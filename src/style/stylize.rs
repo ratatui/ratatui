@@ -1,3 +1,5 @@
+use std::fmt;
+
 use paste::paste;
 
 use crate::{
@@ -21,6 +23,75 @@ pub trait Styled {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     fn set_style<S: Into<Style>>(self, style: S) -> Self::Item;
+}
+
+/// A helper struct to make it easy to debug using the `Stylize` method names
+pub(crate) struct ColorDebug {
+    pub kind: ColorDebugKind,
+    pub color: Color,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub(crate) enum ColorDebugKind {
+    Foreground,
+    Background,
+    #[cfg(feature = "underline-color")]
+    Underline,
+}
+
+impl fmt::Debug for ColorDebug {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        #[cfg(feature = "underline-color")]
+        let is_underline = self.kind == ColorDebugKind::Underline;
+        #[cfg(not(feature = "underline-color"))]
+        let is_underline = false;
+        if is_underline
+            || matches!(
+                self.color,
+                Color::Reset | Color::Indexed(_) | Color::Rgb(_, _, _)
+            )
+        {
+            match self.kind {
+                ColorDebugKind::Foreground => write!(f, ".fg(")?,
+                ColorDebugKind::Background => write!(f, ".bg(")?,
+                #[cfg(feature = "underline-color")]
+                ColorDebugKind::Underline => write!(f, ".underline_color(")?,
+            }
+            write!(f, "Color::{:?}", self.color)?;
+            write!(f, ")")?;
+            return Ok(());
+        }
+
+        match self.kind {
+            ColorDebugKind::Foreground => write!(f, ".")?,
+            ColorDebugKind::Background => write!(f, ".on_")?,
+            // TODO: .underline_color_xxx is not implemented on Stylize yet, but it should be
+            #[cfg(feature = "underline-color")]
+            ColorDebugKind::Underline => {
+                unreachable!("covered by the first part of the if statement")
+            }
+        }
+        match self.color {
+            Color::Black => write!(f, "black")?,
+            Color::Red => write!(f, "red")?,
+            Color::Green => write!(f, "green")?,
+            Color::Yellow => write!(f, "yellow")?,
+            Color::Blue => write!(f, "blue")?,
+            Color::Magenta => write!(f, "magenta")?,
+            Color::Cyan => write!(f, "cyan")?,
+            Color::Gray => write!(f, "gray")?,
+            Color::DarkGray => write!(f, "dark_gray")?,
+            Color::LightRed => write!(f, "light_red")?,
+            Color::LightGreen => write!(f, "light_green")?,
+            Color::LightYellow => write!(f, "light_yellow")?,
+            Color::LightBlue => write!(f, "light_blue")?,
+            Color::LightMagenta => write!(f, "light_magenta")?,
+            Color::LightCyan => write!(f, "light_cyan")?,
+            Color::White => write!(f, "white")?,
+            _ => unreachable!("covered by the first part of the if statement"),
+        }
+        write!(f, "()")
+    }
 }
 
 /// Generates two methods for each color, one for setting the foreground color (`red()`, `blue()`,
@@ -231,6 +302,7 @@ impl Styled for String {
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
+    use rstest::rstest;
 
     use super::*;
 
@@ -422,5 +494,83 @@ mod tests {
                 .reversed(),
             Span::styled("hello", all_modifier_black)
         );
+    }
+
+    #[rstest]
+    #[case(ColorDebugKind::Foreground, Color::Black, ".black()")]
+    #[case(ColorDebugKind::Foreground, Color::Red, ".red()")]
+    #[case(ColorDebugKind::Foreground, Color::Green, ".green()")]
+    #[case(ColorDebugKind::Foreground, Color::Yellow, ".yellow()")]
+    #[case(ColorDebugKind::Foreground, Color::Blue, ".blue()")]
+    #[case(ColorDebugKind::Foreground, Color::Magenta, ".magenta()")]
+    #[case(ColorDebugKind::Foreground, Color::Cyan, ".cyan()")]
+    #[case(ColorDebugKind::Foreground, Color::Gray, ".gray()")]
+    #[case(ColorDebugKind::Foreground, Color::DarkGray, ".dark_gray()")]
+    #[case(ColorDebugKind::Foreground, Color::LightRed, ".light_red()")]
+    #[case(ColorDebugKind::Foreground, Color::LightGreen, ".light_green()")]
+    #[case(ColorDebugKind::Foreground, Color::LightYellow, ".light_yellow()")]
+    #[case(ColorDebugKind::Foreground, Color::LightBlue, ".light_blue()")]
+    #[case(ColorDebugKind::Foreground, Color::LightMagenta, ".light_magenta()")]
+    #[case(ColorDebugKind::Foreground, Color::LightCyan, ".light_cyan()")]
+    #[case(ColorDebugKind::Foreground, Color::White, ".white()")]
+    #[case(
+        ColorDebugKind::Foreground,
+        Color::Indexed(10),
+        ".fg(Color::Indexed(10))"
+    )]
+    #[case(
+        ColorDebugKind::Foreground,
+        Color::Rgb(255, 0, 0),
+        ".fg(Color::Rgb(255, 0, 0))"
+    )]
+    #[case(ColorDebugKind::Background, Color::Black, ".on_black()")]
+    #[case(ColorDebugKind::Background, Color::Red, ".on_red()")]
+    #[case(ColorDebugKind::Background, Color::Green, ".on_green()")]
+    #[case(ColorDebugKind::Background, Color::Yellow, ".on_yellow()")]
+    #[case(ColorDebugKind::Background, Color::Blue, ".on_blue()")]
+    #[case(ColorDebugKind::Background, Color::Magenta, ".on_magenta()")]
+    #[case(ColorDebugKind::Background, Color::Cyan, ".on_cyan()")]
+    #[case(ColorDebugKind::Background, Color::Gray, ".on_gray()")]
+    #[case(ColorDebugKind::Background, Color::DarkGray, ".on_dark_gray()")]
+    #[case(ColorDebugKind::Background, Color::LightRed, ".on_light_red()")]
+    #[case(ColorDebugKind::Background, Color::LightGreen, ".on_light_green()")]
+    #[case(ColorDebugKind::Background, Color::LightYellow, ".on_light_yellow()")]
+    #[case(ColorDebugKind::Background, Color::LightBlue, ".on_light_blue()")]
+    #[case(ColorDebugKind::Background, Color::LightMagenta, ".on_light_magenta()")]
+    #[case(ColorDebugKind::Background, Color::LightCyan, ".on_light_cyan()")]
+    #[case(ColorDebugKind::Background, Color::White, ".on_white()")]
+    #[case(
+        ColorDebugKind::Background,
+        Color::Indexed(10),
+        ".bg(Color::Indexed(10))"
+    )]
+    #[case(
+        ColorDebugKind::Background,
+        Color::Rgb(255, 0, 0),
+        ".bg(Color::Rgb(255, 0, 0))"
+    )]
+    #[cfg(feature = "underline-color")]
+    #[case(
+        ColorDebugKind::Underline,
+        Color::Black,
+        ".underline_color(Color::Black)"
+    )]
+    #[cfg(feature = "underline-color")]
+    #[case(ColorDebugKind::Underline, Color::Red, ".underline_color(Color::Red)")]
+    #[cfg(feature = "underline-color")]
+    #[case(
+        ColorDebugKind::Underline,
+        Color::Green,
+        ".underline_color(Color::Green)"
+    )]
+    #[cfg(feature = "underline-color")]
+    #[case(
+        ColorDebugKind::Underline,
+        Color::Yellow,
+        ".underline_color(Color::Yellow)"
+    )]
+    fn stylize_debug(#[case] kind: ColorDebugKind, #[case] color: Color, #[case] expected: &str) {
+        let debug = color.stylize_debug(kind);
+        assert_eq!(format!("{debug:?}"), expected);
     }
 }
