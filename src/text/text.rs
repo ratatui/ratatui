@@ -183,8 +183,8 @@ impl fmt::Debug for Text<'_> {
             if self.style != Style::default() {
                 debug.field("style", &self.style);
             }
-            if self.alignment.is_some() {
-                debug.field("alignment", &self.alignment);
+            if let Some(alignment) = self.alignment {
+                debug.field("alignment", &format!("Alignment::{alignment}"));
             }
             debug.field("lines", &self.lines).finish()
         }
@@ -1276,7 +1276,7 @@ mod tests {
         #[ignore = "This is just showing the debug output of the assertions"]
         fn line_style() {
             let text = Text::from(vec![
-                Line::from("first line").red(),
+                Line::from("first line").red().alignment(Alignment::Right),
                 Line::from("second line").on_black(),
             ]);
             assert_eq!(text, Text::default());

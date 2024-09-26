@@ -171,8 +171,8 @@ impl fmt::Debug for Line<'_> {
         if self.style != Style::default() {
             debug.field("style", &self.style);
         }
-        if self.alignment.is_some() {
-            debug.field("alignment", &self.alignment);
+        if let Some(alignment) = self.alignment {
+            debug.field("alignment", &format!("Alignment::{alignment}"));
         }
         debug.field("spans", &self.spans).finish()
     }
