@@ -1,11 +1,11 @@
+use std::fmt;
+
 use paste::paste;
 
 use crate::{
     style::{Color, Modifier, Style},
     text::Span,
 };
-
-use std::fmt;
 
 /// A trait for objects that have a `Style`.
 ///
@@ -301,9 +301,10 @@ impl Styled for String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use itertools::Itertools;
     use rstest::rstest;
+
+    use super::*;
 
     #[test]
     fn str_styled() {

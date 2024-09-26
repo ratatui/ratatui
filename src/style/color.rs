@@ -1,7 +1,8 @@
 #![allow(clippy::unreadable_literal)]
 
-use crate::style::stylize::{StylizeDebug, StylizeDebugKind};
 use std::{fmt, str::FromStr};
+
+use crate::style::stylize::{StylizeDebug, StylizeDebugKind};
 
 /// ANSI Color
 ///
