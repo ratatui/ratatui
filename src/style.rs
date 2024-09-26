@@ -263,7 +263,7 @@ impl fmt::Debug for Style {
                 Modifier::REVERSED => f.write_str(".reversed()")?,
                 Modifier::HIDDEN => f.write_str(".hidden()")?,
                 Modifier::CROSSED_OUT => f.write_str(".crossed_out()")?,
-                _ => f.write_fmt(format_args!(".add_modifier(Modifier::{:?})", modifier))?,
+                _ => f.write_fmt(format_args!(".add_modifier(Modifier::{modifier:?})"))?,
             }
         }
         for modifier in self.sub_modifier.iter() {
@@ -277,7 +277,7 @@ impl fmt::Debug for Style {
                 Modifier::REVERSED => f.write_str(".not_reversed()")?,
                 Modifier::HIDDEN => f.write_str(".not_hidden()")?,
                 Modifier::CROSSED_OUT => f.write_str(".not_crossed_out()")?,
-                _ => f.write_fmt(format_args!(".remove_modifier(Modifier::{:?})", modifier))?,
+                _ => f.write_fmt(format_args!(".remove_modifier(Modifier::{modifier:?})"))?,
             }
         }
         Ok(())
