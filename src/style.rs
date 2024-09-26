@@ -72,7 +72,7 @@ use std::fmt;
 
 use bitflags::bitflags;
 pub use color::{Color, ParseColorError};
-use stylize::StylizeDebugKind;
+use stylize::ColorDebugKind;
 pub use stylize::{Styled, Stylize};
 
 mod color;
@@ -241,15 +241,15 @@ impl fmt::Debug for Style {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str("Style::new()")?;
         if let Some(fg) = self.fg {
-            fg.stylize_debug(StylizeDebugKind::Foreground).fmt(f)?;
+            fg.stylize_debug(ColorDebugKind::Foreground).fmt(f)?;
         }
         if let Some(bg) = self.bg {
-            bg.stylize_debug(StylizeDebugKind::Background).fmt(f)?;
+            bg.stylize_debug(ColorDebugKind::Background).fmt(f)?;
         }
         #[cfg(feature = "underline-color")]
         if let Some(underline_color) = self.underline_color {
             underline_color
-                .stylize_debug(StylizeDebugKind::Underline)
+                .stylize_debug(ColorDebugKind::Underline)
                 .fmt(f)?;
         }
         for modifier in self.add_modifier.iter() {

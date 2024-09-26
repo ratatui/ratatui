@@ -2,7 +2,7 @@
 
 use std::{fmt, str::FromStr};
 
-use crate::style::stylize::{StylizeDebug, StylizeDebugKind};
+use crate::style::stylize::{ColorDebug, ColorDebugKind};
 
 /// ANSI Color
 ///
@@ -363,8 +363,8 @@ impl fmt::Display for Color {
 }
 
 impl Color {
-    pub(crate) const fn stylize_debug(self, kind: StylizeDebugKind) -> StylizeDebug {
-        StylizeDebug { kind, color: self }
+    pub(crate) const fn stylize_debug(self, kind: ColorDebugKind) -> ColorDebug {
+        ColorDebug { kind, color: self }
     }
 
     /// Converts a HSL representation to a `Color::Rgb` instance.
