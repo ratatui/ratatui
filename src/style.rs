@@ -71,8 +71,8 @@
 use std::fmt;
 
 use bitflags::bitflags;
-use color::StylizeDebugKind;
 pub use color::{Color, ParseColorError};
+use stylize::StylizeDebugKind;
 pub use stylize::{Styled, Stylize};
 
 mod color;
