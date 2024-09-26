@@ -175,15 +175,15 @@ pub struct Text<'a> {
 
 impl fmt::Debug for Text<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.style == Style::default() && self.alignment == None {
+        if self.style == Style::default() && self.alignment.is_none() {
             f.write_str("Text ")?;
-            return f.debug_list().entries(&self.lines).finish();
+            f.debug_list().entries(&self.lines).finish()
         } else {
             let mut debug = f.debug_struct("Text");
             if self.style != Style::default() {
                 debug.field("style", &self.style);
             }
-            if self.alignment != None {
+            if self.alignment.is_some() {
                 debug.field("alignment", &self.alignment);
             }
             debug.field("lines", &self.lines).finish()

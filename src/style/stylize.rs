@@ -578,6 +578,6 @@ mod tests {
     )]
     fn stylize_debug(#[case] kind: StylizeDebugKind, #[case] color: Color, #[case] expected: &str) {
         let debug = color.stylize_debug(kind);
-        assert_eq!(format!("{:?}", debug), expected);
+        assert_eq!(format!("{debug:?}"), expected);
     }
 }

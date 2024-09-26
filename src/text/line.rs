@@ -163,7 +163,7 @@ pub struct Line<'a> {
 
 impl fmt::Debug for Line<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.style == Style::default() && self.alignment == None {
+        if self.style == Style::default() && self.alignment.is_none() {
             f.write_str("Line ")?;
             return f.debug_list().entries(&self.spans).finish();
         }
@@ -171,7 +171,7 @@ impl fmt::Debug for Line<'_> {
         if self.style != Style::default() {
             debug.field("style", &self.style);
         }
-        if self.alignment != None {
+        if self.alignment.is_some() {
             debug.field("alignment", &self.alignment);
         }
         debug.field("spans", &self.spans).finish()

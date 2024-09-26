@@ -253,10 +253,10 @@ impl fmt::Debug for Style {
                 .fmt(f)?;
         }
         for modifier in self.add_modifier.iter() {
-            write!(f, ".add_modifier(Modifier::{:?})", modifier)?;
+            write!(f, ".add_modifier(Modifier::{modifier:?})")?;
         }
         for modifier in self.sub_modifier.iter() {
-            write!(f, ".remove_modifier(Modifier::{:?})", modifier)?;
+            write!(f, ".remove_modifier(Modifier::{modifier:?})")?;
         }
         Ok(())
     }
@@ -586,7 +586,7 @@ mod tests {
     // TODO .not_bold() etc.
     #[case(Style::new().not_italic(), "Style::new().remove_modifier(Modifier::ITALIC)")]
     fn debug(#[case] style: Style, #[case] expected: &'static str) {
-        assert_eq!(format!("{:?}", style), expected);
+        assert_eq!(format!("{style:?}"), expected);
     }
 
     #[test]

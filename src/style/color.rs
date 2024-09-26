@@ -362,7 +362,7 @@ impl fmt::Display for Color {
 }
 
 impl Color {
-    pub(crate) fn stylize_debug(self, kind: StylizeDebugKind) -> StylizeDebug {
+    pub(crate) const fn stylize_debug(self, kind: StylizeDebugKind) -> StylizeDebug {
         StylizeDebug { kind, color: self }
     }
 
