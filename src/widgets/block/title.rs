@@ -9,6 +9,17 @@ use crate::{layout::Alignment, text::Line};
 ///
 /// It can be aligned (see [`Alignment`]) and positioned (see [`Position`]).
 ///
+/// # Future Deprecation
+///
+/// This type is deprecated and will be removed in a future release. The reason for this is that the
+/// position of the title should be stored in the block itself, not in the title. The `Line` type
+/// has an alignment method that can be used to align the title. For more information see
+/// <https://github.com/ratatui/ratatui/issues/738>.
+///
+/// Use [`Line`] instead, when the position is not defined as part of the title. When a specific
+/// position is needed, use [`Block::title_top`](crate::widgets::Block::title_top) or
+/// [`Block::title_bottom`](crate::widgets::Block::title_bottom) instead.
+///
 /// # Example
 ///
 /// Title with no style.
@@ -88,6 +99,7 @@ pub enum Position {
     Bottom,
 }
 
+#[deprecated = "use Block::title_top() or Block::title_bottom() instead. This will be removed in a future release."]
 impl<'a> Title<'a> {
     /// Set the title content.
     #[must_use = "method moves the value of self and returns the modified value"]
