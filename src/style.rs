@@ -253,10 +253,32 @@ impl fmt::Debug for Style {
                 .fmt(f)?;
         }
         for modifier in self.add_modifier.iter() {
-            write!(f, ".add_modifier(Modifier::{modifier:?})")?;
+            match modifier {
+                Modifier::BOLD => f.write_str(".bold()")?,
+                Modifier::DIM => f.write_str(".dim()")?,
+                Modifier::ITALIC => f.write_str(".italic()")?,
+                Modifier::UNDERLINED => f.write_str(".underlined()")?,
+                Modifier::SLOW_BLINK => f.write_str(".slow_blink()")?,
+                Modifier::RAPID_BLINK => f.write_str(".rapid_blink()")?,
+                Modifier::REVERSED => f.write_str(".reversed()")?,
+                Modifier::HIDDEN => f.write_str(".hidden()")?,
+                Modifier::CROSSED_OUT => f.write_str(".crossed_out()")?,
+                _ => f.write_fmt(format_args!(".add_modifier(Modifier::{:?})", modifier))?,
+            }
         }
         for modifier in self.sub_modifier.iter() {
-            write!(f, ".remove_modifier(Modifier::{modifier:?})")?;
+            match modifier {
+                Modifier::BOLD => f.write_str(".not_bold()")?,
+                Modifier::DIM => f.write_str(".not_dim()")?,
+                Modifier::ITALIC => f.write_str(".not_italic()")?,
+                Modifier::UNDERLINED => f.write_str(".not_underlined()")?,
+                Modifier::SLOW_BLINK => f.write_str(".not_slow_blink()")?,
+                Modifier::RAPID_BLINK => f.write_str(".not_rapid_blink()")?,
+                Modifier::REVERSED => f.write_str(".not_reversed()")?,
+                Modifier::HIDDEN => f.write_str(".not_hidden()")?,
+                Modifier::CROSSED_OUT => f.write_str(".not_crossed_out()")?,
+                _ => f.write_fmt(format_args!(".remove_modifier(Modifier::{:?})", modifier))?,
+            }
         }
         Ok(())
     }
@@ -581,10 +603,8 @@ mod tests {
     #[case(Style::new(), "Style::new()")]
     #[case(Style::new().red(), "Style::new().red()")]
     #[case(Style::new().on_blue(), "Style::new().on_blue()")]
-    // TODO .bold() etc.
-    #[case(Style::new().bold(), "Style::new().add_modifier(Modifier::BOLD)")]
-    // TODO .not_bold() etc.
-    #[case(Style::new().not_italic(), "Style::new().remove_modifier(Modifier::ITALIC)")]
+    #[case(Style::new().bold(), "Style::new().bold()")]
+    #[case(Style::new().not_italic(), "Style::new().not_italic()")]
     fn debug(#[case] style: Style, #[case] expected: &'static str) {
         assert_eq!(format!("{style:?}"), expected);
     }
