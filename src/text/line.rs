@@ -149,16 +149,33 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 /// ```
 ///
 /// [`Paragraph`]: crate::widgets::Paragraph
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Line<'a> {
-    /// The spans that make up this line of text.
-    pub spans: Vec<Span<'a>>,
-
     /// The style of this line of text.
     pub style: Style,
 
     /// The alignment of this line of text.
     pub alignment: Option<Alignment>,
+
+    /// The spans that make up this line of text.
+    pub spans: Vec<Span<'a>>,
+}
+
+impl fmt::Debug for Line<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.style == Style::default() && self.alignment.is_none() {
+            f.write_str("Line ")?;
+            return f.debug_list().entries(&self.spans).finish();
+        }
+        let mut debug = f.debug_struct("Line");
+        if self.style != Style::default() {
+            debug.field("style", &self.style);
+        }
+        if let Some(alignment) = self.alignment {
+            debug.field("alignment", &format!("Alignment::{alignment}"));
+        }
+        debug.field("spans", &self.spans).finish()
+    }
 }
 
 fn cow_to_spans<'a>(content: impl Into<Cow<'a, str>>) -> Vec<Span<'a>> {

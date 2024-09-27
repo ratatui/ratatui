@@ -72,6 +72,7 @@ use std::fmt;
 
 use bitflags::bitflags;
 pub use color::{Color, ParseColorError};
+use stylize::ColorDebugKind;
 pub use stylize::{Styled, Stylize};
 
 mod color;
@@ -223,7 +224,7 @@ impl fmt::Debug for Modifier {
 ///     buffer[(0, 0)].style(),
 /// );
 /// ```
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
     pub fg: Option<Color>,
@@ -232,6 +233,55 @@ pub struct Style {
     pub underline_color: Option<Color>,
     pub add_modifier: Modifier,
     pub sub_modifier: Modifier,
+}
+
+/// A custom debug implementation that prints only the fields that are not the default, and unwraps
+/// the `Option`s.
+impl fmt::Debug for Style {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("Style::new()")?;
+        if let Some(fg) = self.fg {
+            fg.stylize_debug(ColorDebugKind::Foreground).fmt(f)?;
+        }
+        if let Some(bg) = self.bg {
+            bg.stylize_debug(ColorDebugKind::Background).fmt(f)?;
+        }
+        #[cfg(feature = "underline-color")]
+        if let Some(underline_color) = self.underline_color {
+            underline_color
+                .stylize_debug(ColorDebugKind::Underline)
+                .fmt(f)?;
+        }
+        for modifier in self.add_modifier.iter() {
+            match modifier {
+                Modifier::BOLD => f.write_str(".bold()")?,
+                Modifier::DIM => f.write_str(".dim()")?,
+                Modifier::ITALIC => f.write_str(".italic()")?,
+                Modifier::UNDERLINED => f.write_str(".underlined()")?,
+                Modifier::SLOW_BLINK => f.write_str(".slow_blink()")?,
+                Modifier::RAPID_BLINK => f.write_str(".rapid_blink()")?,
+                Modifier::REVERSED => f.write_str(".reversed()")?,
+                Modifier::HIDDEN => f.write_str(".hidden()")?,
+                Modifier::CROSSED_OUT => f.write_str(".crossed_out()")?,
+                _ => f.write_fmt(format_args!(".add_modifier(Modifier::{modifier:?})"))?,
+            }
+        }
+        for modifier in self.sub_modifier.iter() {
+            match modifier {
+                Modifier::BOLD => f.write_str(".not_bold()")?,
+                Modifier::DIM => f.write_str(".not_dim()")?,
+                Modifier::ITALIC => f.write_str(".not_italic()")?,
+                Modifier::UNDERLINED => f.write_str(".not_underlined()")?,
+                Modifier::SLOW_BLINK => f.write_str(".not_slow_blink()")?,
+                Modifier::RAPID_BLINK => f.write_str(".not_rapid_blink()")?,
+                Modifier::REVERSED => f.write_str(".not_reversed()")?,
+                Modifier::HIDDEN => f.write_str(".not_hidden()")?,
+                Modifier::CROSSED_OUT => f.write_str(".not_crossed_out()")?,
+                _ => f.write_fmt(format_args!(".remove_modifier(Modifier::{modifier:?})"))?,
+            }
+        }
+        Ok(())
+    }
 }
 
 impl Styled for Style {
@@ -548,6 +598,16 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+
+    #[rstest]
+    #[case(Style::new(), "Style::new()")]
+    #[case(Style::new().red(), "Style::new().red()")]
+    #[case(Style::new().on_blue(), "Style::new().on_blue()")]
+    #[case(Style::new().bold(), "Style::new().bold()")]
+    #[case(Style::new().not_italic(), "Style::new().not_italic()")]
+    fn debug(#[case] style: Style, #[case] expected: &'static str) {
+        assert_eq!(format!("{style:?}"), expected);
+    }
 
     #[test]
     fn combined_patch_gives_same_result_as_individual_patch() {
