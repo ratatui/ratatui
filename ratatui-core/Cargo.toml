@@ -1,0 +1,50 @@
+[package]
+name = "ratatui-core"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+underline-color = []
+unstable-widget-ref = []
+
+[dependencies]
+bitflags.workspace = true
+cassowary.workspace = true
+compact_str.workspace = true
+document-features.workspace = true
+instability.workspace = true
+itertools.workspace = true
+lru.workspace = true
+paste.workspace = true
+palette = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
+strum = { workspace = true, features = ["derive"] }
+termwiz = { workspace = true, optional = true }
+unicode-segmentation.workspace = true
+unicode-truncate.workspace = true
+unicode-width.workspace = true
+
+[dev-dependencies]
+argh = "0.1.12"
+color-eyre = "0.6.2"
+criterion = { version = "0.5.1", features = ["html_reports"] }
+crossterm = { version = "0.28.1", features = ["event-stream"] }
+fakeit = "1.1"
+font8x8 = "0.3.1"
+futures = "0.3.30"
+indoc = "2"
+octocrab = "0.40.0"
+pretty_assertions = "1.4.0"
+rand = "0.8.5"
+rand_chacha = "0.3.1"
+rstest = "0.22.0"
+serde_json = "1.0.109"
+tokio = { version = "1.39.2", features = [
+    "rt",
+    "macros",
+    "time",
+    "rt-multi-thread",
+] }
+tracing = "0.1.40"
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

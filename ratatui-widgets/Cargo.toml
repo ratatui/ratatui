@@ -1,0 +1,40 @@
+[package]
+name = "ratatui-widgets"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+# TODO: remove unstable-widget-ref, consider whether to keep all-widgets
+default = ["all-widgets", "unstable-widget-ref"]
+
+## enables serialization and deserialization of style and color types using the [`serde`] crate.
+## This is useful if you want to save themes to a file.
+serde = ["dep:serde", "bitflags/serde"]
+
+
+## enables all widgets.
+all-widgets = ["widget-calendar"]
+
+#! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
+#! dependencies. The available features are:
+## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
+widget-calendar = ["dep:time"]
+
+unstable-widget-ref = ["ratatui-core/unstable-widget-ref"]
+
+[dependencies]
+bitflags.workspace = true
+instability.workspace = true
+itertools.workspace = true
+ratatui-core.workspace = true
+serde = { workspace = true, optional = true }
+strum.workspace = true
+time = { workspace = true, optional = true }
+unicode-segmentation.workspace = true
+unicode-width.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true
+indoc.workspace = true
+pretty_assertions.workspace = true
+time.workspace = true

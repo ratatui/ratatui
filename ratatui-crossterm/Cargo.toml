@@ -1,0 +1,20 @@
+[package]
+name = "ratatui-crossterm"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["underline-color"]
+
+## enables the backend code that sets the underline color.
+## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
+## and is not supported on Windows 7.
+underline-color = []
+
+[dependencies]
+ratatui-core = { workspace = true }
+crossterm.workspace = true
+instability.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true

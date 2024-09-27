@@ -1,0 +1,9 @@
+[package]
+name = "ratatui-termion"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+instability = { workspace = true }
+ratatui-core = { workspace = true }
+termion.workspace = true

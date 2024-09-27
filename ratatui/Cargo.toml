@@ -1,0 +1,386 @@
+[package]
+name = "ratatui"
+version = "0.28.1" # crate version
+authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
+description = "A library that's all about cooking up terminal user interfaces"
+documentation = "https://docs.rs/ratatui/latest/ratatui/"
+repository = "https://github.com/ratatui/ratatui"
+homepage = "https://ratatui.rs"
+keywords = ["tui", "terminal", "dashboard"]
+categories = ["command-line-interface"]
+readme = "README.md"
+license = "MIT"
+exclude = [
+    "assets/*",
+    ".github",
+    "Makefile.toml",
+    "CONTRIBUTING.md",
+    "*.log",
+    "tags",
+]
+edition = "2021"
+rust-version = "1.74.0"
+
+[features]
+#! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
+#!
+## By default, we enable the crossterm backend as this is a reasonable choice for most applications
+## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
+## which allows you to set the underline color of text.
+default = ["crossterm", "underline-color"]
+#! Generally an application will only use one backend, so you should only enable one of the following features:
+## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
+crossterm = ["dep:ratatui-crossterm", "dep:crossterm"]
+## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
+# termion = ["dep:ratatui-termion", "dep:termion"]
+# ## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
+# termwiz = ["dep:ratatui-termwiz"]
+
+#! The following optional features are available for all backends:
+## enables serialization and deserialization of style and color types using the [`serde`] crate.
+## This is useful if you want to save themes to a file.
+serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
+
+## enables the [`border!`] macro.
+macros = []
+
+## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
+palette = ["dep:palette"]
+
+## enables all widgets.
+all-widgets = ["widget-calendar"]
+
+#! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
+#! dependencies. The available features are:
+## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
+widget-calendar = ["ratatui-widgets/widget-calendar", "dep:time"]
+
+#! The following optional features are only available for some backends:
+
+## enables the backend code that sets the underline color.
+## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
+## and is not supported on Windows 7.
+# underline-color = ["ratatui-crossterm/underline-color"]
+underline-color = ["ratatui-core/underline-color"]
+
+#! The following features are unstable and may change in the future:
+
+## Enable all unstable features.
+unstable = [
+    "unstable-rendered-line-info",
+    "unstable-widget-ref",
+    "unstable-backend-writer",
+]
+
+## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
+## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
+## which are experimental and may change in the future.
+## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
+unstable-rendered-line-info = []
+
+## Enables the [`WidgetRef`](widgets::WidgetRef) and [`StatefulWidgetRef`](widgets::StatefulWidgetRef) traits which are experimental and may change in
+## the future.
+unstable-widget-ref = []
+
+## Enables getting access to backends' writers.
+unstable-backend-writer = []
+
+[dependencies]
+ratatui-widgets = { workspace = true }
+ratatui-core = { workspace = true }
+ratatui-crossterm = { workspace = true, optional = true }
+# ratatui-termwiz = { workspace = true, optional = true }
+
+bitflags = "2.3"
+cassowary = "0.3"
+crossterm = { workspace = true, optional = true }
+compact_str = "0.8.0"
+document-features = { version = "0.2.7", optional = true }
+instability = "0.3.1"
+itertools = "0.13"
+lru = "0.12.0"
+paste = "1.0.2"
+palette = { version = "0.7.6", optional = true }
+serde = { version = "1", optional = true, features = ["derive"] }
+strum = { version = "0.26.3", features = ["derive"] }
+unicode-segmentation = "1.10"
+unicode-truncate = "1"
+unicode-width = "=0.1.13"
+time = { workspace = true, optional = true }
+
+# [target.'cfg(not(windows))'.dependencies]
+# # termion is not supported on Windows
+# ratatui-termion = { workspace = true, optional = true }
+# termion = { workspace = true, optional = true }
+
+[dev-dependencies]
+argh = "0.1.12"
+color-eyre = "0.6.2"
+criterion = { version = "0.5.1", features = ["html_reports"] }
+fakeit = "1.1"
+font8x8 = "0.3.1"
+futures = "0.3.30"
+indoc = "2"
+octocrab = "0.40.0"
+pretty_assertions = "1.4.0"
+rand = "0.8.5"
+rand_chacha = "0.3.1"
+rstest = "0.22.0"
+serde_json = "1.0.109"
+tokio = { version = "1.39.2", features = [
+    "rt",
+    "macros",
+    "time",
+    "rt-multi-thread",
+] }
+tracing = "0.1.40"
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+cargo = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+cast_possible_truncation = "allow"
+cast_possible_wrap = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+
+# we often split up a module into multiple files with the main type in a file named after the
+# module, so we want to allow this pattern
+module_inception = "allow"
+
+# nursery or restricted
+as_underscore = "warn"
+deref_by_slicing = "warn"
+else_if_without_else = "warn"
+empty_line_after_doc_comments = "warn"
+equatable_if_let = "warn"
+fn_to_numeric_cast_any = "warn"
+format_push_string = "warn"
+map_err_ignore = "warn"
+missing_const_for_fn = "warn"
+mixed_read_write_in_expression = "warn"
+mod_module_files = "warn"
+needless_pass_by_ref_mut = "warn"
+needless_raw_strings = "warn"
+or_fun_call = "warn"
+redundant_type_annotations = "warn"
+rest_pat_in_fully_bound_structs = "warn"
+string_lit_chars_any = "warn"
+string_slice = "warn"
+string_to_string = "warn"
+unnecessary_self_imports = "warn"
+use_self = "warn"
+
+
+[package.metadata.docs.rs]
+all-features = true
+# see https://doc.rust-lang.org/nightly/rustdoc/scraped-examples.html
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+# Improve benchmark consistency
+[profile.bench]
+codegen-units = 1
+lto = true
+
+[lib]
+bench = false
+
+[[bench]]
+name = "main"
+harness = false
+
+[[example]]
+name = "async"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "barchart"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "barchart-grouped"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "block"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "calendar"
+required-features = ["crossterm", "widget-calendar"]
+doc-scrape-examples = true
+
+[[example]]
+name = "canvas"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "chart"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "colors"
+required-features = ["crossterm"]
+# this example is a bit verbose, so we don't want to include it in the docs
+doc-scrape-examples = false
+
+[[example]]
+name = "colors_rgb"
+required-features = ["crossterm", "palette"]
+doc-scrape-examples = true
+
+[[example]]
+name = "constraint-explorer"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "constraints"
+required-features = ["crossterm"]
+doc-scrape-examples = false
+
+[[example]]
+name = "custom_widget"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "demo"
+# this runs for all of the terminal backends, so it can't be built using --all-features or scraped
+doc-scrape-examples = false
+
+[[example]]
+name = "demo2"
+required-features = ["crossterm", "palette", "widget-calendar"]
+doc-scrape-examples = true
+
+[[example]]
+name = "docsrs"
+required-features = ["crossterm"]
+doc-scrape-examples = false
+
+[[example]]
+name = "flex"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "gauge"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "hello_world"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "inline"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "layout"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "line_gauge"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "hyperlink"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "list"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "minimal"
+required-features = ["crossterm"]
+# prefer to show the more featureful examples in the docs
+doc-scrape-examples = false
+
+[[example]]
+name = "modifiers"
+required-features = ["crossterm"]
+# this example is a bit verbose, so we don't want to include it in the docs
+doc-scrape-examples = false
+
+[[example]]
+name = "panic"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "paragraph"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "popup"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "ratatui-logo"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "scrollbar"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "sparkline"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "table"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "tabs"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "tracing"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "user_input"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "widget_impl"
+required-features = ["crossterm", "unstable-widget-ref"]
+doc-scrape-examples = true
+
+[[test]]
+name = "state_serde"
+required-features = ["serde"]
