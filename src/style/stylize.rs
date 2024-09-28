@@ -196,7 +196,11 @@ macro_rules! modifier {
 ///
 /// # Examples
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Color, Modifier, Style, Stylize},
+///     text::Line,
+///     widgets::{Block, Paragraph},
+/// };
 ///
 /// let span = "hello".red().on_blue().bold();
 /// let line = Line::from(vec![

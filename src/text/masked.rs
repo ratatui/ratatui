@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt};
 
-use super::Text;
+use crate::text::Text;
 
 /// A wrapper around a string that is masked when displayed.
 ///
@@ -10,7 +10,12 @@ use super::Text;
 /// # Examples
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     buffer::Buffer,
+///     layout::Rect,
+///     text::Masked,
+///     widgets::{Paragraph, Widget},
+/// };
 ///
 /// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
 /// let password = Masked::new("12345", 'x');

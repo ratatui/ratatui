@@ -31,14 +31,14 @@ use crate::{layout::Alignment, text::Line};
 ///
 /// Blue title on a white background (via [`Stylize`](crate::style::Stylize) trait).
 /// ```
-/// use ratatui::{prelude::*, widgets::block::*};
+/// use ratatui::{style::Stylize, widgets::block::Title};
 ///
 /// Title::from("Title".blue().on_white());
 /// ```
 ///
 /// Title with multiple styles (see [`Line`] and [`Stylize`](crate::style::Stylize)).
 /// ```
-/// use ratatui::{prelude::*, widgets::block::*};
+/// use ratatui::{style::Stylize, text::Line, widgets::block::Title};
 ///
 /// Title::from(Line::from(vec!["Q".white().underlined(), "uit".gray()]));
 /// ```
@@ -46,7 +46,7 @@ use crate::{layout::Alignment, text::Line};
 /// Complete example
 /// ```
 /// use ratatui::{
-///     prelude::*,
+///     layout::Alignment,
 ///     widgets::{
 ///         block::{Position, Title},
 ///         Block,
@@ -84,7 +84,10 @@ pub struct Title<'a> {
 /// # Example
 ///
 /// ```
-/// use ratatui::widgets::{block::*, *};
+/// use ratatui::widgets::{
+///     block::{Position, Title},
+///     Block,
+/// };
 ///
 /// Block::new().title(Title::from("title").position(Position::Bottom));
 /// ```

@@ -30,7 +30,14 @@ pub use self::{
     points::Points,
     rectangle::Rectangle,
 };
-use crate::{prelude::*, symbols::Marker, text::Line as TextLine, widgets::Block};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Color, Style},
+    symbols::{self, Marker},
+    text::Line as TextLine,
+    widgets::{block::BlockExt, Block, Widget, WidgetRef},
+};
 
 /// Something that can be drawn on a [`Canvas`].
 ///
@@ -356,7 +363,10 @@ impl<'a, 'b> Painter<'a, 'b> {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::{prelude::*, widgets::canvas::*};
+    /// use ratatui::{
+    ///     symbols,
+    ///     widgets::canvas::{Context, Painter},
+    /// };
     ///
     /// let mut ctx = Context::new(2, 2, [1.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -399,7 +409,11 @@ impl<'a, 'b> Painter<'a, 'b> {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{prelude::*, widgets::canvas::*};
+    /// use ratatui::{
+    ///     style::Color,
+    ///     symbols,
+    ///     widgets::canvas::{Context, Painter},
+    /// };
     ///
     /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -425,7 +439,7 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
 /// This is used by the [`Canvas`] widget to draw shapes on the grid. It can be useful to think of
 /// this as similar to the [`Frame`] struct that is used to draw widgets on the terminal.
 ///
-/// [`Frame`]: crate::prelude::Frame
+/// [`Frame`]: crate::Frame
 #[derive(Debug)]
 pub struct Context<'a> {
     x_bounds: [f64; 2],
@@ -449,7 +463,7 @@ impl<'a> Context<'a> {
     /// example, if you want to draw a map of the world, you might want to use the following bounds:
     ///
     /// ```
-    /// use ratatui::{prelude::*, widgets::canvas::*};
+    /// use ratatui::{symbols, widgets::canvas::Context};
     ///
     /// let ctx = Context::new(
     ///     100,
@@ -513,6 +527,8 @@ impl<'a> Context<'a> {
     ///
     /// Note that the text is always printed on top of the canvas and is **not** affected by the
     /// layers.
+    ///
+    /// [`Text`]: crate::text::Text
     pub fn print<T>(&mut self, x: f64, y: f64, line: T)
     where
         T: Into<TextLine<'a>>,
@@ -563,7 +579,10 @@ impl<'a> Context<'a> {
 /// ```
 /// use ratatui::{
 ///     style::Color,
-///     widgets::{canvas::*, *},
+///     widgets::{
+///         canvas::{Canvas, Line, Map, MapResolution, Rectangle},
+///         Block,
+///     },
 /// };
 ///
 /// Canvas::default()
@@ -698,7 +717,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use ratatui::{prelude::*, widgets::canvas::*};
+    /// use ratatui::{symbols, widgets::canvas::Canvas};
     ///
     /// Canvas::default()
     ///     .marker(symbols::Marker::Braille)

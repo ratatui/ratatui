@@ -1,9 +1,18 @@
 use itertools::Itertools;
 
 #[allow(unused_imports)] // `Cell` is used in the doc comment but not the code
-use super::Cell;
-use super::{HighlightSpacing, Row, TableState};
-use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
+use crate::widgets::table::Cell;
+use crate::{
+    buffer::Buffer,
+    layout::{Constraint, Flex, Layout, Rect},
+    style::{Style, Styled},
+    text::Text,
+    widgets::{
+        block::BlockExt,
+        table::{HighlightSpacing, Row, TableState},
+        Block, StatefulWidget, StatefulWidgetRef, Widget, WidgetRef,
+    },
+};
 
 /// A widget to display data in formatted columns.
 ///
@@ -55,7 +64,11 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::Constraint,
+///     style::{Style, Stylize},
+///     widgets::{Block, Row, Table},
+/// };
 ///
 /// let rows = [Row::new(vec!["Cell1", "Cell2", "Cell3"])];
 /// // Columns widths are constrained in the same way as Layout...
@@ -90,7 +103,12 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// bottom margin, and style. See [`Row`] for more details.
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     text::{Line, Span},
+///     widgets::{Cell, Row, Table},
+/// };
+///
 /// // a Row can be created from simple strings.
 /// let row = Row::new(vec!["Row11", "Row12", "Row13"]);
 ///
@@ -100,11 +118,8 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// // If you need more control over the styling, create Cells directly
 /// let row = Row::new(vec![
 ///     Cell::from("Row31"),
-///     Cell::from("Row32").style(Style::default().fg(Color::Yellow)),
-///     Cell::from(Line::from(vec![
-///         Span::raw("Row"),
-///         Span::styled("33", Style::default().fg(Color::Green)),
-///     ])),
+///     Cell::from("Row32").style(Style::new().yellow()),
+///     Cell::from(Line::from(vec![Span::raw("Row"), Span::from("33").green()])),
 /// ]);
 ///
 /// // If a Row need to display some content over multiple lines, specify the height.
@@ -120,14 +135,19 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// details.
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     text::{Line, Span, Text},
+///     widgets::Cell,
+/// };
+///
 /// Cell::from("simple string");
 /// Cell::from("simple styled span".red());
 /// Cell::from(Span::raw("raw span"));
 /// Cell::from(Span::styled("styled span", Style::new().red()));
 /// Cell::from(Line::from(vec![
 ///     Span::raw("a vec of "),
-///     Span::styled("spans", Style::new().bold()),
+///     Span::from("spans").bold(),
 /// ]));
 /// Cell::from(Text::from("text"));
 /// ```
@@ -137,7 +157,10 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// These default columns widths can be overridden using the `Table::widths` method.
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::Constraint,
+///     widgets::{Row, Table},
+/// };
 ///
 /// let text = "Mary had a\nlittle lamb.";
 ///
@@ -152,7 +175,11 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// the [`Stylize`] trait to set the style of the widget more concisely.
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::Constraint,
+///     style::Stylize,
+///     widgets::{Row, Table},
+/// };
 ///
 /// let rows = [Row::new(vec!["Cell1", "Cell2", "Cell3"])];
 /// let widths = [
@@ -169,7 +196,13 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// user to scroll through the rows and select one of them.
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::{Constraint, Rect},
+///     style::{Style, Stylize},
+///     widgets::{Block, Row, Table, TableState},
+///     Frame,
+/// };
+///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
 /// // Note: TableState should be stored in your application state (not constructed in your render
@@ -187,12 +220,15 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// ];
 /// let table = Table::new(rows, widths)
 ///     .block(Block::new().title("Table"))
-///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
+///     .highlight_style(Style::new().reversed())
 ///     .highlight_symbol(">>");
 ///
 /// frame.render_stateful_widget(table, area, &mut table_state);
 /// # }
 /// ```
+///
+/// [`Frame::render_widget`]: crate::Frame::render_widget
+/// [`Stylize`]: crate::style::Stylize
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Table<'a> {
     /// Data to display in each row
@@ -261,7 +297,11 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     widgets::{Row, Table},
+    /// };
+    ///
     /// let rows = [
     ///     Row::new(vec!["Cell1", "Cell2"]),
     ///     Row::new(vec!["Cell3", "Cell4"]),
@@ -302,7 +342,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Row, Table};
+    ///
     /// let rows = [
     ///     Row::new(vec!["Cell1", "Cell2"]),
     ///     Row::new(vec!["Cell3", "Cell4"]),
@@ -327,7 +368,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Cell, Row, Table};
+    ///
     /// let header = Row::new(vec![
     ///     Cell::from("Header Cell 1"),
     ///     Cell::from("Header Cell 2"),
@@ -349,7 +391,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Cell, Row, Table};
+    ///
     /// let footer = Row::new(vec![
     ///     Cell::from("Footer Cell 1"),
     ///     Cell::from("Footer Cell 2"),
@@ -376,7 +419,11 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     widgets::{Cell, Row, Table},
+    /// };
+    ///
     /// let table = Table::default().widths([Constraint::Length(5), Constraint::Length(5)]);
     /// let table = Table::default().widths(vec![Constraint::Length(5); 2]);
     ///
@@ -403,9 +450,13 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
-    /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     widgets::{Row, Table},
+    /// };
+    ///
+    /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
+    /// let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).column_spacing(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -424,9 +475,13 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
-    /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     widgets::{Block, Cell, Row, Table},
+    /// };
+    ///
+    /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
+    /// let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let block = Block::bordered().title("Table");
     /// let table = Table::new(rows, widths).block(block);
     /// ```
@@ -449,7 +504,12 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     style::{Style, Stylize},
+    ///     widgets::{Row, Table},
+    /// };
+    ///
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).style(Style::new().red().italic());
@@ -459,11 +519,19 @@ impl<'a> Table<'a> {
     /// the [`Stylize`] trait to set the style of the widget more concisely.
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     style::Stylize,
+    ///     widgets::{Cell, Row, Table},
+    /// };
+    ///
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = vec![Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).red().italic();
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
+    /// [`Stylize`]: crate::style::Stylize
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -483,11 +551,18 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
-    /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     style::{Style, Stylize},
+    ///     widgets::{Cell, Row, Table},
+    /// };
+    ///
+    /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
+    /// let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_style(Style::new().red().italic());
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
         self.highlight_style = highlight_style.into();
@@ -501,7 +576,11 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     widgets::{Cell, Row, Table},
+    /// };
+    ///
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_symbol(">>");
@@ -533,9 +612,13 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
-    /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
+    /// use ratatui::{
+    ///     layout::Constraint,
+    ///     widgets::{HighlightSpacing, Row, Table},
+    /// };
+    ///
+    /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
+    /// let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_spacing(HighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -557,8 +640,11 @@ impl<'a> Table<'a> {
     /// Create a table that needs at least 30 columns to display.  Any extra space will be assigned
     /// to the last column.
     /// ```
-    /// # use ratatui::layout::{Constraint, Flex};
-    /// # use ratatui::widgets::{Table, Row};
+    /// use ratatui::{
+    ///     layout::{Constraint, Flex},
+    ///     widgets::{Row, Table},
+    /// };
+    ///
     /// let widths = [
     ///     Constraint::Min(10),
     ///     Constraint::Min(10),
@@ -868,7 +954,12 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::{layout::Constraint::*, style::Style, text::Line, widgets::Cell};
+    use crate::{
+        layout::Constraint::*,
+        style::{Color, Modifier, Style, Stylize},
+        text::Line,
+        widgets::Cell,
+    };
 
     #[test]
     fn new() {
@@ -1033,11 +1124,10 @@ mod tests {
     mod state {
         use rstest::{fixture, rstest};
 
-        use super::TableState;
         use crate::{
             buffer::Buffer,
             layout::{Constraint, Rect},
-            widgets::{Row, StatefulWidget, Table},
+            widgets::{Row, StatefulWidget, Table, TableState},
         };
 
         #[fixture]
@@ -1088,6 +1178,7 @@ mod tests {
         use rstest::rstest;
 
         use super::*;
+        use crate::layout::Alignment;
 
         #[test]
         fn render_empty_area() {

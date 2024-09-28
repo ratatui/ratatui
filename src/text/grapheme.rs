@@ -1,4 +1,4 @@
-use crate::{prelude::*, style::Styled};
+use crate::style::{Style, Styled};
 
 const NBSP: &str = "\u{00a0}";
 const ZWSP: &str = "\u{200b}";
@@ -19,6 +19,8 @@ impl<'a> StyledGrapheme<'a> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     pub fn new<S: Into<Style>>(symbol: &'a str, style: S) -> Self {
         Self {
             symbol,
@@ -48,6 +50,7 @@ impl<'a> Styled for StyledGrapheme<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::style::Stylize;
 
     #[test]
     fn new() {
