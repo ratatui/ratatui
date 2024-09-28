@@ -1,4 +1,8 @@
-use crate::prelude::*;
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    widgets::{Widget, WidgetRef},
+};
 
 /// A widget to clear/reset a certain area to allow overdrawing (e.g. for popups).
 ///
@@ -8,7 +12,11 @@ use crate::prelude::*;
 /// # Examples
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::Rect,
+///     widgets::{Block, Clear},
+///     Frame,
+/// };
 ///
 /// fn draw_on_clear(f: &mut Frame, area: Rect) {
 ///     let block = Block::bordered().title("Block");
@@ -43,7 +51,7 @@ impl WidgetRef for Clear {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use crate::{buffer::Buffer, layout::Rect, widgets::Widget};
     #[test]
     fn render() {
         let mut buffer = Buffer::with_lines(["xxxxxxxxxxxxxxx"; 7]);

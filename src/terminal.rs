@@ -13,7 +13,7 @@
 //! ```rust,no_run
 //! use std::io::stdout;
 //!
-//! use ratatui::{prelude::*, widgets::Paragraph};
+//! use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
 //!
 //! let backend = CrosstermBackend::new(stdout());
 //! let mut terminal = Terminal::new(backend)?;

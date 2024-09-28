@@ -44,7 +44,7 @@ use crate::style::stylize::{ColorDebug, ColorDebugKind};
 /// ```
 /// use std::str::FromStr;
 ///
-/// use ratatui::prelude::*;
+/// use ratatui::style::Color;
 ///
 /// assert_eq!(Color::from_str("red"), Ok(Color::Red));
 /// assert_eq!("red".parse(), Ok(Color::Red));
@@ -168,7 +168,9 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// use ratatui::style::Color;
     ///
     /// #[derive(Debug, serde::Deserialize)]
     /// struct Theme {
@@ -263,7 +265,7 @@ impl std::error::Error for ParseColorError {}
 /// ```
 /// use std::str::FromStr;
 ///
-/// use ratatui::prelude::*;
+/// use ratatui::style::Color;
 ///
 /// let color: Color = Color::from_str("blue").unwrap();
 /// assert_eq!(color, Color::Blue);
@@ -379,7 +381,7 @@ impl Color {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::prelude::*;
+    /// use ratatui::style::Color;
     ///
     /// let color: Color = Color::from_hsl(360.0, 100.0, 100.0);
     /// assert_eq!(color, Color::Rgb(255, 255, 255));

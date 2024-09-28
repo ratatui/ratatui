@@ -27,7 +27,7 @@
 //! ```rust,no_run
 //! use std::io::stdout;
 //!
-//! use ratatui::prelude::*;
+//! use ratatui::{backend::CrosstermBackend, Terminal};
 //!
 //! let backend = CrosstermBackend::new(stdout());
 //! let mut terminal = Terminal::new(backend)?;
@@ -187,8 +187,10 @@ pub trait Backend {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::backend::{Backend, TestBackend};
+    /// # use ratatui::backend::{TestBackend};
     /// # let mut backend = TestBackend::new(80, 25);
+    /// use ratatui::backend::Backend;
+    ///
     /// backend.hide_cursor()?;
     /// // do something with hidden cursor
     /// backend.show_cursor()?;
@@ -222,9 +224,10 @@ pub trait Backend {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::backend::{Backend, TestBackend};
-    /// # use ratatui::layout::Position;
+    /// # use ratatui::backend::{TestBackend};
     /// # let mut backend = TestBackend::new(80, 25);
+    /// use ratatui::{backend::Backend, layout::Position};
+    ///
     /// backend.set_cursor_position(Position { x: 10, y: 20 })?;
     /// assert_eq!(backend.get_cursor_position()?, Position { x: 10, y: 20 });
     /// # std::io::Result::Ok(())
@@ -254,8 +257,10 @@ pub trait Backend {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use ratatui::backend::{Backend, TestBackend};
+    /// # use ratatui::backend::{TestBackend};
     /// # let mut backend = TestBackend::new(80, 25);
+    /// use ratatui::backend::Backend;
+    ///
     /// backend.clear()?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -270,8 +275,10 @@ pub trait Backend {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use ratatui::{prelude::*, backend::{TestBackend, ClearType}};
+    /// # use ratatui::{backend::{TestBackend}};
     /// # let mut backend = TestBackend::new(80, 25);
+    /// use ratatui::backend::{Backend, ClearType};
+    ///
     /// backend.clear_region(ClearType::All)?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -302,8 +309,10 @@ pub trait Backend {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, backend::TestBackend};
-    /// let backend = TestBackend::new(80, 25);
+    /// # use ratatui::{backend::{TestBackend}};
+    /// # let backend = TestBackend::new(80, 25);
+    /// use ratatui::{backend::Backend, layout::Size};
+    ///
     /// assert_eq!(backend.size()?, Size::new(80, 25));
     /// # std::io::Result::Ok(())
     /// ```

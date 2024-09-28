@@ -6,7 +6,12 @@ use std::{
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{buffer::Cell, layout::Position, prelude::*};
+use crate::{
+    buffer::Cell,
+    layout::{Position, Rect},
+    style::Style,
+    text::{Line, Span},
+};
 
 /// A buffer that maps to the desired content of the terminal after the draw call
 ///
@@ -163,7 +168,11 @@ impl Buffer {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
+    /// use ratatui::{
+    ///     buffer::{Buffer, Cell},
+    ///     layout::{Position, Rect},
+    /// };
+    ///
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
     /// assert_eq!(buffer.cell(Position::new(0, 0)), Some(&Cell::default()));
@@ -190,7 +199,11 @@ impl Buffer {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
+    /// use ratatui::{
+    ///     buffer::{Buffer, Cell},
+    ///     layout::{Position, Rect},
+    ///     style::{Color, Style},
+    /// };
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
     /// if let Some(cell) = buffer.cell_mut(Position::new(0, 0)) {
@@ -214,7 +227,8 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{buffer::Buffer, layout::Rect};
+    ///
     /// let buffer = Buffer::empty(Rect::new(200, 100, 10, 10));
     /// // Global coordinates to the top corner of this buffer's area
     /// assert_eq!(buffer.index_of(200, 100), 0);
@@ -225,7 +239,8 @@ impl Buffer {
     /// Panics when given an coordinate that is outside of this Buffer's area.
     ///
     /// ```should_panic
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{buffer::Buffer, layout::Rect};
+    ///
     /// let buffer = Buffer::empty(Rect::new(200, 100, 10, 10));
     /// // Top coordinate is outside of the buffer in global coordinate space, as the Buffer's area
     /// // starts at (200, 100).
@@ -266,7 +281,8 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{buffer::Buffer, layout::Rect};
+    ///
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// assert_eq!(buffer.pos_of(0), (200, 100));
@@ -278,7 +294,8 @@ impl Buffer {
     /// Panics when given an index that is outside the Buffer's content.
     ///
     /// ```should_panic
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{buffer::Buffer, layout::Rect};
+    ///
     /// let rect = Rect::new(0, 0, 10, 10); // 100 cells in total
     /// let buffer = Buffer::empty(rect);
     /// // Index 100 is the 101th cell, which lies outside of the area of this Buffer.
@@ -377,6 +394,8 @@ impl Buffer {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     pub fn set_style<S: Into<Style>>(&mut self, area: Rect, style: S) {
         let style = style.into();
         let area = self.area.intersection(area);
@@ -504,7 +523,11 @@ impl<P: Into<Position>> Index<P> for Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
+    /// use ratatui::{
+    ///     buffer::{Buffer, Cell},
+    ///     layout::{Position, Rect},
+    /// };
+    ///
     /// let buf = Buffer::empty(Rect::new(0, 0, 10, 10));
     /// let cell = &buf[(0, 0)];
     /// let cell = &buf[Position::new(0, 0)];
@@ -530,7 +553,11 @@ impl<P: Into<Position>> IndexMut<P> for Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
+    /// use ratatui::{
+    ///     buffer::{Buffer, Cell},
+    ///     layout::{Position, Rect},
+    /// };
+    ///
     /// let mut buf = Buffer::empty(Rect::new(0, 0, 10, 10));
     /// buf[(0, 0)].set_symbol("A");
     /// buf[Position::new(0, 0)].set_symbol("B");
@@ -622,6 +649,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::style::{Color, Modifier, Stylize};
 
     #[test]
     fn debug_empty_buffer() {

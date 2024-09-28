@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{style::Style, text::Text};
 
 /// A single item in a [`List`]
 ///
@@ -19,14 +19,15 @@ use crate::prelude::*;
 /// You can create [`ListItem`]s from simple `&str`
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::widgets::ListItem;
 /// let item = ListItem::new("Item 1");
 /// ```
 ///
 /// Anything that can be converted to [`Text`] can be a [`ListItem`].
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{text::Line, widgets::ListItem};
+///
 /// let item1: ListItem = "Item 1".into();
 /// let item2: ListItem = Line::raw("Item 2").into();
 /// ```
@@ -34,7 +35,8 @@ use crate::prelude::*;
 /// A [`ListItem`] styled with [`Stylize`]
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{style::Stylize, widgets::ListItem};
+///
 /// let item = ListItem::new("Item 1").red().on_white();
 /// ```
 ///
@@ -42,7 +44,12 @@ use crate::prelude::*;
 /// [`Text`]
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::Stylize,
+///     text::{Span, Text},
+///     widgets::ListItem,
+/// };
+///
 /// let mut text = Text::default();
 /// text.extend(["Item".blue(), Span::raw(" "), "1".bold().red()]);
 /// let item = ListItem::new(text);
@@ -51,12 +58,15 @@ use crate::prelude::*;
 /// A right-aligned `ListItem`
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
-/// ListItem::new(Text::from("foo").alignment(Alignment::Right));
+/// use ratatui::{text::Text, widgets::ListItem};
+///
+/// ListItem::new(Text::from("foo").right_aligned());
 /// ```
 ///
 /// [`List`]: crate::widgets::List
 /// [`Stylize`]: crate::style::Stylize
+/// [`Line`]: crate::text::Line
+/// [`Line::alignment`]: crate::text::Line::alignment
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ListItem<'a> {
     pub(crate) content: Text<'a>,
@@ -73,22 +83,25 @@ impl<'a> ListItem<'a> {
     /// You can create [`ListItem`]s from simple `&str`
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListItem;
+    ///
     /// let item = ListItem::new("Item 1");
     /// ```
     ///
     /// Anything that can be converted to [`Text`] can be a [`ListItem`].
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{text::Line, widgets::ListItem};
+    ///
     /// let item1: ListItem = "Item 1".into();
     /// let item2: ListItem = Line::raw("Item 2").into();
     /// ```
     ///
-    /// You can also create multilines item
+    /// You can also create multiline items
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListItem;
+    ///
     /// let item = ListItem::new("Multi-line\nitem");
     /// ```
     ///
@@ -118,7 +131,11 @@ impl<'a> ListItem<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     widgets::ListItem,
+    /// };
+    ///
     /// let item = ListItem::new("Item 1").style(Style::new().red().italic());
     /// ```
     ///
@@ -127,12 +144,14 @@ impl<'a> ListItem<'a> {
     /// concisely.
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{style::Stylize, widgets::ListItem};
+    ///
     /// let item = ListItem::new("Item 1").red().italic();
     /// ```
     ///
     /// [`Styled`]: crate::style::Styled
     /// [`ListState`]: crate::widgets::list::ListState
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -146,7 +165,8 @@ impl<'a> ListItem<'a> {
     /// One line item
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListItem;
+    ///
     /// let item = ListItem::new("Item 1");
     /// assert_eq!(item.height(), 1);
     /// ```
@@ -154,7 +174,8 @@ impl<'a> ListItem<'a> {
     /// Two lines item (note the `\n`)
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListItem;
+    ///
     /// let item = ListItem::new("Multi-line\nitem");
     /// assert_eq!(item.height(), 2);
     /// ```
@@ -167,13 +188,15 @@ impl<'a> ListItem<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListItem;
+    ///
     /// let item = ListItem::new("12345");
     /// assert_eq!(item.width(), 5);
     /// ```
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListItem;
+    ///
     /// let item = ListItem::new("12345\n1234567");
     /// assert_eq!(item.width(), 7);
     /// ```
@@ -198,6 +221,10 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
+    use crate::{
+        style::{Color, Modifier, Stylize},
+        text::{Line, Span},
+    };
 
     #[test]
     fn new_from_str() {

@@ -1,8 +1,12 @@
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    prelude::{Buffer, Rect, StatefulWidget, StatefulWidgetRef, Widget, WidgetRef},
-    widgets::{block::BlockExt, List, ListDirection, ListState},
+    buffer::Buffer,
+    layout::Rect,
+    widgets::{
+        block::BlockExt, List, ListDirection, ListState, StatefulWidget, StatefulWidgetRef, Widget,
+        WidgetRef,
+    },
 };
 
 impl Widget for List<'_> {
@@ -273,8 +277,12 @@ mod tests {
 
     use super::*;
     use crate::{
-        prelude::*,
-        widgets::{Block, HighlightSpacing, ListItem},
+        backend,
+        layout::{Alignment, Rect},
+        style::{Color, Modifier, Style, Stylize},
+        text::Line,
+        widgets::{Block, HighlightSpacing, ListItem, StatefulWidget, Widget},
+        Terminal,
     };
 
     #[fixture]

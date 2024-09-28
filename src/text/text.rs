@@ -1,7 +1,13 @@
 #![warn(missing_docs)]
 use std::{borrow::Cow, fmt};
 
-use crate::{prelude::*, style::Styled};
+use crate::{
+    buffer::Buffer,
+    layout::{Alignment, Rect},
+    style::{Style, Styled},
+    text::{Line, Span},
+    widgets::{Widget, WidgetRef},
+};
 
 /// A string split over one or more lines.
 ///
@@ -62,7 +68,10 @@ use crate::{prelude::*, style::Styled};
 /// ```rust
 /// use std::{borrow::Cow, iter};
 ///
-/// use ratatui::prelude::*;
+/// use ratatui::{
+///     style::{Color, Modifier, Style, Stylize},
+///     text::{Line, Span, Text},
+/// };
 ///
 /// let style = Style::new().yellow().italic();
 /// let text = Text::raw("The first line\nThe second line").style(style);
@@ -99,7 +108,11 @@ use crate::{prelude::*, style::Styled};
 /// [`Stylize`] trait.
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// use ratatui::{
+///     style::{Color, Modifier, Style, Stylize},
+///     text::{Line, Text},
+/// };
+///
 /// let text = Text::from("The first line\nThe second line").style(Style::new().yellow().italic());
 /// let text = Text::from("The first line\nThe second line")
 ///     .yellow()
@@ -116,7 +129,11 @@ use crate::{prelude::*, style::Styled};
 /// Lines composing the text can also be individually aligned with [`Line::alignment`].
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// use ratatui::{
+///     layout::Alignment,
+///     text::{Line, Text},
+/// };
+///
 /// let text = Text::from("The first line\nThe second line").alignment(Alignment::Right);
 /// let text = Text::from("The first line\nThe second line").right_aligned();
 /// let text = Text::from(vec![
@@ -132,7 +149,9 @@ use crate::{prelude::*, style::Styled};
 /// [`Frame`].
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// # use ratatui::{buffer::Buffer, layout::Rect};
+/// use ratatui::{text::Text, widgets::Widget, Frame};
+///
 /// // within another widget's `render` method:
 /// # fn render(area: Rect, buf: &mut Buffer) {
 /// let text = Text::from("The first line\nThe second line");
@@ -152,7 +171,13 @@ use crate::{prelude::*, style::Styled};
 /// provides more functionality.
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     buffer::Buffer,
+///     layout::Rect,
+///     text::Text,
+///     widgets::{Paragraph, Widget, Wrap},
+/// };
+///
 /// # fn render(area: Rect, buf: &mut Buffer) {
 /// let text = Text::from("The first line\nThe second line");
 /// let paragraph = Paragraph::new(text)
@@ -163,6 +188,8 @@ use crate::{prelude::*, style::Styled};
 /// ```
 ///
 /// [`Paragraph`]: crate::widgets::Paragraph
+/// [`Stylize`]: crate::style::Stylize
+/// [`Frame`]: crate::Frame
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Text<'a> {
     /// The alignment of this text.
@@ -197,7 +224,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::Text;
+    ///
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
@@ -222,13 +250,19 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     style::{Color, Modifier, Style},
+    ///     text::Text,
+    /// };
+    ///
     /// let style = Style::default()
     ///     .fg(Color::Yellow)
     ///     .add_modifier(Modifier::ITALIC);
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -242,7 +276,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::Text;
+    ///
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(15, text.width());
     /// ```
@@ -255,7 +290,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::Text;
+    ///
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
@@ -276,9 +312,15 @@ impl<'a> Text<'a> {
     ///
     /// # Examples
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     text::Text,
+    /// };
+    ///
     /// let mut line = Text::from("foo").style(Style::new().red());
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -302,7 +344,11 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     style::{Color, Modifier},
+    ///     text::Text,
+    /// };
+    ///
     /// let raw_text = Text::styled("The first line\nThe second line", Modifier::ITALIC);
     /// let styled_text = Text::styled(
     ///     String::from("The first line\nThe second line"),
@@ -313,6 +359,9 @@ impl<'a> Text<'a> {
     /// let raw_text = raw_text.patch_style(Color::Yellow);
     /// assert_eq!(raw_text, styled_text);
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
+    /// [`Stylize`]: crate::style::Stylize
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = self.style.patch(style);
@@ -328,7 +377,11 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     style::{Color, Modifier, Style},
+    ///     text::Text,
+    /// };
+    ///
     /// let text = Text::styled(
     ///     "The first line\nThe second line",
     ///     (Color::Yellow, Modifier::ITALIC),
@@ -355,7 +408,8 @@ impl<'a> Text<'a> {
     /// Set alignment to the whole text.
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{layout::Alignment, text::Text};
+    ///
     /// let mut text = Text::from("Hi, what's up?");
     /// assert_eq!(None, text.alignment);
     /// assert_eq!(
@@ -367,7 +421,11 @@ impl<'a> Text<'a> {
     /// Set a default alignment and override it on a per line basis.
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     layout::Alignment,
+    ///     text::{Line, Text},
+    /// };
+    ///
     /// let text = Text::from(vec![
     ///     Line::from("left").alignment(Alignment::Left),
     ///     Line::from("default"),
@@ -404,7 +462,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::Text;
+    ///
     /// let text = Text::from("Hi, what's up?").left_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -423,7 +482,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::Text;
+    ///
     /// let text = Text::from("Hi, what's up?").centered();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -442,7 +502,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::Text;
+    ///
     /// let text = Text::from("Hi, what's up?").right_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -468,7 +529,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::{Line, Span, Text};
+    ///
     /// let mut text = Text::from("Hello, world!");
     /// text.push_line(Line::from("How are you?"));
     /// text.push_line(Span::from("How are you?"));
@@ -486,7 +548,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::{Span, Text};
+    ///
     /// let mut text = Text::from("Hello, world!");
     /// text.push_span(Span::from("How are you?"));
     /// text.push_span("How are you?");
@@ -708,6 +771,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::style::{Color, Modifier, Stylize};
 
     #[fixture]
     fn small_buf() -> Buffer {

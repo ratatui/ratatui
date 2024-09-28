@@ -20,10 +20,15 @@
 /// # Example
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::Rect,
+///     widgets::{List, ListState},
+///     Frame,
+/// };
+///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
-/// # let items = ["Item 1"];
+/// let items = ["Item 1"];
 /// let list = List::new(items);
 ///
 /// // This should be stored outside of the function in your application state.
@@ -52,7 +57,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let state = ListState::default().with_offset(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -68,7 +74,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let state = ListState::default().with_selected(Some(1));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -82,7 +89,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let state = ListState::default();
     /// assert_eq!(state.offset(), 0);
     /// ```
@@ -95,7 +103,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// *state.offset_mut() = 1;
     /// ```
@@ -110,8 +119,9 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let state = TableState::default();
+    /// use ratatui::widgets::ListState;
+    ///
+    /// let state = ListState::default();
     /// assert_eq!(state.selected(), None);
     /// ```
     pub const fn selected(&self) -> Option<usize> {
@@ -125,7 +135,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// *state.selected_mut() = Some(1);
     /// ```
@@ -140,7 +151,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// state.select(Some(1));
     /// ```
@@ -159,7 +171,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// state.select_next();
     /// ```
@@ -176,7 +189,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// state.select_previous();
     /// ```
@@ -193,7 +207,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// state.select_first();
     /// ```
@@ -209,7 +224,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// state.select_last();
     /// ```
@@ -226,7 +242,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// state.scroll_down_by(4);
     /// ```
@@ -244,7 +261,8 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::ListState;
+    ///
     /// let mut state = ListState::default();
     /// state.scroll_up_by(4);
     /// ```

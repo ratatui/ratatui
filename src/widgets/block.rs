@@ -8,7 +8,14 @@
 use itertools::Itertools;
 use strum::{Display, EnumString};
 
-use crate::{prelude::*, style::Styled, symbols::border, widgets::Borders};
+use crate::{
+    buffer::Buffer,
+    layout::{Alignment, Rect},
+    style::{Style, Styled},
+    symbols::border,
+    text::Line,
+    widgets::{Borders, Widget, WidgetRef},
+};
 
 mod padding;
 pub mod title;
@@ -67,7 +74,10 @@ pub use title::{Position, Title};
 /// # Examples
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Color, Style},
+///     widgets::{Block, BorderType, Borders},
+/// };
 ///
 /// Block::new()
 ///     .border_type(BorderType::Rounded)
@@ -79,12 +89,9 @@ pub use title::{Position, Title};
 ///
 /// You may also use multiple titles like in the following:
 /// ```
-/// use ratatui::{
-///     prelude::*,
-///     widgets::{
-///         block::{Position, Title},
-///         Block,
-///     },
+/// use ratatui::widgets::{
+///     block::{Position, Title},
+///     Block,
 /// };
 ///
 /// Block::new()
@@ -94,10 +101,7 @@ pub use title::{Position, Title};
 ///
 /// You can also pass it as parameters of another widget so that the block surrounds them:
 /// ```
-/// use ratatui::{
-///     prelude::*,
-///     widgets::{Block, Borders, List},
-/// };
+/// use ratatui::widgets::{Block, Borders, List};
 ///
 /// let surrounding_block = Block::default()
 ///     .borders(Borders::ALL)
@@ -220,7 +224,8 @@ impl<'a> Block<'a> {
     /// Create a new block with [all borders](Borders::ALL) shown
     ///
     /// ```
-    /// # use ratatui::widgets::{Block, Borders};
+    /// use ratatui::widgets::{Block, Borders};
+    ///
     /// assert_eq!(Block::bordered(), Block::new().borders(Borders::ALL));
     /// ```
     pub const fn bordered() -> Self {
@@ -268,8 +273,8 @@ impl<'a> Block<'a> {
     /// - Two titles with the same alignment (notice the left titles are separated)
     /// ```
     /// use ratatui::{
-    ///     prelude::*,
-    ///     widgets::{block::*, *},
+    ///     text::Line,
+    ///     widgets::{Block, Borders},
     /// };
     ///
     /// Block::new()
@@ -320,7 +325,8 @@ impl<'a> Block<'a> {
     /// # Example
     ///
     /// ```
-    /// # use ratatui::{ prelude::*, widgets::* };
+    /// use ratatui::{ widgets::Block, text::Line };
+    ///
     /// Block::bordered()
     ///     .title_top("Left1") // By default in the top left corner
     ///     .title_top(Line::from("Left2").left_aligned())
@@ -348,7 +354,8 @@ impl<'a> Block<'a> {
     /// # Example
     ///
     /// ```
-    /// # use ratatui::{ prelude::*, widgets::* };
+    /// use ratatui::{ widgets::Block, text::Line };
+    ///
     /// Block::bordered()
     ///     .title_bottom("Left1") // By default in the top left corner
     ///     .title_bottom(Line::from("Left2").left_aligned())
@@ -377,6 +384,8 @@ impl<'a> Block<'a> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.titles_style = style.into();
@@ -392,10 +401,7 @@ impl<'a> Block<'a> {
     /// This example aligns all titles in the center except the "right" title which explicitly sets
     /// [`Alignment::Right`].
     /// ```
-    /// use ratatui::{
-    ///     prelude::*,
-    ///     widgets::{block::*, *},
-    /// };
+    /// use ratatui::{layout::Alignment, text::Line, widgets::Block};
     ///
     /// Block::new()
     ///     .title_alignment(Alignment::Center)
@@ -419,13 +425,7 @@ impl<'a> Block<'a> {
     /// This example positions all titles on the bottom except the "top" title which explicitly sets
     /// [`Position::Top`].
     /// ```
-    /// use ratatui::{
-    ///     prelude::*,
-    ///     widgets::{
-    ///         block::{Position, Title},
-    ///         Block,
-    ///     },
-    /// };
+    /// use ratatui::widgets::{block::Position, Block};
     ///
     /// Block::new()
     ///     .title_position(Position::Bottom)
@@ -454,9 +454,14 @@ impl<'a> Block<'a> {
     ///
     /// This example shows a `Block` with blue borders.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     widgets::Block,
+    /// };
     /// Block::bordered().border_style(Style::new().blue());
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.border_style = style.into();
@@ -479,7 +484,11 @@ impl<'a> Block<'a> {
     /// # Example
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::{Color, Style, Stylize},
+    ///     widgets::{Block, Paragraph},
+    /// };
+    ///
     /// let block = Block::new().style(Style::new().red().on_black());
     ///
     /// // For border and title you can additionally apply styles on top of the block level style.
@@ -496,6 +505,7 @@ impl<'a> Block<'a> {
     /// ```
     ///
     /// [`Paragraph`]: crate::widgets::Paragraph
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -510,7 +520,7 @@ impl<'a> Block<'a> {
     ///
     /// Display left and right borders.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Block, Borders};
     /// Block::new().borders(Borders::LEFT | Borders::RIGHT);
     /// ```
     ///
@@ -531,7 +541,7 @@ impl<'a> Block<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Block, BorderType};
     /// Block::bordered()
     ///     .border_type(BorderType::Rounded)
     ///     .title("Block");
@@ -553,7 +563,8 @@ impl<'a> Block<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{widgets::Block, symbols};
+    ///
     /// Block::bordered().border_set(symbols::border::DOUBLE).title("Block");
     /// // Renders
     /// // ╔Block╗
@@ -573,7 +584,8 @@ impl<'a> Block<'a> {
     ///
     /// This renders a `Block` with no padding (the default).
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Block, Padding};
+    ///
     /// Block::bordered().padding(Padding::ZERO);
     /// // Renders
     /// // ┌───────┐
@@ -584,7 +596,8 @@ impl<'a> Block<'a> {
     /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
     /// Notice the two spaces before and after the content.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Block, Padding};
+    ///
     /// Block::bordered().padding(Padding::horizontal(2));
     /// // Renders
     /// // ┌───────────┐
@@ -603,7 +616,8 @@ impl<'a> Block<'a> {
     ///
     /// Draw a block nested within another block
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{widgets::Block, Frame};
+    ///
     /// # fn render_nested_block(frame: &mut Frame) {
     /// let outer_block = Block::bordered().title("Outer");
     /// let inner_block = Block::bordered().title("Inner");
@@ -990,6 +1004,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
+    use crate::style::{Color, Modifier, Stylize};
 
     #[test]
     fn create_with_all_borders() {

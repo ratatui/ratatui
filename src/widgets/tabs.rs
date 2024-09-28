@@ -1,4 +1,11 @@
-use crate::{prelude::*, style::Styled, widgets::Block};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Modifier, Style, Styled},
+    symbols::{self},
+    text::{Line, Span},
+    widgets::{block::BlockExt, Block, Widget, WidgetRef},
+};
 
 const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVERSED);
 
@@ -14,7 +21,11 @@ const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVER
 /// # Example
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     symbols,
+///     widgets::{Block, Tabs},
+/// };
 ///
 /// Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
 ///     .block(Block::bordered().title("Tabs"))
@@ -75,13 +86,15 @@ impl<'a> Tabs<'a> {
     ///
     /// Basic titles.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// use ratatui::widgets::Tabs;
+    ///
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]);
     /// ```
     ///
     /// Styled titles
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// use ratatui::{style::Stylize, widgets::Tabs};
+    ///
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
     pub fn new<Iter>(titles: Iter) -> Self
@@ -126,6 +139,8 @@ impl<'a> Tabs<'a> {
     /// This will set the given style on the entire render area.
     /// More precise style can be applied to the titles by styling the ones given to [`Tabs::new`].
     /// The selected tab can be styled differently using [`Tabs::highlight_style`].
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -139,6 +154,8 @@ impl<'a> Tabs<'a> {
     ///
     /// Highlighted tab can be selected with [`Tabs::select`].
     #[must_use = "method moves the value of self and returns the modified value"]
+    ///
+    /// [`Color`]: crate::style::Color
     pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();
         self
@@ -152,12 +169,14 @@ impl<'a> Tabs<'a> {
     ///
     /// Use a dot (`•`) as separator.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs, symbols};
+    /// use ratatui::{symbols, widgets::Tabs};
+    ///
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider(symbols::DOT);
     /// ```
     /// Use dash (`-`) as separator.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// use ratatui::widgets::Tabs;
+    ///
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider("-");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -177,12 +196,14 @@ impl<'a> Tabs<'a> {
     ///
     /// A space on either side of the tabs.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// use ratatui::widgets::Tabs;
+    ///
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding(" ", " ");
     /// ```
     /// Nothing on either side of the tabs.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// use ratatui::widgets::Tabs;
+    ///
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding("", "");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -204,7 +225,8 @@ impl<'a> Tabs<'a> {
     ///
     /// An arrow on the left of tabs.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// use ratatui::widgets::Tabs;
+    ///
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_left("->");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -224,7 +246,8 @@ impl<'a> Tabs<'a> {
     ///
     /// An arrow on the right of tabs.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// use ratatui::widgets::Tabs;
+    ///
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_right("<-");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -333,6 +356,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::style::{Color, Stylize};
 
     #[test]
     fn new() {

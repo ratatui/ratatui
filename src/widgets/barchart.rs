@@ -1,4 +1,11 @@
-use crate::{prelude::*, style::Styled, widgets::Block};
+use crate::{
+    buffer::Buffer,
+    layout::{Direction, Rect},
+    style::{Style, Styled},
+    symbols::{self},
+    text::Line,
+    widgets::{block::BlockExt, Block, Widget, WidgetRef},
+};
 
 mod bar;
 mod bar_group;
@@ -42,7 +49,10 @@ pub use bar_group::BarGroup;
 /// The first group is added by an array slice (`&[(&str, u64)]`).
 /// The second group is added by a [`BarGroup`] instance.
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     widgets::{Bar, BarChart, BarGroup, Block},
+/// };
 ///
 /// BarChart::default()
 ///     .block(Block::bordered().title("BarChart"))
@@ -113,7 +123,8 @@ impl<'a> BarChart<'a> {
     /// The first group is added by an array slice (`&[(&str, u64)]`).
     /// The second group is added by a [`BarGroup`] instance.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Bar, BarChart, BarGroup};
+    ///
     /// BarChart::default()
     ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
     ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
@@ -143,7 +154,7 @@ impl<'a> BarChart<'a> {
     /// This example shows the default behavior when `max` is not set.
     /// The maximum value in the dataset is taken (here, `100`).
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::BarChart;
     /// BarChart::default().data(&[("foo", 1), ("bar", 2), ("baz", 100)]);
     /// // Renders
     /// //     █
@@ -154,7 +165,8 @@ impl<'a> BarChart<'a> {
     /// This example shows a custom max value.
     /// The maximum height being `2`, `bar` & `baz` render as the max.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::BarChart;
+    ///
     /// BarChart::default()
     ///     .data(&[("foo", 1), ("bar", 2), ("baz", 100)])
     ///     .max(2);
@@ -176,6 +188,8 @@ impl<'a> BarChart<'a> {
     ///
     /// It is also possible to set individually the style of each [`Bar`].
     /// In this case the default style will be patched by the individual style
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bar_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.bar_style = style.into();
@@ -204,7 +218,8 @@ impl<'a> BarChart<'a> {
     ///
     /// This shows two bars with a gap of `3`. Notice the labels will always stay under the bar.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::BarChart;
+    ///
     /// BarChart::default()
     ///     .data(&[("foo", 1), ("bar", 2)])
     ///     .bar_gap(3);
@@ -239,6 +254,8 @@ impl<'a> BarChart<'a> {
     /// # See also
     ///
     /// [`Bar::value_style`] to set the value style individually.
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.value_style = style.into();
@@ -256,6 +273,8 @@ impl<'a> BarChart<'a> {
     /// # See also
     ///
     /// [`Bar::label`] to set the label style individually.
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.label_style = style.into();
@@ -275,6 +294,8 @@ impl<'a> BarChart<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// The style will be applied to everything that isn't styled (borders, bars, labels, ...).
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -615,7 +636,12 @@ mod tests {
     use itertools::iproduct;
 
     use super::*;
-    use crate::widgets::BorderType;
+    use crate::{
+        layout::Alignment,
+        style::{Color, Modifier, Stylize},
+        text::Span,
+        widgets::BorderType,
+    };
 
     #[test]
     fn default() {

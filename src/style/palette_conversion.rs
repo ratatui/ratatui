@@ -7,7 +7,7 @@ use ::palette::{
 };
 use palette::{stimulus::IntoStimulus, Srgb};
 
-use super::Color;
+use crate::style::Color;
 
 /// Convert an [`palette::Srgb`] color to a [`Color`].
 ///

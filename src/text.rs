@@ -19,7 +19,11 @@
 //! its `title` property (which is a [`Line`] under the hood):
 //!
 //! ```rust
-//! use ratatui::{prelude::*, widgets::*};
+//! use ratatui::{
+//!     style::{Color, Style},
+//!     text::{Line, Span},
+//!     widgets::Block,
+//! };
 //!
 //! // A simple string with no styling.
 //! // Converted to Line(vec![

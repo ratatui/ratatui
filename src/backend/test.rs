@@ -24,7 +24,7 @@ use crate::{
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{backend::TestBackend, prelude::*};
+/// use ratatui::backend::{Backend, TestBackend};
 ///
 /// let mut backend = TestBackend::new(10, 2);
 /// backend.clear()?;
@@ -247,7 +247,7 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn clear_region(&mut self, clear_type: super::ClearType) -> io::Result<()> {
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         let region = match clear_type {
             ClearType::All => return self.clear(),
             ClearType::AfterCursor => {

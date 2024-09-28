@@ -1,7 +1,6 @@
 use unicode_width::UnicodeWidthStr;
 
-use crate::prelude::*;
-
+use crate::{buffer::Buffer, layout::Rect, style::Style, text::Line, widgets::Widget};
 /// A bar to be shown by the [`BarChart`](crate::widgets::BarChart) widget.
 ///
 /// Here is an explanation of a `Bar`'s components.
@@ -17,13 +16,16 @@ use crate::prelude::*;
 /// The following example creates a bar with the label "Bar 1", a value "10",
 /// red background and a white value foreground.
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     widgets::Bar,
+/// };
 ///
 /// Bar::default()
 ///     .label("Bar 1".into())
 ///     .value(10)
-///     .style(Style::default().fg(Color::Red))
-///     .value_style(Style::default().bg(Color::Red).fg(Color::White))
+///     .style(Style::new().red())
+///     .value_style(Style::new().red().on_white())
 ///     .text_value("10°C".to_string());
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -74,6 +76,8 @@ impl<'a> Bar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This will apply to every non-styled element. It can be seen and used as a default value.
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -88,6 +92,8 @@ impl<'a> Bar<'a> {
     /// # See also
     ///
     /// [`Bar::value`] to set the value.
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.value_style = style.into();
