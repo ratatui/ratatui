@@ -3,7 +3,13 @@ use std::{borrow::Cow, fmt};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{prelude::*, style::Styled, text::StyledGrapheme};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Style, Styled},
+    text::{Line, StyledGrapheme},
+    widgets::{Widget, WidgetRef},
+};
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
 ///
@@ -36,7 +42,7 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 /// any type convertible to [`Cow<str>`].
 ///
 /// ```rust
-/// use ratatui::prelude::*;
+/// use ratatui::text::Span;
 ///
 /// let span = Span::raw("test content");
 /// let span = Span::raw(String::from("test content"));
@@ -50,7 +56,10 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 /// the [`Stylize`] trait.
 ///
 /// ```rust
-/// use ratatui::prelude::*;
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     text::Span,
+/// };
 ///
 /// let span = Span::styled("test content", Style::new().green());
 /// let span = Span::styled(String::from("test content"), Style::new().green());
@@ -64,7 +73,7 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 /// defined in the [`Stylize`] trait.
 ///
 /// ```rust
-/// use ratatui::prelude::*;
+/// use ratatui::{style::Stylize, text::Span};
 ///
 /// let span = Span::raw("test content").green().on_yellow().italic();
 /// let span = Span::raw(String::from("test content"))
@@ -78,22 +87,34 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 /// wrapping and alignment for you.
 ///
 /// ```rust
-/// use ratatui::prelude::*;
+/// use ratatui::{style::Stylize, Frame};
 ///
 /// # fn render_frame(frame: &mut Frame) {
-/// frame.render_widget("test content".green().on_yellow().italic(), frame.size());
+/// frame.render_widget("test content".green().on_yellow().italic(), frame.area());
 /// # }
 /// ```
 /// [`Line`]: crate::text::Line
 /// [`Paragraph`]: crate::widgets::Paragraph
 /// [`Stylize`]: crate::style::Stylize
 /// [`Cow<str>`]: std::borrow::Cow
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Span<'a> {
-    /// The content of the span as a Clone-on-write string.
-    pub content: Cow<'a, str>,
     /// The style of the span.
     pub style: Style,
+    /// The content of the span as a Clone-on-write string.
+    pub content: Cow<'a, str>,
+}
+
+impl fmt::Debug for Span<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.style == Style::default() {
+            return write!(f, "Span({:?})", self.content);
+        }
+        f.debug_struct("Span")
+            .field("style", &self.style)
+            .field("content", &self.content)
+            .finish()
+    }
 }
 
 impl<'a> Span<'a> {
@@ -102,7 +123,8 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::Span;
+    ///
     /// Span::raw("test content");
     /// Span::raw(String::from("test content"));
     /// ```
@@ -127,11 +149,17 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     text::Span,
+    /// };
+    ///
     /// let style = Style::new().yellow().on_green().italic();
     /// Span::styled("test content", style);
     /// Span::styled(String::from("test content"), style);
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -153,7 +181,8 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::text::Span;
+    ///
     /// let mut span = Span::default().content("content");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -178,9 +207,15 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     text::Span,
+    /// };
+    ///
     /// let mut span = Span::default().style(Style::new().green());
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -197,11 +232,17 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     text::Span,
+    /// };
+    ///
     /// let span = Span::styled("test content", Style::new().green().italic())
     ///     .patch_style(Style::new().red().on_yellow().bold());
     /// assert_eq!(span.style, Style::new().red().on_yellow().italic().bold());
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = self.style.patch(style);
@@ -217,7 +258,11 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     text::Span,
+    /// };
+    ///
     /// let span = Span::styled(
     ///     "Test Content",
     ///     Style::new().dark_gray().on_yellow().italic(),
@@ -248,7 +293,10 @@ impl<'a> Span<'a> {
     /// ```rust
     /// use std::iter::Iterator;
     ///
-    /// use ratatui::{prelude::*, text::StyledGrapheme};
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     text::{Span, StyledGrapheme},
+    /// };
     ///
     /// let span = Span::styled("Test", Style::new().green().italic());
     /// let style = Style::new().red().on_yellow();
@@ -263,6 +311,8 @@ impl<'a> Span<'a> {
     ///     ],
     /// );
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     pub fn styled_graphemes<S: Into<Style>>(
         &'a self,
         base_style: S,
@@ -280,7 +330,8 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::Stylize;
+    ///
     /// let line = "Test Content".green().italic().into_left_aligned_line();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -299,7 +350,8 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::Stylize;
+    ///
     /// let line = "Test Content".green().italic().into_centered_line();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -318,7 +370,8 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::Stylize;
+    ///
     /// let line = "Test Content".green().italic().into_right_aligned_line();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -452,10 +505,10 @@ impl fmt::Display for Span<'_> {
 
 #[cfg(test)]
 mod tests {
-    use buffer::Cell;
     use rstest::fixture;
 
     use super::*;
+    use crate::{buffer::Cell, layout::Alignment, style::Stylize};
 
     #[fixture]
     fn small_buf() -> Buffer {

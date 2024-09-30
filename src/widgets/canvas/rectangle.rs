@@ -3,7 +3,7 @@ use crate::{
     widgets::canvas::{Line, Painter, Shape},
 };
 
-/// A rectangle to draw on a [`Canvas`](super::Canvas)
+/// A rectangle to draw on a [`Canvas`](crate::widgets::canvas::Canvas)
 ///
 /// Sizes used here are **not** in terminal cell. This is much more similar to the
 /// mathematic coordinate system.
@@ -66,7 +66,13 @@ impl Shape for Rectangle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{prelude::*, symbols::Marker, widgets::canvas::Canvas};
+    use crate::{
+        buffer::Buffer,
+        layout::{Margin, Rect},
+        style::{Style, Stylize},
+        symbols::Marker,
+        widgets::{canvas::Canvas, Widget},
+    };
 
     #[test]
     fn draw_block_lines() {

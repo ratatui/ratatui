@@ -1,12 +1,14 @@
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    prelude::*,
-    style::Styled,
-    text::StyledGrapheme,
+    buffer::Buffer,
+    layout::{Alignment, Position, Rect},
+    style::{Style, Styled},
+    text::{Line, StyledGrapheme, Text},
     widgets::{
+        block::BlockExt,
         reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
-        Block,
+        Block, Widget, WidgetRef,
     },
 };
 
@@ -59,7 +61,12 @@ const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Align
 /// # Example
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::Alignment,
+///     style::{Style, Stylize},
+///     text::{Line, Span},
+///     widgets::{Block, Paragraph, Wrap},
+/// };
 ///
 /// let text = vec![
 ///     Line::from(vec![
@@ -76,6 +83,8 @@ const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Align
 ///     .alignment(Alignment::Center)
 ///     .wrap(Wrap { trim: true });
 /// ```
+///
+/// [`Span`]: crate::text::Span
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Paragraph<'a> {
     /// A block to wrap the widget in
@@ -97,7 +106,10 @@ pub struct Paragraph<'a> {
 /// ## Examples
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     text::Text,
+///     widgets::{Paragraph, Wrap},
+/// };
 ///
 /// let bullet_points = Text::from(
 ///     r#"Some indented points:
@@ -139,7 +151,12 @@ impl<'a> Paragraph<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     text::{Line, Text},
+    ///     widgets::Paragraph,
+    /// };
+    ///
     /// let paragraph = Paragraph::new("Hello, world!");
     /// let paragraph = Paragraph::new(String::from("Hello, world!"));
     /// let paragraph = Paragraph::new(Text::raw("Hello, world!"));
@@ -165,7 +182,8 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Block, Paragraph};
+    ///
     /// let paragraph = Paragraph::new("Hello, world!").block(Block::bordered().title("Paragraph"));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -185,9 +203,15 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     widgets::Paragraph,
+    /// };
+    ///
     /// let paragraph = Paragraph::new("Hello, world!").style(Style::new().red().on_white());
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -201,7 +225,8 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Paragraph, Wrap};
+    ///
     /// let paragraph = Paragraph::new("Hello, world!").wrap(Wrap { trim: true });
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -238,7 +263,8 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{layout::Alignment, widgets::Paragraph};
+    ///
     /// let paragraph = Paragraph::new("Hello World").alignment(Alignment::Center);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -254,7 +280,8 @@ impl<'a> Paragraph<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::Paragraph;
+    ///
     /// let paragraph = Paragraph::new("Hello World").left_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -269,7 +296,8 @@ impl<'a> Paragraph<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::Paragraph;
+    ///
     /// let paragraph = Paragraph::new("Hello World").centered();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -284,7 +312,8 @@ impl<'a> Paragraph<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::Paragraph;
+    ///
     /// let paragraph = Paragraph::new("Hello World").right_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -305,7 +334,8 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```ignore
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{widgets::{Paragraph, Wrap}};
+    ///
     /// let paragraph = Paragraph::new("Hello World")
     ///     .wrap(Wrap { trim: false });
     /// assert_eq!(paragraph.line_count(20), 1);
@@ -359,7 +389,8 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```ignore
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{widgets::Paragraph};
+    ///
     /// let paragraph = Paragraph::new("Hello World");
     /// assert_eq!(paragraph.line_width(), 11);
     ///
@@ -473,7 +504,12 @@ mod test {
     use super::*;
     use crate::{
         backend::TestBackend,
-        widgets::{block::Position, Borders},
+        buffer::Buffer,
+        layout::{Alignment, Rect},
+        style::{Color, Modifier, Style, Stylize},
+        text::{Line, Span, Text},
+        widgets::{block::Position, Borders, Widget},
+        Terminal,
     };
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal

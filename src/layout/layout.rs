@@ -12,8 +12,7 @@ use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
     MIN_SIZE_GE, PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, SPACER_SIZE_EQ, SPACE_GROW,
 };
-use super::Flex;
-use crate::prelude::*;
+use crate::layout::{Constraint, Direction, Flex, Margin, Rect};
 
 type Rects = Rc<[Rect]>;
 type Segments = Rects;
@@ -87,7 +86,11 @@ thread_local! {
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::{Constraint, Direction, Layout, Rect},
+///     widgets::Paragraph,
+///     Frame,
+/// };
 ///
 /// fn render(frame: &mut Frame, area: Rect) {
 ///     let layout = Layout::new(
@@ -141,7 +144,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Direction, Layout};
+    ///
     /// Layout::new(
     ///     Direction::Horizontal,
     ///     [Constraint::Length(5), Constraint::Min(0)],
@@ -174,7 +178,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout};
+    ///
     /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
     pub fn vertical<I>(constraints: I) -> Self
@@ -193,7 +198,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout};
+    ///
     /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
     pub fn horizontal<I>(constraints: I) -> Self
@@ -221,7 +227,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Direction, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .direction(Direction::Horizontal)
     ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
@@ -255,7 +262,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .constraints([
     ///         Constraint::Percentage(20),
@@ -299,7 +307,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .constraints([Constraint::Min(0)])
     ///     .margin(2)
@@ -320,7 +329,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .constraints([Constraint::Min(0)])
     ///     .horizontal_margin(2)
@@ -338,7 +348,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .constraints([Constraint::Min(0)])
     ///     .vertical_margin(2)
@@ -369,7 +380,8 @@ impl Layout {
     /// In this example, the items in the layout will be aligned to the start.
     ///
     /// ```rust
-    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// use ratatui::layout::{Constraint::*, Flex, Layout};
+    ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Start);
     /// ```
     ///
@@ -377,7 +389,8 @@ impl Layout {
     /// space.
     ///
     /// ```rust
-    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// use ratatui::layout::{Constraint::*, Flex, Layout};
+    ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Legacy);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -397,7 +410,8 @@ impl Layout {
     /// In this example, the spacing between each item in the layout is set to 2 cells.
     ///
     /// ```rust
-    /// # use ratatui::layout::{Layout, Constraint::*};
+    /// use ratatui::layout::{Constraint::*, Layout};
+    ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(2);
     /// ```
     ///
@@ -426,9 +440,10 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{layout::{Layout, Constraint}, Frame};
+    ///
     /// # fn render(frame: &mut Frame) {
-    /// let area = frame.size();
+    /// let area = frame.area();
     /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     /// let [top, main] = layout.areas(area);
     ///
@@ -458,9 +473,10 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{layout::{Layout, Constraint}, Frame};
+    ///
     /// # fn render(frame: &mut Frame) {
-    /// let area = frame.size();
+    /// let area = frame.area();
     /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     /// let [top, main] = layout.areas(area);
     /// let [before, inbetween, after] = layout.spacers(area);
@@ -497,7 +513,7 @@ impl Layout {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Direction, Layout, Rect};
     /// let layout = Layout::default()
     ///     .direction(Direction::Vertical)
     ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
@@ -529,7 +545,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Direction, Layout, Rect};
+    ///
     /// let (areas, spacers) = Layout::default()
     ///     .direction(Direction::Vertical)
     ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
@@ -1293,9 +1310,9 @@ mod tests {
         use rstest::rstest;
 
         use crate::{
-            layout::flex::Flex,
-            prelude::{Constraint::*, *},
-            widgets::Paragraph,
+            buffer::Buffer,
+            layout::{Constraint, Constraint::*, Direction, Flex, Layout, Rect},
+            widgets::{Paragraph, Widget},
         };
 
         /// Test that the given constraints applied to the given area result in the expected layout.

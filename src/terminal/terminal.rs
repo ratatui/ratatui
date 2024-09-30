@@ -1,7 +1,10 @@
 use std::io;
 
 use crate::{
-    backend::ClearType, buffer::Cell, prelude::*, CompletedFrame, TerminalOptions, Viewport,
+    backend::{Backend, ClearType},
+    buffer::{Buffer, Cell},
+    layout::{Position, Rect, Size},
+    CompletedFrame, Frame, TerminalOptions, Viewport,
 };
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
@@ -30,15 +33,14 @@ use crate::{
 /// # Examples
 ///
 /// ```rust,no_run
-/// # use ratatui::prelude::*;
 /// use std::io::stdout;
 ///
-/// use ratatui::widgets::Paragraph;
+/// use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
 ///
 /// let backend = CrosstermBackend::new(stdout());
 /// let mut terminal = Terminal::new(backend)?;
 /// terminal.draw(|frame| {
-///     let area = frame.size();
+///     let area = frame.area();
 ///     frame.render_widget(Paragraph::new("Hello World!"), area);
 /// })?;
 /// # std::io::Result::Ok(())
@@ -107,8 +109,10 @@ where
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
+    /// use std::io::stdout;
+    ///
+    /// use ratatui::{backend::CrosstermBackend, Terminal};
+    ///
     /// let backend = CrosstermBackend::new(stdout());
     /// let terminal = Terminal::new(backend)?;
     /// # std::io::Result::Ok(())
@@ -127,8 +131,10 @@ where
     /// # Example
     ///
     /// ```rust
-    /// # use std::io::stdout;
-    /// # use ratatui::{prelude::*, backend::TestBackend, Viewport, TerminalOptions};
+    /// use std::io::stdout;
+    ///
+    /// use ratatui::{backend::CrosstermBackend, layout::Rect, Terminal, TerminalOptions, Viewport};
+    ///
     /// let backend = CrosstermBackend::new(stdout());
     /// let viewport = Viewport::Fixed(Rect::new(0, 0, 10, 10));
     /// let terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
@@ -205,7 +211,6 @@ where
     /// of the screen.
     pub fn resize(&mut self, area: Rect) -> io::Result<()> {
         let next_area = match self.viewport {
-            Viewport::Fullscreen => area,
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
@@ -219,7 +224,7 @@ where
                 )?
                 .0
             }
-            Viewport::Fixed(area) => area,
+            Viewport::Fixed(_) | Viewport::Fullscreen => area,
         };
         self.set_viewport_area(next_area);
         self.clear()?;
@@ -277,14 +282,13 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::layout::Position;
     /// # let backend = ratatui::backend::TestBackend::new(10, 10);
     /// # let mut terminal = ratatui::Terminal::new(backend)?;
-    /// use ratatui::widgets::Paragraph;
+    /// use ratatui::{layout::Position, widgets::Paragraph};
     ///
     /// // with a closure
     /// terminal.draw(|frame| {
-    ///     let area = frame.size();
+    ///     let area = frame.area();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
     ///     frame.set_cursor_position(Position { x: 0, y: 0 });
     /// })?;
@@ -293,7 +297,7 @@ where
     /// terminal.draw(render)?;
     ///
     /// fn render(frame: &mut ratatui::Frame) {
-    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.area());
     /// }
     /// # std::io::Result::Ok(())
     /// ```
@@ -356,7 +360,7 @@ where
     /// // with a closure
     /// terminal.try_draw(|frame| {
     ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
-    ///     let area = frame.size();
+    ///     let area = frame.area();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
     ///     frame.set_cursor_position(Position { x: 0, y: 0 });
     ///     io::Result::Ok(())
@@ -367,7 +371,7 @@ where
     ///
     /// fn render(frame: &mut ratatui::Frame) -> io::Result<()> {
     ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
-    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.area());
     ///     Ok(())
     /// }
     /// # io::Result::Ok(())
@@ -553,7 +557,13 @@ where
     /// ## Insert a single line before the current viewport
     ///
     /// ```rust
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     backend::TestBackend,
+    ///     style::{Color, Style},
+    ///     text::{Line, Span},
+    ///     widgets::{Paragraph, Widget},
+    ///     Terminal,
+    /// };
     /// # let backend = TestBackend::new(10, 10);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// terminal.insert_before(1, |buf| {

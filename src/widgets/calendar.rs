@@ -12,7 +12,13 @@ use std::collections::HashMap;
 
 use time::{Date, Duration, OffsetDateTime};
 
-use crate::{prelude::*, widgets::Block};
+use crate::{
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::Style,
+    text::{Line, Span},
+    widgets::{block::BlockExt, Block, Widget, WidgetRef},
+};
 
 /// Display a month calendar for the month containing `display_date`
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -46,6 +52,8 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_surrounding<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_surrounding = Some(style.into());
@@ -56,6 +64,8 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_weekdays_header<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_weekday = Some(style.into());
@@ -66,6 +76,8 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_month_header<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_month = Some(style.into());
@@ -76,6 +88,8 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn default_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.default_style = style.into();
@@ -177,7 +191,9 @@ impl<DS: DateStyler> Monthly<'_, DS> {
                 spans.push(self.format_date(curr_day));
                 curr_day += Duration::DAY;
             }
-            buf.set_line(days_area.x, y, &spans.into(), area.width);
+            if buf.area.height > y {
+                buf.set_line(days_area.x, y, &spans.into(), area.width);
+            }
             y += 1;
         }
     }
@@ -199,6 +215,8 @@ impl CalendarEventStore {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     pub fn today<S: Into<Style>>(style: S) -> Self {
         let mut res = Self::default();
         res.add(
@@ -214,6 +232,8 @@ impl CalendarEventStore {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: crate::style::Color
     pub fn add<S: Into<Style>>(&mut self, date: Date, style: S) {
         // to simplify style nonsense, last write wins
         let _ = self.0.insert(date, style.into());
@@ -248,6 +268,7 @@ mod tests {
     use time::Month;
 
     use super::*;
+    use crate::style::Color;
 
     #[test]
     fn event_store() {

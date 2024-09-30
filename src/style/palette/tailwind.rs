@@ -268,14 +268,16 @@
 //! # Example
 //!
 //! ```rust
-//! # use ratatui::prelude::*;
-//! use ratatui::style::palette::tailwind::{BLUE, RED};
+//! use ratatui::style::{
+//!     palette::tailwind::{BLUE, RED},
+//!     Color,
+//! };
 //!
 //! assert_eq!(RED.c500, Color::Rgb(239, 68, 68));
 //! assert_eq!(BLUE.c500, Color::Rgb(59, 130, 246));
 //! ```
 
-use crate::prelude::*;
+use crate::style::Color;
 
 pub struct Palette {
     pub c50: Color,

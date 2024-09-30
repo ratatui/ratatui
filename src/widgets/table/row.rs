@@ -1,5 +1,7 @@
-use super::Cell;
-use crate::{prelude::*, style::Styled};
+use crate::{
+    style::{Style, Styled},
+    widgets::table::Cell,
+};
 
 /// A single row of data to be displayed in a [`Table`] widget.
 ///
@@ -16,7 +18,7 @@ use crate::{prelude::*, style::Styled};
 /// You can create `Row`s from simple strings.
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::widgets::Row;
 ///
 /// Row::new(vec!["Cell1", "Cell2", "Cell3"]);
 /// ```
@@ -24,11 +26,14 @@ use crate::{prelude::*, style::Styled};
 /// If you need a bit more control over individual cells, you can explicitly create [`Cell`]s:
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::Stylize,
+///     widgets::{Cell, Row},
+/// };
 ///
 /// Row::new(vec![
 ///     Cell::from("Cell1"),
-///     Cell::from("Cell2").style(Style::default().fg(Color::Yellow)),
+///     Cell::from("Cell2").red().italic(),
 /// ]);
 /// ```
 ///
@@ -37,7 +42,7 @@ use crate::{prelude::*, style::Styled};
 /// ```rust
 /// use std::borrow::Cow;
 ///
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::widgets::{Cell, Row};
 ///
 /// Row::new(vec![
 ///     Cow::Borrowed("hello"),
@@ -57,12 +62,15 @@ use crate::{prelude::*, style::Styled};
 /// to set the style of the row concisely.
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{style::Stylize, widgets::Row};
+///
 /// let cells = vec!["Cell1", "Cell2", "Cell3"];
 /// Row::new(cells).red().italic();
 /// ```
 ///
-/// [`Table`]: super::Table
+/// [`Table`]: crate::widgets::Table
+/// [`Text`]: crate::text::Text
+/// [`Stylize`]: crate::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Row<'a> {
     pub(crate) cells: Vec<Cell<'a>>,
@@ -81,7 +89,8 @@ impl<'a> Row<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Cell, Row};
+    ///
     /// let row = Row::new(vec!["Cell 1", "Cell 2", "Cell 3"]);
     /// let row = Row::new(vec![
     ///     Cell::new("Cell 1"),
@@ -111,7 +120,8 @@ impl<'a> Row<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Cell, Row};
+    ///
     /// let row = Row::default().cells(vec!["Cell 1", "Cell 2", "Cell 3"]);
     /// let row = Row::default().cells(vec![
     ///     Cell::new("Cell 1"),
@@ -140,7 +150,8 @@ impl<'a> Row<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::Row;
+    ///
     /// let cells = vec!["Cell 1\nline 2", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).height(2);
     /// ```
@@ -159,8 +170,9 @@ impl<'a> Row<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
+    /// use ratatui::widgets::Row;
+    /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
+    ///
     /// let row = Row::default().top_margin(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -178,8 +190,9 @@ impl<'a> Row<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
+    /// use ratatui::widgets::Row;
+    ///
+    /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::default().bottom_margin(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -201,7 +214,10 @@ impl<'a> Row<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     widgets::Row,
+    /// };
     /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).style(Style::new().red().italic());
     /// ```
@@ -210,10 +226,15 @@ impl<'a> Row<'a> {
     /// the [`Stylize`] trait to set the style of the widget more concisely.
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{style::Stylize, widgets::Row};
+    ///
     /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).red().italic();
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
+    /// [`Stylize`]: crate::style::Stylize
+    /// [`Text`]: crate::text::Text
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -257,6 +278,7 @@ mod tests {
     use std::vec;
 
     use super::*;
+    use crate::style::{Color, Modifier, Stylize};
 
     #[test]
     fn new() {

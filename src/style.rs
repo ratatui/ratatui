@@ -13,7 +13,10 @@
 //! ## Example
 //!
 //! ```
-//! use ratatui::prelude::*;
+//! use ratatui::{
+//!     style::{Color, Modifier, Style},
+//!     text::Span,
+//! };
 //!
 //! let heading_style = Style::new()
 //!     .fg(Color::Black)
@@ -41,7 +44,11 @@
 //! ## Example
 //!
 //! ```
-//! use ratatui::{prelude::*, widgets::*};
+//! use ratatui::{
+//!     style::{Color, Modifier, Style, Stylize},
+//!     text::Span,
+//!     widgets::Paragraph,
+//! };
 //!
 //! assert_eq!(
 //!     "hello".red().on_blue().bold(),
@@ -72,6 +79,7 @@ use std::fmt;
 
 use bitflags::bitflags;
 pub use color::{Color, ParseColorError};
+use stylize::ColorDebugKind;
 pub use stylize::{Styled, Stylize};
 
 mod color;
@@ -91,7 +99,7 @@ bitflags! {
     /// ## Examples
     ///
     /// ```rust
-    /// use ratatui::{prelude::*};
+    /// use ratatui::style::Modifier;
     ///
     /// let m = Modifier::BOLD | Modifier::ITALIC;
     /// ```
@@ -127,7 +135,7 @@ impl fmt::Debug for Modifier {
 /// Style lets you control the main characteristics of the displayed elements.
 ///
 /// ```rust
-/// use ratatui::prelude::*;
+/// use ratatui::style::{Color, Modifier, Style};
 ///
 /// Style::default()
 ///     .fg(Color::Black)
@@ -138,7 +146,8 @@ impl fmt::Debug for Modifier {
 /// Styles can also be created with a [shorthand notation](crate::style#using-style-shorthands).
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// use ratatui::style::{Style, Stylize};
+///
 /// Style::new().black().on_green().italic().bold();
 /// ```
 ///
@@ -148,7 +157,11 @@ impl fmt::Debug for Modifier {
 /// anywhere that accepts `Into<Style>`.
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// use ratatui::{
+///     style::{Color, Modifier, Style},
+///     text::Line,
+/// };
+///
 /// Line::styled("hello", Style::new().fg(Color::Red));
 /// // simplifies to
 /// Line::styled("hello", Color::Red);
@@ -163,7 +176,11 @@ impl fmt::Debug for Modifier {
 /// just S3.
 ///
 /// ```rust
-/// use ratatui::prelude::*;
+/// use ratatui::{
+///     buffer::Buffer,
+///     layout::Rect,
+///     style::{Color, Modifier, Style},
+/// };
 ///
 /// let styles = [
 ///     Style::default()
@@ -199,7 +216,11 @@ impl fmt::Debug for Modifier {
 /// reset all properties until that point use [`Style::reset`].
 ///
 /// ```
-/// use ratatui::prelude::*;
+/// use ratatui::{
+///     buffer::Buffer,
+///     layout::Rect,
+///     style::{Color, Modifier, Style},
+/// };
 ///
 /// let styles = [
 ///     Style::default()
@@ -223,7 +244,7 @@ impl fmt::Debug for Modifier {
 ///     buffer[(0, 0)].style(),
 /// );
 /// ```
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
     pub fg: Option<Color>,
@@ -232,6 +253,55 @@ pub struct Style {
     pub underline_color: Option<Color>,
     pub add_modifier: Modifier,
     pub sub_modifier: Modifier,
+}
+
+/// A custom debug implementation that prints only the fields that are not the default, and unwraps
+/// the `Option`s.
+impl fmt::Debug for Style {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("Style::new()")?;
+        if let Some(fg) = self.fg {
+            fg.stylize_debug(ColorDebugKind::Foreground).fmt(f)?;
+        }
+        if let Some(bg) = self.bg {
+            bg.stylize_debug(ColorDebugKind::Background).fmt(f)?;
+        }
+        #[cfg(feature = "underline-color")]
+        if let Some(underline_color) = self.underline_color {
+            underline_color
+                .stylize_debug(ColorDebugKind::Underline)
+                .fmt(f)?;
+        }
+        for modifier in self.add_modifier.iter() {
+            match modifier {
+                Modifier::BOLD => f.write_str(".bold()")?,
+                Modifier::DIM => f.write_str(".dim()")?,
+                Modifier::ITALIC => f.write_str(".italic()")?,
+                Modifier::UNDERLINED => f.write_str(".underlined()")?,
+                Modifier::SLOW_BLINK => f.write_str(".slow_blink()")?,
+                Modifier::RAPID_BLINK => f.write_str(".rapid_blink()")?,
+                Modifier::REVERSED => f.write_str(".reversed()")?,
+                Modifier::HIDDEN => f.write_str(".hidden()")?,
+                Modifier::CROSSED_OUT => f.write_str(".crossed_out()")?,
+                _ => f.write_fmt(format_args!(".add_modifier(Modifier::{modifier:?})"))?,
+            }
+        }
+        for modifier in self.sub_modifier.iter() {
+            match modifier {
+                Modifier::BOLD => f.write_str(".not_bold()")?,
+                Modifier::DIM => f.write_str(".not_dim()")?,
+                Modifier::ITALIC => f.write_str(".not_italic()")?,
+                Modifier::UNDERLINED => f.write_str(".not_underlined()")?,
+                Modifier::SLOW_BLINK => f.write_str(".not_slow_blink()")?,
+                Modifier::RAPID_BLINK => f.write_str(".not_rapid_blink()")?,
+                Modifier::REVERSED => f.write_str(".not_reversed()")?,
+                Modifier::HIDDEN => f.write_str(".not_hidden()")?,
+                Modifier::CROSSED_OUT => f.write_str(".not_crossed_out()")?,
+                _ => f.write_fmt(format_args!(".remove_modifier(Modifier::{modifier:?})"))?,
+            }
+        }
+        Ok(())
+    }
 }
 
 impl Styled for Style {
@@ -275,7 +345,8 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Style};
+    ///
     /// let style = Style::default().fg(Color::Blue);
     /// let diff = Style::default().fg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().fg(Color::Red));
@@ -291,7 +362,8 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Style};
+    ///
     /// let style = Style::default().bg(Color::Blue);
     /// let diff = Style::default().bg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().bg(Color::Red));
@@ -315,7 +387,8 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Modifier, Style};
+    ///
     /// let style = Style::default()
     ///     .underline_color(Color::Blue)
     ///     .add_modifier(Modifier::UNDERLINED);
@@ -343,7 +416,8 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Modifier, Style};
+    ///
     /// let style = Style::default().add_modifier(Modifier::BOLD);
     /// let diff = Style::default().add_modifier(Modifier::ITALIC);
     /// let patched = style.patch(diff);
@@ -364,7 +438,8 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Modifier, Style};
+    ///
     /// let style = Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC);
     /// let diff = Style::default().remove_modifier(Modifier::ITALIC);
     /// let patched = style.patch(diff);
@@ -386,7 +461,8 @@ impl Style {
     ///
     /// ## Examples
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Modifier, Style};
+    ///
     /// let style_1 = Style::default().fg(Color::Yellow);
     /// let style_2 = Style::default().bg(Color::Red);
     /// let combined = style_1.patch(style_2);
@@ -423,7 +499,8 @@ impl From<Color> for Style {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Style};
+    ///
     /// let style = Style::from(Color::Red);
     /// ```
     fn from(color: Color) -> Self {
@@ -437,7 +514,8 @@ impl From<(Color, Color)> for Style {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Style};
+    ///
     /// // red foreground, blue background
     /// let style = Style::from((Color::Red, Color::Blue));
     /// // default foreground, blue background
@@ -459,7 +537,8 @@ impl From<Modifier> for Style {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Style, Modifier};
+    ///
     /// // add bold and italic
     /// let style = Style::from(Modifier::BOLD|Modifier::ITALIC);
     fn from(modifier: Modifier) -> Self {
@@ -473,7 +552,8 @@ impl From<(Modifier, Modifier)> for Style {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Modifier, Style};
+    ///
     /// // add bold and italic, remove dim
     /// let style = Style::from((Modifier::BOLD | Modifier::ITALIC, Modifier::DIM));
     /// ```
@@ -492,7 +572,8 @@ impl From<(Color, Modifier)> for Style {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Modifier, Style};
+    ///
     /// // red foreground, add bold and italic
     /// let style = Style::from((Color::Red, Modifier::BOLD | Modifier::ITALIC));
     /// ```
@@ -509,7 +590,8 @@ impl From<(Color, Color, Modifier)> for Style {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Modifier, Style};
+    ///
     /// // red foreground, blue background, add bold and italic
     /// let style = Style::from((Color::Red, Color::Blue, Modifier::BOLD | Modifier::ITALIC));
     /// ```
@@ -525,7 +607,8 @@ impl From<(Color, Color, Modifier, Modifier)> for Style {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::style::{Color, Modifier, Style};
+    ///
     /// // red foreground, blue background, add bold and italic, remove dim
     /// let style = Style::from((
     ///     Color::Red,
@@ -548,6 +631,16 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+
+    #[rstest]
+    #[case(Style::new(), "Style::new()")]
+    #[case(Style::new().red(), "Style::new().red()")]
+    #[case(Style::new().on_blue(), "Style::new().on_blue()")]
+    #[case(Style::new().bold(), "Style::new().bold()")]
+    #[case(Style::new().not_italic(), "Style::new().not_italic()")]
+    fn debug(#[case] style: Style, #[case] expected: &'static str) {
+        assert_eq!(format!("{style:?}"), expected);
+    }
 
     #[test]
     fn combined_patch_gives_same_result_as_individual_patch() {

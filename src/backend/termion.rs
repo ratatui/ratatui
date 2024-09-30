@@ -40,8 +40,9 @@ use crate::{
 /// use std::io::{stderr, stdout};
 ///
 /// use ratatui::{
-///     prelude::*,
+///     backend::TermionBackend,
 ///     termion::{raw::IntoRawMode, screen::IntoAlternateScreen},
+///     Terminal,
 /// };
 ///
 /// let writer = stdout().into_raw_mode()?.into_alternate_screen()?;
@@ -84,8 +85,10 @@ where
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
+    /// use std::io::stdout;
+    ///
+    /// use ratatui::backend::TermionBackend;
+    ///
     /// let backend = TermionBackend::new(stdout());
     /// ```
     pub const fn new(writer: W) -> Self {

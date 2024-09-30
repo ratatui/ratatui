@@ -14,7 +14,16 @@
 // not too happy about the redundancy in these tests,
 // but if that helps readability then it's ok i guess /shrug
 
-use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+use ratatui::{
+    backend::TestBackend,
+    layout::{Constraint, Direction, Layout},
+    text::Line,
+    widgets::{
+        Block, Borders, List, ListState, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Table, TableState,
+    },
+    Terminal,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 struct AppState {

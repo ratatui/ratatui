@@ -1,4 +1,11 @@
-use crate::{prelude::*, style::Styled, widgets::Block};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Color, Style, Styled},
+    symbols::{self},
+    text::{Line, Span},
+    widgets::{block::BlockExt, Block, Widget, WidgetRef},
+};
 
 /// A widget to display a progress bar.
 ///
@@ -16,16 +23,14 @@ use crate::{prelude::*, style::Styled, widgets::Block};
 /// # Example
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     widgets::{Block, Gauge},
+/// };
 ///
 /// Gauge::default()
 ///     .block(Block::bordered().title("Progress"))
-///     .gauge_style(
-///         Style::default()
-///             .fg(Color::White)
-///             .bg(Color::Black)
-///             .add_modifier(Modifier::ITALIC),
-///     )
+///     .gauge_style(Style::new().white().on_black().italic())
 ///     .percent(20);
 /// ```
 ///
@@ -242,16 +247,15 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 /// # Examples:
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     symbols,
+///     widgets::{Block, LineGauge},
+/// };
 ///
 /// LineGauge::default()
 ///     .block(Block::bordered().title("Progress"))
-///     .filled_style(
-///         Style::default()
-///             .fg(Color::White)
-///             .bg(Color::Black)
-///             .add_modifier(Modifier::BOLD),
-///     )
+///     .filled_style(Style::new().white().on_black().bold())
 ///     .line_set(symbols::line::THICK)
 ///     .ratio(0.4);
 /// ```
@@ -443,7 +447,10 @@ impl<'a> Styled for LineGauge<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use crate::{
+        style::{Color, Modifier, Style, Stylize},
+        symbols,
+    };
     #[test]
     #[should_panic = "Percentage should be between 0 and 100 inclusively"]
     fn gauge_invalid_percentage() {

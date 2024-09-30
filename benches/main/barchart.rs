@@ -2,8 +2,7 @@ use criterion::{criterion_group, Bencher, BenchmarkId, Criterion};
 use rand::Rng;
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
-    prelude::Direction,
+    layout::{Direction, Rect},
     widgets::{Bar, BarChart, BarGroup, Widget},
 };
 
