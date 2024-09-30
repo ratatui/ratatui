@@ -600,6 +600,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).row_highlight_style(Style::new().red().italic());
     /// ```
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn row_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
         self.row_highlight_style = highlight_style.into();
@@ -624,6 +625,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).column_highlight_style(Style::new().red().italic());
     /// ```
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn column_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
         self.column_highlight_style = highlight_style.into();
@@ -648,6 +650,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).cell_highlight_style(Style::new().red().italic());
     /// ```
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn cell_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
         self.cell_highlight_style = highlight_style.into();
