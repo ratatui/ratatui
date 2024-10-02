@@ -118,7 +118,7 @@ pub struct Layout {
     margin: Margin,
     flex: Flex,
     spacing: u16,
-    overlap: u32,
+    overlap: u16,
 }
 
 impl Layout {
@@ -439,7 +439,7 @@ impl Layout {
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).overlap(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn overlap(mut self, overlap: u32) -> Self {
+    pub const fn overlap(mut self, overlap: u16) -> Self {
         self.overlap = overlap;
         self.spacing = 0;
         self
@@ -747,7 +747,7 @@ fn configure_variable_ascending_order_constraints(
 fn configure_variable_overlap_constraints(
     solver: &mut Solver,
     segments: &[Element],
-    overlap: u32,
+    overlap: u16,
 ) -> Result<(), AddConstraintError> {
     let overlap = 1.0 * f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
     for (left, right) in segments.iter().tuple_windows() {
@@ -2488,7 +2488,7 @@ mod tests {
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] overlap: u32,
+            #[case] overlap: u16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
