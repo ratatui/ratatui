@@ -118,6 +118,7 @@ pub struct Layout {
     margin: Margin,
     flex: Flex,
     spacing: u16,
+    overlap: u32,
 }
 
 impl Layout {
@@ -425,6 +426,13 @@ impl Layout {
         self
     }
 
+    /// Sets the overlap between segments in the layout.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn overlap(mut self, overlap: u32) -> Self {
+        self.overlap = overlap;
+        self
+    }
+
     /// Split the rect into a number of sub-rects according to the given [`Layout`].
     ///
     /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
@@ -657,10 +665,11 @@ impl Layout {
         let flex = self.flex;
         let spacing = self.spacing;
         let constraints = &self.constraints;
+        let overlap = self.overlap;
 
         let area_size = Element::from((*variables.first().unwrap(), *variables.last().unwrap()));
         configure_area(&mut solver, area_size, area_start, area_end)?;
-        configure_variable_constraints(&mut solver, &variables, area_size)?;
+        configure_variable_constraints(&mut solver, &variables, &segments, area_size, overlap)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
         configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
@@ -696,7 +705,9 @@ fn configure_area(
 fn configure_variable_constraints(
     solver: &mut Solver,
     variables: &[Variable],
+    segments: &[Element],
     area: Element,
+    overlap: u32,
 ) -> Result<(), AddConstraintError> {
     // all variables are in the range [area.start, area.end]
     for &variable in variables {
@@ -704,9 +715,16 @@ fn configure_variable_constraints(
         solver.add_constraint(variable | LE(REQUIRED) | area.end)?;
     }
 
-    // all variables are in ascending order
-    for (&left, &right) in variables.iter().tuple_windows() {
-        solver.add_constraint(left | LE(REQUIRED) | right)?;
+    if overlap == 0 {
+        // all variables are in ascending order
+        for (&left, &right) in variables.iter().tuple_windows() {
+            solver.add_constraint(left | LE(REQUIRED) | right)?;
+        }
+    } else {
+        let overlap = 1.0 * f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
+        for (left, right) in segments.iter().tuple_windows() {
+            solver.add_constraint((left.end - right.start) | EQ(REQUIRED) | overlap)?;
+        }
     }
 
     Ok(())
@@ -1119,6 +1137,7 @@ mod tests {
                 constraints: vec![],
                 flex: Flex::default(),
                 spacing: 0,
+                overlap: 0,
             }
         );
     }
@@ -1164,6 +1183,7 @@ mod tests {
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
+                overlap: 0,
             }
         );
     }
@@ -1178,6 +1198,7 @@ mod tests {
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
+                overlap: 0,
             }
         );
     }
@@ -2234,6 +2255,27 @@ mod tests {
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::length_overlap(vec![(0 , 20), (20, 20)], vec![Length(20), Length(20)], Flex::Start      , 0)]
+        #[case::length_overlap(vec![(0 , 20), (19, 20)], vec![Length(20), Length(20)], Flex::Start      , 1)]
+        fn flex_overlap(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] overlap: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .flex(flex)
+                .overlap(overlap.into())
+                .split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
         }
 
         #[rstest]
