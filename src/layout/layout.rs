@@ -2460,6 +2460,49 @@ mod tests {
         }
 
         #[rstest]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Legacy , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Start , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Center , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::End , 0)]
+        #[case::flex10(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::Legacy , 10)]
+        #[case::flex10(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::Start , 10)]
+        #[case::flex10(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::Center , 10)]
+        #[case::flex10(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::End , 10)]
+        #[case::flex10(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex10(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , 0)]
+        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 0)]
+        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 0)]
+        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , 0)]
+        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , 0)]
+        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , 0)]
+        #[case::flex_length10(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , 10)]
+        #[case::flex_length10(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , 10)]
+        #[case::flex_length10(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , 10)]
+        #[case::flex_length10(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , 10)]
+        #[case::flex_length10(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex_length10(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 10)]
+        fn fill_overlap(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] overlap: u32,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .flex(flex)
+                .overlap(overlap)
+                .split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
+        }
+
+        #[rstest]
         #[case::flex_length10(vec![(0, 10), (90, 10)], vec![Length(10), Length(10)], Flex::Center, 80)]
         fn flex_spacing_lower_priority_than_user_spacing(
             #[case] expected: Vec<(u16, u16)>,
