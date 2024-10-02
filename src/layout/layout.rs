@@ -423,13 +423,25 @@ impl Layout {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn spacing(mut self, spacing: u16) -> Self {
         self.spacing = spacing;
+        self.overlap = 0;
         self
     }
 
     /// Sets the overlap between segments in the layout.
+    ///
+    /// # Examples
+    ///
+    /// In this example, the overlap between each item in the layout is set to 1.
+    ///
+    /// ```rust
+    /// use ratatui::layout::{Constraint::*, Layout};
+    ///
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).overlap(1);
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn overlap(mut self, overlap: u32) -> Self {
         self.overlap = overlap;
+        self.spacing = 0;
         self
     }
 
@@ -669,7 +681,12 @@ impl Layout {
 
         let area_size = Element::from((*variables.first().unwrap(), *variables.last().unwrap()));
         configure_area(&mut solver, area_size, area_start, area_end)?;
-        configure_variable_constraints(&mut solver, &variables, &segments, area_size, overlap)?;
+        configure_variable_in_area_constraints(&mut solver, &variables, area_size)?;
+        if overlap == 0 {
+            configure_variable_ascending_order_constraints(&mut solver, &variables)?;
+        } else {
+            configure_variable_overlap_constraints(&mut solver, &segments, overlap)?;
+        }
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
         configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
@@ -702,12 +719,10 @@ fn configure_area(
     Ok(())
 }
 
-fn configure_variable_constraints(
+fn configure_variable_in_area_constraints(
     solver: &mut Solver,
     variables: &[Variable],
-    segments: &[Element],
     area: Element,
-    overlap: u32,
 ) -> Result<(), AddConstraintError> {
     // all variables are in the range [area.start, area.end]
     for &variable in variables {
@@ -715,18 +730,29 @@ fn configure_variable_constraints(
         solver.add_constraint(variable | LE(REQUIRED) | area.end)?;
     }
 
-    if overlap == 0 {
-        // all variables are in ascending order
-        for (&left, &right) in variables.iter().tuple_windows() {
-            solver.add_constraint(left | LE(REQUIRED) | right)?;
-        }
-    } else {
-        let overlap = 1.0 * f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
-        for (left, right) in segments.iter().tuple_windows() {
-            solver.add_constraint((left.end - right.start) | EQ(REQUIRED) | overlap)?;
-        }
-    }
+    Ok(())
+}
 
+fn configure_variable_ascending_order_constraints(
+    solver: &mut Solver,
+    variables: &[Variable],
+) -> Result<(), AddConstraintError> {
+    // all variables are in ascending order
+    for (&left, &right) in variables.iter().tuple_windows() {
+        solver.add_constraint(left | LE(REQUIRED) | right)?;
+    }
+    Ok(())
+}
+
+fn configure_variable_overlap_constraints(
+    solver: &mut Solver,
+    segments: &[Element],
+    overlap: u32,
+) -> Result<(), AddConstraintError> {
+    let overlap = 1.0 * f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
+    for (left, right) in segments.iter().tuple_windows() {
+        solver.add_constraint((left.end - right.start) | EQ(REQUIRED) | overlap)?;
+    }
     Ok(())
 }
 
@@ -2258,8 +2284,13 @@ mod tests {
         }
 
         #[rstest]
-        #[case::length_overlap(vec![(0 , 20), (20, 20)], vec![Length(20), Length(20)], Flex::Start      , 0)]
-        #[case::length_overlap(vec![(0 , 20), (19, 20)], vec![Length(20), Length(20)], Flex::Start      , 1)]
+        #[case::length_overlap(vec![(0  , 20) , (20 , 20) , (40 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , 0)]
+        #[case::length_overlap(vec![(0  , 20) , (19 , 20) , (38 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , 1)]
+        #[case::length_overlap(vec![(21 , 20) , (40 , 20) , (59 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Center       , 1)]
+        #[case::length_overlap(vec![(42 , 20) , (61 , 20) , (80 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::End          , 1)]
+        #[case::length_overlap(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , 1)]
+        #[case::length_overlap(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , 1)]
+        #[case::length_overlap(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 1)]
         fn flex_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
