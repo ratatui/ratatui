@@ -2312,6 +2312,7 @@ mod tests {
         #[case::length_overlap5(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , 1)]
         #[case::length_overlap6(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , 1)]
         #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 1)]
+        #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 2)]
         fn flex_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
