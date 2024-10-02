@@ -2282,15 +2282,36 @@ mod tests {
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
         }
+        struct VisualTest {
+            data: Vec<(u16, u16)>,
+        }
+
+        impl VisualTest {
+            fn new(data: Vec<(u16, u16)>) -> Self {
+                Self { data }
+            }
+        }
+
+        impl std::fmt::Display for VisualTest {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                for (start, width) in &self.data {
+                    let prefix = " ".repeat(*start as usize);
+                    let underscores = "_".repeat(*width as usize);
+                    writeln!(f, "{prefix}{underscores}")?;
+                }
+
+                Ok(())
+            }
+        }
 
         #[rstest]
-        #[case::length_overlap(vec![(0  , 20) , (20 , 20) , (40 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , 0)]
-        #[case::length_overlap(vec![(0  , 20) , (19 , 20) , (38 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , 1)]
-        #[case::length_overlap(vec![(21 , 20) , (40 , 20) , (59 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Center       , 1)]
-        #[case::length_overlap(vec![(42 , 20) , (61 , 20) , (80 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::End          , 1)]
-        #[case::length_overlap(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , 1)]
-        #[case::length_overlap(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , 1)]
-        #[case::length_overlap(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 1)]
+        #[case::length_overlap1(vec![(0  , 20) , (20 , 20) , (40 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , 0)]
+        #[case::length_overlap2(vec![(0  , 20) , (19 , 20) , (38 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , 1)]
+        #[case::length_overlap3(vec![(21 , 20) , (40 , 20) , (59 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Center       , 1)]
+        #[case::length_overlap4(vec![(42 , 20) , (61 , 20) , (80 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::End          , 1)]
+        #[case::length_overlap5(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , 1)]
+        #[case::length_overlap6(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , 1)]
+        #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 1)]
         fn flex_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2306,7 +2327,12 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+
+            // Convert both expected and result into VisualTest for visual output
+            let expected_visual = VisualTest::new(expected);
+            let result_visual = VisualTest::new(result);
+
+            assert_eq!(expected_visual.to_string(), result_visual.to_string());
         }
 
         #[rstest]
