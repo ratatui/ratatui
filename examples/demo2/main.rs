@@ -52,3 +52,20 @@ fn main() -> Result<()> {
     ratatui::restore();
     app_result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::App;
+    use insta::assert_snapshot;
+    use ratatui::{backend::TestBackend, Terminal};
+
+    #[test]
+    fn test_render_app() {
+        let app = App::default();
+        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        terminal
+            .draw(|frame| frame.render_widget(&app, frame.area()))
+            .unwrap();
+        assert_snapshot!(terminal.backend());
+    }
+}

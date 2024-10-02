@@ -134,6 +134,21 @@ jobs:
         env:
           RUST_BACKTRACE: full
 
+  test-example:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-make
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo make test-examples
+        env:
+          RUST_BACKTRACE: full
+
   test:
     strategy:
       fail-fast: false

@@ -81,6 +81,10 @@ args = [
 description = "Install cargo-nextest"
 install_crate = { crate_name = "cargo-nextest", binary = "cargo-nextest", test_arg = "--help" }
 
+[tasks.install-insta]
+description = "Install cargo-insta"
+install_crate = { crate_name = "cargo-insta", binary = "cargo-insta", test_arg = "--help" }
+
 [tasks.test]
 description = "Run tests"
 run_task = { name = ["test-lib", "test-doc"] }
@@ -108,6 +112,17 @@ args = [
   "--no-default-features",
   "--features",
   "${NON_BACKEND_FEATURES},${@}",
+]
+
+[tasks.test-examples]
+description = "Run example tests"
+dependencies = ["install-insta"]
+command = "cargo"
+args = [
+  "insta",
+  "test",
+  "--examples",
+  "--all-features"
 ]
 
 [tasks.coverage]
