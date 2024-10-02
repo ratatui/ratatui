@@ -2300,7 +2300,7 @@ mod tests {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
                 .flex(flex)
-                .overlap(overlap.into())
+                .overlap(overlap)
                 .split(rect);
             let result = r
                 .iter()
