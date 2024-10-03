@@ -453,6 +453,8 @@ impl Layout {
     pub const fn overlap(mut self, overlap: bool) -> Self {
         if overlap {
             self.spacing = None;
+        } else if self.spacing.is_none() {
+            self.spacing = Some(0)
         }
         self
     }
