@@ -682,11 +682,7 @@ impl Layout {
         let area_size = Element::from((*variables.first().unwrap(), *variables.last().unwrap()));
         configure_area(&mut solver, area_size, area_start, area_end)?;
         configure_variable_in_area_constraints(&mut solver, &variables, area_size)?;
-        if overlap == 0 {
-            configure_variable_ascending_order_constraints(&mut solver, &variables)?;
-        } else {
-            configure_variable_overlap_constraints(&mut solver, &segments, overlap)?;
-        }
+        configure_variable_ascending_order_constraints(&mut solver, &variables, overlap)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
         configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
@@ -736,22 +732,37 @@ fn configure_variable_in_area_constraints(
 fn configure_variable_ascending_order_constraints(
     solver: &mut Solver,
     variables: &[Variable],
-) -> Result<(), AddConstraintError> {
-    // all variables are in ascending order
-    for (&left, &right) in variables.iter().tuple_windows() {
-        solver.add_constraint(left | LE(REQUIRED) | right)?;
-    }
-    Ok(())
-}
-
-fn configure_variable_overlap_constraints(
-    solver: &mut Solver,
-    segments: &[Element],
     overlap: u16,
 ) -> Result<(), AddConstraintError> {
+    // ┌────┬───────────────────┬────┬─────variables─────┬────┬───────────────────┬────┐
+    // │    │                   │    │                   │    │                   │    │
+    // v    v                   v    v                   v    v                   v    v
+    // ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
+    //      │     Max(20)      │     │      Max(20)     │     │      Max(20)     │
+    // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
+    // ^    ^                   ^    ^                   ^    ^                   ^    ^
+    // └v1  └v2                 └v3  └v4                 └v5  └v6                 └v7  └v8
+
+    // v0 - v1 <= 0
+    // v1 - v2 <= 0
+    // v2 - v3 == overlap
+    // v3 - v4 <= 0
+    // v4 - v5 == overlap
+    // v5 - v6 <= 0
+    // v6 - v7 <= 0
     let overlap = 1.0 * f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
-    for (left, right) in segments.iter().tuple_windows() {
-        solver.add_constraint((left.end - right.start) | EQ(REQUIRED) | overlap)?;
+    for (i, (&left, &right)) in variables.iter().tuple_windows().enumerate() {
+        if overlap == 0.0 {
+            solver.add_constraint((left - right) | LE(REQUIRED) | 0.0)?;
+        } else if i == 0 {
+            solver.add_constraint((left - right) | LE(REQUIRED) | 0.0)?;
+        } else if i == variables.len() - 2 {
+            solver.add_constraint((left - right) | LE(REQUIRED) | 0.0)?;
+        } else if i % 2 != 0 {
+            solver.add_constraint((left - right) | LE(REQUIRED) | 0.0)?;
+        } else {
+            solver.add_constraint((left - right) | EQ(REQUIRED) | overlap)?;
+        }
     }
     Ok(())
 }
@@ -2291,7 +2302,6 @@ mod tests {
         #[case::length_overlap5(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , 1)]
         #[case::length_overlap6(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , 1)]
         #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 1)]
-        #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 2)]
         fn flex_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
