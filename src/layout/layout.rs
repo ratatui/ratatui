@@ -2575,6 +2575,32 @@ mod tests {
         }
 
         #[rstest]
+        #[case::spacers_1(vec![(0, 0), (10, 0), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 5)]
+        #[case::spacers_2(vec![(0, 0), (53, 0), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 5)]
+        #[case::spacers_3(vec![(0, 0), (53, 0), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceAround, 5)]
+        #[case::spacers_4(vec![(0, 0), (10, 0), (15, 85)], vec![Length(10), Length(10)], Flex::Start, 5)]
+        #[case::spacers_5(vec![(0, 43), (53, 0), (58, 42)], vec![Length(10), Length(10)], Flex::Center, 5)]
+        #[case::spacers_6(vec![(0, 85), (95, 0), (100, 0)], vec![Length(10), Length(10)], Flex::End, 5)]
+        fn split_with_spacers_and_overlap(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let (_, s) = Layout::horizontal(&constraints)
+                .flex(flex)
+                .overlap(spacing)
+                .split_with_spacers(rect);
+            assert_eq!(s.len(), constraints.len() + 1);
+            let result = s
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
+        }
+
+        #[rstest]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
         #[case::spacers(vec![(0, 33), (33, 34), (67, 33)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
