@@ -1362,42 +1362,6 @@ mod tests {
             widgets::{Paragraph, Widget},
         };
 
-        #[derive(Default, Clone, Eq, PartialEq, Hash)]
-        struct VisualTest {
-            data: Vec<(u16, u16)>,
-        }
-
-        impl VisualTest {
-            fn new(data: Vec<(u16, u16)>) -> Self {
-                Self { data }
-            }
-        }
-
-        // TODO: decide best way to represent visual data
-        impl std::fmt::Display for VisualTest {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                for (start, width) in &self.data {
-                    let prefix = " ".repeat(*start as usize);
-                    let underscores = "_".repeat(*width as usize);
-                    writeln!(f, "{prefix}{underscores}")?;
-                }
-
-                Ok(())
-            }
-        }
-
-        impl std::fmt::Debug for VisualTest {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                for (start, width) in &self.data {
-                    let prefix = " ".repeat(*start as usize);
-                    let underscores = "_".repeat(*width as usize);
-                    writeln!(f, "{prefix}{underscores}")?;
-                }
-
-                Ok(())
-            }
-        }
-
         /// Test that the given constraints applied to the given area result in the expected layout.
         /// Each chunk is filled with a letter repeated as many times as the width of the chunk. The
         /// resulting buffer is compared to the expected string.
@@ -2327,6 +2291,7 @@ mod tests {
         #[case::length_overlap5(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , 1)]
         #[case::length_overlap6(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , 1)]
         #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 1)]
+        #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , 2)]
         fn flex_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2342,9 +2307,6 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-
-            let expected = VisualTest::new(expected);
-            let result = VisualTest::new(result);
 
             assert_eq!(expected, result);
         }
