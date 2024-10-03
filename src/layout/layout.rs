@@ -1062,9 +1062,9 @@ mod strengths {
     use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
     /// The strength to apply to overlap constraints to ensure overlap takes precedence.
     ///
-    /// ┌     ┐┌───┐┌     ┐┌───┐┌     ┐
-    ///   ==x  │   │  ==x  │   │  ==x
-    /// └     ┘└───┘└     ┘└───┘└     ┘
+    /// ┌───┬───┬───┐
+    /// │   │   │   │
+    /// └───┴───┴───┘
     pub const OVERLAP_SIZE_EQ: f64 = REQUIRED - 1.0;
 
     /// The strength to apply to Spacers to ensure that their sizes are equal.
