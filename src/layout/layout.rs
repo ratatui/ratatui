@@ -449,6 +449,7 @@ impl Layout {
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).overlap(true);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
+    #[instability::unstable(feature = "layout-overlap")]
     pub const fn overlap(mut self, overlap: bool) -> Self {
         if overlap {
             self.spacing = None;

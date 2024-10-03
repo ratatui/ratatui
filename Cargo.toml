@@ -159,6 +159,7 @@ unstable = [
   "unstable-rendered-line-info",
   "unstable-widget-ref",
   "unstable-backend-writer",
+  "unstable-layout-overlap",
 ]
 
 ## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
@@ -173,6 +174,9 @@ unstable-widget-ref = []
 
 ## Enables getting access to backends' writers.
 unstable-backend-writer = []
+
+## Enables using layout overlap feature
+unstable-layout-overlap = []
 
 [package.metadata.docs.rs]
 all-features = true
