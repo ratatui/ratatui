@@ -734,6 +734,8 @@ fn configure_variable_constraints(
     variables: &[Variable],
     overlap: u16,
 ) -> Result<(), AddConstraintError> {
+    let overlap = f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
+
     // ┌────┬───────────────────┬────┬─────variables─────┬────┬───────────────────┬────┐
     // │    │                   │    │                   │    │                   │    │
     // v    v                   v    v                   v    v                   v    v
@@ -750,9 +752,13 @@ fn configure_variable_constraints(
     // v4 - v5 == overlap : if overlap == 0, then even == overlap, else even <= 0
     // v5 - v6 <= 0       : odd is always <= 0
     // v6 - v7 <= 0       : last is always <= 0
-    let overlap = f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
+
+    // above logic implemented in this closure
+    let should_apply_overlap =
+        |i| overlap != 0.0 && i % 2 == 0 && i != 0 && i != variables.len() - 2;
+
     for (i, (&left, &right)) in variables.iter().tuple_windows().enumerate() {
-        let constraint = if overlap != 0.0 && i % 2 == 0 && i != 0 && i != variables.len() - 2 {
+        let constraint = if should_apply_overlap(i) {
             // Apply forcing overlap constraint
             (left - right) | EQ(REQUIRED) | overlap
         } else {
