@@ -719,35 +719,35 @@ fn configure_constraints(
     constraints: &[Constraint],
     flex: Flex,
 ) -> Result<(), AddConstraintError> {
-    for (&constraint, &element) in constraints.iter().zip(segments.iter()) {
+    for (&constraint, &segment) in constraints.iter().zip(segments.iter()) {
         match constraint {
             Constraint::Max(max) => {
-                solver.add_constraint(element.has_max_size(max, MAX_SIZE_LE))?;
-                solver.add_constraint(element.has_int_size(max, MAX_SIZE_EQ))?;
+                solver.add_constraint(segment.has_max_size(max, MAX_SIZE_LE))?;
+                solver.add_constraint(segment.has_int_size(max, MAX_SIZE_EQ))?;
             }
             Constraint::Min(min) => {
-                solver.add_constraint(element.has_min_size(min, MIN_SIZE_GE))?;
+                solver.add_constraint(segment.has_min_size(min, MIN_SIZE_GE))?;
                 if flex.is_legacy() {
-                    solver.add_constraint(element.has_int_size(min, MIN_SIZE_EQ))?;
+                    solver.add_constraint(segment.has_int_size(min, MIN_SIZE_EQ))?;
                 } else {
-                    solver.add_constraint(element.has_size(area, FILL_GROW))?;
+                    solver.add_constraint(segment.has_size(area, FILL_GROW))?;
                 }
             }
             Constraint::Length(length) => {
-                solver.add_constraint(element.has_int_size(length, LENGTH_SIZE_EQ))?;
+                solver.add_constraint(segment.has_int_size(length, LENGTH_SIZE_EQ))?;
             }
             Constraint::Percentage(p) => {
                 let size = area.size() * f64::from(p) / 100.00;
-                solver.add_constraint(element.has_size(size, PERCENTAGE_SIZE_EQ))?;
+                solver.add_constraint(segment.has_size(size, PERCENTAGE_SIZE_EQ))?;
             }
             Constraint::Ratio(num, den) => {
                 // avoid division by zero by using 1 when denominator is 0
                 let size = area.size() * f64::from(num) / f64::from(den.max(1));
-                solver.add_constraint(element.has_size(size, RATIO_SIZE_EQ))?;
+                solver.add_constraint(segment.has_size(size, RATIO_SIZE_EQ))?;
             }
             Constraint::Fill(_) => {
                 // given no other constraints, this segment will grow as much as possible.
-                solver.add_constraint(element.has_size(area, FILL_GROW))?;
+                solver.add_constraint(segment.has_size(area, FILL_GROW))?;
             }
         }
     }
@@ -854,7 +854,7 @@ fn configure_fill_constraints(
     constraints: &[Constraint],
     flex: Flex,
 ) -> Result<(), AddConstraintError> {
-    for ((&left_constraint, &left_element), (&right_constraint, &right_element)) in constraints
+    for ((&left_constraint, &left_segment), (&right_constraint, &right_segment)) in constraints
         .iter()
         .zip(segments.iter())
         .filter(|(c, _)| c.is_fill() || (!flex.is_legacy() && c.is_min()))
@@ -871,9 +871,9 @@ fn configure_fill_constraints(
             _ => unreachable!(),
         };
         solver.add_constraint(
-            (right_scaling_factor * left_element.size())
+            (right_scaling_factor * left_segment.size())
                 | EQ(GROW)
-                | (left_scaling_factor * right_element.size()),
+                | (left_scaling_factor * right_segment.size()),
         )?;
     }
     Ok(())
