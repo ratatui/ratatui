@@ -1362,6 +1362,42 @@ mod tests {
             widgets::{Paragraph, Widget},
         };
 
+        #[derive(Default, Clone, Eq, PartialEq, Hash)]
+        struct VisualTest {
+            data: Vec<(u16, u16)>,
+        }
+
+        impl VisualTest {
+            fn new(data: Vec<(u16, u16)>) -> Self {
+                Self { data }
+            }
+        }
+
+        // TODO: decide best way to represent visual data
+        impl std::fmt::Display for VisualTest {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                for (start, width) in &self.data {
+                    let prefix = " ".repeat(*start as usize);
+                    let underscores = "_".repeat(*width as usize);
+                    writeln!(f, "{prefix}{underscores}")?;
+                }
+
+                Ok(())
+            }
+        }
+
+        impl std::fmt::Debug for VisualTest {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                for (start, width) in &self.data {
+                    let prefix = " ".repeat(*start as usize);
+                    let underscores = "_".repeat(*width as usize);
+                    writeln!(f, "{prefix}{underscores}")?;
+                }
+
+                Ok(())
+            }
+        }
+
         /// Test that the given constraints applied to the given area result in the expected layout.
         /// Each chunk is filled with a letter repeated as many times as the width of the chunk. The
         /// resulting buffer is compared to the expected string.
@@ -2282,27 +2318,6 @@ mod tests {
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
         }
-        struct VisualTest {
-            data: Vec<(u16, u16)>,
-        }
-
-        impl VisualTest {
-            fn new(data: Vec<(u16, u16)>) -> Self {
-                Self { data }
-            }
-        }
-
-        impl std::fmt::Display for VisualTest {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                for (start, width) in &self.data {
-                    let prefix = " ".repeat(*start as usize);
-                    let underscores = "_".repeat(*width as usize);
-                    writeln!(f, "{prefix}{underscores}")?;
-                }
-
-                Ok(())
-            }
-        }
 
         #[rstest]
         #[case::length_overlap1(vec![(0  , 20) , (20 , 20) , (40 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , 0)]
@@ -2329,11 +2344,10 @@ mod tests {
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
 
-            // Convert both expected and result into VisualTest for visual output
-            let expected_visual = VisualTest::new(expected);
-            let result_visual = VisualTest::new(result);
+            let expected = VisualTest::new(expected);
+            let result = VisualTest::new(result);
 
-            assert_eq!(expected_visual.to_string(), result_visual.to_string());
+            assert_eq!(expected, result);
         }
 
         #[rstest]
