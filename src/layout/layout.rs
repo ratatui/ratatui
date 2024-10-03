@@ -682,7 +682,7 @@ impl Layout {
         let area_size = Element::from((*variables.first().unwrap(), *variables.last().unwrap()));
         configure_area(&mut solver, area_size, area_start, area_end)?;
         configure_variable_in_area_constraints(&mut solver, &variables, area_size)?;
-        configure_variable_ascending_order_constraints(&mut solver, &variables, overlap)?;
+        configure_variable_constraints(&mut solver, &variables, overlap)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
         configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
@@ -729,7 +729,7 @@ fn configure_variable_in_area_constraints(
     Ok(())
 }
 
-fn configure_variable_ascending_order_constraints(
+fn configure_variable_constraints(
     solver: &mut Solver,
     variables: &[Variable],
     overlap: u16,
