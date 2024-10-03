@@ -741,7 +741,7 @@ fn configure_variable_ascending_order_constraints(
     //      │     Max(20)      │     │      Max(20)     │     │      Max(20)     │
     // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
     // ^    ^                   ^    ^                   ^    ^                   ^    ^
-    // └v1  └v2                 └v3  └v4                 └v5  └v6                 └v7  └v8
+    // └v0  └v1                 └v2  └v3                 └v4  └v5                 └v6  └v7
 
     // v0 - v1 <= 0
     // v1 - v2 <= 0
@@ -752,17 +752,14 @@ fn configure_variable_ascending_order_constraints(
     // v6 - v7 <= 0
     let overlap = 1.0 * f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
     for (i, (&left, &right)) in variables.iter().tuple_windows().enumerate() {
-        if overlap == 0.0 {
-            solver.add_constraint((left - right) | LE(REQUIRED) | 0.0)?;
-        } else if i == 0 {
-            solver.add_constraint((left - right) | LE(REQUIRED) | 0.0)?;
-        } else if i == variables.len() - 2 {
-            solver.add_constraint((left - right) | LE(REQUIRED) | 0.0)?;
-        } else if i % 2 != 0 {
-            solver.add_constraint((left - right) | LE(REQUIRED) | 0.0)?;
+        let constraint = if overlap != 0.0 && i % 2 == 0 && i != 0 && i != variables.len() - 2 {
+            // Apply forcing overlap constraint
+            (left - right) | EQ(REQUIRED) | overlap
         } else {
-            solver.add_constraint((left - right) | EQ(REQUIRED) | overlap)?;
-        }
+            // Apply ascending order constraint
+            (left - right) | LE(REQUIRED) | 0.0
+        };
+        solver.add_constraint(constraint)?;
     }
     Ok(())
 }
