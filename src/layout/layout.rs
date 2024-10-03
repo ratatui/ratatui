@@ -745,13 +745,13 @@ fn configure_variable_constraints(
     // ^    ^                   ^    ^                   ^    ^                   ^    ^
     // └v0  └v1                 └v2  └v3                 └v4  └v5                 └v6  └v7
 
-    // v0 - v1 <= 0       : first is always <= 0
-    // v1 - v2 <= 0       : odd is always <= 0
-    // v2 - v3 == overlap : if overlap == 0, then even == overlap, else even <= 0
-    // v3 - v4 <= 0       : odd is always <= 0
-    // v4 - v5 == overlap : if overlap == 0, then even == overlap, else even <= 0
-    // v5 - v6 <= 0       : odd is always <= 0
-    // v6 - v7 <= 0       : last is always <= 0
+    // v0 - v1 <= 0           : first_pair is never involved in overlap constraints
+    // v1 - v2 <= 0           : odd_pair is always ascending (since they are always segments)
+    // v2 - v3 == overlap?    : if overlap != 0, use for spacers, else even_pair forces overlap
+    // v3 - v4 <= 0           : odd_pair is always ascending
+    // v4 - v5 == overlap?    : if overlap != 0, use for spacers, else even_pair forces overlap
+    // v5 - v6 <= 0           : odd_pair is always ascending
+    // v6 - v7 <= 0           : last_pair is never involved in overlap constraints
 
     // above logic implemented in this closure
     let should_apply_overlap =
