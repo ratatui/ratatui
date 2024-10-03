@@ -743,13 +743,13 @@ fn configure_variable_constraints(
     // ^    ^                   ^    ^                   ^    ^                   ^    ^
     // └v0  └v1                 └v2  └v3                 └v4  └v5                 └v6  └v7
 
-    // v0 - v1 <= 0
-    // v1 - v2 <= 0
-    // v2 - v3 == overlap
-    // v3 - v4 <= 0
-    // v4 - v5 == overlap
-    // v5 - v6 <= 0
-    // v6 - v7 <= 0
+    // v0 - v1 <= 0       : first is always <= 0
+    // v1 - v2 <= 0       : odd is always <= 0
+    // v2 - v3 == overlap : if overlap == 0, then even == overlap, else even <= 0
+    // v3 - v4 <= 0       : odd is always <= 0
+    // v4 - v5 == overlap : if overlap == 0, then even == overlap, else even <= 0
+    // v5 - v6 <= 0       : odd is always <= 0
+    // v6 - v7 <= 0       : last is always <= 0
     let overlap = 1.0 * f64::from(overlap) * FLOAT_PRECISION_MULTIPLIER;
     for (i, (&left, &right)) in variables.iter().tuple_windows().enumerate() {
         let constraint = if overlap != 0.0 && i % 2 == 0 && i != 0 && i != variables.len() - 2 {
