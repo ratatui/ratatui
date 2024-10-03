@@ -10,7 +10,7 @@ use lru::LruCache;
 
 use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
-    MIN_SIZE_GE, PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, SPACER_SIZE_EQ, SPACE_GROW,
+    MIN_SIZE_GE, OVERLAP_SIZE_EQ, PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, SPACER_SIZE_EQ, SPACE_GROW,
 };
 use crate::layout::{Constraint, Direction, Flex, Margin, Rect};
 
@@ -760,7 +760,7 @@ fn configure_variable_constraints(
     for (i, (&left, &right)) in variables.iter().tuple_windows().enumerate() {
         let constraint = if should_apply_overlap(i) {
             // Apply forcing overlap constraint
-            (left - right) | EQ(REQUIRED) | overlap
+            (left - right) | EQ(OVERLAP_SIZE_EQ) | overlap
         } else {
             // Apply ascending order constraint
             (left - right) | LE(REQUIRED) | 0.0
@@ -1047,12 +1047,19 @@ impl From<&Element> for Expression {
 
 mod strengths {
     use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
+    /// The strength to apply to overlap constraints to ensure overlap takes precedence.
+    ///
+    /// ┌     ┐┌───┐┌     ┐┌───┐┌     ┐
+    ///   ==x  │   │  ==x  │   │  ==x
+    /// └     ┘└───┘└     ┘└───┘└     ┘
+    pub const OVERLAP_SIZE_EQ: f64 = REQUIRED - 1.0;
+
     /// The strength to apply to Spacers to ensure that their sizes are equal.
     ///
     /// ┌     ┐┌───┐┌     ┐┌───┐┌     ┐
     ///   ==x  │   │  ==x  │   │  ==x
     /// └     ┘└───┘└     ┘└───┘└     ┘
-    pub const SPACER_SIZE_EQ: f64 = REQUIRED - 1.0;
+    pub const SPACER_SIZE_EQ: f64 = REQUIRED / 10.0;
 
     /// The strength to apply to Min inequality constraints.
     ///
