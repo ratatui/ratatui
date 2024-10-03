@@ -707,8 +707,8 @@ impl Layout {
 
         // `solver.fetch_changes()` can only be called once per solve
         let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
-        // debug_segments(&segments, &changes);
-        // debug_segments(&spacers, &changes);
+        // debug_elements(&segments, &changes);
+        // debug_elements(&spacers, &changes);
 
         let segment_rects = changes_to_rects(&changes, &segments, inner_area, self.direction);
         let spacer_rects = changes_to_rects(&changes, &spacers, inner_area, self.direction);
@@ -983,10 +983,10 @@ fn changes_to_rects(
 /// please leave this here as it's useful for debugging unit tests when we make any changes to
 /// layout code - we should replace this with tracing in the future.
 #[allow(dead_code)]
-fn debug_segments(segments: &[Element], changes: &HashMap<Variable, f64>) {
+fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
     let variables = format!(
         "{:?}",
-        segments
+        elements
             .iter()
             .map(|e| (
                 changes.get(&e.start).unwrap_or(&0.0) / FLOAT_PRECISION_MULTIPLIER,
