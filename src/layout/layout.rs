@@ -41,6 +41,46 @@ thread_local! {
     ));
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum Spacing {
+    Space(u16),
+    Overlap(u16),
+}
+
+impl Default for Spacing {
+    fn default() -> Self {
+        Self::Space(0)
+    }
+}
+
+impl From<u32> for Spacing {
+    fn from(value: u32) -> Self {
+        Self::from(value.clamp(u32::from(u16::MIN), u32::from(u16::MAX)) as u16)
+    }
+}
+
+impl From<i32> for Spacing {
+    fn from(value: i32) -> Self {
+        Self::from(value.clamp(i32::from(i16::MIN), i32::from(i16::MAX)) as i16)
+    }
+}
+
+impl From<u16> for Spacing {
+    fn from(value: u16) -> Self {
+        Self::Space(value)
+    }
+}
+
+impl From<i16> for Spacing {
+    fn from(value: i16) -> Self {
+        if value < 0 {
+            Self::Overlap(value.unsigned_abs())
+        } else {
+            Self::Space(value.unsigned_abs())
+        }
+    }
+}
+
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
 /// ones.
 ///
@@ -111,25 +151,13 @@ thread_local! {
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
 /// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
     constraints: Vec<Constraint>,
     margin: Margin,
     flex: Flex,
-    spacing: Option<u16>,
-}
-
-impl Default for Layout {
-    fn default() -> Self {
-        Self {
-            spacing: Some(0), // for backwards compatibility
-            direction: Direction::default(),
-            constraints: Vec::default(),
-            margin: Margin::default(),
-            flex: Flex::default(),
-        }
-    }
+    spacing: Spacing,
 }
 
 impl Layout {
@@ -432,30 +460,11 @@ impl Layout {
     /// - If the layout has only one item, the spacing will not be applied.
     /// - Spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn spacing(mut self, spacing: u16) -> Self {
-        self.spacing = Some(spacing);
-        self
-    }
-
-    /// Sets the overlap between segments in the layout.
-    ///
-    /// # Examples
-    ///
-    /// In this example, the overlap between each item in the layout is set to 1.
-    ///
-    /// ```rust
-    /// use ratatui::layout::{Constraint::*, Layout};
-    ///
-    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).overlap(true);
-    /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
-    #[instability::unstable(feature = "layout-overlap")]
-    pub const fn overlap(mut self, overlap: bool) -> Self {
-        if overlap {
-            self.spacing = None;
-        } else if self.spacing.is_none() {
-            self.spacing = Some(0)
-        }
+    pub fn spacing<T>(mut self, spacing: T) -> Self
+    where
+        T: Into<Spacing>,
+    {
+        self.spacing = spacing.into();
         self
     }
 
@@ -689,9 +698,21 @@ impl Layout {
             .collect_vec();
 
         let flex = self.flex;
-        let spacing = self.spacing.unwrap_or(0);
+
+        // if self.spacing is negative, overlap is Some(self.spacing.abs()), else overlap is None
+        //
+        // - Some(overlap) is always a non-zero positive value
+        // - spacing is always a zero or positive value
+        let overlap = match self.spacing {
+            Spacing::Space(_) => None,
+            Spacing::Overlap(x) => Some(x),
+        };
+        let spacing = match self.spacing {
+            Spacing::Space(x) => x,
+            Spacing::Overlap(_) => 0,
+        };
+
         let constraints = &self.constraints;
-        let overlap = self.spacing.is_none();
 
         let area_size = Element::from((*variables.first().unwrap(), *variables.last().unwrap()));
         configure_area(&mut solver, area_size, area_start, area_end)?;
@@ -747,7 +768,7 @@ fn configure_variable_in_area_constraints(
 fn configure_variable_constraints(
     solver: &mut Solver,
     variables: &[Variable],
-    overlap: bool,
+    overlap: Option<u16>, // always a non-zero value
 ) -> Result<(), AddConstraintError> {
     // ┌────┬───────────────────┬────┬─────variables─────┬────┬───────────────────┬────┐
     // │    │                   │    │                   │    │                   │    │
@@ -767,12 +788,15 @@ fn configure_variable_constraints(
     // v6 - v7 <= 0           : last_pair is never involved in overlap constraints
 
     // above logic implemented in this closure
-    let should_apply_overlap = |i| overlap && i % 2 == 0 && i != 0 && i != variables.len() - 2;
+    let should_apply_overlap =
+        |i| overlap.is_some() && i % 2 == 0 && i != 0 && i != variables.len() - 2;
 
     for (i, (&left, &right)) in variables.iter().tuple_windows().enumerate() {
         let constraint = if should_apply_overlap(i) {
             // Apply forcing overlap constraint
-            (left - right) | EQ(OVERLAP_SIZE_EQ) | FLOAT_PRECISION_MULTIPLIER
+            (left - right)
+                | EQ(OVERLAP_SIZE_EQ)
+                | (f64::from(overlap.unwrap_or(1)) * FLOAT_PRECISION_MULTIPLIER)
         } else {
             // Apply ascending order constraint
             (left - right) | LE(REQUIRED) | 0.0
@@ -1198,7 +1222,7 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![],
                 flex: Flex::default(),
-                spacing: Some(0),
+                spacing: Spacing::default(),
             }
         );
     }
@@ -1243,7 +1267,7 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
-                spacing: Some(0),
+                spacing: Spacing::default(),
             }
         );
     }
@@ -1257,7 +1281,7 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
-                spacing: Some(0),
+                spacing: Spacing::default(),
             }
         );
     }
@@ -1364,8 +1388,9 @@ mod tests {
 
     #[test]
     fn spacing() {
-        assert_eq!(Layout::default().spacing(10).spacing, Some(10));
-        assert_eq!(Layout::default().spacing(0).spacing, Some(0));
+        assert_eq!(Layout::default().spacing(10).spacing, Spacing::Space(10));
+        assert_eq!(Layout::default().spacing(0).spacing, Spacing::Space(0));
+        assert_eq!(Layout::default().spacing(-10).spacing, Spacing::Overlap(10));
     }
 
     /// Tests for the `Layout::split()` function.
@@ -2317,23 +2342,23 @@ mod tests {
         }
 
         #[rstest]
-        #[case::length_overlap1(vec![(0  , 20) , (20 , 20) , (40 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , false)]
-        #[case::length_overlap2(vec![(0  , 20) , (19 , 20) , (38 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , true)]
-        #[case::length_overlap3(vec![(21 , 20) , (40 , 20) , (59 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Center       , true)]
-        #[case::length_overlap4(vec![(42 , 20) , (61 , 20) , (80 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::End          , true)]
-        #[case::length_overlap5(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , true)]
-        #[case::length_overlap6(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , true)]
-        #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , true)]
+        #[case::length_overlap1(vec![(0  , 20) , (20 , 20) , (40 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , 0)]
+        #[case::length_overlap2(vec![(0  , 20) , (19 , 20) , (38 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Start        , -1)]
+        #[case::length_overlap3(vec![(21 , 20) , (40 , 20) , (59 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Center       , -1)]
+        #[case::length_overlap4(vec![(42 , 20) , (61 , 20) , (80 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::End          , -1)]
+        #[case::length_overlap5(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , -1)]
+        #[case::length_overlap6(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , -1)]
+        #[case::length_overlap7(vec![(0  , 34) , (33 , 34) , (66 , 34)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , -1)]
         fn flex_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] overlap: bool,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
                 .flex(flex)
-                .overlap(overlap)
+                .spacing(spacing)
                 .split(rect);
             let result = r
                 .iter()
@@ -2355,7 +2380,7 @@ mod tests {
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] spacing: u16,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
@@ -2412,7 +2437,7 @@ mod tests {
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] spacing: u16,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
@@ -2479,7 +2504,7 @@ mod tests {
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] spacing: u16,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
@@ -2494,40 +2519,40 @@ mod tests {
         }
 
         #[rstest]
-        #[case::flex0_1(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Legacy , false)]
-        #[case::flex0_2(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , false)]
-        #[case::flex0_3(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , false)]
-        #[case::flex0_4(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Start , false)]
-        #[case::flex0_5(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Center , false)]
-        #[case::flex0_6(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::End , false)]
-        #[case::flex10_1(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Legacy , true)]
-        #[case::flex10_2(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Start , true)]
-        #[case::flex10_3(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Center , true)]
-        #[case::flex10_4(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::End , true)]
-        #[case::flex10_5(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , true)]
-        #[case::flex10_6(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , true)]
-        #[case::flex_length0_1(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , false)]
-        #[case::flex_length0_2(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , false)]
-        #[case::flex_length0_3(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , false)]
-        #[case::flex_length0_4(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , false)]
-        #[case::flex_length0_5(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , false)]
-        #[case::flex_length0_6(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , false)]
-        #[case::flex_length10_1(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , true)]
-        #[case::flex_length10_2(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , true)]
-        #[case::flex_length10_3(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , true)]
-        #[case::flex_length10_4(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , true)]
-        #[case::flex_length10_5(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , true)]
-        #[case::flex_length10_6(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , true)]
+        #[case::flex0_1(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::Legacy , -10)]
+        #[case::flex0_2(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , -10)]
+        #[case::flex0_3(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , -10)]
+        #[case::flex0_4(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::Start , -10)]
+        #[case::flex0_5(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::Center , -10)]
+        #[case::flex0_6(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::End , -10)]
+        #[case::flex10_1(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Legacy , -1)]
+        #[case::flex10_2(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Start , -1)]
+        #[case::flex10_3(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Center , -1)]
+        #[case::flex10_4(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::End , -1)]
+        #[case::flex10_5(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , -1)]
+        #[case::flex10_6(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , -1)]
+        #[case::flex_length0_1(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , -10)]
+        #[case::flex_length0_2(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , -10)]
+        #[case::flex_length0_3(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , -10)]
+        #[case::flex_length0_4(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , -10)]
+        #[case::flex_length0_5(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , -10)]
+        #[case::flex_length0_6(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , -10)]
+        #[case::flex_length10_1(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , -1)]
+        #[case::flex_length10_2(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , -1)]
+        #[case::flex_length10_3(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , -1)]
+        #[case::flex_length10_4(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , -1)]
+        #[case::flex_length10_5(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , -1)]
+        #[case::flex_length10_6(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , -1)]
         fn fill_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] overlap: bool,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
                 .flex(flex)
-                .overlap(overlap)
+                .spacing(spacing)
                 .split(rect);
             let result = r
                 .iter()
@@ -2542,7 +2567,7 @@ mod tests {
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] spacing: u16,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
@@ -2591,7 +2616,7 @@ mod tests {
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] spacing: u16,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let (_, s) = Layout::horizontal(&constraints)
@@ -2607,22 +2632,22 @@ mod tests {
         }
 
         #[rstest]
-        #[case::spacers_1(vec![(0, 0), (10, 0), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, true)]
-        #[case::spacers_2(vec![(0, 0), (51, 0), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, true)]
-        #[case::spacers_3(vec![(0, 0), (51, 0), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceAround, true)]
-        #[case::spacers_4(vec![(0, 0), (10, 0), (19, 81)], vec![Length(10), Length(10)], Flex::Start, true)]
-        #[case::spacers_5(vec![(0, 41), (51, 0), (60, 40)], vec![Length(10), Length(10)], Flex::Center, true)]
-        #[case::spacers_6(vec![(0, 81), (91, 0), (100, 0)], vec![Length(10), Length(10)], Flex::End, true)]
+        #[case::spacers_1(vec![(0, 0), (10, 0), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, -1)]
+        #[case::spacers_2(vec![(0, 0), (51, 0), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, -1)]
+        #[case::spacers_3(vec![(0, 0), (51, 0), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceAround, -1)]
+        #[case::spacers_4(vec![(0, 0), (10, 0), (19, 81)], vec![Length(10), Length(10)], Flex::Start, -1)]
+        #[case::spacers_5(vec![(0, 41), (51, 0), (60, 40)], vec![Length(10), Length(10)], Flex::Center, -1)]
+        #[case::spacers_6(vec![(0, 81), (91, 0), (100, 0)], vec![Length(10), Length(10)], Flex::End, -1)]
         fn split_with_spacers_and_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] overlap: bool,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let (_, s) = Layout::horizontal(&constraints)
                 .flex(flex)
-                .overlap(overlap)
+                .spacing(spacing)
                 .split_with_spacers(rect);
             assert_eq!(s.len(), constraints.len() + 1);
             let result = s
@@ -2643,7 +2668,7 @@ mod tests {
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
-            #[case] spacing: u16,
+            #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let (_, s) = Layout::horizontal(&constraints)
