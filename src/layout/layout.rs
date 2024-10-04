@@ -53,12 +53,6 @@ impl Default for Spacing {
     }
 }
 
-impl From<u32> for Spacing {
-    fn from(value: u32) -> Self {
-        Self::from(value.clamp(u32::from(u16::MIN), u32::from(u16::MAX)) as u16)
-    }
-}
-
 impl From<i32> for Spacing {
     fn from(value: i32) -> Self {
         Self::from(value.clamp(i32::from(i16::MIN), i32::from(i16::MAX)) as i16)
