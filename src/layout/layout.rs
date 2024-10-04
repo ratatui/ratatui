@@ -41,6 +41,34 @@ thread_local! {
     ));
 }
 
+/// Represents the spacing between segments in a layout.
+///
+/// The `Spacing` enum is used to define the spacing between segments in a layout. It can represent
+/// either positive spacing (space between segments) or negative spacing (overlap between segments).
+///
+/// # Variants
+///
+/// - `Space(u16)`: Represents positive spacing between segments. The value indicates the number of
+///   cells.
+/// - `Overlap(u16)`: Represents negative spacing, causing overlap between segments. The value
+///   indicates the number of overlapping cells.
+///
+/// # Default
+///
+/// The default value for `Spacing` is `Space(0)`, which means no spacing or no overlap between
+/// segments.
+///
+/// # Conversions
+///
+/// The `Spacing` enum can be created from different integer types:
+///
+/// - From `u16`: Directly converts the value to `Spacing::Space`.
+/// - From `i16`: Converts negative values to `Spacing::Overlap` and non-negative values to
+///   `Spacing::Space`.
+/// - From `i32`: Clamps the value to the range of `i16` and converts negative values to
+///   `Spacing::Overlap` and non-negative values to `Spacing::Space`.
+///
+/// See the [`Layout::spacing`] method for details on how to use this enum.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Spacing {
     Space(u16),
@@ -436,8 +464,10 @@ impl Layout {
     /// Sets the spacing between items in the layout.
     ///
     /// The `spacing` method sets the spacing between items in the layout. The spacing is applied
-    /// evenly between all items. The spacing value represents the number of cells between each
+    /// evenly between all segments. The spacing value represents the number of cells between each
     /// item.
+    ///
+    /// Spacing can be negative in which case it will cause overlap between segments.
     ///
     /// # Examples
     ///
@@ -447,6 +477,14 @@ impl Layout {
     /// use ratatui::layout::{Constraint::*, Layout};
     ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(2);
+    /// ```
+    ///
+    /// In this example, the spacing between each item in the layout is set to -1 cells, i.e. the
+    /// three segments will have an overlapping border.
+    ///
+    /// ```rust
+    /// use ratatui::layout::{Constraint::*, Layout};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(-1);
     /// ```
     ///
     /// # Notes
