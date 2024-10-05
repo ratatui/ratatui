@@ -897,8 +897,6 @@ fn configure_flex_constraints(
             }
             for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
-            }
-            for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
