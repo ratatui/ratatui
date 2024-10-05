@@ -828,7 +828,7 @@ impl Table<'_> {
     /// Returns (x, width). When self.widths is empty, it is assumed `.widths()` has not been called
     /// and a default of equal widths is returned.
     fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
-        let widths = if self.widths.is_empty() {
+        let widths: &[Constraint] = if self.widths.is_empty() {
             let col_count = self
                 .rows
                 .iter()
@@ -838,10 +838,11 @@ impl Table<'_> {
                 .max()
                 .unwrap_or(0);
             // Divide the space between each column equally
-            vec![Constraint::Length(max_width / col_count.max(1) as u16); col_count]
+            &vec![Constraint::Length(max_width / col_count.max(1) as u16); col_count]
         } else {
-            self.widths.clone()
+            &self.widths
         };
+
         // this will always allocate a selection area
         let [_selection_area, columns_area] =
             Layout::horizontal([Constraint::Length(selection_width), Constraint::Fill(0)])
