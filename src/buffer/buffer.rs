@@ -437,7 +437,7 @@ impl Buffer {
             // New index in content
             let k = ((y - area.y) * area.width + x - area.x) as usize;
             if i != k {
-                self.content[k] = self.content[i].clone();
+                self.content.swap(i, k);
                 self.content[i].reset();
             }
         }
