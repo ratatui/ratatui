@@ -215,7 +215,13 @@ impl<'a> List<'a> {
         T: IntoIterator,
         T::Item: Into<ListItem<'a>>,
     {
-        self.items = items.into_iter().map(Into::into).collect();
+        // This should only allocate if the provided iterator does not fit.
+        // This is better than collecting it into a `Vec` as we can use the existing structure.
+        // Pushing in a for loop would also work, but extend makes use of size hints, and other
+        // optimizations which can improve performance depending on the exact type that is provided.
+        self.items.clear();
+        self.items.extend(items.into_iter().map(Into::into));
+
         self
     }
 
