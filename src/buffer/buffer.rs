@@ -1243,10 +1243,10 @@ mod tests {
     // Technically this is a (brown) bear, a zero-width joiner and a snowflake
     // As it is joined its a single emoji and should therefore have a width of 2.
     // It's correctly detected as a single grapheme but it's width is 4 for some reason
-    #[case::polarbear("🐻‍❄️", "🐻‍❄️xxx")]
+    #[case::polarbear("🐻‍❄️", "🐻‍❄️xxxxx")]
     // Technically this is an eye, a zero-width joiner and a speech bubble
     // Both eye and speech bubble include a 'display as emoji' variation selector
-    #[case::eye_speechbubble("👁️‍🗨️", "👁️‍🗨️xxx")]
+    #[case::eye_speechbubble("👁️‍🗨️", "👁️‍🗨️xxxxx")]
     fn renders_emoji(#[case] input: &str, #[case] expected: &str) {
         use unicode_width::UnicodeWidthChar;
 

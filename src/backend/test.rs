@@ -391,7 +391,7 @@ mod tests {
         assert_eq!(
             buffer_view(&buffer),
             format!(
-                r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " "), (2, " "), (3, " "), (4, " "), (5, " "), (6, " "), (7, " ")]
+                r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " ")]
 "#,
             )
         );
