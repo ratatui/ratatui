@@ -19,7 +19,7 @@ use crate::{buffer::Buffer, layout::Rect, text::Text, widgets::Widget};
 ///
 /// [Ratatui-logo]: https://github.com/ratatui/ratatui/blob/main/examples/ratatui-logo.rs
 ///
-/// ## Tiny
+/// ## Tiny (default, 2x15 characters)
 ///
 /// ```
 /// use ratatui::widgets::RatatuiLogo;
@@ -36,7 +36,7 @@ use crate::{buffer::Buffer, layout::Rect, text::Text, widgets::Widget};
 /// ▛▚▐▀▌▐ ▛▜ ▌▝▄▘▌
 /// ```
 ///
-/// ## Small
+/// ## Small (2x27 characters)
 ///
 /// ```
 /// use ratatui::widgets::RatatuiLogo;
@@ -63,6 +63,8 @@ pub struct RatatuiLogo {
 pub enum Size {
     /// A tiny logo
     ///
+    /// The default size of the logo (2x15 characters)
+    ///
     /// ```text
     /// ▛▚▗▀▖▜▘▞▚▝▛▐ ▌▌
     /// ▛▚▐▀▌▐ ▛▜ ▌▝▄▘▌
@@ -70,6 +72,8 @@ pub enum Size {
     #[default]
     Tiny,
     /// A small logo
+    ///
+    /// A slightly larger version of the logo (2x27 characters)
     ///
     /// ```text
     /// █▀▀▄ ▄▀▀▄▝▜▛▘▄▀▀▄▝▜▛▘█  █ █
@@ -84,9 +88,9 @@ impl RatatuiLogo {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::widgets::RatatuiLogo;
+    /// use ratatui::widgets::{RatatuiLogo, RatatuiLogoSize};
     ///
-    /// let logo = RatatuiLogo::new(Size::Tiny);
+    /// let logo = RatatuiLogo::new(RatatuiLogoSize::Tiny);
     /// ```
     pub const fn new(size: Size) -> Self {
         Self { size }
@@ -97,9 +101,9 @@ impl RatatuiLogo {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::widgets::RatatuiLogo;
+    /// use ratatui::widgets::{RatatuiLogo, RatatuiLogoSize};
     ///
-    /// let logo = RatatuiLogo::default().size(Size::Small);
+    /// let logo = RatatuiLogo::default().size(RatatuiLogoSize::Small);
     /// ```
     #[must_use]
     pub const fn size(self, size: Size) -> Self {
@@ -161,5 +165,72 @@ impl Size {
             █▀▀▄ ▄▀▀▄▝▜▛▘▄▀▀▄▝▜▛▘█  █ █
             █▀▀▄ █▀▀█ ▐▌ █▀▀█ ▐▌ ▀▄▄▀ █
         "}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case::tiny(Size::Tiny)]
+    #[case::small(Size::Small)]
+    fn new_size(#[case] size: Size) {
+        let logo = RatatuiLogo::new(size);
+        assert_eq!(logo.size, size);
+    }
+
+    #[test]
+    fn default_logo_is_tiny() {
+        let logo = RatatuiLogo::default();
+        assert_eq!(logo.size, Size::Tiny);
+    }
+
+    #[test]
+    fn set_logo_size_to_small() {
+        let logo = RatatuiLogo::default().size(Size::Small);
+        assert_eq!(logo.size, Size::Small);
+    }
+
+    #[test]
+    fn tiny_logo_constant() {
+        let logo = RatatuiLogo::tiny();
+        assert_eq!(logo.size, Size::Tiny);
+    }
+
+    #[test]
+    fn small_logo_constant() {
+        let logo = RatatuiLogo::small();
+        assert_eq!(logo.size, Size::Small);
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn render_tiny() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
+        RatatuiLogo::tiny().render(buf.area, &mut buf);
+        assert_eq!(
+            buf,
+            Buffer::with_lines([
+                "▛▚▗▀▖▜▘▞▚▝▛▐ ▌▌",
+                "▛▚▐▀▌▐ ▛▜ ▌▝▄▘▌",
+            ])
+        );
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn render_small() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 27, 2));
+        RatatuiLogo::small().render(buf.area, &mut buf);
+        assert_eq!(
+            buf,
+            Buffer::with_lines([
+                "█▀▀▄ ▄▀▀▄▝▜▛▘▄▀▀▄▝▜▛▘█  █ █",
+                "█▀▀▄ █▀▀█ ▐▌ █▀▀█ ▐▌ ▀▄▄▀ █",
+            ])
+        );
     }
 }
