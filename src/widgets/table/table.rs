@@ -21,10 +21,10 @@ use crate::{
 /// You can construct a [`Table`] using either [`Table::new`] or [`Table::default`] and then chain
 /// builder style methods to set the desired properties.
 ///
-/// Table cells can be aligned, for more details see [`Cell`].
+/// Note: If column widths are not provided via either [`Table::new`] or [`Table::widths`], the
+/// available space will be shared equally between the columns.
 ///
-/// Make sure to call the [`Table::widths`] method, otherwise the columns will all have a width of 0
-/// and thus not be visible.
+/// Table cells can be aligned, for more details see [`Cell`].
 ///
 /// [`Table`] implements [`Widget`] and so it can be drawn using [`Frame::render_widget`].
 ///
@@ -32,8 +32,6 @@ use crate::{
 /// the user to scroll through the rows and select one of them. When rendering a [`Table`] with a
 /// [`TableState`], the selected row will be highlighted. If the selected row is not visible (based
 /// on the offset), the table will be scrolled to make the selected row visible.
-///
-/// Note: if the `widths` field is empty, the table will be rendered with equal widths.
 ///
 /// See the table example and the recipe and traceroute tabs in the demo2 example in the [Examples]
 /// directory for a more in depth example of the various configuration options and for how to handle
