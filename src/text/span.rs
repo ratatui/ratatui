@@ -107,13 +107,15 @@ pub struct Span<'a> {
 
 impl fmt::Debug for Span<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.style == Style::default() {
-            return write!(f, "Span({:?})", self.content);
+        if self.content.is_empty() {
+            write!(f, "Span::default()")?;
+        } else {
+            write!(f, "Span::from({:?})", self.content)?;
         }
-        f.debug_struct("Span")
-            .field("style", &self.style)
-            .field("content", &self.content)
-            .finish()
+        if self.style != Style::default() {
+            self.style.fmt_stylize(f)?;
+        }
+        Ok(())
     }
 }
 
@@ -505,7 +507,7 @@ impl fmt::Display for Span<'_> {
 
 #[cfg(test)]
 mod tests {
-    use rstest::fixture;
+    use rstest::{fixture, rstest};
 
     use super::*;
     use crate::{buffer::Cell, layout::Alignment, style::Stylize};
@@ -883,5 +885,17 @@ mod tests {
             Span::raw("test") + Span::raw("content"),
             Line::from(vec![Span::raw("test"), Span::raw("content")])
         );
+    }
+
+    #[rstest]
+    #[case::default(Span::default(), "Span::default()")]
+    #[case::raw(Span::raw("test"), r#"Span::from("test")"#)]
+    #[case::styled(Span::styled("test", Style::new().green()), r#"Span::from("test").green()"#)]
+    #[case::styled_italic(
+        Span::styled("test", Style::new().green().italic()),
+        r#"Span::from("test").green().italic()"#
+    )]
+    fn debug(#[case] span: Span, #[case] expected: &str) {
+        assert_eq!(format!("{span:?}"), expected);
     }
 }

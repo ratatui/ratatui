@@ -260,46 +260,7 @@ pub struct Style {
 impl fmt::Debug for Style {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str("Style::new()")?;
-        if let Some(fg) = self.fg {
-            fg.stylize_debug(ColorDebugKind::Foreground).fmt(f)?;
-        }
-        if let Some(bg) = self.bg {
-            bg.stylize_debug(ColorDebugKind::Background).fmt(f)?;
-        }
-        #[cfg(feature = "underline-color")]
-        if let Some(underline_color) = self.underline_color {
-            underline_color
-                .stylize_debug(ColorDebugKind::Underline)
-                .fmt(f)?;
-        }
-        for modifier in self.add_modifier.iter() {
-            match modifier {
-                Modifier::BOLD => f.write_str(".bold()")?,
-                Modifier::DIM => f.write_str(".dim()")?,
-                Modifier::ITALIC => f.write_str(".italic()")?,
-                Modifier::UNDERLINED => f.write_str(".underlined()")?,
-                Modifier::SLOW_BLINK => f.write_str(".slow_blink()")?,
-                Modifier::RAPID_BLINK => f.write_str(".rapid_blink()")?,
-                Modifier::REVERSED => f.write_str(".reversed()")?,
-                Modifier::HIDDEN => f.write_str(".hidden()")?,
-                Modifier::CROSSED_OUT => f.write_str(".crossed_out()")?,
-                _ => f.write_fmt(format_args!(".add_modifier(Modifier::{modifier:?})"))?,
-            }
-        }
-        for modifier in self.sub_modifier.iter() {
-            match modifier {
-                Modifier::BOLD => f.write_str(".not_bold()")?,
-                Modifier::DIM => f.write_str(".not_dim()")?,
-                Modifier::ITALIC => f.write_str(".not_italic()")?,
-                Modifier::UNDERLINED => f.write_str(".not_underlined()")?,
-                Modifier::SLOW_BLINK => f.write_str(".not_slow_blink()")?,
-                Modifier::RAPID_BLINK => f.write_str(".not_rapid_blink()")?,
-                Modifier::REVERSED => f.write_str(".not_reversed()")?,
-                Modifier::HIDDEN => f.write_str(".not_hidden()")?,
-                Modifier::CROSSED_OUT => f.write_str(".not_crossed_out()")?,
-                _ => f.write_fmt(format_args!(".remove_modifier(Modifier::{modifier:?})"))?,
-            }
-        }
+        self.fmt_stylize(f)?;
         Ok(())
     }
 }
@@ -489,6 +450,54 @@ impl Style {
 
         self
     }
+
+    /// Formats the style in a way that can be copy-pasted into code using the style shorthands.
+    ///
+    /// This is useful for debugging and for generating code snippets.
+    pub(crate) fn fmt_stylize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use fmt::Debug;
+        if let Some(fg) = self.fg {
+            fg.stylize_debug(ColorDebugKind::Foreground).fmt(f)?;
+        }
+        if let Some(bg) = self.bg {
+            bg.stylize_debug(ColorDebugKind::Background).fmt(f)?;
+        }
+        #[cfg(feature = "underline-color")]
+        if let Some(underline_color) = self.underline_color {
+            underline_color
+                .stylize_debug(ColorDebugKind::Underline)
+                .fmt(f)?;
+        }
+        for modifier in self.add_modifier.iter() {
+            match modifier {
+                Modifier::BOLD => f.write_str(".bold()")?,
+                Modifier::DIM => f.write_str(".dim()")?,
+                Modifier::ITALIC => f.write_str(".italic()")?,
+                Modifier::UNDERLINED => f.write_str(".underlined()")?,
+                Modifier::SLOW_BLINK => f.write_str(".slow_blink()")?,
+                Modifier::RAPID_BLINK => f.write_str(".rapid_blink()")?,
+                Modifier::REVERSED => f.write_str(".reversed()")?,
+                Modifier::HIDDEN => f.write_str(".hidden()")?,
+                Modifier::CROSSED_OUT => f.write_str(".crossed_out()")?,
+                _ => f.write_fmt(format_args!(".add_modifier(Modifier::{modifier:?})"))?,
+            }
+        }
+        for modifier in self.sub_modifier.iter() {
+            match modifier {
+                Modifier::BOLD => f.write_str(".not_bold()")?,
+                Modifier::DIM => f.write_str(".not_dim()")?,
+                Modifier::ITALIC => f.write_str(".not_italic()")?,
+                Modifier::UNDERLINED => f.write_str(".not_underlined()")?,
+                Modifier::SLOW_BLINK => f.write_str(".not_slow_blink()")?,
+                Modifier::RAPID_BLINK => f.write_str(".not_rapid_blink()")?,
+                Modifier::REVERSED => f.write_str(".not_reversed()")?,
+                Modifier::HIDDEN => f.write_str(".not_hidden()")?,
+                Modifier::CROSSED_OUT => f.write_str(".not_crossed_out()")?,
+                _ => f.write_fmt(format_args!(".remove_modifier(Modifier::{modifier:?})"))?,
+            }
+        }
+        Ok(())
+    }
 }
 
 impl From<Color> for Style {
@@ -638,6 +647,10 @@ mod tests {
     #[case(Style::new().on_blue(), "Style::new().on_blue()")]
     #[case(Style::new().bold(), "Style::new().bold()")]
     #[case(Style::new().not_italic(), "Style::new().not_italic()")]
+    #[case(
+        Style::new().red().on_blue().bold().italic().not_dim().not_hidden(),
+        "Style::new().red().on_blue().bold().italic().not_dim().not_hidden()"
+    )]
     fn debug(#[case] style: Style, #[case] expected: &'static str) {
         assert_eq!(format!("{style:?}"), expected);
     }
