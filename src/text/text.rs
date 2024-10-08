@@ -202,19 +202,23 @@ pub struct Text<'a> {
 
 impl fmt::Debug for Text<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.style == Style::default() && self.alignment.is_none() {
-            f.write_str("Text ")?;
-            f.debug_list().entries(&self.lines).finish()
+        if self.lines.is_empty() {
+            f.write_str("Text::default()")?;
+        } else if self.lines.len() == 1 {
+            write!(f, "Text::from({:?})", self.lines[0])?;
         } else {
-            let mut debug = f.debug_struct("Text");
-            if self.style != Style::default() {
-                debug.field("style", &self.style);
-            }
-            if let Some(alignment) = self.alignment {
-                debug.field("alignment", &format!("Alignment::{alignment}"));
-            }
-            debug.field("lines", &self.lines).finish()
+            f.write_str("Text::from_iter(")?;
+            f.debug_list().entries(self.lines.iter()).finish()?;
+            f.write_str(")")?;
         }
+        self.style.fmt_stylize(f)?;
+        match self.alignment {
+            Some(Alignment::Left) => f.write_str(".left_aligned()")?,
+            Some(Alignment::Center) => f.write_str(".centered()")?,
+            Some(Alignment::Right) => f.write_str(".right_aligned()")?,
+            _ => (),
+        }
+        Ok(())
     }
 }
 
@@ -1315,45 +1319,68 @@ mod tests {
         }
     }
 
-    mod debug {
-        use super::*;
+    #[rstest]
+    #[case::default(Text::default(), "Text::default()")]
+    // TODO jm: these could be improved to inspect the line / span if there's only one. e.g.
+    // Text::from("Hello, world!") and Text::from("Hello, world!".blue()) but the current
+    // implementation is good enough for now.
+    #[case::raw(
+        Text::raw("Hello, world!"),
+        r#"Text::from(Line::from("Hello, world!"))"#
+    )]
+    #[case::styled(
+        Text::styled("Hello, world!", Color::Yellow),
+        r#"Text::from(Line::from("Hello, world!")).yellow()"#
+    )]
+    #[case::complex_styled(
+        Text::from("Hello, world!").yellow().on_blue().bold().italic().not_dim().not_hidden(),
+        r#"Text::from(Line::from("Hello, world!")).yellow().on_blue().bold().italic().not_dim().not_hidden()"#
+    )]
+    #[case::alignment(
+        Text::from("Hello, world!").centered(),
+        r#"Text::from(Line::from("Hello, world!")).centered()"#
+    )]
+    #[case::styled_alignment(
+        Text::styled("Hello, world!", Color::Yellow).centered(),
+        r#"Text::from(Line::from("Hello, world!")).yellow().centered()"#
+    )]
+    #[case::multiple_lines(
+        Text::from(vec![
+            Line::from("Hello, world!"),
+            Line::from("How are you?")
+        ]),
+        r#"Text::from_iter([Line::from("Hello, world!"), Line::from("How are you?")])"#
+    )]
+    fn debug(#[case] text: Text, #[case] expected: &str) {
+        assert_eq!(format!("{text:?}"), expected);
+    }
 
-        #[test]
-        #[ignore = "This is just showing the debug output of the assertions"]
-        fn no_style() {
-            let text = Text::from("single unstyled line");
-            assert_eq!(text, Text::default());
-        }
-
-        #[test]
-        #[ignore = "This is just showing the debug output of the assertions"]
-        fn text_style() {
-            let text = Text::from("single styled line")
-                .red()
-                .on_black()
-                .bold()
-                .not_italic();
-            assert_eq!(text, Text::default());
-        }
-
-        #[test]
-        #[ignore = "This is just showing the debug output of the assertions"]
-        fn line_style() {
-            let text = Text::from(vec![
-                Line::from("first line").red().alignment(Alignment::Right),
-                Line::from("second line").on_black(),
-            ]);
-            assert_eq!(text, Text::default());
-        }
-
-        #[test]
-        #[ignore = "This is just showing the debug output of the assertions"]
-        fn span_style() {
-            let text = Text::from(Line::from(vec![
-                Span::from("first span").red(),
-                Span::from("second span").on_black(),
-            ]));
-            assert_eq!(text, Text::default());
-        }
+    #[test]
+    fn debug_alternate() {
+        let text = Text::from_iter([
+            Line::from("Hello, world!"),
+            Line::from("How are you?").bold().left_aligned(),
+            Line::from_iter([
+                Span::from("I'm "),
+                Span::from("doing ").italic(),
+                Span::from("great!").bold(),
+            ]),
+        ])
+        .on_blue()
+        .italic()
+        .centered();
+        assert_eq!(
+            format!("{text:#?}"),
+            indoc::indoc! {r#"
+            Text::from_iter([
+                Line::from("Hello, world!"),
+                Line::from("How are you?").bold().left_aligned(),
+                Line::from_iter([
+                    Span::from("I'm "),
+                    Span::from("doing ").italic(),
+                    Span::from("great!").bold(),
+                ]),
+            ]).on_blue().italic().centered()"#}
+        );
     }
 }
