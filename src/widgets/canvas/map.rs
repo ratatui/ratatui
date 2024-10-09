@@ -65,7 +65,12 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{prelude::*, symbols::Marker, widgets::canvas::Canvas};
+    use crate::{
+        buffer::Buffer,
+        layout::Rect,
+        symbols::Marker,
+        widgets::{canvas::Canvas, Widget},
+    };
 
     #[test]
     fn map_resolution_to_string() {

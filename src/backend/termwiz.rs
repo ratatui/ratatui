@@ -38,7 +38,7 @@ use crate::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use ratatui::prelude::*;
+/// use ratatui::{backend::TermwizBackend, Terminal};
 ///
 /// let backend = TermwizBackend::new()?;
 /// let mut terminal = Terminal::new(backend)?;
@@ -78,7 +78,8 @@ impl TermwizBackend {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use ratatui::prelude::*;
+    /// use ratatui::backend::TermwizBackend;
+    ///
     /// let backend = TermwizBackend::new()?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```

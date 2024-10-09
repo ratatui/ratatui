@@ -2,6 +2,8 @@
 
 use std::{fmt, str::FromStr};
 
+use crate::style::stylize::{ColorDebug, ColorDebugKind};
+
 /// ANSI Color
 ///
 /// All colors from the [ANSI color table] are supported (though some names are not exactly the
@@ -42,7 +44,7 @@ use std::{fmt, str::FromStr};
 /// ```
 /// use std::str::FromStr;
 ///
-/// use ratatui::prelude::*;
+/// use ratatui::style::Color;
 ///
 /// assert_eq!(Color::from_str("red"), Ok(Color::Red));
 /// assert_eq!("red".parse(), Ok(Color::Red));
@@ -166,7 +168,9 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// use ratatui::style::Color;
     ///
     /// #[derive(Debug, serde::Deserialize)]
     /// struct Theme {
@@ -261,7 +265,7 @@ impl std::error::Error for ParseColorError {}
 /// ```
 /// use std::str::FromStr;
 ///
-/// use ratatui::prelude::*;
+/// use ratatui::style::Color;
 ///
 /// let color: Color = Color::from_str("blue").unwrap();
 /// assert_eq!(color, Color::Blue);
@@ -361,6 +365,10 @@ impl fmt::Display for Color {
 }
 
 impl Color {
+    pub(crate) const fn stylize_debug(self, kind: ColorDebugKind) -> ColorDebug {
+        ColorDebug { kind, color: self }
+    }
+
     /// Converts a HSL representation to a `Color::Rgb` instance.
     ///
     /// The `from_hsl` function converts the Hue, Saturation and Lightness values to a
@@ -373,7 +381,7 @@ impl Color {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::prelude::*;
+    /// use ratatui::style::Color;
     ///
     /// let color: Color = Color::from_hsl(360.0, 100.0, 100.0);
     /// assert_eq!(color, Color::Rgb(255, 255, 255));

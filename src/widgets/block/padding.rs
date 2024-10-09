@@ -10,7 +10,7 @@
 /// # Example
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::widgets::Padding;
 ///
 /// Padding::uniform(1);
 /// Padding::horizontal(2);

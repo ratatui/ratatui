@@ -2,7 +2,13 @@ use std::cmp::min;
 
 use strum::{Display, EnumString};
 
-use crate::{prelude::*, style::Styled, widgets::Block};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Style, Styled},
+    symbols::{self},
+    widgets::{block::BlockExt, Block, Widget, WidgetRef},
+};
 
 /// Widget to render a sparkline over one or more lines.
 ///
@@ -21,7 +27,10 @@ use crate::{prelude::*, style::Styled, widgets::Block};
 /// # Examples
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     widgets::{Block, RenderDirection, Sparkline},
+/// };
 ///
 /// Sparkline::default()
 ///     .block(Block::bordered().title("Sparkline"))
@@ -73,6 +82,8 @@ impl<'a> Sparkline<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// The foreground corresponds to the bars while the background is everything else.
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -84,7 +95,8 @@ impl<'a> Sparkline<'a> {
     /// # Example
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{layout::Rect, widgets::Sparkline, Frame};
+    ///
     /// # fn ui(frame: &mut Frame) {
     /// # let area = Rect::default();
     /// let sparkline = Sparkline::default().data(&[1, 2, 3]);
@@ -211,7 +223,10 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::buffer::Cell;
+    use crate::{
+        buffer::Cell,
+        style::{Color, Modifier, Stylize},
+    };
 
     #[test]
     fn render_direction_to_string() {
@@ -237,7 +252,7 @@ mod tests {
 
     // Helper function to render a sparkline to a buffer with a given width
     // filled with x symbols to make it easier to assert on the result
-    fn render(widget: Sparkline, width: u16) -> Buffer {
+    fn render(widget: Sparkline<'_>, width: u16) -> Buffer {
         let area = Rect::new(0, 0, width, 1);
         let mut buffer = Buffer::filled(area, Cell::new("x"));
         widget.render(area, &mut buffer);
@@ -253,6 +268,8 @@ mod tests {
 
     #[test]
     fn it_does_not_panic_if_max_is_set_to_zero() {
+        // see https://github.com/rust-lang/rust-clippy/issues/13191
+        #[allow(clippy::unnecessary_min_or_max)]
         let widget = Sparkline::default().data(&[0, 1, 2]).max(0);
         let buffer = render(widget, 6);
         assert_eq!(buffer, Buffer::with_lines(["   xxx"]));

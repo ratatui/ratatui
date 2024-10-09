@@ -4,8 +4,7 @@ use std::{
     fmt,
 };
 
-use super::{Position, Size};
-use crate::prelude::*;
+use crate::layout::{Margin, Position, Size};
 
 mod iter;
 pub use iter::*;
@@ -27,7 +26,7 @@ pub struct Rect {
     pub height: u16,
 }
 
-/// Amounts by which to move a [`Rect`](super::Rect).
+/// Amounts by which to move a [`Rect`](crate::layout::Rect).
 ///
 /// Positive numbers move to the right/bottom and negative to the left/top.
 ///
@@ -205,7 +204,8 @@ impl Rect {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, layout::Position};
+    /// use ratatui::layout::{Position, Rect};
+    ///
     /// let rect = Rect::new(1, 2, 3, 4);
     /// assert!(rect.contains(Position { x: 1, y: 2 }));
     /// ````
@@ -234,9 +234,10 @@ impl Rect {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{layout::Rect, Frame};
+    ///
     /// # fn render(frame: &mut Frame) {
-    /// let area = frame.size();
+    /// let area = frame.area();
     /// let rect = Rect::new(0, 0, 100, 100).clamp(area);
     /// # }
     /// ```
@@ -254,7 +255,8 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+    ///
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for row in area.rows() {
     ///         Line::raw("Hello, world!").render(row, buf);
@@ -270,7 +272,11 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     buffer::Buffer,
+    ///     layout::Rect,
+    ///     widgets::{Block, Borders, Widget},
+    /// };
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     if let Some(left) = area.columns().next() {
     ///         Block::new().borders(Borders::LEFT).render(left, buf);
@@ -288,7 +294,8 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{buffer::Buffer, layout::Rect};
+    ///
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for position in area.positions() {
     ///         buf[(position.x, position.y)].set_symbol("x");
@@ -304,7 +311,8 @@ impl Rect {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::Rect;
+    ///
     /// let rect = Rect::new(1, 2, 3, 4);
     /// let position = rect.as_position();
     /// ````
@@ -352,6 +360,7 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+    use crate::layout::{Constraint, Layout};
 
     #[test]
     fn to_string() {

@@ -1,10 +1,8 @@
 use strum::{Display, EnumString};
 
-use super::ListItem;
 use crate::{
-    prelude::*,
-    style::Styled,
-    widgets::{Block, HighlightSpacing},
+    style::{Style, Styled},
+    widgets::{Block, HighlightSpacing, ListItem},
 };
 
 /// A widget to display several items among which one can be selected (optional)
@@ -41,14 +39,20 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::Rect,
+///     style::{Style, Stylize},
+///     widgets::{Block, List, ListDirection, ListItem},
+///     Frame,
+/// };
+///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
 /// let items = ["Item 1", "Item 2", "Item 3"];
 /// let list = List::new(items)
 ///     .block(Block::bordered().title("List"))
-///     .style(Style::default().fg(Color::White))
-///     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+///     .style(Style::new().white())
+///     .highlight_style(Style::new().italic())
 ///     .highlight_symbol(">>")
 ///     .repeat_highlight_symbol(true)
 ///     .direction(ListDirection::BottomToTop);
@@ -60,7 +64,13 @@ use crate::{
 /// # Stateful example
 ///
 /// ```rust
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::Rect,
+///     style::{Style, Stylize},
+///     widgets::{Block, List, ListState},
+///     Frame,
+/// };
+///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
 /// // This should be stored outside of the function in your application state.
@@ -68,7 +78,7 @@ use crate::{
 /// let items = ["Item 1", "Item 2", "Item 3"];
 /// let list = List::new(items)
 ///     .block(Block::bordered().title("List"))
-///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
+///     .highlight_style(Style::new().reversed())
 ///     .highlight_symbol(">>")
 ///     .repeat_highlight_symbol(true);
 ///
@@ -88,6 +98,9 @@ use crate::{
 /// [`ListState`]: crate::widgets::list::ListState
 /// [scroll]: crate::widgets::list::ListState::offset
 /// [select]: crate::widgets::list::ListState::select
+/// [`Text::alignment`]: crate::text::Text::alignment
+/// [`StatefulWidget`]: crate::widgets::StatefulWidget
+/// [`Widget`]: crate::widgets::Widget
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct List<'a> {
     /// An optional block to wrap the widget in
@@ -135,17 +148,23 @@ impl<'a> List<'a> {
     /// From a slice of [`&str`]
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::List;
+    ///
     /// let list = List::new(["Item 1", "Item 2"]);
     /// ```
     ///
     /// From [`Text`]
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     text::Text,
+    ///     widgets::List,
+    /// };
+    ///
     /// let list = List::new([
-    ///     Text::styled("Item 1", Style::default().red()),
-    ///     Text::styled("Item 2", Style::default().red()),
+    ///     Text::styled("Item 1", Style::new().red()),
+    ///     Text::styled("Item 2", Style::new().red()),
     /// ]);
     /// ```
     ///
@@ -153,10 +172,13 @@ impl<'a> List<'a> {
     /// [`List::items`] fluent setter.
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::List;
+    ///
     /// let empty_list = List::default();
     /// let filled_list = empty_list.items(["Item 1"]);
     /// ```
+    ///
+    /// [`Text`]: crate::text::Text
     pub fn new<T>(items: T) -> Self
     where
         T: IntoIterator,
@@ -181,9 +203,12 @@ impl<'a> List<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::List;
+    ///
     /// let list = List::default().items(["Item 1", "Item 2"]);
     /// ```
+    ///
+    /// [`Text`]: crate::text::Text
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn items<T>(mut self, items: T) -> Self
     where
@@ -203,8 +228,9 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1"];
+    /// use ratatui::widgets::{Block, List};
+    ///
+    /// let items = ["Item 1"];
     /// let block = Block::bordered().title("List");
     /// let list = List::new(items).block(block);
     /// ```
@@ -227,8 +253,12 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1"];
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     widgets::List,
+    /// };
+    ///
+    /// let items = ["Item 1"];
     /// let list = List::new(items).style(Style::new().red().italic());
     /// ```
     ///
@@ -238,10 +268,13 @@ impl<'a> List<'a> {
     /// [`Stylize`]: crate::style::Stylize
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1"];
+    /// use ratatui::{style::Stylize, widgets::List};
+    ///
+    /// let items = ["Item 1"];
     /// let list = List::new(items).red().italic();
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -257,8 +290,9 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1", "Item 2"];
+    /// use ratatui::widgets::List;
+    ///
+    /// let items = ["Item 1", "Item 2"];
     /// let list = List::new(items).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -281,10 +315,16 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1", "Item 2"];
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     widgets::List,
+    /// };
+    ///
+    /// let items = ["Item 1", "Item 2"];
     /// let list = List::new(items).highlight_style(Style::new().red().italic());
     /// ```
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();
@@ -323,8 +363,9 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1"];
+    /// use ratatui::widgets::{HighlightSpacing, List};
+    ///
+    /// let items = ["Item 1"];
     /// let list = List::new(items).highlight_spacing(HighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -345,8 +386,9 @@ impl<'a> List<'a> {
     /// Bottom to top
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1"];
+    /// use ratatui::widgets::{List, ListDirection};
+    ///
+    /// let items = ["Item 1"];
     /// let list = List::new(items).direction(ListDirection::BottomToTop);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -364,8 +406,9 @@ impl<'a> List<'a> {
     /// A padding value of 1 will keep 1 item above and 1 item bellow visible if possible
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1"];
+    /// use ratatui::widgets::List;
+    ///
+    /// let items = ["Item 1"];
     /// let list = List::new(items).scroll_padding(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -423,6 +466,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
+    use crate::style::{Color, Modifier, Stylize};
 
     #[test]
     fn collect_list_from_iterator() {

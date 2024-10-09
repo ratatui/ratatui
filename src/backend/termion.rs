@@ -40,8 +40,9 @@ use crate::{
 /// use std::io::{stderr, stdout};
 ///
 /// use ratatui::{
-///     prelude::*,
+///     backend::TermionBackend,
 ///     termion::{raw::IntoRawMode, screen::IntoAlternateScreen},
+///     Terminal,
 /// };
 ///
 /// let writer = stdout().into_raw_mode()?.into_alternate_screen()?;
@@ -76,11 +77,18 @@ where
 {
     /// Creates a new Termion backend with the given writer.
     ///
+    /// Most applications will use either [`stdout`](std::io::stdout) or
+    /// [`stderr`](std::io::stderr) as writer. See the [FAQ] to determine which one to use.
+    ///
+    /// [FAQ]: https://ratatui.rs/faq/#should-i-use-stdout-or-stderr
+    ///
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
+    /// use std::io::stdout;
+    ///
+    /// use ratatui::backend::TermionBackend;
+    ///
     /// let backend = TermionBackend::new(stdout());
     /// ```
     pub const fn new(writer: W) -> Self {
