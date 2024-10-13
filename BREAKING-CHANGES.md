@@ -12,7 +12,7 @@ This is a quick summary of the sections below:
 
 - [v0.29.0](#v0290)
   - `Table::highlight_style` is now `Table::row_highlight_style`
-
+  - `Tabs::select` now accepts `Into<Option<usize>>`
 - [v0.28.0](#v0280)
   ⁻ `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
@@ -69,6 +69,19 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.29.0
+
+### `Tabs::select()` now accepts `Into<Option<usize>>` ([#1413])
+
+[#1413]: https://github.com/ratatui/ratatui/pull/1413
+
+Previously `Tabs::select()` accepted `usize`, but it now accepts `Into<Option<usize>>`. This breaks
+any code already using parameter type inference:
+
+```diff
+let selected = 1u8;
+- let tabs = Tabs::new(["A", "B"]).select(selected.into())
++ let tabs = Tabs::new(["A", "B"]).select(selected as usize)
+```
 
 ### `Table::highlight_style` is now `Table::row_highlight_style` ([#1331])
 
@@ -152,7 +165,6 @@ This change simplifies the trait and makes it easier to implement.
 
 ### `Frame::size` is deprecated and renamed to `Frame::area`
 
-[#1293]: https://github.com/ratatui/ratatui/pull/1293
 
 `Frame::size` is renamed to `Frame::area` as it's the more correct name.
 
