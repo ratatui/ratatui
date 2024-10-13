@@ -51,7 +51,7 @@ pub struct Tabs<'a> {
     /// One title for each tab
     titles: Vec<Line<'a>>,
     /// The index of the selected tabs
-    selected: usize,
+    selected: Option<usize>,
     /// The style used to draw the text
     style: Style,
     /// Style to apply to the selected item
@@ -105,7 +105,7 @@ impl<'a> Tabs<'a> {
         Self {
             block: None,
             titles: titles.into_iter().map(Into::into).collect(),
-            selected: 0,
+            selected: Some(0),
             style: Style::default(),
             highlight_style: DEFAULT_HIGHLIGHT_STYLE,
             divider: Span::raw(symbols::line::VERTICAL),
@@ -127,7 +127,14 @@ impl<'a> Tabs<'a> {
     /// The selected tab can have a different style with [`Tabs::highlight_style`].
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn select(mut self, selected: usize) -> Self {
-        self.selected = selected;
+        self.selected = Some(selected);
+        self
+    }
+
+    /// Unselect tab.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn unselect(mut self) -> Self {
+        self.selected = None;
         self
     }
 
@@ -313,7 +320,7 @@ impl Tabs<'_> {
 
             // Title
             let pos = buf.set_line(x, tabs_area.top(), title, remaining_width);
-            if i == self.selected {
+            if Some(i) == self.selected {
                 buf.set_style(
                     Rect {
                         x,
@@ -372,7 +379,7 @@ mod tests {
                     Line::from("Tab3"),
                     Line::from("Tab4"),
                 ],
-                selected: 0,
+                selected: Some(0),
                 style: Style::default(),
                 highlight_style: DEFAULT_HIGHLIGHT_STYLE,
                 divider: Span::raw(symbols::line::VERTICAL),
@@ -486,6 +493,10 @@ mod tests {
             "    ".into(),
         ])]);
         test_case(tabs.clone().select(3), Rect::new(0, 0, 30, 1), &expected);
+
+        // unselect
+        let expected = Buffer::with_lines([" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        test_case(tabs.clone().unselect(), Rect::new(0, 0, 30, 1), &expected);
 
         // out of bounds selects no tab
         let expected = Buffer::with_lines([" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
