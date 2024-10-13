@@ -30,10 +30,11 @@ use crate::{
 ///
 /// [`Table`] is also a [`StatefulWidget`], which means you can use it with [`TableState`] to allow
 /// the user to scroll through the rows and select one of them. When rendering a [`Table`] with a
-/// [`TableState`], the selected row will be highlighted. If the selected row is not visible (based
-/// on the offset), the table will be scrolled to make the selected row visible.
+/// [`TableState`], the selected row, column and cell will be highlighted. If the selected row is
+/// not visible (based on the offset), the table will be scrolled to make the selected row visible.
 ///
 /// Note: if the `widths` field is empty, the table will be rendered with equal widths.
+/// Note: Highlight styles are applied in the following order: Row, Column, Cell.
 ///
 /// See the table example and the recipe and traceroute tabs in the demo2 example in the [Examples]
 /// directory for a more in depth example of the various configuration options and for how to handle
@@ -57,7 +58,9 @@ use crate::{
 /// - [`Table::column_spacing`] sets the spacing between each column.
 /// - [`Table::block`] wraps the table in a [`Block`] widget.
 /// - [`Table::style`] sets the base style of the widget.
-/// - [`Table::highlight_style`] sets the style of the selected row.
+/// - [`Table::row_highlight_style`] sets the style of the selected row.
+/// - [`Table::column_highlight_style`] sets the style of the selected column.
+/// - [`Table::cell_highlight_style`] sets the style of the selected cell.
 /// - [`Table::highlight_symbol`] sets the symbol to be displayed in front of the selected row.
 /// - [`Table::highlight_spacing`] sets when to show the highlight spacing.
 ///
@@ -93,8 +96,10 @@ use crate::{
 ///     .footer(Row::new(vec!["Updated on Dec 28"]))
 ///     // As any other widget, a Table can be wrapped in a Block.
 ///     .block(Block::new().title("Table"))
-///     // The selected row and its content can also be styled.
-///     .highlight_style(Style::new().reversed())
+///     // The selected row, column, cell and its content can also be styled.
+///     .row_highlight_style(Style::new().reversed())
+///     .column_highlight_style(Style::new().red())
+///     .cell_highlight_style(Style::new().blue())
 ///     // ...and potentially show a symbol in front of the selection.
 ///     .highlight_symbol(">>");
 /// ```
@@ -220,7 +225,7 @@ use crate::{
 /// ];
 /// let table = Table::new(rows, widths)
 ///     .block(Block::new().title("Table"))
-///     .highlight_style(Style::new().reversed())
+///     .row_highlight_style(Style::new().reversed())
 ///     .highlight_symbol(">>");
 ///
 /// frame.render_stateful_widget(table, area, &mut table_state);
@@ -253,7 +258,13 @@ pub struct Table<'a> {
     style: Style,
 
     /// Style used to render the selected row
-    highlight_style: Style,
+    row_highlight_style: Style,
+
+    /// Style used to render the selected column
+    column_highlight_style: Style,
+
+    /// Style used to render the selected cell
+    cell_highlight_style: Style,
 
     /// Symbol in front of the selected row
     highlight_symbol: Text<'a>,
@@ -275,7 +286,9 @@ impl<'a> Default for Table<'a> {
             column_spacing: 1,
             block: None,
             style: Style::new(),
-            highlight_style: Style::new(),
+            row_highlight_style: Style::new(),
+            column_highlight_style: Style::new(),
+            cell_highlight_style: Style::new(),
             highlight_symbol: Text::default(),
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
@@ -564,8 +577,83 @@ impl<'a> Table<'a> {
     ///
     /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
-        self.highlight_style = highlight_style.into();
+    #[deprecated(note = "use `Table::row_highlight_style` instead")]
+    pub fn highlight_style<S: Into<Style>>(self, highlight_style: S) -> Self {
+        self.row_highlight_style(highlight_style)
+    }
+
+    /// Set the style of the selected row
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This style will be applied to the entire row, including the selection symbol if it is
+    /// displayed, and will override any style set on the row or on the individual cells.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
+    /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
+    /// let table = Table::new(rows, widths).row_highlight_style(Style::new().red().italic());
+    /// ```
+    /// [`Color`]: crate::style::Color
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn row_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
+        self.row_highlight_style = highlight_style.into();
+        self
+    }
+
+    /// Set the style of the selected column
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This style will be applied to the entire column, and will override any style set on the
+    /// row or on the individual cells.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
+    /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
+    /// let table = Table::new(rows, widths).column_highlight_style(Style::new().red().italic());
+    /// ```
+    /// [`Color`]: crate::style::Color
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn column_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
+        self.column_highlight_style = highlight_style.into();
+        self
+    }
+
+    /// Set the style of the selected cell
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This style will be applied to the selected cell, and will override any style set on the
+    /// row or on the individual cells.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
+    /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
+    /// let table = Table::new(rows, widths).cell_highlight_style(Style::new().red().italic());
+    /// ```
+    /// [`Color`]: crate::style::Color
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn cell_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
+        self.cell_highlight_style = highlight_style.into();
         self
     }
 
@@ -707,8 +795,17 @@ impl StatefulWidgetRef for Table<'_> {
             state.select(None);
         }
 
+        let column_count = self.column_count();
+        if state.selected_column.is_some_and(|s| s >= column_count) {
+            state.select_column(Some(column_count.saturating_sub(1)));
+        }
+        if column_count == 0 {
+            state.select_column(None);
+        }
+
         let selection_width = self.selection_width(state);
-        let columns_widths = self.get_columns_widths(table_area.width, selection_width);
+        let columns_widths =
+            self.get_columns_widths(table_area.width, selection_width, column_count);
         let (header_area, rows_area, footer_area) = self.layout(table_area);
 
         self.render_header(header_area, buf, &columns_widths);
@@ -786,6 +883,8 @@ impl Table<'_> {
         state.offset = start_index;
 
         let mut y_offset = 0;
+
+        let mut selected_row_area = None;
         for (i, row) in self
             .rows
             .iter()
@@ -801,7 +900,7 @@ impl Table<'_> {
             );
             buf.set_style(row_area, row.style);
 
-            let is_selected = state.selected().is_some_and(|index| index == i);
+            let is_selected = state.selected.is_some_and(|index| index == i);
             if selection_width > 0 && is_selected {
                 let selection_area = Rect {
                     width: selection_width,
@@ -817,9 +916,35 @@ impl Table<'_> {
                 );
             }
             if is_selected {
-                buf.set_style(row_area, self.highlight_style);
+                selected_row_area = Some(row_area);
             }
             y_offset += row.height_with_margin();
+        }
+
+        let selected_column_area = state.selected_column.and_then(|s| {
+            // The selection is clamped by the column count. Since a user can manually specify an
+            // incorrect number of widths, we should use panic free methods.
+            columns_widths.get(s).map(|(x, width)| Rect {
+                x: x + area.x,
+                width: *width,
+                ..area
+            })
+        });
+
+        match (selected_row_area, selected_column_area) {
+            (Some(row_area), Some(col_area)) => {
+                buf.set_style(row_area, self.row_highlight_style);
+                buf.set_style(col_area, self.column_highlight_style);
+                let cell_area = row_area.intersection(col_area);
+                buf.set_style(cell_area, self.cell_highlight_style);
+            }
+            (Some(row_area), None) => {
+                buf.set_style(row_area, self.row_highlight_style);
+            }
+            (None, Some(col_area)) => {
+                buf.set_style(col_area, self.column_highlight_style);
+            }
+            (None, None) => (),
         }
     }
 
@@ -827,16 +952,13 @@ impl Table<'_> {
     ///
     /// Returns (x, width). When self.widths is empty, it is assumed `.widths()` has not been called
     /// and a default of equal widths is returned.
-    fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
+    fn get_columns_widths(
+        &self,
+        max_width: u16,
+        selection_width: u16,
+        col_count: usize,
+    ) -> Vec<(u16, u16)> {
         let widths = if self.widths.is_empty() {
-            let col_count = self
-                .rows
-                .iter()
-                .chain(self.header.iter())
-                .chain(self.footer.iter())
-                .map(|r| r.cells.len())
-                .max()
-                .unwrap_or(0);
             // Divide the space between each column equally
             vec![Constraint::Length(max_width / col_count.max(1) as u16); col_count]
         } else {
@@ -900,10 +1022,20 @@ impl Table<'_> {
         (start, end)
     }
 
+    fn column_count(&self) -> usize {
+        self.rows
+            .iter()
+            .chain(self.footer.iter())
+            .chain(self.header.iter())
+            .map(|r| r.cells.len())
+            .max()
+            .unwrap_or_default()
+    }
+
     /// Returns the width of the selection column if a row is selected, or the `highlight_spacing`
     /// is set to show the column always, otherwise 0.
     fn selection_width(&self, state: &TableState) -> u16 {
-        let has_selection = state.selected().is_some();
+        let has_selection = state.selected.is_some();
         if self.highlight_spacing.should_add(has_selection) {
             self.highlight_symbol.width() as u16
         } else {
@@ -953,6 +1085,8 @@ where
 mod tests {
     use std::vec;
 
+    use rstest::{fixture, rstest};
+
     use super::*;
     use crate::{
         layout::Constraint::*,
@@ -973,7 +1107,7 @@ mod tests {
         assert_eq!(table.column_spacing, 1);
         assert_eq!(table.block, None);
         assert_eq!(table.style, Style::default());
-        assert_eq!(table.highlight_style, Style::default());
+        assert_eq!(table.row_highlight_style, Style::default());
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
@@ -989,7 +1123,7 @@ mod tests {
         assert_eq!(table.column_spacing, 1);
         assert_eq!(table.block, None);
         assert_eq!(table.style, Style::default());
-        assert_eq!(table.highlight_style, Style::default());
+        assert_eq!(table.row_highlight_style, Style::default());
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
@@ -1072,10 +1206,32 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn highlight_style() {
         let style = Style::default().red().italic();
         let table = Table::default().highlight_style(style);
-        assert_eq!(table.highlight_style, style);
+        assert_eq!(table.row_highlight_style, style);
+    }
+
+    #[test]
+    fn row_highlight_style() {
+        let style = Style::default().red().italic();
+        let table = Table::default().row_highlight_style(style);
+        assert_eq!(table.row_highlight_style, style);
+    }
+
+    #[test]
+    fn column_highlight_style() {
+        let style = Style::default().red().italic();
+        let table = Table::default().column_highlight_style(style);
+        assert_eq!(table.column_highlight_style, style);
+    }
+
+    #[test]
+    fn cell_highlight_style() {
+        let style = Style::default().red().italic();
+        let table = Table::default().cell_highlight_style(style);
+        assert_eq!(table.cell_highlight_style, style);
     }
 
     #[test]
@@ -1122,8 +1278,8 @@ mod tests {
 
     #[cfg(test)]
     mod state {
-        use rstest::{fixture, rstest};
 
+        use super::*;
         use crate::{
             buffer::Buffer,
             layout::{Constraint, Rect},
@@ -1145,6 +1301,7 @@ mod tests {
             state.select_first();
             StatefulWidget::render(table, table_buf.area, &mut table_buf, &mut state);
             assert_eq!(state.selected, None);
+            assert_eq!(state.selected_column, None);
         }
 
         #[rstest]
@@ -1158,25 +1315,49 @@ mod tests {
             state.select_first();
             StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
             assert_eq!(state.selected, Some(0));
+            assert_eq!(state.selected_column, None);
 
             state.select_last();
             StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
             assert_eq!(state.selected, Some(0));
+            assert_eq!(state.selected_column, None);
 
             state.select_previous();
             StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
             assert_eq!(state.selected, Some(0));
+            assert_eq!(state.selected_column, None);
 
             state.select_next();
             StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
             assert_eq!(state.selected, Some(0));
+            assert_eq!(state.selected_column, None);
+
+            let mut state = TableState::default();
+
+            state.select_first_column();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected_column, Some(0));
+            assert_eq!(state.selected, None);
+
+            state.select_last_column();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected_column, Some(0));
+            assert_eq!(state.selected, None);
+
+            state.select_previous_column();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected_column, Some(0));
+            assert_eq!(state.selected, None);
+
+            state.select_next_column();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected_column, Some(0));
+            assert_eq!(state.selected, None);
         }
     }
 
     #[cfg(test)]
     mod render {
-        use rstest::rstest;
-
         use super::*;
         use crate::layout::Alignment;
 
@@ -1350,6 +1531,17 @@ mod tests {
         }
 
         #[test]
+        fn render_with_selected_column_and_incorrect_width_count_does_not_panic() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
+            let table = Table::new(
+                vec![Row::new(vec!["Row1", "Row2", "Row3"])],
+                [Constraint::Length(10); 1],
+            );
+            let mut state = TableState::new().with_selected_column(2);
+            StatefulWidget::render(table, Rect::new(0, 0, 20, 3), &mut buf, &mut state);
+        }
+
+        #[test]
         fn render_with_selected() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
             let rows = vec![
@@ -1357,14 +1549,113 @@ mod tests {
                 Row::new(vec!["Cell3", "Cell4"]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2])
-                .highlight_style(Style::new().red())
+                .row_highlight_style(Style::new().red())
                 .highlight_symbol(">>");
-            let mut state = TableState::new().with_selected(0);
+            let mut state = TableState::new().with_selected(Some(0));
             StatefulWidget::render(table, Rect::new(0, 0, 15, 3), &mut buf, &mut state);
             let expected = Buffer::with_lines([
                 ">>Cell1 Cell2  ".red(),
                 "  Cell3 Cell4  ".into(),
                 "               ".into(),
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_selected_column() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let rows = vec![
+                Row::new(vec!["Cell1", "Cell2"]),
+                Row::new(vec!["Cell3", "Cell4"]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2])
+                .column_highlight_style(Style::new().blue())
+                .highlight_symbol(">>");
+            let mut state = TableState::new().with_selected_column(Some(1));
+            StatefulWidget::render(table, Rect::new(0, 0, 15, 3), &mut buf, &mut state);
+            let expected = Buffer::with_lines::<[Line; 3]>([
+                Line::from(vec![
+                    "Cell1".into(),
+                    " ".into(),
+                    "Cell2".blue(),
+                    "    ".into(),
+                ]),
+                Line::from(vec![
+                    "Cell3".into(),
+                    " ".into(),
+                    "Cell4".blue(),
+                    "    ".into(),
+                ]),
+                Line::from(vec!["      ".into(), "     ".blue(), "    ".into()]),
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_selected_cell() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 20, 4));
+            let rows = vec![
+                Row::new(vec!["Cell1", "Cell2", "Cell3"]),
+                Row::new(vec!["Cell4", "Cell5", "Cell6"]),
+                Row::new(vec!["Cell7", "Cell8", "Cell9"]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3])
+                .highlight_symbol(">>")
+                .cell_highlight_style(Style::new().green());
+            let mut state = TableState::new().with_selected_cell((1, 2));
+            StatefulWidget::render(table, Rect::new(0, 0, 20, 4), &mut buf, &mut state);
+            let expected = Buffer::with_lines::<[Line; 4]>([
+                Line::from(vec!["  Cell1 ".into(), "Cell2 ".into(), "Cell3".into()]),
+                Line::from(vec![">>Cell4 Cell5 ".into(), "Cell6".green(), " ".into()]),
+                Line::from(vec!["  Cell7 ".into(), "Cell8 ".into(), "Cell9".into()]),
+                Line::from(vec!["                    ".into()]),
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_selected_row_and_column() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 20, 4));
+            let rows = vec![
+                Row::new(vec!["Cell1", "Cell2", "Cell3"]),
+                Row::new(vec!["Cell4", "Cell5", "Cell6"]),
+                Row::new(vec!["Cell7", "Cell8", "Cell9"]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3])
+                .highlight_symbol(">>")
+                .row_highlight_style(Style::new().red())
+                .column_highlight_style(Style::new().blue());
+            let mut state = TableState::new().with_selected(1).with_selected_column(2);
+            StatefulWidget::render(table, Rect::new(0, 0, 20, 4), &mut buf, &mut state);
+            let expected = Buffer::with_lines::<[Line; 4]>([
+                Line::from(vec!["  Cell1 ".into(), "Cell2 ".into(), "Cell3".blue()]),
+                Line::from(vec![">>Cell4 Cell5 ".red(), "Cell6".blue(), " ".red()]),
+                Line::from(vec!["  Cell7 ".into(), "Cell8 ".into(), "Cell9".blue()]),
+                Line::from(vec!["              ".into(), "     ".blue(), " ".into()]),
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_selected_row_and_column_and_cell() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 20, 4));
+            let rows = vec![
+                Row::new(vec!["Cell1", "Cell2", "Cell3"]),
+                Row::new(vec!["Cell4", "Cell5", "Cell6"]),
+                Row::new(vec!["Cell7", "Cell8", "Cell9"]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3])
+                .highlight_symbol(">>")
+                .row_highlight_style(Style::new().red())
+                .column_highlight_style(Style::new().blue())
+                .cell_highlight_style(Style::new().green());
+            let mut state = TableState::new().with_selected(1).with_selected_column(2);
+            StatefulWidget::render(table, Rect::new(0, 0, 20, 4), &mut buf, &mut state);
+            let expected = Buffer::with_lines::<[Line; 4]>([
+                Line::from(vec!["  Cell1 ".into(), "Cell2 ".into(), "Cell3".blue()]),
+                Line::from(vec![">>Cell4 Cell5 ".red(), "Cell6".green(), " ".red()]),
+                Line::from(vec!["  Cell7 ".into(), "Cell8 ".into(), "Cell9".blue()]),
+                Line::from(vec!["              ".into(), "     ".blue(), " ".into()]),
             ]);
             assert_eq!(buf, expected);
         }
@@ -1391,7 +1682,7 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
             let mut state = TableState::new()
                 .with_offset(50)
-                .with_selected(selected_row);
+                .with_selected(selected_row.into());
 
             StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
 
@@ -1408,15 +1699,15 @@ mod tests {
         fn length_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
+            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
+            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
+            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             // <--------7px-------->
@@ -1425,26 +1716,26 @@ mod tests {
             // └────────┘x└────────┘
             // column spacing (i.e. `x`) is always prioritized
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
+            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 2), (6, 1)]);
         }
 
         #[test]
         fn max_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
+            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
+            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
+            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
+            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 2), (6, 1)]);
         }
 
         #[test]
@@ -1455,42 +1746,42 @@ mod tests {
 
             // without selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(20, 0), [(0, 10), (11, 9)]);
+            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 10), (11, 9)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(20, 3), [(3, 8), (12, 8)]);
+            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 8), (12, 8)]);
 
             // without selection, less than needed width
             // allocates spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
+            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             // always allocates selection and spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
+            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 2), (6, 1)]);
         }
 
         #[test]
         fn percentage_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_columns_widths(20, 0), [(0, 6), (7, 6)]);
+            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 6), (7, 6)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_columns_widths(20, 3), [(3, 5), (9, 5)]);
+            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 5), (9, 5)]);
 
             // without selection, less than needed width
             // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 2), (3, 2)]);
+            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 2), (3, 2)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 1), (5, 1)]);
+            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 1), (5, 1)]);
         }
 
         #[test]
@@ -1498,22 +1789,22 @@ mod tests {
             // without selection, more than needed width
             // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_columns_widths(20, 0), [(0, 7), (8, 6)]);
+            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 7), (8, 6)]);
 
             // with selection, more than needed width
             // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_columns_widths(20, 3), [(3, 6), (10, 5)]);
+            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 6), (10, 5)]);
 
             // without selection, less than needed width
             // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 2), (3, 3)]);
+            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 2), (3, 3)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 1), (5, 2)]);
+            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 1), (5, 2)]);
         }
 
         /// When more width is available than requested, the behavior is controlled by flex
@@ -1521,7 +1812,7 @@ mod tests {
         fn underconstrained_flex() {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
-                table.get_columns_widths(62, 0),
+                table.get_columns_widths(62, 0, 0),
                 &[(0, 20), (21, 20), (42, 20)]
             );
 
@@ -1529,7 +1820,7 @@ mod tests {
                 .widths([Min(10), Min(10), Min(1)])
                 .flex(Flex::Legacy);
             assert_eq!(
-                table.get_columns_widths(62, 0),
+                table.get_columns_widths(62, 0, 0),
                 &[(0, 10), (11, 10), (22, 40)]
             );
 
@@ -1537,7 +1828,7 @@ mod tests {
                 .widths([Min(10), Min(10), Min(1)])
                 .flex(Flex::SpaceBetween);
             assert_eq!(
-                table.get_columns_widths(62, 0),
+                table.get_columns_widths(62, 0, 0),
                 &[(0, 20), (21, 20), (42, 20)]
             );
         }
@@ -1548,7 +1839,7 @@ mod tests {
         fn underconstrained_segment_size() {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
-                table.get_columns_widths(62, 0),
+                table.get_columns_widths(62, 0, 0),
                 &[(0, 20), (21, 20), (42, 20)]
             );
 
@@ -1556,7 +1847,7 @@ mod tests {
                 .widths([Min(10), Min(10), Min(1)])
                 .flex(Flex::Legacy);
             assert_eq!(
-                table.get_columns_widths(62, 0),
+                table.get_columns_widths(62, 0, 0),
                 &[(0, 10), (11, 10), (22, 40)]
             );
         }
@@ -1573,7 +1864,7 @@ mod tests {
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
             assert_eq!(
-                table.get_columns_widths(30, 0),
+                table.get_columns_widths(30, 0, 3),
                 &[(0, 10), (10, 10), (20, 10)]
             );
         }
@@ -1584,7 +1875,7 @@ mod tests {
                 .rows(vec![])
                 .header(Row::new(vec!["f", "g"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)]);
+            assert_eq!(table.get_columns_widths(10, 0, 2), [(0, 5), (5, 5)]);
         }
 
         #[test]
@@ -1593,7 +1884,7 @@ mod tests {
                 .rows(vec![])
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)]);
+            assert_eq!(table.get_columns_widths(10, 0, 2), [(0, 5), (5, 5)]);
         }
 
         #[track_caller]
@@ -1961,5 +2252,50 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::CROSSED_OUT)
         );
+    }
+
+    #[rstest]
+    #[case::no_columns(vec![], vec![], vec![], 0)]
+    #[case::only_header(vec!["H1", "H2"], vec![], vec![], 2)]
+    #[case::only_rows(
+        vec![],
+        vec![vec!["C1", "C2"], vec!["C1", "C2", "C3"]],
+        vec![],
+        3
+    )]
+    #[case::only_footer(vec![], vec![], vec!["F1", "F2", "F3", "F4"], 4)]
+    #[case::rows_longer(
+        vec!["H1", "H2", "H3", "H4"],
+        vec![vec!["C1", "C2"],vec!["C1", "C2", "C3"]],
+        vec!["F1", "F2"],
+        4
+    )]
+    #[case::rows_longer(
+        vec!["H1", "H2"],
+        vec![vec!["C1", "C2"], vec!["C1", "C2", "C3", "C4"]],
+        vec!["F1", "F2"],
+        4
+    )]
+    #[case::footer_longer(
+        vec!["H1", "H2"],
+        vec![vec!["C1", "C2"], vec!["C1", "C2", "C3"]],
+        vec!["F1", "F2", "F3", "F4"],
+        4
+    )]
+
+    fn column_count(
+        #[case] header: Vec<&str>,
+        #[case] rows: Vec<Vec<&str>>,
+        #[case] footer: Vec<&str>,
+        #[case] expected: usize,
+    ) {
+        let header = Row::new(header);
+        let footer = Row::new(footer);
+        let rows: Vec<Row> = rows.into_iter().map(Row::new).collect();
+        let table = Table::new(rows, Vec::<Constraint>::new())
+            .header(header)
+            .footer(footer);
+        let column_count = table.column_count();
+        assert_eq!(column_count, expected);
     }
 }

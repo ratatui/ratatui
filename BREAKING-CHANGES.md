@@ -10,6 +10,9 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.29.0](#v0290)
+  - `Table::highlight_style` is now `Table::row_highlight_style`
+
 - [v0.28.0](#v0280)
   ⁻ `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
@@ -64,6 +67,19 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## v0.29.0
+
+### `Table::highlight_style` is now `Table::row_highlight_style` ([#1331])
+
+[#1331]: https://github.com/ratatui/ratatui/pull/1331
+
+The `Table::highlight_style` is now deprecated in favor of `Table::row_highlight_style`.
+
+Also, the serialized output of the `TableState` will now include the "selected_column" field.
+Software that manually parse the serialized the output (with anything other than the `Serialize`
+implementation on `TableState`) may have to be refactored if the "selected_column" field is not accounted for.
+This does not affect users who rely on the `Deserialize`, or `Serialize` implementation on the state.
 
 ## v0.28.0
 

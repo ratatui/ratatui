@@ -632,6 +632,7 @@ fn widgets_table_can_have_elements_styled_individually() {
     let mut terminal = Terminal::new(backend).unwrap();
     let mut state = TableState::default();
     state.select(Some(0));
+    state.select_column(Some(1));
     terminal
         .draw(|f| {
             let table = Table::new(
@@ -658,7 +659,9 @@ fn widgets_table_can_have_elements_styled_individually() {
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::new().borders(Borders::LEFT | Borders::RIGHT))
             .highlight_symbol(">> ")
-            .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+            .row_highlight_style(Style::default().add_modifier(Modifier::BOLD))
+            .column_highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+            .cell_highlight_style(Style::default().add_modifier(Modifier::DIM))
             .column_spacing(1);
             f.render_stateful_widget(table, f.area(), &mut state);
         })
@@ -678,6 +681,19 @@ fn widgets_table_can_have_elements_styled_individually() {
                 .add_modifier(Modifier::BOLD),
         );
     }
+
+    // Second column highlight style
+    for row in 2..=3 {
+        for col in 11..=16 {
+            expected[(col, row)].set_style(Style::default().add_modifier(Modifier::ITALIC));
+        }
+    }
+
+    // First row, second column highlight style (cell highlight)
+    for col in 11..=16 {
+        expected[(col, 2)].set_style(Style::default().add_modifier(Modifier::DIM));
+    }
+
     // Second row:
     // 1. row color
     for col in 1..=28 {
