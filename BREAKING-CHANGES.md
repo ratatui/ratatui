@@ -10,12 +10,13 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.29.0](#v0290)
+- [v0.29.0](#unreleased)
+  - Removed public fields from `Rect` iterators
   - `Line` now implements `From<Cow<str>`
   - `Table::highlight_style` is now `Table::row_highlight_style`
   - `Tabs::select` now accepts `Into<Option<usize>>`
 - [v0.28.0](#v0280)
-  ⁻ `Backend::size` returns `Size` instead of `Rect`
+  - `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
   - Ratatui now requires Crossterm 0.28.0
   - `Axis::labels` now accepts `IntoIterator<Into<Line>>`
@@ -69,7 +70,15 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## v0.29.0 (Unreleased)
+## Unreleased
+
+### Removed public fields from `Rect` iterators ([#1358])
+
+[#1358]: https://github.com/ratatui/ratatui/pull/1358
+
+The `pub` modifier has been removed from fields on the `layout::rect::Columns` and
+`layout::rect::Rows`. These fields were not intended to be public and should not have been accessed
+directly.
 
 ### `Rect::area()` now returns u32 instead of u16 ([#1378])
 
@@ -117,8 +126,9 @@ The `Table::highlight_style` is now deprecated in favor of `Table::row_highlight
 
 Also, the serialized output of the `TableState` will now include the "selected_column" field.
 Software that manually parse the serialized the output (with anything other than the `Serialize`
-implementation on `TableState`) may have to be refactored if the "selected_column" field is not accounted for.
-This does not affect users who rely on the `Deserialize`, or `Serialize` implementation on the state.
+implementation on `TableState`) may have to be refactored if the "selected_column" field is not
+accounted for. This does not affect users who rely on the `Deserialize`, or `Serialize`
+implementation on the state.
 
 ## v0.28.0
 
