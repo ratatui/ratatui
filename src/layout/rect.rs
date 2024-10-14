@@ -55,32 +55,41 @@ impl Rect {
         height: 0,
     };
 
-    /// Creates a new `Rect`, with width and height limited to keep the area under max `u16`. If
-    /// clipped, aspect ratio will be preserved.
-    pub fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
-        let max_area = u16::MAX;
-        let (clipped_width, clipped_height) =
-            if u32::from(width) * u32::from(height) > u32::from(max_area) {
-                let aspect_ratio = f64::from(width) / f64::from(height);
-                let max_area_f = f64::from(max_area);
-                let height_f = (max_area_f / aspect_ratio).sqrt();
-                let width_f = height_f * aspect_ratio;
-                (width_f as u16, height_f as u16)
-            } else {
-                (width, height)
-            };
+    /// Creates a new `Rect`, with width and height limited to keep both bounds within `u16`.
+    ///
+    /// If the width or height would cause the right or bottom coordinate to be larger than the
+    /// maximum value of `u16`, the width or height will be clamped to keep the right or bottom
+    /// coordinate within `u16`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::layout::Rect;
+    ///
+    /// let rect = Rect::new(1, 2, 3, 4);
+    /// ```
+    pub const fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
+        // these calculations avoid using min so that this function can be const
+        let max_width = u16::MAX - x;
+        let max_height = u16::MAX - y;
+        let width = if width > max_width { max_width } else { width };
+        let height = if height > max_height {
+            max_height
+        } else {
+            height
+        };
         Self {
             x,
             y,
-            width: clipped_width,
-            height: clipped_height,
+            width,
+            height,
         }
     }
 
     /// The area of the `Rect`. If the area is larger than the maximum value of `u16`, it will be
     /// clamped to `u16::MAX`.
-    pub const fn area(self) -> u16 {
-        self.width.saturating_mul(self.height)
+    pub const fn area(self) -> u32 {
+        (self.width as u32) * (self.height as u32)
     }
 
     /// Returns true if the `Rect` has no area.
@@ -505,46 +514,28 @@ mod tests {
 
     #[test]
     fn size_truncation() {
-        for width in 256u16..300u16 {
-            for height in 256u16..300u16 {
-                let rect = Rect::new(0, 0, width, height);
-                rect.area(); // Should not panic.
-                assert!(rect.width < width || rect.height < height);
-                // The target dimensions are rounded down so the math will not be too precise
-                // but let's make sure the ratios don't diverge crazily.
-                assert!(
-                    (f64::from(rect.width) / f64::from(rect.height)
-                        - f64::from(width) / f64::from(height))
-                    .abs()
-                        < 1.0
-                );
+        assert_eq!(
+            Rect::new(u16::MAX - 100, u16::MAX - 1000, 200, 2000),
+            Rect {
+                x: u16::MAX - 100,
+                y: u16::MAX - 1000,
+                width: 100,
+                height: 1000
             }
-        }
-
-        // One dimension below 255, one above. Area above max u16.
-        let width = 900;
-        let height = 100;
-        let rect = Rect::new(0, 0, width, height);
-        assert_ne!(rect.width, 900);
-        assert_ne!(rect.height, 100);
-        assert!(rect.width < width || rect.height < height);
+        );
     }
 
     #[test]
     fn size_preservation() {
-        for width in 0..256u16 {
-            for height in 0..256u16 {
-                let rect = Rect::new(0, 0, width, height);
-                rect.area(); // Should not panic.
-                assert_eq!(rect.width, width);
-                assert_eq!(rect.height, height);
+        assert_eq!(
+            Rect::new(u16::MAX - 100, u16::MAX - 1000, 100, 1000),
+            Rect {
+                x: u16::MAX - 100,
+                y: u16::MAX - 1000,
+                width: 100,
+                height: 1000
             }
-        }
-
-        // One dimension below 255, one above. Area below max u16.
-        let rect = Rect::new(0, 0, 300, 100);
-        assert_eq!(rect.width, 300);
-        assert_eq!(rect.height, 100);
+        );
     }
 
     #[test]
@@ -555,7 +546,7 @@ mod tests {
             width: 10,
             height: 10,
         };
-        const _AREA: u16 = RECT.area();
+        const _AREA: u32 = RECT.area();
         const _LEFT: u16 = RECT.left();
         const _RIGHT: u16 = RECT.right();
         const _TOP: u16 = RECT.top();
