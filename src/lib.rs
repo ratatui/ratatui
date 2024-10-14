@@ -295,6 +295,9 @@
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
 pub use crossterm;
+/// re-export the `palatte` crate so that users don't have to add it as a dependency
+#[cfg(feature = "palette")]
+pub use palette;
 #[cfg(feature = "crossterm")]
 pub use terminal::{
     init, init_with_options, restore, try_init, try_init_with_options, try_restore, DefaultTerminal,
@@ -306,9 +309,6 @@ pub use termion;
 /// re-export the `termwiz` crate so that users don't have to add it as a dependency
 #[cfg(feature = "termwiz")]
 pub use termwiz;
-/// re-export the `palatte` crate so that users don't have to add it as a dependency
-#[cfg(feature = "palette")]
-pub use palette;
 
 pub mod backend;
 pub mod buffer;
