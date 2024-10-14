@@ -2,6 +2,8 @@
 
 use std::{fmt, str::FromStr};
 
+use crate::style::stylize::{ColorDebug, ColorDebugKind};
+
 /// ANSI Color
 ///
 /// All colors from the [ANSI color table] are supported (though some names are not exactly the
@@ -42,7 +44,7 @@ use std::{fmt, str::FromStr};
 /// ```
 /// use std::str::FromStr;
 ///
-/// use ratatui::prelude::*;
+/// use ratatui::style::Color;
 ///
 /// assert_eq!(Color::from_str("red"), Ok(Color::Red));
 /// assert_eq!("red".parse(), Ok(Color::Red));
@@ -166,7 +168,9 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// use ratatui::style::Color;
     ///
     /// #[derive(Debug, serde::Deserialize)]
     /// struct Theme {
@@ -261,7 +265,7 @@ impl std::error::Error for ParseColorError {}
 /// ```
 /// use std::str::FromStr;
 ///
-/// use ratatui::prelude::*;
+/// use ratatui::style::Color;
 ///
 /// let color: Color = Color::from_str("blue").unwrap();
 /// assert_eq!(color, Color::Blue);
@@ -361,6 +365,10 @@ impl fmt::Display for Color {
 }
 
 impl Color {
+    pub(crate) const fn stylize_debug(self, kind: ColorDebugKind) -> ColorDebug {
+        ColorDebug { kind, color: self }
+    }
+
     /// Converts a HSL representation to a `Color::Rgb` instance.
     ///
     /// The `from_hsl` function converts the Hue, Saturation and Lightness values to a
@@ -373,7 +381,7 @@ impl Color {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::prelude::*;
+    /// use ratatui::style::Color;
     ///
     /// let color: Color = Color::from_hsl(360.0, 100.0, 100.0);
     /// assert_eq!(color, Color::Rgb(255, 255, 255));
@@ -389,6 +397,41 @@ impl Color {
 
         // Delegate to the function for normalized HSL to RGB conversion
         normalized_hsl_to_rgb(h / 360.0, s / 100.0, l / 100.0)
+    }
+
+    /// Converts a `HSLuv` representation to a `Color::Rgb` instance.
+    ///
+    /// The `from_hsluv` function converts the Hue, Saturation and Lightness values to a
+    /// corresponding `Color` RGB equivalent.
+    ///
+    /// Hue values should be in the range [0, 360].
+    /// Saturation and L values should be in the range [0, 100].
+    /// Values that are not in the range are clamped to be within the range.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::prelude::*;
+    ///
+    /// let color = Color::from_hsluv(360.0, 50.0, 75.0);
+    /// assert_eq!(color, Color::Rgb(223, 171, 181));
+    ///
+    /// let color: Color = Color::from_hsluv(0.0, 0.0, 0.0);
+    /// assert_eq!(color, Color::Rgb(0, 0, 0));
+    /// ```
+    #[cfg(feature = "palette")]
+    pub fn from_hsluv(h: f64, s: f64, l: f64) -> Self {
+        use palette::{Clamp, FromColor, Hsluv, Srgb};
+
+        let hsluv = Hsluv::new(h, s, l).clamp();
+        let Srgb {
+            red,
+            green,
+            blue,
+            standard: _,
+        }: Srgb<u8> = Srgb::from_color(hsluv).into();
+
+        Self::Rgb(red, green, blue)
     }
 }
 
@@ -502,6 +545,34 @@ mod tests {
 
         // Test with S and L values below the lower bound
         let color = Color::from_hsl(60.0, -20.0, -10.0);
+        assert_eq!(color, Color::Rgb(0, 0, 0));
+    }
+
+    #[cfg(feature = "palette")]
+    #[test]
+    fn test_hsluv_to_rgb() {
+        // Test with valid HSLuv values
+        let color = Color::from_hsluv(120.0, 50.0, 75.0);
+        assert_eq!(color, Color::Rgb(147, 198, 129));
+
+        // Test with H value at upper bound
+        let color = Color::from_hsluv(360.0, 50.0, 75.0);
+        assert_eq!(color, Color::Rgb(223, 171, 181));
+
+        // Test with H value exceeding the upper bound
+        let color = Color::from_hsluv(400.0, 50.0, 75.0);
+        assert_eq!(color, Color::Rgb(226, 174, 140));
+
+        // Test with S and L values exceeding the upper bound
+        let color = Color::from_hsluv(240.0, 120.0, 150.0);
+        assert_eq!(color, Color::Rgb(255, 255, 255));
+
+        // Test with H, S, and L values below the lower bound
+        let color = Color::from_hsluv(0.0, 0.0, 0.0);
+        assert_eq!(color, Color::Rgb(0, 0, 0));
+
+        // Test with S and L values below the lower bound
+        let color = Color::from_hsluv(60.0, 0.0, 0.0);
         assert_eq!(color, Color::Rgb(0, 0, 0));
     }
 

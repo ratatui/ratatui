@@ -1,4 +1,8 @@
-use crate::prelude::*;
+use crate::{
+    buffer::Buffer,
+    layout::{Position, Rect},
+    widgets::{StatefulWidget, StatefulWidgetRef, Widget, WidgetRef},
+};
 
 /// A consistent view into the terminal state for rendering a single frame.
 ///
@@ -10,6 +14,7 @@ use crate::prelude::*;
 /// to the terminal. This avoids drawing redundant cells.
 ///
 /// [`Buffer`]: crate::buffer::Buffer
+/// [`Terminal::draw`]: crate::Terminal::draw
 #[derive(Debug, Hash)]
 pub struct Frame<'a> {
     /// Where should the cursor be after drawing this frame?
@@ -31,6 +36,8 @@ pub struct Frame<'a> {
 /// `CompletedFrame` represents the state of the terminal after all changes performed in the last
 /// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
 /// [`Terminal::draw`].
+///
+/// [`Terminal::draw`]: crate::Terminal::draw
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CompletedFrame<'a> {
     /// The buffer that was used to draw the last frame.
@@ -73,10 +80,12 @@ impl Frame<'_> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::Block};
+    /// # use ratatui::{backend::TestBackend, Terminal};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
+    /// use ratatui::{layout::Rect, widgets::Block};
+    ///
     /// let block = Block::new();
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_widget(block, area);
@@ -96,10 +105,12 @@ impl Frame<'_> {
     ///
     /// ```rust
     /// # #[cfg(feature = "unstable-widget-ref")] {
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::Block};
+    /// # use ratatui::{backend::TestBackend, Terminal};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
+    /// use ratatui::{layout::Rect, widgets::Block};
+    ///
     /// let block = Block::new();
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_widget_ref(block, area);
@@ -122,10 +133,15 @@ impl Frame<'_> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+    /// # use ratatui::{backend::TestBackend, Terminal};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
+    /// use ratatui::{
+    ///     layout::Rect,
+    ///     widgets::{List, ListItem, ListState},
+    /// };
+    ///
     /// let mut state = ListState::default().with_selected(Some(1));
     /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);
     /// let area = Rect::new(0, 0, 5, 5);
@@ -153,10 +169,15 @@ impl Frame<'_> {
     ///
     /// ```rust
     /// # #[cfg(feature = "unstable-widget-ref")] {
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+    /// # use ratatui::{backend::TestBackend, Terminal};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
+    /// use ratatui::{
+    ///     layout::Rect,
+    ///     widgets::{List, ListItem, ListState},
+    /// };
+    ///
     /// let mut state = ListState::default().with_selected(Some(1));
     /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);
     /// let area = Rect::new(0, 0, 5, 5);
@@ -178,6 +199,10 @@ impl Frame<'_> {
     /// Note that this will interfere with calls to [`Terminal::hide_cursor`],
     /// [`Terminal::show_cursor`], and [`Terminal::set_cursor_position`]. Pick one of the APIs and
     /// stick with it.
+    ///
+    /// [`Terminal::hide_cursor`]: crate::Terminal::hide_cursor
+    /// [`Terminal::show_cursor`]: crate::Terminal::show_cursor
+    /// [`Terminal::set_cursor_position`]: crate::Terminal::set_cursor_position
     pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P) {
         self.cursor_position = Some(position.into());
     }
@@ -188,6 +213,10 @@ impl Frame<'_> {
     /// Note that this will interfere with calls to [`Terminal::hide_cursor`],
     /// [`Terminal::show_cursor`], and [`Terminal::set_cursor_position`]. Pick one of the APIs and
     /// stick with it.
+    ///
+    /// [`Terminal::hide_cursor`]: crate::Terminal::hide_cursor
+    /// [`Terminal::show_cursor`]: crate::Terminal::show_cursor
+    /// [`Terminal::set_cursor_position`]: crate::Terminal::set_cursor_position
     #[deprecated = "the method set_cursor_position indicates more clearly what about the cursor to set"]
     pub fn set_cursor(&mut self, x: u16, y: u16) {
         self.set_cursor_position(Position { x, y });
@@ -215,7 +244,7 @@ impl Frame<'_> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+    /// # use ratatui::{backend::TestBackend, Terminal};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();

@@ -1,7 +1,7 @@
 use strum::{Display, EnumIs, EnumString};
 
 #[allow(unused_imports)]
-use super::constraint::Constraint;
+use crate::layout::Constraint;
 
 /// Defines the options for layout flex justify content in a container.
 ///

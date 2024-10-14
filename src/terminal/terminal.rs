@@ -1,7 +1,10 @@
 use std::io;
 
 use crate::{
-    backend::ClearType, buffer::Cell, prelude::*, CompletedFrame, TerminalOptions, Viewport,
+    backend::{Backend, ClearType},
+    buffer::{Buffer, Cell},
+    layout::{Position, Rect, Size},
+    CompletedFrame, Frame, TerminalOptions, Viewport,
 };
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
@@ -30,10 +33,9 @@ use crate::{
 /// # Examples
 ///
 /// ```rust,no_run
-/// # use ratatui::prelude::*;
 /// use std::io::stdout;
 ///
-/// use ratatui::widgets::Paragraph;
+/// use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
 ///
 /// let backend = CrosstermBackend::new(stdout());
 /// let mut terminal = Terminal::new(backend)?;
@@ -107,8 +109,10 @@ where
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
+    /// use std::io::stdout;
+    ///
+    /// use ratatui::{backend::CrosstermBackend, Terminal};
+    ///
     /// let backend = CrosstermBackend::new(stdout());
     /// let terminal = Terminal::new(backend)?;
     /// # std::io::Result::Ok(())
@@ -127,8 +131,10 @@ where
     /// # Example
     ///
     /// ```rust
-    /// # use std::io::stdout;
-    /// # use ratatui::{prelude::*, backend::TestBackend, Viewport, TerminalOptions};
+    /// use std::io::stdout;
+    ///
+    /// use ratatui::{backend::CrosstermBackend, layout::Rect, Terminal, TerminalOptions, Viewport};
+    ///
     /// let backend = CrosstermBackend::new(stdout());
     /// let viewport = Viewport::Fixed(Rect::new(0, 0, 10, 10));
     /// let terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
@@ -276,10 +282,9 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::layout::Position;
     /// # let backend = ratatui::backend::TestBackend::new(10, 10);
     /// # let mut terminal = ratatui::Terminal::new(backend)?;
-    /// use ratatui::widgets::Paragraph;
+    /// use ratatui::{layout::Position, widgets::Paragraph};
     ///
     /// // with a closure
     /// terminal.draw(|frame| {
@@ -552,7 +557,13 @@ where
     /// ## Insert a single line before the current viewport
     ///
     /// ```rust
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     backend::TestBackend,
+    ///     style::{Color, Style},
+    ///     text::{Line, Span},
+    ///     widgets::{Paragraph, Widget},
+    ///     Terminal,
+    /// };
     /// # let backend = TestBackend::new(10, 10);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// terminal.insert_before(1, |buf| {

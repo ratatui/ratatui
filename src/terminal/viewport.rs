@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::prelude::*;
+use crate::layout::Rect;
 
 /// Represents the viewport of the terminal. The viewport is the area of the terminal that is
 /// currently visible to the user. It can be either fullscreen, inline or fixed.
@@ -14,6 +14,8 @@ use crate::prelude::*;
 /// by a [`Rect`].
 ///
 /// See [`Terminal::with_options`] for more information.
+///
+/// [`Terminal::with_options`]: crate::Terminal::with_options
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub enum Viewport {
     /// The viewport is fullscreen

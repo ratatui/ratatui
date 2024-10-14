@@ -1,12 +1,17 @@
-use super::Bar;
-use crate::prelude::*;
+use crate::{
+    buffer::Buffer,
+    layout::{Alignment, Rect},
+    style::Style,
+    text::Line,
+    widgets::{barchart::Bar, Widget},
+};
 
 /// A group of bars to be shown by the Barchart.
 ///
 /// # Examples
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::widgets::{Bar, BarGroup};
 ///
 /// BarGroup::default()
 ///     .label("Group 1".into())

@@ -14,12 +14,13 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
+use crossterm::event::KeyModifiers;
 use itertools::Itertools;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Margin, Rect},
     style::{self, Color, Modifier, Style, Stylize},
-    text::{Line, Text},
+    text::Text,
     widgets::{
         Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
         ScrollbarState, Table, TableState,
@@ -35,8 +36,10 @@ const PALETTES: [tailwind::Palette; 4] = [
     tailwind::INDIGO,
     tailwind::RED,
 ];
-const INFO_TEXT: &str =
-    "(Esc) quit | (↑) move up | (↓) move down | (→) next color | (←) previous color";
+const INFO_TEXT: [&str; 2] = [
+    "(Esc) quit | (↑) move up | (↓) move down | (←) move left | (→) move right",
+    "(Shift + →) next color | (Shift + ←) previous color",
+];
 
 const ITEM_HEIGHT: usize = 4;
 
@@ -52,7 +55,9 @@ struct TableColors {
     header_bg: Color,
     header_fg: Color,
     row_fg: Color,
-    selected_style_fg: Color,
+    selected_row_style_fg: Color,
+    selected_column_style_fg: Color,
+    selected_cell_style_fg: Color,
     normal_row_color: Color,
     alt_row_color: Color,
     footer_border_color: Color,
@@ -65,7 +70,9 @@ impl TableColors {
             header_bg: color.c900,
             header_fg: tailwind::SLATE.c200,
             row_fg: tailwind::SLATE.c200,
-            selected_style_fg: color.c400,
+            selected_row_style_fg: color.c400,
+            selected_column_style_fg: color.c400,
+            selected_cell_style_fg: color.c600,
             normal_row_color: tailwind::SLATE.c950,
             alt_row_color: tailwind::SLATE.c900,
             footer_border_color: color.c400,
@@ -118,8 +125,7 @@ impl App {
             items: data_vec,
         }
     }
-
-    pub fn next(&mut self) {
+    pub fn next_row(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
@@ -134,7 +140,7 @@ impl App {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
-    pub fn previous(&mut self) {
+    pub fn previous_row(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -147,6 +153,14 @@ impl App {
         };
         self.state.select(Some(i));
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
+    }
+
+    pub fn next_column(&mut self) {
+        self.state.select_next_column();
+    }
+
+    pub fn previous_column(&mut self) {
+        self.state.select_previous_column();
     }
 
     pub fn next_color(&mut self) {
@@ -168,12 +182,17 @@ impl App {
 
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
+                    let shift_pressed = key.modifiers.contains(KeyModifiers::SHIFT);
                     match key.code {
                         KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                        KeyCode::Char('j') | KeyCode::Down => self.next(),
-                        KeyCode::Char('k') | KeyCode::Up => self.previous(),
-                        KeyCode::Char('l') | KeyCode::Right => self.next_color(),
-                        KeyCode::Char('h') | KeyCode::Left => self.previous_color(),
+                        KeyCode::Char('j') | KeyCode::Down => self.next_row(),
+                        KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
+                        KeyCode::Char('l') | KeyCode::Right if shift_pressed => self.next_color(),
+                        KeyCode::Char('h') | KeyCode::Left if shift_pressed => {
+                            self.previous_color();
+                        }
+                        KeyCode::Char('l') | KeyCode::Right => self.next_column(),
+                        KeyCode::Char('h') | KeyCode::Left => self.previous_column(),
                         _ => {}
                     }
                 }
@@ -182,7 +201,7 @@ impl App {
     }
 
     fn draw(&mut self, frame: &mut Frame) {
-        let vertical = &Layout::vertical([Constraint::Min(5), Constraint::Length(3)]);
+        let vertical = &Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
         let rects = vertical.split(frame.area());
 
         self.set_colors();
@@ -196,9 +215,13 @@ impl App {
         let header_style = Style::default()
             .fg(self.colors.header_fg)
             .bg(self.colors.header_bg);
-        let selected_style = Style::default()
+        let selected_row_style = Style::default()
             .add_modifier(Modifier::REVERSED)
-            .fg(self.colors.selected_style_fg);
+            .fg(self.colors.selected_row_style_fg);
+        let selected_col_style = Style::default().fg(self.colors.selected_column_style_fg);
+        let selected_cell_style = Style::default()
+            .add_modifier(Modifier::REVERSED)
+            .fg(self.colors.selected_cell_style_fg);
 
         let header = ["Name", "Address", "Email"]
             .into_iter()
@@ -229,7 +252,9 @@ impl App {
             ],
         )
         .header(header)
-        .highlight_style(selected_style)
+        .row_highlight_style(selected_row_style)
+        .column_highlight_style(selected_col_style)
+        .cell_highlight_style(selected_cell_style)
         .highlight_symbol(Text::from(vec![
             "".into(),
             bar.into(),
@@ -256,7 +281,7 @@ impl App {
     }
 
     fn render_footer(&self, frame: &mut Frame, area: Rect) {
-        let info_footer = Paragraph::new(Line::from(INFO_TEXT))
+        let info_footer = Paragraph::new(Text::from_iter(INFO_TEXT))
             .style(
                 Style::new()
                     .fg(self.colors.row_fg)

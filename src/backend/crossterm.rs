@@ -44,15 +44,11 @@ use crate::{
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
-/// use ratatui::{
-///     crossterm::{
-///         terminal::{
-///             disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-///         },
-///         ExecutableCommand,
-///     },
-///     prelude::*,
+/// use crossterm::{
+///     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+///     ExecutableCommand,
 /// };
+/// use ratatui::{backend::CrosstermBackend, Terminal};
 ///
 /// let mut backend = CrosstermBackend::new(stdout());
 /// // or
@@ -101,8 +97,10 @@ where
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
+    /// use std::io::stdout;
+    ///
+    /// use ratatui::backend::CrosstermBackend;
+    ///
     /// let backend = CrosstermBackend::new(stdout());
     /// ```
     pub const fn new(writer: W) -> Self {

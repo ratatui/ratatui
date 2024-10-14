@@ -1,6 +1,6 @@
 use compact_str::CompactString;
 
-use crate::prelude::*;
+use crate::style::{Color, Modifier, Style};
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

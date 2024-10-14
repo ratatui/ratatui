@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - uses: bnjbvr/cargo-machete@v0.6.2
+      - uses: bnjbvr/cargo-machete@v0.7.0
 
   clippy:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DavidAnson/markdownlint-cli2-action@v16
+      - uses: DavidAnson/markdownlint-cli2-action@v17
         with:
           globs: |
             '**/*.md'

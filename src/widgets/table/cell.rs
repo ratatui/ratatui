@@ -1,4 +1,10 @@
-use crate::{prelude::*, style::Styled};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Style, Styled},
+    text::Text,
+    widgets::WidgetRef,
+};
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
 ///
@@ -16,13 +22,17 @@ use crate::{prelude::*, style::Styled};
 /// ```rust
 /// use std::borrow::Cow;
 ///
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::Stylize,
+///     text::{Line, Span, Text},
+///     widgets::Cell,
+/// };
 ///
 /// Cell::from("simple string");
 /// Cell::from(Span::from("span"));
 /// Cell::from(Line::from(vec![
-///     Span::raw("a vec of "),
-///     Span::styled("spans", Style::default().add_modifier(Modifier::BOLD)),
+///     Span::from("a vec of "),
+///     Span::from("spans").bold(),
 /// ]));
 /// Cell::from(Text::from("a text"));
 /// Cell::from(Text::from(Cow::Borrowed("hello")));
@@ -32,12 +42,14 @@ use crate::{prelude::*, style::Styled};
 /// to set the style of the cell concisely.
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{style::Stylize, widgets::Cell};
+///
 /// Cell::new("Cell 1").red().italic();
 /// ```
 ///
-/// [`Row`]: super::Row
-/// [`Table`]: super::Table
+/// [`Row`]: crate::widgets::Row
+/// [`Table`]: crate::widgets::Table
+/// [`Stylize`]: crate::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Cell<'a> {
     content: Text<'a>,
@@ -52,12 +64,17 @@ impl<'a> Cell<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::Stylize,
+    ///     text::{Line, Span, Text},
+    ///     widgets::Cell,
+    /// };
+    ///
     /// Cell::new("simple string");
     /// Cell::new(Span::from("span"));
     /// Cell::new(Line::from(vec![
     ///     Span::raw("a vec of "),
-    ///     Span::styled("spans", Style::default().add_modifier(Modifier::BOLD)),
+    ///     Span::from("spans").bold(),
     /// ]));
     /// Cell::new(Text::from("a text"));
     /// ```
@@ -80,12 +97,17 @@ impl<'a> Cell<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::Stylize,
+    ///     text::{Line, Span, Text},
+    ///     widgets::Cell,
+    /// };
+    ///
     /// Cell::default().content("simple string");
     /// Cell::default().content(Span::from("span"));
     /// Cell::default().content(Line::from(vec![
     ///     Span::raw("a vec of "),
-    ///     Span::styled("spans", Style::new().bold()),
+    ///     Span::from("spans").bold(),
     /// ]));
     /// Cell::default().content(Text::from("a text"));
     /// ```
@@ -111,7 +133,11 @@ impl<'a> Cell<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     widgets::Cell,
+    /// };
+    ///
     /// Cell::new("Cell 1").style(Style::new().red().italic());
     /// ```
     ///
@@ -119,11 +145,14 @@ impl<'a> Cell<'a> {
     /// the [`Stylize`] trait to set the style of the widget more concisely.
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{style::Stylize, widgets::Cell};
+    ///
     /// Cell::new("Cell 1").red().italic();
     /// ```
     ///
-    /// [`Row`]: super::Row
+    /// [`Row`]: crate::widgets::Row
+    /// [`Color`]: crate::style::Color
+    /// [`Stylize`]: crate::style::Stylize
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -165,6 +194,7 @@ impl<'a> Styled for Cell<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::style::{Color, Modifier, Stylize};
 
     #[test]
     fn new() {

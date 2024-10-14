@@ -403,8 +403,10 @@
 //! # Example
 //!
 //! ```rust
-//! # use ratatui::prelude::*;
-//! use ratatui::style::palette::material::{BLUE, RED};
+//! use ratatui::style::{
+//!     palette::material::{BLUE, RED},
+//!     Color,
+//! };
 //!
 //! assert_eq!(RED.c500, Color::Rgb(244, 67, 54));
 //! assert_eq!(BLUE.c500, Color::Rgb(33, 150, 243));
@@ -412,7 +414,7 @@
 //!
 //! [`matdesign-color` crate]: https://crates.io/crates/matdesign-color
 
-use crate::prelude::*;
+use crate::style::Color;
 
 /// A palette of colors for use in Material design with accent colors
 ///

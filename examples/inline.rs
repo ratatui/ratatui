@@ -25,11 +25,11 @@ use rand::distributions::{Distribution, Uniform};
 use ratatui::{
     backend::Backend,
     crossterm::event,
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span},
-    widgets::{block, Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
+    widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
     Frame, Terminal, TerminalOptions, Viewport,
 };
 
@@ -231,7 +231,7 @@ fn run(
 fn draw(frame: &mut Frame, downloads: &Downloads) {
     let area = frame.area();
 
-    let block = Block::new().title(block::Title::from("Progress").alignment(Alignment::Center));
+    let block = Block::new().title(Line::from("Progress").centered());
     frame.render_widget(block, area);
 
     let vertical = Layout::vertical([Constraint::Length(2), Constraint::Length(4)]).margin(1);

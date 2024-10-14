@@ -31,6 +31,7 @@ mod chart;
 mod clear;
 mod gauge;
 mod list;
+mod logo;
 mod paragraph;
 mod reflow;
 mod scrollbar;
@@ -46,6 +47,7 @@ pub use self::{
     clear::Clear,
     gauge::{Gauge, LineGauge},
     list::{List, ListDirection, ListItem, ListState},
+    logo::{RatatuiLogo, Size as RatatuiLogoSize},
     paragraph::{Paragraph, Wrap},
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline},
@@ -83,7 +85,11 @@ use crate::{buffer::Buffer, layout::Rect, style::Style};
 /// # Examples
 ///
 /// ```rust,no_run
-/// use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+/// use ratatui::{
+///     backend::TestBackend,
+///     widgets::{Clear, Widget},
+///     Terminal,
+/// };
 /// # let backend = TestBackend::new(5, 5);
 /// # let mut terminal = Terminal::new(backend).unwrap();
 ///
@@ -95,7 +101,7 @@ use crate::{buffer::Buffer, layout::Rect, style::Style};
 /// It's common to render widgets inside other widgets:
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
 ///
 /// struct MyWidget;
 ///
@@ -133,7 +139,11 @@ pub trait Widget {
 /// ```rust,no_run
 /// use std::io;
 ///
-/// use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+/// use ratatui::{
+///     backend::TestBackend,
+///     widgets::{List, ListItem, ListState, StatefulWidget, Widget},
+///     Terminal,
+/// };
 ///
 /// // Let's say we have some events to display.
 /// struct Events {
@@ -257,7 +267,12 @@ pub trait StatefulWidget {
 ///
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     buffer::Buffer,
+///     layout::Rect,
+///     text::Line,
+///     widgets::{Widget, WidgetRef},
+/// };
 ///
 /// struct Greeting;
 ///
@@ -332,7 +347,12 @@ impl<W: WidgetRef> Widget for &W {
 ///
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     buffer::Buffer,
+///     layout::Rect,
+///     text::Line,
+///     widgets::{Widget, WidgetRef},
+/// };
 ///
 /// struct Parent {
 ///     child: Option<Child>,
@@ -381,7 +401,13 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 ///
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     buffer::Buffer,
+///     layout::Rect,
+///     style::Stylize,
+///     text::Line,
+///     widgets::{StatefulWidget, StatefulWidgetRef, Widget},
+/// };
 ///
 /// struct PersonalGreeting;
 ///

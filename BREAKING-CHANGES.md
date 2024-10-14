@@ -10,6 +10,10 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.29.0](#v0290)
+  - `Line` now implements `From<Cow<str>`
+  - `Table::highlight_style` is now `Table::row_highlight_style`
+  - `Tabs::select` now accepts `Into<Option<usize>>`
 - [v0.28.0](#v0280)
   ⁻ `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
@@ -85,6 +89,30 @@ let line = Line::from(foo); // now fails due to now ambiguous inferred type
 let line = Line::from(String::from(foo));
 ```
 
+### `Tabs::select()` now accepts `Into<Option<usize>>` ([#1413])
+
+[#1413]: https://github.com/ratatui/ratatui/pull/1413
+
+Previously `Tabs::select()` accepted `usize`, but it now accepts `Into<Option<usize>>`. This breaks
+any code already using parameter type inference:
+
+```diff
+let selected = 1u8;
+- let tabs = Tabs::new(["A", "B"]).select(selected.into())
++ let tabs = Tabs::new(["A", "B"]).select(selected as usize)
+```
+
+### `Table::highlight_style` is now `Table::row_highlight_style` ([#1331])
+
+[#1331]: https://github.com/ratatui/ratatui/pull/1331
+
+The `Table::highlight_style` is now deprecated in favor of `Table::row_highlight_style`.
+
+Also, the serialized output of the `TableState` will now include the "selected_column" field.
+Software that manually parse the serialized the output (with anything other than the `Serialize`
+implementation on `TableState`) may have to be refactored if the "selected_column" field is not accounted for.
+This does not affect users who rely on the `Deserialize`, or `Serialize` implementation on the state.
+
 ## v0.28.0
 
 ### `Backend::size` returns `Size` instead of `Rect` ([#1254])
@@ -154,7 +182,7 @@ are also named terminal, and confusion about module exports for newer Rust users
 
 This change simplifies the trait and makes it easier to implement.
 
-### `Frame::size` is deprecated and renamed to `Frame::area` ([#1293])
+### `Frame::size` is deprecated and renamed to `Frame::area`
 
 [#1293]: https://github.com/ratatui/ratatui/pull/1293
 

@@ -3,12 +3,15 @@ use std::{cmp::max, ops::Not};
 use strum::{Display, EnumString};
 
 use crate::{
-    layout::Flex,
-    prelude::*,
-    style::Styled,
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Flex, Layout, Position, Rect},
+    style::{Color, Style, Styled},
+    symbols::{self},
+    text::Line,
     widgets::{
+        block::BlockExt,
         canvas::{Canvas, Line as CanvasLine, Points},
-        Block,
+        Block, Widget, WidgetRef,
     },
 };
 
@@ -25,7 +28,11 @@ use crate::{
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     widgets::Axis,
+/// };
+///
 /// let axis = Axis::default()
 ///     .title("X Axis")
 ///     .style(Style::default().gray())
@@ -94,7 +101,8 @@ impl<'a> Axis<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{style::Stylize, widgets::Axis};
+    ///
     /// let axis = Axis::default()
     ///     .bounds([0.0, 50.0])
     ///     .labels(["0".bold(), "25".into(), "50".bold()]);
@@ -122,7 +130,8 @@ impl<'a> Axis<'a> {
     /// like so
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{style::Stylize, widgets::Axis};
+    ///
     /// let axis = Axis::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -297,7 +306,11 @@ impl LegendPosition {
 /// This example draws a red line between two points.
 ///
 /// ```rust
-/// use ratatui::{prelude::*, symbols::Marker, widgets::*};
+/// use ratatui::{
+///     style::Stylize,
+///     symbols::Marker,
+///     widgets::{Dataset, GraphType},
+/// };
 ///
 /// let dataset = Dataset::default()
 ///     .name("dataset 1")
@@ -401,7 +414,8 @@ impl<'a> Dataset<'a> {
     /// like so
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{style::Stylize, widgets::Dataset};
+    ///
     /// let dataset = Dataset::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -452,7 +466,11 @@ struct ChartLayout {
 /// # Examples
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     symbols,
+///     widgets::{Axis, Block, Chart, Dataset, GraphType},
+/// };
 ///
 /// // Create the datasets to fill the chart with
 /// let datasets = vec![
@@ -521,17 +539,19 @@ impl<'a> Chart<'a> {
     /// This creates a simple chart with one [`Dataset`]
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let data_points = vec![];
+    /// use ratatui::widgets::{Chart, Dataset};
+    ///
+    /// let data_points = vec![];
     /// let chart = Chart::new(vec![Dataset::default().data(&data_points)]);
     /// ```
     ///
     /// This creates a chart with multiple [`Dataset`]s
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let data_points = vec![];
-    /// # let data_points2 = vec![];
+    /// use ratatui::widgets::{Chart, Dataset};
+    ///
+    /// let data_points = vec![];
+    /// let data_points2 = vec![];
     /// let chart = Chart::new(vec![
     ///     Dataset::default().data(&data_points),
     ///     Dataset::default().data(&data_points2),
@@ -581,7 +601,8 @@ impl<'a> Chart<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Axis, Chart};
+    ///
     /// let chart = Chart::new(vec![]).x_axis(
     ///     Axis::default()
     ///         .title("X Axis")
@@ -604,7 +625,8 @@ impl<'a> Chart<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::widgets::{Axis, Chart};
+    ///
     /// let chart = Chart::new(vec![]).y_axis(
     ///     Axis::default()
     ///         .title("Y Axis")
@@ -635,7 +657,8 @@ impl<'a> Chart<'a> {
     /// its height is greater than 25% of the total widget height.
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{layout::Constraint, widgets::Chart};
+    ///
     /// let constraints = (Constraint::Ratio(1, 3), Constraint::Ratio(1, 4));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
@@ -644,7 +667,8 @@ impl<'a> Chart<'a> {
     /// first one is always true.
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{layout::Constraint, widgets::Chart};
+    ///
     /// let constraints = (Constraint::Min(0), Constraint::Ratio(1, 4));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
@@ -653,7 +677,8 @@ impl<'a> Chart<'a> {
     /// [`Chart::legend_position`].
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{layout::Constraint, widgets::Chart};
+    ///
     /// let constraints = (Constraint::Length(0), Constraint::Ratio(1, 4));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
@@ -685,14 +710,16 @@ impl<'a> Chart<'a> {
     /// Show the legend on the top left corner.
     ///
     /// ```
-    /// # use ratatui::widgets::{Chart, LegendPosition};
+    /// use ratatui::widgets::{Chart, LegendPosition};
+    ///
     /// let chart: Chart = Chart::new(vec![]).legend_position(Some(LegendPosition::TopLeft));
     /// ```
     ///
     /// Hide the legend altogether
     ///
     /// ```
-    /// # use ratatui::widgets::{Chart, LegendPosition};
+    /// use ratatui::widgets::{Chart, LegendPosition};
+    ///
     /// let chart = Chart::new(vec![]).legend_position(None);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -1134,6 +1161,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
+    use crate::style::{Modifier, Stylize};
 
     struct LegendTestCase {
         chart_area: Rect,

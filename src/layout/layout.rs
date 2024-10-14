@@ -12,8 +12,7 @@ use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
     MIN_SIZE_GE, PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, SPACER_SIZE_EQ, SPACE_GROW,
 };
-use super::Flex;
-use crate::prelude::*;
+use crate::layout::{Constraint, Direction, Flex, Margin, Rect};
 
 type Rects = Rc<[Rect]>;
 type Segments = Rects;
@@ -87,7 +86,11 @@ thread_local! {
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::{Constraint, Direction, Layout, Rect},
+///     widgets::Paragraph,
+///     Frame,
+/// };
 ///
 /// fn render(frame: &mut Frame, area: Rect) {
 ///     let layout = Layout::new(
@@ -141,7 +144,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Direction, Layout};
+    ///
     /// Layout::new(
     ///     Direction::Horizontal,
     ///     [Constraint::Length(5), Constraint::Min(0)],
@@ -174,7 +178,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout};
+    ///
     /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
     pub fn vertical<I>(constraints: I) -> Self
@@ -193,7 +198,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout};
+    ///
     /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
     pub fn horizontal<I>(constraints: I) -> Self
@@ -221,7 +227,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Direction, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .direction(Direction::Horizontal)
     ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
@@ -255,7 +262,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .constraints([
     ///         Constraint::Percentage(20),
@@ -299,7 +307,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .constraints([Constraint::Min(0)])
     ///     .margin(2)
@@ -320,7 +329,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .constraints([Constraint::Min(0)])
     ///     .horizontal_margin(2)
@@ -338,7 +348,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Layout, Rect};
+    ///
     /// let layout = Layout::default()
     ///     .constraints([Constraint::Min(0)])
     ///     .vertical_margin(2)
@@ -369,7 +380,8 @@ impl Layout {
     /// In this example, the items in the layout will be aligned to the start.
     ///
     /// ```rust
-    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// use ratatui::layout::{Constraint::*, Flex, Layout};
+    ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Start);
     /// ```
     ///
@@ -377,7 +389,8 @@ impl Layout {
     /// space.
     ///
     /// ```rust
-    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// use ratatui::layout::{Constraint::*, Flex, Layout};
+    ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Legacy);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -397,7 +410,8 @@ impl Layout {
     /// In this example, the spacing between each item in the layout is set to 2 cells.
     ///
     /// ```rust
-    /// # use ratatui::layout::{Layout, Constraint::*};
+    /// use ratatui::layout::{Constraint::*, Layout};
+    ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(2);
     /// ```
     ///
@@ -426,7 +440,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{layout::{Layout, Constraint}, Frame};
+    ///
     /// # fn render(frame: &mut Frame) {
     /// let area = frame.area();
     /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
@@ -458,7 +473,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// use ratatui::{layout::{Layout, Constraint}, Frame};
+    ///
     /// # fn render(frame: &mut Frame) {
     /// let area = frame.area();
     /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
@@ -497,7 +513,7 @@ impl Layout {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Direction, Layout, Rect};
     /// let layout = Layout::default()
     ///     .direction(Direction::Vertical)
     ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
@@ -529,7 +545,8 @@ impl Layout {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::prelude::*;
+    /// use ratatui::layout::{Constraint, Direction, Layout, Rect};
+    ///
     /// let (areas, spacers) = Layout::default()
     ///     .direction(Direction::Vertical)
     ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
@@ -702,35 +719,35 @@ fn configure_constraints(
     constraints: &[Constraint],
     flex: Flex,
 ) -> Result<(), AddConstraintError> {
-    for (&constraint, &element) in constraints.iter().zip(segments.iter()) {
+    for (&constraint, &segment) in constraints.iter().zip(segments.iter()) {
         match constraint {
             Constraint::Max(max) => {
-                solver.add_constraint(element.has_max_size(max, MAX_SIZE_LE))?;
-                solver.add_constraint(element.has_int_size(max, MAX_SIZE_EQ))?;
+                solver.add_constraint(segment.has_max_size(max, MAX_SIZE_LE))?;
+                solver.add_constraint(segment.has_int_size(max, MAX_SIZE_EQ))?;
             }
             Constraint::Min(min) => {
-                solver.add_constraint(element.has_min_size(min, MIN_SIZE_GE))?;
+                solver.add_constraint(segment.has_min_size(min, MIN_SIZE_GE))?;
                 if flex.is_legacy() {
-                    solver.add_constraint(element.has_int_size(min, MIN_SIZE_EQ))?;
+                    solver.add_constraint(segment.has_int_size(min, MIN_SIZE_EQ))?;
                 } else {
-                    solver.add_constraint(element.has_size(area, FILL_GROW))?;
+                    solver.add_constraint(segment.has_size(area, FILL_GROW))?;
                 }
             }
             Constraint::Length(length) => {
-                solver.add_constraint(element.has_int_size(length, LENGTH_SIZE_EQ))?;
+                solver.add_constraint(segment.has_int_size(length, LENGTH_SIZE_EQ))?;
             }
             Constraint::Percentage(p) => {
                 let size = area.size() * f64::from(p) / 100.00;
-                solver.add_constraint(element.has_size(size, PERCENTAGE_SIZE_EQ))?;
+                solver.add_constraint(segment.has_size(size, PERCENTAGE_SIZE_EQ))?;
             }
             Constraint::Ratio(num, den) => {
                 // avoid division by zero by using 1 when denominator is 0
                 let size = area.size() * f64::from(num) / f64::from(den.max(1));
-                solver.add_constraint(element.has_size(size, RATIO_SIZE_EQ))?;
+                solver.add_constraint(segment.has_size(size, RATIO_SIZE_EQ))?;
             }
             Constraint::Fill(_) => {
                 // given no other constraints, this segment will grow as much as possible.
-                solver.add_constraint(element.has_size(area, FILL_GROW))?;
+                solver.add_constraint(segment.has_size(area, FILL_GROW))?;
             }
         }
     }
@@ -837,7 +854,7 @@ fn configure_fill_constraints(
     constraints: &[Constraint],
     flex: Flex,
 ) -> Result<(), AddConstraintError> {
-    for ((&left_constraint, &left_element), (&right_constraint, &right_element)) in constraints
+    for ((&left_constraint, &left_segment), (&right_constraint, &right_segment)) in constraints
         .iter()
         .zip(segments.iter())
         .filter(|(c, _)| c.is_fill() || (!flex.is_legacy() && c.is_min()))
@@ -854,9 +871,9 @@ fn configure_fill_constraints(
             _ => unreachable!(),
         };
         solver.add_constraint(
-            (right_scaling_factor * left_element.size())
+            (right_scaling_factor * left_segment.size())
                 | EQ(GROW)
-                | (left_scaling_factor * right_element.size()),
+                | (left_scaling_factor * right_segment.size()),
         )?;
     }
     Ok(())
@@ -1293,9 +1310,9 @@ mod tests {
         use rstest::rstest;
 
         use crate::{
-            layout::flex::Flex,
-            prelude::{Constraint::*, *},
-            widgets::Paragraph,
+            buffer::Buffer,
+            layout::{Constraint, Constraint::*, Direction, Flex, Layout, Rect},
+            widgets::{Paragraph, Widget},
         };
 
         /// Test that the given constraints applied to the given area result in the expected layout.
@@ -1847,7 +1864,7 @@ mod tests {
                 ])
                 .split(target);
 
-            assert_eq!(target.height, chunks.iter().map(|r| r.height).sum::<u16>());
+            assert_eq!(chunks.iter().map(|r| r.height).sum::<u16>(), target.height);
             chunks.windows(2).for_each(|w| assert!(w[0].y <= w[1].y));
         }
 
@@ -1940,7 +1957,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -1959,7 +1976,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -1990,7 +2007,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2020,7 +2037,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
 
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(&constraints)
@@ -2029,7 +2046,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
 
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(&constraints)
@@ -2038,7 +2055,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
 
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(&constraints)
@@ -2047,7 +2064,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
 
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(&constraints)
@@ -2056,7 +2073,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2070,7 +2087,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2117,7 +2134,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2134,7 +2151,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2152,7 +2169,7 @@ mod tests {
                 .iter()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2216,7 +2233,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2242,7 +2259,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2274,7 +2291,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2298,7 +2315,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2323,7 +2340,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2366,7 +2383,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2386,7 +2403,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2410,7 +2427,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2436,7 +2453,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2462,7 +2479,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2483,7 +2500,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
     }
 
