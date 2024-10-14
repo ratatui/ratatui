@@ -609,6 +609,12 @@ impl<'a> From<&'a str> for Line<'a> {
     }
 }
 
+impl<'a> From<Cow<'a, str>> for Line<'a> {
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::raw(s)
+    }
+}
+
 impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     fn from(spans: Vec<Span<'a>>) -> Self {
         Self {
