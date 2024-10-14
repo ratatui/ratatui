@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::{
     buffer::Buffer,
     layout::Rect,
@@ -44,14 +46,14 @@ const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVER
 ///
 /// (0..5).map(|i| format!("Tab{i}")).collect::<Tabs>();
 /// ```
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Tabs<'a> {
     /// A block to wrap this widget in if necessary
     block: Option<Block<'a>>,
     /// One title for each tab
     titles: Vec<Line<'a>>,
     /// The index of the selected tabs
-    selected: usize,
+    selected: Option<usize>,
     /// The style used to draw the text
     style: Style,
     /// Style to apply to the selected item
@@ -62,6 +64,30 @@ pub struct Tabs<'a> {
     padding_left: Line<'a>,
     /// Tab Right Padding
     padding_right: Line<'a>,
+}
+
+impl Default for Tabs<'_> {
+    /// Returns a default `Tabs` widget.
+    ///
+    /// The default widget has:
+    /// - No tabs
+    /// - No selected tab
+    /// - The highlight style is set to reversed.
+    /// - The divider is set to a pipe (`|`).
+    /// - The padding on the left and right is set to a space.
+    ///
+    /// This is rarely useful on its own without calling [`Tabs::titles`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::widgets::Tabs;
+    ///
+    /// let tabs = Tabs::default().titles(["Tab 1", "Tab 2"]);
+    /// ```
+    fn default() -> Self {
+        Self::new(Vec::<Line>::new())
+    }
 }
 
 impl<'a> Tabs<'a> {
@@ -102,16 +128,60 @@ impl<'a> Tabs<'a> {
         Iter: IntoIterator,
         Iter::Item: Into<Line<'a>>,
     {
+        let titles = titles.into_iter().map(Into::into).collect_vec();
+        let selected = if titles.is_empty() { None } else { Some(0) };
         Self {
             block: None,
-            titles: titles.into_iter().map(Into::into).collect(),
-            selected: 0,
+            titles,
+            selected,
             style: Style::default(),
             highlight_style: DEFAULT_HIGHLIGHT_STYLE,
             divider: Span::raw(symbols::line::VERTICAL),
             padding_left: Line::from(" "),
             padding_right: Line::from(" "),
         }
+    }
+
+    /// Sets the titles of the tabs.
+    ///
+    /// `titles` is an iterator whose elements can be converted into `Line`.
+    ///
+    /// The selected tab can be set with [`Tabs::select`]. The first tab has index 0 (this is also
+    /// the default index).
+    ///
+    /// # Examples
+    ///
+    /// Basic titles.
+    ///
+    /// ```
+    /// use ratatui::widgets::Tabs;
+    ///
+    /// let tabs = Tabs::default().titles(vec!["Tab 1", "Tab 2"]);
+    /// ```
+    ///
+    /// Styled titles.
+    ///
+    /// ```
+    /// use ratatui::{style::Stylize, widgets::Tabs};
+    ///
+    /// let tabs = Tabs::default().titles(vec!["Tab 1".red(), "Tab 2".blue()]);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn titles<Iter>(mut self, titles: Iter) -> Self
+    where
+        Iter: IntoIterator,
+        Iter::Item: Into<Line<'a>>,
+    {
+        self.titles = titles.into_iter().map(Into::into).collect_vec();
+        self.selected = if self.titles.is_empty() {
+            None
+        } else {
+            // Ensure selected is within bounds, and default to 0 if no selected tab
+            self.selected
+                .map(|selected| selected.min(self.titles.len() - 1))
+                .or(Some(0))
+        };
+        self
     }
 
     /// Surrounds the `Tabs` with a [`Block`].
@@ -125,9 +195,27 @@ impl<'a> Tabs<'a> {
     ///
     /// The first tab has index 0 (this is also the default index).
     /// The selected tab can have a different style with [`Tabs::highlight_style`].
+    ///
+    /// # Examples
+    ///
+    /// Select the second tab.
+    ///
+    /// ```
+    /// use ratatui::widgets::Tabs;
+    ///
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).select(1);
+    /// ```
+    ///
+    /// Deselect the selected tab.
+    ///
+    /// ```
+    /// use ratatui::widgets::Tabs;
+    ///
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).select(None);
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn select(mut self, selected: usize) -> Self {
-        self.selected = selected;
+    pub fn select<T: Into<Option<usize>>>(mut self, selected: T) -> Self {
+        self.selected = selected.into();
         self
     }
 
@@ -313,7 +401,7 @@ impl Tabs<'_> {
 
             // Title
             let pos = buf.set_line(x, tabs_area.top(), title, remaining_width);
-            if i == self.selected {
+            if Some(i) == self.selected {
                 buf.set_style(
                     Rect {
                         x,
@@ -372,7 +460,7 @@ mod tests {
                     Line::from("Tab3"),
                     Line::from("Tab4"),
                 ],
-                selected: 0,
+                selected: Some(0),
                 style: Style::default(),
                 highlight_style: DEFAULT_HIGHLIGHT_STYLE,
                 divider: Span::raw(symbols::line::VERTICAL),
@@ -380,6 +468,37 @@ mod tests {
                 padding_left: Line::from(" "),
             }
         );
+    }
+
+    #[test]
+    fn default() {
+        assert_eq!(
+            Tabs::default(),
+            Tabs {
+                block: None,
+                titles: vec![],
+                selected: None,
+                style: Style::default(),
+                highlight_style: DEFAULT_HIGHLIGHT_STYLE,
+                divider: Span::raw(symbols::line::VERTICAL),
+                padding_right: Line::from(" "),
+                padding_left: Line::from(" "),
+            }
+        );
+    }
+
+    #[test]
+    fn select_into() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
+        assert_eq!(tabs.clone().select(2).selected, Some(2));
+        assert_eq!(tabs.clone().select(None).selected, None);
+        assert_eq!(tabs.clone().select(1u8 as usize).selected, Some(1));
+    }
+
+    #[test]
+    fn select_before_titles() {
+        let tabs = Tabs::default().select(1).titles(["Tab1", "Tab2"]);
+        assert_eq!(tabs.selected, Some(1));
     }
 
     #[test]
@@ -410,7 +529,7 @@ mod tests {
     }
 
     #[test]
-    fn render_default() {
+    fn render_new() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
         let mut expected = Buffer::with_lines([" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
         // first tab selected
@@ -490,6 +609,10 @@ mod tests {
         // out of bounds selects no tab
         let expected = Buffer::with_lines([" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
         test_case(tabs.clone().select(4), Rect::new(0, 0, 30, 1), &expected);
+
+        // deselect
+        let expected = Buffer::with_lines([" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        test_case(tabs.clone().select(None), Rect::new(0, 0, 30, 1), &expected);
     }
 
     #[test]
