@@ -187,7 +187,7 @@ where
     fn get_cursor_position(&mut self) -> io::Result<Position> {
         let position = termion::cursor::DetectCursorPos::cursor_pos(&mut self.writer)
             .map(|(x, y)| Position::new(x - 1, y - 1))
-            .or_else(|e| self.last_known_cursor_position.ok_or_else(|| e))?;
+            .or_else(|e| self.last_known_cursor_position.ok_or(e))?;
         self.last_known_cursor_position = Some(position);
         Ok(position)
     }
