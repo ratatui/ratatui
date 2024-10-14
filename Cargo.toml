@@ -138,6 +138,10 @@ macros = []
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["dep:palette"]
 
+## Use terminal scrolling regions to make some operations less prone to
+## flickering. (i.e. Terminal::insert_before).
+scrolling-regions = []
+
 ## enables all widgets.
 all-widgets = ["widget-calendar"]
 

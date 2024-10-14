@@ -80,6 +80,28 @@ impl TestBackend {
         }
     }
 
+    /// Creates a new `TestBackend` with the specified lines as the initial screen state.
+    ///
+    /// The backend's screen size is determined from the initial lines.
+    #[must_use]
+    pub fn with_lines<'line, Lines>(lines: Lines) -> Self
+    where
+        Lines: IntoIterator,
+        Lines::Item: Into<crate::text::Line<'line>>,
+    {
+        let buffer = Buffer::with_lines(lines);
+        let scrollback = Buffer::empty(Rect {
+            width: buffer.area.width,
+            ..Rect::ZERO
+        });
+        Self {
+            buffer,
+            scrollback,
+            cursor: false,
+            pos: (0, 0),
+        }
+    }
+
     /// Returns a reference to the internal buffer of the `TestBackend`.
     pub const fn buffer(&self) -> &Buffer {
         &self.buffer
@@ -343,6 +365,77 @@ impl Backend for TestBackend {
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }
+
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, scroll_by: u16) -> io::Result<()> {
+        let width: usize = self.buffer.area.width.into();
+        let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
+        let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
+        let cell_region_len = cell_region_end - cell_region_start;
+        let cells_to_scroll_by = width * scroll_by as usize;
+
+        // Deal with the simple case where nothing needs to be copied into scrollback.
+        if cell_region_start > 0 {
+            if cells_to_scroll_by >= cell_region_len {
+                // The scroll amount is large enough to clear the whole region.
+                self.buffer.content[cell_region_start..cell_region_end].fill_with(Default::default);
+            } else {
+                // Scroll up by rotating, then filling in the bottom with empty cells.
+                self.buffer.content[cell_region_start..cell_region_end]
+                    .rotate_left(cells_to_scroll_by);
+                self.buffer.content[cell_region_end - cells_to_scroll_by..cell_region_end]
+                    .fill_with(Default::default);
+            }
+            return Ok(());
+        }
+
+        // The rows inserted into the scrollback will first come from the buffer, and if that is
+        // insufficient, will then be blank rows.
+        let cells_from_region = cell_region_len.min(cells_to_scroll_by);
+        append_to_scrollback(
+            &mut self.scrollback,
+            self.buffer.content.splice(
+                0..cells_from_region,
+                iter::repeat_with(Default::default).take(cells_from_region),
+            ),
+        );
+        if cells_to_scroll_by < cell_region_len {
+            // Rotate the remaining cells to the front of the region.
+            self.buffer.content[cell_region_start..cell_region_end].rotate_left(cells_from_region);
+        } else {
+            // Splice cleared out the region. Insert empty rows in scrollback.
+            append_to_scrollback(
+                &mut self.scrollback,
+                iter::repeat_with(Default::default).take(cells_to_scroll_by - cell_region_len),
+            );
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_down(
+        &mut self,
+        region: std::ops::Range<u16>,
+        scroll_by: u16,
+    ) -> io::Result<()> {
+        let width: usize = self.buffer.area.width.into();
+        let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
+        let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
+        let cell_region_len = cell_region_end - cell_region_start;
+        let cells_to_scroll_by = width * scroll_by as usize;
+
+        if cells_to_scroll_by >= cell_region_len {
+            // The scroll amount is large enough to clear the whole region.
+            self.buffer.content[cell_region_start..cell_region_end].fill_with(Default::default);
+        } else {
+            // Scroll up by rotating, then filling in the top with empty cells.
+            self.buffer.content[cell_region_start..cell_region_end]
+                .rotate_right(cells_to_scroll_by);
+            self.buffer.content[cell_region_start..cell_region_start + cells_to_scroll_by]
+                .fill_with(Default::default);
+        }
+        Ok(())
+    }
 }
 
 /// Append the provided cells to the bottom of a scrollback buffer. The number of cells must be a
@@ -492,8 +585,7 @@ mod tests {
 
     #[test]
     fn clear_region_all() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -513,8 +605,7 @@ mod tests {
 
     #[test]
     fn clear_region_after_cursor() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -537,8 +628,7 @@ mod tests {
 
     #[test]
     fn clear_region_before_cursor() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -561,8 +651,7 @@ mod tests {
 
     #[test]
     fn clear_region_current_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -585,8 +674,7 @@ mod tests {
 
     #[test]
     fn clear_region_until_new_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -609,8 +697,7 @@ mod tests {
 
     #[test]
     fn append_lines_not_at_last_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -648,8 +735,7 @@ mod tests {
 
     #[test]
     fn append_lines_at_last_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -681,8 +767,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_not_at_last_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -711,8 +796,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_past_last_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -739,8 +823,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_where_cursor_at_end_appends_height_lines() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -773,8 +856,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_where_cursor_appends_height_lines() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -799,8 +881,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_where_cursor_at_end_appends_more_than_height_lines() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -915,5 +996,82 @@ mod tests {
     fn flush() {
         let mut backend = TestBackend::new(10, 2);
         backend.flush().unwrap();
+    }
+
+    #[cfg(feature = "scrolling-regions")]
+    mod scrolling_regions {
+        use rstest::rstest;
+
+        use super::*;
+
+        const A: &str = "aaaa";
+        const B: &str = "bbbb";
+        const C: &str = "cccc";
+        const D: &str = "dddd";
+        const E: &str = "eeee";
+        const S: &str = "    ";
+
+        #[rstest]
+        #[case([A, B, C, D, E], 0..5, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..5, 2, [A, B],                [C, D, E, S, S])]
+        #[case([A, B, C, D, E], 0..5, 5, [A, B, C, D, E],       [S, S, S, S, S])]
+        #[case([A, B, C, D, E], 0..5, 7, [A, B, C, D, E, S, S], [S, S, S, S, S])]
+        #[case([A, B, C, D, E], 0..3, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..3, 2, [A, B],                [C, S, S, D, E])]
+        #[case([A, B, C, D, E], 0..3, 3, [A, B, C],             [S, S, S, D, E])]
+        #[case([A, B, C, D, E], 0..3, 4, [A, B, C, S],          [S, S, S, D, E])]
+        #[case([A, B, C, D, E], 1..4, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 1..4, 2, [],                    [A, D, S, S, E])]
+        #[case([A, B, C, D, E], 1..4, 3, [],                    [A, S, S, S, E])]
+        #[case([A, B, C, D, E], 1..4, 4, [],                    [A, S, S, S, E])]
+        #[case([A, B, C, D, E], 0..0, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..0, 2, [S, S],                [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 2..2, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 2..2, 2, [],                    [A, B, C, D, E])]
+        fn scroll_region_up<const L: usize, const M: usize, const N: usize>(
+            #[case] initial_screen: [&'static str; L],
+            #[case] range: std::ops::Range<u16>,
+            #[case] scroll_by: u16,
+            #[case] expected_scrollback: [&'static str; M],
+            #[case] expected_buffer: [&'static str; N],
+        ) {
+            let mut backend = TestBackend::with_lines(initial_screen);
+            backend.scroll_region_up(range, scroll_by).unwrap();
+            if expected_scrollback.is_empty() {
+                backend.assert_scrollback_empty();
+            } else {
+                backend.assert_scrollback_lines(expected_scrollback);
+            }
+            backend.assert_buffer_lines(expected_buffer);
+        }
+
+        #[rstest]
+        #[case([A, B, C, D, E], 0..5, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..5, 2, [S, S, A, B, C])]
+        #[case([A, B, C, D, E], 0..5, 5, [S, S, S, S, S])]
+        #[case([A, B, C, D, E], 0..5, 7, [S, S, S, S, S])]
+        #[case([A, B, C, D, E], 0..3, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..3, 2, [S, S, A, D, E])]
+        #[case([A, B, C, D, E], 0..3, 3, [S, S, S, D, E])]
+        #[case([A, B, C, D, E], 0..3, 4, [S, S, S, D, E])]
+        #[case([A, B, C, D, E], 1..4, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 1..4, 2, [A, S, S, B, E])]
+        #[case([A, B, C, D, E], 1..4, 3, [A, S, S, S, E])]
+        #[case([A, B, C, D, E], 1..4, 4, [A, S, S, S, E])]
+        #[case([A, B, C, D, E], 0..0, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..0, 2, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 2..2, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 2..2, 2, [A, B, C, D, E])]
+        fn scroll_region_down<const M: usize, const N: usize>(
+            #[case] initial_screen: [&'static str; M],
+            #[case] range: std::ops::Range<u16>,
+            #[case] scroll_by: u16,
+            #[case] expected_buffer: [&'static str; N],
+        ) {
+            let mut backend = TestBackend::with_lines(initial_screen);
+            backend.scroll_region_down(range, scroll_by).unwrap();
+            backend.assert_scrollback_empty();
+            backend.assert_buffer_lines(expected_buffer);
+        }
     }
 }

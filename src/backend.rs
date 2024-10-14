@@ -327,6 +327,64 @@ pub trait Backend {
 
     /// Flush any buffered content to the terminal screen.
     fn flush(&mut self) -> io::Result<()>;
+
+    /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range
+    /// of rows.
+    ///
+    /// Each row in the region is replaced by the row `line_count` rows below it, except the bottom
+    /// `line_count` rows, which are replaced by empty rows. If `line_count` is equal to or larger
+    /// than the number of rows in the region, then all rows are replaced with empty rows.
+    ///
+    /// If the region includes row 0, then `line_count` rows are copied into the bottom of the
+    /// scrollback buffer. These rows are first taken from the old contents of the region, starting
+    /// from the top. If there aren't sufficient rows in the region, then the remainder are empty
+    /// rows.
+    ///
+    /// The position of the cursor afterwards is undefined.
+    ///
+    /// The behavior is designed to match what ANSI terminals do when scrolling regions are
+    /// established. With ANSI terminals, a scrolling region can be established with the "^[[X;Yr"
+    /// sequence, where X and Y define the lines of the region. The scrolling region can be reset
+    /// to be the whole screen with the "^[[r" sequence.
+    ///
+    /// When a scrolling region is established in an ANSI terminal, various operations' behaviors
+    /// are changed in such a way that the scrolling region acts like a "virtual screen". In
+    /// particular, the scrolling sequence "^[[NS", which scrolls lines up by a count of N.
+    ///
+    /// On an ANSI terminal, this method will probably translate to something like:
+    /// "^[[X;Yr^[[NS^[[r". That is, set the scrolling region, scroll up, then reset the scrolling
+    /// region.
+    ///
+    /// For examples of how this function is expected to work, refer to the tests for
+    /// [`TestBackend::scroll_region_up`].
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, line_count: u16)
+        -> io::Result<()>;
+
+    /// Scroll a region of the screen downwards, where a region is specified by a (half-open) range
+    /// of rows.
+    ///
+    /// Each row in the region is replaced by the row `line_count` rows above it, except the top
+    /// `line_count` rows, which are replaced by empty rows. If `line_count` is equal to or larger
+    /// than the number of rows in the region, then all rows are replaced with empty rows.
+    ///
+    /// The position of the cursor afterwards is undefined.
+    ///
+    /// See the documentation for [`Self::scroll_region_down`] for more information about how this
+    /// is expected to be implemented for ANSI terminals. All of that applies, except the ANSI
+    /// sequence to scroll down is "^[[NT".
+    ///
+    /// This function is asymmetrical with regards to the scrollback buffer. The reason is that
+    /// this how terminals seem to implement things.
+    ///
+    /// For examples of how this function is expected to work, refer to the tests for
+    /// [`TestBackend::scroll_region_down`].
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_down(
+        &mut self,
+        region: std::ops::Range<u16>,
+        line_count: u16,
+    ) -> io::Result<()>;
 }
 
 #[cfg(test)]
