@@ -295,7 +295,7 @@
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
 pub use crossterm;
-/// re-export the `palatte` crate so that users don't have to add it as a dependency
+/// re-export the `palette` crate so that users don't have to add it as a dependency
 #[cfg(feature = "palette")]
 pub use palette;
 #[cfg(feature = "crossterm")]
