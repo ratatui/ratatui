@@ -182,9 +182,7 @@ are also named terminal, and confusion about module exports for newer Rust users
 
 This change simplifies the trait and makes it easier to implement.
 
-### `Frame::size` is deprecated and renamed to `Frame::area`
-
-[#1293]: https://github.com/ratatui/ratatui/pull/1293
+### `Frame::size` is deprecated and renamed to `Frame::area` ([#1293])
 
 `Frame::size` is renamed to `Frame::area` as it's the more correct name.
 
