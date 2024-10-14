@@ -184,6 +184,8 @@ This change simplifies the trait and makes it easier to implement.
 
 ### `Frame::size` is deprecated and renamed to `Frame::area` ([#1293])
 
+[#1293]: https://github.com/ratatui/ratatui/pull/1293
+
 `Frame::size` is renamed to `Frame::area` as it's the more correct name.
 
 ## [v0.27.0](https://github.com/ratatui/ratatui/releases/tag/v0.27.0)
