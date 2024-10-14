@@ -2,13 +2,14 @@ use criterion::{black_box, criterion_group, BatchSize, Bencher, BenchmarkId, Cri
 use ratatui::layout::Rect;
 
 fn rect_iters_benchmark(c: &mut Criterion) {
-    let rect_sizes = vec![
-        Rect::new(0, 0, 16, 16),
-        Rect::new(0, 0, 128, 128),
-        Rect::new(0, 0, 256, 256),
-    ];
+    let rect_sizes = vec![[16, 16], [1024, 1024], [u16::MAX, u16::MAX]];
     let mut group = c.benchmark_group("rect");
-    for rect in rect_sizes {
+    // We don't use `Rect::new` as it will clamp the value to a max of 255x255.
+    for rect in rect_sizes.into_iter().map(|[width, height]| Rect {
+        width,
+        height,
+        ..Default::default()
+    }) {
         group.bench_with_input(
             BenchmarkId::new("rect_rows_iter", rect.height),
             &rect,
