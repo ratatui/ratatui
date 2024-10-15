@@ -16,6 +16,7 @@ This is a quick summary of the sections below:
   - `Table::highlight_style` is now `Table::row_highlight_style`
   - `Tabs::select` now accepts `Into<Option<usize>>`
   - `Color::from_hsl` is now behind the `palette` feature
+  - `block::Title` is now deprecated
 - [v0.28.0](#v0280)
   - `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
@@ -72,6 +73,24 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased
+
+### `block::Title` is now deprecated ([#1372])
+
+[#1372]: https://github.com/ratatui/ratatui/pull/1372
+
+`ratatui::widgets::block::Title` is deprecated in favor of using `Line` to represent titles.
+This removes an unnecessary layer of wrapping (string -> Span -> Line -> Title).
+
+```diff
+-Block::new().title(Title::from("foo"));
++Block::new().title("foo"); // or Line::from("foo")
+
+-Block::new().title(Title::from("foo").position(Position::TOP));
++Block::new().title_top("foo"); // or Line::from("foo")
+
+-Block::new().title(Title::from("foo").position(Position::BOTTOM));
++Block::new().title_bottom("foo"); // or Line::from("foo")
+```
 
 ### `Color::from_hsl` is now behind the `palette` feature and accepts `palette::Hsl` ([#1418])
 
