@@ -79,7 +79,7 @@ impl Buffer {
     /// Returns a Buffer with all cells set to the default one
     #[must_use]
     pub fn empty(area: Rect) -> Self {
-        Self::filled(area, Cell::EMPTY)
+        Self::filled(area, Cell::empty())
     }
 
     /// Returns a Buffer with all cells initialized with the attributes of the given Cell
@@ -414,7 +414,7 @@ impl Buffer {
         if self.content.len() > length {
             self.content.truncate(length);
         } else {
-            self.content.resize(length, Cell::EMPTY);
+            self.content.resize(length, Cell::empty());
         }
         self.area = area;
     }
@@ -429,7 +429,7 @@ impl Buffer {
     /// Merge an other buffer into this one
     pub fn merge(&mut self, other: &Self) {
         let area = self.area.union(other.area);
-        self.content.resize(area.area() as usize, Cell::EMPTY);
+        self.content.resize(area.area() as usize, Cell::empty());
 
         // Move original content to the appropriate space
         let size = self.area.area() as usize;
@@ -499,9 +499,8 @@ impl Buffer {
                 updates.push((x, y, &next_buffer[i]));
             }
 
-            to_skip = current.symbol().width().saturating_sub(1);
-
-            let affected_width = std::cmp::max(current.symbol().width(), previous.symbol().width());
+            to_skip = current.width().saturating_sub(1);
+            let affected_width = std::cmp::max(current.width(), previous.width());
             invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
         }
         updates
@@ -598,7 +597,7 @@ impl fmt::Debug for Buffer {
                 } else {
                     overwritten.push((x, c.symbol()));
                 }
-                skip = std::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+                skip = std::cmp::max(skip, c.width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
