@@ -383,11 +383,13 @@ impl Color {
     /// ```
     /// use ratatui::{palette::Hsl, style::Color};
     ///
-    /// let color: Color = Color::from_hsl(Hsl::new(360.0, 100.0, 100.0));
-    /// assert_eq!(color, Color::Rgb(255, 255, 255));
-    ///
+    /// // Black
     /// let color: Color = Color::from_hsl(Hsl::new(0.0, 0.0, 0.0));
     /// assert_eq!(color, Color::Rgb(0, 0, 0));
+    ///
+    /// // White - note: 100% saturation is not converted to white
+    /// let color: Color = Color::from_hsl(Hsl::new(0.0, 0.0, 100.0));
+    /// assert_eq!(color, Color::Rgb(255, 255, 255));
     /// ```
     #[cfg(feature = "palette")]
     pub fn from_hsl(hsl: palette::Hsl) -> Self {
