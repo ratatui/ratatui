@@ -103,16 +103,13 @@
 //! terminal to its original state.
 //!
 //! ```rust,no_run
-//! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! fn main() -> std::io::Result<()> {
 //!     let mut terminal = ratatui::init();
 //!     let result = run(&mut terminal);
 //!     ratatui::restore();
 //!     result
 //! }
-//!
-//! fn run(terminal: &mut ratatui::DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
-//!     // your application's main loop
-//! }
+//! # fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> { Ok(()) }
 //! ```
 //!
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
@@ -126,8 +123,26 @@
 //! [`render_widget`] method. After this closure returns, a diff is performed and only the changes
 //! are drawn to the terminal. See the [Widgets] section of the [Ratatui Website] for more info.
 //!
-//! The closure passed to the [`Terminal::draw`] method should be the main loop of the application
-//! and should handle the rendering of a full frame.
+//! The closure passed to the [`Terminal::draw`] method should handle the rendering of a full frame.
+//!
+//! ```rust,no_run
+//! use ratatui::{widgets::Paragraph, Frame};
+//!
+//! fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> {
+//!     loop {
+//!         terminal.draw(|frame| draw(frame))?;
+//!         if handle_events()? {
+//!             break Ok(());
+//!         }
+//!     }
+//! }
+//!
+//! fn draw(frame: &mut Frame) {
+//!     let text = Paragraph::new("Hello World!");
+//!     frame.render_widget(text, frame.area());
+//! }
+//! # fn handle_events() -> std::io::Result<bool> { Ok(false) }
+//! ```
 //!
 //! ### Handling events
 //!
@@ -135,8 +150,6 @@
 //! calling backend library methods directly. See the [Handling Events] section of the [Ratatui
 //! Website] for more info. For example, if you are using [Crossterm], you can use the
 //! [`crossterm::event`] module to handle events.
-//!
-//! ### Example
 //!
 //! ```rust,no_run
 //! use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -172,7 +185,7 @@
 //! fn draw(frame: &mut Frame) {
 //!     use Constraint::{Fill, Length, Min};
 //!
-//!     let vertical = Layout::vertical([Length(1), Min(0),Length(1),])
+//!     let vertical = Layout::vertical([Length(1), Min(0), Length(1)]);
 //!     let [title_area, main_area, status_area] = vertical.areas(frame.area());
 //!     let horizontal = Layout::horizontal([Fill(1); 2]);
 //!     let [left_area, right_area] = horizontal.areas(main_area);
@@ -269,9 +282,6 @@
 //! [Contributing]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md
 //! [Breaking Changes]: https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md
 //! [FOSDEM 2024 talk]: https://www.youtube.com/watch?v=NU0q6NOLJ20
-//! [docsrs-hello]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
-//! [docsrs-layout]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
-//! [docsrs-styling]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
 //! [`Frame`]: terminal::Frame
 //! [`render_widget`]: terminal::Frame::render_widget
 //! [`Widget`]: widgets::Widget
