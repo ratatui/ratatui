@@ -180,9 +180,7 @@ impl Iterator for Positions {
         };
         // Decrement the remaining rows by one since we do not want to include the
         // current row.
-        let remaining_rows_cell_count = remaining_rows
-            .saturating_sub(1)
-            .saturating_mul(self.rect.width);
+        let remaining_rows_cell_count = (remaining_rows - 1).saturating_mul(self.rect.width);
         let count = remaining_cells.saturating_add(remaining_rows_cell_count) as usize;
         (count, Some(count))
     }
