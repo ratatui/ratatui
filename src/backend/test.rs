@@ -386,7 +386,7 @@ mod tests {
 
     #[test]
     fn buffer_view_with_overwrites() {
-        let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 8 wide
+        let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 2 wide
         let buffer = Buffer::with_lines([multi_byte_char]);
         assert_eq!(
             buffer_view(&buffer),
