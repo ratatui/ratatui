@@ -73,9 +73,17 @@ This is a quick summary of the sections below:
 
 ## Unreleased
 
-### `Color::from_hsl` is now behind the `palette` feature
+### `Color::from_hsl` is now behind the `palette` feature and accepts `palette::Hsl` ([#1418])
 
-<!-- TODO -->
+[#1418]: https://github.com/ratatui/ratatui/pull/1418
+
+Previously `Color::from_hsl` accepted components as individual f64 parameters. It now accepts a
+single `palette::Hsl` value and is gated behind a `palette` feature flag.
+
+```diff
+- Color::from_hsl(360.0, 100.0, 100.0)
++ Color::from_hsl(Hsl::new(360.0, 100.0, 100.0))
+```
 
 ### Removed public fields from `Rect` iterators ([#1358])
 
