@@ -4,7 +4,6 @@ use ratatui::layout::Rect;
 fn rect_iters_benchmark(c: &mut Criterion) {
     let rect_sizes = vec![[16, 16], [64, 64], [255, 255]];
     let mut group = c.benchmark_group("rect");
-    // We don't use `Rect::new` as it will clamp the value to a max of 255x255.
     for rect in rect_sizes.into_iter().map(|[width, height]| Rect {
         width,
         height,
