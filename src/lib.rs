@@ -186,7 +186,13 @@
 //!
 //! Running this example produces the following output:
 //!
-//! ![docsrs-layout]
+//! ```text
+//! Title Bar───────────────────────────────────
+//! ┌Left────────────────┐┌Right───────────────┐
+//! │                    ││                    │
+//! └────────────────────┘└────────────────────┘
+//! Status Bar──────────────────────────────────
+//! ```
 //!
 //! ## Text and styling
 //!
@@ -238,10 +244,6 @@
 //!     frame.render_widget(paragraph, areas[3]);
 //! }
 //! ```
-//!
-//! Running this example produces the following output:
-//!
-//! ![docsrs-styling]
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 //!
