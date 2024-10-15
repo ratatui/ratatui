@@ -15,6 +15,7 @@ This is a quick summary of the sections below:
   - `Line` now implements `From<Cow<str>`
   - `Table::highlight_style` is now `Table::row_highlight_style`
   - `Tabs::select` now accepts `Into<Option<usize>>`
+  - `Color::from_hsl` is now behind the `palette` feature
 - [v0.28.0](#v0280)
   - `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
@@ -71,6 +72,18 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased
+
+### `Color::from_hsl` is now behind the `palette` feature and accepts `palette::Hsl` ([#1418])
+
+[#1418]: https://github.com/ratatui/ratatui/pull/1418
+
+Previously `Color::from_hsl` accepted components as individual f64 parameters. It now accepts a
+single `palette::Hsl` value and is gated behind a `palette` feature flag.
+
+```diff
+- Color::from_hsl(360.0, 100.0, 100.0)
++ Color::from_hsl(Hsl::new(360.0, 100.0, 100.0))
+```
 
 ### Removed public fields from `Rect` iterators ([#1358])
 
