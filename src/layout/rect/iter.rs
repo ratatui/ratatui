@@ -325,10 +325,16 @@ mod tests {
     fn positions() {
         let rect = Rect::new(0, 0, 2, 2);
         let mut positions = Positions::new(rect);
+        assert_eq!(positions.size_hint(), (4, Some(4)));
         assert_eq!(positions.next(), Some(Position::new(0, 0)));
+        assert_eq!(positions.size_hint(), (3, Some(3)));
         assert_eq!(positions.next(), Some(Position::new(1, 0)));
+        assert_eq!(positions.size_hint(), (2, Some(2)));
         assert_eq!(positions.next(), Some(Position::new(0, 1)));
+        assert_eq!(positions.size_hint(), (1, Some(1)));
         assert_eq!(positions.next(), Some(Position::new(1, 1)));
+        assert_eq!(positions.size_hint(), (0, Some(0)));
         assert_eq!(positions.next(), None);
+        assert_eq!(positions.size_hint(), (0, Some(0)));
     }
 }
