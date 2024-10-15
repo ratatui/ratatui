@@ -37,13 +37,13 @@ impl Iterator for Rows {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
+        let start_count = self.current_row_fwd.saturating_sub(self.rect.top());
+        let end_count = self.rect.bottom().saturating_sub(self.current_row_back);
         let count = self
             .rect
             .height
-            .saturating_sub(self.current_row_fwd.saturating_sub(self.rect.y))
-            .saturating_sub(self.rect.bottom().saturating_sub(self.current_row_back))
-            as usize;
-
+            .saturating_sub(start_count)
+            .saturating_sub(end_count) as usize;
         (count, Some(count))
     }
 }
@@ -99,12 +99,13 @@ impl Iterator for Columns {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
+        let start_count = self.current_column_fwd.saturating_sub(self.rect.left());
+        let end_count = self.rect.right().saturating_sub(self.current_column_back);
         let count = self
             .rect
             .width
-            .saturating_sub(self.current_column_fwd.saturating_sub(self.rect.x))
-            .saturating_sub(self.rect.right().saturating_sub(self.current_column_back))
-            as usize;
+            .saturating_sub(start_count)
+            .saturating_sub(end_count) as usize;
         (count, Some(count))
     }
 }
@@ -163,25 +164,15 @@ impl Iterator for Positions {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        // Includes the current row.
-        let remaining_rows = self
-            .rect
-            .height
-            .saturating_add(self.rect.y)
-            .saturating_sub(self.current_position.y);
-        // Number of cells remaining in the current row.
-        let remaining_cells = if remaining_rows != 0 {
-            self.rect
-                .width
-                .saturating_add(self.rect.x)
-                .saturating_sub(self.current_position.x)
-        } else {
+        let row_count = self.rect.bottom().saturating_sub(self.current_position.y);
+        if row_count == 0 {
             return (0, Some(0));
-        };
-        // Decrement the remaining rows by one since we do not want to include the
-        // current row.
-        let remaining_rows_cell_count = (remaining_rows - 1).saturating_mul(self.rect.width);
-        let count = remaining_cells.saturating_add(remaining_rows_cell_count) as usize;
+        }
+        let column_count = self.rect.right().saturating_sub(self.current_position.x);
+        // subtract 1 from the row count to account for the current row
+        let count = (row_count - 1)
+            .saturating_mul(self.rect.width)
+            .saturating_add(column_count) as usize;
         (count, Some(count))
     }
 }
