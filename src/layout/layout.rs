@@ -806,12 +806,8 @@ fn configure_variable_constraints(
     // ^    ^                   ^    ^                   ^    ^                   ^    ^
     // └v0  └v1                 └v2  └v3                 └v4  └v5                 └v6  └v7
 
-    for (i, (&left, &right)) in variables.iter().tuple_windows().enumerate() {
-        if i % 2 != 0 {
-            // Apply ascending order constraint to only segments and not to spacers
-            let constraint = left | LE(REQUIRED) | right;
-            solver.add_constraint(constraint)?;
-        };
+    for (&left, &right) in variables.iter().skip(1).tuples() {
+        solver.add_constraint(left | LE(REQUIRED) | right)?;
     }
     Ok(())
 }
