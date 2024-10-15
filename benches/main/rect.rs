@@ -54,7 +54,7 @@ fn rect_rows_iter(c: &mut Bencher, rect: Rect) {
     c.iter_batched(
         || black_box(rect),
         |rect| {
-            for row in rect.rows() {
+            for row in black_box(rect.rows()) {
                 black_box(row);
             }
         },
@@ -65,7 +65,7 @@ fn rect_rows_iter(c: &mut Bencher, rect: Rect) {
 fn rect_rows_collect(c: &mut Bencher, rect: Rect) {
     c.iter_batched(
         || black_box(rect),
-        |rect| rect.rows().collect::<Vec<_>>(),
+        |rect| black_box(rect.rows()).collect::<Vec<_>>(),
         BatchSize::LargeInput,
     );
 }
@@ -74,7 +74,7 @@ fn rect_columns_iter(c: &mut Bencher, rect: Rect) {
     c.iter_batched(
         || black_box(rect),
         |rect| {
-            for col in rect.columns() {
+            for col in black_box(rect.columns()) {
                 black_box(col);
             }
         },
@@ -85,7 +85,7 @@ fn rect_columns_iter(c: &mut Bencher, rect: Rect) {
 fn rect_columns_collect(c: &mut Bencher, rect: Rect) {
     c.iter_batched(
         || black_box(rect),
-        |rect| rect.columns().collect::<Vec<_>>(),
+        |rect| black_box(rect.columns()).collect::<Vec<_>>(),
         BatchSize::LargeInput,
     );
 }
@@ -94,7 +94,7 @@ fn rect_positions_iter(c: &mut Bencher, rect: Rect) {
     c.iter_batched(
         || black_box(rect),
         |rect| {
-            for pos in rect.positions() {
+            for pos in black_box(rect.positions()) {
                 black_box(pos);
             }
         },
@@ -105,7 +105,7 @@ fn rect_positions_iter(c: &mut Bencher, rect: Rect) {
 fn rect_positions_collect(b: &mut Bencher, rect: Rect) {
     b.iter_batched(
         || black_box(rect),
-        |rect| rect.positions().collect::<Vec<_>>(),
+        |rect| black_box(rect.positions()).collect::<Vec<_>>(),
         BatchSize::LargeInput,
     );
 }
