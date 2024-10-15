@@ -35,6 +35,19 @@ impl Iterator for Rows {
         self.current_row_fwd += 1;
         Some(row)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining_count = self
+            .rect
+            .height
+            // Subtract the number of rows that were provided from the start of the `Rect`, from the
+            // total height.
+            .saturating_sub(self.current_row_fwd.saturating_sub(self.rect.y))
+            // Subtract the number of rows that were provided from the end of the `Rect`, from the
+            // total height.
+            .saturating_sub(self.rect.bottom().saturating_sub(self.current_row_back));
+        (remaining_count as usize, None)
+    }
 }
 
 impl DoubleEndedIterator for Rows {
@@ -85,6 +98,17 @@ impl Iterator for Columns {
         let column = Rect::new(self.current_column_fwd, self.rect.y, 1, self.rect.height);
         self.current_column_fwd += 1;
         Some(column)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self
+            .rect
+            .width
+            // Subtract the number of columns provided from the start, from the total width.
+            .saturating_sub(self.current_column_fwd.saturating_sub(self.rect.x))
+            // Subtract the number of columns provided from the end, from the total width.
+            .saturating_sub(self.rect.right().saturating_sub(self.current_column_back));
+        (remaining as usize, None)
     }
 }
 
@@ -140,6 +164,33 @@ impl Iterator for Positions {
         }
         Some(position)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        // Number of the remaining rows including the current row.
+        let remaining_rows = self
+            .rect
+            .height
+            .saturating_add(self.rect.y)
+            .saturating_sub(self.current_position.y);
+        // Number of cells remaining in the current row.
+        let remaining_cells = if remaining_rows != 0 {
+            self.rect
+                .width
+                .saturating_add(self.rect.x)
+                .saturating_sub(self.current_position.x)
+        } else {
+            return (0, None);
+        };
+        // Decrement the remaining rows by one since we do not want to include the
+        // current row.
+        let remaining_rows_cell_count = remaining_rows
+            .saturating_sub(1)
+            .saturating_mul(self.rect.width);
+        (
+            remaining_cells.saturating_add(remaining_rows_cell_count) as usize,
+            None,
+        )
+    }
 }
 
 #[cfg(test)]
@@ -150,68 +201,106 @@ mod tests {
     fn rows() {
         let rect = Rect::new(0, 0, 2, 3);
         let mut rows = Rows::new(rect);
+        assert_eq!(rows.size_hint().0, 3);
         assert_eq!(rows.next(), Some(Rect::new(0, 0, 2, 1)));
+        assert_eq!(rows.size_hint().0, 2);
         assert_eq!(rows.next(), Some(Rect::new(0, 1, 2, 1)));
+        assert_eq!(rows.size_hint().0, 1);
         assert_eq!(rows.next(), Some(Rect::new(0, 2, 2, 1)));
+        assert_eq!(rows.size_hint().0, 0);
         assert_eq!(rows.next(), None);
+        assert_eq!(rows.size_hint().0, 0);
         assert_eq!(rows.next_back(), None);
+        assert_eq!(rows.size_hint().0, 0);
     }
 
     #[test]
     fn rows_back() {
         let rect = Rect::new(0, 0, 2, 3);
         let mut rows = Rows::new(rect);
+        assert_eq!(rows.size_hint().0, 3);
         assert_eq!(rows.next_back(), Some(Rect::new(0, 2, 2, 1)));
+        assert_eq!(rows.size_hint().0, 2);
         assert_eq!(rows.next_back(), Some(Rect::new(0, 1, 2, 1)));
+        assert_eq!(rows.size_hint().0, 1);
         assert_eq!(rows.next_back(), Some(Rect::new(0, 0, 2, 1)));
+        assert_eq!(rows.size_hint().0, 0);
         assert_eq!(rows.next_back(), None);
+        assert_eq!(rows.size_hint().0, 0);
         assert_eq!(rows.next(), None);
+        assert_eq!(rows.size_hint().0, 0);
     }
 
     #[test]
     fn rows_meet_in_the_middle() {
         let rect = Rect::new(0, 0, 2, 4);
         let mut rows = Rows::new(rect);
+        assert_eq!(rows.size_hint().0, 4);
         assert_eq!(rows.next(), Some(Rect::new(0, 0, 2, 1)));
+        assert_eq!(rows.size_hint().0, 3);
         assert_eq!(rows.next_back(), Some(Rect::new(0, 3, 2, 1)));
+        assert_eq!(rows.size_hint().0, 2);
         assert_eq!(rows.next(), Some(Rect::new(0, 1, 2, 1)));
+        assert_eq!(rows.size_hint().0, 1);
         assert_eq!(rows.next_back(), Some(Rect::new(0, 2, 2, 1)));
+        assert_eq!(rows.size_hint().0, 0);
         assert_eq!(rows.next(), None);
+        assert_eq!(rows.size_hint().0, 0);
         assert_eq!(rows.next_back(), None);
+        assert_eq!(rows.size_hint().0, 0);
     }
 
     #[test]
     fn columns() {
         let rect = Rect::new(0, 0, 3, 2);
         let mut columns = Columns::new(rect);
+        assert_eq!(columns.size_hint().0, 3);
         assert_eq!(columns.next(), Some(Rect::new(0, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 2);
         assert_eq!(columns.next(), Some(Rect::new(1, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 1);
         assert_eq!(columns.next(), Some(Rect::new(2, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 0);
         assert_eq!(columns.next(), None);
+        assert_eq!(columns.size_hint().0, 0);
         assert_eq!(columns.next_back(), None);
+        assert_eq!(columns.size_hint().0, 0);
     }
 
     #[test]
     fn columns_back() {
         let rect = Rect::new(0, 0, 3, 2);
         let mut columns = Columns::new(rect);
+        assert_eq!(columns.size_hint().0, 3);
         assert_eq!(columns.next_back(), Some(Rect::new(2, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 2);
         assert_eq!(columns.next_back(), Some(Rect::new(1, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 1);
         assert_eq!(columns.next_back(), Some(Rect::new(0, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 0);
         assert_eq!(columns.next_back(), None);
+        assert_eq!(columns.size_hint().0, 0);
         assert_eq!(columns.next(), None);
+        assert_eq!(columns.size_hint().0, 0);
     }
 
     #[test]
     fn columns_meet_in_the_middle() {
         let rect = Rect::new(0, 0, 4, 2);
         let mut columns = Columns::new(rect);
+        assert_eq!(columns.size_hint().0, 4);
         assert_eq!(columns.next(), Some(Rect::new(0, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 3);
         assert_eq!(columns.next_back(), Some(Rect::new(3, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 2);
         assert_eq!(columns.next(), Some(Rect::new(1, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 1);
         assert_eq!(columns.next_back(), Some(Rect::new(2, 0, 1, 2)));
+        assert_eq!(columns.size_hint().0, 0);
         assert_eq!(columns.next(), None);
+        assert_eq!(columns.size_hint().0, 0);
         assert_eq!(columns.next_back(), None);
+        assert_eq!(columns.size_hint().0, 0);
     }
 
     /// We allow a total of `65536` columns in the range `(0..=65535)`.  In this test we iterate
