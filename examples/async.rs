@@ -244,7 +244,7 @@ impl Widget for &PullRequestListWidget {
             .block(block)
             .highlight_spacing(HighlightSpacing::Always)
             .highlight_symbol(">>")
-            .highlight_style(Style::new().on_blue());
+            .row_highlight_style(Style::new().on_blue());
 
         StatefulWidget::render(table, area, buf, &mut state.table_state);
     }

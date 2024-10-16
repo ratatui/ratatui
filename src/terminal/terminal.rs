@@ -579,10 +579,22 @@ where
     where
         F: FnOnce(&mut Buffer),
     {
-        if !matches!(self.viewport, Viewport::Inline(_)) {
-            return Ok(());
+        match self.viewport {
+            #[cfg(feature = "scrolling-regions")]
+            Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),
+            #[cfg(not(feature = "scrolling-regions"))]
+            Viewport::Inline(_) => self.insert_before_no_scrolling_regions(height, draw_fn),
+            _ => Ok(()),
         }
+    }
 
+    /// Implement `Self::insert_before` using standard backend capabilities.
+    #[cfg(not(feature = "scrolling-regions"))]
+    fn insert_before_no_scrolling_regions(
+        &mut self,
+        height: u16,
+        draw_fn: impl FnOnce(&mut Buffer),
+    ) -> io::Result<()> {
         // The approach of this function is to first render all of the lines to insert into a
         // temporary buffer, and then to loop drawing chunks from the buffer to the screen. drawing
         // this buffer onto the screen.
@@ -668,6 +680,86 @@ where
         Ok(())
     }
 
+    /// Implement `Self::insert_before` using scrolling regions.
+    ///
+    /// If a terminal supports scrolling regions, it means that we can define a subset of rows of
+    /// the screen, and then tell the terminal to scroll up or down just within that region. The
+    /// rows outside of the region are not affected.
+    ///
+    /// This function utilizes this feature to avoid having to redraw the viewport. This is done
+    /// either by splitting the screen at the top of the viewport, and then creating a gap by
+    /// either scrolling the viewport down, or scrolling the area above it up. The lines to insert
+    /// are then drawn into the gap created.
+    #[cfg(feature = "scrolling-regions")]
+    fn insert_before_scrolling_regions(
+        &mut self,
+        mut height: u16,
+        draw_fn: impl FnOnce(&mut Buffer),
+    ) -> io::Result<()> {
+        // The approach of this function is to first render all of the lines to insert into a
+        // temporary buffer, and then to loop drawing chunks from the buffer to the screen. drawing
+        // this buffer onto the screen.
+        let area = Rect {
+            x: 0,
+            y: 0,
+            width: self.viewport_area.width,
+            height,
+        };
+        let mut buffer = Buffer::empty(area);
+        draw_fn(&mut buffer);
+        let mut buffer = buffer.content.as_slice();
+
+        // Handle the special case where the viewport takes up the whole screen.
+        if self.viewport_area.height == self.last_known_area.height {
+            // "Borrow" the top line of the viewport. Draw over it, then immediately scroll it into
+            // scrollback. Do this repeatedly until the whole buffer has been put into scrollback.
+            let mut first = true;
+            while !buffer.is_empty() {
+                buffer = if first {
+                    self.draw_lines(0, 1, buffer)?
+                } else {
+                    self.draw_lines_over_cleared(0, 1, buffer)?
+                };
+                first = false;
+                self.backend.scroll_region_up(0..1, 1)?;
+            }
+
+            // Redraw the top line of the viewport.
+            let width = self.viewport_area.width as usize;
+            let top_line = self.buffers[1 - self.current].content[0..width].to_vec();
+            self.draw_lines_over_cleared(0, 1, &top_line)?;
+            return Ok(());
+        }
+
+        // Handle the case where the viewport isn't yet at the bottom of the screen.
+        {
+            let viewport_top = self.viewport_area.top();
+            let viewport_bottom = self.viewport_area.bottom();
+            let screen_bottom = self.last_known_area.bottom();
+            if viewport_bottom < screen_bottom {
+                let to_draw = height.min(screen_bottom - viewport_bottom);
+                self.backend
+                    .scroll_region_down(viewport_top..viewport_bottom + to_draw, to_draw)?;
+                buffer = self.draw_lines_over_cleared(viewport_top, to_draw, buffer)?;
+                self.set_viewport_area(Rect {
+                    y: viewport_top + to_draw,
+                    ..self.viewport_area
+                });
+                height -= to_draw;
+            }
+        }
+
+        let viewport_top = self.viewport_area.top();
+        while height > 0 {
+            let to_draw = height.min(viewport_top);
+            self.backend.scroll_region_up(0..viewport_top, to_draw)?;
+            buffer = self.draw_lines_over_cleared(viewport_top - to_draw, to_draw, buffer)?;
+            height -= to_draw;
+        }
+
+        Ok(())
+    }
+
     /// Draw lines at the given vertical offset. The slice of cells must contain enough cells
     /// for the requested lines. A slice of the unused cells are returned.
     fn draw_lines<'a>(
@@ -689,7 +781,33 @@ where
         Ok(remainder)
     }
 
+    /// Draw lines at the given vertical offset, assuming that the lines they are replacing on the
+    /// screen are cleared. The slice of cells must contain enough cells for the requested lines. A
+    /// slice of the unused cells are returned.
+    #[cfg(feature = "scrolling-regions")]
+    fn draw_lines_over_cleared<'a>(
+        &mut self,
+        y_offset: u16,
+        lines_to_draw: u16,
+        cells: &'a [Cell],
+    ) -> io::Result<&'a [Cell]> {
+        let width: usize = self.last_known_area.width.into();
+        let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
+        if lines_to_draw > 0 {
+            let area = Rect::new(0, y_offset, width as u16, y_offset + lines_to_draw);
+            let old = Buffer::empty(area);
+            let new = Buffer {
+                area,
+                content: to_draw.to_vec(),
+            };
+            self.backend.draw(old.diff(&new).into_iter())?;
+            self.backend.flush()?;
+        }
+        Ok(remainder)
+    }
+
     /// Scroll the whole screen up by the given number of lines.
+    #[cfg(not(feature = "scrolling-regions"))]
     fn scroll_up(&mut self, lines_to_scroll: u16) -> io::Result<()> {
         if lines_to_scroll > 0 {
             self.set_cursor_position(Position::new(

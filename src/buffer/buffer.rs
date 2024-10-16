@@ -269,9 +269,10 @@ impl Buffer {
             return None;
         }
         // remove offset
-        let y = position.y - self.area.y;
-        let x = position.x - self.area.x;
-        Some((y * self.area.width + x) as usize)
+        let y = (position.y - self.area.y) as usize;
+        let x = (position.x - self.area.x) as usize;
+        let width = self.area.width as usize;
+        Some(y * width + x)
     }
 
     /// Returns the (global) coordinates of a cell given its index
@@ -1242,11 +1243,12 @@ mod tests {
     #[case::shrug("🤷", "🤷xxxxx")]
     // Technically this is a (brown) bear, a zero-width joiner and a snowflake
     // As it is joined its a single emoji and should therefore have a width of 2.
-    // It's correctly detected as a single grapheme but it's width is 4 for some reason
-    #[case::polarbear("🐻‍❄️", "🐻‍❄️xxx")]
+    // Prior to unicode-width 0.2, this was incorrectly detected as width 4 for some reason
+    #[case::polarbear("🐻‍❄️", "🐻‍❄️xxxxx")]
     // Technically this is an eye, a zero-width joiner and a speech bubble
     // Both eye and speech bubble include a 'display as emoji' variation selector
-    #[case::eye_speechbubble("👁️‍🗨️", "👁️‍🗨️xxx")]
+    // Prior to unicode-width 0.2, this was incorrectly detected as width 4 for some reason
+    #[case::eye_speechbubble("👁️‍🗨️", "👁️‍🗨️xxxxx")]
     fn renders_emoji(#[case] input: &str, #[case] expected: &str) {
         use unicode_width::UnicodeWidthChar;
 

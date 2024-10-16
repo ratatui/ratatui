@@ -8,12 +8,7 @@ use ratatui::{
 criterion::criterion_group!(benches, empty, filled, with_lines);
 
 const fn rect(size: u16) -> Rect {
-    Rect {
-        x: 0,
-        y: 0,
-        width: size,
-        height: size,
-    }
+    Rect::new(0, 0, size, size)
 }
 
 fn empty(c: &mut Criterion) {

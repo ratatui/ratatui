@@ -1966,7 +1966,7 @@ mod tests {
                 ])
                 .split(target);
 
-            assert_eq!(target.height, chunks.iter().map(|r| r.height).sum::<u16>());
+            assert_eq!(chunks.iter().map(|r| r.height).sum::<u16>(), target.height);
             chunks.windows(2).for_each(|w| assert!(w[0].y <= w[1].y));
         }
 
@@ -2337,7 +2337,7 @@ mod tests {
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
 
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2363,7 +2363,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2395,7 +2395,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2419,7 +2419,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, r);
+            assert_eq!(r, expected);
         }
 
         #[rstest]
@@ -2444,7 +2444,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2530,7 +2530,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2550,7 +2550,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2574,7 +2574,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2626,7 +2626,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2652,7 +2652,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
 
         #[rstest]
@@ -2673,7 +2673,7 @@ mod tests {
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
-            assert_eq!(expected, result);
+            assert_eq!(result, expected);
         }
     }
 

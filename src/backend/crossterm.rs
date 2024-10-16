@@ -274,6 +274,32 @@ where
     fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
+
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
+        queue!(
+            self.writer,
+            ScrollUpInRegion {
+                first_row: region.start,
+                last_row: region.end.saturating_sub(1),
+                lines_to_scroll: amount,
+            }
+        )?;
+        self.writer.flush()
+    }
+
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
+        queue!(
+            self.writer,
+            ScrollDownInRegion {
+                first_row: region.start,
+                last_row: region.end.saturating_sub(1),
+                lines_to_scroll: amount,
+            }
+        )?;
+        self.writer.flush()
+    }
 }
 
 impl From<Color> for CColor {
@@ -482,6 +508,102 @@ impl From<ContentStyle> for Style {
             add_modifier: value.attributes.into(),
             sub_modifier,
         }
+    }
+}
+
+/// A command that scrolls the terminal screen a given number of rows up in a specific scrolling
+/// region.
+///
+/// This will hopefully be replaced by a struct in crossterm proper. There are two outstanding
+/// crossterm PRs that will address this:
+///   - [918](https://github.com/crossterm-rs/crossterm/pull/918)
+///   - [923](https://github.com/crossterm-rs/crossterm/pull/923)
+#[cfg(feature = "scrolling-regions")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ScrollUpInRegion {
+    /// The first row of the scrolling region.
+    pub first_row: u16,
+
+    /// The last row of the scrolling region.
+    pub last_row: u16,
+
+    /// The number of lines to scroll up by.
+    pub lines_to_scroll: u16,
+}
+
+#[cfg(feature = "scrolling-regions")]
+impl crate::crossterm::Command for ScrollUpInRegion {
+    fn write_ansi(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
+        if self.lines_to_scroll != 0 {
+            // Set a scrolling region that contains just the desired lines.
+            write!(
+                f,
+                crate::crossterm::csi!("{};{}r"),
+                self.first_row.saturating_add(1),
+                self.last_row.saturating_add(1)
+            )?;
+            // Scroll the region by the desired count.
+            write!(f, crate::crossterm::csi!("{}S"), self.lines_to_scroll)?;
+            // Reset the scrolling region to be the whole screen.
+            write!(f, crate::crossterm::csi!("r"))?;
+        }
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> io::Result<()> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "ScrollUpInRegion command not supported for winapi",
+        ))
+    }
+}
+
+/// A command that scrolls the terminal screen a given number of rows down in a specific scrolling
+/// region.
+///
+/// This will hopefully be replaced by a struct in crossterm proper. There are two outstanding
+/// crossterm PRs that will address this:
+///   - [918](https://github.com/crossterm-rs/crossterm/pull/918)
+///   - [923](https://github.com/crossterm-rs/crossterm/pull/923)
+#[cfg(feature = "scrolling-regions")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ScrollDownInRegion {
+    /// The first row of the scrolling region.
+    pub first_row: u16,
+
+    /// The last row of the scrolling region.
+    pub last_row: u16,
+
+    /// The number of lines to scroll down by.
+    pub lines_to_scroll: u16,
+}
+
+#[cfg(feature = "scrolling-regions")]
+impl crate::crossterm::Command for ScrollDownInRegion {
+    fn write_ansi(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
+        if self.lines_to_scroll != 0 {
+            // Set a scrolling region that contains just the desired lines.
+            write!(
+                f,
+                crate::crossterm::csi!("{};{}r"),
+                self.first_row.saturating_add(1),
+                self.last_row.saturating_add(1)
+            )?;
+            // Scroll the region by the desired count.
+            write!(f, crate::crossterm::csi!("{}T"), self.lines_to_scroll)?;
+            // Reset the scrolling region to be the whole screen.
+            write!(f, crate::crossterm::csi!("r"))?;
+        }
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> io::Result<()> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "ScrollDownInRegion command not supported for winapi",
+        ))
     }
 }
 

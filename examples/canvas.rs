@@ -48,7 +48,7 @@ struct App {
 }
 
 impl App {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             x: 0.0,
             y: 0.0,

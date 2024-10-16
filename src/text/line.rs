@@ -193,18 +193,28 @@ pub struct Line<'a> {
 
 impl fmt::Debug for Line<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.style == Style::default() && self.alignment.is_none() {
-            f.write_str("Line ")?;
-            return f.debug_list().entries(&self.spans).finish();
+        if self.spans.is_empty() {
+            f.write_str("Line::default()")?;
+        } else if self.spans.len() == 1 && self.spans[0].style == Style::default() {
+            f.write_str(r#"Line::from(""#)?;
+            f.write_str(&self.spans[0].content)?;
+            f.write_str(r#"")"#)?;
+        } else if self.spans.len() == 1 {
+            f.write_str("Line::from(")?;
+            self.spans[0].fmt(f)?;
+            f.write_str(")")?;
+        } else {
+            f.write_str("Line::from_iter(")?;
+            f.debug_list().entries(&self.spans).finish()?;
+            f.write_str(")")?;
         }
-        let mut debug = f.debug_struct("Line");
-        if self.style != Style::default() {
-            debug.field("style", &self.style);
+        self.style.fmt_stylize(f)?;
+        match self.alignment {
+            Some(Alignment::Left) => write!(f, ".left_aligned()"),
+            Some(Alignment::Center) => write!(f, ".centered()"),
+            Some(Alignment::Right) => write!(f, ".right_aligned()"),
+            None => Ok(()),
         }
-        if let Some(alignment) = self.alignment {
-            debug.field("alignment", &format!("Alignment::{alignment}"));
-        }
-        debug.field("spans", &self.spans).finish()
     }
 }
 
@@ -595,6 +605,12 @@ impl<'a> From<String> for Line<'a> {
 
 impl<'a> From<&'a str> for Line<'a> {
     fn from(s: &'a str) -> Self {
+        Self::raw(s)
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for Line<'a> {
+    fn from(s: Cow<'a, str>) -> Self {
         Self::raw(s)
     }
 }
@@ -1589,5 +1605,50 @@ mod tests {
             }
             assert_eq!(result, "Hello world!");
         }
+    }
+
+    #[rstest]
+    #[case::empty(Line::default(), "Line::default()")]
+    #[case::raw(Line::raw("Hello, world!"), r#"Line::from("Hello, world!")"#)]
+    #[case::styled(
+        Line::styled("Hello, world!", Color::Yellow),
+        r#"Line::from("Hello, world!").yellow()"#
+    )]
+    #[case::styled_complex(
+        Line::from(String::from("Hello, world!")).green().on_blue().bold().italic().not_dim(),
+        r#"Line::from("Hello, world!").green().on_blue().bold().italic().not_dim()"#
+    )]
+    #[case::styled_span(
+        Line::from(Span::styled("Hello, world!", Color::Yellow)),
+        r#"Line::from(Span::from("Hello, world!").yellow())"#
+    )]
+    #[case::styled_line_and_span(
+        Line::from(vec![
+            Span::styled("Hello", Color::Yellow),
+            Span::styled(" world!", Color::Green),
+        ]).italic(),
+        r#"Line::from_iter([Span::from("Hello").yellow(), Span::from(" world!").green()]).italic()"#
+    )]
+    #[case::spans_vec(
+        Line::from(vec![
+            Span::styled("Hello", Color::Blue),
+            Span::styled(" world!", Color::Green),
+        ]),
+        r#"Line::from_iter([Span::from("Hello").blue(), Span::from(" world!").green()])"#,
+    )]
+    #[case::left_aligned(
+        Line::from("Hello, world!").left_aligned(),
+        r#"Line::from("Hello, world!").left_aligned()"#
+    )]
+    #[case::centered(
+        Line::from("Hello, world!").centered(),
+        r#"Line::from("Hello, world!").centered()"#
+    )]
+    #[case::right_aligned(
+        Line::from("Hello, world!").right_aligned(),
+        r#"Line::from("Hello, world!").right_aligned()"#
+    )]
+    fn debug(#[case] line: Line, #[case] expected: &str) {
+        assert_eq!(format!("{line:?}"), expected);
     }
 }

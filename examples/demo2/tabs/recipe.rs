@@ -164,7 +164,7 @@ fn render_ingredients(selected_row: usize, area: Rect, buf: &mut Buffer) {
         Table::new(rows, [Constraint::Length(7), Constraint::Length(30)])
             .block(Block::new().style(theme.ingredients))
             .header(Row::new(vec!["Qty", "Ingredient"]).style(theme.ingredients_header))
-            .highlight_style(Style::new().light_yellow()),
+            .row_highlight_style(Style::new().light_yellow()),
         area,
         buf,
         &mut state,
