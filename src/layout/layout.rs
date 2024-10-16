@@ -173,7 +173,7 @@ impl From<i16> for Spacing {
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
 /// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
-#[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
     constraints: Vec<Constraint>,
