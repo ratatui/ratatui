@@ -731,10 +731,6 @@ impl Layout {
 
         let flex = self.flex;
 
-        // if self.spacing is negative, overlap is Some(self.spacing.abs()), else overlap is None
-        //
-        // - Some(overlap) is always a non-zero positive value
-        // - spacing is always a zero or positive value
         let spacing = match self.spacing {
             Spacing::Space(x) => x as i16,
             Spacing::Overlap(x) => -(x as i16),
