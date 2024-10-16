@@ -2713,47 +2713,4 @@ mod tests {
         assert_eq!(x, 2);
         assert_eq!(y, 3);
     }
-
-    #[test]
-    fn test_layout() {
-        use crate::layout::Constraint::*;
-        let mut terminal = crate::Terminal::new(crate::backend::TestBackend::new(80, 4)).unwrap();
-        terminal
-            .draw(|frame| {
-                let [upper, lower] = Layout::vertical([Fill(1), Fill(1)]).areas(frame.area());
-
-                let (segments, spacers) = Layout::horizontal([Length(20), Length(20), Length(20)])
-                    .flex(Flex::Center)
-                    .split_with_spacers(upper);
-
-                for segment in segments.iter() {
-                    frame.render_widget(
-                        crate::widgets::Block::bordered()
-                            .border_set(crate::symbols::border::DOUBLE),
-                        *segment,
-                    );
-                }
-                for spacer in spacers.iter() {
-                    frame.render_widget(crate::widgets::Block::bordered(), *spacer);
-                }
-
-                let (segments, spacers) = Layout::horizontal([Length(20), Length(20), Length(20)])
-                    .flex(Flex::Center)
-                    .spacing(-1) // new feature
-                    .split_with_spacers(lower);
-
-                for segment in segments.iter() {
-                    frame.render_widget(
-                        crate::widgets::Block::bordered()
-                            .border_set(crate::symbols::border::DOUBLE),
-                        *segment,
-                    );
-                }
-                for spacer in spacers.iter() {
-                    frame.render_widget(crate::widgets::Block::bordered(), *spacer);
-                }
-            })
-            .unwrap();
-        dbg!(terminal.backend());
-    }
 }
