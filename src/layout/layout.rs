@@ -467,7 +467,9 @@ impl Layout {
     /// evenly between all segments. The spacing value represents the number of cells between each
     /// item.
     ///
-    /// Spacing can be negative in which case it will cause overlap between segments.
+    /// Spacing can be positive integers, representing gaps between segments; or negative integers
+    /// representing overlaps. Additionally, one of the variants of the [`Spacing`] enum can be
+    /// passed to this function. See the documentation of the [`Spacing`] enum for more information.
     ///
     /// Note that if the layout has only one segment, the spacing will not be applied.
     /// Also, spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
