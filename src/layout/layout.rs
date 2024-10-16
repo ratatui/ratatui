@@ -469,6 +469,9 @@ impl Layout {
     ///
     /// Spacing can be negative in which case it will cause overlap between segments.
     ///
+    /// Note that if the layout has only one segment, the spacing will not be applied.
+    /// Also, spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
+    ///
     /// # Examples
     ///
     /// In this example, the spacing between each item in the layout is set to 2 cells.
@@ -486,11 +489,6 @@ impl Layout {
     /// use ratatui::layout::{Constraint::*, Layout};
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(-1);
     /// ```
-    ///
-    /// # Notes
-    ///
-    /// - If the layout has only one item, the spacing will not be applied.
-    /// - Spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn spacing<T>(mut self, spacing: T) -> Self
     where
