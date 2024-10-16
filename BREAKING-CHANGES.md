@@ -85,13 +85,13 @@ single `palette::Hsl` value and is gated behind a `palette` feature flag.
 + Color::from_hsl(Hsl::new(360.0, 100.0, 100.0))
 ```
 
-### Removed public fields from `Rect` iterators ([#1358])
+### Removed public fields from `Rect` iterators ([#1358], [#1424])
 
 [#1358]: https://github.com/ratatui/ratatui/pull/1358
+[#1424]: https://github.com/ratatui/ratatui/pull/1424
 
-The `pub` modifier has been removed from fields on the `layout::rect::Columns` and
-`layout::rect::Rows`. These fields were not intended to be public and should not have been accessed
-directly.
+The `pub` modifier has been removed from fields on the `Columns`,`Rows`, and `Positions` iterators.
+These fields were not intended to be public and should not have been accessed directly.
 
 ### `Rect::area()` now returns u32 instead of u16 ([#1378])
 

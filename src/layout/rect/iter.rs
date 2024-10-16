@@ -129,9 +129,9 @@ impl DoubleEndedIterator for Columns {
 /// The iterator will yield all positions within the `Rect` in a row-major order.
 pub struct Positions {
     /// The `Rect` associated with the positions.
-    pub rect: Rect,
+    rect: Rect,
     /// The current position within the `Rect`.
-    pub current_position: Position,
+    current_position: Position,
 }
 
 impl Positions {
