@@ -17,12 +17,12 @@ use std::time::{Duration, Instant};
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, MouseEventKind},
     layout::{Constraint, Layout, Rect},
     style::{Color, Stylize},
     symbols::Marker,
     widgets::{
-        canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
+        canvas::{Canvas, Circle, Map, MapResolution, Points, Rectangle},
         Block, Widget,
     },
     DefaultTerminal, Frame,
@@ -30,9 +30,11 @@ use ratatui::{
 
 fn main() -> Result<()> {
     color_eyre::install()?;
+    ratatui::crossterm::execute!(std::io::stderr(), crossterm::event::EnableMouseCapture)?;
     let terminal = ratatui::init();
     let app_result = App::new().run(terminal);
     ratatui::restore();
+    ratatui::crossterm::execute!(std::io::stderr(), crossterm::event::DisableMouseCapture)?;
     app_result
 }
 
@@ -45,6 +47,8 @@ struct App {
     vy: f64,
     tick_count: u64,
     marker: Marker,
+    points: Vec<(f64, f64)>,
+    is_drawing: bool,
 }
 
 impl App {
@@ -63,6 +67,8 @@ impl App {
             vy: 1.0,
             tick_count: 0,
             marker: Marker::Dot,
+            points: vec![],
+            is_drawing: false,
         }
     }
 
@@ -73,13 +79,27 @@ impl App {
             terminal.draw(|frame| self.draw(frame))?;
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
+                let event = event::read()?;
+                if let Event::Key(key) = event {
                     match key.code {
                         KeyCode::Char('q') => break Ok(()),
                         KeyCode::Down | KeyCode::Char('j') => self.y += 1.0,
                         KeyCode::Up | KeyCode::Char('k') => self.y -= 1.0,
                         KeyCode::Right | KeyCode::Char('l') => self.x += 1.0,
                         KeyCode::Left | KeyCode::Char('h') => self.x -= 1.0,
+                        _ => {}
+                    }
+                } else if let Event::Mouse(event) = event {
+                    match event.kind {
+                        MouseEventKind::Down(_) => {
+                            self.is_drawing = true;
+                        }
+                        MouseEventKind::Up(_) => {
+                            self.is_drawing = false;
+                        }
+                        MouseEventKind::Drag(_) => {
+                            self.points.push((event.column as f64, event.row as f64));
+                        }
                         _ => {}
                     }
                 }
@@ -126,10 +146,12 @@ impl App {
         let horizontal =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [map, right] = horizontal.areas(frame.area());
+        let [left, right] = horizontal.areas(frame.area());
+        let [draw, map] = vertical.areas(left);
         let [pong, boxes] = vertical.areas(right);
 
         frame.render_widget(self.map_canvas(), map);
+        frame.render_widget(self.draw_canvas(draw), draw);
         frame.render_widget(self.pong_canvas(), pong);
         frame.render_widget(self.boxes_canvas(boxes), boxes);
     }
@@ -147,6 +169,22 @@ impl App {
             })
             .x_bounds([-180.0, 180.0])
             .y_bounds([-90.0, 90.0])
+    }
+
+    fn draw_canvas(&self, area: Rect) -> impl Widget + '_ {
+        Canvas::default()
+            .block(Block::bordered().title("Draw here"))
+            .marker(self.marker)
+            .x_bounds([0., area.width.into()])
+            .y_bounds([0., area.height.into()])
+            .paint(move |ctx| {
+                for (x, y) in &self.points {
+                    ctx.draw(&Points {
+                        coords: &[(*x, area.height as f64 - *y)],
+                        color: Color::White,
+                    });
+                }
+            })
     }
 
     fn pong_canvas(&self) -> impl Widget + '_ {
