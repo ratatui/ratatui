@@ -67,7 +67,7 @@ where
     /// Whether the cursor is currently hidden
     hidden_cursor: bool,
     /// Viewport
-    viewport: Viewport,
+    viewport_type: ViewportType,
     /// Area of the viewport
     viewport_area: Rect,
     /// Last known area of the terminal. Used to detect if the internal buffers have to be resized.
@@ -77,6 +77,29 @@ where
     last_known_cursor_pos: Position,
     /// Number of frames rendered up until current time.
     frame_count: usize,
+}
+
+/// How to handle resize events
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+enum ViewportType {
+    /// The new viewport will be the size of the terminal
+    #[default]
+    Fullscreen,
+    /// The new viewport will be a fixed height, but the width will be the same as the terminal
+    Inline { resize_height_limit: u16 },
+    /// Resize is not handled automatically; user will call `resize`
+    Fixed,
+}
+impl From<Viewport> for ViewportType {
+    fn from(viewport: Viewport) -> Self {
+        match viewport {
+            Viewport::Fullscreen => Self::Fullscreen,
+            Viewport::Inline(height) => Self::Inline {
+                resize_height_limit: height,
+            },
+            Viewport::Fixed(_) => Self::Fixed,
+        }
+    }
 }
 
 /// Options to pass to [`Terminal::with_options`]
@@ -159,7 +182,7 @@ where
             buffers: [Buffer::empty(viewport_area), Buffer::empty(viewport_area)],
             current: 0,
             hidden_cursor: false,
-            viewport: options.viewport,
+            viewport_type: options.viewport.into(),
             viewport_area,
             last_known_area: area,
             last_known_cursor_pos: cursor_pos,
@@ -210,21 +233,23 @@ where
     /// Requested area will be saved to remain consistent when rendering. This leads to a full clear
     /// of the screen.
     pub fn resize(&mut self, area: Rect) -> io::Result<()> {
-        let next_area = match self.viewport {
-            Viewport::Inline(height) => {
+        let next_area = match self.viewport_type {
+            ViewportType::Inline {
+                resize_height_limit: height_limit,
+            } => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
                     .y
                     .saturating_sub(self.viewport_area.top());
                 compute_inline_size(
                     &mut self.backend,
-                    height,
+                    height_limit,
                     area.as_size(),
                     offset_in_previous_viewport,
                 )?
                 .0
             }
-            Viewport::Fixed(_) | Viewport::Fullscreen => area,
+            ViewportType::Fixed | ViewportType::Fullscreen => area,
         };
         self.set_viewport_area(next_area);
         self.clear()?;
@@ -242,7 +267,13 @@ where
     /// Queries the backend for size and resizes if it doesn't match the previous size.
     pub fn autoresize(&mut self) -> io::Result<()> {
         // fixed viewports do not get autoresized
-        if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
+        if matches!(
+            self.viewport_type,
+            ViewportType::Fullscreen
+                | ViewportType::Inline {
+                    resize_height_limit: _
+                }
+        ) {
             let area = Rect::from((Position::ORIGIN, self.size()?));
             if area != self.last_known_area {
                 self.resize(area)?;
@@ -469,14 +500,16 @@ where
 
     /// Clear the terminal and force a full redraw on the next draw call.
     pub fn clear(&mut self) -> io::Result<()> {
-        match self.viewport {
-            Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
-            Viewport::Inline(_) => {
+        match self.viewport_type {
+            ViewportType::Fullscreen => self.backend.clear_region(ClearType::All)?,
+            ViewportType::Inline {
+                resize_height_limit: _,
+            } => {
                 self.backend
                     .set_cursor_position(self.viewport_area.as_position())?;
                 self.backend.clear_region(ClearType::AfterCursor)?;
             }
-            Viewport::Fixed(_) => {
+            ViewportType::Fixed => {
                 let area = self.viewport_area;
                 for y in area.top()..area.bottom() {
                     self.backend.set_cursor_position(Position { x: 0, y })?;
@@ -580,11 +613,15 @@ where
     where
         F: FnOnce(&mut Buffer),
     {
-        match self.viewport {
+        match self.viewport_type {
             #[cfg(feature = "scrolling-regions")]
-            Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),
+            ViewportType::Inline {
+                resize_height_limit: _,
+            } => self.insert_before_scrolling_regions(height, draw_fn),
             #[cfg(not(feature = "scrolling-regions"))]
-            Viewport::Inline(_) => self.insert_before_no_scrolling_regions(height, draw_fn),
+            ViewportType::Inline {
+                resize_height_limit: _,
+            } => self.insert_before_no_scrolling_regions(height, draw_fn),
             _ => Ok(()),
         }
     }
