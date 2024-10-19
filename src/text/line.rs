@@ -687,6 +687,21 @@ impl Widget for Line<'_> {
 
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        self.render_with_alignment(area, buf, None);
+    }
+}
+
+impl Line<'_> {
+    /// An internal implementation method for `WidgetRef::render_ref`
+    ///
+    /// Allows the parent widget to define a default alignment, to be
+    /// used if `Line::alignment` is `None`.
+    pub(crate) fn render_with_alignment(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        parent_alignment: Option<Alignment>,
+    ) {
         let area = area.intersection(buf.area);
         if area.is_empty() {
             return;
@@ -699,10 +714,12 @@ impl WidgetRef for Line<'_> {
 
         buf.set_style(area, self.style);
 
+        let alignment = self.alignment.or(parent_alignment);
+
         let area_width = usize::from(area.width);
         let can_render_complete_line = line_width <= area_width;
         if can_render_complete_line {
-            let indent_width = match self.alignment {
+            let indent_width = match alignment {
                 Some(Alignment::Center) => (area_width.saturating_sub(line_width)) / 2,
                 Some(Alignment::Right) => area_width.saturating_sub(line_width),
                 Some(Alignment::Left) | None => 0,
@@ -713,7 +730,7 @@ impl WidgetRef for Line<'_> {
         } else {
             // There is not enough space to render the whole line. As the right side is truncated by
             // the area width, only truncate the left.
-            let skip_width = match self.alignment {
+            let skip_width = match alignment {
                 Some(Alignment::Center) => (line_width.saturating_sub(area_width)) / 2,
                 Some(Alignment::Right) => line_width.saturating_sub(area_width),
                 Some(Alignment::Left) | None => 0,

@@ -735,23 +735,8 @@ impl WidgetRef for Text<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
-        for (line, row) in self.iter().zip(area.rows()) {
-            let line_width = line.width() as u16;
-
-            let x_offset = match (self.alignment, line.alignment) {
-                (Some(Alignment::Center), None) => area.width.saturating_sub(line_width) / 2,
-                (Some(Alignment::Right), None) => area.width.saturating_sub(line_width),
-                _ => 0,
-            };
-
-            let line_area = Rect {
-                x: area.x + x_offset,
-                y: row.y,
-                width: area.width - x_offset,
-                height: 1,
-            };
-
-            line.render(line_area, buf);
+        for (line, line_area) in self.iter().zip(area.rows()) {
+            line.render_with_alignment(line_area, buf, self.alignment);
         }
     }
 }
@@ -1194,6 +1179,33 @@ mod tests {
             let mut buf = Buffer::empty(area);
             text.render(area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([" foo  "]));
+        }
+
+        #[test]
+        fn render_right_aligned_with_truncation() {
+            let text = Text::from("123456789").alignment(Alignment::Right);
+            let area = Rect::new(0, 0, 5, 1);
+            let mut buf = Buffer::empty(area);
+            text.render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["56789"]));
+        }
+
+        #[test]
+        fn render_centered_odd_with_truncation() {
+            let text = Text::from("123456789").alignment(Alignment::Center);
+            let area = Rect::new(0, 0, 5, 1);
+            let mut buf = Buffer::empty(area);
+            text.render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["34567"]));
+        }
+
+        #[test]
+        fn render_centered_even_with_truncation() {
+            let text = Text::from("123456789").alignment(Alignment::Center);
+            let area = Rect::new(0, 0, 6, 1);
+            let mut buf = Buffer::empty(area);
+            text.render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["234567"]));
         }
 
         #[test]
