@@ -687,7 +687,7 @@ impl Widget for Line<'_> {
 
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        self.render_with_alignment(area, buf, None)
+        self.render_with_alignment(area, buf, None);
     }
 }
 
