@@ -342,86 +342,24 @@ fn draw(frame: &mut Frame) {
 
 <!-- cargo-rdme end -->
 
-## Status of this fork
-
-In response to the original maintainer [**Florian Dehau**](https://github.com/fdehau)'s issue
-regarding the [future of `tui-rs`](https://github.com/fdehau/tui-rs/issues/654), several members of
-the community forked the project and created this crate. We look forward to continuing the work
-started by Florian 🚀
+## Contributing
 
 In order to organize ourselves, we currently use a [Discord server](https://discord.gg/pMCEU9hNEj),
 feel free to join and come chat! There is also a [Matrix](https://matrix.org/) bridge available at
 [#ratatui:matrix.org](https://matrix.to/#/#ratatui:matrix.org).
 
-While we do utilize Discord for coordinating, it's not essential for contributing. We have recently
-launched the [Ratatui Forum][Forum], and our primary open-source workflow is centered around GitHub.
-For bugs and features, we rely on GitHub. Please [Report a bug], [Request a Feature] or [Create a
-Pull Request].
+We have also recently launched the [Ratatui Forum][Forum], For bugs and features, we rely on GitHub.
+Please [Report a bug], [Request a Feature] or [Create a Pull Request].
 
-Please make sure you read the updated [contributing](./CONTRIBUTING.md) guidelines, especially if
-you are interested in working on a PR or issue opened in the previous repository.
+Please make sure you read the [contributing](./CONTRIBUTING.md) guidelines, especially if you are
+interested in working on a PR or issue opened in the previous repository.
 
-## Widgets
+## Built with Ratatui
 
-### Built in
-
-The library comes with the following
-[widgets](https://docs.rs/ratatui/latest/ratatui/widgets/index.html):
-
-- [BarChart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html)
-- [Block](https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html)
-- [Calendar](https://docs.rs/ratatui/latest/ratatui/widgets/calendar/index.html)
-- [Canvas](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/struct.Canvas.html) which allows
-  rendering [points, lines, shapes and a world
-  map](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/index.html)
-- [Chart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Chart.html)
-- [Clear](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Clear.html)
-- [Gauge](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Gauge.html)
-- [List](https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html)
-- [Paragraph](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Paragraph.html)
-- [Scrollbar](https://docs.rs/ratatui/latest/ratatui/widgets/scrollbar/struct.Scrollbar.html)
-- [Sparkline](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Sparkline.html)
-- [Table](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Table.html)
-- [Tabs](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tabs.html)
-
-Each widget has an associated example which can be found in the [Examples] folder. Run each example
-with cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by pressing `q`.
-
-You can also run all examples by running `cargo make run-examples` (requires `cargo-make` that can
-be installed with `cargo install cargo-make`).
-
-### Third-party libraries, bootstrapping templates and widgets
-
-- [ansi-to-tui](https://github.com/uttarayan21/ansi-to-tui) — Convert ansi colored text to
-  `ratatui::text::Text`
-- [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to
-  `ratatui::style::Color`
-- [templates](https://github.com/ratatui/templates) — Starter templates for
-  bootstrapping a Rust TUI application with Ratatui & crossterm
-- [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for
-  Tui-rs + Crossterm apps
-- [tui-clap](https://github.com/kegesch/tui-clap-rs) — Use clap-rs together with Tui-rs
-- [tui-log](https://github.com/kegesch/tui-log-rs) — Example of how to use logging with Tui-rs
-- [tui-logger](https://github.com/gin66/tui-logger) — Logger and Widget for Tui-rs
-- [tui-realm](https://github.com/veeso/tui-realm) — Tui-rs framework to build stateful applications
-  with a React/Elm inspired approach
-- [tui-realm-treeview](https://github.com/veeso/tui-realm-treeview) — Treeview component for
-  Tui-realm
-- [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget) — Widget for tree data
-  structures.
-- [tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple
-  windows and their rendering
-- [tui-textarea](https://github.com/rhysd/tui-textarea) — Simple yet powerful multi-line text editor
-  widget supporting several key shortcuts, undo/redo, text search, etc.
-- [tui-input](https://github.com/sayanarijit/tui-input) — TUI input library supporting multiple
-  backends and tui-rs.
-- [tui-term](https://github.com/a-kenji/tui-term) — A pseudoterminal widget library
-  that enables the rendering of terminal applications as ratatui widgets.
-
-## Apps
-
-Check out [awesome-ratatui](https://github.com/ratatui/awesome-ratatui) for a curated list of
-awesome apps/libraries built with `ratatui`!
+Ratatui has a number of built-in [widgets](https://docs.rs/ratatui/latest/ratatui/widgets/), as well
+as many contributed by external contributors. Check out the [Showcase](https://ratatui.rs/showcase/)
+section of the website, or the [awesome-ratatui](https://github.com/ratatui/awesome-ratatui) repo
+for a curated list of awesome apps/libraries built with `ratatui`!
 
 ## Alternatives
 
@@ -429,6 +367,9 @@ You might want to checkout [Cursive](https://github.com/gyscos/Cursive) for an a
 to build text user interfaces in Rust.
 
 ## Acknowledgments
+
+None of this could be possible without [**Florian Dehau**](https://github.com/fdehau) who originally
+created [tui-rs] which inspired many Rust TUIs.
 
 Special thanks to [**Pavel Fomchenkov**](https://github.com/nawok) for his work in designing **an
 awesome logo** for the ratatui project and ratatui organization.
