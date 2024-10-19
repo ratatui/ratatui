@@ -595,7 +595,7 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::{layout::Constraint, style::{Style, Stylize}, widgets::{Row, Table}};
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).row_highlight_style(Style::new().red().italic());
@@ -620,7 +620,7 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::{layout::Constraint, style::{Style, Stylize}, widgets::{Row, Table}};
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).column_highlight_style(Style::new().red().italic());
@@ -645,7 +645,7 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::{layout::Constraint, style::{Style, Stylize}, widgets::{Row, Table}};
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).cell_highlight_style(Style::new().red().italic());
