@@ -468,12 +468,13 @@ impl Color {
 
 #[cfg(test)]
 mod tests {
+    use std::error::Error;
+
     #[cfg(feature = "palette")]
     use palette::{Hsl, Hsluv};
     use rstest::rstest;
     #[cfg(feature = "serde")]
     use serde::de::{Deserialize, IntoDeserializer};
-    use std::error::Error;
 
     use super::*;
 
