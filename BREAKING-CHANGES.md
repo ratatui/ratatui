@@ -78,17 +78,17 @@ This is a quick summary of the sections below:
 
 [#1326]: https://github.com/ratatui/ratatui/pull/1326
 
-The `Sparkline::data` method has been modified to accept `IntoIterator<Item = SparklineBar>` 
-instead of `&[u64]`. 
+The `Sparkline::data` method has been modified to accept `IntoIterator<Item = SparklineBar>`
+instead of `&[u64]`.
 
-`SparklineBar` is a struct that contains an `Option<u64>` value, which represents an possible 
-_absent_ value, as distinct from a `0` value. This change allows the `Sparkline` to style 
+`SparklineBar` is a struct that contains an `Option<u64>` value, which represents an possible
+_absent_ value, as distinct from a `0` value. This change allows the `Sparkline` to style
 data points differently, depending on whether they are present or absent.
 
-`SparklineBar` also contains an `Option<Style>` that will be used to apply a style the bar in 
+`SparklineBar` also contains an `Option<Style>` that will be used to apply a style the bar in
 addition to any other styling applied to the `Sparkline`.
 
-Several `From` implementations have been added to `SparklineBar` to support existing callers who 
+Several `From` implementations have been added to `SparklineBar` to support existing callers who
 provide `&[u64]` and other types that can be converted to `SparklineBar`, such as `Option<u64>`.
 
 If you encounter any type inference issues, you may need to provide an explicit type for the data
@@ -172,6 +172,8 @@ Software that manually parse the serialized the output (with anything other than
 implementation on `TableState`) may have to be refactored if the "selected_column" field is not
 accounted for. This does not affect users who rely on the `Deserialize`, or `Serialize`
 implementation on the state.
+
+## v0.28.0
 
 ### `Backend::size` returns `Size` instead of `Rect` ([#1254])
 
