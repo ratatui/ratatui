@@ -397,11 +397,11 @@ impl Color {
     ///
     /// // Minimum Saturation is fully desaturated red = gray
     /// let color: Color = Color::from_hsl(Hsl::new(0.0, 0.0, 0.5));
+    /// assert_eq!(color, Color::Rgb(128, 128, 128));
     ///
     /// // Maximum Saturation is fully saturated red
     /// let color: Color = Color::from_hsl(Hsl::new(0.0, 1.0, 0.5));
     /// assert_eq!(color, Color::Rgb(255, 0, 0));
-    /// assert_eq!(color, Color::Rgb(128, 128, 128));
     /// ```
     #[cfg(feature = "palette")]
     pub fn from_hsl(hsl: palette::Hsl) -> Self {
