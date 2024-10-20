@@ -47,7 +47,8 @@ use crate::{
 ///
 /// ```
 /// use ratatui::{
-///     style::{Style, Stylize},
+///     style::{Color, Style, Stylize},
+///     symbols,
 ///     widgets::{Block, RenderDirection, Sparkline},
 /// };
 ///
@@ -123,6 +124,8 @@ impl<'a> Sparkline<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// The foreground corresponds to the bars while the background is everything else.
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn absent_value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.absent_value_style = style.into();
@@ -265,6 +268,8 @@ impl SparklineBar {
     /// As well as the style of the sparkline, each [`SparklineBar`] may optionally set its own
     /// style.  If set, the style of the bar will be the style of the sparkline combined with
     /// the style of the bar.
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Option<Style>>>(mut self, style: S) -> Self {
         self.style = style.into();
