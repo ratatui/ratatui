@@ -80,7 +80,7 @@ impl App {
 /// This allows the `App` type to be rendered as a widget. The `App` type owns several other widgets
 /// that are rendered as part of the app. The `Widget` trait is implemented on a mutable reference
 /// to the `App` type, which allows this to be rendered without consuming the `App` type, and allows
-/// the sub-widgets to be mutatable.
+/// the sub-widgets to be mutable.
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let constraints = Constraint::from_lengths([1, 1, 2, 1]);

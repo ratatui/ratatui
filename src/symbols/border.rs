@@ -1,4 +1,4 @@
-use super::{block, line};
+use crate::symbols::{block, line};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Set {

@@ -27,19 +27,20 @@ cassowary = "0.3"
 compact_str = "0.8.0"
 crossterm = { version = "0.28.1", optional = true }
 document-features = { version = "0.2.7", optional = true }
+indoc = "2"
 instability = "0.3.1"
 itertools = "0.13"
 lru = "0.12.0"
 paste = "1.0.2"
 palette = { version = "0.7.6", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
-strum = { version = "0.26", features = ["derive"] }
-strum_macros = { version = "0.26.3" }
+strum = { version = "0.26.3", features = ["derive"] }
 termwiz = { version = "0.22.0", optional = true }
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation = "1.10"
 unicode-truncate = "1"
-unicode-width = "0.1.13"
+# See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
+unicode-width = "=0.2.0"
 
 [target.'cfg(not(windows))'.dependencies]
 # termion is not supported on Windows
@@ -50,16 +51,15 @@ argh = "0.1.12"
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 crossterm = { version = "0.28.1", features = ["event-stream"] }
-derive_builder = "0.20.0"
 fakeit = "1.1"
 font8x8 = "0.3.1"
 futures = "0.3.30"
 indoc = "2"
-octocrab = "0.39.0"
+octocrab = "0.41.0"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
-rstest = "0.22.0"
+rstest = "0.23.0"
 serde_json = "1.0.109"
 tokio = { version = "1.39.2", features = [
   "rt",
@@ -138,6 +138,10 @@ macros = []
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["dep:palette"]
+
+## Use terminal scrolling regions to make some operations less prone to
+## flickering. (i.e. Terminal::insert_before).
+scrolling-regions = []
 
 ## enables all widgets.
 all-widgets = ["widget-calendar"]

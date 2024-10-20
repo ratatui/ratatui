@@ -12,6 +12,11 @@ This is a quick summary of the sections below:
 
 - [v0.29.0](#unreleased)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
+  - Removed public fields from `Rect` iterators
+  - `Line` now implements `From<Cow<str>`
+  - `Table::highlight_style` is now `Table::row_highlight_style`
+  - `Tabs::select` now accepts `Into<Option<usize>>`
+  - `Color::from_hsl` is now behind the `palette` feature
 - [v0.28.0](#v0280)
   - `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
@@ -98,7 +103,75 @@ let value = 1u8;
 
 As a consequence of this change, the `data` method is no longer a `const fn`.
 
-## v0.28.0
+### `Color::from_hsl` is now behind the `palette` feature and accepts `palette::Hsl` ([#1418])
+
+[#1418]: https://github.com/ratatui/ratatui/pull/1418
+
+Previously `Color::from_hsl` accepted components as individual f64 parameters. It now accepts a
+single `palette::Hsl` value and is gated behind a `palette` feature flag.
+
+```diff
+- Color::from_hsl(360.0, 100.0, 100.0)
++ Color::from_hsl(Hsl::new(360.0, 100.0, 100.0))
+```
+
+### Removed public fields from `Rect` iterators ([#1358], [#1424])
+
+[#1358]: https://github.com/ratatui/ratatui/pull/1358
+[#1424]: https://github.com/ratatui/ratatui/pull/1424
+
+The `pub` modifier has been removed from fields on the `Columns`,`Rows`, and `Positions` iterators.
+These fields were not intended to be public and should not have been accessed directly.
+
+### `Rect::area()` now returns u32 instead of u16 ([#1378])
+
+[#1378]: https://github.com/ratatui/ratatui/pull/1378
+
+This is likely to impact anything which relies on `Rect::area` maxing out at u16::MAX. It can now
+return up to u16::MAX * u16::MAX (2^32 - 2^17 + 1).
+
+### `Line` now implements `From<Cow<str>` ([#1373])
+
+[#1373]: https://github.com/ratatui/ratatui/pull/1373
+
+As this adds an extra conversion, ambiguous inferred expressions may no longer compile.
+
+```rust
+// given:
+struct Foo { ... }
+impl From<Foo> for String { ... }
+impl From<Foo> for Cow<str> { ... }
+
+let foo = Foo { ... };
+let line = Line::from(foo); // now fails due to now ambiguous inferred type
+// replace with e.g.
+let line = Line::from(String::from(foo));
+```
+
+### `Tabs::select()` now accepts `Into<Option<usize>>` ([#1413])
+
+[#1413]: https://github.com/ratatui/ratatui/pull/1413
+
+Previously `Tabs::select()` accepted `usize`, but it now accepts `Into<Option<usize>>`. This breaks
+any code already using parameter type inference:
+
+```diff
+let selected = 1u8;
+- let tabs = Tabs::new(["A", "B"]).select(selected.into())
++ let tabs = Tabs::new(["A", "B"]).select(selected as usize)
+```
+
+### `Table::highlight_style` is now `Table::row_highlight_style` ([#1331])
+
+[#1331]: https://github.com/ratatui/ratatui/pull/1331
+
+The `Table::highlight_style` is now deprecated in favor of `Table::row_highlight_style`.
+
+Also, the serialized output of the `TableState` will now include the "selected_column" field.
+Software that manually parse the serialized the output (with anything other than the `Serialize`
+implementation on `TableState`) may have to be refactored if the "selected_column" field is not
+accounted for. This does not affect users who rely on the `Deserialize`, or `Serialize`
+implementation on the state.
 
 ### `Backend::size` returns `Size` instead of `Rect` ([#1254])
 
@@ -167,7 +240,7 @@ are also named terminal, and confusion about module exports for newer Rust users
 
 This change simplifies the trait and makes it easier to implement.
 
-### `Frame::size` is deprecated and renamed to `Frame::area`
+### `Frame::size` is deprecated and renamed to `Frame::area` ([#1293])
 
 [#1293]: https://github.com/ratatui/ratatui/pull/1293
 

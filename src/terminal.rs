@@ -13,12 +13,12 @@
 //! ```rust,no_run
 //! use std::io::stdout;
 //!
-//! use ratatui::{prelude::*, widgets::Paragraph};
+//! use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
 //!
 //! let backend = CrosstermBackend::new(stdout());
 //! let mut terminal = Terminal::new(backend)?;
 //! terminal.draw(|frame| {
-//!     let area = frame.size();
+//!     let area = frame.area();
 //!     frame.render_widget(Paragraph::new("Hello world!"), area);
 //! })?;
 //! # std::io::Result::Ok(())

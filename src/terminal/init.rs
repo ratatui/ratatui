@@ -5,8 +5,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
-use super::TerminalOptions;
-use crate::{backend::CrosstermBackend, Terminal};
+use crate::{backend::CrosstermBackend, terminal::TerminalOptions, Terminal};
 
 /// A type alias for the default terminal type.
 ///

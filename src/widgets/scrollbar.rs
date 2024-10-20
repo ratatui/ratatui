@@ -12,8 +12,11 @@ use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    prelude::*,
+    buffer::Buffer,
+    layout::Rect,
+    style::Style,
     symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL},
+    widgets::StatefulWidget,
 };
 
 /// A widget to display a scrollbar
@@ -39,7 +42,15 @@ use crate::{
 /// # Examples
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     layout::{Margin, Rect},
+///     text::Line,
+///     widgets::{
+///         Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+///         StatefulWidget,
+///     },
+///     Frame,
+/// };
 ///
 /// # fn render_paragraph_with_scrollbar(frame: &mut Frame, area: Rect) {
 /// let vertical_scroll = 0; // from app state
@@ -59,7 +70,7 @@ use crate::{
 ///
 /// let mut scrollbar_state = ScrollbarState::new(items.len()).position(vertical_scroll);
 ///
-/// let area = frame.size();
+/// let area = frame.area();
 /// // Note we render the paragraph
 /// frame.render_widget(paragraph, area);
 /// // and the scrollbar, those are separate widgets
@@ -254,6 +265,8 @@ impl<'a> Scrollbar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn thumb_style<S: Into<Style>>(mut self, thumb_style: S) -> Self {
         self.thumb_style = thumb_style.into();
@@ -279,6 +292,8 @@ impl<'a> Scrollbar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn track_style<S: Into<Style>>(mut self, track_style: S) -> Self {
         self.track_style = track_style.into();
@@ -304,6 +319,8 @@ impl<'a> Scrollbar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn begin_style<S: Into<Style>>(mut self, begin_style: S) -> Self {
         self.begin_style = begin_style.into();
@@ -329,6 +346,8 @@ impl<'a> Scrollbar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn end_style<S: Into<Style>>(mut self, end_style: S) -> Self {
         self.end_style = end_style.into();
@@ -382,6 +401,8 @@ impl<'a> Scrollbar<'a> {
     /// ```
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         let style = style.into();
@@ -621,6 +642,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
+    use crate::{text::Text, widgets::Widget};
 
     #[test]
     fn scroll_direction_to_string() {

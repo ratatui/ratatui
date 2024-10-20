@@ -9,6 +9,17 @@ use crate::{layout::Alignment, text::Line};
 ///
 /// It can be aligned (see [`Alignment`]) and positioned (see [`Position`]).
 ///
+/// # Future Deprecation
+///
+/// This type is deprecated and will be removed in a future release. The reason for this is that the
+/// position of the title should be stored in the block itself, not in the title. The `Line` type
+/// has an alignment method that can be used to align the title. For more information see
+/// <https://github.com/ratatui/ratatui/issues/738>.
+///
+/// Use [`Line`] instead, when the position is not defined as part of the title. When a specific
+/// position is needed, use [`Block::title_top`](crate::widgets::Block::title_top) or
+/// [`Block::title_bottom`](crate::widgets::Block::title_bottom) instead.
+///
 /// # Example
 ///
 /// Title with no style.
@@ -20,14 +31,14 @@ use crate::{layout::Alignment, text::Line};
 ///
 /// Blue title on a white background (via [`Stylize`](crate::style::Stylize) trait).
 /// ```
-/// use ratatui::{prelude::*, widgets::block::*};
+/// use ratatui::{style::Stylize, widgets::block::Title};
 ///
 /// Title::from("Title".blue().on_white());
 /// ```
 ///
 /// Title with multiple styles (see [`Line`] and [`Stylize`](crate::style::Stylize)).
 /// ```
-/// use ratatui::{prelude::*, widgets::block::*};
+/// use ratatui::{style::Stylize, text::Line, widgets::block::Title};
 ///
 /// Title::from(Line::from(vec!["Q".white().underlined(), "uit".gray()]));
 /// ```
@@ -35,7 +46,7 @@ use crate::{layout::Alignment, text::Line};
 /// Complete example
 /// ```
 /// use ratatui::{
-///     prelude::*,
+///     layout::Alignment,
 ///     widgets::{
 ///         block::{Position, Title},
 ///         Block,
@@ -73,7 +84,10 @@ pub struct Title<'a> {
 /// # Example
 ///
 /// ```
-/// use ratatui::widgets::{block::*, *};
+/// use ratatui::widgets::{
+///     block::{Position, Title},
+///     Block,
+/// };
 ///
 /// Block::new().title(Title::from("title").position(Position::Bottom));
 /// ```
@@ -88,6 +102,7 @@ pub enum Position {
     Bottom,
 }
 
+#[deprecated = "use Block::title_top() or Block::title_bottom() instead. This will be removed in a future release."]
 impl<'a> Title<'a> {
     /// Set the title content.
     #[must_use = "method moves the value of self and returns the modified value"]

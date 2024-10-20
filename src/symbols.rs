@@ -155,7 +155,7 @@ pub enum Marker {
 }
 
 pub mod scrollbar {
-    use super::{block, line};
+    use crate::symbols::{block, line};
 
     /// Scrollbar Set
     /// ```text

@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 use std::fmt;
 
-use crate::prelude::*;
+use crate::layout::Rect;
 
 /// A simple size struct
 ///

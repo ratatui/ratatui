@@ -7,6 +7,7 @@ pub mod main {
     pub mod paragraph;
     pub mod rect;
     pub mod sparkline;
+    pub mod table;
 }
 pub use main::*;
 
@@ -18,5 +19,6 @@ criterion::criterion_main!(
     list::benches,
     paragraph::benches,
     rect::benches,
-    sparkline::benches
+    sparkline::benches,
+    table::benches,
 );

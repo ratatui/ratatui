@@ -2,7 +2,13 @@ use std::cmp::min;
 
 use strum::{Display, EnumString};
 
-use crate::{prelude::*, style::Styled, widgets::Block};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Style, Styled},
+    symbols::{self},
+    widgets::{block::BlockExt, Block, Widget, WidgetRef},
+};
 
 /// Widget to render a sparkline over one or more lines.
 ///
@@ -40,7 +46,10 @@ use crate::{prelude::*, style::Styled, widgets::Block};
 /// # Examples
 ///
 /// ```
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{
+///     style::{Style, Stylize},
+///     widgets::{Block, RenderDirection, Sparkline},
+/// };
 ///
 /// Sparkline::default()
 ///     .block(Block::bordered().title("Sparkline"))
@@ -98,6 +107,8 @@ impl<'a> Sparkline<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// The foreground corresponds to the bars while the background is everything else.
+    ///
+    /// [`Color`]: crate::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -151,7 +162,8 @@ impl<'a> Sparkline<'a> {
     /// Create a `Sparkline` from a slice of `u64`:
     ///
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{layout::Rect, widgets::Sparkline, Frame};
+    ///
     /// # fn ui(frame: &mut Frame) {
     /// # let area = Rect::default();
     /// let sparkline = Sparkline::default().data(&[1, 2, 3]);
@@ -420,7 +432,10 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::buffer::Cell;
+    use crate::{
+        buffer::Cell,
+        style::{Color, Modifier, Stylize},
+    };
 
     #[test]
     fn render_direction_to_string() {
