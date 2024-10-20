@@ -99,10 +99,9 @@ args = ["test", "--doc", "--all-features"]
 [tasks.test-backend]
 # takes a command line parameter to specify the backend to test (e.g. "crossterm")
 description = "Run backend-specific tests"
-dependencies = ["install-nextest"]
 command = "cargo"
 args = [
-  "nextest",
+  "test",
   "run",
   "--all-targets",
   "--no-default-features",
