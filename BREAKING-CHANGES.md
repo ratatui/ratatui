@@ -11,6 +11,7 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.29.0](#unreleased)
+  - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
   - `Line` now implements `From<Cow<str>`
   - `Table::highlight_style` is now `Table::row_highlight_style`
@@ -72,6 +73,35 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased
+
+### `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const ([#1326])
+
+[#1326]: https://github.com/ratatui/ratatui/pull/1326
+
+The `Sparkline::data` method has been modified to accept `IntoIterator<Item = SparklineBar>`
+instead of `&[u64]`.
+
+`SparklineBar` is a struct that contains an `Option<u64>` value, which represents an possible
+_absent_ value, as distinct from a `0` value. This change allows the `Sparkline` to style
+data points differently, depending on whether they are present or absent.
+
+`SparklineBar` also contains an `Option<Style>` that will be used to apply a style the bar in
+addition to any other styling applied to the `Sparkline`.
+
+Several `From` implementations have been added to `SparklineBar` to support existing callers who
+provide `&[u64]` and other types that can be converted to `SparklineBar`, such as `Option<u64>`.
+
+If you encounter any type inference issues, you may need to provide an explicit type for the data
+passed to `Sparkline::data`. For example, if you are passing a single value, you may need to use
+`into()` to convert it to form that can be used as a `SparklineBar`:
+
+```diff
+let value = 1u8;
+- Sparkline::default().data(&[value.into()]);
++ Sparkline::default().data(&[u64::from(value)]);
+```
+
+As a consequence of this change, the `data` method is no longer a `const fn`.
 
 ### `Color::from_hsl` is now behind the `palette` feature and accepts `palette::Hsl` ([#1418])
 

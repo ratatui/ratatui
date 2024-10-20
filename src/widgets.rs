@@ -50,7 +50,7 @@ pub use self::{
     logo::{RatatuiLogo, Size as RatatuiLogoSize},
     paragraph::{Paragraph, Wrap},
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
-    sparkline::{RenderDirection, Sparkline},
+    sparkline::{RenderDirection, Sparkline, SparklineBar},
     table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
