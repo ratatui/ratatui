@@ -99,7 +99,7 @@ pub fn render_ping(progress: usize, area: Rect, buf: &mut Buffer) {
                 .title_alignment(Alignment::Center)
                 .border_type(BorderType::Thick),
         )
-        .data(&data)
+        .data(data)
         .style(THEME.traceroute.ping)
         .render(area, buf);
 }

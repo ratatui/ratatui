@@ -13,16 +13,24 @@
 //! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use std::time::{Duration, Instant};
+use std::{
+    io::stdout,
+    time::{Duration, Instant},
+};
 
 use color_eyre::Result;
+use crossterm::{
+    event::{DisableMouseCapture, EnableMouseCapture, KeyEventKind},
+    ExecutableCommand,
+};
+use itertools::Itertools;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
-    layout::{Constraint, Layout, Rect},
+    crossterm::event::{self, Event, KeyCode, MouseEventKind},
+    layout::{Constraint, Layout, Position, Rect},
     style::{Color, Stylize},
     symbols::Marker,
     widgets::{
-        canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
+        canvas::{Canvas, Circle, Map, MapResolution, Points, Rectangle},
         Block, Widget,
     },
     DefaultTerminal, Frame,
@@ -30,13 +38,16 @@ use ratatui::{
 
 fn main() -> Result<()> {
     color_eyre::install()?;
+    stdout().execute(EnableMouseCapture)?;
     let terminal = ratatui::init();
     let app_result = App::new().run(terminal);
     ratatui::restore();
+    stdout().execute(DisableMouseCapture)?;
     app_result
 }
 
 struct App {
+    exit: bool,
     x: f64,
     y: f64,
     ball: Circle,
@@ -45,11 +56,14 @@ struct App {
     vy: f64,
     tick_count: u64,
     marker: Marker,
+    points: Vec<Position>,
+    is_drawing: bool,
 }
 
 impl App {
     const fn new() -> Self {
         Self {
+            exit: false,
             x: 0.0,
             y: 0.0,
             ball: Circle {
@@ -63,25 +77,22 @@ impl App {
             vy: 1.0,
             tick_count: 0,
             marker: Marker::Dot,
+            points: vec![],
+            is_drawing: false,
         }
     }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         let tick_rate = Duration::from_millis(16);
         let mut last_tick = Instant::now();
-        loop {
+        while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
-                    match key.code {
-                        KeyCode::Char('q') => break Ok(()),
-                        KeyCode::Down | KeyCode::Char('j') => self.y += 1.0,
-                        KeyCode::Up | KeyCode::Char('k') => self.y -= 1.0,
-                        KeyCode::Right | KeyCode::Char('l') => self.x += 1.0,
-                        KeyCode::Left | KeyCode::Char('h') => self.x -= 1.0,
-                        _ => {}
-                    }
+                match event::read()? {
+                    Event::Key(key) => self.handle_key_press(key),
+                    Event::Mouse(event) => self.handle_mouse_event(event),
+                    _ => (),
                 }
             }
 
@@ -89,6 +100,32 @@ impl App {
                 self.on_tick();
                 last_tick = Instant::now();
             }
+        }
+        Ok(())
+    }
+
+    fn handle_key_press(&mut self, key: event::KeyEvent) {
+        if key.kind != KeyEventKind::Press {
+            return;
+        }
+        match key.code {
+            KeyCode::Char('q') => self.exit = true,
+            KeyCode::Down | KeyCode::Char('j') => self.y += 1.0,
+            KeyCode::Up | KeyCode::Char('k') => self.y -= 1.0,
+            KeyCode::Right | KeyCode::Char('l') => self.x += 1.0,
+            KeyCode::Left | KeyCode::Char('h') => self.x -= 1.0,
+            _ => {}
+        }
+    }
+
+    fn handle_mouse_event(&mut self, event: event::MouseEvent) {
+        match event.kind {
+            MouseEventKind::Down(_) => self.is_drawing = true,
+            MouseEventKind::Up(_) => self.is_drawing = false,
+            MouseEventKind::Drag(_) => {
+                self.points.push(Position::new(event.column, event.row));
+            }
+            _ => {}
         }
     }
 
@@ -126,10 +163,12 @@ impl App {
         let horizontal =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [map, right] = horizontal.areas(frame.area());
+        let [left, right] = horizontal.areas(frame.area());
+        let [draw, map] = vertical.areas(left);
         let [pong, boxes] = vertical.areas(right);
 
         frame.render_widget(self.map_canvas(), map);
+        frame.render_widget(self.draw_canvas(draw), draw);
         frame.render_widget(self.pong_canvas(), pong);
         frame.render_widget(self.boxes_canvas(boxes), boxes);
     }
@@ -147,6 +186,30 @@ impl App {
             })
             .x_bounds([-180.0, 180.0])
             .y_bounds([-90.0, 90.0])
+    }
+
+    fn draw_canvas(&self, area: Rect) -> impl Widget + '_ {
+        Canvas::default()
+            .block(Block::bordered().title("Draw here"))
+            .marker(self.marker)
+            .x_bounds([0.0, f64::from(area.width)])
+            .y_bounds([0.0, f64::from(area.height)])
+            .paint(move |ctx| {
+                let points = self
+                    .points
+                    .iter()
+                    .map(|p| {
+                        (
+                            f64::from(p.x) - f64::from(area.left()),
+                            f64::from(area.bottom()) - f64::from(p.y),
+                        )
+                    })
+                    .collect_vec();
+                ctx.draw(&Points {
+                    coords: &points,
+                    color: Color::White,
+                });
+            })
     }
 
     fn pong_canvas(&self) -> impl Widget + '_ {

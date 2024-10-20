@@ -479,12 +479,12 @@ mod tests {
 
     #[test]
     fn buffer_view_with_overwrites() {
-        let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 8 wide
+        let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 2 wide
         let buffer = Buffer::with_lines([multi_byte_char]);
         assert_eq!(
             buffer_view(&buffer),
             format!(
-                r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " "), (2, " "), (3, " "), (4, " "), (5, " "), (6, " "), (7, " ")]
+                r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " ")]
 "#,
             )
         );

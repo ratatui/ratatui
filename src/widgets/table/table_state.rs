@@ -123,7 +123,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let state = TableState::new().with_selected_column(Some(1));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -142,7 +142,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let state = TableState::new().with_selected_cell(Some((1, 5)));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -212,7 +212,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let state = TableState::new();
     /// assert_eq!(state.selected_column(), None);
     /// ```
@@ -227,7 +227,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let state = TableState::new();
     /// assert_eq!(state.selected_cell(), None);
     /// ```
@@ -261,7 +261,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// *state.selected_column_mut() = Some(1);
     /// ```
@@ -293,7 +293,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// state.select_column(Some(1));
     /// ```
@@ -308,7 +308,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// state.select_cell(Some((1, 5)));
     /// ```
@@ -349,7 +349,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// state.select_next_column();
     /// ```
@@ -384,7 +384,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// state.select_previous_column();
     /// ```
@@ -420,7 +420,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// state.select_first_column();
     /// ```
@@ -453,7 +453,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// state.select_last();
     /// ```
@@ -508,7 +508,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// state.scroll_right_by(4);
     /// ```
@@ -526,7 +526,7 @@ impl TableState {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use ratatui::widgets::{TableState};
     /// let mut state = TableState::default();
     /// state.scroll_left_by(4);
     /// ```

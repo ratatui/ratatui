@@ -371,32 +371,54 @@ impl Color {
 
     /// Converts a HSL representation to a `Color::Rgb` instance.
     ///
-    /// The `from_hsl` function converts the Hue, Saturation and Lightness values to a
-    /// corresponding `Color` RGB equivalent.
+    /// The `from_hsl` function converts the Hue, Saturation and Lightness values to a corresponding
+    /// `Color` RGB equivalent.
     ///
-    /// Hue values should be in the range [0, 360].
-    /// Saturation and L values should be in the range [0, 100].
-    /// Values that are not in the range are clamped to be within the range.
+    /// Hue values should be in the range [-180..180]. Values outside this range are normalized by
+    /// wrapping.
+    ///
+    /// Saturation and L values should be in the range [0.0..1.0]. Values outside this range are
+    /// clamped.
+    ///
+    /// Clamping to valid ranges happens before conversion to RGB.
     ///
     /// # Examples
     ///
     /// ```
-    /// use ratatui::style::Color;
+    /// use ratatui::{palette::Hsl, style::Color};
     ///
-    /// let color: Color = Color::from_hsl(360.0, 100.0, 100.0);
+    /// // Minimum Lightness is black
+    /// let color: Color = Color::from_hsl(Hsl::new(0.0, 0.0, 0.0));
+    /// assert_eq!(color, Color::Rgb(0, 0, 0));
+    ///
+    /// // Maximum Lightness is white
+    /// let color: Color = Color::from_hsl(Hsl::new(0.0, 0.0, 1.0));
     /// assert_eq!(color, Color::Rgb(255, 255, 255));
     ///
-    /// let color: Color = Color::from_hsl(0.0, 0.0, 0.0);
-    /// assert_eq!(color, Color::Rgb(0, 0, 0));
+    /// // Minimum Saturation is fully desaturated red = gray
+    /// let color: Color = Color::from_hsl(Hsl::new(0.0, 0.0, 0.5));
+    /// assert_eq!(color, Color::Rgb(128, 128, 128));
+    ///
+    /// // Bright red
+    /// let color: Color = Color::from_hsl(Hsl::new(0.0, 1.0, 0.5));
+    /// assert_eq!(color, Color::Rgb(255, 0, 0));
+    ///
+    /// // Bright blue
+    /// let color: Color = Color::from_hsl(Hsl::new(-120.0, 1.0, 0.5));
+    /// assert_eq!(color, Color::Rgb(0, 0, 255));
     /// ```
-    pub fn from_hsl(h: f64, s: f64, l: f64) -> Self {
-        // Clamp input values to valid ranges
-        let h = h.clamp(0.0, 360.0);
-        let s = s.clamp(0.0, 100.0);
-        let l = l.clamp(0.0, 100.0);
+    #[cfg(feature = "palette")]
+    pub fn from_hsl(hsl: palette::Hsl) -> Self {
+        use palette::{Clamp, FromColor, Srgb};
+        let hsl = hsl.clamp();
+        let Srgb {
+            red,
+            green,
+            blue,
+            standard: _,
+        }: Srgb<u8> = Srgb::from_color(hsl).into();
 
-        // Delegate to the function for normalized HSL to RGB conversion
-        normalized_hsl_to_rgb(h / 360.0, s / 100.0, l / 100.0)
+        Self::Rgb(red, green, blue)
     }
 
     /// Converts a `HSLuv` representation to a `Color::Rgb` instance.
@@ -404,26 +426,43 @@ impl Color {
     /// The `from_hsluv` function converts the Hue, Saturation and Lightness values to a
     /// corresponding `Color` RGB equivalent.
     ///
-    /// Hue values should be in the range [0, 360].
-    /// Saturation and L values should be in the range [0, 100].
-    /// Values that are not in the range are clamped to be within the range.
+    /// Hue values should be in the range [-180.0..180.0]. Values outside this range are normalized
+    /// by wrapping.
+    ///
+    /// Saturation and L values should be in the range [0.0..100.0]. Values outside this range are
+    /// clamped.
+    ///
+    /// Clamping to valid ranges happens before conversion to RGB.
     ///
     /// # Examples
     ///
     /// ```
-    /// use ratatui::prelude::*;
+    /// use ratatui::{palette::Hsluv, style::Color};
     ///
-    /// let color = Color::from_hsluv(360.0, 50.0, 75.0);
-    /// assert_eq!(color, Color::Rgb(223, 171, 181));
-    ///
-    /// let color: Color = Color::from_hsluv(0.0, 0.0, 0.0);
+    /// // Minimum Lightness is black
+    /// let color: Color = Color::from_hsluv(Hsluv::new(0.0, 100.0, 0.0));
     /// assert_eq!(color, Color::Rgb(0, 0, 0));
+    ///
+    /// // Maximum Lightness is white
+    /// let color: Color = Color::from_hsluv(Hsluv::new(0.0, 0.0, 100.0));
+    /// assert_eq!(color, Color::Rgb(255, 255, 255));
+    ///
+    /// // Minimum Saturation is fully desaturated red = gray
+    /// let color = Color::from_hsluv(Hsluv::new(0.0, 0.0, 50.0));
+    /// assert_eq!(color, Color::Rgb(119, 119, 119));
+    ///
+    /// // Bright Red
+    /// let color = Color::from_hsluv(Hsluv::new(12.18, 100.0, 53.2));
+    /// assert_eq!(color, Color::Rgb(255, 0, 0));
+    ///
+    /// // Bright Blue
+    /// let color = Color::from_hsluv(Hsluv::new(-94.13, 100.0, 32.3));
+    /// assert_eq!(color, Color::Rgb(0, 0, 255));
     /// ```
     #[cfg(feature = "palette")]
-    pub fn from_hsluv(h: f64, s: f64, l: f64) -> Self {
-        use palette::{Clamp, FromColor, Hsluv, Srgb};
-
-        let hsluv = Hsluv::new(h, s, l).clamp();
+    pub fn from_hsluv(hsluv: palette::Hsluv) -> Self {
+        use palette::{Clamp, FromColor, Srgb};
+        let hsluv = hsluv.clamp();
         let Srgb {
             red,
             green,
@@ -435,145 +474,65 @@ impl Color {
     }
 }
 
-/// Converts normalized HSL (Hue, Saturation, Lightness) values to RGB (Red, Green, Blue) color
-/// representation. H, S, and L values should be in the range [0, 1].
-///
-/// Based on <https://github.com/killercup/hsl-rs/blob/b8a30e11afd75f262e0550725333293805f4ead0/src/lib.rs>
-fn normalized_hsl_to_rgb(hue: f64, saturation: f64, lightness: f64) -> Color {
-    // This function can be made into `const` in the future.
-    // This comment contains the relevant information for making it `const`.
-    //
-    // If it is `const` and made public, users can write the following:
-    //
-    // ```rust
-    // const SLATE_50: Color = normalized_hsl_to_rgb(0.210, 0.40, 0.98);
-    // ```
-    //
-    // For it to be const now, we need `#![feature(const_fn_floating_point_arithmetic)]`
-    // Tracking issue: https://github.com/rust-lang/rust/issues/57241
-    //
-    // We would also need to remove the use of `.round()` in this function, i.e.:
-    //
-    // ```rust
-    // Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
-    // ```
-
-    // Initialize RGB components
-    let red: f64;
-    let green: f64;
-    let blue: f64;
-
-    // Check if the color is achromatic (grayscale)
-    if saturation == 0.0 {
-        red = lightness;
-        green = lightness;
-        blue = lightness;
-    } else {
-        // Calculate RGB components for colored cases
-        let q = if lightness < 0.5 {
-            lightness * (1.0 + saturation)
-        } else {
-            lightness + saturation - lightness * saturation
-        };
-        let p = 2.0 * lightness - q;
-        red = hue_to_rgb(p, q, hue + 1.0 / 3.0);
-        green = hue_to_rgb(p, q, hue);
-        blue = hue_to_rgb(p, q, hue - 1.0 / 3.0);
-    }
-
-    // Scale RGB components to the range [0, 255] and create a Color::Rgb instance
-    Color::Rgb(
-        (red * 255.0).round() as u8,
-        (green * 255.0).round() as u8,
-        (blue * 255.0).round() as u8,
-    )
-}
-
-/// Helper function to calculate RGB component for a specific hue value.
-fn hue_to_rgb(p: f64, q: f64, t: f64) -> f64 {
-    // Adjust the hue value to be within the valid range [0, 1]
-    let mut t = t;
-    if t < 0.0 {
-        t += 1.0;
-    }
-    if t > 1.0 {
-        t -= 1.0;
-    }
-
-    // Calculate the RGB component based on the hue value
-    if t < 1.0 / 6.0 {
-        p + (q - p) * 6.0 * t
-    } else if t < 1.0 / 2.0 {
-        q
-    } else if t < 2.0 / 3.0 {
-        p + (q - p) * (2.0 / 3.0 - t) * 6.0
-    } else {
-        p
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::error::Error;
 
+    #[cfg(feature = "palette")]
+    use palette::{Hsl, Hsluv};
+    use rstest::rstest;
     #[cfg(feature = "serde")]
     use serde::de::{Deserialize, IntoDeserializer};
 
     use super::*;
 
-    #[test]
-    fn test_hsl_to_rgb() {
-        // Test with valid HSL values
-        let color = Color::from_hsl(120.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(159, 223, 159));
-
-        // Test with H value at upper bound
-        let color = Color::from_hsl(360.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(223, 159, 159));
-
-        // Test with H value exceeding the upper bound
-        let color = Color::from_hsl(400.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(223, 159, 159));
-
-        // Test with S and L values exceeding the upper bound
-        let color = Color::from_hsl(240.0, 120.0, 150.0);
-        assert_eq!(color, Color::Rgb(255, 255, 255));
-
-        // Test with H, S, and L values below the lower bound
-        let color = Color::from_hsl(-20.0, -50.0, -20.0);
-        assert_eq!(color, Color::Rgb(0, 0, 0));
-
-        // Test with S and L values below the lower bound
-        let color = Color::from_hsl(60.0, -20.0, -10.0);
-        assert_eq!(color, Color::Rgb(0, 0, 0));
+    #[cfg(feature = "palette")]
+    #[rstest]
+    #[case::black(Hsl::new(0.0, 0.0, 0.0), Color::Rgb(0, 0, 0))]
+    #[case::white(Hsl::new(0.0, 0.0, 1.0), Color::Rgb(255, 255, 255))]
+    #[case::valid(Hsl::new(120.0, 0.5, 0.75), Color::Rgb(159, 223, 159))]
+    #[case::min_hue(Hsl::new(-180.0, 0.5, 0.75), Color::Rgb(159, 223, 223))]
+    #[case::max_hue(Hsl::new(180.0, 0.5, 0.75), Color::Rgb(159, 223, 223))]
+    #[case::min_saturation(Hsl::new(0.0, 0.0, 0.5), Color::Rgb(128, 128, 128))]
+    #[case::max_saturation(Hsl::new(0.0, 1.0, 0.5), Color::Rgb(255, 0, 0))]
+    #[case::min_lightness(Hsl::new(0.0, 0.5, 0.0), Color::Rgb(0, 0, 0))]
+    #[case::max_lightness(Hsl::new(0.0, 0.5, 1.0), Color::Rgb(255, 255, 255))]
+    #[case::under_hue_wraps(Hsl::new(-240.0, 0.5, 0.75), Color::Rgb(159, 223, 159))]
+    #[case::over_hue_wraps(Hsl::new(480.0, 0.5, 0.75), Color::Rgb(159, 223, 159))]
+    #[case::under_saturation_clamps(Hsl::new(0.0, -0.5, 0.75), Color::Rgb(191, 191, 191))]
+    #[case::over_saturation_clamps(Hsl::new(0.0, 1.2, 0.75), Color::Rgb(255, 128, 128))]
+    #[case::under_lightness_clamps(Hsl::new(0.0, 0.5, -0.20), Color::Rgb(0, 0, 0))]
+    #[case::over_lightness_clamps(Hsl::new(0.0, 0.5, 1.5), Color::Rgb(255, 255, 255))]
+    #[case::under_saturation_lightness_clamps(Hsl::new(0.0, -0.5, -0.20), Color::Rgb(0, 0, 0))]
+    #[case::over_saturation_lightness_clamps(Hsl::new(0.0, 1.2, 1.5), Color::Rgb(255, 255, 255))]
+    fn test_hsl_to_rgb(#[case] hsl: palette::Hsl, #[case] expected: Color) {
+        assert_eq!(Color::from_hsl(hsl), expected);
     }
 
     #[cfg(feature = "palette")]
-    #[test]
-    fn test_hsluv_to_rgb() {
-        // Test with valid HSLuv values
-        let color = Color::from_hsluv(120.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(147, 198, 129));
-
-        // Test with H value at upper bound
-        let color = Color::from_hsluv(360.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(223, 171, 181));
-
-        // Test with H value exceeding the upper bound
-        let color = Color::from_hsluv(400.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(226, 174, 140));
-
-        // Test with S and L values exceeding the upper bound
-        let color = Color::from_hsluv(240.0, 120.0, 150.0);
-        assert_eq!(color, Color::Rgb(255, 255, 255));
-
-        // Test with H, S, and L values below the lower bound
-        let color = Color::from_hsluv(0.0, 0.0, 0.0);
-        assert_eq!(color, Color::Rgb(0, 0, 0));
-
-        // Test with S and L values below the lower bound
-        let color = Color::from_hsluv(60.0, 0.0, 0.0);
-        assert_eq!(color, Color::Rgb(0, 0, 0));
+    #[rstest]
+    #[case::black(Hsluv::new(0.0, 0.0, 0.0), Color::Rgb(0, 0, 0))]
+    #[case::white(Hsluv::new(0.0, 0.0, 100.0), Color::Rgb(255, 255, 255))]
+    #[case::valid(Hsluv::new(120.0, 50.0, 75.0), Color::Rgb(147, 198, 129))]
+    #[case::min_hue(Hsluv::new(-180.0, 50.0, 75.0), Color::Rgb(135,196, 188))]
+    #[case::max_hue(Hsluv::new(180.0, 50.0, 75.0), Color::Rgb(135, 196, 188))]
+    #[case::min_saturation(Hsluv::new(0.0, 0.0, 75.0), Color::Rgb(185, 185, 185))]
+    #[case::max_saturation(Hsluv::new(0.0, 100.0, 75.0), Color::Rgb(255, 156, 177))]
+    #[case::min_lightness(Hsluv::new(0.0, 50.0, 0.0), Color::Rgb(0, 0, 0))]
+    #[case::max_lightness(Hsluv::new(0.0, 50.0, 100.0), Color::Rgb(255, 255, 255))]
+    #[case::under_hue_wraps(Hsluv::new(-240.0, 50.0, 75.0), Color::Rgb(147, 198, 129))]
+    #[case::over_hue_wraps(Hsluv::new(480.0, 50.0, 75.0), Color::Rgb(147, 198, 129))]
+    #[case::under_saturation_clamps(Hsluv::new(0.0, -50.0, 75.0), Color::Rgb(185, 185, 185))]
+    #[case::over_saturation_clamps(Hsluv::new(0.0, 150.0, 75.0), Color::Rgb(255, 156, 177))]
+    #[case::under_lightness_clamps(Hsluv::new(0.0, 50.0, -20.0), Color::Rgb(0, 0, 0))]
+    #[case::over_lightness_clamps(Hsluv::new(0.0, 50.0, 150.0), Color::Rgb(255, 255, 255))]
+    #[case::under_saturation_lightness_clamps(Hsluv::new(0.0, -50.0, -20.0), Color::Rgb(0, 0, 0))]
+    #[case::over_saturation_lightness_clamps(
+        Hsluv::new(0.0, 150.0, 150.0),
+        Color::Rgb(255, 255, 255)
+    )]
+    fn test_hsluv_to_rgb(#[case] hsluv: palette::Hsluv, #[case] expected: Color) {
+        assert_eq!(Color::from_hsluv(hsluv), expected);
     }
 
     #[test]
