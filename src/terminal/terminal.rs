@@ -476,7 +476,8 @@ where
                     .set_cursor_position(self.viewport_area.as_position())?;
                 self.backend.clear_region(ClearType::AfterCursor)?;
             }
-            Viewport::Fixed(area) => {
+            Viewport::Fixed(_) => {
+                let area = self.viewport_area;
                 for y in area.top()..area.bottom() {
                     self.backend.set_cursor_position(Position { x: 0, y })?;
                     self.backend.clear_region(ClearType::AfterCursor)?;
