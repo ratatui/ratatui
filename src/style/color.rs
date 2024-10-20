@@ -399,9 +399,13 @@ impl Color {
     /// let color: Color = Color::from_hsl(Hsl::new(0.0, 0.0, 0.5));
     /// assert_eq!(color, Color::Rgb(128, 128, 128));
     ///
-    /// // Maximum Saturation is fully saturated red
+    /// // Bright red
     /// let color: Color = Color::from_hsl(Hsl::new(0.0, 1.0, 0.5));
     /// assert_eq!(color, Color::Rgb(255, 0, 0));
+    ///
+    /// // Bright blue
+    /// let color: Color = Color::from_hsl(Hsl::new(-120.0, 1.0, 0.5));
+    /// assert_eq!(color, Color::Rgb(0, 0, 255));
     /// ```
     #[cfg(feature = "palette")]
     pub fn from_hsl(hsl: palette::Hsl) -> Self {
@@ -447,9 +451,13 @@ impl Color {
     /// let color = Color::from_hsluv(Hsluv::new(0.0, 0.0, 50.0));
     /// assert_eq!(color, Color::Rgb(119, 119, 119));
     ///
-    /// // Maximum Saturation is medium redish color (not fully saturated like hsl)
-    /// let color = Color::from_hsluv(Hsluv::new(0.0, 100.0, 50.0));
-    /// assert_eq!(color, Color::Rgb(234, 0, 100));
+    /// // Bright Red
+    /// let color = Color::from_hsluv(Hsluv::new(12.18, 100.0, 53.2));
+    /// assert_eq!(color, Color::Rgb(255, 0, 0));
+    ///
+    /// // Bright Blue
+    /// let color = Color::from_hsluv(Hsluv::new(-94.13, 100.0, 32.3));
+    /// assert_eq!(color, Color::Rgb(0, 0, 255));
     /// ```
     #[cfg(feature = "palette")]
     pub fn from_hsluv(hsluv: palette::Hsluv) -> Self {
