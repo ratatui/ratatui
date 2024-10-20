@@ -70,6 +70,7 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
 /// environment: [](https://gitlab.redox-os.org/redox-os/termion/-/issues/173)
 #[cfg(feature = "termion")]
 #[test]
+#[ignore = "Disabled as it fails on CI due to the lack of a real terminal"]
 fn backend_termion_should_fail_on_missing_last_known_cursor(
 ) -> Result<(), Box<dyn std::error::Error>> {
     use std::io::{self, Cursor};
@@ -99,6 +100,7 @@ fn backend_termion_should_fail_on_missing_last_known_cursor(
 /// environment: [](https://gitlab.redox-os.org/redox-os/termion/-/issues/173)
 #[cfg(feature = "termion")]
 #[test]
+#[ignore = "Disabled as it fails on CI due to the lack of a real terminal"]
 fn backend_termion_should_use_last_known_cursor() -> Result<(), Box<dyn std::error::Error>> {
     use std::io::Cursor;
 
