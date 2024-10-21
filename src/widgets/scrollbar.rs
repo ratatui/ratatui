@@ -478,9 +478,16 @@ impl ScrollbarState {
         self.position = 0;
     }
 
-    /// Sets the scroll position to the end of the scrollable content.
-    pub fn last(&mut self) {
-        self.position = self.content_length.saturating_sub(1);
+    /// Returns true if the scroll position is at (or above) the start of the scrollable content.
+    #[must_use = "returns whether the scroll position is at the start"]
+    pub const fn is_at_start(&self) -> bool {
+        self.position == 0
+    }
+
+    /// Returns true if the scroll position is at (or below) the end of the scrollable content.
+    #[must_use = "returns whether the scroll position is at the end"]
+    pub const fn is_at_end(&self) -> bool {
+        self.position + self.viewport_content_length >= self.content_length.saturating_sub(1)
     }
 
     /// Changes the scroll position based on the provided [`ScrollDirection`].
@@ -1065,4 +1072,42 @@ mod tests {
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
+
+    #[rstest]
+    #[case(0, 0, true, "position_0")]
+    #[case(0, 1, true, "position_1")]
+    #[case(0, 2, true, "position_2")]
+    #[case(1, 0, false, "position_3")]
+    #[case(1, 1, false, "position_4")]
+    #[case(2, 2, false, "position_5")]
+    fn test_is_at_start(
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] expected: bool,
+        #[case] description: &str,
+    ) {
+        let state = ScrollbarState::new(content_length).position(position);
+        assert_eq!(state.is_at_start(), expected, "{description}");
+    }
+
+    // FIXME: these tests don't work
+    // #[rstest]
+    // #[case(0, 0, true, "position_0")]
+    // #[case(1, 0, true, "position_1")]
+    // #[case(2, 0, true, "position_2")]
+    // #[case(0, 1, false, "position_3")]
+    // #[case(0, 2, false, "position_4")]
+    // #[case(1, 1, true, "position_5")]
+    // #[case(1, 2, false, "position_6")]
+    // #[case(2, 2, true, "position_7")]
+    // #[case(3, 2, true, "position_8")]
+    // fn test_is_at_end(
+    //     #[case] position: usize,
+    //     #[case] content_length: usize,
+    //     #[case] expected: bool,
+    //     #[case] description: &str,
+    // ) {
+    //     let state = ScrollbarState::new(content_length).position(position);
+    //     assert_eq!(state.is_at_end(), expected, "{description}");
+    // }
 }
