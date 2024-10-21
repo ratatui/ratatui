@@ -30,7 +30,7 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
   >
   > BREAKING-CHANGES:`Line` now implements `From<Cow<str>`
   >
-  > As this adds an extra conversion, ambiguous infered values may no longer
+  > As this adds an extra conversion, ambiguous inferred values may no longer
   > compile.
   >
   > ```rust
@@ -100,7 +100,7 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
   > scroll_down, and reset_scrolling_region methods. We chose that approach
   > for two reasons. First, we don't want Ratatui to have to remember that
   > state and then reset the scrolling region when tearing down. Second, the
-  > pre-Windows-10 console code doesn't support scrolling regio
+  > pre-Windows-10 console code doesn't support scrolling region
   >
   > This PR:
   > - Adds a new scrolling-regions feature.
@@ -185,7 +185,7 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
 
 - [60cc15b](https://github.com/ratatui/ratatui/commit/60cc15bbb064faa704f78ca51ae60584b5f7ca31) *(uncategorized)* Add support for empty bar style to `Sparkline` by @fujiapple852 in [#1326](https://github.com/ratatui/ratatui/pull/1326) [**breaking**]
 
-  > - distingiush between empty bars and bars with a value of 0
+  > - distinguish between empty bars and bars with a value of 0
   > - provide custom styling for empty bars
   > - provide custom styling for individual bars
   > - inverts the rendering algorithm to be item first
@@ -293,7 +293,7 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
   > are within the expected range before conversion.
   >
   > Also note that the ranges of Saturation and Lightness values have been
-  > aligned to be consisten with the palette crate. Saturation and Lightness
+  > aligned to be consistent with the palette crate. Saturation and Lightness
   > for `from_hsl` are now in the range [0.0..1.0] while `from_hsluv` are
   > in the range [0.0..100.0].
   >
