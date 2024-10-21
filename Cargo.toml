@@ -14,8 +14,8 @@ categories = ["command-line-interface"]
 
 [dependencies]
 # requires alpha version of ratatui for the Into<Style> changes
-ratatui = "0.28.1"
+ratatui = "0.29.0"
 
 [dev-dependencies]
-trybuild = { version = "1.0.99", features = ["diff"] }
+trybuild = { version = "1.0.101", features = ["diff"] }
 cargo-husky = { version = "1.5.0", features = ["user-hooks"] }
