@@ -10,7 +10,7 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.29.0](#unreleased)
+- [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
   - `Line` now implements `From<Cow<str>`
@@ -72,7 +72,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## Unreleased
+## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 
 ### `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const ([#1326])
 
@@ -173,7 +173,7 @@ implementation on `TableState`) may have to be refactored if the "selected_colum
 accounted for. This does not affect users who rely on the `Deserialize`, or `Serialize`
 implementation on the state.
 
-## v0.28.0
+## [v0.28.0](https://github.com/ratatui/ratatui/releases/tag/v0.28.0)
 
 ### `Backend::size` returns `Size` instead of `Rect` ([#1254])
 

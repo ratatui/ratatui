@@ -30,19 +30,9 @@ body = """
 {% macro commit(commit) -%}
 - [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui/ratatui/commit/" ~ commit.id }}) \
   *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first | trim }}\
-  {% if commit.github.username %} by @{{ commit.github.username }}{%- endif -%}\
-  {% if commit.github.pr_number %} in [#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }}){%- endif %}\
+  {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}\
+  {% if commit.remote.pr_number %} in [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}){%- endif %}\
 {%- if commit.breaking %} [**breaking**]{% endif %}
-{%- if commit.body %}\n\n{{ commit.body | indent(prefix="  > ", first=true, blank=true) }}
-{%- endif %}
-{%- for footer in commit.footers %}\n
-{%- if footer.token != "Signed-off-by" and footer.token != "Co-authored-by" %}
-  >
-{{ footer.token | indent(prefix="  > ", first=true, blank=true) }}
-{{- footer.separator }}
-{{- footer.value| indent(prefix="  > ", first=false, blank=true)  }}
-{%- endif %}
-{%- endfor %}
 {% endmacro -%}
 
 {% for group, commits in commits | group_by(attribute="group") %}
