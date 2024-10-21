@@ -40,6 +40,27 @@ pub struct Offset {
     pub y: i32,
 }
 
+/// Amounts by which to resize a [`Rect`](crate::layout::Rect).
+///
+/// Positive numbers represent an increase and negative numbers a decrease in width/height.
+///
+/// See [`Rect::resize`]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ResizeOffset {
+    /// Difference in width
+    pub width: i32,
+    /// Difference in height
+    pub height: i32,
+}
+
+impl ResizeOffset {
+    /// Creates a new `ResizeOffset` from width and height.
+    pub const fn new(width: i32, height: i32) -> Self {
+        Self { width, height }
+    }
+}
+
 impl fmt::Display for Rect {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}x{}+{}+{}", self.width, self.height, self.x, self.y)
@@ -162,6 +183,29 @@ impl Rect {
             y: i32::from(self.y)
                 .saturating_add(offset.y)
                 .clamp(0, i32::from(u16::MAX - self.height)) as u16,
+            ..self
+        }
+    }
+
+    /// Resizes the `Rect` without modifying its position.
+    ///
+    /// Resizes the `Rect` according to the given offset without modifying its [`x`](Rect::x)
+    /// or [`y`](Rect::y) coordinates.
+    /// - Positive `width` increases the extent of the `Rect` along the x-axis, negative `width`
+    ///   decreases it.
+    /// - Positive `height` increases the extent of the `Rect` along the y-axis, negative `height`
+    ///   decreases it.
+    ///
+    /// See [`ResizeOffset`] for details.
+    #[must_use = "method returns the modified value"]
+    pub fn resize(self, resize_offset: ResizeOffset) -> Self {
+        Self {
+            width: i32::from(self.width)
+                .saturating_add(resize_offset.width)
+                .clamp(0, i32::from(u16::MAX - self.x)) as u16,
+            height: i32::from(self.height)
+                .saturating_add(resize_offset.height)
+                .clamp(0, i32::from(u16::MAX - self.y)) as u16,
             ..self
         }
     }
@@ -460,6 +504,24 @@ mod tests {
             Rect::new(u16::MAX - 500, u16::MAX - 500, 100, 100).offset(Offset { x: 1000, y: 1000 }),
             Rect::new(u16::MAX - 100, u16::MAX - 100, 100, 100),
         );
+    }
+
+    #[rstest]
+    #[case::positive(Rect::new(1, 2, 3, 4), ResizeOffset::new(5, 6), Rect::new(1, 2, 8, 10))]
+    #[case::negative(Rect::new(1, 2, 3, 4), ResizeOffset::new(-2, -3), Rect::new(1, 2, 1, 1))]
+    #[case::mixed(Rect::new(1, 2, 3, 4), ResizeOffset::new(5, -2), Rect::new(1, 2, 8, 2))]
+    #[case::inverse(Rect::new(1, 2, 3, 4), ResizeOffset::new(-3, -4), Rect::new(1, 2, 0, 0))]
+    #[case::identity(Rect::new(1, 2, 3, 4), ResizeOffset::new(0, 0), Rect::new(1, 2, 3, 4))]
+    #[case::saturate_min(Rect::new(1, 2, 3, 4), ResizeOffset::new(-5, -6), Rect::new(1, 2, 0, 0))]
+    #[case::saturate_max(Rect::new(100, 100, u16::MAX - 500, u16::MAX - 500), ResizeOffset::new(1000, 1000), Rect::new(100, 100, u16::MAX - 100, u16::MAX - 100))]
+    #[case::max_value(Rect::new(1, 2, 3, 4), ResizeOffset::new(i32::MAX, i32::MAX), Rect::new(1, 2, u16::MAX - 1, u16::MAX - 2))]
+    #[case::min_value(
+        Rect::new(1, 2, 3, 4),
+        ResizeOffset::new(i32::MIN, i32::MIN),
+        Rect::new(1, 2, 0, 0)
+    )]
+    fn resize(#[case] rect: Rect, #[case] delta: ResizeOffset, #[case] expected: Rect) {
+        assert_eq!(rect.resize(delta), expected);
     }
 
     #[test]
