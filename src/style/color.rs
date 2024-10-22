@@ -480,6 +480,7 @@ mod tests {
 
     #[cfg(feature = "palette")]
     use palette::{Hsl, Hsluv};
+    #[cfg(feature = "palette")]
     use rstest::rstest;
     #[cfg(feature = "serde")]
     use serde::de::{Deserialize, IntoDeserializer};

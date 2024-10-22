@@ -303,15 +303,17 @@ impl Buffer {
     /// buffer.pos_of(100); // Panics
     /// ```
     #[must_use]
-    pub fn pos_of(&self, i: usize) -> (u16, u16) {
+    pub fn pos_of(&self, index: usize) -> (u16, u16) {
         debug_assert!(
-            i < self.content.len(),
-            "Trying to get the coords of a cell outside the buffer: i={i} len={}",
+            index < self.content.len(),
+            "Trying to get the coords of a cell outside the buffer: i={index} len={}",
             self.content.len()
         );
+        let x = index % self.area.width as usize + self.area.x as usize;
+        let y = index / self.area.width as usize + self.area.y as usize;
         (
-            self.area.x + (i as u16) % self.area.width,
-            self.area.y + (i as u16) / self.area.width,
+            u16::try_from(x).expect("x overflow. This should never happen as area.width is u16"),
+            u16::try_from(y).expect("y overflow. This should never happen as area.height is u16"),
         )
     }
 
@@ -1273,5 +1275,25 @@ mod tests {
 
         let expected = Buffer::with_lines([expected]);
         assert_eq!(buffer, expected);
+    }
+
+    /// Regression test for <https://github.com/ratatui/ratatui/issues/1441>
+    ///
+    /// Previously the `pos_of` function would incorrectly cast the index to a u16 value instead of
+    /// using the index as is. This caused incorrect rendering of any buffer with an length > 65535.
+    #[test]
+    fn index_pos_of_u16_max() {
+        let buffer = Buffer::empty(Rect::new(0, 0, 256, 256 + 1));
+        assert_eq!(buffer.index_of(255, 255), 65535);
+        assert_eq!(buffer.pos_of(65535), (255, 255));
+
+        assert_eq!(buffer.index_of(0, 256), 65536);
+        assert_eq!(buffer.pos_of(65536), (0, 256)); // previously (0, 0)
+
+        assert_eq!(buffer.index_of(1, 256), 65537);
+        assert_eq!(buffer.pos_of(65537), (1, 256)); // previously (1, 0)
+
+        assert_eq!(buffer.index_of(255, 256), 65791);
+        assert_eq!(buffer.pos_of(65791), (255, 256)); // previously (255, 0)
     }
 }
