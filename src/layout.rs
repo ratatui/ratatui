@@ -17,5 +17,5 @@ pub use flex::Flex;
 pub use layout::{Layout, Spacing};
 pub use margin::Margin;
 pub use position::Position;
-pub use rect::{Columns, Offset, Positions, Rect, Rows};
+pub use rect::{Columns, Offset, Positions, Rect, ResizeOffset, Rows};
 pub use size::Size;
