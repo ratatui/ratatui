@@ -263,6 +263,11 @@ pub trait StatefulWidget {
 /// provided. This is a convenience approach to make it easier to attach child widgets to parent
 /// widgets. It allows you to render an optional widget by reference.
 ///
+/// A blanket [implementation of `WidgetRef` for `Fn(Rect, &mut
+/// Buffer)`](WidgetRef#impl-WidgetRef-for-F) is provided. This allows you to treat any function or
+/// closure that takes a `Rect` and a mutable reference to a `Buffer` as a widget in situations
+/// where you don't want to create a new type for a widget.
+///
 /// # Examples
 ///
 /// ```rust
@@ -327,10 +332,37 @@ pub trait WidgetRef {
     fn render_ref(&self, area: Rect, buf: &mut Buffer);
 }
 
-/// This allows you to render a widget by reference.
+// /// This allows you to render a widget by reference.
 impl<W: WidgetRef> Widget for &W {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.render_ref(area, buf);
+    }
+}
+
+/// A blanket implementation of `WidgetRef` for `Fn(Rect, &mut Buffer)`.
+///
+/// This allows you to treat any function  that takes a `Rect` and a mutable reference to a `Buffer`
+/// as a widget in situations where you don't want to create a new type for a widget.
+///
+/// # Examples
+///
+/// ```rust
+/// use ratatui::{prelude::*, widgets::*};
+/// fn hello(area: Rect, buf: &mut Buffer) {
+///     Line::raw("Hello").render(area, buf);
+/// }
+///
+/// fn draw(mut frame: Frame) {
+///     frame.render_widget(&hello, frame.size());
+///     frame.render_widget_ref(hello, frame.size());
+/// }
+/// ```
+impl<F> WidgetRef for F
+where
+    F: Fn(Rect, &mut Buffer),
+{
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        self(area, buf);
     }
 }
 
@@ -741,6 +773,44 @@ mod tests {
         fn option_render_ref(mut buf: Buffer) {
             Some(String::from("hello world")).render_ref(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+        }
+    }
+
+    mod function_widget {
+        use super::*;
+
+        fn widget_function(area: Rect, buf: &mut Buffer) {
+            "Hello".render(area, buf);
+        }
+
+        #[rstest]
+        fn render(mut buf: Buffer) {
+            widget_function.render(buf.area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Hello               "]));
+        }
+
+        #[rstest]
+        fn render_ref(mut buf: Buffer) {
+            widget_function.render_ref(buf.area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Hello               "]));
+        }
+
+        #[rstest]
+        fn render_closure(mut buf: Buffer) {
+            let widget = |area: Rect, buf: &mut Buffer| {
+                "Hello".render(area, buf);
+            };
+            widget.render(buf.area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Hello               "]));
+        }
+
+        #[rstest]
+        fn render_closure_ref(mut buf: Buffer) {
+            let widget = |area: Rect, buf: &mut Buffer| {
+                "Hello".render(area, buf);
+            };
+            widget.render_ref(buf.area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Hello               "]));
         }
     }
 }
