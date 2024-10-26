@@ -1016,7 +1016,7 @@ impl Table<'_> {
             }
         }
 
-        // If the table contains rows with a height greater than one, then the last row of the
+        // If the table contains rows with a height greater than one, then an additional row of the
         // table may be partially displayed.
         if height < max_height && end < self.rows.len() {
             end += 1;
@@ -1521,7 +1521,7 @@ mod tests {
                     Text::raw("Cell3-Line1\nCell3-Line2\nCell3-Line3"),
                     Text::raw("Cell4-Line1\nCell4-Line2\nCell4-Line3"),
                 ])
-                .height(2),
+                .height(3),
             ];
             let table = Table::new(rows, [Constraint::Length(11); 2]);
             Widget::render(table, Rect::new(0, 0, 23, 3), &mut buf);
