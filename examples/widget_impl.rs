@@ -13,9 +13,9 @@
 //! See the [examples readme] for more information on finding examples that match the version of the
 //! library you are using.
 //!
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
@@ -115,7 +115,7 @@ impl Widget for &mut App {
 /// This was the way most widgets were implemented in Ratatui before `Widget` was implemented on
 /// references in [PR #903] (merged in Ratatui 0.26.0).
 ///
-/// [PR #903]: https://github.com/ratatui-org/ratatui/pull/903
+/// [PR #903]: https://github.com/ratatui/ratatui/pull/903
 struct Greeting {
     name: String,
 }
@@ -247,7 +247,7 @@ impl Widget for &mut RightAlignedSquare {
 /// Fill the area with the specified symbol and style.
 ///
 /// This probably should be a method on the `Buffer` type, but it is defined here for simplicity.
-/// <https://github.com/ratatui-org/ratatui/issues/1146>
+/// <https://github.com/ratatui/ratatui/issues/1146>
 fn fill<S: Into<Style>>(area: Rect, buf: &mut Buffer, symbol: &str, style: S) {
     let style = style.into();
     for y in area.top()..area.bottom() {
