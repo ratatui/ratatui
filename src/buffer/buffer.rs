@@ -309,10 +309,17 @@ impl Buffer {
             "Trying to get the coords of a cell outside the buffer: i={i} len={}",
             self.content.len()
         );
-        (
-            self.area.x + (i as u16) % self.area.width,
-            self.area.y + (i as u16) / self.area.width,
-        )
+        if let (Ok(x_offset), Ok(y_offset)) = (
+            u16::try_from(i % usize::from(self.area.width)),
+            u16::try_from(i / usize::from(self.area.width)),
+        ) {
+            (self.area.x + x_offset, self.area.y + y_offset)
+        } else {
+            panic!(
+                "index {i} caused overflow in coordinate calculation in a buffer with area {area:?}",
+                area = self.area
+            );
+        }
     }
 
     /// Print a string, starting at the position (x, y)
@@ -1233,6 +1240,22 @@ mod tests {
             "xxxxxxxxxxx",
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::bottom_left(usize::from(u16::MAX - 1) * 20, (0, u16::MAX - 1))]
+    #[case::bottom_right(usize::from(u16::MAX) * 20 - 1, (19, u16::MAX - 1))]
+    fn pos_of_last_index_does_not_overflow(#[case] index: usize, #[case] pos: (u16, u16)) {
+        // Create a very long rectangle
+        let rect = Rect::new(0, 0, 20, u16::MAX);
+
+        // Fill the buffer with a single character
+        let buf = Buffer::filled(rect, Cell::new("x"));
+
+        // Check that the index and position match as expected
+        assert_eq!(buf.index_of(pos.0, pos.1), index);
+        assert_eq!(buf.pos_of(index), pos);
+        assert_eq!(buf.cell(pos), Some(&Cell::new("x")));
     }
 
     /// Emojis normally contain various characters which should stay part of the Emoji.
