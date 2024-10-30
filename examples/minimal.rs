@@ -4,8 +4,8 @@
 //! this is not meant to be prescriptive. See the [examples] folder for more complete examples.
 //! In particular, the [hello-world] example is a good starting point.
 //!
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [hello-world]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [hello-world]: https://github.com/ratatui/ratatui/blob/main/examples/hello_world.rs
 //!
 //! The latest version of this example is available in the [examples] folder in the repository.
 //!
