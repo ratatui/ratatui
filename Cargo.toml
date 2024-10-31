@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["ratatui"]
+members = ["ratatui", "xtask"]
+default-members = ["ratatui"]
 
 [workspace.package]
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
