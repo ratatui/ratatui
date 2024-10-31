@@ -10,6 +10,8 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [Unreleased](#unreleased)
+  - Backend type conversions moved to specific traits
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators

@@ -44,7 +44,7 @@ use crate::style::stylize::{ColorDebug, ColorDebugKind};
 /// ```
 /// use std::str::FromStr;
 ///
-/// use ratatui::style::Color;
+/// use ratatui_core::style::Color;
 ///
 /// assert_eq!(Color::from_str("red"), Ok(Color::Red));
 /// assert_eq!("red".parse(), Ok(Color::Red));
@@ -112,14 +112,12 @@ pub enum Color {
     /// Notably versions of Windows Terminal prior to Windows 10 and macOS Terminal.app do not
     /// support this.
     ///
-    /// If the terminal does not support true color, code using the  [`TermwizBackend`] will
+    /// If the terminal does not support true color, code using the  `TermwizBackend` will
     /// fallback to the default text color. Crossterm and Termion do not have this capability and
     /// the display will be unpredictable (e.g. Terminal.app may display glitched blinking text).
     /// See <https://github.com/ratatui/ratatui/issues/475> for an example of this problem.
     ///
     /// See also: <https://en.wikipedia.org/wiki/ANSI_escape_code#24-bit>
-    ///
-    /// [`TermwizBackend`]: crate::backend::TermwizBackend
     Rgb(u8, u8, u8),
     /// An 8-bit 256 color.
     ///
@@ -170,7 +168,7 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// ```
     /// use std::str::FromStr;
     ///
-    /// use ratatui::style::Color;
+    /// use ratatui_core::style::Color;
     ///
     /// #[derive(Debug, serde::Deserialize)]
     /// struct Theme {
@@ -265,7 +263,7 @@ impl std::error::Error for ParseColorError {}
 /// ```
 /// use std::str::FromStr;
 ///
-/// use ratatui::style::Color;
+/// use ratatui_core::style::Color;
 ///
 /// let color: Color = Color::from_str("blue").unwrap();
 /// assert_eq!(color, Color::Blue);
@@ -385,7 +383,8 @@ impl Color {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::{palette::Hsl, style::Color};
+    /// use palette::Hsl;
+    /// use ratatui_core::style::Color;
     ///
     /// // Minimum Lightness is black
     /// let color: Color = Color::from_hsl(Hsl::new(0.0, 0.0, 0.0));
@@ -437,7 +436,8 @@ impl Color {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::{palette::Hsluv, style::Color};
+    /// use palette::Hsluv;
+    /// use ratatui_core::style::Color;
     ///
     /// // Minimum Lightness is black
     /// let color: Color = Color::from_hsluv(Hsluv::new(0.0, 100.0, 0.0));

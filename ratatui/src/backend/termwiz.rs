@@ -194,7 +194,7 @@ impl Backend for TermwizBackend {
 
     fn get_cursor_position(&mut self) -> io::Result<crate::layout::Position> {
         let (x, y) = self.buffered_terminal.cursor_position();
-        Ok((x as u16, y as u16).into())
+        Ok(crate::layout::Position::new(x as u16, y as u16))
     }
 
     fn set_cursor_position<P: Into<crate::layout::Position>>(

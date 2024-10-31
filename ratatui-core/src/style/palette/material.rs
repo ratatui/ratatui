@@ -403,7 +403,7 @@
 //! # Example
 //!
 //! ```rust
-//! use ratatui::style::{
+//! use ratatui_core::style::{
 //!     palette::material::{BLUE, RED},
 //!     Color,
 //! };

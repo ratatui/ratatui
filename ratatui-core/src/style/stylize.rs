@@ -195,8 +195,8 @@ macro_rules! modifier {
 /// by `not_`). The `reset()` method is also provided to reset the style.
 ///
 /// # Examples
-/// ```
-/// use ratatui::{
+/// ```ignore
+/// use ratatui_core::{
 ///     style::{Color, Modifier, Style, Stylize},
 ///     text::Line,
 ///     widgets::{Block, Paragraph},

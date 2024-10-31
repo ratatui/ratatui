@@ -344,11 +344,9 @@ pub use termion;
 pub use termwiz;
 
 pub mod backend;
-pub mod buffer;
-pub mod layout;
+pub use ratatui_core::{buffer, layout};
 pub mod prelude;
-pub mod style;
-pub mod symbols;
+pub use ratatui_core::{style, symbols};
 mod terminal;
-pub mod text;
+pub use ratatui_core::text;
 pub mod widgets;
