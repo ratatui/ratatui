@@ -43,6 +43,8 @@ toolchain = "nightly"
 command = "cargo"
 args = [
   "rustdoc",
+  "-p",
+  "ratatui",
   "--all-features",
   "--",
   "-Zunstable-options",
