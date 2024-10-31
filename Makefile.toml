@@ -6,6 +6,8 @@ skip_core_tasks = true
 [env]
 # all features except the backend ones
 NON_BACKEND_FEATURES = "all-widgets,macros,serde"
+# allow to run tasks from the workspace root
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 
 [tasks.default]
 alias = "ci"
