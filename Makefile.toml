@@ -119,6 +119,8 @@ description = "Generate code coverage report"
 command = "cargo"
 args = [
   "llvm-cov",
+  "-p",
+  "ratatui",
   "--lcov",
   "--output-path",
   "target/lcov.info",
