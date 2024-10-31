@@ -6,6 +6,8 @@ skip_core_tasks = true
 [env]
 # all features except the backend ones
 NON_BACKEND_FEATURES = "all-widgets,macros,serde"
+# allow to run tasks from the workspace root
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 
 [tasks.default]
 alias = "ci"
@@ -41,6 +43,8 @@ toolchain = "nightly"
 command = "cargo"
 args = [
   "rustdoc",
+  "-p",
+  "ratatui",
   "--all-features",
   "--",
   "-Zunstable-options",
@@ -115,9 +119,10 @@ description = "Generate code coverage report"
 command = "cargo"
 args = [
   "llvm-cov",
+  "--workspace",
   "--lcov",
   "--output-path",
-  "target/lcov.info",
+  "../target/lcov.info",
   "--all-features",
 ]
 

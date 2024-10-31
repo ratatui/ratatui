@@ -117,7 +117,7 @@ jobs:
       # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account
       # the package.metadata.docs.rs configured in Cargo.toml.
       # https://github.com/dtolnay/cargo-docs-rs
-      - run: cargo +nightly docs-rs
+      - run: cargo +nightly docs-rs -p ratatui
 
   test-doc:
     strategy:
