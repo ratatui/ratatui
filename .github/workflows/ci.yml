@@ -143,8 +143,12 @@ jobs:
 
   # Run cargo test on the libraries of the crate.
   test-libs:
-    name: Test Libs
+    name: Test Libs ${{ matrix.toolchain }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: ["1.74.0", "stable"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
