@@ -27,7 +27,7 @@ fn main() -> Result<()> {
 }
 
 #[derive(Debug, Parser)]
-#[command(styles = clap_cargo::style::CLAP_STYLING)]
+#[command(bin_name = "cargo xtask", styles = clap_cargo::style::CLAP_STYLING)]
 struct Args {
     #[command(subcommand)]
     command: Command,
