@@ -68,7 +68,7 @@ impl StatefulWidgetRef for List<'_> {
         state.offset = first_visible_index;
 
         // Get our set highlighted symbol (if one was set)
-        let highlight_symbol = self.highlight_symbol.clone().unwrap_or(Line::default());
+        let highlight_symbol = self.highlight_symbol.clone().unwrap_or_default();
         let blank_symbol = Line::from(" ");
 
         let mut current_height = 0;
@@ -102,11 +102,8 @@ impl StatefulWidgetRef for List<'_> {
             let is_selected = state.selected.map_or(false, |s| s == i);
 
             let item_area = if selection_spacing {
-                let highlight_symbol_width = self
-                    .highlight_symbol
-                    .clone()
-                    .unwrap_or(Line::default())
-                    .width() as u16;
+                let highlight_symbol_width =
+                    self.highlight_symbol.clone().unwrap_or_default().width() as u16;
                 Rect {
                     x: row_area.x + highlight_symbol_width,
                     width: row_area.width.saturating_sub(highlight_symbol_width),

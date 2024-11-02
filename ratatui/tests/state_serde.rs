@@ -74,7 +74,7 @@ where
                 ])
                 .split(f.area());
             let list = List::new(items)
-                .highlight_symbol(">>")
+                .highlight_symbol(Line::from(">>"))
                 .block(Block::new().borders(Borders::RIGHT));
             f.render_stateful_widget(list, layout[0], &mut state.list);
 
