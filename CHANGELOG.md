@@ -5175,7 +5175,7 @@ Also, we created various tutorials and walkthroughs in [Ratatui Book](https://gi
 
   ```text
   The `Spans` type (plural, not singular) was replaced with a more ergonomic `Line` type
-  in Ratatui v0.21.0 and marked deprecated byt left for backwards compatibility. This is now
+  in Ratatui v0.21.0 and marked deprecated but left for backwards compatibility. This is now
   removed.
 
   - `Line` replaces `Spans`
