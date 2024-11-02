@@ -246,7 +246,7 @@ struct HalfBlockGrid {
     /// Height of the grid in number of terminal rows
     height: u16,
     /// Represents a single color for each "pixel" arranged in column, row order
-    pixels: Vec<Vec<Color>>,
+    pixels: Vec<Vec<Option<Color>>>,
 }
 
 impl HalfBlockGrid {
@@ -256,7 +256,7 @@ impl HalfBlockGrid {
         Self {
             width,
             height,
-            pixels: vec![vec![Color::Reset; width as usize]; height as usize * 2],
+            pixels: vec![vec![None; width as usize]; height as usize * 2],
         }
     }
 }
@@ -294,45 +294,29 @@ impl Grid for HalfBlockGrid {
             .tuples()
             .flat_map(|(upper_row, lower_row)| zip(upper_row, lower_row));
 
-        // then we work out what character to print for each pair of pixels
-        let string = vertical_color_pairs
-            .clone()
+        // Then we determine the character to print for each pair,
+        // along with the color of the foreground and background.
+        let (string, colors): (String, Vec<(Color, Color)>) = vertical_color_pairs
             .map(|(upper, lower)| match (upper, lower) {
-                (Color::Reset, Color::Reset) => ' ',
-                (Color::Reset, _) => symbols::half_block::LOWER,
-                (_, Color::Reset) => symbols::half_block::UPPER,
-                (&lower, &upper) => {
-                    if lower == upper {
-                        symbols::half_block::FULL
-                    } else {
-                        symbols::half_block::UPPER
-                    }
+                (None, None) => (' ', (Color::Reset, Color::Reset)),
+                (None, Some(lower)) => (symbols::half_block::LOWER, (*lower, Color::Reset)),
+                (Some(upper), None) => (symbols::half_block::UPPER, (*upper, Color::Reset)),
+                (Some(upper), Some(lower)) if lower == upper => {
+                    (symbols::half_block::FULL, (*upper, *lower))
                 }
+                (Some(upper), Some(lower)) => (symbols::half_block::UPPER, (*upper, *lower)),
             })
-            .collect();
-
-        // then we convert these each vertical pair of pixels into a foreground and background color
-        let colors = vertical_color_pairs
-            .map(|(upper, lower)| {
-                let (fg, bg) = match (upper, lower) {
-                    (Color::Reset, Color::Reset) => (Color::Reset, Color::Reset),
-                    (Color::Reset, &lower) => (lower, Color::Reset),
-                    (&upper, Color::Reset) => (upper, Color::Reset),
-                    (&upper, &lower) => (upper, lower),
-                };
-                (fg, bg)
-            })
-            .collect();
+            .unzip();
 
         Layer { string, colors }
     }
 
     fn reset(&mut self) {
-        self.pixels.fill(vec![Color::Reset; self.width as usize]);
+        self.pixels.fill(vec![None; self.width as usize]);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
-        self.pixels[y][x] = color;
+        self.pixels[y][x] = Some(color);
     }
 }
 
@@ -828,13 +812,53 @@ where
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
+    use rstest::rstest;
 
     use super::*;
     use crate::buffer::Cell;
 
-    // helper to test the canvas checks that drawing a vertical and horizontal line
-    // results in the expected output
-    fn test_marker(marker: Marker, expected: &str) {
+    #[rstest]
+    #[case::block(Marker::Block, indoc!(
+                "
+                █xxxx
+                █xxxx
+                █xxxx
+                █xxxx
+                █████"
+            ))]
+    #[case::half_block(Marker::HalfBlock, indoc!(
+                "
+                █xxxx
+                █xxxx
+                █xxxx
+                █xxxx
+                █▄▄▄▄"
+            ))]
+    #[case::bar(Marker::Bar, indoc!(
+                "
+                ▄xxxx
+                ▄xxxx
+                ▄xxxx
+                ▄xxxx
+                ▄▄▄▄▄"
+            ))]
+    #[case::braille(Marker::Braille, indoc!(
+                "
+                ⡇xxxx
+                ⡇xxxx
+                ⡇xxxx
+                ⡇xxxx
+                ⣇⣀⣀⣀⣀"
+            ))]
+    #[case::dot(Marker::Dot, indoc!(
+                "
+                •xxxx
+                •xxxx
+                •xxxx
+                •xxxx
+                •••••"
+            ))]
+    fn test_horizontal_with_vertical(#[case] marker: Marker, #[case] expected: &'static str) {
         let area = Rect::new(0, 0, 5, 5);
         let mut buf = Buffer::filled(area, Cell::new("x"));
         let horizontal_line = Line {
@@ -863,63 +887,72 @@ mod tests {
         assert_eq!(buf, Buffer::with_lines(expected.lines()));
     }
 
-    #[test]
-    fn test_bar_marker() {
-        test_marker(
-            Marker::Bar,
-            indoc!(
+    #[rstest]
+    #[case::block(Marker::Block, indoc!(
                 "
-                ▄xxxx
-                ▄xxxx
-                ▄xxxx
-                ▄xxxx
-                ▄▄▄▄▄"
-            ),
-        );
-    }
-
-    #[test]
-    fn test_block_marker() {
-        test_marker(
-            Marker::Block,
-            indoc!(
+                █xxx█
+                x█x█x
+                xx█xx
+                x█x█x
+                █xxx█"))]
+    #[case::half_block(Marker::HalfBlock,
+           indoc!(
                 "
-                █xxxx
-                █xxxx
-                █xxxx
-                █xxxx
-                █████"
-            ),
-        );
-    }
-
-    #[test]
-    fn test_braille_marker() {
-        test_marker(
-            Marker::Braille,
-            indoc!(
+                █xxx█
+                x█x█x
+                xx█xx
+                x█x█x
+                █xxx█")
+    )]
+    #[case::bar(Marker::Bar, indoc!(
                 "
-                ⡇xxxx
-                ⡇xxxx
-                ⡇xxxx
-                ⡇xxxx
-                ⣇⣀⣀⣀⣀"
-            ),
-        );
-    }
-
-    #[test]
-    fn test_dot_marker() {
-        test_marker(
-            Marker::Dot,
-            indoc!(
+                ▄xxx▄
+                x▄x▄x
+                xx▄xx
+                x▄x▄x
+                ▄xxx▄"))]
+    #[case::braille(Marker::Braille, indoc!(
                 "
-                •xxxx
-                •xxxx
-                •xxxx
-                •xxxx
-                •••••"
-            ),
-        );
+                ⢣xxx⡜
+                x⢣x⡜x
+                xx⣿xx
+                x⡜x⢣x
+                ⡜xxx⢣"
+            ))]
+    #[case::dot(Marker::Dot, indoc!(
+                "
+                •xxx•
+                x•x•x
+                xx•xx
+                x•x•x
+                •xxx•"
+            ))]
+    fn test_diagonal_lines(#[case] marker: Marker, #[case] expected: &'static str) {
+        let area = Rect::new(0, 0, 5, 5);
+        let mut buf = Buffer::filled(area, Cell::new("x"));
+        let diagonal_up = Line {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 10.0,
+            y2: 10.0,
+            color: Color::Reset,
+        };
+        let diagonal_down = Line {
+            x1: 0.0,
+            y1: 10.0,
+            x2: 10.0,
+            y2: 0.0,
+            color: Color::Reset,
+        };
+        Canvas::default()
+            .marker(marker)
+            .paint(|ctx| {
+                ctx.draw(&diagonal_down);
+                ctx.draw(&diagonal_up);
+            })
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .render(area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(expected.lines()));
     }
 }
