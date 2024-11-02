@@ -103,7 +103,7 @@ mod tests {
             "█        █",
             "██████████",
         ]);
-        expected.set_style(buffer.area, Style::new().red());
+        expected.set_style(buffer.area, Style::new().red().on_red());
         expected.set_style(buffer.area.inner(Margin::new(1, 1)), Style::reset());
         assert_eq!(buffer, expected);
     }
