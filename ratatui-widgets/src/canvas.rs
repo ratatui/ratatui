@@ -162,7 +162,7 @@ impl Grid for BrailleGrid {
                 let symbol = if code_point == symbols::braille::BLANK {
                     None
                 } else {
-                    Some(char::from_u32(u32::from(code_point)).unwrap())
+                    Some(char::from_u32(code_point.into()).unwrap())
                 };
 
                 LayerCell {
