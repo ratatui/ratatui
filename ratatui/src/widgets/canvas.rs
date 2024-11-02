@@ -72,9 +72,9 @@ struct Layer {
 /// If a Context contains multiple layers, then the symbol,
 /// foreground, and background colors for a character will be
 /// determined by the top-most layer that provides a value for that
-/// character.  For example, a chart drawn with Marker::Block may
+/// character.  For example, a chart drawn with `Marker::Block` may
 /// provide the background color, and a later chart drawn with
-/// Marker::Braille may provide the symbol and foreground color.
+/// `Marker::Braille` may provide the symbol and foreground color.
 #[derive(Debug)]
 struct LayerCell {
     symbol: Option<char>,
@@ -158,7 +158,7 @@ impl Grid for BrailleGrid {
                 let symbol = if code_point == symbols::braille::BLANK {
                     None
                 } else {
-                    Some(char::from_u32(code_point as u32).unwrap())
+                    Some(char::from_u32(code_point.into()).unwrap())
                 };
 
                 LayerCell {
@@ -207,7 +207,7 @@ struct CharGrid {
     cell_char: char,
 
     /// If true, apply the color to the background as well as the
-    /// foreground.  This is used for Marker::Block, so that it will
+    /// foreground.  This is used for `Marker::Block`, so that it will
     /// overwrite any previous foreground character, but also leave a
     /// background that can be overlaid with an additional foreground
     /// character.
