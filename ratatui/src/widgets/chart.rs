@@ -1018,16 +1018,18 @@ impl WidgetRef for Chart<'_> {
             }
         }
 
-        for dataset in &self.datasets {
-            Canvas::default()
-                .background_color(self.style.bg.unwrap_or(Color::Reset))
-                .x_bounds(self.x_axis.bounds)
-                .y_bounds(self.y_axis.bounds)
-                .marker(dataset.marker)
-                .paint(|ctx| {
+        Canvas::default()
+            .background_color(self.style.bg.unwrap_or(Color::Reset))
+            .x_bounds(self.x_axis.bounds)
+            .y_bounds(self.y_axis.bounds)
+            .paint(|ctx| {
+                for dataset in &self.datasets {
+                    ctx.marker(dataset.marker);
+
+                    let color = dataset.style.fg.unwrap_or(Color::Reset);
                     ctx.draw(&Points {
                         coords: dataset.data,
-                        color: dataset.style.fg.unwrap_or(Color::Reset),
+                        color,
                     });
                     match dataset.graph_type {
                         GraphType::Line => {
@@ -1037,7 +1039,7 @@ impl WidgetRef for Chart<'_> {
                                     y1: data[0].1,
                                     x2: data[1].0,
                                     y2: data[1].1,
-                                    color: dataset.style.fg.unwrap_or(Color::Reset),
+                                    color,
                                 });
                             }
                         }
@@ -1048,15 +1050,15 @@ impl WidgetRef for Chart<'_> {
                                     y1: 0.0,
                                     x2: *x,
                                     y2: *y,
-                                    color: dataset.style.fg.unwrap_or(Color::Reset),
+                                    color,
                                 });
                             }
                         }
                         GraphType::Scatter => {}
                     }
-                })
-                .render(graph_area, buf);
-        }
+                }
+            })
+            .render(graph_area, buf);
 
         if let Some(Position { x, y }) = layout.title_x {
             let title = self.x_axis.title.as_ref().unwrap();
@@ -1541,6 +1543,62 @@ mod tests {
             "  • • • • •",
             "• • • • • •",
         ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::dot(symbols::Marker::Dot, '•')]
+    #[case::dot(symbols::Marker::Braille, '⢣')]
+    fn overlapping_lines(#[case] marker: symbols::Marker, #[case] symbol: char) {
+        let data_diagonal_up = [(0.0, 0.0), (5.0, 5.0)];
+        let data_diagonal_down = [(0.0, 5.0), (5.0, 0.0)];
+        let lines = vec![
+            Dataset::default()
+                .data(&data_diagonal_up)
+                .marker(symbols::Marker::Block)
+                .graph_type(GraphType::Line)
+                .blue(),
+            Dataset::default()
+                .data(&data_diagonal_down)
+                .marker(marker)
+                .graph_type(GraphType::Line)
+                .red(),
+        ];
+        let chart = Chart::new(lines)
+            .x_axis(Axis::default().bounds([0.0, 5.0]))
+            .y_axis(Axis::default().bounds([0.0, 5.0]));
+        let area = Rect::new(0, 0, 5, 5);
+        let mut buffer = Buffer::empty(area);
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            format!("{symbol}   █"),
+            format!(" {symbol} █ "),
+            format!("  {symbol}  "),
+            format!(" █ {symbol} "),
+            format!("█   {symbol}"),
+        ]);
+        for i in 0..5 {
+            // The Marker::Dot and Marker::Braille tiles have the
+            // foreground set to Red.
+            expected.set_style(Rect::new(i, i, 1, 1), Style::new().fg(Color::Red));
+            // The Marker::Block tiles have both the foreground and
+            // background set to Blue.
+            expected.set_style(
+                Rect::new(i, 4 - i, 1, 1),
+                Style::new().fg(Color::Blue).bg(Color::Blue),
+            );
+        }
+        // Where the Marker::Dot/Braille overlaps with Marker::Block,
+        // the background is set to blue from the Block, but the
+        // foreground is set to red from the Dot/Braille.  This allows
+        // two line plots to overlap, so long as one of them is a
+        // Block.
+        expected.set_style(
+            Rect::new(2, 2, 1, 1),
+            Style::new().fg(Color::Red).bg(Color::Blue),
+        );
+
         assert_eq!(buffer, expected);
     }
 }
