@@ -122,7 +122,7 @@ pub use self::crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
 #[cfg(feature = "termwiz")]
 mod termwiz;
 #[cfg(feature = "termwiz")]
-pub use self::termwiz::TermwizBackend;
+pub use self::termwiz::{FromTermwiz, IntoTermwiz, TermwizBackend};
 
 mod test;
 pub use self::test::TestBackend;

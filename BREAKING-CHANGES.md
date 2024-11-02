@@ -74,9 +74,12 @@ This is a quick summary of the sections below:
 
 ## Unreleased
 
-### The `From` impls for crossterm types are now replaced with `IntoCrossterm` and `FromCrossterm` traits. [#1464]
+### The `From` impls for backend types are now replaced with more specific traits [#1464]
 
 [#1464]: https://github.com/ratatui/ratatui/pull/1464
+
+Crossterm gains `ratatui::backend::crossterm::{FromCrossterm, IntoCrossterm}`
+Termwiz gains `ratatui::backend::termwiz::{FromTermwiz, IntoTermwiz}`
 
 This is necessary in order to avoid the orphan rule when implementing `From` for crossterm types
 once the crossterm types are moved to a separate crate.
@@ -101,7 +104,8 @@ let crossterm_attribute = crossterm::style::types::Attribute::Bold;
 + let crossterm_attribute = ratatui_modifier.into_crossterm();
 ```
 
-Similar conversions for  `ContentStyle` -> `Style` and `Attributes` -> `Modifier` exist.
+Similar conversions for  `ContentStyle` -> `Style` and `Attributes` -> `Modifier` exist for
+crossterm and the various termwiz types as well.
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 
