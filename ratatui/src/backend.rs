@@ -117,7 +117,7 @@ pub use self::termion::TermionBackend;
 #[cfg(feature = "crossterm")]
 mod crossterm;
 #[cfg(feature = "crossterm")]
-pub use self::crossterm::CrosstermBackend;
+pub use self::crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
 
 #[cfg(feature = "termwiz")]
 mod termwiz;
