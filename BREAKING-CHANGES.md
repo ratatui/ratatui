@@ -105,7 +105,7 @@ let crossterm_attribute = crossterm::style::types::Attribute::Bold;
 ```
 
 Similar conversions for  `ContentStyle` -> `Style` and `Attributes` -> `Modifier` exist for
-crossterm and the various termwiz types as well.
+Crossterm and the various Termion and Termwiz types as well.
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 
