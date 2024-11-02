@@ -1,0 +1,16 @@
+[package]
+name = "xtask"
+edition = "2021"
+publish = false
+license.workspace = true
+
+[dependencies]
+cargo_metadata = "0.18.1"
+clap = { version = "4.5.20", features = ["derive"] }
+clap-cargo = { version = "0.14.1", features = ["cargo_metadata"] }
+clap-verbosity-flag = "2.2.2"
+color-eyre = "0.6.3"
+duct = "0.13.7"
+tracing = "0.1.40"
+tracing-log = "0.2.0"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

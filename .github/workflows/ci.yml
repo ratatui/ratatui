@@ -9,7 +9,6 @@ on:
   pull_request:
     branches:
       - main
-  merge_group:
 
 # ensure that the workflow is only triggered once per PR,  subsequent pushes to the PR will cancel
 # and restart the workflow. See https://docs.github.com/en/actions/using-jobs/using-concurrency
@@ -21,46 +20,58 @@ concurrency:
 # typos, and missing tests as early as possible. This allows us to fix these and resubmit the PR
 # without having to wait for the comprehensive matrix of tests to complete.
 jobs:
-  rustfmt:
+  # Lint the formatting of the codebase.
+  lint-formatting:
+    name: Check Formatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rustfmt
-      - run: cargo +nightly fmt --all --check
+        with: { components: rustfmt }
+      - run: cargo xtask lint-formatting
 
-  typos:
+  # Check for typos in the codebase.
+  # See <https://github.com/crate-ci/typos/>
+  lint-typos:
+    name: Check Typos
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: crate-ci/typos@master
 
+  # Check for any disallowed dependencies in the codebase due to license / security issues.
+  # See <https://github.com/EmbarkStudios/cargo-deny>
   dependencies:
+    name: Check Dependencies
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v2
 
+  # Check for any unused dependencies in the codebase.
+  # See <https://github.com/bnjbvr/cargo-machete/>
   cargo-machete:
+    name: Check Unused Dependencies
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: bnjbvr/cargo-machete@v0.7.0
 
-  clippy:
+  # Run cargo clippy.
+  lint-clippy:
+    name: Check Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - uses: taiki-e/install-action@cargo-make
+        with: { components: clippy }
       - uses: Swatinem/rust-cache@v2
-      - run: cargo make clippy
+      - run: cargo xtask lint-clippy
 
-  markdownlint:
+  # Run markdownlint on all markdown files in the repository.
+  lint-markdown:
+    name: Check Markdown
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -70,24 +81,27 @@ jobs:
             '**/*.md'
             '!target'
 
+  # Run cargo coverage. This will generate a coverage report and upload it to codecov.
+  # <https://app.codecov.io/gh/ratatui/ratatui>
   coverage:
+    name: Coverage Report
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-llvm-cov,cargo-make
+      - uses: taiki-e/install-action@cargo-llvm-cov
       - uses: Swatinem/rust-cache@v2
-      - run: cargo make coverage
+      - run: cargo xtask coverage
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
+  # Run cargo check. This is a fast way to catch any obvious errors in the code.
   check:
+    name: Check ${{ matrix.os }} ${{ matrix.toolchain }}
     strategy:
       fail-fast: false
       matrix:
@@ -99,13 +113,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-      - uses: taiki-e/install-action@cargo-make
       - uses: Swatinem/rust-cache@v2
-      - run: cargo make check
-        env:
-          RUST_BACKTRACE: full
+      - run: cargo xtask check
 
+  # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account the
+  # package.metadata.docs.rs configured in Cargo.toml. https://github.com/dtolnay/cargo-docs-rs
   lint-docs:
+    name: Check Docs
     runs-on: ubuntu-latest
     env:
       RUSTDOCFLAGS: -Dwarnings
@@ -114,47 +128,48 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: dtolnay/install@cargo-docs-rs
       - uses: Swatinem/rust-cache@v2
-      # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account
-      # the package.metadata.docs.rs configured in Cargo.toml.
-      # https://github.com/dtolnay/cargo-docs-rs
-      - run: cargo +nightly docs-rs -p ratatui
+      - run: cargo xtask lint-docs
 
-  test-doc:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+  # Run cargo test on the documentation of the crate. This will catch any code examples that don't
+  # compile, or any other issues in the documentation.
+  test-docs:
+    name: Test Docs
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-make
       - uses: Swatinem/rust-cache@v2
-      - run: cargo make test-doc
-        env:
-          RUST_BACKTRACE: full
+      - run: cargo xtask test-docs
 
-  test:
+  # Run cargo test on the libraries of the crate.
+  test-libs:
+    name: Test Libs ${{ matrix.toolchain }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: ["1.74.0", "stable"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo xtask test-libs
+
+  # Run cargo test on all the backends.
+  test-backends:
+    name: Test ${{matrix.backend}} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        toolchain: ["1.74.0", "stable"]
         backend: [crossterm, termion, termwiz]
         exclude:
           # termion is not supported on windows
           - os: windows-latest
             backend: termion
-    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-make,nextest
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo make test-backend ${{ matrix.backend }}
-        env:
-          RUST_BACKTRACE: full
+      - run: cargo xtask test-backend ${{ matrix.backend }}
