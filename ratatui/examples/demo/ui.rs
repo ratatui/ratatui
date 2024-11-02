@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
-    text::{self, Span},
+    text::{self, Line, Span},
     widgets::{
         canvas::{self, Canvas, Circle, Map, MapResolution, Rectangle},
         Axis, BarChart, Block, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem, Paragraph,
@@ -119,7 +119,7 @@ fn draw_charts(frame: &mut Frame, app: &mut App, area: Rect) {
             let tasks = List::new(tasks)
                 .block(Block::bordered().title("List"))
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD))
-                .highlight_symbol("> ");
+                .highlight_symbol(Line::from("> "));
             frame.render_stateful_widget(tasks, chunks[0], &mut app.tasks.state);
 
             // Draw logs

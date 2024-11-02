@@ -2,6 +2,7 @@ use criterion::{criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
+    text::Line,
     widgets::{List, ListItem, ListState, StatefulWidget, Widget},
 };
 
@@ -25,7 +26,7 @@ fn list(c: &mut Criterion) {
         // Render with an offset to the middle of the list and a selected item
         group.bench_with_input(
             BenchmarkId::new("render_scroll_half", line_count),
-            &List::new(lines.clone()).highlight_symbol(">>"),
+            &List::new(lines.clone()).highlight_symbol(Line::from(">>")),
             |b, list| {
                 render_stateful(
                     b,

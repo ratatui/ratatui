@@ -1,8 +1,7 @@
-use unicode_width::UnicodeWidthStr;
-
 use crate::{
     buffer::Buffer,
     layout::Rect,
+    text::Line,
     widgets::{
         block::BlockExt, List, ListDirection, ListState, StatefulWidget, StatefulWidgetRef, Widget,
         WidgetRef,
@@ -69,8 +68,8 @@ impl StatefulWidgetRef for List<'_> {
         state.offset = first_visible_index;
 
         // Get our set highlighted symbol (if one was set)
-        let highlight_symbol = self.highlight_symbol.unwrap_or("");
-        let blank_symbol = " ".repeat(highlight_symbol.width());
+        let highlight_symbol = self.highlight_symbol.clone().unwrap_or(Line::default());
+        let blank_symbol = Line::from(" ");
 
         let mut current_height = 0;
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
@@ -103,7 +102,11 @@ impl StatefulWidgetRef for List<'_> {
             let is_selected = state.selected.map_or(false, |s| s == i);
 
             let item_area = if selection_spacing {
-                let highlight_symbol_width = self.highlight_symbol.unwrap_or("").width() as u16;
+                let highlight_symbol_width = self
+                    .highlight_symbol
+                    .clone()
+                    .unwrap_or(Line::default())
+                    .width() as u16;
                 Rect {
                     x: row_area.x + highlight_symbol_width,
                     width: row_area.width.saturating_sub(highlight_symbol_width),
@@ -119,15 +122,15 @@ impl StatefulWidgetRef for List<'_> {
                 // - either for the first line of the item only,
                 // - or for each line of the item if the appropriate option is set
                 let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
-                    highlight_symbol
+                    highlight_symbol.clone()
                 } else {
-                    &blank_symbol
+                    blank_symbol.clone()
                 };
                 if selection_spacing {
                     buf.set_stringn(
                         x,
                         y + j as u16,
-                        symbol,
+                        symbol.to_string(),
                         list_area.width as usize,
                         item_style,
                     );
@@ -361,7 +364,7 @@ mod tests {
     #[test]
     fn does_not_render_in_small_space() {
         let items = vec!["Item 0", "Item 1", "Item 2"];
-        let list = List::new(items.clone()).highlight_symbol(">>");
+        let list = List::new(items.clone()).highlight_symbol(Line::from(">>"));
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
 
         // attempt to render into an area of the buffer with 0 width
@@ -373,7 +376,7 @@ mod tests {
         assert_eq!(&buffer, &Buffer::empty(buffer.area));
 
         let list = List::new(items)
-            .highlight_symbol(">>")
+            .highlight_symbol(Line::from(">>"))
             .block(Block::bordered());
         // attempt to render into an area of the buffer with zero height after
         // setting the block borders
@@ -396,7 +399,7 @@ mod tests {
             Lines: IntoIterator,
             Lines::Item: Into<Line<'line>>,
         {
-            let list = List::new(items.to_owned()).highlight_symbol(">>");
+            let list = List::new(items.to_owned()).highlight_symbol(Line::from(">>"));
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
             Widget::render(list, buffer.area, &mut buffer);
             assert_eq!(buffer, Buffer::with_lines(expected));
@@ -411,7 +414,7 @@ mod tests {
             Lines: IntoIterator,
             Lines::Item: Into<Line<'line>>,
         {
-            let list = List::new(items.to_owned()).highlight_symbol(">>");
+            let list = List::new(items.to_owned()).highlight_symbol(Line::from(">>"));
             let mut state = ListState::default().with_selected(selected);
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
             StatefulWidget::render(list, buffer.area, &mut buffer, &mut state);
@@ -668,7 +671,7 @@ mod tests {
     #[test]
     fn highlight_symbol_and_style() {
         let list = List::new(["Item 0", "Item 1", "Item 2"])
-            .highlight_symbol(">>")
+            .highlight_symbol(Line::from(">>"))
             .highlight_style(Style::default().fg(Color::Yellow));
         let mut state = ListState::default();
         state.select(Some(1));
@@ -687,7 +690,7 @@ mod tests {
     fn highlight_spacing_default_when_selected() {
         // when not selected
         {
-            let list = List::new(["Item 0", "Item 1", "Item 2"]).highlight_symbol(">>");
+            let list = List::new(["Item 0", "Item 1", "Item 2"]).highlight_symbol(Line::from(">>"));
             let mut state = ListState::default();
             let buffer = stateful_widget(list, &mut state, 10, 5);
             let expected = Buffer::with_lines([
@@ -702,7 +705,7 @@ mod tests {
 
         // when selected
         {
-            let list = List::new(["Item 0", "Item 1", "Item 2"]).highlight_symbol(">>");
+            let list = List::new(["Item 0", "Item 1", "Item 2"]).highlight_symbol(Line::from(">>"));
             let mut state = ListState::default();
             state.select(Some(1));
             let buffer = stateful_widget(list, &mut state, 10, 5);
@@ -722,7 +725,7 @@ mod tests {
         // when not selected
         {
             let list = List::new(["Item 0", "Item 1", "Item 2"])
-                .highlight_symbol(">>")
+                .highlight_symbol(Line::from(">>"))
                 .highlight_spacing(HighlightSpacing::Always);
             let mut state = ListState::default();
             let buffer = stateful_widget(list, &mut state, 10, 5);
@@ -739,7 +742,7 @@ mod tests {
         // when selected
         {
             let list = List::new(["Item 0", "Item 1", "Item 2"])
-                .highlight_symbol(">>")
+                .highlight_symbol(Line::from(">>"))
                 .highlight_spacing(HighlightSpacing::Always);
             let mut state = ListState::default();
             state.select(Some(1));
@@ -760,7 +763,7 @@ mod tests {
         // when not selected
         {
             let list = List::new(["Item 0", "Item 1", "Item 2"])
-                .highlight_symbol(">>")
+                .highlight_symbol(Line::from(">>"))
                 .highlight_spacing(HighlightSpacing::Never);
             let mut state = ListState::default();
             let buffer = stateful_widget(list, &mut state, 10, 5);
@@ -777,7 +780,7 @@ mod tests {
         // when selected
         {
             let list = List::new(["Item 0", "Item 1", "Item 2"])
-                .highlight_symbol(">>")
+                .highlight_symbol(Line::from(">>"))
                 .highlight_spacing(HighlightSpacing::Never);
             let mut state = ListState::default();
             state.select(Some(1));
@@ -796,7 +799,7 @@ mod tests {
     #[test]
     fn repeat_highlight_symbol() {
         let list = List::new(["Item 0\nLine 2", "Item 1", "Item 2"])
-            .highlight_symbol(">>")
+            .highlight_symbol(Line::from(">>"))
             .highlight_style(Style::default().fg(Color::Yellow))
             .repeat_highlight_symbol(true);
         let mut state = ListState::default();
@@ -881,7 +884,7 @@ mod tests {
             "Item 1",
             "Item 2",
         ];
-        let list = List::new(items).highlight_symbol(">>");
+        let list = List::new(items).highlight_symbol(Line::from(">>"));
         let mut state = ListState::default().with_selected(selected);
         let buffer = stateful_widget(list, &mut state, 15, 3);
         assert_eq!(buffer, Buffer::with_lines(expected));
@@ -892,7 +895,7 @@ mod tests {
         let items = [
             "Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6",
         ];
-        let list = List::new(items).highlight_symbol(">>");
+        let list = List::new(items).highlight_symbol(Line::from(">>"));
         // Set the initial visible range to items 3, 4, and 5
         let mut state = ListState::default().with_selected(Some(1)).with_offset(3);
         let buffer = stateful_widget(list, &mut state, 10, 3);
@@ -917,7 +920,7 @@ mod tests {
         let items = [
             "Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6",
         ];
-        let list = List::new(items).highlight_symbol(">>");
+        let list = List::new(items).highlight_symbol(Line::from(">>"));
         // Set the initial visible range to items 3, 4, and 5
         let mut state = ListState::default().with_selected(Some(6)).with_offset(3);
         let buffer = stateful_widget(list, &mut state, 10, 3);
@@ -1157,7 +1160,7 @@ mod tests {
 
         let list = List::new(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5"])
             .scroll_padding(padding)
-            .highlight_symbol(">> ");
+            .highlight_symbol(Line::from(">> "));
         terminal
             .draw(|f| f.render_stateful_widget(list, f.area(), &mut state))
             .unwrap();
@@ -1179,7 +1182,9 @@ mod tests {
         let items = [
             "Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6", "Item 7",
         ];
-        let list = List::new(items).scroll_padding(3).highlight_symbol(">> ");
+        let list = List::new(items)
+            .scroll_padding(3)
+            .highlight_symbol(Line::from(">> "));
 
         terminal
             .draw(|f| f.render_stateful_widget(&list, f.area(), &mut state))
@@ -1209,7 +1214,9 @@ mod tests {
             ListItem::new("Item 4\nTest\nTest"),
             ListItem::new("Item 5"),
         ];
-        let list = List::new(items).scroll_padding(1).highlight_symbol(">> ");
+        let list = List::new(items)
+            .scroll_padding(1)
+            .highlight_symbol(Line::from(">> "));
 
         terminal
             .draw(|f| f.render_stateful_widget(list, f.area(), &mut state))
@@ -1241,7 +1248,9 @@ mod tests {
             ListItem::new("Item 2"),
             ListItem::new("Item 3"),
         ];
-        let list = List::new(items).scroll_padding(2).highlight_symbol(">> ");
+        let list = List::new(items)
+            .scroll_padding(2)
+            .highlight_symbol(Line::from(">> "));
 
         terminal
             .draw(|f| f.render_stateful_widget(list, f.area(), &mut state))
@@ -1269,7 +1278,7 @@ mod tests {
         #[case] expected: &str,
         mut single_line_buf: Buffer,
     ) {
-        let list = List::new([item]).highlight_symbol(highlight_symbol);
+        let list = List::new([item]).highlight_symbol(Line::from(highlight_symbol));
         let mut state = ListState::default();
         state.select(Some(0));
         StatefulWidget::render(list, single_line_buf.area, &mut single_line_buf, &mut state);

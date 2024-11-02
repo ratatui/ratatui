@@ -2,6 +2,7 @@ use strum::{Display, EnumString};
 
 use crate::{
     style::{Style, Styled},
+    text::Line,
     widgets::{Block, HighlightSpacing, ListItem},
 };
 
@@ -42,6 +43,7 @@ use crate::{
 /// use ratatui::{
 ///     layout::Rect,
 ///     style::{Style, Stylize},
+///     text::Line,
 ///     widgets::{Block, List, ListDirection, ListItem},
 ///     Frame,
 /// };
@@ -53,7 +55,7 @@ use crate::{
 ///     .block(Block::bordered().title("List"))
 ///     .style(Style::new().white())
 ///     .highlight_style(Style::new().italic())
-///     .highlight_symbol(">>")
+///     .highlight_symbol(Line::from(">>"))
 ///     .repeat_highlight_symbol(true)
 ///     .direction(ListDirection::BottomToTop);
 ///
@@ -67,6 +69,7 @@ use crate::{
 /// use ratatui::{
 ///     layout::Rect,
 ///     style::{Style, Stylize},
+///     text::Line,
 ///     widgets::{Block, List, ListState},
 ///     Frame,
 /// };
@@ -79,7 +82,7 @@ use crate::{
 /// let list = List::new(items)
 ///     .block(Block::bordered().title("List"))
 ///     .highlight_style(Style::new().reversed())
-///     .highlight_symbol(">>")
+///     .highlight_symbol(Line::from(">>"))
 ///     .repeat_highlight_symbol(true);
 ///
 /// frame.render_stateful_widget(list, area, &mut state);
@@ -114,7 +117,7 @@ pub struct List<'a> {
     /// Style used to render selected item
     pub(crate) highlight_style: Style,
     /// Symbol in front of the selected item (Shift all items to the right)
-    pub(crate) highlight_symbol: Option<&'a str>,
+    pub(crate) highlight_symbol: Option<Line<'a>>,
     /// Whether to repeat the highlight symbol for each line of the selected item
     pub(crate) repeat_highlight_symbol: bool,
     /// Decides when to allocate spacing for the selection symbol
@@ -291,12 +294,13 @@ impl<'a> List<'a> {
     ///
     /// ```rust
     /// use ratatui::widgets::List;
+    /// use ratatui::text::Line;
     ///
     /// let items = ["Item 1", "Item 2"];
-    /// let list = List::new(items).highlight_symbol(">>");
+    /// let list = List::new(items).highlight_symbol(Line::from(">>"));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
+    pub fn highlight_symbol(mut self, highlight_symbol: Line<'a>) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
