@@ -30,7 +30,7 @@ pub struct Rect {
 ///
 /// Positive numbers move to the right/bottom and negative to the left/top.
 ///
-/// See [`Rect::offset`]
+/// See [`Rect::move_by`]
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Offset {
@@ -184,8 +184,33 @@ impl Rect {
     /// - Positive `y` moves the whole `Rect` to the bottom, negative to the top.
     ///
     /// See [`Offset`] for details.
+    #[deprecated = "Use .move_by() as a drop-in replacement"]
     #[must_use = "method returns the modified value"]
     pub fn offset(self, offset: Offset) -> Self {
+        Self {
+            x: i32::from(self.x)
+                .saturating_add(offset.x)
+                .clamp(0, i32::from(u16::MAX - self.width)) as u16,
+            y: i32::from(self.y)
+                .saturating_add(offset.y)
+                .clamp(0, i32::from(u16::MAX - self.height)) as u16,
+            ..self
+        }
+    }
+
+    /// Moves the `Rect` without modifying its size.
+    ///
+    /// Moves the `Rect` by a given offset without modifying its [`width`](Rect::width)
+    /// or [`height`](Rect::height).
+    /// - Positive `x` moves the whole `Rect` to the right, negative to the left.
+    /// - Positive `y` moves the whole `Rect` to the bottom, negative to the top.
+    ///
+    /// The operation ensures that all coordinates within the resulting rectangle
+    /// are valid in `u16` and clamps values if necessary.
+    ///
+    /// See [`Offset`] for details.
+    #[must_use = "method returns the modified value"]
+    pub fn move_by(self, offset: Offset) -> Self {
         Self {
             x: i32::from(self.x)
                 .saturating_add(offset.x)
@@ -483,6 +508,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn offset() {
         assert_eq!(
             Rect::new(1, 2, 3, 4).offset(Offset { x: 5, y: 6 }),
@@ -491,6 +517,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn negative_offset() {
         assert_eq!(
             Rect::new(4, 3, 3, 4).offset(Offset { x: -2, y: -1 }),
@@ -499,6 +526,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn negative_offset_saturate() {
         assert_eq!(
             Rect::new(1, 2, 3, 4).offset(Offset { x: -5, y: -6 }),
@@ -508,11 +536,38 @@ mod tests {
 
     /// Offsets a [`Rect`] making it go outside [`u16::MAX`], it should keep its size.
     #[test]
+    #[allow(deprecated)]
     fn offset_saturate_max() {
         assert_eq!(
             Rect::new(u16::MAX - 500, u16::MAX - 500, 100, 100).offset(Offset { x: 1000, y: 1000 }),
             Rect::new(u16::MAX - 100, u16::MAX - 100, 100, 100),
         );
+    }
+
+    #[rstest]
+    #[case::positive(Rect::new(1, 2, 3, 4), Offset::new(5, 6), Rect::new(6, 8, 3, 4))]
+    #[case::negative(Rect::new(4, 3, 3, 4), Offset::new(-2, -1), Rect::new(2, 2, 3, 4))]
+    #[case::mixed(Rect::new(4, 3, 2, 1), Offset::new(-2, 1), Rect::new(2, 4, 2, 1))]
+    #[case::inverse(Rect::new(1, 2, 3, 4), Offset::new(-1, -2), Rect::new(0, 0, 3, 4))]
+    #[case::identity(Rect::new(1, 2, 3, 4), Offset::new(0, 0), Rect::new(1, 2, 3, 4))]
+    #[case::saturate_min(Rect::new(1, 2, 3, 4), Offset::new(-5, -6), Rect::new(0, 0, 3, 4))]
+    #[case::saturate_max(
+        Rect::new(u16::MAX - 500, u16::MAX - 500, 100, 100),
+        Offset::new(1000, 1000),
+        Rect::new(u16::MAX - 100, u16::MAX - 100, 100, 100)
+    )]
+    #[case::min_value(
+        Rect::new(1, 2, 3, 4),
+        Offset::new(i32::MIN, i32::MIN),
+        Rect::new(0, 0, 3, 4)
+    )]
+    #[case::max_value(
+        Rect::new(1, 2, 3, 4),
+        Offset::new(i32::MAX, i32::MAX),
+        Rect::new(u16::MAX - 3, u16::MAX - 4, 3, 4)
+    )]
+    fn move_by(#[case] rect: Rect, #[case] offset: Offset, #[case] expected: Rect) {
+        assert_eq!(rect.move_by(offset), expected);
     }
 
     #[rstest]
