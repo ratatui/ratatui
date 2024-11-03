@@ -306,7 +306,7 @@ where
     }
 }
 
-/// A trait for converting a ratatui type to a crossterm type.
+/// A trait for converting a Ratatui type to a Crossterm type.
 ///
 /// This trait is needed for avoiding the orphan rule when implementing `From` for crossterm types
 /// once these are moved to a separate crate.
