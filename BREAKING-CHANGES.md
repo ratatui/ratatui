@@ -72,7 +72,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## Unreleased
+## Unreleased (0.30.0)
 
 ### The `From` impls for backend types are now replaced with more specific traits [#1464]
 
