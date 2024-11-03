@@ -315,7 +315,7 @@ pub trait IntoCrossterm<C> {
     fn into_crossterm(self) -> C;
 }
 
-/// A trait for converting a crossterm type to a ratatui type.
+/// A trait for converting a Crossterm type to a Ratatui type.
 ///
 /// This trait is needed for avoiding the orphan rule when implementing `From` for crossterm types
 /// once these are moved to a separate crate.
