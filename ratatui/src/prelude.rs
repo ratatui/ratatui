@@ -28,11 +28,11 @@
 //! ```
 
 #[cfg(feature = "crossterm")]
-pub use crate::backend::CrosstermBackend;
+pub use crate::backend::{CrosstermBackend, FromCrossterm, IntoCrossterm};
 #[cfg(all(not(windows), feature = "termion"))]
-pub use crate::backend::TermionBackend;
+pub use crate::backend::{FromTermion, IntoTermion, TermionBackend};
 #[cfg(feature = "termwiz")]
-pub use crate::backend::TermwizBackend;
+pub use crate::backend::{FromTermwiz, IntoTermwiz, TermwizBackend};
 pub use crate::{
     backend::{self, Backend},
     buffer::{self, Buffer},
