@@ -124,6 +124,37 @@ let crossterm_attribute = crossterm::style::types::Attribute::Bold;
 Similar conversions for `ContentStyle` -> `Style` and `Attributes` -> `Modifier` exist for
 Crossterm and the various Termion and Termwiz types as well.
 
+### `Bar::label()` and `BarGroup::label()` now accepts `Into<Line<'a>>`. ([#1471])
+
+[#1471]: https://github.com/ratatui/ratatui/pull/1471
+
+Previously `Bar::label()` and `BarGroup::label()` accepted `Line<'a>`, but they now accepts `Into<Line<'a>>`.
+
+for `Bar::label()`:
+
+```diff
+- Bar::default().label("foo".into());
++ Bar::default().label("foo");
+```
+
+for `BarGroup::label()`:
+
+```diff
+- BarGroup::default().label("bar".into());
++ BarGroup::default().label("bar");
+```
+
+### `Bar::text_value` now accepts `Into<String>` ([#1471])
+
+Previously `Bar::text_value` accepted `String`, but now it accepts `Into<String>`.
+
+for `Bar::text_value()`:
+
+```diff
+- Bar::default().text_value("foobar".into());
++ Bar::default().text_value("foobar");
+```
+
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 
 ### `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const ([#1326])

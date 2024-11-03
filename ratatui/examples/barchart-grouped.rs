@@ -189,7 +189,7 @@ impl Company {
     fn vertical_revenue_bar(&self, revenue: u32) -> Bar {
         let text_value = format!("{:.1}M", f64::from(revenue) / 1000.);
         Bar::default()
-            .label(self.short_name.into())
+            .label(self.short_name)
             .value(u64::from(revenue))
             .text_value(text_value)
             .style(self.color)

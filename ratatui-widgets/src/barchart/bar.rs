@@ -28,11 +28,11 @@ use unicode_width::UnicodeWidthStr;
 /// };
 ///
 /// Bar::default()
-///     .label("Bar 1".into())
+///     .label("Bar 1")
 ///     .value(10)
 ///     .red()
 ///     .value_style(Style::new().red().on_white())
-///     .text_value("10°C".to_string());
+///     .text_value("10°C");
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Bar<'a> {
@@ -65,14 +65,35 @@ impl<'a> Bar<'a> {
 
     /// Set the label of the bar.
     ///
+    /// `label` can be a [`&str`], [`String`] or anything that can be converted into [`Line`].
+    ///
+    /// # Examples
+    ///
+    /// From [`&str`] and [`String`]:
+    ///
+    /// ```rust
+    /// use ratatui::widgets::Bar;
+    ///
+    /// Bar::default().label("label");
+    /// Bar::default().label(String::from("label"));
+    /// ```
+    ///
+    /// From a [`Line`] with red foreground color:
+    ///
+    /// ```rust
+    /// use ratatui::{style::Stylize, text::Line, widgets::Bar};
+    ///
+    /// Bar::default().label(Line::from("Line").red());
+    /// ```
+    ///
     /// For [`Vertical`](ratatui_core::layout::Direction::Vertical) bars,
     /// display the label **under** the bar.
     /// For [`Horizontal`](ratatui_core::layout::Direction::Horizontal) bars,
     /// display the label **in** the bar.
     /// See [`BarChart::direction`](crate::barchart::BarChart::direction) to set the direction.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label(mut self, label: Line<'a>) -> Self {
-        self.label = Some(label);
+    pub fn label<T: Into<Line<'a>>>(mut self, label: T) -> Self {
+        self.label = Some(label.into());
         self
     }
 
@@ -108,15 +129,28 @@ impl<'a> Bar<'a> {
 
     /// Set the text value printed in the bar.
     ///
+    /// `text_value` can be a [`&str`], `Number` or anything that can be converted into [`String`].
+    ///
     /// If `text_value` is not set, then the [`ToString`] representation of `value` will be shown on
     /// the bar.
+    ///
+    /// # Examples
+    ///
+    /// From [`&str`] and [`String`]:
+    ///
+    /// ```
+    /// use ratatui::widgets::Bar;
+    ///
+    /// Bar::default().text_value("label");
+    /// Bar::default().text_value(String::from("label"));
+    /// ```
     ///
     /// # See also
     ///
     /// [`Bar::value`] to set the value.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn text_value(mut self, text_value: String) -> Self {
-        self.text_value = Some(text_value);
+    pub fn text_value<T: Into<String>>(mut self, text_value: T) -> Self {
+        self.text_value = Some(text_value.into());
         self
     }
 

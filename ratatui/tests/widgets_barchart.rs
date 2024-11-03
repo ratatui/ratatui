@@ -46,16 +46,16 @@ fn widgets_barchart_group() {
             let barchart = BarChart::default()
                 .block(Block::bordered())
                 .data(
-                    BarGroup::default().label("Mar".into()).bars(&[
+                    BarGroup::default().label("Mar").bars(&[
                         Bar::default()
                             .value(10)
-                            .label("C1".into())
+                            .label("C1")
                             .style(Style::default().fg(Color::Red))
                             .value_style(Style::default().fg(Color::Blue)),
                         Bar::default()
                             .value(20)
                             .style(Style::default().fg(Color::Green))
-                            .text_value("20M".to_string()),
+                            .text_value("20M"),
                     ]),
                 )
                 .data(&vec![("C1", 50), ("C2", 40)])
