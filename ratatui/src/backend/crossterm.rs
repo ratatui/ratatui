@@ -6,19 +6,20 @@ use std::io::{self, Write};
 
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
+use crossterm::{
+    cursor::{Hide, MoveTo, Show},
+    execute, queue,
+    style::{
+        Attribute as CrosstermAttribute, Attributes as CrosstermAttributes,
+        Color as CrosstermColor, Colors as CrosstermColors, ContentStyle, Print, SetAttribute,
+        SetBackgroundColor, SetColors, SetForegroundColor,
+    },
+    terminal::{self, Clear},
+};
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
-    crossterm::{
-        cursor::{Hide, MoveTo, Show},
-        execute, queue,
-        style::{
-            Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors,
-            ContentStyle, Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
-        },
-        terminal::{self, Clear},
-    },
     layout::{Position, Size},
     style::{Color, Modifier, Style},
 };
@@ -175,14 +176,17 @@ where
             if cell.fg != fg || cell.bg != bg {
                 queue!(
                     self.writer,
-                    SetColors(Colors::new(cell.fg.into(), cell.bg.into()))
+                    SetColors(CrosstermColors::new(
+                        cell.fg.into_crossterm(),
+                        cell.bg.into_crossterm(),
+                    ))
                 )?;
                 fg = cell.fg;
                 bg = cell.bg;
             }
             #[cfg(feature = "underline-color")]
             if cell.underline_color != underline_color {
-                let color = CColor::from(cell.underline_color);
+                let color = cell.underline_color.into_crossterm();
                 queue!(self.writer, SetUnderlineColor(color))?;
                 underline_color = cell.underline_color;
             }
@@ -193,17 +197,17 @@ where
         #[cfg(feature = "underline-color")]
         return queue!(
             self.writer,
-            SetForegroundColor(CColor::Reset),
-            SetBackgroundColor(CColor::Reset),
-            SetUnderlineColor(CColor::Reset),
-            SetAttribute(CAttribute::Reset),
+            SetForegroundColor(CrosstermColor::Reset),
+            SetBackgroundColor(CrosstermColor::Reset),
+            SetUnderlineColor(CrosstermColor::Reset),
+            SetAttribute(CrosstermAttribute::Reset),
         );
         #[cfg(not(feature = "underline-color"))]
         return queue!(
             self.writer,
-            SetForegroundColor(CColor::Reset),
-            SetBackgroundColor(CColor::Reset),
-            SetAttribute(CAttribute::Reset),
+            SetForegroundColor(CrosstermColor::Reset),
+            SetBackgroundColor(CrosstermColor::Reset),
+            SetAttribute(CrosstermAttribute::Reset),
         );
     }
 
@@ -302,54 +306,72 @@ where
     }
 }
 
-impl From<Color> for CColor {
-    fn from(color: Color) -> Self {
-        match color {
-            Color::Reset => Self::Reset,
-            Color::Black => Self::Black,
-            Color::Red => Self::DarkRed,
-            Color::Green => Self::DarkGreen,
-            Color::Yellow => Self::DarkYellow,
-            Color::Blue => Self::DarkBlue,
-            Color::Magenta => Self::DarkMagenta,
-            Color::Cyan => Self::DarkCyan,
-            Color::Gray => Self::Grey,
-            Color::DarkGray => Self::DarkGrey,
-            Color::LightRed => Self::Red,
-            Color::LightGreen => Self::Green,
-            Color::LightBlue => Self::Blue,
-            Color::LightYellow => Self::Yellow,
-            Color::LightMagenta => Self::Magenta,
-            Color::LightCyan => Self::Cyan,
-            Color::White => Self::White,
-            Color::Indexed(i) => Self::AnsiValue(i),
-            Color::Rgb(r, g, b) => Self::Rgb { r, g, b },
+/// A trait for converting a Ratatui type to a Crossterm type.
+///
+/// This trait is needed for avoiding the orphan rule when implementing `From` for crossterm types
+/// once these are moved to a separate crate.
+pub trait IntoCrossterm<C> {
+    /// Converts the ratatui type to a crossterm type.
+    fn into_crossterm(self) -> C;
+}
+
+/// A trait for converting a Crossterm type to a Ratatui type.
+///
+/// This trait is needed for avoiding the orphan rule when implementing `From` for crossterm types
+/// once these are moved to a separate crate.
+pub trait FromCrossterm<C> {
+    /// Converts the crossterm type to a ratatui type.
+    fn from_crossterm(value: C) -> Self;
+}
+
+impl IntoCrossterm<CrosstermColor> for Color {
+    fn into_crossterm(self) -> CrosstermColor {
+        match self {
+            Self::Reset => CrosstermColor::Reset,
+            Self::Black => CrosstermColor::Black,
+            Self::Red => CrosstermColor::DarkRed,
+            Self::Green => CrosstermColor::DarkGreen,
+            Self::Yellow => CrosstermColor::DarkYellow,
+            Self::Blue => CrosstermColor::DarkBlue,
+            Self::Magenta => CrosstermColor::DarkMagenta,
+            Self::Cyan => CrosstermColor::DarkCyan,
+            Self::Gray => CrosstermColor::Grey,
+            Self::DarkGray => CrosstermColor::DarkGrey,
+            Self::LightRed => CrosstermColor::Red,
+            Self::LightGreen => CrosstermColor::Green,
+            Self::LightBlue => CrosstermColor::Blue,
+            Self::LightYellow => CrosstermColor::Yellow,
+            Self::LightMagenta => CrosstermColor::Magenta,
+            Self::LightCyan => CrosstermColor::Cyan,
+            Self::White => CrosstermColor::White,
+            Self::Indexed(i) => CrosstermColor::AnsiValue(i),
+            Self::Rgb(r, g, b) => CrosstermColor::Rgb { r, g, b },
         }
     }
 }
 
-impl From<CColor> for Color {
-    fn from(value: CColor) -> Self {
+impl FromCrossterm<CrosstermColor> for Color {
+    fn from_crossterm(value: CrosstermColor) -> Self {
         match value {
-            CColor::Reset => Self::Reset,
-            CColor::Black => Self::Black,
-            CColor::DarkRed => Self::Red,
-            CColor::DarkGreen => Self::Green,
-            CColor::DarkYellow => Self::Yellow,
-            CColor::DarkBlue => Self::Blue,
-            CColor::DarkMagenta => Self::Magenta,
-            CColor::DarkCyan => Self::Cyan,
-            CColor::Grey => Self::Gray,
-            CColor::DarkGrey => Self::DarkGray,
-            CColor::Red => Self::LightRed,
-            CColor::Green => Self::LightGreen,
-            CColor::Blue => Self::LightBlue,
-            CColor::Yellow => Self::LightYellow,
-            CColor::Magenta => Self::LightMagenta,
-            CColor::Cyan => Self::LightCyan,
-            CColor::White => Self::White,
-            CColor::Rgb { r, g, b } => Self::Rgb(r, g, b),
-            CColor::AnsiValue(v) => Self::Indexed(v),
+            CrosstermColor::Reset => Self::Reset,
+            CrosstermColor::Black => Self::Black,
+            CrosstermColor::DarkRed => Self::Red,
+            CrosstermColor::DarkGreen => Self::Green,
+            CrosstermColor::DarkYellow => Self::Yellow,
+            CrosstermColor::DarkBlue => Self::Blue,
+            CrosstermColor::DarkMagenta => Self::Magenta,
+            CrosstermColor::DarkCyan => Self::Cyan,
+            CrosstermColor::Grey => Self::Gray,
+            CrosstermColor::DarkGrey => Self::DarkGray,
+            CrosstermColor::Red => Self::LightRed,
+            CrosstermColor::Green => Self::LightGreen,
+            CrosstermColor::Blue => Self::LightBlue,
+            CrosstermColor::Yellow => Self::LightYellow,
+            CrosstermColor::Magenta => Self::LightMagenta,
+            CrosstermColor::Cyan => Self::LightCyan,
+            CrosstermColor::White => Self::White,
+            CrosstermColor::Rgb { r, g, b } => Self::Rgb(r, g, b),
+            CrosstermColor::AnsiValue(v) => Self::Indexed(v),
         }
     }
 }
@@ -370,142 +392,138 @@ impl ModifierDiff {
         //use crossterm::Attribute;
         let removed = self.from - self.to;
         if removed.contains(Modifier::REVERSED) {
-            queue!(w, SetAttribute(CAttribute::NoReverse))?;
+            queue!(w, SetAttribute(CrosstermAttribute::NoReverse))?;
         }
         if removed.contains(Modifier::BOLD) {
-            queue!(w, SetAttribute(CAttribute::NormalIntensity))?;
+            queue!(w, SetAttribute(CrosstermAttribute::NormalIntensity))?;
             if self.to.contains(Modifier::DIM) {
-                queue!(w, SetAttribute(CAttribute::Dim))?;
+                queue!(w, SetAttribute(CrosstermAttribute::Dim))?;
             }
         }
         if removed.contains(Modifier::ITALIC) {
-            queue!(w, SetAttribute(CAttribute::NoItalic))?;
+            queue!(w, SetAttribute(CrosstermAttribute::NoItalic))?;
         }
         if removed.contains(Modifier::UNDERLINED) {
-            queue!(w, SetAttribute(CAttribute::NoUnderline))?;
+            queue!(w, SetAttribute(CrosstermAttribute::NoUnderline))?;
         }
         if removed.contains(Modifier::DIM) {
-            queue!(w, SetAttribute(CAttribute::NormalIntensity))?;
+            queue!(w, SetAttribute(CrosstermAttribute::NormalIntensity))?;
         }
         if removed.contains(Modifier::CROSSED_OUT) {
-            queue!(w, SetAttribute(CAttribute::NotCrossedOut))?;
+            queue!(w, SetAttribute(CrosstermAttribute::NotCrossedOut))?;
         }
         if removed.contains(Modifier::SLOW_BLINK) || removed.contains(Modifier::RAPID_BLINK) {
-            queue!(w, SetAttribute(CAttribute::NoBlink))?;
+            queue!(w, SetAttribute(CrosstermAttribute::NoBlink))?;
         }
 
         let added = self.to - self.from;
         if added.contains(Modifier::REVERSED) {
-            queue!(w, SetAttribute(CAttribute::Reverse))?;
+            queue!(w, SetAttribute(CrosstermAttribute::Reverse))?;
         }
         if added.contains(Modifier::BOLD) {
-            queue!(w, SetAttribute(CAttribute::Bold))?;
+            queue!(w, SetAttribute(CrosstermAttribute::Bold))?;
         }
         if added.contains(Modifier::ITALIC) {
-            queue!(w, SetAttribute(CAttribute::Italic))?;
+            queue!(w, SetAttribute(CrosstermAttribute::Italic))?;
         }
         if added.contains(Modifier::UNDERLINED) {
-            queue!(w, SetAttribute(CAttribute::Underlined))?;
+            queue!(w, SetAttribute(CrosstermAttribute::Underlined))?;
         }
         if added.contains(Modifier::DIM) {
-            queue!(w, SetAttribute(CAttribute::Dim))?;
+            queue!(w, SetAttribute(CrosstermAttribute::Dim))?;
         }
         if added.contains(Modifier::CROSSED_OUT) {
-            queue!(w, SetAttribute(CAttribute::CrossedOut))?;
+            queue!(w, SetAttribute(CrosstermAttribute::CrossedOut))?;
         }
         if added.contains(Modifier::SLOW_BLINK) {
-            queue!(w, SetAttribute(CAttribute::SlowBlink))?;
+            queue!(w, SetAttribute(CrosstermAttribute::SlowBlink))?;
         }
         if added.contains(Modifier::RAPID_BLINK) {
-            queue!(w, SetAttribute(CAttribute::RapidBlink))?;
+            queue!(w, SetAttribute(CrosstermAttribute::RapidBlink))?;
         }
 
         Ok(())
     }
 }
 
-impl From<CAttribute> for Modifier {
-    fn from(value: CAttribute) -> Self {
-        // `Attribute*s*` (note the *s*) contains multiple `Attribute`
-        // We convert `Attribute` to `Attribute*s*` (containing only 1 value) to avoid implementing
-        // the conversion again
-        Self::from(CAttributes::from(value))
+impl FromCrossterm<CrosstermAttribute> for Modifier {
+    fn from_crossterm(value: CrosstermAttribute) -> Self {
+        // `Attribute*s*` (note the *s*) contains multiple `Attribute` We convert `Attribute` to
+        // `Attribute*s*` (containing only 1 value) to avoid implementing the conversion again
+        Self::from_crossterm(CrosstermAttributes::from(value))
     }
 }
 
-impl From<CAttributes> for Modifier {
-    fn from(value: CAttributes) -> Self {
+impl FromCrossterm<CrosstermAttributes> for Modifier {
+    fn from_crossterm(value: CrosstermAttributes) -> Self {
         let mut res = Self::empty();
-
-        if value.has(CAttribute::Bold) {
+        if value.has(CrosstermAttribute::Bold) {
             res |= Self::BOLD;
         }
-        if value.has(CAttribute::Dim) {
+        if value.has(CrosstermAttribute::Dim) {
             res |= Self::DIM;
         }
-        if value.has(CAttribute::Italic) {
+        if value.has(CrosstermAttribute::Italic) {
             res |= Self::ITALIC;
         }
-        if value.has(CAttribute::Underlined)
-            || value.has(CAttribute::DoubleUnderlined)
-            || value.has(CAttribute::Undercurled)
-            || value.has(CAttribute::Underdotted)
-            || value.has(CAttribute::Underdashed)
+        if value.has(CrosstermAttribute::Underlined)
+            || value.has(CrosstermAttribute::DoubleUnderlined)
+            || value.has(CrosstermAttribute::Undercurled)
+            || value.has(CrosstermAttribute::Underdotted)
+            || value.has(CrosstermAttribute::Underdashed)
         {
             res |= Self::UNDERLINED;
         }
-        if value.has(CAttribute::SlowBlink) {
+        if value.has(CrosstermAttribute::SlowBlink) {
             res |= Self::SLOW_BLINK;
         }
-        if value.has(CAttribute::RapidBlink) {
+        if value.has(CrosstermAttribute::RapidBlink) {
             res |= Self::RAPID_BLINK;
         }
-        if value.has(CAttribute::Reverse) {
+        if value.has(CrosstermAttribute::Reverse) {
             res |= Self::REVERSED;
         }
-        if value.has(CAttribute::Hidden) {
+        if value.has(CrosstermAttribute::Hidden) {
             res |= Self::HIDDEN;
         }
-        if value.has(CAttribute::CrossedOut) {
+        if value.has(CrosstermAttribute::CrossedOut) {
             res |= Self::CROSSED_OUT;
         }
-
         res
     }
 }
 
-impl From<ContentStyle> for Style {
-    fn from(value: ContentStyle) -> Self {
+impl FromCrossterm<ContentStyle> for Style {
+    fn from_crossterm(value: ContentStyle) -> Self {
         let mut sub_modifier = Modifier::empty();
-
-        if value.attributes.has(CAttribute::NoBold) {
+        if value.attributes.has(CrosstermAttribute::NoBold) {
             sub_modifier |= Modifier::BOLD;
         }
-        if value.attributes.has(CAttribute::NoItalic) {
+        if value.attributes.has(CrosstermAttribute::NoItalic) {
             sub_modifier |= Modifier::ITALIC;
         }
-        if value.attributes.has(CAttribute::NotCrossedOut) {
+        if value.attributes.has(CrosstermAttribute::NotCrossedOut) {
             sub_modifier |= Modifier::CROSSED_OUT;
         }
-        if value.attributes.has(CAttribute::NoUnderline) {
+        if value.attributes.has(CrosstermAttribute::NoUnderline) {
             sub_modifier |= Modifier::UNDERLINED;
         }
-        if value.attributes.has(CAttribute::NoHidden) {
+        if value.attributes.has(CrosstermAttribute::NoHidden) {
             sub_modifier |= Modifier::HIDDEN;
         }
-        if value.attributes.has(CAttribute::NoBlink) {
+        if value.attributes.has(CrosstermAttribute::NoBlink) {
             sub_modifier |= Modifier::RAPID_BLINK | Modifier::SLOW_BLINK;
         }
-        if value.attributes.has(CAttribute::NoReverse) {
+        if value.attributes.has(CrosstermAttribute::NoReverse) {
             sub_modifier |= Modifier::REVERSED;
         }
 
         Self {
-            fg: value.foreground_color.map(Into::into),
-            bg: value.background_color.map(Into::into),
+            fg: value.foreground_color.map(FromCrossterm::from_crossterm),
+            bg: value.background_color.map(FromCrossterm::from_crossterm),
             #[cfg(feature = "underline-color")]
-            underline_color: value.underline_color.map(Into::into),
-            add_modifier: value.attributes.into(),
+            underline_color: value.underline_color.map(FromCrossterm::from_crossterm),
+            add_modifier: Modifier::from_crossterm(value.attributes),
             sub_modifier,
         }
     }
@@ -609,212 +627,174 @@ impl crate::crossterm::Command for ScrollDownInRegion {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
-    #[test]
-    fn from_crossterm_color() {
-        assert_eq!(Color::from(CColor::Reset), Color::Reset);
-        assert_eq!(Color::from(CColor::Black), Color::Black);
-        assert_eq!(Color::from(CColor::DarkGrey), Color::DarkGray);
-        assert_eq!(Color::from(CColor::Red), Color::LightRed);
-        assert_eq!(Color::from(CColor::DarkRed), Color::Red);
-        assert_eq!(Color::from(CColor::Green), Color::LightGreen);
-        assert_eq!(Color::from(CColor::DarkGreen), Color::Green);
-        assert_eq!(Color::from(CColor::Yellow), Color::LightYellow);
-        assert_eq!(Color::from(CColor::DarkYellow), Color::Yellow);
-        assert_eq!(Color::from(CColor::Blue), Color::LightBlue);
-        assert_eq!(Color::from(CColor::DarkBlue), Color::Blue);
-        assert_eq!(Color::from(CColor::Magenta), Color::LightMagenta);
-        assert_eq!(Color::from(CColor::DarkMagenta), Color::Magenta);
-        assert_eq!(Color::from(CColor::Cyan), Color::LightCyan);
-        assert_eq!(Color::from(CColor::DarkCyan), Color::Cyan);
-        assert_eq!(Color::from(CColor::White), Color::White);
-        assert_eq!(Color::from(CColor::Grey), Color::Gray);
-        assert_eq!(
-            Color::from(CColor::Rgb { r: 0, g: 0, b: 0 }),
-            Color::Rgb(0, 0, 0)
-        );
-        assert_eq!(
-            Color::from(CColor::Rgb {
-                r: 10,
-                g: 20,
-                b: 30
-            }),
-            Color::Rgb(10, 20, 30)
-        );
-        assert_eq!(Color::from(CColor::AnsiValue(32)), Color::Indexed(32));
-        assert_eq!(Color::from(CColor::AnsiValue(37)), Color::Indexed(37));
+    #[rstest]
+    #[case(CrosstermColor::Reset, Color::Reset)]
+    #[case(CrosstermColor::Black, Color::Black)]
+    #[case(CrosstermColor::DarkGrey, Color::DarkGray)]
+    #[case(CrosstermColor::Red, Color::LightRed)]
+    #[case(CrosstermColor::DarkRed, Color::Red)]
+    #[case(CrosstermColor::Green, Color::LightGreen)]
+    #[case(CrosstermColor::DarkGreen, Color::Green)]
+    #[case(CrosstermColor::Yellow, Color::LightYellow)]
+    #[case(CrosstermColor::DarkYellow, Color::Yellow)]
+    #[case(CrosstermColor::Blue, Color::LightBlue)]
+    #[case(CrosstermColor::DarkBlue, Color::Blue)]
+    #[case(CrosstermColor::Magenta, Color::LightMagenta)]
+    #[case(CrosstermColor::DarkMagenta, Color::Magenta)]
+    #[case(CrosstermColor::Cyan, Color::LightCyan)]
+    #[case(CrosstermColor::DarkCyan, Color::Cyan)]
+    #[case(CrosstermColor::White, Color::White)]
+    #[case(CrosstermColor::Grey, Color::Gray)]
+    #[case(CrosstermColor::Rgb { r: 0, g: 0, b: 0 }, Color::Rgb(0, 0, 0) )]
+    #[case(CrosstermColor::Rgb { r: 10, g: 20, b: 30 }, Color::Rgb(10, 20, 30) )]
+    #[case(CrosstermColor::AnsiValue(32), Color::Indexed(32))]
+    #[case(CrosstermColor::AnsiValue(37), Color::Indexed(37))]
+    fn from_crossterm_color(#[case] crossterm_color: CrosstermColor, #[case] color: Color) {
+        assert_eq!(Color::from_crossterm(crossterm_color), color);
     }
 
     mod modifier {
         use super::*;
 
-        #[test]
-        fn from_crossterm_attribute() {
-            assert_eq!(Modifier::from(CAttribute::Reset), Modifier::empty());
-            assert_eq!(Modifier::from(CAttribute::Bold), Modifier::BOLD);
-            assert_eq!(Modifier::from(CAttribute::Italic), Modifier::ITALIC);
-            assert_eq!(Modifier::from(CAttribute::Underlined), Modifier::UNDERLINED);
+        #[rstest]
+        #[case(CrosstermAttribute::Reset, Modifier::empty())]
+        #[case(CrosstermAttribute::Bold, Modifier::BOLD)]
+        #[case(CrosstermAttribute::NoBold, Modifier::empty())]
+        #[case(CrosstermAttribute::Italic, Modifier::ITALIC)]
+        #[case(CrosstermAttribute::NoItalic, Modifier::empty())]
+        #[case(CrosstermAttribute::Underlined, Modifier::UNDERLINED)]
+        #[case(CrosstermAttribute::NoUnderline, Modifier::empty())]
+        #[case(CrosstermAttribute::OverLined, Modifier::empty())]
+        #[case(CrosstermAttribute::NotOverLined, Modifier::empty())]
+        #[case(CrosstermAttribute::DoubleUnderlined, Modifier::UNDERLINED)]
+        #[case(CrosstermAttribute::Undercurled, Modifier::UNDERLINED)]
+        #[case(CrosstermAttribute::Underdotted, Modifier::UNDERLINED)]
+        #[case(CrosstermAttribute::Underdashed, Modifier::UNDERLINED)]
+        #[case(CrosstermAttribute::Dim, Modifier::DIM)]
+        #[case(CrosstermAttribute::NormalIntensity, Modifier::empty())]
+        #[case(CrosstermAttribute::CrossedOut, Modifier::CROSSED_OUT)]
+        #[case(CrosstermAttribute::NotCrossedOut, Modifier::empty())]
+        #[case(CrosstermAttribute::NoUnderline, Modifier::empty())]
+        #[case(CrosstermAttribute::SlowBlink, Modifier::SLOW_BLINK)]
+        #[case(CrosstermAttribute::RapidBlink, Modifier::RAPID_BLINK)]
+        #[case(CrosstermAttribute::Hidden, Modifier::HIDDEN)]
+        #[case(CrosstermAttribute::NoHidden, Modifier::empty())]
+        #[case(CrosstermAttribute::Reverse, Modifier::REVERSED)]
+        #[case(CrosstermAttribute::NoReverse, Modifier::empty())]
+        fn from_crossterm_attribute(
+            #[case] crossterm_attribute: CrosstermAttribute,
+            #[case] ratatui_modifier: Modifier,
+        ) {
             assert_eq!(
-                Modifier::from(CAttribute::DoubleUnderlined),
-                Modifier::UNDERLINED
+                Modifier::from_crossterm(crossterm_attribute),
+                ratatui_modifier
             );
-            assert_eq!(
-                Modifier::from(CAttribute::Underdotted),
-                Modifier::UNDERLINED
-            );
-            assert_eq!(Modifier::from(CAttribute::Dim), Modifier::DIM);
-            assert_eq!(
-                Modifier::from(CAttribute::NormalIntensity),
-                Modifier::empty()
-            );
-            assert_eq!(
-                Modifier::from(CAttribute::CrossedOut),
-                Modifier::CROSSED_OUT
-            );
-            assert_eq!(Modifier::from(CAttribute::NoUnderline), Modifier::empty());
-            assert_eq!(Modifier::from(CAttribute::OverLined), Modifier::empty());
-            assert_eq!(Modifier::from(CAttribute::SlowBlink), Modifier::SLOW_BLINK);
-            assert_eq!(
-                Modifier::from(CAttribute::RapidBlink),
-                Modifier::RAPID_BLINK
-            );
-            assert_eq!(Modifier::from(CAttribute::Hidden), Modifier::HIDDEN);
-            assert_eq!(Modifier::from(CAttribute::NoHidden), Modifier::empty());
-            assert_eq!(Modifier::from(CAttribute::Reverse), Modifier::REVERSED);
         }
 
-        #[test]
-        fn from_crossterm_attributes() {
+        #[rstest]
+        #[case(&[CrosstermAttribute::Bold], Modifier::BOLD)]
+        #[case(&[CrosstermAttribute::Bold, CrosstermAttribute::Italic], Modifier::BOLD | Modifier::ITALIC)]
+        #[case(&[CrosstermAttribute::Bold, CrosstermAttribute::NotCrossedOut], Modifier::BOLD)]
+        #[case(&[CrosstermAttribute::Dim, CrosstermAttribute::Underdotted], Modifier::DIM | Modifier::UNDERLINED)]
+        #[case(&[CrosstermAttribute::Dim, CrosstermAttribute::SlowBlink, CrosstermAttribute::Italic], Modifier::DIM | Modifier::SLOW_BLINK | Modifier::ITALIC)]
+        #[case(&[CrosstermAttribute::Hidden, CrosstermAttribute::NoUnderline, CrosstermAttribute::NotCrossedOut], Modifier::HIDDEN)]
+        #[case(&[CrosstermAttribute::Reverse], Modifier::REVERSED)]
+        #[case(&[CrosstermAttribute::Reset], Modifier::empty())]
+        #[case(&[CrosstermAttribute::RapidBlink, CrosstermAttribute::CrossedOut], Modifier::RAPID_BLINK | Modifier::CROSSED_OUT)]
+        fn from_crossterm_attributes(
+            #[case] crossterm_attributes: &[CrosstermAttribute],
+            #[case] ratatui_modifier: Modifier,
+        ) {
             assert_eq!(
-                Modifier::from(CAttributes::from(CAttribute::Bold)),
-                Modifier::BOLD
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::Bold, CAttribute::Italic].as_ref()
-                )),
-                Modifier::BOLD | Modifier::ITALIC
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::Bold, CAttribute::NotCrossedOut].as_ref()
-                )),
-                Modifier::BOLD
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::Dim, CAttribute::Underdotted].as_ref()
-                )),
-                Modifier::DIM | Modifier::UNDERLINED
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::Dim, CAttribute::SlowBlink, CAttribute::Italic].as_ref()
-                )),
-                Modifier::DIM | Modifier::SLOW_BLINK | Modifier::ITALIC
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [
-                        CAttribute::Hidden,
-                        CAttribute::NoUnderline,
-                        CAttribute::NotCrossedOut
-                    ]
-                    .as_ref()
-                )),
-                Modifier::HIDDEN
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(CAttribute::Reverse)),
-                Modifier::REVERSED
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(CAttribute::Reset)),
-                Modifier::empty()
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::RapidBlink, CAttribute::CrossedOut].as_ref()
-                )),
-                Modifier::RAPID_BLINK | Modifier::CROSSED_OUT
+                Modifier::from_crossterm(CrosstermAttributes::from(crossterm_attributes)),
+                ratatui_modifier
             );
         }
     }
 
-    #[test]
-    fn from_crossterm_content_style() {
-        assert_eq!(Style::from(ContentStyle::default()), Style::default());
-        assert_eq!(
-            Style::from(ContentStyle {
-                foreground_color: Some(CColor::DarkYellow),
-                ..Default::default()
-            }),
-            Style::default().fg(Color::Yellow)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                background_color: Some(CColor::DarkYellow),
-                ..Default::default()
-            }),
-            Style::default().bg(Color::Yellow)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from(CAttribute::Bold),
-                ..Default::default()
-            }),
-            Style::default().add_modifier(Modifier::BOLD)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from(CAttribute::NoBold),
-                ..Default::default()
-            }),
-            Style::default().remove_modifier(Modifier::BOLD)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from(CAttribute::Italic),
-                ..Default::default()
-            }),
-            Style::default().add_modifier(Modifier::ITALIC)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from(CAttribute::NoItalic),
-                ..Default::default()
-            }),
-            Style::default().remove_modifier(Modifier::ITALIC)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from([CAttribute::Bold, CAttribute::Italic].as_ref()),
-                ..Default::default()
-            }),
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .add_modifier(Modifier::ITALIC)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from([CAttribute::NoBold, CAttribute::NoItalic].as_ref()),
-                ..Default::default()
-            }),
-            Style::default()
-                .remove_modifier(Modifier::BOLD)
-                .remove_modifier(Modifier::ITALIC)
-        );
+    #[rstest]
+    #[case(ContentStyle::default(), Style::default())]
+    #[case(
+        ContentStyle {
+            foreground_color: Some(CrosstermColor::DarkYellow),
+            ..Default::default()
+        },
+        Style::default().fg(Color::Yellow)
+    )]
+    #[case(
+        ContentStyle {
+            background_color: Some(CrosstermColor::DarkYellow),
+            ..Default::default()
+        },
+        Style::default().bg(Color::Yellow)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::Bold),
+            ..Default::default()
+        },
+        Style::default().add_modifier(Modifier::BOLD)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NoBold),
+            ..Default::default()
+        },
+        Style::default().remove_modifier(Modifier::BOLD)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::Italic),
+            ..Default::default()
+        },
+        Style::default().add_modifier(Modifier::ITALIC)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NoItalic),
+            ..Default::default()
+        },
+        Style::default().remove_modifier(Modifier::ITALIC)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::Bold, CrosstermAttribute::Italic].as_ref()
+            ),
+            ..Default::default()
+        },
+        Style::default()
+            .add_modifier(Modifier::BOLD)
+            .add_modifier(Modifier::ITALIC)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::NoBold, CrosstermAttribute::NoItalic].as_ref()
+            ),
+            ..Default::default()
+        },
+        Style::default()
+            .remove_modifier(Modifier::BOLD)
+            .remove_modifier(Modifier::ITALIC)
+    )]
+    fn from_crossterm_content_style(#[case] content_style: ContentStyle, #[case] style: Style) {
+        assert_eq!(Style::from_crossterm(content_style), style);
     }
 
     #[test]
     #[cfg(feature = "underline-color")]
     fn from_crossterm_content_style_underline() {
+        let content_style = ContentStyle {
+            underline_color: Some(CrosstermColor::DarkRed),
+            ..Default::default()
+        };
         assert_eq!(
-            Style::from(ContentStyle {
-                underline_color: Some(CColor::DarkRed),
-                ..Default::default()
-            }),
+            Style::from_crossterm(content_style),
             Style::default().underline_color(Color::Red)
         );
     }

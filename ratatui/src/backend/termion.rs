@@ -327,22 +327,40 @@ impl fmt::Display for Bg {
     }
 }
 
+/// A trait for converting a Termion type to a Ratatui type.
+///
+/// This trait is necessary to avoid the orphan rule, as we cannot implement a trait for a type
+/// defined in another crate.
+pub trait FromTermion<T> {
+    /// Convert the Termion type to the Ratatui type.
+    fn from_termion(termion: T) -> Self;
+}
+
+/// A trait for converting a Ratatui type to a Termion type.
+///
+/// This trait is necessary to avoid the orphan rule, as we cannot implement a trait for a type
+/// defined in another crate.
+pub trait IntoTermion<T> {
+    /// Convert the Ratatui type to the Termion type.
+    fn into_termion(self) -> T;
+}
+
 macro_rules! from_termion_for_color {
     ($termion_color:ident, $color:ident) => {
-        impl From<tcolor::$termion_color> for Color {
-            fn from(_: tcolor::$termion_color) -> Self {
+        impl FromTermion<tcolor::$termion_color> for Color {
+            fn from_termion(_: tcolor::$termion_color) -> Self {
                 Color::$color
             }
         }
 
-        impl From<tcolor::Bg<tcolor::$termion_color>> for Style {
-            fn from(_: tcolor::Bg<tcolor::$termion_color>) -> Self {
+        impl FromTermion<tcolor::Bg<tcolor::$termion_color>> for Style {
+            fn from_termion(_: tcolor::Bg<tcolor::$termion_color>) -> Self {
                 Style::default().bg(Color::$color)
             }
         }
 
-        impl From<tcolor::Fg<tcolor::$termion_color>> for Style {
-            fn from(_: tcolor::Fg<tcolor::$termion_color>) -> Self {
+        impl FromTermion<tcolor::Fg<tcolor::$termion_color>> for Style {
+            fn from_termion(_: tcolor::Fg<tcolor::$termion_color>) -> Self {
                 Style::default().fg(Color::$color)
             }
         }
@@ -367,38 +385,38 @@ from_termion_for_color!(LightMagenta, LightMagenta);
 from_termion_for_color!(LightCyan, LightCyan);
 from_termion_for_color!(LightWhite, White);
 
-impl From<tcolor::AnsiValue> for Color {
-    fn from(value: tcolor::AnsiValue) -> Self {
+impl FromTermion<tcolor::AnsiValue> for Color {
+    fn from_termion(value: tcolor::AnsiValue) -> Self {
         Self::Indexed(value.0)
     }
 }
 
-impl From<tcolor::Bg<tcolor::AnsiValue>> for Style {
-    fn from(value: tcolor::Bg<tcolor::AnsiValue>) -> Self {
+impl FromTermion<tcolor::Bg<tcolor::AnsiValue>> for Style {
+    fn from_termion(value: tcolor::Bg<tcolor::AnsiValue>) -> Self {
         Self::default().bg(Color::Indexed(value.0 .0))
     }
 }
 
-impl From<tcolor::Fg<tcolor::AnsiValue>> for Style {
-    fn from(value: tcolor::Fg<tcolor::AnsiValue>) -> Self {
+impl FromTermion<tcolor::Fg<tcolor::AnsiValue>> for Style {
+    fn from_termion(value: tcolor::Fg<tcolor::AnsiValue>) -> Self {
         Self::default().fg(Color::Indexed(value.0 .0))
     }
 }
 
-impl From<tcolor::Rgb> for Color {
-    fn from(value: tcolor::Rgb) -> Self {
+impl FromTermion<tcolor::Rgb> for Color {
+    fn from_termion(value: tcolor::Rgb) -> Self {
         Self::Rgb(value.0, value.1, value.2)
     }
 }
 
-impl From<tcolor::Bg<tcolor::Rgb>> for Style {
-    fn from(value: tcolor::Bg<tcolor::Rgb>) -> Self {
+impl FromTermion<tcolor::Bg<tcolor::Rgb>> for Style {
+    fn from_termion(value: tcolor::Bg<tcolor::Rgb>) -> Self {
         Self::default().bg(Color::Rgb(value.0 .0, value.0 .1, value.0 .2))
     }
 }
 
-impl From<tcolor::Fg<tcolor::Rgb>> for Style {
-    fn from(value: tcolor::Fg<tcolor::Rgb>) -> Self {
+impl FromTermion<tcolor::Fg<tcolor::Rgb>> for Style {
+    fn from_termion(value: tcolor::Fg<tcolor::Rgb>) -> Self {
         Self::default().fg(Color::Rgb(value.0 .0, value.0 .1, value.0 .2))
     }
 }
@@ -470,8 +488,8 @@ impl fmt::Display for ModifierDiff {
 
 macro_rules! from_termion_for_modifier {
     ($termion_modifier:ident, $modifier:ident) => {
-        impl From<tstyle::$termion_modifier> for Modifier {
-            fn from(_: tstyle::$termion_modifier) -> Self {
+        impl FromTermion<tstyle::$termion_modifier> for Modifier {
+            fn from_termion(_: tstyle::$termion_modifier) -> Self {
                 Modifier::$modifier
             }
         }
@@ -486,8 +504,8 @@ from_termion_for_modifier!(Faint, DIM);
 from_termion_for_modifier!(CrossedOut, CROSSED_OUT);
 from_termion_for_modifier!(Blink, SLOW_BLINK);
 
-impl From<termion::style::Reset> for Modifier {
-    fn from(_: termion::style::Reset) -> Self {
+impl FromTermion<termion::style::Reset> for Modifier {
+    fn from_termion(_: termion::style::Reset) -> Self {
         Self::empty()
     }
 }
@@ -519,25 +537,34 @@ mod tests {
 
     #[test]
     fn from_termion_color() {
-        assert_eq!(Color::from(tcolor::Reset), Color::Reset);
-        assert_eq!(Color::from(tcolor::Black), Color::Black);
-        assert_eq!(Color::from(tcolor::Red), Color::Red);
-        assert_eq!(Color::from(tcolor::Green), Color::Green);
-        assert_eq!(Color::from(tcolor::Yellow), Color::Yellow);
-        assert_eq!(Color::from(tcolor::Blue), Color::Blue);
-        assert_eq!(Color::from(tcolor::Magenta), Color::Magenta);
-        assert_eq!(Color::from(tcolor::Cyan), Color::Cyan);
-        assert_eq!(Color::from(tcolor::White), Color::Gray);
-        assert_eq!(Color::from(tcolor::LightBlack), Color::DarkGray);
-        assert_eq!(Color::from(tcolor::LightRed), Color::LightRed);
-        assert_eq!(Color::from(tcolor::LightGreen), Color::LightGreen);
-        assert_eq!(Color::from(tcolor::LightBlue), Color::LightBlue);
-        assert_eq!(Color::from(tcolor::LightYellow), Color::LightYellow);
-        assert_eq!(Color::from(tcolor::LightMagenta), Color::LightMagenta);
-        assert_eq!(Color::from(tcolor::LightCyan), Color::LightCyan);
-        assert_eq!(Color::from(tcolor::LightWhite), Color::White);
-        assert_eq!(Color::from(tcolor::AnsiValue(31)), Color::Indexed(31));
-        assert_eq!(Color::from(tcolor::Rgb(1, 2, 3)), Color::Rgb(1, 2, 3));
+        assert_eq!(Color::from_termion(tcolor::Reset), Color::Reset);
+        assert_eq!(Color::from_termion(tcolor::Black), Color::Black);
+        assert_eq!(Color::from_termion(tcolor::Red), Color::Red);
+        assert_eq!(Color::from_termion(tcolor::Green), Color::Green);
+        assert_eq!(Color::from_termion(tcolor::Yellow), Color::Yellow);
+        assert_eq!(Color::from_termion(tcolor::Blue), Color::Blue);
+        assert_eq!(Color::from_termion(tcolor::Magenta), Color::Magenta);
+        assert_eq!(Color::from_termion(tcolor::Cyan), Color::Cyan);
+        assert_eq!(Color::from_termion(tcolor::White), Color::Gray);
+        assert_eq!(Color::from_termion(tcolor::LightBlack), Color::DarkGray);
+        assert_eq!(Color::from_termion(tcolor::LightRed), Color::LightRed);
+        assert_eq!(Color::from_termion(tcolor::LightGreen), Color::LightGreen);
+        assert_eq!(Color::from_termion(tcolor::LightBlue), Color::LightBlue);
+        assert_eq!(Color::from_termion(tcolor::LightYellow), Color::LightYellow);
+        assert_eq!(
+            Color::from_termion(tcolor::LightMagenta),
+            Color::LightMagenta
+        );
+        assert_eq!(Color::from_termion(tcolor::LightCyan), Color::LightCyan);
+        assert_eq!(Color::from_termion(tcolor::LightWhite), Color::White);
+        assert_eq!(
+            Color::from_termion(tcolor::AnsiValue(31)),
+            Color::Indexed(31)
+        );
+        assert_eq!(
+            Color::from_termion(tcolor::Rgb(1, 2, 3)),
+            Color::Rgb(1, 2, 3)
+        );
     }
 
     #[test]
@@ -545,38 +572,62 @@ mod tests {
         use tc::Bg;
         use tcolor as tc;
 
-        assert_eq!(Style::from(Bg(tc::Reset)), Style::new().bg(Color::Reset));
-        assert_eq!(Style::from(Bg(tc::Black)), Style::new().on_black());
-        assert_eq!(Style::from(Bg(tc::Red)), Style::new().on_red());
-        assert_eq!(Style::from(Bg(tc::Green)), Style::new().on_green());
-        assert_eq!(Style::from(Bg(tc::Yellow)), Style::new().on_yellow());
-        assert_eq!(Style::from(Bg(tc::Blue)), Style::new().on_blue());
-        assert_eq!(Style::from(Bg(tc::Magenta)), Style::new().on_magenta());
-        assert_eq!(Style::from(Bg(tc::Cyan)), Style::new().on_cyan());
-        assert_eq!(Style::from(Bg(tc::White)), Style::new().on_gray());
-        assert_eq!(Style::from(Bg(tc::LightBlack)), Style::new().on_dark_gray());
-        assert_eq!(Style::from(Bg(tc::LightRed)), Style::new().on_light_red());
         assert_eq!(
-            Style::from(Bg(tc::LightGreen)),
+            Style::from_termion(Bg(tc::Reset)),
+            Style::new().bg(Color::Reset)
+        );
+        assert_eq!(Style::from_termion(Bg(tc::Black)), Style::new().on_black());
+        assert_eq!(Style::from_termion(Bg(tc::Red)), Style::new().on_red());
+        assert_eq!(Style::from_termion(Bg(tc::Green)), Style::new().on_green());
+        assert_eq!(
+            Style::from_termion(Bg(tc::Yellow)),
+            Style::new().on_yellow()
+        );
+        assert_eq!(Style::from_termion(Bg(tc::Blue)), Style::new().on_blue());
+        assert_eq!(
+            Style::from_termion(Bg(tc::Magenta)),
+            Style::new().on_magenta()
+        );
+        assert_eq!(Style::from_termion(Bg(tc::Cyan)), Style::new().on_cyan());
+        assert_eq!(Style::from_termion(Bg(tc::White)), Style::new().on_gray());
+        assert_eq!(
+            Style::from_termion(Bg(tc::LightBlack)),
+            Style::new().on_dark_gray()
+        );
+        assert_eq!(
+            Style::from_termion(Bg(tc::LightRed)),
+            Style::new().on_light_red()
+        );
+        assert_eq!(
+            Style::from_termion(Bg(tc::LightGreen)),
             Style::new().on_light_green()
         );
-        assert_eq!(Style::from(Bg(tc::LightBlue)), Style::new().on_light_blue());
         assert_eq!(
-            Style::from(Bg(tc::LightYellow)),
+            Style::from_termion(Bg(tc::LightBlue)),
+            Style::new().on_light_blue()
+        );
+        assert_eq!(
+            Style::from_termion(Bg(tc::LightYellow)),
             Style::new().on_light_yellow()
         );
         assert_eq!(
-            Style::from(Bg(tc::LightMagenta)),
+            Style::from_termion(Bg(tc::LightMagenta)),
             Style::new().on_light_magenta()
         );
-        assert_eq!(Style::from(Bg(tc::LightCyan)), Style::new().on_light_cyan());
-        assert_eq!(Style::from(Bg(tc::LightWhite)), Style::new().on_white());
         assert_eq!(
-            Style::from(Bg(tc::AnsiValue(31))),
+            Style::from_termion(Bg(tc::LightCyan)),
+            Style::new().on_light_cyan()
+        );
+        assert_eq!(
+            Style::from_termion(Bg(tc::LightWhite)),
+            Style::new().on_white()
+        );
+        assert_eq!(
+            Style::from_termion(Bg(tc::AnsiValue(31))),
             Style::new().bg(Color::Indexed(31))
         );
         assert_eq!(
-            Style::from(Bg(tc::Rgb(1, 2, 3))),
+            Style::from_termion(Bg(tc::Rgb(1, 2, 3))),
             Style::new().bg(Color::Rgb(1, 2, 3))
         );
     }
@@ -586,48 +637,78 @@ mod tests {
         use tc::Fg;
         use tcolor as tc;
 
-        assert_eq!(Style::from(Fg(tc::Reset)), Style::new().fg(Color::Reset));
-        assert_eq!(Style::from(Fg(tc::Black)), Style::new().black());
-        assert_eq!(Style::from(Fg(tc::Red)), Style::new().red());
-        assert_eq!(Style::from(Fg(tc::Green)), Style::new().green());
-        assert_eq!(Style::from(Fg(tc::Yellow)), Style::new().yellow());
-        assert_eq!(Style::from(Fg(tc::Blue)), Style::default().blue());
-        assert_eq!(Style::from(Fg(tc::Magenta)), Style::default().magenta());
-        assert_eq!(Style::from(Fg(tc::Cyan)), Style::default().cyan());
-        assert_eq!(Style::from(Fg(tc::White)), Style::default().gray());
-        assert_eq!(Style::from(Fg(tc::LightBlack)), Style::new().dark_gray());
-        assert_eq!(Style::from(Fg(tc::LightRed)), Style::new().light_red());
-        assert_eq!(Style::from(Fg(tc::LightGreen)), Style::new().light_green());
-        assert_eq!(Style::from(Fg(tc::LightBlue)), Style::new().light_blue());
         assert_eq!(
-            Style::from(Fg(tc::LightYellow)),
+            Style::from_termion(Fg(tc::Reset)),
+            Style::new().fg(Color::Reset)
+        );
+        assert_eq!(Style::from_termion(Fg(tc::Black)), Style::new().black());
+        assert_eq!(Style::from_termion(Fg(tc::Red)), Style::new().red());
+        assert_eq!(Style::from_termion(Fg(tc::Green)), Style::new().green());
+        assert_eq!(Style::from_termion(Fg(tc::Yellow)), Style::new().yellow());
+        assert_eq!(Style::from_termion(Fg(tc::Blue)), Style::default().blue());
+        assert_eq!(
+            Style::from_termion(Fg(tc::Magenta)),
+            Style::default().magenta()
+        );
+        assert_eq!(Style::from_termion(Fg(tc::Cyan)), Style::default().cyan());
+        assert_eq!(Style::from_termion(Fg(tc::White)), Style::default().gray());
+        assert_eq!(
+            Style::from_termion(Fg(tc::LightBlack)),
+            Style::new().dark_gray()
+        );
+        assert_eq!(
+            Style::from_termion(Fg(tc::LightRed)),
+            Style::new().light_red()
+        );
+        assert_eq!(
+            Style::from_termion(Fg(tc::LightGreen)),
+            Style::new().light_green()
+        );
+        assert_eq!(
+            Style::from_termion(Fg(tc::LightBlue)),
+            Style::new().light_blue()
+        );
+        assert_eq!(
+            Style::from_termion(Fg(tc::LightYellow)),
             Style::new().light_yellow()
         );
         assert_eq!(
-            Style::from(Fg(tc::LightMagenta)),
+            Style::from_termion(Fg(tc::LightMagenta)),
             Style::new().light_magenta()
         );
-        assert_eq!(Style::from(Fg(tc::LightCyan)), Style::new().light_cyan());
-        assert_eq!(Style::from(Fg(tc::LightWhite)), Style::new().white());
         assert_eq!(
-            Style::from(Fg(tc::AnsiValue(31))),
+            Style::from_termion(Fg(tc::LightCyan)),
+            Style::new().light_cyan()
+        );
+        assert_eq!(
+            Style::from_termion(Fg(tc::LightWhite)),
+            Style::new().white()
+        );
+        assert_eq!(
+            Style::from_termion(Fg(tc::AnsiValue(31))),
             Style::default().fg(Color::Indexed(31))
         );
         assert_eq!(
-            Style::from(Fg(tc::Rgb(1, 2, 3))),
+            Style::from_termion(Fg(tc::Rgb(1, 2, 3))),
             Style::default().fg(Color::Rgb(1, 2, 3))
         );
     }
 
     #[test]
     fn from_termion_style() {
-        assert_eq!(Modifier::from(tstyle::Invert), Modifier::REVERSED);
-        assert_eq!(Modifier::from(tstyle::Bold), Modifier::BOLD);
-        assert_eq!(Modifier::from(tstyle::Italic), Modifier::ITALIC);
-        assert_eq!(Modifier::from(tstyle::Underline), Modifier::UNDERLINED);
-        assert_eq!(Modifier::from(tstyle::Faint), Modifier::DIM);
-        assert_eq!(Modifier::from(tstyle::CrossedOut), Modifier::CROSSED_OUT);
-        assert_eq!(Modifier::from(tstyle::Blink), Modifier::SLOW_BLINK);
-        assert_eq!(Modifier::from(tstyle::Reset), Modifier::empty());
+        assert_eq!(Modifier::from_termion(tstyle::Invert), Modifier::REVERSED);
+        assert_eq!(Modifier::from_termion(tstyle::Bold), Modifier::BOLD);
+        assert_eq!(Modifier::from_termion(tstyle::Italic), Modifier::ITALIC);
+        assert_eq!(
+            Modifier::from_termion(tstyle::Underline),
+            Modifier::UNDERLINED
+        );
+        assert_eq!(Modifier::from_termion(tstyle::Faint), Modifier::DIM);
+        assert_eq!(
+            Modifier::from_termion(tstyle::CrossedOut),
+            Modifier::CROSSED_OUT
+        );
+        assert_eq!(Modifier::from_termion(tstyle::Blink), Modifier::SLOW_BLINK);
+        assert_eq!(Modifier::from_termion(tstyle::Reset), Modifier::empty());
     }
 }

@@ -72,6 +72,41 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
+## Unreleased (0.30.0)
+
+### The `From` impls for backend types are now replaced with more specific traits [#1464]
+
+[#1464]: https://github.com/ratatui/ratatui/pull/1464
+
+Crossterm gains `ratatui::backend::crossterm::{FromCrossterm, IntoCrossterm}`
+Termwiz gains `ratatui::backend::termwiz::{FromTermwiz, IntoTermwiz}`
+
+This is necessary in order to avoid the orphan rule when implementing `From` for crossterm types
+once the crossterm types are moved to a separate crate.
+
+```diff
++ use ratatui::backend::crossterm::{FromCrossterm, IntoCrossterm};
+
+let crossterm_color = crossterm::style::Color::Black;
+- let ratatui_color = crossterm_color.into();
+- let ratatui_color = ratatui::style::Color::from(crossterm_color);
++ let ratatui_color = ratatui::style::Color::from_crossterm(crossterm_color);
+- let crossterm_color = ratatui_color.into();
+- let crossterm_color = crossterm::style::Color::from(ratatui_color);
++ let crossterm_color = ratatui_color.into_crossterm();
+
+let crossterm_attribute = crossterm::style::types::Attribute::Bold;
+- let ratatui_modifier = crossterm_attribute.into();
+- let ratatui_modifier = ratatui::style::Modifier::from(crossterm_attribute);
++ let ratatui_modifier = ratatui::style::Modifier::from_crossterm(crossterm_attribute);
+- let crossterm_attribute = ratatui_modifier.into();
+- let crossterm_attribute = crossterm::style::types::Attribute::from(ratatui_modifier);
++ let crossterm_attribute = ratatui_modifier.into_crossterm();
+```
+
+Similar conversions for  `ContentStyle` -> `Style` and `Attributes` -> `Modifier` exist for
+Crossterm and the various Termion and Termwiz types as well.
+
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 
 ### `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const ([#1326])
