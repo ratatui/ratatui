@@ -293,8 +293,7 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::widgets::List;
-    /// use ratatui::text::Line;
+    /// use ratatui::{text::Line, widgets::List};
     ///
     /// let items = ["Item 1", "Item 2"];
     /// let list = List::new(items).highlight_symbol(Line::from(">>"));
