@@ -299,8 +299,8 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_symbol(Line::from(">>"));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_symbol(mut self, highlight_symbol: Line<'a>) -> Self {
-        self.highlight_symbol = Some(highlight_symbol);
+    pub fn highlight_symbol<L: Into<Line<'a>>>(mut self, highlight_symbol: L) -> Self {
+        self.highlight_symbol = Some(highlight_symbol.into());
         self
     }
 
