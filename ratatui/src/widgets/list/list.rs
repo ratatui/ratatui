@@ -291,10 +291,10 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{text::Line, widgets::List};
+    /// use ratatui::widgets::List;
     ///
     /// let items = ["Item 1", "Item 2"];
-    /// let list = List::new(items).highlight_symbol(Line::from(">>"));
+    /// let list = List::new(items).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_symbol<L: Into<Line<'a>>>(mut self, highlight_symbol: L) -> Self {
