@@ -105,7 +105,7 @@ fn render_inbox(selected_index: usize, area: Rect, buf: &mut Buffer) {
         List::new(items)
             .style(theme.inbox)
             .highlight_style(theme.selected_item)
-            .highlight_symbol(Line::from(highlight_symbol)),
+            .highlight_symbol(highlight_symbol),
         inbox,
         buf,
         &mut state,

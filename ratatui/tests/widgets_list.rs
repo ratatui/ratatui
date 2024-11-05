@@ -41,7 +41,7 @@ fn widgets_list_should_highlight_the_selected_item() {
             ];
             let list = List::new(items)
                 .highlight_style(Style::default().bg(Color::Yellow))
-                .highlight_symbol(Line::from(">> "));
+                .highlight_symbol(">> ");
             f.render_stateful_widget(list, f.area(), &mut state);
         })
         .unwrap();
@@ -75,7 +75,7 @@ fn widgets_list_should_highlight_the_selected_item_wide_symbol() {
             ];
             let list = List::new(items)
                 .highlight_style(Style::default().bg(Color::Yellow))
-                .highlight_symbol(Line::from(wide_symbol));
+                .highlight_symbol(wide_symbol);
             f.render_stateful_widget(list, f.area(), &mut state);
         })
         .unwrap();
@@ -135,7 +135,7 @@ fn widgets_list_should_truncate_items() {
             .draw(|f| {
                 let list = List::new(case.items.clone())
                     .block(Block::new().borders(Borders::RIGHT))
-                    .highlight_symbol(Line::from(">> "));
+                    .highlight_symbol(">> ");
                 f.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);
             })
             .unwrap();
@@ -161,7 +161,7 @@ fn widgets_list_should_clamp_offset_if_items_are_removed() {
                 ListItem::new("Item 4"),
                 ListItem::new("Item 5"),
             ];
-            let list = List::new(items).highlight_symbol(Line::from(">> "));
+            let list = List::new(items).highlight_symbol(">> ");
             f.render_stateful_widget(list, f.area(), &mut state);
         })
         .unwrap();
@@ -177,7 +177,7 @@ fn widgets_list_should_clamp_offset_if_items_are_removed() {
     terminal
         .draw(|f| {
             let items = vec![ListItem::new("Item 3")];
-            let list = List::new(items).highlight_symbol(Line::from(">> "));
+            let list = List::new(items).highlight_symbol(">> ");
             f.render_stateful_widget(list, f.area(), &mut state);
         })
         .unwrap();
@@ -204,7 +204,7 @@ fn widgets_list_should_display_multiline_items() {
             ];
             let list = List::new(items)
                 .highlight_style(Style::default().bg(Color::Yellow))
-                .highlight_symbol(Line::from(">> "));
+                .highlight_symbol(">> ");
             f.render_stateful_widget(list, f.area(), &mut state);
         })
         .unwrap();
@@ -238,7 +238,7 @@ fn widgets_list_should_repeat_highlight_symbol() {
             ];
             let list = List::new(items)
                 .highlight_style(Style::default().bg(Color::Yellow))
-                .highlight_symbol(Line::from(">> "))
+                .highlight_symbol(">> ")
                 .repeat_highlight_symbol(true);
             f.render_stateful_widget(list, f.area(), &mut state);
         })
@@ -363,7 +363,7 @@ fn widgets_list_enable_always_highlight_spacing<'line, Lines>(
                 ListItem::new(vec![Line::from("Item 3"), Line::from("Item 3c")]),
             ])
             .block(Block::bordered())
-            .highlight_symbol(Line::from(">> "))
+            .highlight_symbol(">> ")
             .highlight_spacing(space);
             f.render_stateful_widget(table, f.area(), &mut state);
         })

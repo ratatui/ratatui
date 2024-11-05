@@ -43,7 +43,6 @@ use crate::{
 /// use ratatui::{
 ///     layout::Rect,
 ///     style::{Style, Stylize},
-///     text::Line,
 ///     widgets::{Block, List, ListDirection, ListItem},
 ///     Frame,
 /// };
@@ -55,7 +54,7 @@ use crate::{
 ///     .block(Block::bordered().title("List"))
 ///     .style(Style::new().white())
 ///     .highlight_style(Style::new().italic())
-///     .highlight_symbol(Line::from(">>"))
+///     .highlight_symbol(">>")
 ///     .repeat_highlight_symbol(true)
 ///     .direction(ListDirection::BottomToTop);
 ///
@@ -69,7 +68,6 @@ use crate::{
 /// use ratatui::{
 ///     layout::Rect,
 ///     style::{Style, Stylize},
-///     text::Line,
 ///     widgets::{Block, List, ListState},
 ///     Frame,
 /// };
@@ -82,7 +80,7 @@ use crate::{
 /// let list = List::new(items)
 ///     .block(Block::bordered().title("List"))
 ///     .highlight_style(Style::new().reversed())
-///     .highlight_symbol(Line::from(">>"))
+///     .highlight_symbol(">>")
 ///     .repeat_highlight_symbol(true);
 ///
 /// frame.render_stateful_widget(list, area, &mut state);
