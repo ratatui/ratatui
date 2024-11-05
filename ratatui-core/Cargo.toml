@@ -1,9 +1,9 @@
 [package]
 name = "ratatui-core"
 description = """
-    Core library for the Ratatui terminal UI framework. This crate contains the core types and
-    traits that are used to build terminal user interfaces. Most applications should use the
-    `ratatui`, while widget libraries should use this crate."""
+    Core types and traits for the Ratatui Terminal UI library.
+    Widget libraries should use this crate. Applications should use the main Ratatui crate.
+"""
 version = "0.3.0"
 authors.workspace = true
 documentation.workspace = true
