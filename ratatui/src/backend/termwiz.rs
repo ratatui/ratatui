@@ -10,13 +10,13 @@ use std::{error::Error, io};
 use crate::{
     backend::{Backend, WindowSize},
     buffer::Cell,
-    layout::Size,
+    layout::{Position, Size},
     style::{Color, Modifier, Style},
     termwiz::{
         caps::Capabilities,
         cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
         color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
-        surface::{Change, CursorVisibility, Position},
+        surface::{Change, CursorVisibility, Position as TermwizPosition},
         terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
     },
 };
@@ -117,8 +117,8 @@ impl Backend for TermwizBackend {
         for (x, y, cell) in content {
             self.buffered_terminal.add_changes(vec![
                 Change::CursorPosition {
-                    x: Position::Absolute(x as usize),
-                    y: Position::Absolute(y as usize),
+                    x: TermwizPosition::Absolute(x as usize),
+                    y: TermwizPosition::Absolute(y as usize),
                 },
                 Change::Attribute(AttributeChange::Foreground(cell.fg.into_termwiz())),
                 Change::Attribute(AttributeChange::Background(cell.bg.into_termwiz())),
@@ -192,19 +192,16 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn get_cursor_position(&mut self) -> io::Result<crate::layout::Position> {
+    fn get_cursor_position(&mut self) -> io::Result<Position> {
         let (x, y) = self.buffered_terminal.cursor_position();
-        Ok(crate::layout::Position::new(x as u16, y as u16))
+        Ok(Position::new(x as u16, y as u16))
     }
 
-    fn set_cursor_position<P: Into<crate::layout::Position>>(
-        &mut self,
-        position: P,
-    ) -> io::Result<()> {
-        let crate::layout::Position { x, y } = position.into();
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+        let Position { x, y } = position.into();
         self.buffered_terminal.add_change(Change::CursorPosition {
-            x: Position::Absolute(x as usize),
-            y: Position::Absolute(y as usize),
+            x: TermwizPosition::Absolute(x as usize),
+            y: TermwizPosition::Absolute(y as usize),
         });
 
         Ok(())
