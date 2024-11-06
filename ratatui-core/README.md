@@ -27,7 +27,8 @@ cargo add ratatui-core
 
 ## Contributing
 
-We welcome contributions from the community! Please see our [CONTRIBUTING](../CONTRIBUTING.md) guide for more details on how to get involved.
+We welcome contributions from the community! Please see our [CONTRIBUTING](../CONTRIBUTING.md) guide
+for more details on how to get involved.
 
 ## License
 

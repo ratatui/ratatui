@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["ratatui", "ratatui-core", "xtask"]
-default-members = ["ratatui", "ratatui-core"]
+members = ["ratatui", "ratatui-core", "ratatui-widgets", "xtask"]
+default-members = ["ratatui", "ratatui-core", "ratatui-widgets"]
 
 [workspace.package]
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
@@ -29,7 +29,9 @@ indoc = "2.0.5"
 instability = "0.3.1"
 itertools = "0.13.0"
 pretty_assertions = "1.4.1"
+ratatui = { path = "ratatui" }
 ratatui-core = { path = "ratatui-core" }
+ratatui-widgets = { path = "ratatui-widgets" }
 rstest = "0.23.0"
 serde = { version = "1.0.214", features = ["derive"] }
 strum = { version = "0.26.3", features = ["derive"] }

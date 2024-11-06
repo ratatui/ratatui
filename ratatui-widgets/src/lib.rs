@@ -1,8 +1,9 @@
 #![warn(missing_docs)]
-//! `widgets` is a collection of types that implement [`Widget`] or [`StatefulWidget`] or both.
+//! `ratatui-widgets` is a collection of types that implement [`Widget`] or [`StatefulWidget`] or
+//! both.
 //!
-//! Widgets are created for each frame as they are consumed after rendered.
-//! They are not meant to be stored but used as *commands* to draw common figures in the UI.
+//! Widgets are created for each frame as they are consumed after rendered. They are not meant to be
+//! stored but used as *commands* to draw common figures in the UI.
 //!
 //! The available widgets are:
 //! - [`Block`]: a basic widget that draws a block with optional borders, titles and styles.
@@ -21,21 +22,41 @@
 //! - [`Tabs`]: displays a tab bar and allows selection.
 //!
 //! [`Canvas`]: crate::widgets::canvas::Canvas
+mod barchart;
+pub mod block;
+mod borders;
+pub mod canvas;
+mod chart;
+mod clear;
+mod gauge;
+mod list;
+mod logo;
+mod paragraph;
+mod reflow;
+mod scrollbar;
+mod sparkline;
+mod table;
+mod tabs;
 
-pub use ratatui_widgets::{
-    canvas, Axis, Bar, BarChart, BarGroup, Block, BorderType, Borders, Cell, Chart, Clear, Dataset,
-    Gauge, GraphType, HighlightSpacing, LegendPosition, LineGauge, List, ListDirection, ListItem,
-    ListState, Padding, Paragraph, RatatuiLogo, RatatuiLogoSize, RenderDirection, Row,
-    ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState, Sparkline, SparklineBar,
-    Table, TableState, Tabs, Wrap,
-};
-
-// TODO remove this module once title etc. are gone
-pub use ratatui_widgets::block;
-
-#[cfg(feature = "widget-calendar")]
-pub use ratatui_widgets::calendar;
+#[cfg(feature = "calendar")]
+pub mod calendar;
 
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
 #[instability::unstable(feature = "widget-ref")]
 pub use ratatui_core::widgets::{StatefulWidgetRef, WidgetRef};
+
+pub use self::{
+    barchart::{Bar, BarChart, BarGroup},
+    block::{Block, BorderType, Padding},
+    borders::*,
+    chart::{Axis, Chart, Dataset, GraphType, LegendPosition},
+    clear::Clear,
+    gauge::{Gauge, LineGauge},
+    list::{List, ListDirection, ListItem, ListState},
+    logo::{RatatuiLogo, Size as RatatuiLogoSize},
+    paragraph::{Paragraph, Wrap},
+    scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
+    sparkline::{RenderDirection, Sparkline, SparklineBar},
+    table::{Cell, HighlightSpacing, Row, Table, TableState},
+    tabs::Tabs,
+};

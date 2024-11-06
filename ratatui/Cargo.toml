@@ -23,6 +23,7 @@ instability.workspace = true
 itertools.workspace = true
 palette = { version = "0.7.6", optional = true }
 ratatui-core = { workspace = true, features = ["unstable-widget-ref"] }
+ratatui-widgets = { workspace = true, features = ["unstable-widget-ref"] }
 serde = { workspace = true, optional = true }
 strum.workspace = true
 termwiz = { version = "0.22.0", optional = true }
@@ -120,7 +121,7 @@ termwiz = ["dep:termwiz"]
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "ratatui-core/serde"]
+serde = ["dep:serde", "ratatui-core/serde", "ratatui-widgets/serde"]
 
 ## enables the [`border!`] macro.
 macros = []
@@ -138,7 +139,7 @@ all-widgets = ["widget-calendar"]
 #! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
 #! dependencies. The available features are:
 ## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
-widget-calendar = ["dep:time"]
+widget-calendar = ["ratatui-widgets/calendar"]
 
 #! The following optional features are only available for some backends:
 

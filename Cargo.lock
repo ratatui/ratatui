@@ -2106,6 +2106,7 @@ dependencies = [
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "ratatui-core",
+ "ratatui-widgets",
  "rstest",
  "serde",
  "serde_json",
@@ -2141,6 +2142,24 @@ dependencies = [
  "strum",
  "unicode-segmentation",
  "unicode-truncate",
+ "unicode-width 0.2.0",
+]
+
+[[package]]
+name = "ratatui-widgets"
+version = "0.1.0"
+dependencies = [
+ "bitflags 2.6.0",
+ "indoc",
+ "instability",
+ "itertools 0.13.0",
+ "pretty_assertions",
+ "ratatui-core",
+ "rstest",
+ "serde",
+ "strum",
+ "time",
+ "unicode-segmentation",
  "unicode-width 0.2.0",
 ]
 
