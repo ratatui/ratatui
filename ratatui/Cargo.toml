@@ -123,9 +123,6 @@ termwiz = ["dep:termwiz"]
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "ratatui-core/serde", "ratatui-widgets/serde"]
 
-## enables the [`border!`] macro.
-macros = []
-
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["ratatui-core/palette", "dep:palette"]
 
