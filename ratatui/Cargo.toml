@@ -158,7 +158,7 @@ unstable = [
 ## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
 ## which are experimental and may change in the future.
 ## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
-unstable-rendered-line-info = []
+unstable-rendered-line-info = ["ratatui-widgets/unstable-rendered-line-info"]
 
 ## enables the [`WidgetRef`] and [`StatefulWidgetRef`] traits which are experimental and may change
 ## in the future.
