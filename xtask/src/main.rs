@@ -59,6 +59,10 @@ enum Command {
     #[command(visible_alias = "c")]
     Check,
 
+    /// Check if README.md is up-to-date
+    #[command(visible_alias = "cr")]
+    CheckReadme,
+
     /// Generate code coverage report
     #[command(visible_alias = "cov")]
     Coverage,
@@ -129,6 +133,7 @@ impl Command {
             Command::CI => ci(),
             Command::Build => build(),
             Command::Check => check(),
+            Command::CheckReadme => check_readme(),
             Command::Coverage => coverage(),
             Command::Lint => lint(),
             Command::LintClippy => lint_clippy(),
@@ -163,6 +168,11 @@ fn build() -> Result<()> {
 /// Run cargo check
 fn check() -> Result<()> {
     run_cargo(vec!["check", "--all-targets", "--all-features"])
+}
+
+/// Run cargo-rdme to check if README.md is up-to-date with the library documentation
+fn check_readme() -> Result<()> {
+    run_cargo(vec!["rdme", "--workspace-project", "ratatui", "--check"])
 }
 
 /// Generate code coverage report
