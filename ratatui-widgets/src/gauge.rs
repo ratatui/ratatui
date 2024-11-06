@@ -1,12 +1,14 @@
+//! The [`Gauge`] widget is used to display a horizontal progress bar.
 use ratatui_core::{
     buffer::Buffer,
     layout::Rect,
     style::{Color, Style, Styled},
     symbols::{self},
     text::{Line, Span},
+    widgets::{Widget, WidgetRef},
 };
 
-use crate::{block::BlockExt, Block, Widget, WidgetRef};
+use crate::block::{Block, BlockExt};
 
 /// A widget to display a progress bar.
 ///
@@ -447,11 +449,13 @@ impl<'a> Styled for LineGauge<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ratatui_core::{
         style::{Color, Modifier, Style, Stylize},
         symbols,
     };
+
+    use super::*;
+
     #[test]
     #[should_panic = "Percentage should be between 0 and 100 inclusively"]
     fn gauge_invalid_percentage() {

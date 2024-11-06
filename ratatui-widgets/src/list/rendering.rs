@@ -5,7 +5,10 @@ use ratatui_core::{
 };
 use unicode_width::UnicodeWidthStr;
 
-use crate::{block::BlockExt, List, ListDirection, ListState};
+use crate::{
+    block::BlockExt,
+    list::{List, ListDirection, ListState},
+};
 
 impl Widget for List<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -271,17 +274,16 @@ impl List<'_> {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use rstest::{fixture, rstest};
-
-    use super::*;
     use ratatui_core::{
         layout::{Alignment, Rect},
         style::{Color, Modifier, Style, Stylize},
         text::Line,
         widgets::{StatefulWidget, Widget},
     };
+    use rstest::{fixture, rstest};
 
-    use crate::{Block, HighlightSpacing, ListItem};
+    use super::*;
+    use crate::{block::Block, list::ListItem, table::HighlightSpacing};
 
     #[fixture]
     fn single_line_buf() -> Buffer {

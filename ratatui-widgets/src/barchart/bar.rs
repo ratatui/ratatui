@@ -1,6 +1,6 @@
+use ratatui_core::{buffer::Buffer, layout::Rect, style::Style, text::Line, widgets::Widget};
 use unicode_width::UnicodeWidthStr;
 
-use ratatui_core::{buffer::Buffer, layout::Rect, style::Style, text::Line, widgets::Widget};
 /// A bar to be shown by the [`BarChart`](crate::widgets::BarChart) widget.
 ///
 /// Here is an explanation of a `Bar`'s components.

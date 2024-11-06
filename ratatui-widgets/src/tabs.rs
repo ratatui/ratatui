@@ -1,5 +1,5 @@
+//! The [`Tabs`] widget displays a horizontal set of tabs with a single tab selected.
 use itertools::Itertools;
-
 use ratatui_core::{
     buffer::Buffer,
     layout::Rect,
@@ -9,7 +9,7 @@ use ratatui_core::{
     widgets::{Widget, WidgetRef},
 };
 
-use crate::{block::BlockExt, Block};
+use crate::block::{Block, BlockExt};
 
 const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVERSED);
 
@@ -445,8 +445,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ratatui_core::style::{Color, Stylize};
+
+    use super::*;
 
     #[test]
     fn new() {

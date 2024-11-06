@@ -1,6 +1,5 @@
-use strum::{Display, EnumString};
-
 use ratatui_core::style::Color;
+use strum::{Display, EnumString};
 
 use crate::canvas::{
     world::{WORLD_HIGH_RESOLUTION, WORLD_LOW_RESOLUTION},
@@ -61,12 +60,11 @@ impl Shape for Map {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{buffer::Buffer, layout::Rect, symbols::Marker};
+    use ratatui_core::{buffer::Buffer, layout::Rect, symbols::Marker, widgets::Widget};
     use strum::ParseError;
 
     use super::*;
-
-    use crate::{canvas::Canvas, Widget};
+    use crate::canvas::Canvas;
 
     #[test]
     fn map_resolution_to_string() {

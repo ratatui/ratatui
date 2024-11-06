@@ -64,14 +64,16 @@ impl Shape for Rectangle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{canvas::Canvas, Widget};
     use ratatui_core::{
         buffer::Buffer,
         layout::{Margin, Rect},
         style::{Style, Stylize},
         symbols::Marker,
+        widgets::Widget,
     };
+
+    use super::*;
+    use crate::canvas::Canvas;
 
     #[test]
     fn draw_block_lines() {

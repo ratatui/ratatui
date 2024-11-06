@@ -1,9 +1,10 @@
+//! A module for reflowing text to fit into a certain width.
+//!
 use std::{collections::VecDeque, mem};
 
+use ratatui_core::{layout::Alignment, text::StyledGrapheme};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
-
-use ratatui_core::{layout::Alignment, text::StyledGrapheme};
 
 /// A state machine to pack styled symbols into lines.
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
@@ -12,6 +13,7 @@ pub trait LineComposer<'a> {
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>>;
 }
 
+/// A line that has been wrapped to a certain width.
 pub struct WrappedLine<'lend, 'text> {
     /// One line reflowed to the correct width
     pub line: &'lend [StyledGrapheme<'text>],
@@ -51,6 +53,7 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
+    /// Create a new `WordWrapper` with the given lines and maximum line width.
     pub const fn new(lines: O, max_line_width: u16, trim: bool) -> Self {
         Self {
             input_lines: lines,
@@ -250,6 +253,7 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
+    /// Create a new `LineTruncator` with the given lines and maximum line width.
     pub const fn new(lines: O, max_line_width: u16) -> Self {
         Self {
             input_lines: lines,
@@ -259,6 +263,7 @@ where
         }
     }
 
+    /// Set the horizontal offset to skip render.
     pub fn set_horizontal_offset(&mut self, horizontal_offset: u16) {
         self.horizontal_offset = horizontal_offset;
     }
@@ -343,12 +348,13 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
 }
 
 #[cfg(test)]
-mod test {
-    use super::*;
+mod tests {
     use ratatui_core::{
         style::Style,
         text::{Line, Text},
     };
+
+    use super::*;
 
     #[derive(Clone, Copy)]
     enum Composer {

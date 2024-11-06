@@ -10,8 +10,6 @@
 //! [`Monthly`] has several controls for what should be displayed
 use std::collections::HashMap;
 
-use time::{Date, Duration, OffsetDateTime};
-
 use ratatui_core::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Layout, Rect},
@@ -19,8 +17,9 @@ use ratatui_core::{
     text::{Line, Span},
     widgets::{Widget, WidgetRef},
 };
+use time::{Date, Duration, OffsetDateTime};
 
-use crate::{block::BlockExt, Block};
+use crate::block::{Block, BlockExt};
 
 /// Display a month calendar for the month containing `display_date`
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -267,10 +266,10 @@ impl Default for CalendarEventStore {
 
 #[cfg(test)]
 mod tests {
+    use ratatui_core::style::Color;
     use time::Month;
 
     use super::*;
-    use ratatui_core::style::Color;
 
     #[test]
     fn event_store() {

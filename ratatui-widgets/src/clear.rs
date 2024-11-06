@@ -1,3 +1,4 @@
+//! The [`Clear`] widget allows you to clear a certain area to allow overdrawing (e.g. for popups).
 use ratatui_core::{
     buffer::Buffer,
     layout::Rect,
@@ -50,8 +51,10 @@ impl WidgetRef for Clear {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ratatui_core::{buffer::Buffer, layout::Rect, widgets::Widget};
+
+    use super::*;
+
     #[test]
     fn render() {
         let mut buffer = Buffer::with_lines(["xxxxxxxxxxxxxxx"; 7]);

@@ -1,6 +1,9 @@
+//! Border related types ([`Borders`], [`BorderType`]) and a macro to create borders ([`border`]).
 use std::fmt;
 
 use bitflags::bitflags;
+use ratatui_core::symbols::border;
+use strum::{Display, EnumString};
 
 bitflags! {
     /// Bitflags that can be composed to set the visible borders essentially on the block widget.
@@ -18,6 +21,98 @@ bitflags! {
         const LEFT   = 0b1000;
         /// Show all borders
         const ALL = Self::TOP.bits() | Self::RIGHT.bits() | Self::BOTTOM.bits() | Self::LEFT.bits();
+    }
+}
+
+/// The type of border of a [`Block`].
+///
+/// See the [`borders`](Block::borders) method of `Block` to configure its borders.
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum BorderType {
+    /// A plain, simple border.
+    ///
+    /// This is the default
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ┌───────┐
+    /// │       │
+    /// └───────┘
+    /// ```
+    #[default]
+    Plain,
+    /// A plain border with rounded corners.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ╭───────╮
+    /// │       │
+    /// ╰───────╯
+    /// ```
+    Rounded,
+    /// A doubled border.
+    ///
+    /// Note this uses one character that draws two lines.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ╔═══════╗
+    /// ║       ║
+    /// ╚═══════╝
+    /// ```
+    Double,
+    /// A thick border.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ┏━━━━━━━┓
+    /// ┃       ┃
+    /// ┗━━━━━━━┛
+    /// ```
+    Thick,
+    /// A border with a single line on the inside of a half block.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ▗▄▄▄▄▄▄▄▖
+    /// ▐       ▌
+    /// ▐       ▌
+    /// ▝▀▀▀▀▀▀▀▘
+    QuadrantInside,
+
+    /// A border with a single line on the outside of a half block.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ▛▀▀▀▀▀▀▀▜
+    /// ▌       ▐
+    /// ▌       ▐
+    /// ▙▄▄▄▄▄▄▄▟
+    QuadrantOutside,
+}
+
+impl BorderType {
+    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
+    pub const fn border_symbols(border_type: Self) -> border::Set {
+        match border_type {
+            Self::Plain => border::PLAIN,
+            Self::Rounded => border::ROUNDED,
+            Self::Double => border::DOUBLE,
+            Self::Thick => border::THICK,
+            Self::QuadrantInside => border::QUADRANT_INSIDE,
+            Self::QuadrantOutside => border::QUADRANT_OUTSIDE,
+        }
+    }
+
+    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
+    pub const fn to_border_set(self) -> border::Set {
+        Self::border_symbols(self)
     }
 }
 

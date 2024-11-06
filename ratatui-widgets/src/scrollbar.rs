@@ -1,3 +1,4 @@
+//! The [`Scrollbar`] widget is used to display a scrollbar alongside other widgets.
 #![warn(clippy::pedantic)]
 #![allow(
     clippy::cast_possible_truncation,
@@ -8,9 +9,6 @@
 
 use std::iter;
 
-use strum::{Display, EnumString};
-use unicode_width::UnicodeWidthStr;
-
 use ratatui_core::{
     buffer::Buffer,
     layout::Rect,
@@ -18,6 +16,8 @@ use ratatui_core::{
     symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL},
     widgets::StatefulWidget,
 };
+use strum::{Display, EnumString};
+use unicode_width::UnicodeWidthStr;
 
 /// A widget to display a scrollbar
 ///
@@ -638,11 +638,11 @@ impl ScrollbarOrientation {
 mod tests {
     use std::str::FromStr;
 
+    use ratatui_core::{text::Text, widgets::Widget};
     use rstest::{fixture, rstest};
     use strum::ParseError;
 
     use super::*;
-    use ratatui_core::{text::Text, widgets::Widget};
 
     #[test]
     fn scroll_direction_to_string() {

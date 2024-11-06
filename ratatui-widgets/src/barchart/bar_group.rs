@@ -3,9 +3,10 @@ use ratatui_core::{
     layout::{Alignment, Rect},
     style::Style,
     text::Line,
+    widgets::Widget,
 };
 
-use crate::{barchart::Bar, Widget};
+use crate::barchart::Bar;
 
 /// A group of bars to be shown by the Barchart.
 ///

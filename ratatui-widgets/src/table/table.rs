@@ -7,11 +7,8 @@ use ratatui_core::{
     widgets::{StatefulWidget, StatefulWidgetRef, Widget, WidgetRef},
 };
 
-use crate::{
-    block::BlockExt,
-    table::{HighlightSpacing, Row, TableState},
-    Block,
-};
+use super::{HighlightSpacing, Row, TableState};
+use crate::block::{Block, BlockExt};
 
 /// A widget to display data in formatted columns.
 ///
@@ -1093,7 +1090,6 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-
     use crate::table::Cell;
 
     #[test]

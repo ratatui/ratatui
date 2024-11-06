@@ -6,8 +6,6 @@
 //! [title](Block::title) and [padding](Block::padding).
 
 use itertools::Itertools;
-use strum::{Display, EnumString};
-
 use ratatui_core::{
     buffer::Buffer,
     layout::{Alignment, Rect},
@@ -17,13 +15,14 @@ use ratatui_core::{
     widgets::{Widget, WidgetRef},
 };
 
-use crate::borders::Borders;
+pub use self::{
+    padding::Padding,
+    title::{Position, Title},
+};
+use crate::borders::{BorderType, Borders};
 
 mod padding;
 pub mod title;
-
-pub use padding::Padding;
-pub use title::{Position, Title};
 
 /// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
 ///
@@ -132,79 +131,6 @@ pub struct Block<'a> {
     style: Style,
     /// Block padding
     padding: Padding,
-}
-
-/// The type of border of a [`Block`].
-///
-/// See the [`borders`](Block::borders) method of `Block` to configure its borders.
-#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum BorderType {
-    /// A plain, simple border.
-    ///
-    /// This is the default
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ┌───────┐
-    /// │       │
-    /// └───────┘
-    /// ```
-    #[default]
-    Plain,
-    /// A plain border with rounded corners.
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ╭───────╮
-    /// │       │
-    /// ╰───────╯
-    /// ```
-    Rounded,
-    /// A doubled border.
-    ///
-    /// Note this uses one character that draws two lines.
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ╔═══════╗
-    /// ║       ║
-    /// ╚═══════╝
-    /// ```
-    Double,
-    /// A thick border.
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ┏━━━━━━━┓
-    /// ┃       ┃
-    /// ┗━━━━━━━┛
-    /// ```
-    Thick,
-    /// A border with a single line on the inside of a half block.
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ▗▄▄▄▄▄▄▄▖
-    /// ▐       ▌
-    /// ▐       ▌
-    /// ▝▀▀▀▀▀▀▀▘
-    QuadrantInside,
-
-    /// A border with a single line on the outside of a half block.
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ▛▀▀▀▀▀▀▀▜
-    /// ▌       ▐
-    /// ▌       ▐
-    /// ▙▄▄▄▄▄▄▄▟
-    QuadrantOutside,
 }
 
 impl<'a> Block<'a> {
@@ -675,25 +601,6 @@ impl<'a> Block<'a> {
     }
 }
 
-impl BorderType {
-    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn border_symbols(border_type: Self) -> border::Set {
-        match border_type {
-            Self::Plain => border::PLAIN,
-            Self::Rounded => border::ROUNDED,
-            Self::Double => border::DOUBLE,
-            Self::Thick => border::THICK,
-            Self::QuadrantInside => border::QUADRANT_INSIDE,
-            Self::QuadrantOutside => border::QUADRANT_OUTSIDE,
-        }
-    }
-
-    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn to_border_set(self) -> border::Set {
-        Self::border_symbols(self)
-    }
-}
-
 impl Widget for Block<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.render_ref(area, buf);
@@ -1002,11 +909,11 @@ impl<'a> Styled for Block<'a> {
 
 #[cfg(test)]
 mod tests {
+    use ratatui_core::style::{Color, Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;
 
     use super::*;
-    use ratatui_core::style::{Color, Modifier, Stylize};
 
     #[test]
     fn create_with_all_borders() {

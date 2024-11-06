@@ -1,3 +1,5 @@
+//! The [`BarChart`] widget and its related types (e.g. [`Bar`], [`BarGroup`]).
+
 use ratatui_core::{
     buffer::Buffer,
     layout::{Direction, Rect},
@@ -7,13 +9,11 @@ use ratatui_core::{
     widgets::{Widget, WidgetRef},
 };
 
+pub use self::{bar::Bar, bar_group::BarGroup};
+use crate::block::{Block, BlockExt};
+
 mod bar;
 mod bar_group;
-
-pub use bar::Bar;
-pub use bar_group::BarGroup;
-
-use crate::{block::BlockExt, Block};
 
 /// A chart showing values as [bars](Bar).
 ///
@@ -636,14 +636,14 @@ impl<'a> Styled for BarChart<'a> {
 #[cfg(test)]
 mod tests {
     use itertools::iproduct;
-
-    use super::*;
-    use crate::BorderType;
     use ratatui_core::{
         layout::Alignment,
         style::{Color, Modifier, Stylize},
         text::Span,
     };
+
+    use super::*;
+    use crate::borders::BorderType;
 
     #[test]
     fn default() {

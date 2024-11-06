@@ -22,41 +22,25 @@
 //! - [`Tabs`]: displays a tab bar and allows selection.
 //!
 //! [`Canvas`]: crate::widgets::canvas::Canvas
-mod barchart;
+pub mod barchart;
 pub mod block;
-mod borders;
+pub mod borders;
 pub mod canvas;
-mod chart;
-mod clear;
-mod gauge;
-mod list;
-mod logo;
-mod paragraph;
+pub mod chart;
+pub mod clear;
+pub mod gauge;
+pub mod list;
+pub mod logo;
+pub mod paragraph;
+pub mod scrollbar;
+pub mod sparkline;
+pub mod table;
+pub mod tabs;
+
+/// Internal module for reflowing text.
 mod reflow;
-mod scrollbar;
-mod sparkline;
-mod table;
-mod tabs;
 
 #[cfg(feature = "calendar")]
 pub mod calendar;
 
-pub use ratatui_core::widgets::{StatefulWidget, Widget};
-#[instability::unstable(feature = "widget-ref")]
-pub use ratatui_core::widgets::{StatefulWidgetRef, WidgetRef};
-
-pub use self::{
-    barchart::{Bar, BarChart, BarGroup},
-    block::{Block, BorderType, Padding},
-    borders::*,
-    chart::{Axis, Chart, Dataset, GraphType, LegendPosition},
-    clear::Clear,
-    gauge::{Gauge, LineGauge},
-    list::{List, ListDirection, ListItem, ListState},
-    logo::{RatatuiLogo, Size as RatatuiLogoSize},
-    paragraph::{Paragraph, Wrap},
-    scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
-    sparkline::{RenderDirection, Sparkline, SparklineBar},
-    table::{Cell, HighlightSpacing, Row, Table, TableState},
-    tabs::Tabs,
-};
+// use ratatui_core::widgets::Widget;

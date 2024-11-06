@@ -193,8 +193,9 @@ impl<'a> Styled for Cell<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ratatui_core::style::{Color, Modifier, Stylize};
+
+    use super::*;
 
     #[test]
     fn new() {

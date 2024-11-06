@@ -1,6 +1,5 @@
+//! The [`Sparkline`] widget is used to display a sparkline over one or more lines.
 use std::cmp::min;
-
-use strum::{Display, EnumString};
 
 use ratatui_core::{
     buffer::Buffer,
@@ -9,8 +8,9 @@ use ratatui_core::{
     symbols::{self},
     widgets::{Widget, WidgetRef},
 };
+use strum::{Display, EnumString};
 
-use crate::{block::BlockExt, Block};
+use crate::block::{Block, BlockExt};
 
 /// Widget to render a sparkline over one or more lines.
 ///
@@ -436,13 +436,13 @@ impl Sparkline<'_> {
 
 #[cfg(test)]
 mod tests {
-    use strum::ParseError;
-
-    use super::*;
     use ratatui_core::{
         buffer::Cell,
         style::{Color, Modifier, Stylize},
     };
+    use strum::ParseError;
+
+    use super::*;
 
     #[test]
     fn render_direction_to_string() {

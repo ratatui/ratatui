@@ -1,8 +1,14 @@
 #![warn(missing_docs)]
 //! `widgets` is a collection of types that implement [`Widget`] or [`StatefulWidget`] or both.
 //!
-//! Widgets are created for each frame as they are consumed after rendered.
-//! They are not meant to be stored but used as *commands* to draw common figures in the UI.
+//! The widgts provided with Ratatui are implemented in the [`ratatui_widgets`] crate, and are
+//! re-exported here. The traits [`Widget`] and [`StatefulWidget`] are also implemented in the
+//! [`ratatui_core`] crate and are also re-exported in this module. This means that you can use
+//! these types directly from the `ratatui` crate without having to import the `ratatui_widgets`
+//! crate.
+//!
+//! Widgets are created for each frame as they are consumed after rendered. They are not meant to be
+//! stored but used as *commands* to draw common figures in the UI.
 //!
 //! The available widgets are:
 //! - [`Block`]: a basic widget that draws a block with optional borders, titles and styles.
@@ -23,11 +29,20 @@
 //! [`Canvas`]: crate::widgets::canvas::Canvas
 
 pub use ratatui_widgets::{
-    canvas, Axis, Bar, BarChart, BarGroup, Block, BorderType, Borders, Cell, Chart, Clear, Dataset,
-    Gauge, GraphType, HighlightSpacing, LegendPosition, LineGauge, List, ListDirection, ListItem,
-    ListState, Padding, Paragraph, RatatuiLogo, RatatuiLogoSize, RenderDirection, Row,
-    ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState, Sparkline, SparklineBar,
-    Table, TableState, Tabs, Wrap,
+    barchart::{Bar, BarChart, BarGroup},
+    block::{Block, Padding},
+    borders::{BorderType, Borders},
+    canvas,
+    chart::{Axis, Chart, Dataset, GraphType, LegendPosition},
+    clear::Clear,
+    gauge::{Gauge, LineGauge},
+    list::{List, ListDirection, ListItem, ListState},
+    logo::{RatatuiLogo, Size as RatatuiLogoSize},
+    paragraph::{Paragraph, Wrap},
+    scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
+    sparkline::{RenderDirection, Sparkline, SparklineBar},
+    table::{Cell, HighlightSpacing, Row, Table, TableState},
+    tabs::Tabs,
 };
 
 // TODO remove this module once title etc. are gone

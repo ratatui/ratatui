@@ -1,9 +1,8 @@
 //! This module holds the [`Title`] element and its related configuration types.
 //! A title is a piece of [`Block`](crate::widgets::Block) configuration.
 
-use strum::{Display, EnumString};
-
 use ratatui_core::{layout::Alignment, text::Line};
+use strum::{Display, EnumString};
 
 /// A [`Block`](crate::widgets::Block) title.
 ///

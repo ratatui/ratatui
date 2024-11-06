@@ -1,6 +1,5 @@
+//! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
 use std::{cmp::max, ops::Not};
-
-use strum::{Display, EnumString};
 
 use ratatui_core::{
     buffer::Buffer,
@@ -8,12 +7,13 @@ use ratatui_core::{
     style::{Color, Style, Styled},
     symbols::{self},
     text::Line,
+    widgets::{Widget, WidgetRef},
 };
+use strum::{Display, EnumString};
 
 use crate::{
-    block::BlockExt,
+    block::{Block, BlockExt},
     canvas::{Canvas, Line as CanvasLine, Points},
-    Block, Widget, WidgetRef,
 };
 
 /// An X or Y axis for the [`Chart`] widget
@@ -1158,11 +1158,11 @@ impl<'a> Styled for Chart<'a> {
 
 #[cfg(test)]
 mod tests {
+    use ratatui_core::style::{Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;
 
     use super::*;
-    use ratatui_core::style::{Modifier, Stylize};
 
     struct LegendTestCase {
         chart_area: Rect,

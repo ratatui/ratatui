@@ -12,24 +12,10 @@
 //! - [`Rectangle`]: A basic rectangle
 //!
 //! You can also implement your own custom [`Shape`]s.
-mod circle;
-mod line;
-mod map;
-mod points;
-mod rectangle;
-mod world;
 
 use std::{fmt, iter::zip};
 
 use itertools::Itertools;
-
-pub use self::{
-    circle::Circle,
-    line::Line,
-    map::{Map, MapResolution},
-    points::Points,
-    rectangle::Rectangle,
-};
 use ratatui_core::{
     buffer::Buffer,
     layout::Rect,
@@ -39,7 +25,21 @@ use ratatui_core::{
     widgets::{Widget, WidgetRef},
 };
 
-use crate::{block::BlockExt, Block};
+pub use self::{
+    circle::Circle,
+    line::Line,
+    map::{Map, MapResolution},
+    points::Points,
+    rectangle::Rectangle,
+};
+use crate::block::{Block, BlockExt};
+
+mod circle;
+mod line;
+mod map;
+mod points;
+mod rectangle;
+mod world;
 
 /// Something that can be drawn on a [`Canvas`].
 ///
@@ -830,9 +830,9 @@ where
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
+    use ratatui_core::buffer::Cell;
 
     use super::*;
-    use ratatui_core::buffer::Cell;
 
     // helper to test the canvas checks that drawing a vertical and horizontal line
     // results in the expected output

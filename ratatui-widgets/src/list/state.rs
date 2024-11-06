@@ -276,7 +276,7 @@ impl ListState {
 mod tests {
     use pretty_assertions::assert_eq;
 
-    use crate::ListState;
+    use crate::list::ListState;
 
     #[test]
     fn selected() {

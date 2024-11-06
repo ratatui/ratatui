@@ -219,12 +219,12 @@ mod tests {
     use std::borrow::Cow;
 
     use pretty_assertions::assert_eq;
-
-    use super::*;
     use ratatui_core::{
         style::{Color, Modifier, Stylize},
         text::{Line, Span},
     };
+
+    use super::*;
 
     #[test]
     fn new_from_str() {

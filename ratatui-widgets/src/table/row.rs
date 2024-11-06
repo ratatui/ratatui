@@ -1,6 +1,6 @@
-use super::Cell;
-
 use ratatui_core::style::{Style, Styled};
+
+use super::Cell;
 
 /// A single row of data to be displayed in a [`Table`] widget.
 ///
@@ -276,8 +276,9 @@ where
 mod tests {
     use std::vec;
 
-    use super::*;
     use ratatui_core::style::{Color, Modifier, Stylize};
+
+    use super::*;
 
     #[test]
     fn new() {

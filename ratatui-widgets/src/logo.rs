@@ -1,5 +1,5 @@
+//! The [`RatatuiLogo`] widget renders the Ratatui logo.
 use indoc::indoc;
-
 use ratatui_core::{buffer::Buffer, layout::Rect, text::Text, widgets::Widget};
 
 /// A widget that renders the Ratatui logo

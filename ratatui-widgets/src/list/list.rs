@@ -1,7 +1,8 @@
 use ratatui_core::style::{Style, Styled};
 use strum::{Display, EnumString};
 
-use crate::{Block, HighlightSpacing, ListItem};
+use super::ListItem;
+use crate::{block::Block, table::HighlightSpacing};
 
 /// A widget to display several items among which one can be selected (optional)
 ///
@@ -462,9 +463,9 @@ where
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
+    use ratatui_core::style::{Color, Modifier, Stylize};
 
     use super::*;
-    use ratatui_core::style::{Color, Modifier, Stylize};
 
     #[test]
     fn collect_list_from_iterator() {

@@ -1,3 +1,5 @@
+//! The [`Paragraph`] widget and related types allows displaying a block of text with optional
+//! wrapping, alignment, and block styling.
 use ratatui_core::{
     buffer::Buffer,
     layout::{Alignment, Position, Rect},
@@ -8,9 +10,8 @@ use ratatui_core::{
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    block::BlockExt,
+    block::{Block, BlockExt},
     reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
-    Block,
 };
 
 const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
@@ -501,10 +502,7 @@ impl<'a> Styled for Paragraph<'a> {
 }
 
 #[cfg(test)]
-mod test {
-    use crate::{block::Position, Borders};
-
-    use super::*;
+mod tests {
     use ratatui_core::{
         buffer::Buffer,
         layout::{Alignment, Rect},
@@ -512,6 +510,9 @@ mod test {
         text::{Line, Span, Text},
         widgets::Widget,
     };
+
+    use super::*;
+    use crate::{block::Position, borders::Borders};
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
     /// area and comparing the rendered and expected content.
