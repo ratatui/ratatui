@@ -10,6 +10,8 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [Unreleased](#unreleased)
+  - The `From` impls for backend types are now replaced with more specific traits
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -104,7 +106,7 @@ let crossterm_attribute = crossterm::style::types::Attribute::Bold;
 + let crossterm_attribute = ratatui_modifier.into_crossterm();
 ```
 
-Similar conversions for  `ContentStyle` -> `Style` and `Attributes` -> `Modifier` exist for
+Similar conversions for `ContentStyle` -> `Style` and `Attributes` -> `Modifier` exist for
 Crossterm and the various Termion and Termwiz types as well.
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)

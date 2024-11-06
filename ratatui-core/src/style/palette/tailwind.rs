@@ -268,7 +268,7 @@
 //! # Example
 //!
 //! ```rust
-//! use ratatui::style::{
+//! use ratatui_core::style::{
 //!     palette::tailwind::{BLUE, RED},
 //!     Color,
 //! };

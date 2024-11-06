@@ -42,7 +42,7 @@ use crate::{
 /// any type convertible to [`Cow<str>`].
 ///
 /// ```rust
-/// use ratatui::text::Span;
+/// use ratatui_core::text::Span;
 ///
 /// let span = Span::raw("test content");
 /// let span = Span::raw(String::from("test content"));
@@ -56,7 +56,7 @@ use crate::{
 /// the [`Stylize`] trait.
 ///
 /// ```rust
-/// use ratatui::{
+/// use ratatui_core::{
 ///     style::{Style, Stylize},
 ///     text::Span,
 /// };
@@ -73,7 +73,7 @@ use crate::{
 /// defined in the [`Stylize`] trait.
 ///
 /// ```rust
-/// use ratatui::{style::Stylize, text::Span};
+/// use ratatui_core::{style::Stylize, text::Span};
 ///
 /// let span = Span::raw("test content").green().on_yellow().italic();
 /// let span = Span::raw(String::from("test content"))
@@ -82,11 +82,11 @@ use crate::{
 ///     .italic();
 /// ```
 ///
-/// `Span` implements the [`Widget`] trait, which allows it to be rendered to a [`Buffer`]. Usually
-/// apps will use the [`Paragraph`] widget instead of rendering `Span` directly, as it handles text
+/// `Span` implements the [`Widget`] trait, which allows it to be rendered to a [`Buffer`]. Often
+/// apps will use the `Paragraph` widget instead of rendering `Span` directly, as it handles text
 /// wrapping and alignment for you.
 ///
-/// ```rust
+/// ```rust,ignore
 /// use ratatui::{style::Stylize, Frame};
 ///
 /// # fn render_frame(frame: &mut Frame) {
@@ -94,7 +94,6 @@ use crate::{
 /// # }
 /// ```
 /// [`Line`]: crate::text::Line
-/// [`Paragraph`]: crate::widgets::Paragraph
 /// [`Stylize`]: crate::style::Stylize
 /// [`Cow<str>`]: std::borrow::Cow
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
@@ -125,7 +124,7 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::text::Span;
+    /// use ratatui_core::text::Span;
     ///
     /// Span::raw("test content");
     /// Span::raw(String::from("test content"));
@@ -151,7 +150,7 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
+    /// use ratatui_core::{
     ///     style::{Style, Stylize},
     ///     text::Span,
     /// };
@@ -183,7 +182,7 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::text::Span;
+    /// use ratatui_core::text::Span;
     ///
     /// let mut span = Span::default().content("content");
     /// ```
@@ -209,7 +208,7 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
+    /// use ratatui_core::{
     ///     style::{Style, Stylize},
     ///     text::Span,
     /// };
@@ -234,7 +233,7 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui::{
+    /// use ratatui_core::{
     ///     style::{Style, Stylize},
     ///     text::Span,
     /// };
@@ -260,7 +259,7 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui::{
+    /// use ratatui_core::{
     ///     style::{Style, Stylize},
     ///     text::Span,
     /// };
@@ -295,7 +294,7 @@ impl<'a> Span<'a> {
     /// ```rust
     /// use std::iter::Iterator;
     ///
-    /// use ratatui::{
+    /// use ratatui_core::{
     ///     style::{Style, Stylize},
     ///     text::{Span, StyledGrapheme},
     /// };
@@ -332,7 +331,7 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui::style::Stylize;
+    /// use ratatui_core::style::Stylize;
     ///
     /// let line = "Test Content".green().italic().into_left_aligned_line();
     /// ```
@@ -352,7 +351,7 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui::style::Stylize;
+    /// use ratatui_core::style::Stylize;
     ///
     /// let line = "Test Content".green().italic().into_centered_line();
     /// ```
@@ -372,7 +371,7 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui::style::Stylize;
+    /// use ratatui_core::style::Stylize;
     ///
     /// let line = "Test Content".green().italic().into_right_aligned_line();
     /// ```

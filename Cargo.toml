@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["ratatui", "xtask"]
-default-members = ["ratatui"]
+members = ["ratatui", "ratatui-core", "xtask"]
+default-members = ["ratatui", "ratatui-core"]
 
 [workspace.package]
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
@@ -22,6 +22,20 @@ exclude = [
 ]
 edition = "2021"
 rust-version = "1.74.0"
+
+[workspace.dependencies]
+bitflags = "2.6.0"
+indoc = "2.0.5"
+instability = "0.3.1"
+itertools = "0.13.0"
+pretty_assertions = "1.4.1"
+ratatui-core = { path = "ratatui-core" }
+rstest = "0.23.0"
+serde = { version = "1.0.214", features = ["derive"] }
+strum = { version = "0.26.3", features = ["derive"] }
+unicode-segmentation = "1.12.0"
+# See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
+unicode-width = "=0.2.0"
 
 # Improve benchmark consistency
 [profile.bench]
