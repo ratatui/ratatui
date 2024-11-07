@@ -151,7 +151,7 @@ are drawn to the terminal. See the [Widgets] section of the [Ratatui Website] fo
 The closure passed to the [`Terminal::draw`] method should handle the rendering of a full frame.
 
 ```rust
-use ratatui::{Frame, widgets::Paragraph};
+use ratatui::{widgets::Paragraph, Frame};
 
 fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> {
     loop {
@@ -209,7 +209,7 @@ use ratatui::{
 fn draw(frame: &mut Frame) {
     use Constraint::{Fill, Length, Min};
 
-    let vertical = Layout::vertical([Length(1), Min(0),Length(1)]);
+    let vertical = Layout::vertical([Length(1), Min(0), Length(1)]);
     let [title_area, main_area, status_area] = vertical.areas(frame.area());
     let horizontal = Layout::horizontal([Fill(1); 2]);
     let [left_area, right_area] = horizontal.areas(main_area);
@@ -293,7 +293,7 @@ fn draw(frame: &mut Frame) {
 [Layout]: https://ratatui.rs/how-to/layout/
 [Styling Text]: https://ratatui.rs/how-to/render/style-text/
 [templates]: https://github.com/ratatui/templates/
-[Examples]: https://github.com/ratatui/ratatui/blob/main/ratatui/examples/README.md
+[Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 [Report a bug]: https://github.com/ratatui/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
 [Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
 [Create a Pull Request]: https://github.com/ratatui/ratatui/compare

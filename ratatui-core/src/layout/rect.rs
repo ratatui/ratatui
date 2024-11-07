@@ -64,7 +64,7 @@ impl Rect {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::layout::Rect;
+    /// use ratatui_core::layout::Rect;
     ///
     /// let rect = Rect::new(1, 2, 3, 4);
     /// ```
@@ -213,7 +213,7 @@ impl Rect {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::layout::{Position, Rect};
+    /// use ratatui_core::layout::{Position, Rect};
     ///
     /// let rect = Rect::new(1, 2, 3, 4);
     /// assert!(rect.contains(Position { x: 1, y: 2 }));
@@ -243,12 +243,11 @@ impl Rect {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{layout::Rect, Frame};
+    /// use ratatui_core::layout::Rect;
     ///
-    /// # fn render(frame: &mut Frame) {
-    /// let area = frame.area();
-    /// let rect = Rect::new(0, 0, 100, 100).clamp(area);
-    /// # }
+    /// let area = Rect::new(0, 0, 100, 100);
+    /// let rect = Rect::new(80, 80, 30, 30).clamp(area);
+    /// assert_eq!(rect, Rect::new(70, 70, 30, 30));
     /// ```
     #[must_use = "method returns the modified value"]
     pub fn clamp(self, other: Self) -> Self {
@@ -264,7 +263,7 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+    /// use ratatui_core::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
     ///
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for row in area.rows() {
@@ -281,14 +280,11 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{
-    ///     buffer::Buffer,
-    ///     layout::Rect,
-    ///     widgets::{Block, Borders, Widget},
-    /// };
+    /// use ratatui_core::{buffer::Buffer, layout::Rect, text::Text, widgets::Widget};
+    ///
     /// fn render(area: Rect, buf: &mut Buffer) {
-    ///     if let Some(left) = area.columns().next() {
-    ///         Block::new().borders(Borders::LEFT).render(left, buf);
+    ///     for (i, column) in area.columns().enumerate() {
+    ///         Text::from(format!("{}", i)).render(column, buf);
     ///     }
     /// }
     /// ```
@@ -303,7 +299,7 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{buffer::Buffer, layout::Rect};
+    /// use ratatui_core::{buffer::Buffer, layout::Rect};
     ///
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for position in area.positions() {
@@ -320,7 +316,7 @@ impl Rect {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::layout::Rect;
+    /// use ratatui_core::layout::Rect;
     ///
     /// let rect = Rect::new(1, 2, 3, 4);
     /// let position = rect.as_position();

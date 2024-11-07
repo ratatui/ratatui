@@ -4,23 +4,23 @@ use crate::text::Text;
 
 /// A wrapper around a string that is masked when displayed.
 ///
-/// The masked string is displayed as a series of the same character.
-/// This might be used to display a password field or similar secure data.
+/// The masked string is displayed as a series of the same character. This might be used to display
+/// a password field or similar secure data.
 ///
 /// # Examples
 ///
 /// ```rust
-/// use ratatui::{
+/// use ratatui_core::{
 ///     buffer::Buffer,
 ///     layout::Rect,
-///     text::Masked,
-///     widgets::{Paragraph, Widget},
+///     text::{Masked, Text},
+///     widgets::Widget,
 /// };
 ///
 /// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
 /// let password = Masked::new("12345", 'x');
 ///
-/// Paragraph::new(password).render(buffer.area, &mut buffer);
+/// Text::from(password).render(buffer.area, &mut buffer);
 /// assert_eq!(buffer, Buffer::with_lines(["xxxxx"]));
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]

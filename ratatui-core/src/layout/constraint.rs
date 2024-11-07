@@ -26,7 +26,7 @@ use strum::EnumIs;
 /// `Constraint` provides helper methods to create lists of constraints from various input formats.
 ///
 /// ```rust
-/// use ratatui::layout::Constraint;
+/// use ratatui_core::layout::Constraint;
 ///
 /// // Create a layout with specified lengths for each element
 /// let constraints = Constraint::from_lengths([10, 20, 10]);
@@ -224,7 +224,7 @@ impl Constraint {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::layout::{Constraint, Layout, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_lengths([1, 2, 3]);
@@ -242,7 +242,7 @@ impl Constraint {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::layout::{Constraint, Layout, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
@@ -260,7 +260,7 @@ impl Constraint {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::layout::{Constraint, Layout, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_percentages([25, 50, 25]);
@@ -278,7 +278,7 @@ impl Constraint {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::layout::{Constraint, Layout, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_maxes([1, 2, 3]);
@@ -296,7 +296,7 @@ impl Constraint {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::layout::{Constraint, Layout, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_mins([1, 2, 3]);
@@ -314,7 +314,7 @@ impl Constraint {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::layout::{Constraint, Layout, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_fills([1, 2, 3]);
@@ -337,7 +337,7 @@ impl From<u16> for Constraint {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::layout::{Constraint, Direction, Layout, Rect};
+    /// use ratatui_core::layout::{Constraint, Direction, Layout, Rect};
     ///
     /// # let area = Rect::default();
     /// let layout = Layout::new(Direction::Vertical, [1, 2, 3]).split(area);

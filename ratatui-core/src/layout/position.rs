@@ -12,7 +12,7 @@ use crate::layout::Rect;
 /// # Examples
 ///
 /// ```
-/// use ratatui::layout::{Position, Rect};
+/// use ratatui_core::layout::{Position, Rect};
 ///
 /// // the following are all equivalent
 /// let position = Position { x: 1, y: 2 };

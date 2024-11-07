@@ -28,7 +28,7 @@ impl<'a> StyledGrapheme<'a> {
         }
     }
 
-    pub(crate) fn is_whitespace(&self) -> bool {
+    pub fn is_whitespace(&self) -> bool {
         let symbol = self.symbol;
         symbol == ZWSP || symbol.chars().all(char::is_whitespace) && symbol != NBSP
     }
