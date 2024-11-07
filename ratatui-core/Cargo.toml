@@ -5,13 +5,13 @@ description = """
     Widget libraries should use this crate. Applications should use the main Ratatui crate.
 """
 version = "0.3.0"
+readme = "README.md"
 authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
-readme.workspace = true
 license.workspace = true
 exclude.workspace = true
 edition.workspace = true
