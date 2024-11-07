@@ -64,9 +64,20 @@ mod bar_group;
 ///     .bar_style(Style::new().yellow().on_red())
 ///     .value_style(Style::new().red().bold())
 ///     .label_style(Style::new().white())
-///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
-///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]))
+///     .data(&[("A0", 0), ("A1", 2), ("A2", 4), ("A3", 3)])
+///     .data(BarGroup::new([
+///         Bar::with_label("B0", 10),
+///         Bar::with_label("B2", 20),
+///     ]))
 ///     .max(4);
+/// ```
+///
+/// For simpler usages, you can also create a `BarChart` simply by
+///
+/// ```rust
+/// use ratatui::widgets::{Bar, BarChart};
+///
+/// BarChart::new([Bar::with_label("A", 10), Bar::with_label("B", 20)]);
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct BarChart<'a> {
@@ -117,6 +128,52 @@ impl<'a> Default for BarChart<'a> {
 }
 
 impl<'a> BarChart<'a> {
+    /// Creates a new vertical `BarChart` widget with the given bars.
+    ///
+    /// The `bars` parameter accepts any type that can be converted into a `Vec<Bar>`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::{
+    ///     layout::Direction,
+    ///     widgets::{Bar, BarChart},
+    /// };
+    ///
+    /// BarChart::new(vec![Bar::with_label("A", 10), Bar::with_label("B", 10)]);
+    /// ```
+    pub fn new<T: Into<Vec<Bar<'a>>>>(bars: T) -> Self {
+        Self {
+            data: vec![BarGroup::new(bars.into())],
+            direction: Direction::Vertical,
+            ..Default::default()
+        }
+    }
+
+    /// Creates a new `BarChart` widget with a vertical direction.
+    ///
+    /// This function is equivalent to `BarChart::new()`.
+    pub fn vertical(bars: impl Into<Vec<Bar<'a>>>) -> Self {
+        Self::new(bars)
+    }
+
+    /// Creates a new `BarChart` widget with a horizontal direction.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::{Bar, BarChart};
+    ///
+    /// BarChart::horizontal(vec![Bar::with_label("A", 10), Bar::with_label("B", 20)]);
+    /// ```
+    pub fn horizontal(bars: impl Into<Vec<Bar<'a>>>) -> Self {
+        Self {
+            data: vec![BarGroup::new(bars.into())],
+            direction: Direction::Horizontal,
+            ..Default::default()
+        }
+    }
+
     /// Add group of bars to the `BarChart`
     ///
     /// # Examples
@@ -129,7 +186,10 @@ impl<'a> BarChart<'a> {
     ///
     /// BarChart::default()
     ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
-    ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
+    ///     .data(BarGroup::new([
+    ///         Bar::with_label("A", 10),
+    ///         Bar::with_label("B", 20),
+    ///     ]));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> Self {
@@ -1344,5 +1404,20 @@ mod tests {
             "a  b   ",
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_barchart_new() {
+        let bars = [Bar::with_label("Red", 1), Bar::with_label("Green", 2)];
+
+        let chart = BarChart::new(bars.clone());
+        assert_eq!(chart.data.len(), 1);
+        assert_eq!(chart.data[0].bars, bars);
+
+        let bars2 = [("Blue", 3)];
+
+        let updated_chart = chart.data(&bars2);
+        assert_eq!(updated_chart.data.len(), 2);
+        assert_eq!(updated_chart.data[1].bars, [Bar::with_label("Blue", 3)]);
     }
 }
