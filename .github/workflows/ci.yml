@@ -123,7 +123,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - run: cargo install cargo-rdme
+      - uses: taiki-e/install-action@cargo-rdme
       - run: cargo xtask check-readme
 
   # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account the
