@@ -1,8 +1,8 @@
 #![warn(missing_docs)]
 //! `widgets` is a collection of types that implement [`Widget`] or [`StatefulWidget`] or both.
 //!
-//! The widgts provided with Ratatui are implemented in the [`ratatui_widgets`] crate, and are
-//! re-exported here. The traits [`Widget`] and [`StatefulWidget`] are also implemented in the
+//! The widgets provided with Ratatui are implemented in the [`ratatui_widgets`] crate, and are
+//! re-exported here. The [`Widget`] and [`StatefulWidget`] traits are implemented in the
 //! [`ratatui_core`] crate and are also re-exported in this module. This means that you can use
 //! these types directly from the `ratatui` crate without having to import the `ratatui_widgets`
 //! crate.
