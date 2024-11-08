@@ -19,8 +19,8 @@
 /// Padding::symmetric(5, 6);
 /// ```
 ///
-/// [`Block`]: crate::widgets::Block
-/// [`padding`]: crate::widgets::Block::padding
+/// [`Block`]: crate::block::Block
+/// [`padding`]: crate::block::Block::padding
 /// [CSS padding]: https://developer.mozilla.org/en-US/docs/Web/CSS/padding
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Padding {

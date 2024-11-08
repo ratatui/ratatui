@@ -127,8 +127,8 @@ impl<'a> Axis<'a> {
     ///
     /// # Example
     ///
-    /// [`Axis`] also implements [`Stylize`](crate::style::Stylize) which mean you can style it
-    /// like so
+    /// [`Axis`] also implements [`Stylize`](ratatui_core::style::Stylize) which mean you can style
+    /// it like so
     ///
     /// ```rust
     /// use ratatui::{style::Stylize, widgets::Axis};
@@ -411,8 +411,8 @@ impl<'a> Dataset<'a> {
     ///
     /// # Example
     ///
-    /// [`Dataset`] also implements [`Stylize`](crate::style::Stylize) which mean you can style it
-    /// like so
+    /// [`Dataset`] also implements [`Stylize`](ratatui_core::style::Stylize) which mean you can
+    /// style it like so
     ///
     /// ```rust
     /// use ratatui::{style::Stylize, widgets::Dataset};

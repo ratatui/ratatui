@@ -230,7 +230,7 @@ impl<'a> Tabs<'a> {
     /// More precise style can be applied to the titles by styling the ones given to [`Tabs::new`].
     /// The selected tab can be styled differently using [`Tabs::highlight_style`].
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -245,7 +245,7 @@ impl<'a> Tabs<'a> {
     /// Highlighted tab can be selected with [`Tabs::select`].
     #[must_use = "method moves the value of self and returns the modified value"]
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();
         self

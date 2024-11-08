@@ -24,8 +24,8 @@ use crate::block::{Block, BlockExt};
 /// of `None` is interpreted an as the _absence_ of a value.
 ///
 /// `Sparkline` can be styled either using [`Sparkline::style`] or preferably using the methods
-/// provided by the [`Stylize`](crate::style::Stylize) trait.  The style may be set for the entire
-/// widget or for individual bars by setting individual [`SparklineBar::style`].
+/// provided by the [`Stylize`](ratatui_core::style::Stylize) trait.  The style may be set for the
+/// entire widget or for individual bars by setting individual [`SparklineBar::style`].
 ///
 /// The bars are rendered using a set of symbols. The default set is [`symbols::bar::NINE_LEVELS`].
 /// You can change the set using [`Sparkline::bar_set`].
@@ -111,7 +111,7 @@ impl<'a> Sparkline<'a> {
     ///
     /// The foreground corresponds to the bars while the background is everything else.
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -127,7 +127,7 @@ impl<'a> Sparkline<'a> {
     ///
     /// The foreground corresponds to the bars while the background is everything else.
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn absent_value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.absent_value_style = style.into();
@@ -271,7 +271,7 @@ impl SparklineBar {
     /// style.  If set, the style of the bar will be the style of the sparkline combined with
     /// the style of the bar.
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Option<Style>>>(mut self, style: S) -> Self {
         self.style = style.into();

@@ -40,6 +40,10 @@ unstable-widget-ref = ["ratatui-core/unstable-widget-ref"]
 ## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
 unstable-rendered-line-info = []
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [dependencies]
 bitflags.workspace = true
 itertools.workspace = true

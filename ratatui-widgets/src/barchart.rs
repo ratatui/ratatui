@@ -191,7 +191,7 @@ impl<'a> BarChart<'a> {
     /// It is also possible to set individually the style of each [`Bar`].
     /// In this case the default style will be patched by the individual style
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bar_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.bar_style = style.into();
@@ -200,8 +200,8 @@ impl<'a> BarChart<'a> {
 
     /// Set the width of the displayed bars.
     ///
-    /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars this becomes the height of
-    /// the bar.
+    /// For [`Horizontal`](ratatui_core::layout::Direction::Horizontal) bars this becomes the height
+    /// of the bar.
     ///
     /// If not set, this defaults to `1`.
     /// The bar label also uses this value as its width.
@@ -236,9 +236,9 @@ impl<'a> BarChart<'a> {
         self
     }
 
-    /// The [`bar::Set`](crate::symbols::bar::Set) to use for displaying the bars.
+    /// The [`bar::Set`](ratatui_core::symbols::bar::Set) to use for displaying the bars.
     ///
-    /// If not set, the default is [`bar::NINE_LEVELS`](crate::symbols::bar::NINE_LEVELS).
+    /// If not set, the default is [`bar::NINE_LEVELS`](ratatui_core::symbols::bar::NINE_LEVELS).
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> Self {
         self.bar_set = bar_set;
@@ -257,7 +257,7 @@ impl<'a> BarChart<'a> {
     ///
     /// [`Bar::value_style`] to set the value style individually.
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.value_style = style.into();
@@ -276,7 +276,7 @@ impl<'a> BarChart<'a> {
     ///
     /// [`Bar::label`] to set the label style individually.
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.label_style = style.into();
@@ -297,7 +297,7 @@ impl<'a> BarChart<'a> {
     ///
     /// The style will be applied to everything that isn't styled (borders, bars, labels, ...).
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -306,7 +306,7 @@ impl<'a> BarChart<'a> {
 
     /// Set the direction of the bars.
     ///
-    /// [`Vertical`](crate::layout::Direction::Vertical) bars are the default.
+    /// [`Vertical`](ratatui_core::layout::Direction::Vertical) bars are the default.
     ///
     /// # Examples
     ///

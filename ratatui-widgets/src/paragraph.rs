@@ -86,7 +86,7 @@ const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Align
 ///     .wrap(Wrap { trim: true });
 /// ```
 ///
-/// [`Span`]: crate::text::Span
+/// [`Span`]: ratatui_core::text::Span
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Paragraph<'a> {
     /// A block to wrap the widget in
@@ -213,7 +213,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!").style(Style::new().red().on_white());
     /// ```
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();

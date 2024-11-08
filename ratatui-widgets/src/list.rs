@@ -1,10 +1,9 @@
 //! The [`List`] widget is used to display a list of items and allows selecting one or multiple
 //! items.
-pub use self::{item::ListItem, state::ListState};
-
 use ratatui_core::style::{Style, Styled};
 use strum::{Display, EnumString};
 
+pub use self::{item::ListItem, state::ListState};
 use crate::{block::Block, table::HighlightSpacing};
 
 mod item;
@@ -19,12 +18,9 @@ mod state;
 /// the item's height is automatically determined. A `List` can also be put in reverse order (i.e.
 /// *bottom to top*) whereas a [`Table`] cannot.
 ///
-/// [`Table`]: crate::widgets::Table
+/// [`Table`]: crate::table::Table
 ///
 /// List items can be aligned using [`Text::alignment`], for more details see [`ListItem`].
-///
-/// [`List`] implements [`Widget`] and so it can be drawn using
-/// [`Frame::render_widget`](crate::terminal::Frame::render_widget).
 ///
 /// [`List`] is also a [`StatefulWidget`], which means you can use it with [`ListState`] to allow
 /// the user to [scroll] through items and [select] one of them.
@@ -101,12 +97,12 @@ mod state;
 /// (0..5).map(|i| format!("Item{i}")).collect::<List>();
 /// ```
 ///
-/// [`ListState`]: crate::widgets::list::ListState
-/// [scroll]: crate::widgets::list::ListState::offset
-/// [select]: crate::widgets::list::ListState::select
-/// [`Text::alignment`]: crate::text::Text::alignment
-/// [`StatefulWidget`]: crate::widgets::StatefulWidget
-/// [`Widget`]: crate::widgets::Widget
+/// [`ListState`]: crate::list::ListState
+/// [scroll]: crate::list::ListState::offset
+/// [select]: crate::list::ListState::select
+/// [`Text::alignment`]: ratatui_core::text::Text::alignment
+/// [`StatefulWidget`]: ratatui_core::widgets::StatefulWidget
+/// [`Widget`]: ratatui_core::widgets::Widget
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct List<'a> {
     /// An optional block to wrap the widget in
@@ -184,7 +180,7 @@ impl<'a> List<'a> {
     /// let filled_list = empty_list.items(["Item 1"]);
     /// ```
     ///
-    /// [`Text`]: crate::text::Text
+    /// [`Text`]: ratatui_core::text::Text
     pub fn new<T>(items: T) -> Self
     where
         T: IntoIterator,
@@ -214,7 +210,7 @@ impl<'a> List<'a> {
     /// let list = List::default().items(["Item 1", "Item 2"]);
     /// ```
     ///
-    /// [`Text`]: crate::text::Text
+    /// [`Text`]: ratatui_core::text::Text
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn items<T>(mut self, items: T) -> Self
     where
@@ -271,7 +267,7 @@ impl<'a> List<'a> {
     /// `List` also implements the [`Styled`] trait, which means you can use style shorthands from
     /// the [`Stylize`] trait to set the style of the widget more concisely.
     ///
-    /// [`Stylize`]: crate::style::Stylize
+    /// [`Stylize`]: ratatui_core::style::Stylize
     ///
     /// ```rust
     /// use ratatui::{style::Stylize, widgets::List};
@@ -280,7 +276,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).red().italic();
     /// ```
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -330,7 +326,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_style(Style::new().red().italic());
     /// ```
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();

@@ -8,7 +8,7 @@ use ratatui_core::{
 /// A widget to clear/reset a certain area to allow overdrawing (e.g. for popups).
 ///
 /// This widget **cannot be used to clear the terminal on the first render** as `ratatui` assumes
-/// the render area is empty. Use [`crate::Terminal::clear`] instead.
+/// the render area is empty. Use `Terminal::clear` instead.
 ///
 /// # Examples
 ///

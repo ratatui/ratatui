@@ -20,7 +20,7 @@ pub enum MapResolution {
     ///
     /// Contains about 5000 points, you likely want to use [`Marker::Braille`] with this.
     ///
-    /// [`Marker::Braille`]: (crate::symbols::Marker::Braille)
+    /// [`Marker::Braille`]: (ratatui_core::symbols::Marker::Braille)
     High,
 }
 

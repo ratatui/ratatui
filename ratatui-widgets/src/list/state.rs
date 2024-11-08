@@ -3,7 +3,7 @@
 /// This state can be used to scroll through items and select one. When the list is rendered as a
 /// stateful widget, the selected item will be highlighted and the list will be shifted to ensure
 /// that the selected item is visible. This will modify the [`ListState`] object passed to the
-/// [`Frame::render_stateful_widget`](crate::terminal::Frame::render_stateful_widget) method.
+/// `Frame::render_stateful_widget` method.
 ///
 /// The state consists of two fields:
 /// - [`offset`]: the index of the first item to be displayed
@@ -41,7 +41,7 @@
 /// # }
 /// ```
 ///
-/// [`List`]: crate::widgets::List
+/// [`List`]: super::List
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListState {

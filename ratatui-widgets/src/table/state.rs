@@ -3,7 +3,7 @@
 /// This state can be used to scroll through the rows and select one of them. When the table is
 /// rendered as a stateful widget, the selected row, column and cell will be highlighted and the
 /// table will be shifted to ensure that the selected row is visible. This will modify the
-/// [`TableState`] object passed to the [`Frame::render_stateful_widget`] method.
+/// [`TableState`] object passed to the `Frame::render_stateful_widget` method.
 ///
 /// The state consists of two fields:
 /// - [`offset`]: the index of the first row to be displayed
@@ -50,9 +50,8 @@
 /// Note that if [`Table::widths`] is not called before rendering, the rendered columns will have
 /// equal width.
 ///
-/// [`Table`]: crate::widgets::Table
-/// [`Table::widths`]: crate::widgets::Table::widths
-/// [`Frame::render_stateful_widget`]: crate::Frame::render_stateful_widget
+/// [`Table`]: super::Table
+/// [`Table::widths`]: crate::table::Table::widths
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TableState {

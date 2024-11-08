@@ -266,7 +266,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn thumb_style<S: Into<Style>>(mut self, thumb_style: S) -> Self {
         self.thumb_style = thumb_style.into();
@@ -293,7 +293,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn track_style<S: Into<Style>>(mut self, track_style: S) -> Self {
         self.track_style = track_style.into();
@@ -320,7 +320,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn begin_style<S: Into<Style>>(mut self, begin_style: S) -> Self {
         self.begin_style = begin_style.into();
@@ -347,7 +347,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn end_style<S: Into<Style>>(mut self, end_style: S) -> Self {
         self.end_style = end_style.into();
@@ -402,7 +402,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         let style = style.into();

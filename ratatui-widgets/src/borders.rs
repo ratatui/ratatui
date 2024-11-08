@@ -24,9 +24,9 @@ bitflags! {
     }
 }
 
-/// The type of border of a [`Block`].
+/// The type of border of a [`Block`](crate::block::Block).
 ///
-/// See the [`borders`](Block::borders) method of `Block` to configure its borders.
+/// See the [`borders`](crate::block::Block::borders) method of `Block` to configure its borders.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum BorderType {
     /// A plain, simple border.
@@ -150,7 +150,7 @@ impl fmt::Debug for Borders {
 /// and RIGHT.
 ///
 /// When used with NONE you should consider omitting this completely. For ALL you should consider
-/// [`Block::bordered()`](crate::widgets::Block::bordered) instead.
+/// [`Block::bordered()`](crate::block::Block::bordered) instead.
 ///
 /// ## Examples
 ///

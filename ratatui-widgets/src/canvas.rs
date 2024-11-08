@@ -439,9 +439,7 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
 /// Holds the state of the [`Canvas`] when painting to it.
 ///
 /// This is used by the [`Canvas`] widget to draw shapes on the grid. It can be useful to think of
-/// this as similar to the [`Frame`] struct that is used to draw widgets on the terminal.
-///
-/// [`Frame`]: crate::Frame
+/// this as similar to the `Frame` struct that is used to draw widgets on the terminal.
 #[derive(Debug)]
 pub struct Context<'a> {
     x_bounds: [f64; 2],
@@ -530,7 +528,7 @@ impl<'a> Context<'a> {
     /// Note that the text is always printed on top of the canvas and is **not** affected by the
     /// layers.
     ///
-    /// [`Text`]: crate::text::Text
+    /// [`Text`]: ratatui_core::text::Text
     pub fn print<T>(&mut self, x: f64, y: f64, line: T)
     where
         T: Into<TextLine<'a>>,
@@ -711,10 +709,10 @@ where
     /// cell. This allows for more flexibility than the `BrailleGrid` which only supports a single
     /// foreground color for each 2x4 dots cell.
     ///
-    /// [`Braille`]: crate::symbols::Marker::Braille
-    /// [`HalfBlock`]: crate::symbols::Marker::HalfBlock
-    /// [`Dot`]: crate::symbols::Marker::Dot
-    /// [`Block`]: crate::symbols::Marker::Block
+    /// [`Braille`]: ratatui_core::symbols::Marker::Braille
+    /// [`HalfBlock`]: ratatui_core::symbols::Marker::HalfBlock
+    /// [`Dot`]: ratatui_core::symbols::Marker::Dot
+    /// [`Block`]: ratatui_core::symbols::Marker::Block
     ///
     /// # Examples
     ///

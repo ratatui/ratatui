@@ -1,10 +1,10 @@
 //! This module holds the [`Title`] element and its related configuration types.
-//! A title is a piece of [`Block`](crate::widgets::Block) configuration.
+//! A title is a piece of [`Block`](crate::block::Block) configuration.
 
 use ratatui_core::{layout::Alignment, text::Line};
 use strum::{Display, EnumString};
 
-/// A [`Block`](crate::widgets::Block) title.
+/// A [`Block`](crate::block::Block) title.
 ///
 /// It can be aligned (see [`Alignment`]) and positioned (see [`Position`]).
 ///
@@ -16,8 +16,8 @@ use strum::{Display, EnumString};
 /// <https://github.com/ratatui/ratatui/issues/738>.
 ///
 /// Use [`Line`] instead, when the position is not defined as part of the title. When a specific
-/// position is needed, use [`Block::title_top`](crate::widgets::Block::title_top) or
-/// [`Block::title_bottom`](crate::widgets::Block::title_bottom) instead.
+/// position is needed, use [`Block::title_top`](crate::block::Block::title_top) or
+/// [`Block::title_bottom`](crate::block::Block::title_bottom) instead.
 ///
 /// # Example
 ///
@@ -28,14 +28,14 @@ use strum::{Display, EnumString};
 /// Title::from("Title");
 /// ```
 ///
-/// Blue title on a white background (via [`Stylize`](crate::style::Stylize) trait).
+/// Blue title on a white background (via [`Stylize`](ratatui_core::style::Stylize) trait).
 /// ```
 /// use ratatui::{style::Stylize, widgets::block::Title};
 ///
 /// Title::from("Title".blue().on_white());
 /// ```
 ///
-/// Title with multiple styles (see [`Line`] and [`Stylize`](crate::style::Stylize)).
+/// Title with multiple styles (see [`Line`] and [`Stylize`](ratatui_core::style::Stylize)).
 /// ```
 /// use ratatui::{style::Stylize, text::Line, widgets::block::Title};
 ///
@@ -63,19 +63,19 @@ pub struct Title<'a> {
     /// Title alignment
     ///
     /// If [`None`], defaults to the alignment defined with
-    /// [`Block::title_alignment`](crate::widgets::Block::title_alignment) in the associated
-    /// [`Block`](crate::widgets::Block).
+    /// [`Block::title_alignment`](crate::block::Block::title_alignment) in the associated
+    /// [`Block`](crate::block::Block).
     pub alignment: Option<Alignment>,
 
     /// Title position
     ///
     /// If [`None`], defaults to the position defined with
-    /// [`Block::title_position`](crate::widgets::Block::title_position) in the associated
-    /// [`Block`](crate::widgets::Block).
+    /// [`Block::title_position`](crate::block::Block::title_position) in the associated
+    /// [`Block`](crate::block::Block).
     pub position: Option<Position>,
 }
 
-/// Defines the [title](crate::widgets::block::Title) position.
+/// Defines the [title](crate::block::Title) position.
 ///
 /// The title can be positioned on top or at the bottom of the block.
 /// Defaults to [`Position::Top`].

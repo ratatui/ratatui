@@ -10,9 +10,8 @@ use ratatui_core::{
     widgets::{StatefulWidget, StatefulWidgetRef, Widget, WidgetRef},
 };
 
-use crate::block::{Block, BlockExt};
-
 pub use self::{cell::Cell, highlight_spacing::HighlightSpacing, row::Row, state::TableState};
+use crate::block::{Block, BlockExt};
 
 mod cell;
 mod highlight_spacing;
@@ -31,7 +30,7 @@ mod state;
 /// Make sure to call the [`Table::widths`] method, otherwise the columns will all have a width of 0
 /// and thus not be visible.
 ///
-/// [`Table`] implements [`Widget`] and so it can be drawn using [`Frame::render_widget`].
+/// [`Table`] implements [`Widget`] and so it can be drawn using `Frame::render_widget`.
 ///
 /// [`Table`] is also a [`StatefulWidget`], which means you can use it with [`TableState`] to allow
 /// the user to scroll through the rows and select one of them. When rendering a [`Table`] with a
@@ -237,9 +236,7 @@ mod state;
 /// # }
 /// ```
 ///
-/// [`Frame::render_widget`]: crate::Frame::render_widget
-/// [`Stylize`]: crate::style::Stylize
-/// [`Cell`]: super::Cell
+/// [`Stylize`]: ratatui_core::style::Stylize
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Table<'a> {
     /// Data to display in each row
@@ -549,8 +546,8 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).red().italic();
     /// ```
     ///
-    /// [`Color`]: crate::style::Color
-    /// [`Stylize`]: crate::style::Stylize
+    /// [`Color`]: ratatui_core::style::Color
+    /// [`Stylize`]: ratatui_core::style::Stylize
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -581,7 +578,7 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).highlight_style(Style::new().red().italic());
     /// ```
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     #[deprecated(note = "use `Table::row_highlight_style` instead")]
     pub fn highlight_style<S: Into<Style>>(self, highlight_style: S) -> Self {
@@ -606,7 +603,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).row_highlight_style(Style::new().red().italic());
     /// ```
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn row_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
         self.row_highlight_style = highlight_style.into();
@@ -631,7 +628,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).column_highlight_style(Style::new().red().italic());
     /// ```
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn column_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
         self.column_highlight_style = highlight_style.into();
@@ -656,7 +653,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).cell_highlight_style(Style::new().red().italic());
     /// ```
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn cell_highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
         self.cell_highlight_style = highlight_style.into();
@@ -1291,7 +1288,6 @@ mod tests {
         };
 
         use super::*;
-
         use crate::table::{Row, Table, TableState};
 
         #[fixture]
@@ -1366,8 +1362,9 @@ mod tests {
 
     #[cfg(test)]
     mod render {
-        use super::*;
         use ratatui_core::layout::Alignment;
+
+        use super::*;
 
         #[test]
         fn render_empty_area() {

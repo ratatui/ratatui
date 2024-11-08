@@ -47,9 +47,9 @@ use ratatui_core::{
 /// Cell::new("Cell 1").red().italic();
 /// ```
 ///
-/// [`Row`]: crate::widgets::Row
-/// [`Table`]: crate::widgets::Table
-/// [`Stylize`]: crate::style::Stylize
+/// [`Row`]: super::Row
+/// [`Table`]: super::Table
+/// [`Stylize`]: ratatui_core::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Cell<'a> {
     content: Text<'a>,
@@ -150,9 +150,9 @@ impl<'a> Cell<'a> {
     /// Cell::new("Cell 1").red().italic();
     /// ```
     ///
-    /// [`Row`]: crate::widgets::Row
-    /// [`Color`]: crate::style::Color
-    /// [`Stylize`]: crate::style::Stylize
+    /// [`Row`]: super::Row
+    /// [`Color`]: ratatui_core::style::Color
+    /// [`Stylize`]: ratatui_core::style::Stylize
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();

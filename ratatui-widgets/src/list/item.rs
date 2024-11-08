@@ -63,10 +63,10 @@ use ratatui_core::{style::Style, text::Text};
 /// ListItem::new(Text::from("foo").right_aligned());
 /// ```
 ///
-/// [`List`]: crate::widgets::List
-/// [`Stylize`]: crate::style::Stylize
-/// [`Line`]: crate::text::Line
-/// [`Line::alignment`]: crate::text::Line::alignment
+/// [`List`]: crate::list::List
+/// [`Stylize`]: ratatui_core::style::Stylize
+/// [`Line`]: ratatui_core::text::Line
+/// [`Line::alignment`]: ratatui_core::text::Line::alignment
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ListItem<'a> {
     pub(crate) content: Text<'a>,
@@ -107,8 +107,8 @@ impl<'a> ListItem<'a> {
     ///
     /// # See also
     ///
-    /// - [`List::new`](crate::widgets::List::new) to create a list of items that can be converted
-    ///   to [`ListItem`]
+    /// - [`List::new`](super::List::new) to create a list of items that can be converted to
+    ///   [`ListItem`]
     pub fn new<T>(content: T) -> Self
     where
         T: Into<Text<'a>>,
@@ -140,7 +140,7 @@ impl<'a> ListItem<'a> {
     /// ```
     ///
     /// `ListItem` also implements the [`Styled`] trait, which means you can use style shorthands
-    /// from the [`Stylize`](crate::style::Stylize) trait to set the style of the widget more
+    /// from the [`Stylize`](ratatui_core::style::Stylize) trait to set the style of the widget more
     /// concisely.
     ///
     /// ```rust
@@ -149,9 +149,9 @@ impl<'a> ListItem<'a> {
     /// let item = ListItem::new("Item 1").red().italic();
     /// ```
     ///
-    /// [`Styled`]: crate::style::Styled
-    /// [`ListState`]: crate::widgets::list::ListState
-    /// [`Color`]: crate::style::Color
+    /// [`Styled`]: ratatui_core::style::Styled
+    /// [`ListState`]: crate::list::ListState
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();

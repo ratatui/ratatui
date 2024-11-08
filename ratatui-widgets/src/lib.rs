@@ -67,7 +67,7 @@
 //!
 //! # License
 //!
-//! This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+//! This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
 pub mod barchart;
 pub mod block;
 pub mod borders;

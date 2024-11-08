@@ -67,9 +67,9 @@ use super::Cell;
 /// Row::new(cells).red().italic();
 /// ```
 ///
-/// [`Table`]: crate::widgets::Table
-/// [`Text`]: crate::text::Text
-/// [`Stylize`]: crate::style::Stylize
+/// [`Table`]: super::Table
+/// [`Text`]: ratatui_core::text::Text
+/// [`Stylize`]: ratatui_core::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Row<'a> {
     pub(crate) cells: Vec<Cell<'a>>,
@@ -231,9 +231,9 @@ impl<'a> Row<'a> {
     /// let row = Row::new(cells).red().italic();
     /// ```
     ///
-    /// [`Color`]: crate::style::Color
-    /// [`Stylize`]: crate::style::Stylize
-    /// [`Text`]: crate::text::Text
+    /// [`Color`]: ratatui_core::style::Color
+    /// [`Stylize`]: ratatui_core::style::Stylize
+    /// [`Text`]: ratatui_core::text::Text
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();

@@ -54,7 +54,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_surrounding<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_surrounding = Some(style.into());
@@ -66,7 +66,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_weekdays_header<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_weekday = Some(style.into());
@@ -78,7 +78,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_month_header<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_month = Some(style.into());
@@ -90,7 +90,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn default_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.default_style = style.into();
@@ -217,7 +217,7 @@ impl CalendarEventStore {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     pub fn today<S: Into<Style>>(style: S) -> Self {
         let mut res = Self::default();
         res.add(
@@ -234,7 +234,7 @@ impl CalendarEventStore {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     pub fn add<S: Into<Style>>(&mut self, date: Date, style: S) {
         // to simplify style nonsense, last write wins
         let _ = self.0.insert(date, style.into());

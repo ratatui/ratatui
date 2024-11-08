@@ -1,7 +1,7 @@
 use ratatui_core::{buffer::Buffer, layout::Rect, style::Style, text::Line, widgets::Widget};
 use unicode_width::UnicodeWidthStr;
 
-/// A bar to be shown by the [`BarChart`](crate::widgets::BarChart) widget.
+/// A bar to be shown by the [`BarChart`](crate::barchart::BarChart) widget.
 ///
 /// Here is an explanation of a `Bar`'s components.
 /// ```plain
@@ -59,11 +59,11 @@ impl<'a> Bar<'a> {
 
     /// Set the label of the bar.
     ///
-    /// For [`Vertical`](crate::layout::Direction::Vertical) bars,
+    /// For [`Vertical`](ratatui_core::layout::Direction::Vertical) bars,
     /// display the label **under** the bar.
-    /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars,
+    /// For [`Horizontal`](ratatui_core::layout::Direction::Horizontal) bars,
     /// display the label **in** the bar.
-    /// See [`BarChart::direction`](crate::widgets::BarChart::direction) to set the direction.
+    /// See [`BarChart::direction`](crate::barchart::BarChart::direction) to set the direction.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label(mut self, label: Line<'a>) -> Self {
         self.label = Some(label);
@@ -77,7 +77,7 @@ impl<'a> Bar<'a> {
     ///
     /// This will apply to every non-styled element. It can be seen and used as a default value.
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -93,7 +93,7 @@ impl<'a> Bar<'a> {
     ///
     /// [`Bar::value`] to set the value.
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.value_style = style.into();

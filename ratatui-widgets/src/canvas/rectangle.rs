@@ -2,7 +2,7 @@ use ratatui_core::style::Color;
 
 use crate::canvas::{Line, Painter, Shape};
 
-/// A rectangle to draw on a [`Canvas`](crate::widgets::canvas::Canvas)
+/// A rectangle to draw on a [`Canvas`](crate::canvas::Canvas)
 ///
 /// Sizes used here are **not** in terminal cell. This is much more similar to the
 /// mathematic coordinate system.

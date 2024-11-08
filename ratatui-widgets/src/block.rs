@@ -24,7 +24,7 @@ use crate::borders::{BorderType, Borders};
 mod padding;
 pub mod title;
 
-/// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
+/// Base widget to be used to display a box border around all other built-in widgets.
 ///
 /// The borders can be configured with [`Block::borders`] and others. A block can have multiple
 /// [`Title`] using [`Block::title`]. It can also be [styled](Block::style) and
@@ -172,8 +172,8 @@ impl<'a> Block<'a> {
     /// space is calculated based on the full width of the block, rather than the leftover width.
     ///
     /// You can provide any type that can be converted into [`Title`] including: strings, string
-    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
-    /// [spans](crate::text::Span) (`Vec<Span>`).
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](ratatui_core::text::Span), or
+    /// vectors of [spans](ratatui_core::text::Span) (`Vec<Span>`).
     ///
     /// By default, the titles will avoid being rendered in the corners of the block but will align
     /// against the left or right edge of the block if there is no border on that edge. The
@@ -247,8 +247,8 @@ impl<'a> Block<'a> {
     /// Adds a title to the top of the block.
     ///
     /// You can provide any type that can be converted into [`Line`] including: strings, string
-    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
-    /// [spans](crate::text::Span) (`Vec<Span>`).
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](ratatui_core::text::Span), or
+    /// vectors of [spans](ratatui_core::text::Span) (`Vec<Span>`).
     ///
     /// # Example
     ///
@@ -276,8 +276,8 @@ impl<'a> Block<'a> {
     /// Adds a title to the bottom of the block.
     ///
     /// You can provide any type that can be converted into [`Line`] including: strings, string
-    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
-    /// [spans](crate::text::Span) (`Vec<Span>`).
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](ratatui_core::text::Span), or
+    /// vectors of [spans](ratatui_core::text::Span) (`Vec<Span>`).
     ///
     /// # Example
     ///
@@ -313,7 +313,7 @@ impl<'a> Block<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.titles_style = style.into();
@@ -389,7 +389,7 @@ impl<'a> Block<'a> {
     /// Block::bordered().border_style(Style::new().blue());
     /// ```
     ///
-    /// [`Color`]: crate::style::Color
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.border_style = style.into();
@@ -432,8 +432,8 @@ impl<'a> Block<'a> {
     ///     .style(Style::new().white().not_bold()); // will be white, and italic
     /// ```
     ///
-    /// [`Paragraph`]: crate::widgets::Paragraph
-    /// [`Color`]: crate::style::Color
+    /// [`Paragraph`]: crate::paragraph::Paragraph
+    /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -484,7 +484,7 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// Sets the symbols used to display the border as a [`crate::symbols::border::Set`].
+    /// Sets the symbols used to display the border as a [`ratatui_core::symbols::border::Set`].
     ///
     /// Setting this overwrites any [`border_type`](Block::border_type) that was set.
     ///
