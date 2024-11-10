@@ -68,7 +68,8 @@ impl StatefulWidgetRef for List<'_> {
         state.offset = first_visible_index;
 
         // Get our set highlighted symbol (if one was set)
-        let highlight_symbol = self.highlight_symbol.clone().unwrap_or_default();
+        let default_line = Line::default();
+        let highlight_symbol = self.highlight_symbol.as_ref().unwrap_or(&default_line);
         let blank_symbol = " ".repeat(highlight_symbol.width());
 
         let mut current_height = 0;
