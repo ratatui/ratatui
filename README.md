@@ -363,7 +363,8 @@ for a curated list of awesome apps/libraries built with `ratatui`!
 
 ## Alternatives
 
-You might want to checkout [Cursive](https://github.com/gyscos/Cursive) for an alternative solution
+You might want to checkout [Cursive](https://github.com/gyscos/Cursive) or 
+[iocraft](https://github.com/ccbrown/iocraft/) for an alternative solutions
 to build text user interfaces in Rust.
 
 ## Acknowledgments
