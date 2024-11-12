@@ -51,7 +51,7 @@ rand = "0.8.5"
 rand_chacha = "0.3.1"
 rstest = "0.23.0"
 serde_json = "1.0.109"
-tokio = { version = "1.39.2", features = [
+tokio = { version = "1.41.1", features = [
     "rt",
     "macros",
     "time",
