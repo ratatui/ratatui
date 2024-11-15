@@ -28,6 +28,13 @@
 //!
 //! [`Canvas`]: crate::widgets::canvas::Canvas
 
+pub use ratatui_core::widgets::{StatefulWidget, Widget};
+#[instability::unstable(feature = "widget-ref")]
+pub use ratatui_core::widgets::{StatefulWidgetRef, WidgetRef};
+// TODO remove this module once title etc. are gone
+pub use ratatui_widgets::block;
+#[cfg(feature = "widget-calendar")]
+pub use ratatui_widgets::calendar;
 pub use ratatui_widgets::{
     barchart::{Bar, BarChart, BarGroup},
     block::{Block, Padding},
@@ -44,13 +51,3 @@ pub use ratatui_widgets::{
     table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
-
-// TODO remove this module once title etc. are gone
-pub use ratatui_widgets::block;
-
-#[cfg(feature = "widget-calendar")]
-pub use ratatui_widgets::calendar;
-
-pub use ratatui_core::widgets::{StatefulWidget, Widget};
-#[instability::unstable(feature = "widget-ref")]
-pub use ratatui_core::widgets::{StatefulWidgetRef, WidgetRef};
