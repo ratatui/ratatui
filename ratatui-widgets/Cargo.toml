@@ -59,6 +59,7 @@ serde = { workspace = true, optional = true }
 [dev-dependencies]
 rstest.workspace = true
 pretty_assertions.workspace = true
+ratatui.workspace = true
 
 [lints.rust]
 unsafe_code = "forbid"

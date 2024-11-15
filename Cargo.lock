@@ -2154,13 +2154,14 @@ dependencies = [
  "instability",
  "itertools 0.13.0",
  "pretty_assertions",
+ "ratatui",
  "ratatui-core",
  "rstest",
  "serde",
  "strum",
  "time",
  "unicode-segmentation",
- "unicode-width 0.2.0",
+ "unicode-width",
 ]
 
 [[package]]
