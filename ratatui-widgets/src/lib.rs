@@ -1,16 +1,16 @@
 #![warn(missing_docs)]
-//! Ratatui-widgets contains all the widgets that were previously part of the Ratatui crate. It is
-//! meant to be used in conjunction with the [Ratatui] crate, which provides the core functionality
+//! **ratatui-widgets** contains all the widgets that were previously part of the [Ratatui] crate.
+//! It is meant to be used in conjunction with `ratatui`, which provides the core functionality
 //! for building terminal user interfaces.
 //!
 //! [Ratatui]: https://crates.io/crates/ratatui
 //!
-//! Most applications shouldn't need to depend directly on Ratatui-widgets, as all the Ratatui crate
+//! Most applications shouldn't need to depend directly on `ratatui-widgets`, `ratatui` crate
 //! re-exports all the widgets from this crate. However, if you are building a widget library that
-//! internally uses Ratatui widgets, or if you prefer finer grained dependencies, you may want to
-//! depend on this crate rather than transitively through the Ratatui crate.
+//! internally uses these widgets, or if you prefer finer grained dependencies, you may want to
+//! depend on this crate rather than transitively through the `ratatui` crate.
 //!
-//! Previously, a crate named `Ratatui-widgets` was published with some formative ideas about an
+//! Previously, a crate named `ratatui-widgets` was published with some formative ideas about an
 //! eventual Ratatui framework. That crate is now move to [tui-framework-experiment], pending a new
 //! name.
 //!
@@ -58,7 +58,7 @@
 //! [`Table`]: crate::table::Table
 //! [`Tabs`]: crate::tabs::Tabs
 //!
-//! All these widgets are re-exported directly under `ratatui::widgets` in the Ratatui crate.
+//! All these widgets are re-exported directly under `ratatui::widgets` in the `ratatui` crate.
 //!
 //! # Contributing
 //!
