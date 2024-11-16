@@ -2127,6 +2127,7 @@ dependencies = [
  "bitflags 2.6.0",
  "cassowary",
  "compact_str",
+ "document-features",
  "indoc",
  "instability",
  "itertools 0.13.0",
@@ -2148,6 +2149,7 @@ name = "ratatui-widgets"
 version = "0.3.0"
 dependencies = [
  "bitflags 2.6.0",
+ "document-features",
  "indoc",
  "instability",
  "itertools 0.13.0",

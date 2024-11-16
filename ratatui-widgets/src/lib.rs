@@ -59,6 +59,8 @@
 //! [`Tabs`]: crate::tabs::Tabs
 //!
 //! All these widgets are re-exported directly under `ratatui::widgets` in the `ratatui` crate.
+#![cfg_attr(feature = "document-features", doc = "\n## Features")]
+#![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 //!
 //! # Contributing
 //!
