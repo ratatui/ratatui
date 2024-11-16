@@ -172,7 +172,18 @@ fn check() -> Result<()> {
 
 /// Run cargo-rdme to check if README.md is up-to-date with the library documentation
 fn check_readme() -> Result<()> {
-    run_cargo(vec!["rdme", "--workspace-project", "ratatui", "--check"])
+    let meta = MetadataCommand::new()
+        .exec()
+        .wrap_err("failed to get cargo metadata")?;
+    for package in meta.workspace_default_packages() {
+        run_cargo(vec![
+            "rdme",
+            "--workspace-project",
+            &package.name,
+            "--check",
+        ])?;
+    }
+    Ok(())
 }
 
 /// Generate code coverage report
