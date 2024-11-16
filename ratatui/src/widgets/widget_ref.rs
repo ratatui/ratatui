@@ -82,12 +82,23 @@ pub trait WidgetRef {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
     fn render_ref(&self, area: Rect, buf: &mut Buffer);
+
+    /// Converts the widget into a boxed widget.
+    fn into_boxed(self) -> Box<dyn WidgetRef>
+    where
+        Self: Sized + 'static,
+    {
+        Box::new(self)
+    }
 }
 
 /// This allows you to render a widget by reference.
-impl<W: WidgetRef> Widget for &W {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+impl<W> WidgetRef for &W
+where
+    for<'a> &'a W: Widget,
+{
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        self.render(area, buf);
     }
 }
 
@@ -177,44 +188,37 @@ mod tests {
 
     struct Farewell;
 
-    impl WidgetRef for Greeting {
-        fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+    impl Widget for &Greeting {
+        fn render(self, area: Rect, buf: &mut Buffer) {
             Line::from("Hello").render(area, buf);
         }
     }
 
-    impl WidgetRef for Farewell {
-        fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+    impl Widget for &Farewell {
+        fn render(self, area: Rect, buf: &mut Buffer) {
             Line::from("Goodbye").right_aligned().render(area, buf);
         }
     }
 
+    /// Ensure that the blanket implementation of `WidgetRef` for `&W` where `W` implements
+    /// `Widget` works as expected.
     #[rstest]
     fn render_ref(mut buf: Buffer) {
-        let widget = Greeting;
-        widget.render_ref(buf.area, &mut buf);
-        assert_eq!(buf, Buffer::with_lines(["Hello               "]));
-    }
-
-    /// Ensure that the blanket implementation of `Widget` for `&W` where `W` implements
-    /// `WidgetRef` works as expected.
-    #[rstest]
-    fn render_widget(mut buf: Buffer) {
         let widget = &Greeting;
-        widget.render(buf.area, &mut buf);
+        widget.render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["Hello               "]));
     }
 
     #[rstest]
     fn render_ref_box(mut buf: Buffer) {
-        let widget: Box<dyn WidgetRef> = Box::new(Greeting);
+        let widget: Box<dyn WidgetRef> = Box::new(&Greeting);
         widget.render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["Hello               "]));
     }
 
     #[rstest]
     fn render_ref_box_vec(mut buf: Buffer) {
-        let widgets: Vec<Box<dyn WidgetRef>> = vec![Box::new(Greeting), Box::new(Farewell)];
+        let widgets: Vec<Box<dyn WidgetRef>> = vec![Box::new(&Greeting), Box::new(&Farewell)];
         for widget in widgets {
             widget.render_ref(buf.area, &mut buf);
         }
@@ -223,14 +227,14 @@ mod tests {
 
     #[rstest]
     fn render_ref_some(mut buf: Buffer) {
-        let widget = Some(Greeting);
+        let widget = Some(&Greeting);
         widget.render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["Hello               "]));
     }
 
     #[rstest]
     fn render_ref_none(mut buf: Buffer) {
-        let widget: Option<Greeting> = None;
+        let widget: Option<&Greeting> = None;
         widget.render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["                    "]));
     }

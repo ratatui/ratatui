@@ -7,7 +7,7 @@ use ratatui_core::{
     layout::{Constraint, Flex, Layout, Rect},
     style::{Style, Styled},
     text::Text,
-    widgets::{StatefulWidget, StatefulWidgetRef, Widget, WidgetRef},
+    widgets::{StatefulWidget, Widget},
 };
 
 pub use self::{cell::Cell, highlight_spacing::HighlightSpacing, row::Row, state::TableState};
@@ -752,12 +752,12 @@ impl<'a> Table<'a> {
 
 impl Widget for Table<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        WidgetRef::render_ref(&self, area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for Table<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &Table<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let mut state = TableState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }
@@ -771,20 +771,12 @@ impl StatefulWidget for Table<'_> {
     }
 }
 
-// Note: remove this when StatefulWidgetRef is stabilized and replace with the blanket impl
 impl StatefulWidget for &Table<'_> {
     type State = TableState;
+
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        StatefulWidgetRef::render_ref(self, area, buf, state);
-    }
-}
-
-impl StatefulWidgetRef for Table<'_> {
-    type State = TableState;
-
-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
-        self.block.render_ref(area, buf);
+        self.block.as_ref().render(area, buf);
         let table_area = self.block.inner_if_some(area);
         if table_area.is_empty() {
             return;
@@ -910,7 +902,7 @@ impl Table<'_> {
                     ..row_area
                 };
                 buf.set_style(selection_area, row.style);
-                highlight_symbol.render_ref(selection_area, buf);
+                highlight_symbol.render(selection_area, buf);
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(

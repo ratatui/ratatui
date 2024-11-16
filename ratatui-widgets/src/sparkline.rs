@@ -6,7 +6,7 @@ use ratatui_core::{
     layout::Rect,
     style::{Style, Styled},
     symbols::{self},
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 use strum::{Display, EnumString};
 
@@ -326,13 +326,13 @@ impl<'a> Styled for Sparkline<'a> {
 
 impl Widget for Sparkline<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for Sparkline<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        self.block.render_ref(area, buf);
+impl Widget for &Sparkline<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
         self.render_sparkline(inner, buf);
     }

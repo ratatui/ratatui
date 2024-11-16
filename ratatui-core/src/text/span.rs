@@ -8,7 +8,7 @@ use crate::{
     layout::Rect,
     style::{Style, Styled},
     text::{Line, StyledGrapheme},
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
@@ -418,12 +418,12 @@ impl<'a> Styled for Span<'a> {
 
 impl Widget for Span<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for Span<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &Span<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         if area.is_empty() {
             return;

@@ -76,6 +76,21 @@ This is a quick summary of the sections below:
 
 ## Unreleased (0.30.0)
 
+### `WidgetRef` no longer has a blanket implementation of Widget
+
+Previously there was a blanket implementation of Widget for WidgetRef. This has been reversed to
+instead be a blanket implementation of WidgetRef for all &W where W: Widget. Any widgets that
+previously implemented WidgetRef directly should now instead implement Widget for a reference to the
+type.
+
+```diff
+-impl WidgetRef for Foo {
+-    fn render_ref(&self, area: Rect, buf: &mut Buffer)
++impl Widget for &Foo {
++    fn render(self, area: Rect, buf: &mut Buffer)
+}
+```
+
 ### The `From` impls for backend types are now replaced with more specific traits [#1464]
 
 [#1464]: https://github.com/ratatui/ratatui/pull/1464

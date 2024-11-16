@@ -9,7 +9,7 @@ use crate::{
     layout::{Alignment, Rect},
     style::{Style, Styled},
     text::{Span, StyledGrapheme, Text},
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 
 /// A line of text, consisting of one or more [`Span`]s.
@@ -683,12 +683,12 @@ impl<'a> Extend<Span<'a>> for Line<'a> {
 
 impl Widget for Line<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for Line<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &Line<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         self.render_with_alignment(area, buf, None);
     }
 }
@@ -749,7 +749,7 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, span_skip_widt
         if area.is_empty() {
             break;
         }
-        span.render_ref(area, buf);
+        span.render(area, buf);
         let span_width = u16::try_from(span_width).unwrap_or(u16::MAX);
         area = area.indent_x(span_width);
     }
@@ -1321,7 +1321,7 @@ mod tests {
                 "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得する"
             );
             let mut buf = Buffer::empty(Rect::new(0, 0, 83, 1));
-            line.render_ref(buf.area, &mut buf);
+            line.render(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([
                 "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得 "
             ]));
@@ -1358,7 +1358,7 @@ mod tests {
         ) {
             let line = Line::from("1234🦀7890").alignment(alignment);
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
-            line.render_ref(buf.area, &mut buf);
+            line.render(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
@@ -1411,7 +1411,7 @@ mod tests {
             };
             let line = Line::from(value).centered();
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
-            line.render_ref(buf.area, &mut buf);
+            line.render(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
@@ -1429,7 +1429,7 @@ mod tests {
             // Fill buffer with stuff to ensure the output is indeed padded
             let mut buf = Buffer::filled(Rect::new(0, 0, 10, 1), Cell::new("X"));
             let area = Rect::new(2, 0, 6, 1);
-            line.render_ref(area, &mut buf);
+            line.render(area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
@@ -1447,7 +1447,7 @@ mod tests {
             let area = Rect::new(0, 0, buf_width, 1);
             // Fill buffer with stuff to ensure the output is indeed padded
             let mut buf = Buffer::filled(area, Cell::new("X"));
-            line.render_ref(buf.area, &mut buf);
+            line.render(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
@@ -1478,7 +1478,7 @@ mod tests {
         fn render_truncates_flag(#[case] buf_width: u16, #[case] expected: &str) {
             let line = Line::from("🇺🇸1234");
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
-            line.render_ref(buf.area, &mut buf);
+            line.render(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
@@ -1502,7 +1502,7 @@ mod tests {
             assert!(line.width() >= min_width);
 
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
-            line.render_ref(buf.area, &mut buf);
+            line.render(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
@@ -1526,7 +1526,7 @@ mod tests {
             assert!(line.width() >= min_width);
 
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
-            line.render_ref(buf.area, &mut buf);
+            line.render(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 

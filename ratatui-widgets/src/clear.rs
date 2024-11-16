@@ -1,9 +1,5 @@
 //! The [`Clear`] widget allows you to clear a certain area to allow overdrawing (e.g. for popups).
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    widgets::{Widget, WidgetRef},
-};
+use ratatui_core::{buffer::Buffer, layout::Rect, widgets::Widget};
 
 /// A widget to clear/reset a certain area to allow overdrawing (e.g. for popups).
 ///
@@ -35,12 +31,12 @@ pub struct Clear;
 
 impl Widget for Clear {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for Clear {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &Clear {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         for x in area.left()..area.right() {
             for y in area.top()..area.bottom() {
                 buf[(x, y)].reset();

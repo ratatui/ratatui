@@ -1,5 +1,4 @@
-use super::WidgetRef;
-use crate::{buffer::Buffer, layout::Rect};
+use crate::{buffer::Buffer, layout::Rect, style::Style};
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
 ///
@@ -72,7 +71,7 @@ pub trait Widget {
 /// drawing the text to the screen.
 impl Widget for &str {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
     }
 }
 
@@ -82,7 +81,15 @@ impl Widget for &str {
 /// on a [`Buffer`] within the bounds of a given [`Rect`].
 impl Widget for String {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
+    }
+}
+
+impl<W: Widget> Widget for Option<W> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(widget) = self {
+            widget.render(area, buf);
+        }
     }
 }
 

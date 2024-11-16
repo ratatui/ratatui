@@ -1,7 +1,7 @@
 use ratatui_core::{
     buffer::Buffer,
     layout::Rect,
-    widgets::{StatefulWidget, StatefulWidgetRef, Widget, WidgetRef},
+    widgets::{StatefulWidget, Widget},
 };
 use unicode_width::UnicodeWidthStr;
 
@@ -12,14 +12,14 @@ use crate::{
 
 impl Widget for List<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        WidgetRef::render_ref(&self, area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for List<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &List<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let mut state = ListState::default();
-        StatefulWidgetRef::render_ref(self, area, buf, &mut state);
+        StatefulWidget::render(self, area, buf, &mut state);
     }
 }
 
@@ -27,24 +27,16 @@ impl StatefulWidget for List<'_> {
     type State = ListState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        StatefulWidgetRef::render_ref(&self, area, buf, state);
+        StatefulWidget::render(&self, area, buf, state);
     }
 }
 
-// Note: remove this when StatefulWidgetRef is stabilized and replace with the blanket impl
 impl StatefulWidget for &List<'_> {
     type State = ListState;
+
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        StatefulWidgetRef::render_ref(self, area, buf, state);
-    }
-}
-
-impl StatefulWidgetRef for List<'_> {
-    type State = ListState;
-
-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
-        self.block.render_ref(area, buf);
+        self.block.as_ref().render(area, buf);
         let list_area = self.block.inner_if_some(area);
 
         if list_area.is_empty() {
@@ -113,7 +105,7 @@ impl StatefulWidgetRef for List<'_> {
             } else {
                 row_area
             };
-            item.content.render_ref(item_area, buf);
+            Widget::render(&item.content, item_area, buf);
 
             for j in 0..item.content.height() {
                 // if the item is selected, we need to display the highlight symbol:
