@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 //! **ratatui-core** is the core library of the [ratatui] project,
 //! providing the essential building blocks for creating rich terminal user interfaces in Rust.
 //!
