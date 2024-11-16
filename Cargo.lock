@@ -2089,7 +2089,6 @@ name = "ratatui"
 version = "0.29.0"
 dependencies = [
  "argh",
- "bitflags 2.6.0",
  "color-eyre",
  "criterion",
  "crossterm",
@@ -2106,6 +2105,7 @@ dependencies = [
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "ratatui-core",
+ "ratatui-widgets",
  "rstest",
  "serde",
  "serde_json",
@@ -2117,7 +2117,6 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
- "unicode-segmentation",
  "unicode-width",
 ]
 
@@ -2141,6 +2140,25 @@ dependencies = [
  "strum",
  "unicode-segmentation",
  "unicode-truncate",
+ "unicode-width",
+]
+
+[[package]]
+name = "ratatui-widgets"
+version = "0.3.0"
+dependencies = [
+ "bitflags 2.6.0",
+ "indoc",
+ "instability",
+ "itertools 0.13.0",
+ "pretty_assertions",
+ "ratatui",
+ "ratatui-core",
+ "rstest",
+ "serde",
+ "strum",
+ "time",
+ "unicode-segmentation",
  "unicode-width",
 ]
 

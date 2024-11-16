@@ -15,7 +15,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-bitflags.workspace = true
 crossterm = { version = "0.28.1", optional = true }
 document-features = { version = "0.2.7", optional = true }
 indoc = "2"
@@ -23,11 +22,11 @@ instability.workspace = true
 itertools.workspace = true
 palette = { version = "0.7.6", optional = true }
 ratatui-core = { workspace = true, features = ["unstable-widget-ref"] }
+ratatui-widgets = { workspace = true, features = ["unstable-widget-ref"] }
 serde = { workspace = true, optional = true }
 strum.workspace = true
 termwiz = { version = "0.22.0", optional = true }
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
-unicode-segmentation.workspace = true
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width.workspace = true
 
@@ -120,10 +119,7 @@ termwiz = ["dep:termwiz"]
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "ratatui-core/serde"]
-
-## enables the [`border!`] macro.
-macros = []
+serde = ["dep:serde", "ratatui-core/serde", "ratatui-widgets/serde"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["ratatui-core/palette", "dep:palette"]
@@ -138,7 +134,7 @@ all-widgets = ["widget-calendar"]
 #! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
 #! dependencies. The available features are:
 ## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
-widget-calendar = ["dep:time"]
+widget-calendar = ["ratatui-widgets/calendar"]
 
 #! The following optional features are only available for some backends:
 
@@ -160,7 +156,7 @@ unstable = [
 ## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
 ## which are experimental and may change in the future.
 ## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
-unstable-rendered-line-info = []
+unstable-rendered-line-info = ["ratatui-widgets/unstable-rendered-line-info"]
 
 ## enables the [`WidgetRef`] and [`StatefulWidgetRef`] traits which are experimental and may change
 ## in the future.

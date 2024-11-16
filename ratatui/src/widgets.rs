@@ -1,8 +1,14 @@
 #![warn(missing_docs)]
 //! `widgets` is a collection of types that implement [`Widget`] or [`StatefulWidget`] or both.
 //!
-//! Widgets are created for each frame as they are consumed after rendered.
-//! They are not meant to be stored but used as *commands* to draw common figures in the UI.
+//! The widgets provided with Ratatui are implemented in the [`ratatui_widgets`] crate, and are
+//! re-exported here. The [`Widget`] and [`StatefulWidget`] traits are implemented in the
+//! [`ratatui_core`] crate and are also re-exported in this module. This means that you can use
+//! these types directly from the `ratatui` crate without having to import the `ratatui_widgets`
+//! crate.
+//!
+//! Widgets are created for each frame as they are consumed after rendered. They are not meant to be
+//! stored but used as *commands* to draw common figures in the UI.
 //!
 //! The available widgets are:
 //! - [`Block`]: a basic widget that draws a block with optional borders, titles and styles.
@@ -21,32 +27,19 @@
 //! - [`Tabs`]: displays a tab bar and allows selection.
 //!
 //! [`Canvas`]: crate::widgets::canvas::Canvas
-mod barchart;
-pub mod block;
-mod borders;
-#[cfg(feature = "widget-calendar")]
-pub mod calendar;
-pub mod canvas;
-mod chart;
-mod clear;
-mod gauge;
-mod list;
-mod logo;
-mod paragraph;
-mod reflow;
-mod scrollbar;
-mod sparkline;
-mod table;
-mod tabs;
 
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
 #[instability::unstable(feature = "widget-ref")]
 pub use ratatui_core::widgets::{StatefulWidgetRef, WidgetRef};
-
-pub use self::{
+// TODO remove this module once title etc. are gone
+pub use ratatui_widgets::block;
+#[cfg(feature = "widget-calendar")]
+pub use ratatui_widgets::calendar;
+pub use ratatui_widgets::{
     barchart::{Bar, BarChart, BarGroup},
-    block::{Block, BorderType, Padding},
-    borders::*,
+    block::{Block, Padding},
+    borders::{BorderType, Borders},
+    canvas,
     chart::{Axis, Chart, Dataset, GraphType, LegendPosition},
     clear::Clear,
     gauge::{Gauge, LineGauge},

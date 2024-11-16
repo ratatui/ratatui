@@ -350,3 +350,4 @@ pub use ratatui_core::{style, symbols};
 mod terminal;
 pub use ratatui_core::text;
 pub mod widgets;
+pub use ratatui_widgets::border;
