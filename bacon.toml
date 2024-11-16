@@ -151,12 +151,25 @@ command = [
     "always",
 ]
 
+[jobs.hack]
+command = [
+    "cargo",
+    "hack",
+    "test",
+    "--lib",
+    "--each-feature",
+    # "--all-targets",
+    "--workspace",
+    "--color",
+    "always",
+]
+
 # You may define here keybindings that would be specific to
 # a project, for example a shortcut to launch a specific job.
 # Shortcuts to internal functions (scrolling, toggling, etc.)
 # should go in your personal global prefs.toml file instead.
 [keybindings]
-# alt-m = "job:my-job"
+ctrl-h = "job:hack"
 ctrl-c = "job:check-crossterm"
 ctrl-t = "job:check-termion"
 ctrl-w = "job:check-termwiz"
