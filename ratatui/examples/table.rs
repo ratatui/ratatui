@@ -18,7 +18,7 @@ use crossterm::event::KeyModifiers;
 use itertools::Itertools;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout, Margin, Rect},
+    layout::{Constraint, Layout, Rect},
     style::{self, Color, Modifier, Style, Stylize},
     text::Text,
     widgets::{
@@ -202,13 +202,24 @@ impl App {
 
     fn draw(&mut self, frame: &mut Frame) {
         let vertical = &Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
-        let rects = vertical.split(frame.area());
+        let areas = vertical.split(frame.area());
 
         self.set_colors();
 
-        self.render_table(frame, rects[0]);
-        self.render_scrollbar(frame, rects[0]);
-        self.render_footer(frame, rects[1]);
+        let main_area = areas[0];
+        self.render_table(frame, main_area);
+        // Horizontal margin of 1 left and right
+        // Account for table header
+        let scrollbar_area = Rect {
+            x: main_area.x + 1,
+            y: main_area.y + 1,
+            width: main_area.width.saturating_sub(2),
+            height: (main_area.height.saturating_sub(1) / ITEM_HEIGHT as u16) * ITEM_HEIGHT as u16,
+        }
+        .intersection(main_area);
+        self.render_scrollbar(frame, scrollbar_area);
+
+        self.render_footer(frame, areas[1]);
     }
 
     fn render_table(&mut self, frame: &mut Frame, area: Rect) {
@@ -272,10 +283,7 @@ impl App {
                 .orientation(ScrollbarOrientation::VerticalRight)
                 .begin_symbol(None)
                 .end_symbol(None),
-            area.inner(Margin {
-                vertical: 1,
-                horizontal: 1,
-            }),
+            area,
             &mut self.scroll_state,
         );
     }
