@@ -1,3 +1,5 @@
+//! Symbols and markers for drawing various widgets.
+
 use strum::{Display, EnumString};
 
 pub mod border;

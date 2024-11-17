@@ -244,11 +244,16 @@ impl fmt::Debug for Modifier {
 #[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
+    /// The foreground color.
     pub fg: Option<Color>,
+    /// The background color.
     pub bg: Option<Color>,
+    /// The underline color.
     #[cfg(feature = "underline-color")]
     pub underline_color: Option<Color>,
+    /// The modifiers to add.
     pub add_modifier: Modifier,
+    /// The modifiers to remove.
     pub sub_modifier: Modifier,
 }
 
@@ -275,6 +280,7 @@ impl Styled for Style {
 }
 
 impl Style {
+    /// Returns a `Style` with default properties.
     pub const fn new() -> Self {
         Self {
             fg: None,
