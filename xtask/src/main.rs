@@ -172,16 +172,8 @@ fn check() -> Result<()> {
 
 /// Run cargo-rdme to check if README.md is up-to-date with the library documentation
 fn check_readme() -> Result<()> {
-    let meta = MetadataCommand::new()
-        .exec()
-        .wrap_err("failed to get cargo metadata")?;
-    for package in meta.workspace_default_packages() {
-        run_cargo(vec![
-            "rdme",
-            "--workspace-project",
-            &package.name,
-            "--check",
-        ])?;
+    for package in get_workspace_packages()? {
+        run_cargo(vec!["rdme", "--workspace-project", &package, "--check"])?;
     }
     Ok(())
 }
@@ -240,13 +232,21 @@ fn fix_clippy() -> Result<()> {
 
 /// Check that docs build without errors using flags for docs.rs
 fn lint_docs() -> Result<()> {
+    for package in get_workspace_packages()? {
+        run_cargo_nightly(vec!["docs-rs", "--package", &package])?;
+    }
+    Ok(())
+}
+
+fn get_workspace_packages() -> Result<Vec<String>> {
     let meta = MetadataCommand::new()
         .exec()
         .wrap_err("failed to get cargo metadata")?;
-    for package in meta.workspace_default_packages() {
-        run_cargo_nightly(vec!["docs-rs", "--package", &package.name])?;
-    }
-    Ok(())
+    Ok(meta
+        .workspace_default_packages()
+        .iter()
+        .map(|v| v.name.clone())
+        .collect())
 }
 
 /// Lint formatting issues in the project
