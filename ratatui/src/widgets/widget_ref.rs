@@ -82,14 +82,6 @@ pub trait WidgetRef {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
     fn render_ref(&self, area: Rect, buf: &mut Buffer);
-
-    /// Converts the widget into a boxed widget.
-    fn into_boxed(self) -> Box<dyn WidgetRef>
-    where
-        Self: Sized + 'static,
-    {
-        Box::new(self)
-    }
 }
 
 /// This allows you to render a widget by reference.

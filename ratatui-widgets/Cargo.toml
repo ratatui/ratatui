@@ -28,11 +28,7 @@ all-widgets = ["calendar"]
 calendar = ["dep:time"]
 
 ## Enable all unstable features.
-unstable = ["unstable-rendered-line-info", "unstable-widget-ref"]
-
-## enables the [`WidgetRef`] and [`StatefulWidgetRef`] traits which are experimental and may change
-## in the future.
-unstable-widget-ref = ["ratatui-core/unstable-widget-ref"]
+unstable = ["unstable-rendered-line-info"]
 
 ## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
 ## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods

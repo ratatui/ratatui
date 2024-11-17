@@ -2128,7 +2128,6 @@ dependencies = [
  "cassowary",
  "compact_str",
  "indoc",
- "instability",
  "itertools 0.13.0",
  "lru",
  "palette",

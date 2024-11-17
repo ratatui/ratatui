@@ -10,7 +10,7 @@ use crate::{buffer::Buffer, layout::Rect, style::Style};
 /// themselves. This allows you to store a reference to a widget and render it later. Widget crates
 /// should consider also doing this to allow for more flexibility in how widgets are used.
 ///
-/// In Ratatui 0.26.0, we also added an unstable [`WidgetRef`] trait and implemented this on all the
+/// In Ratatui 0.26.0, we also added an unstable `WidgetRef` trait and implemented this on all the
 /// internal widgets. In addition to the above benefit of rendering references to widgets, this also
 /// allows you to render boxed widgets. This is useful when you want to store a collection of
 /// widgets with different types. You can then iterate over the collection and render each widget.
