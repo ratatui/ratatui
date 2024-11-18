@@ -4,19 +4,19 @@ use crate::{buffer::Buffer, layout::Rect};
 
 /// A `StatefulWidgetRef` is a trait that allows rendering a stateful widget by reference.
 ///
-/// This is the stateful equivalent of `WidgetRef`. It is useful when you want to store a reference
+/// This is the stateful equivalent of `WidgetRef`. It is useful when you need to store a reference
 /// to a stateful widget and render it later. It also allows you to render boxed stateful widgets.
 ///
-/// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal stateful
-/// widgets. It is currently marked as unstable as we are still evaluating the API and may make
-/// changes in the future. See <https://github.com/ratatui/ratatui/issues/1287> for more
-/// information.
+/// This trait was introduced in Ratatui 0.26.0. It is currently marked as unstable as we are still
+/// evaluating the API and may make changes in the future. See
+/// <https://github.com/ratatui/ratatui/issues/1287> for more information.
 ///
-/// A blanket implementation of `StatefulWidget` for `&W` where `W` implements `StatefulWidgetRef`
-/// is provided.
+/// A blanket implementation of `StatefulWidgetRef` for `&W` where `W` implements `StatefulWidget`
+/// is provided. Most of the time you will want to implement `StatefulWidget` against a reference to
+/// the widget instead of implementing `StatefulWidgetRef` directly.
 ///
-/// See the documentation for [`WidgetRef`] for more information on boxed widgets.
-/// See the documentation for [`StatefulWidget`] for more information on stateful widgets.
+/// See the documentation for [`WidgetRef`] for more information on boxed widgets. See the
+/// documentation for [`StatefulWidget`] for more information on stateful widgets.
 ///
 /// # Examples
 ///
