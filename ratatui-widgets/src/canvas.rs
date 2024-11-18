@@ -424,6 +424,25 @@ impl<'a, 'b> Painter<'a, 'b> {
     pub fn paint(&mut self, x: usize, y: usize, color: Color) {
         self.context.grid.paint(x, y, color);
     }
+
+    /// Canvas context bounds by axis.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::{
+    ///     style::Color,
+    ///     symbols,
+    ///     widgets::canvas::{Context, Painter},
+    /// };
+    ///
+    /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
+    /// let mut painter = Painter::from(&mut ctx);
+    /// assert_eq!(painter.bounds(), (&[0.0, 2.0], &[0.0, 2.0]));
+    /// ```
+    pub fn bounds(&self) -> (&[f64; 2], &[f64; 2]) {
+        (&self.context.x_bounds, &self.context.y_bounds)
+    }
 }
 
 impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
