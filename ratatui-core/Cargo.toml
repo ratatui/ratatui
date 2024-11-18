@@ -29,16 +29,6 @@ underline-color = []
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
-## enable all unstable features.
-unstable = ["unstable-widget-ref"]
-
-## enables the [`WidgetRef`] and [`StatefulWidgetRef`] traits which are experimental and may change
-## in the future.
-##
-## [`WidgetRef`]: widgets::WidgetRef
-## [`StatefulWidgetRef`]: widgets::StatefulWidgetRef
-unstable-widget-ref = []
-
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
@@ -48,7 +38,6 @@ bitflags = "2.3"
 cassowary = "0.3"
 compact_str = "0.8.0"
 document-features = { workspace = true, optional = true }
-instability.workspace = true
 indoc.workspace = true
 itertools.workspace = true
 lru = "0.12.0"

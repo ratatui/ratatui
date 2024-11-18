@@ -15,7 +15,7 @@ use ratatui_core::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::Style,
     text::{Line, Span},
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 use time::{Date, Duration, OffsetDateTime};
 
@@ -136,13 +136,13 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
 
 impl<DS: DateStyler> Widget for Monthly<'_, DS> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl<DS: DateStyler> WidgetRef for Monthly<'_, DS> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        self.block.render_ref(area, buf);
+impl<DS: DateStyler> Widget for &Monthly<'_, DS> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
         self.render_monthly(inner, buf);
     }

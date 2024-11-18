@@ -29,8 +29,6 @@
 //! [`Canvas`]: crate::widgets::canvas::Canvas
 
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
-#[instability::unstable(feature = "widget-ref")]
-pub use ratatui_core::widgets::{StatefulWidgetRef, WidgetRef};
 // TODO remove this module once title etc. are gone
 pub use ratatui_widgets::block;
 #[cfg(feature = "widget-calendar")]
@@ -51,3 +49,8 @@ pub use ratatui_widgets::{
     table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
+#[instability::unstable(feature = "widget-ref")]
+pub use {stateful_widget_ref::StatefulWidgetRef, widget_ref::WidgetRef};
+
+mod stateful_widget_ref;
+mod widget_ref;

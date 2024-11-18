@@ -5,7 +5,7 @@ use ratatui_core::{
     layout::{Alignment, Position, Rect},
     style::{Style, Styled},
     text::{Line, StyledGrapheme, Text},
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 use unicode_width::UnicodeWidthStr;
 
@@ -419,14 +419,14 @@ impl<'a> Paragraph<'a> {
 
 impl Widget for Paragraph<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for Paragraph<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &Paragraph<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        self.block.render_ref(area, buf);
+        self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
         self.render_paragraph(inner, buf);
     }

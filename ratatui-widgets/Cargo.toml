@@ -15,9 +15,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [features]
-## enables `unstable-widget-ref` as default
-default = ["unstable-widget-ref"]
-
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "ratatui-core/serde"]
@@ -32,11 +29,7 @@ all-widgets = ["calendar"]
 calendar = ["dep:time"]
 
 ## Enable all unstable features.
-unstable = ["unstable-rendered-line-info", "unstable-widget-ref"]
-
-## enables the [`WidgetRef`](ratatui_core::widgets::WidgetRef) and
-## [`StatefulWidgetRef`](ratatui_core::widgets::StatefulWidgetRef) traits which are experimental and may change
-unstable-widget-ref = ["ratatui-core/unstable-widget-ref"]
+unstable = ["unstable-rendered-line-info"]
 
 ## Enables the [`Paragraph::line_count`](paragraph::Paragraph::line_count)
 ## [`Paragraph::line_width`](paragraph::Paragraph::line_width) methods

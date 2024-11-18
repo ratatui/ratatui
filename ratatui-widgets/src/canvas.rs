@@ -22,7 +22,7 @@ use ratatui_core::{
     style::{Color, Style},
     symbols::{self, Marker},
     text::Line as TextLine,
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 
 pub use self::{
@@ -747,16 +747,16 @@ where
     F: Fn(&mut Context),
 {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl<F> WidgetRef for Canvas<'_, F>
+impl<F> Widget for &Canvas<'_, F>
 where
     F: Fn(&mut Context),
 {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        self.block.render_ref(area, buf);
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.as_ref().render(area, buf);
         let canvas_area = self.block.inner_if_some(area);
         if canvas_area.is_empty() {
             return;

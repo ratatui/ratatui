@@ -6,7 +6,7 @@ use ratatui_core::{
     style::{Modifier, Style, Styled},
     symbols::{self},
     text::{Line, Span},
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 
 use crate::block::{Block, BlockExt};
@@ -364,14 +364,14 @@ impl<'a> Styled for Tabs<'a> {
 
 impl Widget for Tabs<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for Tabs<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &Tabs<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        self.block.render_ref(area, buf);
+        self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
         self.render_tabs(inner, buf);
     }

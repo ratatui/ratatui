@@ -12,7 +12,7 @@ use ratatui_core::{
     style::{Style, Styled},
     symbols::border,
     text::Line,
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 
 pub use self::{
@@ -603,12 +603,12 @@ impl<'a> Block<'a> {
 
 impl Widget for Block<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for Block<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &Block<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         if area.is_empty() {
             return;
@@ -744,7 +744,7 @@ impl Block<'_> {
                 ..titles_area
             };
             buf.set_style(title_area, self.titles_style);
-            title.render_ref(title_area, buf);
+            title.render(title_area, buf);
 
             // bump the width of the titles area to the left
             titles_area.width = titles_area
@@ -785,7 +785,7 @@ impl Block<'_> {
                 ..titles_area
             };
             buf.set_style(title_area, self.titles_style);
-            title.render_ref(title_area, buf);
+            title.render(title_area, buf);
 
             // bump the titles area to the right and reduce its width
             titles_area.x = titles_area.x.saturating_add(title_width + 1);
@@ -808,7 +808,7 @@ impl Block<'_> {
                 ..titles_area
             };
             buf.set_style(title_area, self.titles_style);
-            title.render_ref(title_area, buf);
+            title.render(title_area, buf);
 
             // bump the titles area to the right and reduce its width
             titles_area.x = titles_area.x.saturating_add(title_width + 1);

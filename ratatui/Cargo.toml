@@ -21,8 +21,8 @@ indoc = "2"
 instability.workspace = true
 itertools.workspace = true
 palette = { version = "0.7.6", optional = true }
-ratatui-core = { workspace = true, features = ["unstable-widget-ref"] }
-ratatui-widgets = { workspace = true, features = ["unstable-widget-ref"] }
+ratatui-core = { workspace = true }
+ratatui-widgets = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
 termwiz = { version = "0.22.0", optional = true }
@@ -163,7 +163,7 @@ unstable-rendered-line-info = ["ratatui-widgets/unstable-rendered-line-info"]
 ##
 ## [`WidgetRef`]: widgets::WidgetRef
 ## [`StatefulWidgetRef`]: widgets::StatefulWidgetRef
-unstable-widget-ref = ["ratatui-core/unstable-widget-ref"]
+unstable-widget-ref = []
 
 ## Enables getting access to backends' writers.
 unstable-backend-writer = []

@@ -6,7 +6,7 @@ use crate::{
     layout::{Alignment, Rect},
     style::{Style, Styled},
     text::{Line, Span},
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 
 /// A string split over one or more lines.
@@ -730,12 +730,12 @@ impl fmt::Display for Text<'_> {
 
 impl Widget for Text<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf)
     }
 }
 
-impl WidgetRef for Text<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &Text<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         for (line, line_area) in self.iter().zip(area.rows()) {

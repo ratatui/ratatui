@@ -6,7 +6,7 @@ use ratatui_core::{
     style::{Style, Styled},
     symbols::{self},
     text::Line,
-    widgets::{Widget, WidgetRef},
+    widgets::Widget,
 };
 
 pub use self::{bar::Bar, bar_group::BarGroup};
@@ -600,15 +600,15 @@ impl BarChart<'_> {
 
 impl Widget for BarChart<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_ref(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
-impl WidgetRef for BarChart<'_> {
-    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl Widget for &BarChart<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
-        self.block.render_ref(area, buf);
+        self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
 
         if inner.is_empty() || self.data.is_empty() || self.bar_width == 0 {
