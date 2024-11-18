@@ -24,12 +24,8 @@ use crate::{buffer::Buffer, layout::Rect, style::Style};
 ///
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
-/// use ratatui_core::{
-///     buffer::Buffer,
-///     layout::Rect,
-///     text::Line,
-///     widgets::{Widget, WidgetRef},
-/// };
+/// use ratatui::widgets::WidgetRef;
+/// use ratatui_core::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
 ///
 /// struct Greeting;
 ///
@@ -130,12 +126,8 @@ impl WidgetRef for String {
 ///
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
-/// use ratatui_core::{
-///     buffer::Buffer,
-///     layout::Rect,
-///     text::Line,
-///     widgets::{Widget, WidgetRef},
-/// };
+/// use ratatui::widgets::WidgetRef;
+/// use ratatui_core::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
 ///
 /// struct Parent {
 ///     child: Option<Child>,

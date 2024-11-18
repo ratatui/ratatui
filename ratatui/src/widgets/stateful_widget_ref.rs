@@ -20,12 +20,13 @@ use crate::{buffer::Buffer, layout::Rect};
 ///
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
+/// use ratatui::widgets::StatefulWidgetRef;
 /// use ratatui_core::{
 ///     buffer::Buffer,
 ///     layout::Rect,
 ///     style::Stylize,
 ///     text::Line,
-///     widgets::{StatefulWidget, StatefulWidgetRef, Widget},
+///     widgets::{StatefulWidget, Widget},
 /// };
 ///
 /// struct PersonalGreeting;

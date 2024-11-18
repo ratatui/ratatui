@@ -113,7 +113,7 @@ impl Frame<'_> {
     ///
     /// let block = Block::new();
     /// let area = Rect::new(0, 0, 5, 5);
-    /// frame.render_widget_ref(block, area);
+    /// frame.render_widget_ref(&block, area);
     /// # }
     /// ```
     #[allow(clippy::needless_pass_by_value)]
