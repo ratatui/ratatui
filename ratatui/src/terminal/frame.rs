@@ -181,7 +181,7 @@ impl Frame<'_> {
     /// let mut state = ListState::default().with_selected(Some(1));
     /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);
     /// let area = Rect::new(0, 0, 5, 5);
-    /// frame.render_stateful_widget_ref(list, area, &mut state);
+    /// frame.render_stateful_widget_ref(&list, area, &mut state);
     /// # }
     /// ```
     #[allow(clippy::needless_pass_by_value)]

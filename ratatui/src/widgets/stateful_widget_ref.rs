@@ -1,3 +1,5 @@
+use ratatui_core::widgets::StatefulWidget;
+
 use crate::{buffer::Buffer, layout::Rect};
 
 /// A `StatefulWidgetRef` is a trait that allows rendering a stateful widget by reference.
@@ -65,20 +67,18 @@ pub trait StatefulWidgetRef {
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 }
 
-// Note: while StatefulWidgetRef is marked as unstable, the blanket implementation of StatefulWidget
-// cannot be implemented as W::State is effectively pub(crate) and not accessible from outside the
-// crate. Once stabilized, this blanket implementation can be added and the specific implementations
-// on Table and List can be removed.
-//
-// /// Blanket implementation of `StatefulWidget` for `&W` where `W` implements `StatefulWidgetRef`.
-// ///
-// /// This allows you to render a stateful widget by reference.
-// impl<W: StatefulWidgetRef> StatefulWidget for &W {
-//     type State = W::State;
-//     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-//         StatefulWidgetRef::render_ref(self, area, buf, state);
-//     }
-// }
+/// Blanket implementation of `StatefulWidgetRef` for `&W` where `W` implements `StatefulWidget`.
+///
+/// This allows you to render a stateful widget by reference.
+impl<W, State> StatefulWidgetRef for &W
+where
+    for<'a> &'a W: StatefulWidget<State = State>,
+{
+    type State = State;
+    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        self.render(area, buf, state);
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -99,35 +99,23 @@ mod tests {
 
     struct PersonalGreeting;
 
-    impl StatefulWidgetRef for PersonalGreeting {
+    impl StatefulWidget for &PersonalGreeting {
         type State = String;
-        fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
             Line::from(format!("Hello {state}")).render(area, buf);
         }
     }
 
     #[rstest]
     fn render_ref(mut buf: Buffer, mut state: String) {
-        let widget = PersonalGreeting;
+        let widget = &PersonalGreeting;
         widget.render_ref(buf.area, &mut buf, &mut state);
         assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
     }
 
-    // Note this cannot be tested until the blanket implementation of StatefulWidget for &W
-    // where W implements StatefulWidgetRef is added. (see the comment in the blanket
-    // implementation for more).
-    // /// This test is to ensure that the blanket implementation of `StatefulWidget` for `&W`
-    // where /// `W` implements `StatefulWidgetRef` works as expected.
-    // #[rstest]
-    // fn stateful_widget_blanket_render(mut buf: Buffer, mut state: String) {
-    //     let widget = &PersonalGreeting;
-    //     widget.render(buf.area, &mut buf, &mut state);
-    //     assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
-    // }
-
     #[rstest]
-    fn box_render_render(mut buf: Buffer, mut state: String) {
-        let widget = Box::new(PersonalGreeting);
+    fn box_render_ref(mut buf: Buffer, mut state: String) {
+        let widget = Box::new(&PersonalGreeting);
         widget.render_ref(buf.area, &mut buf, &mut state);
         assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
     }
