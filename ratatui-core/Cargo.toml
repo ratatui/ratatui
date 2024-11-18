@@ -37,6 +37,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 bitflags = "2.3"
 cassowary = "0.3"
 compact_str = "0.8.0"
+document-features = { workspace = true, optional = true }
 indoc.workspace = true
 itertools.workspace = true
 lru = "0.12.0"

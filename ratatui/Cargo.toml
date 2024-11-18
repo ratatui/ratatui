@@ -16,7 +16,7 @@ rust-version.workspace = true
 
 [dependencies]
 crossterm = { version = "0.28.1", optional = true }
-document-features = { version = "0.2.7", optional = true }
+document-features = { workspace = true, optional = true }
 indoc = "2"
 instability.workspace = true
 itertools.workspace = true
@@ -102,7 +102,7 @@ unnecessary_self_imports = "warn"
 use_self = "warn"
 
 [features]
-#! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
+#! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
 #!
 ## By default, we enable the crossterm backend as this is a reasonable choice for most applications
 ## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
