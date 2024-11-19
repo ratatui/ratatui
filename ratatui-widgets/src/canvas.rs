@@ -362,6 +362,9 @@ impl<'a, 'b> Painter<'a, 'b> {
     /// and `[0, height - 1]` respectively. The resolution of the grid is used to convert the
     /// `(x, y)` coordinates to the location of a point on the grid.
     ///
+    /// Points are rounded to the nearest grid cell (with points exactly in the center of a cell
+    /// rounding up).
+    ///
     /// # Examples
     ///
     /// ```
@@ -377,7 +380,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     /// assert_eq!(point, Some((0, 7)));
     ///
     /// let point = painter.get_point(1.5, 1.0);
-    /// assert_eq!(point, Some((1, 3)));
+    /// assert_eq!(point, Some((2, 4)));
     ///
     /// let point = painter.get_point(0.0, 0.0);
     /// assert_eq!(point, None);
@@ -389,20 +392,18 @@ impl<'a, 'b> Painter<'a, 'b> {
     /// assert_eq!(point, Some((0, 0)));
     /// ```
     pub fn get_point(&self, x: f64, y: f64) -> Option<(usize, usize)> {
-        let left = self.context.x_bounds[0];
-        let right = self.context.x_bounds[1];
-        let top = self.context.y_bounds[1];
-        let bottom = self.context.y_bounds[0];
+        let [left, right] = self.context.x_bounds;
+        let [bottom, top] = self.context.y_bounds;
         if x < left || x > right || y < bottom || y > top {
             return None;
         }
-        let width = (self.context.x_bounds[1] - self.context.x_bounds[0]).abs();
-        let height = (self.context.y_bounds[1] - self.context.y_bounds[0]).abs();
-        if width == 0.0 || height == 0.0 {
+        let width = right - left;
+        let height = top - bottom;
+        if width <= 0.0 || height <= 0.0 {
             return None;
         }
-        let x = ((x - left) * (self.resolution.0 - 1.0) / width) as usize;
-        let y = ((top - y) * (self.resolution.1 - 1.0) / height) as usize;
+        let x = ((x - left) * (self.resolution.0 - 1.0) / width).round() as usize;
+        let y = ((top - y) * (self.resolution.1 - 1.0) / height).round() as usize;
         Some((x, y))
     }
 

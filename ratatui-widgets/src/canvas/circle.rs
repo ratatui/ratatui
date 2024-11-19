@@ -53,10 +53,10 @@ mod tests {
             .y_bounds([-10.0, 10.0]);
         canvas.render(buffer.area, &mut buffer);
         let expected = Buffer::with_lines([
-            "     ⢀⣠⢤⣀ ",
-            "    ⢰⠋  ⠈⣇",
-            "    ⠘⣆⡀ ⣠⠇",
-            "      ⠉⠉⠁ ",
+            "      ⣀⣀⣀ ",
+            "     ⡞⠁ ⠈⢣",
+            "     ⢇⡀ ⢀⡼",
+            "      ⠉⠉⠉ ",
             "          ",
         ]);
         assert_eq!(buffer, expected);

@@ -168,7 +168,7 @@ mod tests {
         "          ",
         "          ",
         "          ",
-        "•••••     ",
+        "••••••    ",
     ])]
     #[case::off_grid6(&Line::new(-1.0, -1.0, 10.0, 10.0, Color::Red), [
         "         •",
@@ -238,12 +238,12 @@ mod tests {
         "          ",
         "          ",
         "          ",
-        "         •",
-        "       •• ",
-        "     ••   ",
-        "   ••     ",
-        " ••       ",
-        "•         ",
+        "          ",
+        "        ••",
+        "      ••  ",
+        "    ••    ",
+        "  ••      ",
+        "••        ",
     ])]
     // dy < dx, x1 > x2
     #[case::diagonal2(&Line::new(10.0, 0.0, 0.0, 5.0, Color::Red), [
@@ -251,15 +251,16 @@ mod tests {
         "          ",
         "          ",
         "          ",
-        "•         ",
-        " ••       ",
-        "   ••     ",
-        "     ••   ",
-        "       •• ",
-        "         •",
+        "          ",
+        "••        ",
+        "  ••      ",
+        "    ••    ",
+        "      ••  ",
+        "        ••",
     ])]
     // dy > dx, y1 < y2
     #[case::diagonal3(&Line::new(0.0, 0.0, 5.0, 10.0, Color::Red), [
+        "     •    ",
         "    •     ",
         "    •     ",
         "   •      ",
@@ -268,13 +269,11 @@ mod tests {
         "  •       ",
         " •        ",
         " •        ",
-        "•         ",
         "•         ",
     ])]
     // dy > dx, y1 > y2
     #[case::diagonal4(&Line::new(0.0, 10.0, 5.0, 0.0, Color::Red), [
         "•         ",
-        "•         ",
         " •        ",
         " •        ",
         "  •       ",
@@ -283,6 +282,7 @@ mod tests {
         "   •      ",
         "    •     ",
         "    •     ",
+        "     •    ",
     ])]
     fn tests<'expected_line, ExpectedLines>(#[case] line: &Line, #[case] expected: ExpectedLines)
     where
