@@ -8,26 +8,17 @@
 default_job = "check"
 
 [jobs.check]
-command = ["cargo", "check", "--all-features", "--color", "always"]
+command = ["cargo", "check", "--all-features"]
 need_stdout = false
 
 [jobs.check-all]
-command = [
-    "cargo",
-    "check",
-    "--all-targets",
-    "--all-features",
-    "--color",
-    "always",
-]
+command = ["cargo", "check", "--all-targets", "--all-features"]
 need_stdout = false
 
 [jobs.check-crossterm]
 command = [
     "cargo",
     "check",
-    "--color",
-    "always",
     "--all-targets",
     "--no-default-features",
     "--features",
@@ -39,8 +30,6 @@ need_stdout = false
 command = [
     "cargo",
     "check",
-    "--color",
-    "always",
     "--all-targets",
     "--no-default-features",
     "--features",
@@ -52,8 +41,6 @@ need_stdout = false
 command = [
     "cargo",
     "check",
-    "--color",
-    "always",
     "--all-targets",
     "--no-default-features",
     "--features",
@@ -62,34 +49,15 @@ command = [
 need_stdout = false
 
 [jobs.clippy]
-command = ["cargo", "clippy", "--all-targets", "--color", "always"]
+command = ["cargo", "clippy", "--all-targets"]
 need_stdout = false
 
 [jobs.test]
-command = [
-    "cargo",
-    "test",
-    "--all-features",
-    "--color",
-    "always",
-    "--",
-    "--color",
-    "always",         # see https://github.com/Canop/bacon/issues/124
-]
+command = ["cargo", "test", "--all-features"]
 need_stdout = true
 
 [jobs.test-unit]
-command = [
-    "cargo",
-    "test",
-    "--lib",
-    "--all-features",
-    "--color",
-    "always",
-    "--",
-    "--color",
-    "always",         # see https://github.com/Canop/bacon/issues/124
-]
+command = ["cargo", "test", "--lib", "--all-features"]
 need_stdout = true
 
 [jobs.doc]
@@ -100,8 +68,6 @@ command = [
     "-Zunstable-options",
     "-Zrustdoc-scrape-examples",
     "--all-features",
-    "--color",
-    "always",
     "--no-deps",
 ]
 env.RUSTDOCFLAGS = "--cfg docsrs"
@@ -117,8 +83,6 @@ command = [
     "-Zunstable-options",
     "-Zrustdoc-scrape-examples",
     "--all-features",
-    "--color",
-    "always",
     "--no-deps",
     "--open",
 ]
@@ -134,8 +98,6 @@ command = [
     "--output-path",
     "target/lcov.info",
     "--all-features",
-    "--color",
-    "always",
 ]
 
 [jobs.coverage-unit-tests-only]
@@ -147,8 +109,6 @@ command = [
     "target/lcov.info",
     "--lib",
     "--all-features",
-    "--color",
-    "always",
 ]
 
 [jobs.hack]
@@ -160,8 +120,6 @@ command = [
     "--each-feature",
     # "--all-targets",
     "--workspace",
-    "--color",
-    "always",
 ]
 
 # You may define here keybindings that would be specific to
