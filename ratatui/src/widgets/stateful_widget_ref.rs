@@ -119,4 +119,22 @@ mod tests {
         widget.render_ref(buf.area, &mut buf, &mut state);
         assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
     }
+
+    #[rstest]
+    fn render_unsized_state_type(mut buf: Buffer) {
+        struct Bytes;
+
+        impl StatefulWidgetRef for Bytes {
+            /// state type is unsized
+            type State = [u8];
+            fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+                let slice = std::str::from_utf8(state).unwrap();
+                Line::from(format!("Bytes: {slice}")).render(area, buf);
+            }
+        }
+        let widget = Bytes;
+        let state = b"hello";
+        widget.render_ref(buf.area, &mut buf, &mut state.clone());
+        assert_eq!(buf, Buffer::with_lines(["Bytes: hello        "]));
+    }
 }
