@@ -61,7 +61,7 @@ pub trait StatefulWidgetRef {
     /// If you don't need this then you probably want to implement [`WidgetRef`] instead.
     ///
     /// [`WidgetRef`]: super::WidgetRef
-    type State;
+    type State: ?Sized;
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom stateful widget.
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
