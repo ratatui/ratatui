@@ -155,6 +155,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-example"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "octocrab",
+ "ratatui",
+ "tokio",
+ "tokio-stream",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1828,9 +1840,9 @@ dependencies = [
 
 [[package]]
 name = "octocrab"
-version = "0.42.1"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b97f949a7cb04608441c2ddb28e15a377e8b5142c2d1835ad2686d434de8558"
+checksum = "5235d5839910001bef2c3df99a88688c7c781e5b1fd5fe40c5d8fa8bd786ac5a"
 dependencies = [
  "arc-swap",
  "async-trait",
@@ -2367,7 +2379,6 @@ dependencies = [
  "indoc",
  "instability",
  "itertools 0.13.0",
- "octocrab",
  "palette",
  "pretty_assertions",
  "rand 0.8.5",
@@ -3284,6 +3295,17 @@ checksum = "0c7bc40d0e5a97695bb96e27995cd3a08538541b0a846f65bba7a359f36700d4"
 dependencies = [
  "rustls",
  "rustls-pki-types",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f4e6ce100d0eb49a2734f8c0812bcd324cf357d21810932c5df6b96ef2b86f1"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
  "tokio",
 ]
 

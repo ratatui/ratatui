@@ -1,0 +1,22 @@
+[package]
+name = "async-example"
+version = "0.1.0"
+authors.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+license.workspace = true
+exclude.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+color-eyre = "0.6.3"
+crossterm = { workspace = true, features = ["event-stream"] }
+octocrab = "0.42.0"
+ratatui.workspace = true
+tokio = { version = "1.41.1", features = ["rt-multi-thread", "macros"] }
+tokio-stream = "0.1.16"

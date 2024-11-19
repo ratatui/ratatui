@@ -122,7 +122,6 @@ fakeit = "1.1"
 font8x8 = "0.3.1"
 futures = "0.3.30"
 indoc = "2"
-octocrab = "0.42.1"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
@@ -142,11 +141,6 @@ bench = false
 [[bench]]
 name = "main"
 harness = false
-
-[[example]]
-name = "async"
-required-features = ["crossterm"]
-doc-scrape-examples = true
 
 [[example]]
 name = "barchart"
