@@ -34,7 +34,7 @@ ratatui = { path = "ratatui" }
 ratatui-core = { path = "ratatui-core" }
 ratatui-widgets = { path = "ratatui-widgets" }
 rstest = "0.23.0"
-serde = { version = "1.0.214", features = ["derive"] }
+serde = { version = "1.0.215", features = ["derive"] }
 strum = { version = "0.26.3", features = ["derive"] }
 unicode-segmentation = "1.12.0"
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
