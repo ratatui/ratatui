@@ -77,7 +77,7 @@ use crate::{
 /// [`Terminal`]: crate::terminal::Terminal
 /// [`backend`]: crate::backend
 /// [Crossterm]: https://crates.io/crates/crossterm
-/// [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct CrosstermBackend<W: Write> {
     /// The writer used to send commands to the terminal.

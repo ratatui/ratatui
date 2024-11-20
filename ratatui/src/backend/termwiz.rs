@@ -57,7 +57,7 @@ use crate::{
 /// [`Terminal`]: crate::terminal::Terminal
 /// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
 /// [Termwiz]: https://crates.io/crates/termwiz
-/// [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }

@@ -279,7 +279,7 @@
 //! [Layout]: https://ratatui.rs/how-to/layout/
 //! [Styling Text]: https://ratatui.rs/how-to/render/style-text/
 //! [templates]: https://github.com/ratatui/templates/
-//! [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
+//! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 //! [Report a bug]: https://github.com/ratatui/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
 //! [Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
 //! [Create a Pull Request]: https://github.com/ratatui/ratatui/compare
