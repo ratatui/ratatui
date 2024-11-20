@@ -1,3 +1,10 @@
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
+)]
 //! **ratatui-core** is the core library of the [ratatui] project,
 //! providing the essential building blocks for creating rich terminal user interfaces in Rust.
 //!
