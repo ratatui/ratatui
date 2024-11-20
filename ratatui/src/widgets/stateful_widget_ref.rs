@@ -61,7 +61,7 @@ pub trait StatefulWidgetRef {
     /// If you don't need this then you probably want to implement [`WidgetRef`] instead.
     ///
     /// [`WidgetRef`]: super::WidgetRef
-    type State;
+    type State: ?Sized;
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom stateful widget.
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
@@ -70,7 +70,7 @@ pub trait StatefulWidgetRef {
 /// Blanket implementation of `StatefulWidgetRef` for `&W` where `W` implements `StatefulWidget`.
 ///
 /// This allows you to render a stateful widget by reference.
-impl<W, State> StatefulWidgetRef for &W
+impl<W, State: ?Sized> StatefulWidgetRef for &W
 where
     for<'a> &'a W: StatefulWidget<State = State>,
 {
@@ -118,5 +118,39 @@ mod tests {
         let widget = Box::new(&PersonalGreeting);
         widget.render_ref(buf.area, &mut buf, &mut state);
         assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
+    }
+
+    #[rstest]
+    fn render_stateful_widget_ref_with_unsized_state(mut buf: Buffer) {
+        struct Bytes;
+
+        impl StatefulWidgetRef for Bytes {
+            type State = [u8];
+            fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+                let slice = std::str::from_utf8(state).unwrap();
+                Line::from(format!("Bytes: {slice}")).render(area, buf);
+            }
+        }
+        let widget = Bytes;
+        let state = b"hello";
+        widget.render_ref(buf.area, &mut buf, &mut state.clone());
+        assert_eq!(buf, Buffer::with_lines(["Bytes: hello        "]));
+    }
+
+    #[rstest]
+    fn render_stateful_widget_with_unsized_state(mut buf: Buffer) {
+        struct Bytes;
+        impl StatefulWidget for &Bytes {
+            type State = [u8];
+            fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+                let slice = std::str::from_utf8(state).unwrap();
+                Line::from(format!("Bytes: {slice}")).render(area, buf);
+            }
+        }
+        let widget = &Bytes;
+        let mut state = b"hello".to_owned();
+        let state = state.as_mut_slice();
+        widget.render_ref(buf.area, &mut buf, state);
+        assert_eq!(buf, Buffer::with_lines(["Bytes: hello        "]));
     }
 }

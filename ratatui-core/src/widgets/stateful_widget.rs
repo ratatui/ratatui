@@ -121,7 +121,7 @@ pub trait StatefulWidget {
     /// If you don't need this then you probably want to implement [`Widget`] instead.
     ///
     /// [`Widget`]: super::Widget
-    type State;
+    type State: ?Sized;
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom stateful widget.
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
@@ -158,5 +158,24 @@ mod tests {
         let widget = PersonalGreeting;
         widget.render(buf.area, &mut buf, &mut state);
         assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
+    }
+
+    struct Bytes;
+
+    /// A widget with an unsized state type.
+    impl StatefulWidget for Bytes {
+        type State = [u8];
+        fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+            let slice = std::str::from_utf8(state).unwrap();
+            Line::from(format!("Bytes: {slice}")).render(area, buf);
+        }
+    }
+
+    #[rstest]
+    fn render_unsized_state_type(mut buf: Buffer) {
+        let widget = Bytes;
+        let state = b"hello";
+        widget.render(buf.area, &mut buf, &mut state.clone());
+        assert_eq!(buf, Buffer::with_lines(["Bytes: hello        "]));
     }
 }
