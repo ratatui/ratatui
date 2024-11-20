@@ -1,3 +1,11 @@
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
+)]
+#![warn(missing_docs)]
 //! ![Demo](https://github.com/ratatui/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
 //!
 //! <div align="center">
@@ -317,13 +325,6 @@
 //! [Forum Badge]: https://img.shields.io/discourse/likes?server=https%3A%2F%2Fforum.ratatui.rs&style=flat-square&logo=discourse&label=forum&color=C43AC3
 //! [Forum]: https://forum.ratatui.rs
 //! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
-
-// show the feature flags in the generated documentation
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
-    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
-)]
 
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
