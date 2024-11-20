@@ -70,7 +70,7 @@ pub trait StatefulWidgetRef {
 /// Blanket implementation of `StatefulWidgetRef` for `&W` where `W` implements `StatefulWidget`.
 ///
 /// This allows you to render a stateful widget by reference.
-impl<W, State> StatefulWidgetRef for &W
+impl<W, State: ?Sized> StatefulWidgetRef for &W
 where
     for<'a> &'a W: StatefulWidget<State = State>,
 {
@@ -121,11 +121,10 @@ mod tests {
     }
 
     #[rstest]
-    fn render_unsized_state_type(mut buf: Buffer) {
+    fn render_stateful_widget_ref_with_unsized_state(mut buf: Buffer) {
         struct Bytes;
 
         impl StatefulWidgetRef for Bytes {
-            /// state type is unsized
             type State = [u8];
             fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
                 let slice = std::str::from_utf8(state).unwrap();
@@ -135,6 +134,23 @@ mod tests {
         let widget = Bytes;
         let state = b"hello";
         widget.render_ref(buf.area, &mut buf, &mut state.clone());
+        assert_eq!(buf, Buffer::with_lines(["Bytes: hello        "]));
+    }
+
+    #[rstest]
+    fn render_stateful_widget_with_unsized_state(mut buf: Buffer) {
+        struct Bytes;
+        impl StatefulWidget for &Bytes {
+            type State = [u8];
+            fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+                let slice = std::str::from_utf8(state).unwrap();
+                Line::from(format!("Bytes: {slice}")).render(area, buf);
+            }
+        }
+        let widget = &Bytes;
+        let mut state = b"hello".to_owned();
+        let state = state.as_mut_slice();
+        widget.render_ref(buf.area, &mut buf, state);
         assert_eq!(buf, Buffer::with_lines(["Bytes: hello        "]));
     }
 }
