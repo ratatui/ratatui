@@ -15,7 +15,7 @@ fn barchart(c: &mut Criterion) {
         let data: Vec<Bar> = (0..data_count)
             .map(|i| {
                 Bar::default()
-                    .label(format!("B{i}").into())
+                    .label(format!("B{i}"))
                     .value(rng.gen_range(0..data_count))
             })
             .collect();

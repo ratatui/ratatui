@@ -874,10 +874,10 @@ mod tests {
     #[test]
     fn test_empty_group() {
         let chart = BarChart::default()
-            .data(BarGroup::default().label("invisible".into()))
+            .data(BarGroup::default().label("invisible"))
             .data(
                 BarGroup::default()
-                    .label("G".into())
+                    .label("G")
                     .bars(&[Bar::default().value(1), Bar::default().value(2)]),
             );
 
@@ -894,12 +894,12 @@ mod tests {
 
     fn build_test_barchart<'a>() -> BarChart<'a> {
         BarChart::default()
-            .data(BarGroup::default().label("G1".into()).bars(&[
+            .data(BarGroup::default().label("G1").bars(&[
                 Bar::default().value(2),
                 Bar::default().value(3),
                 Bar::default().value(4),
             ]))
-            .data(BarGroup::default().label("G2".into()).bars(&[
+            .data(BarGroup::default().label("G2").bars(&[
                 Bar::default().value(3),
                 Bar::default().value(4),
                 Bar::default().value(5),
@@ -966,7 +966,7 @@ mod tests {
     fn test_horizontal_bars_label_width_greater_than_bar(bar_color: Option<Color>) {
         let mut bar = Bar::default()
             .value(2)
-            .text_value("label".into())
+            .text_value("label")
             .value_style(Style::default().red());
 
         if let Some(color) = bar_color {
@@ -1041,7 +1041,7 @@ mod tests {
         let chart: BarChart<'_> = BarChart::default()
             .data(
                 BarGroup::default()
-                    .label(Span::from("G1").red().into())
+                    .label(Span::from("G1").red())
                     .bars(&[Bar::default().value(2)]),
             )
             .group_gap(1)
@@ -1109,18 +1109,9 @@ mod tests {
     #[test]
     fn test_unicode_as_value() {
         let group = BarGroup::default().bars(&[
-            Bar::default()
-                .value(123)
-                .label("B1".into())
-                .text_value("写".into()),
-            Bar::default()
-                .value(321)
-                .label("B2".into())
-                .text_value("写".into()),
-            Bar::default()
-                .value(333)
-                .label("B2".into())
-                .text_value("写".into()),
+            Bar::default().value(123).label("B1").text_value("写"),
+            Bar::default().value(321).label("B2").text_value("写"),
+            Bar::default().value(333).label("B2").text_value("写"),
         ]);
         let chart = BarChart::default().data(group).bar_width(3).bar_gap(1);
 
@@ -1162,7 +1153,7 @@ mod tests {
             ("i", 8),
         ])
             .into();
-        group = group.label("Group".into());
+        group = group.label("Group");
 
         let chart = BarChart::default()
             .data(group)
@@ -1187,7 +1178,7 @@ mod tests {
             ("i", 8),
         ])
             .into();
-        group = group.label("Group".into());
+        group = group.label("Group");
 
         let chart = BarChart::default()
             .data(group)
