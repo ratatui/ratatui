@@ -53,6 +53,7 @@ unicode-segmentation.workspace = true
 unicode-width.workspace = true
 serde = { workspace = true, optional = true }
 document-features = { workspace = true, optional = true }
+line-clipping = "0.2.1"
 
 [dev-dependencies]
 rstest.workspace = true

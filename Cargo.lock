@@ -1378,6 +1378,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "line-clipping"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76364bf78d7ed059f98564fc5fb94c5a6eb2b6c9edd621cb1528febe1e918b29"
+dependencies = [
+ "bitflags 2.6.0",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2200,6 +2209,7 @@ dependencies = [
  "indoc",
  "instability",
  "itertools 0.13.0",
+ "line-clipping",
  "pretty_assertions",
  "ratatui",
  "ratatui-core",

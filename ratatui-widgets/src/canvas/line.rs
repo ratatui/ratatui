@@ -1,3 +1,4 @@
+use line_clipping::{cohen_sutherland, LineSegment, Point, Window};
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape};
@@ -31,13 +32,21 @@ impl Line {
 }
 
 impl Shape for Line {
+    #[allow(clippy::similar_names)]
     fn draw(&self, painter: &mut Painter) {
-        let Some((x1, y1)) = painter.get_point(self.x1, self.y1) else {
+        let (x_bounds, y_bounds) = painter.bounds();
+        let Some((world_x1, world_y1, world_x2, world_y2)) =
+            clip_line(x_bounds, y_bounds, self.x1, self.y1, self.x2, self.y2)
+        else {
             return;
         };
-        let Some((x2, y2)) = painter.get_point(self.x2, self.y2) else {
+        let Some((x1, y1)) = painter.get_point(world_x1, world_y1) else {
             return;
         };
+        let Some((x2, y2)) = painter.get_point(world_x2, world_y2) else {
+            return;
+        };
+
         let (dx, x_range) = if x2 >= x1 {
             (x2 - x1, x1..=x2)
         } else {
@@ -68,6 +77,27 @@ impl Shape for Line {
         } else {
             draw_line_high(painter, x1, y1, x2, y2, self.color);
         }
+    }
+}
+
+fn clip_line(
+    &[xmin, xmax]: &[f64; 2],
+    &[ymin, ymax]: &[f64; 2],
+    x1: f64,
+    y1: f64,
+    x2: f64,
+    y2: f64,
+) -> Option<(f64, f64, f64, f64)> {
+    if let Some(LineSegment {
+        p1: Point { x: x1, y: y1 },
+        p2: Point { x: x2, y: y2 },
+    }) = cohen_sutherland::clip_line(
+        LineSegment::new(Point::new(x1, y1), Point::new(x2, y2)),
+        Window::new(xmin, xmax, ymin, ymax),
+    ) {
+        Some((x1, y1, x2, y2))
+    } else {
+        None
     }
 }
 
@@ -124,9 +154,59 @@ mod tests {
     use crate::canvas::Canvas;
 
     #[rstest]
-    #[case::off_grid(&Line::new(-1.0, -1.0, 10.0, 10.0, Color::Red), ["          "; 10])]
-    #[case::off_grid(&Line::new(0.0, 0.0, 11.0, 11.0, Color::Red), ["          "; 10])]
-    #[case::horizontal(&Line::new(0.0, 0.0, 10.0, 0.0, Color::Red), [
+    #[case::off_grid1(&Line::new(-1.0, 0.0, -1.0, 10.0, Color::Red), ["          "; 10])]
+    #[case::off_grid2(&Line::new(0.0, -1.0, 10.0, -1.0, Color::Red), ["          "; 10])]
+    #[case::off_grid3(&Line::new(-10.0, 5.0, -1.0, 5.0, Color::Red), ["          "; 10])]
+    #[case::off_grid4(&Line::new(5.0, 11.0, 5.0, 20.0, Color::Red), ["          "; 10])]
+    #[case::off_grid5(&Line::new(-10.0, 0.0, 5.0, 0.0, Color::Red), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "•••••     ",
+    ])]
+    #[case::off_grid6(&Line::new(-1.0, -1.0, 10.0, 10.0, Color::Red), [
+        "         •",
+        "        • ",
+        "       •  ",
+        "      •   ",
+        "     •    ",
+        "    •     ",
+        "   •      ",
+        "  •       ",
+        " •        ",
+        "•         ",
+    ])]
+    #[case::off_grid7(&Line::new(0.0, 0.0, 11.0, 11.0, Color::Red), [
+        "         •",
+        "        • ",
+        "       •  ",
+        "      •   ",
+        "     •    ",
+        "    •     ",
+        "   •      ",
+        "  •       ",
+        " •        ",
+        "•         ",
+    ])]
+    #[case::off_grid8(&Line::new(-1.0, -1.0, 11.0, 11.0, Color::Red), [
+        "         •",
+        "        • ",
+        "       •  ",
+        "      •   ",
+        "     •    ",
+        "    •     ",
+        "   •      ",
+        "  •       ",
+        " •        ",
+        "•         ",
+    ])]
+    #[case::horizontal1(&Line::new(0.0, 0.0, 10.0, 0.0, Color::Red), [
         "          ",
         "          ",
         "          ",
@@ -138,7 +218,7 @@ mod tests {
         "          ",
         "••••••••••",
     ])]
-    #[case::horizontal(&Line::new(10.0, 10.0, 0.0, 10.0, Color::Red), [
+    #[case::horizontal2(&Line::new(10.0, 10.0, 0.0, 10.0, Color::Red), [
         "••••••••••",
         "          ",
         "          ",
@@ -150,10 +230,10 @@ mod tests {
         "          ",
         "          ",
     ])]
-    #[case::vertical(&Line::new(0.0, 0.0, 0.0, 10.0, Color::Red), ["•         "; 10])]
-    #[case::vertical(&Line::new(10.0, 10.0, 10.0, 0.0, Color::Red), ["         •"; 10])]
+    #[case::vertical1(&Line::new(0.0, 0.0, 0.0, 10.0, Color::Red), ["•         "; 10])]
+    #[case::vertical2(&Line::new(10.0, 10.0, 10.0, 0.0, Color::Red), ["         •"; 10])]
     // dy < dx, x1 < x2
-    #[case::diagonal(&Line::new(0.0, 0.0, 10.0, 5.0, Color::Red), [
+    #[case::diagonal1(&Line::new(0.0, 0.0, 10.0, 5.0, Color::Red), [
         "          ",
         "          ",
         "          ",
@@ -166,7 +246,7 @@ mod tests {
         "•         ",
     ])]
     // dy < dx, x1 > x2
-    #[case::diagonal(&Line::new(10.0, 0.0, 0.0, 5.0, Color::Red), [
+    #[case::diagonal2(&Line::new(10.0, 0.0, 0.0, 5.0, Color::Red), [
         "          ",
         "          ",
         "          ",
@@ -179,7 +259,7 @@ mod tests {
         "         •",
     ])]
     // dy > dx, y1 < y2
-    #[case::diagonal(&Line::new(0.0, 0.0, 5.0, 10.0, Color::Red), [
+    #[case::diagonal3(&Line::new(0.0, 0.0, 5.0, 10.0, Color::Red), [
         "    •     ",
         "    •     ",
         "   •      ",
@@ -192,7 +272,7 @@ mod tests {
         "•         ",
     ])]
     // dy > dx, y1 > y2
-    #[case::diagonal(&Line::new(0.0, 10.0, 5.0, 0.0, Color::Red), [
+    #[case::diagonal4(&Line::new(0.0, 10.0, 5.0, 0.0, Color::Red), [
         "•         ",
         "•         ",
         " •        ",
