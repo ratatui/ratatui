@@ -149,42 +149,43 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
         let canvas = Canvas::default()
             .marker(Marker::Braille)
-            .x_bounds([0.0, 10.0])
-            .y_bounds([0.0, 10.0])
+            .x_bounds([0.0, 20.0])
+            .y_bounds([0.0, 20.0])
             .paint(|context| {
                 // a rectangle that will draw the outside part of the braille
                 context.draw(&Rectangle {
                     x: 0.0,
                     y: 0.0,
-                    width: 10.0,
-                    height: 10.0,
+                    width: 20.0,
+                    height: 20.0,
                     color: Color::Red,
                 });
                 // a rectangle that will draw the inside part of the braille
                 context.draw(&Rectangle {
-                    x: 2.0,
-                    y: 1.75,
-                    width: 6.5,
-                    height: 6.5,
+                    x: 4.0,
+                    y: 4.0,
+                    width: 12.0,
+                    height: 12.0,
                     color: Color::Green,
                 });
             });
         canvas.render(buffer.area, &mut buffer);
         let mut expected = Buffer::with_lines([
             "⡏⠉⠉⠉⠉⠉⠉⠉⠉⢹",
-            "⡇⢠⠤⠤⠤⠤⠤⠤⡄⢸",
-            "⡇⢸      ⡇⢸",
-            "⡇⢸      ⡇⢸",
-            "⡇⢸      ⡇⢸",
-            "⡇⢸      ⡇⢸",
-            "⡇⢸      ⡇⢸",
-            "⡇⢸      ⡇⢸",
-            "⡇⠈⠉⠉⠉⠉⠉⠉⠁⢸",
+            "⡇        ⢸",
+            "⡇ ⡏⠉⠉⠉⠉⢹ ⢸",
+            "⡇ ⡇    ⢸ ⢸",
+            "⡇ ⡇    ⢸ ⢸",
+            "⡇ ⡇    ⢸ ⢸",
+            "⡇ ⡇    ⢸ ⢸",
+            "⡇ ⣇⣀⣀⣀⣀⣸ ⢸",
+            "⡇        ⢸",
             "⣇⣀⣀⣀⣀⣀⣀⣀⣀⣸",
         ]);
         expected.set_style(buffer.area, Style::new().red());
-        expected.set_style(buffer.area.inner(Margin::new(1, 1)), Style::new().green());
-        expected.set_style(buffer.area.inner(Margin::new(2, 2)), Style::reset());
+        expected.set_style(buffer.area.inner(Margin::new(1, 1)), Style::reset());
+        expected.set_style(buffer.area.inner(Margin::new(2, 2)), Style::new().green());
+        expected.set_style(buffer.area.inner(Margin::new(3, 3)), Style::reset());
         assert_eq!(buffer, expected);
     }
 }
