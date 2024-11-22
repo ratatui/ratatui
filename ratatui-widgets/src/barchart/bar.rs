@@ -1,7 +1,13 @@
-use ratatui_core::{buffer::Buffer, layout::Rect, style::Style, text::Line, widgets::Widget};
+use ratatui_core::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Style, Styled},
+    text::Line,
+    widgets::Widget,
+};
 use unicode_width::UnicodeWidthStr;
 
-/// A bar to be shown by the [`BarChart`](crate::barchart::BarChart) widget.
+/// A bar to be shown by the [`BarChart`](super::BarChart) widget.
 ///
 /// Here is an explanation of a `Bar`'s components.
 /// ```plain
@@ -24,7 +30,7 @@ use unicode_width::UnicodeWidthStr;
 /// Bar::default()
 ///     .label("Bar 1".into())
 ///     .value(10)
-///     .style(Style::new().red())
+///     .red()
 ///     .value_style(Style::new().red().on_white())
 ///     .text_value("10°C".to_string());
 /// ```
@@ -204,5 +210,34 @@ impl<'a> Bar<'a> {
         if let Some(label) = &self.label {
             label.render(area, buf);
         }
+    }
+}
+
+impl<'a> Styled for Bar<'a> {
+    type Item = Self;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style<S: Into<Style>>(mut self, style: S) -> Self::Item {
+        self.style = style.into();
+        self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ratatui_core::style::{Color, Modifier, Style, Stylize};
+
+    use super::*;
+
+    #[test]
+    fn test_bar_stylized() {
+        let bar = Bar::default().red().bold();
+        assert_eq!(
+            bar.style,
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+        );
     }
 }
