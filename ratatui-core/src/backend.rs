@@ -109,21 +109,6 @@ use crate::{
     layout::{Position, Size},
 };
 
-#[cfg(feature = "crossterm")]
-mod crossterm;
-#[cfg(feature = "crossterm")]
-pub use self::crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
-
-#[cfg(all(not(windows), feature = "termion"))]
-mod termion;
-#[cfg(all(not(windows), feature = "termion"))]
-pub use self::termion::{FromTermion, IntoTermion, TermionBackend};
-
-#[cfg(feature = "termwiz")]
-mod termwiz;
-#[cfg(feature = "termwiz")]
-pub use self::termwiz::{FromTermwiz, IntoTermwiz, TermwizBackend};
-
 mod test;
 pub use self::test::TestBackend;
 

@@ -25,6 +25,10 @@ palette = ["dep:palette"]
 ## the Crossterm backend, and is not supported on Windows 7.
 underline-color = []
 
+## Use terminal scrolling regions to make some operations less prone to
+## flickering. (i.e. Terminal::insert_before).
+scrolling-regions = []
+
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]

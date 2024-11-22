@@ -7,18 +7,19 @@
 
 use std::{error::Error, io};
 
-use crate::{
+use ratatui_core::{
     backend::{Backend, WindowSize},
     buffer::Cell,
     layout::{Position, Size},
     style::{Color, Modifier, Style},
-    termwiz::{
-        caps::Capabilities,
-        cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
-        color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
-        surface::{Change, CursorVisibility, Position as TermwizPosition},
-        terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
-    },
+};
+pub use termwiz;
+use termwiz::{
+    caps::Capabilities,
+    cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
+    color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
+    surface::{Change, CursorVisibility, Position as TermwizPosition},
+    terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
 };
 
 /// A [`Backend`] implementation that uses [Termwiz] to render to the terminal.
@@ -759,7 +760,7 @@ mod tests {
 
     #[test]
     fn from_cell_attribute_for_style() {
-        use crate::style::Stylize;
+        use ratatui_core::style::Stylize;
 
         #[cfg(feature = "underline-color")]
         const STYLE: Style = Style::new()

@@ -4,18 +4,20 @@
 //! [`Backend`]: crate::backend::Backend
 //! [`TermionBackend`]: crate::backend::TermionBackend
 //! [Termion]: https://docs.rs/termion
+
 use std::{
     fmt,
     io::{self, Write},
 };
 
-use crate::{
+use ratatui_core::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
     layout::{Position, Size},
     style::{Color, Modifier, Style},
-    termion::{self, color as tcolor, color::Color as _, style as tstyle},
 };
+pub use termion;
+use termion::{color as tcolor, color::Color as _, style as tstyle};
 
 /// A [`Backend`] implementation that uses [Termion] to render to the terminal.
 ///
@@ -532,8 +534,9 @@ impl fmt::Display for ResetRegion {
 
 #[cfg(test)]
 mod tests {
+    use ratatui_core::style::Stylize;
+
     use super::*;
-    use crate::style::Stylize;
 
     #[test]
     fn from_termion_color() {

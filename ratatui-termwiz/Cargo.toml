@@ -1,0 +1,24 @@
+[package]
+name = "ratatui-termwiz"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["underline-color"]
+
+## enables the backend code that sets the underline color.
+## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
+## and is not supported on Windows 7.
+underline-color = []
+
+## Use terminal scrolling regions to make some operations less prone to
+## flickering. (i.e. Terminal::insert_before).
+scrolling-regions = []
+
+[dependencies]
+ratatui-core = { workspace = true }
+termwiz.workspace = true
+instability.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true

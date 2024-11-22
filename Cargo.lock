@@ -2162,13 +2162,14 @@ dependencies = [
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "ratatui-core",
+ "ratatui-crossterm",
+ "ratatui-termion",
+ "ratatui-termwiz",
  "ratatui-widgets",
  "rstest",
  "serde",
  "serde_json",
  "strum",
- "termion",
- "termwiz",
  "time",
  "tokio",
  "tracing",
@@ -2198,6 +2199,36 @@ dependencies = [
  "unicode-segmentation",
  "unicode-truncate",
  "unicode-width",
+]
+
+[[package]]
+name = "ratatui-crossterm"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "instability",
+ "ratatui-core",
+ "rstest",
+]
+
+[[package]]
+name = "ratatui-termion"
+version = "0.1.0"
+dependencies = [
+ "instability",
+ "ratatui-core",
+ "rstest",
+ "termion",
+]
+
+[[package]]
+name = "ratatui-termwiz"
+version = "0.1.0"
+dependencies = [
+ "instability",
+ "ratatui-core",
+ "rstest",
+ "termwiz",
 ]
 
 [[package]]

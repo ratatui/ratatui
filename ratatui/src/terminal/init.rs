@@ -1,11 +1,14 @@
 use std::io::{self, stdout, Stdout};
 
-use crossterm::{
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+use ratatui_crossterm::{
+    crossterm::{
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    CrosstermBackend,
 };
 
-use crate::{backend::CrosstermBackend, terminal::TerminalOptions, Terminal};
+use crate::{terminal::TerminalOptions, Terminal};
 
 /// A type alias for the default terminal type.
 ///

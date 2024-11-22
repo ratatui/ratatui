@@ -2,8 +2,10 @@
 //! the [Crossterm] crate to interact with the terminal.
 //!
 //! [Crossterm]: https://crates.io/crates/crossterm
+
 use std::io::{self, Write};
 
+pub use crossterm;
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
 use crossterm::{
@@ -16,8 +18,7 @@ use crossterm::{
     },
     terminal::{self, Clear},
 };
-
-use crate::{
+use ratatui_core::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
     layout::{Position, Size},

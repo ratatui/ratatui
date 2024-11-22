@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["ratatui", "ratatui-core", "ratatui-widgets", "xtask"]
-default-members = ["ratatui", "ratatui-core", "ratatui-widgets"]
+members = ["ratatui", "ratatui-core", "ratatui-widgets", "xtask", "ratatui-crossterm", "ratatui-termion", "ratatui-termwiz"]
+default-members = ["ratatui", "ratatui-core", "ratatui-widgets", "ratatui-crossterm", "ratatui-termion", "ratatui-termwiz"]
 
 [workspace.package]
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
@@ -25,6 +25,7 @@ rust-version = "1.74.0"
 
 [workspace.dependencies]
 bitflags = "2.6.0"
+crossterm = "0.28.1"
 document-features = "0.2.7"
 indoc = "2.0.5"
 instability = "0.3.3"
@@ -32,13 +33,18 @@ itertools = "0.13.0"
 pretty_assertions = "1.4.1"
 ratatui = { path = "ratatui" }
 ratatui-core = { path = "ratatui-core" }
+ratatui-crossterm = { path = "ratatui-crossterm" }
+ratatui-termion = { path = "ratatui-termion" }
+ratatui-termwiz = { path = "ratatui-termwiz" }
 ratatui-widgets = { path = "ratatui-widgets" }
 rstest = "0.23.0"
 serde = { version = "1.0.215", features = ["derive"] }
 strum = { version = "0.26.3", features = ["derive"] }
+termwiz = { version = "0.22.0" }
 unicode-segmentation = "1.12.0"
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width = "=0.2.0"
+termion = "4.0.0" # [target.'cfg(not(windows))'.dependencies]
 
 # Improve benchmark consistency
 [profile.bench]

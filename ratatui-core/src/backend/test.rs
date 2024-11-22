@@ -144,7 +144,7 @@ impl TestBackend {
     #[track_caller]
     pub fn assert_buffer(&self, expected: &Buffer) {
         // TODO: use assert_eq!()
-        ratatui_core::assert_buffer_eq!(&self.buffer, expected);
+        crate::assert_buffer_eq!(&self.buffer, expected);
     }
 
     /// Asserts that the `TestBackend`'s scrollback buffer is equal to the expected buffer.
