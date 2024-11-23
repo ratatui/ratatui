@@ -33,7 +33,6 @@ scrolling-regions = ["ratatui-core/scrolling-regions"]
 document-features = { workspace = true, optional = true }
 ratatui-core = { workspace = true }
 termwiz.workspace = true
-instability.workspace = true
 
 [dev-dependencies]
 ratatui = { workspace = true, features = ["termwiz"] }
