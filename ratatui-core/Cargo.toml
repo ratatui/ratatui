@@ -17,7 +17,13 @@ exclude.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
+default = []
+
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["dep:palette"]
 
@@ -32,10 +38,6 @@ scrolling-regions = []
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 bitflags = "2.3"
@@ -54,9 +56,10 @@ unicode-truncate = "2"
 unicode-width.workspace = true
 
 [dev-dependencies]
-rstest.workspace = true
 pretty_assertions.workspace = true
-serde_json = "1.0.132"
+ratatui = { workspace = true, features = ["crossterm", "termion", "termwiz"] }
+rstest.workspace = true
+serde_json.workspace = true
 
 [lints.clippy]
 # we often split up a module into multiple files with the main type in a file named after the

@@ -3,19 +3,19 @@ name = "ratatui-termion"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.docs.rs]
+all-features = true
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
-default = ["underline-color"]
+default = []
 
-## enables the backend code that sets the underline color.
-## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
-## and is not supported on Windows 7.
-underline-color = []
-
-## Use terminal scrolling regions to make some operations less prone to
-## flickering. (i.e. Terminal::insert_before).
-scrolling-regions = []
+## Use terminal scrolling regions to make Terminal::insert_before less prone to flickering.
+scrolling-regions = ["ratatui-core/scrolling-regions"]
 
 [dependencies]
+document-features = { workspace = true, optional = true }
 ratatui-core = { workspace = true }
 termion.workspace = true
 instability.workspace = true

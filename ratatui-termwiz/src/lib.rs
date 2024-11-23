@@ -1,9 +1,20 @@
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
+)]
+#![warn(missing_docs)]
 //! This module provides the `TermwizBackend` implementation for the [`Backend`] trait. It uses the
 //! [Termwiz] crate to interact with the terminal.
 //!
 //! [`Backend`]: trait.Backend.html
 //! [`TermwizBackend`]: crate::backend::TermionBackend
 //! [Termwiz]: https://crates.io/crates/termwiz
+//!
+#![cfg_attr(feature = "document-features", doc = "\n## Features")]
+#![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
 use std::{error::Error, io};
 
@@ -54,8 +65,8 @@ use termwiz::{
 /// See the the [Examples] directory for more examples. See the [`backend`] module documentation
 /// for more details on raw mode and alternate screen.
 ///
-/// [`backend`]: crate::backend
-/// [`Terminal`]: crate::terminal::Terminal
+/// [`backend`]: ratatui_core::backend
+/// [`Terminal`]: ratatui::terminal::Terminal
 /// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
 /// [Termwiz]: https://crates.io/crates/termwiz
 /// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md

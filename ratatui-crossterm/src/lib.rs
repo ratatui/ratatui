@@ -1,7 +1,18 @@
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
+)]
+#![warn(missing_docs)]
 //! This module provides the [`CrosstermBackend`] implementation for the [`Backend`] trait. It uses
 //! the [Crossterm] crate to interact with the terminal.
 //!
 //! [Crossterm]: https://crates.io/crates/crossterm
+//!
+#![cfg_attr(feature = "document-features", doc = "\n## Features")]
+#![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
 use std::io::{self, Write};
 
@@ -75,8 +86,8 @@ use ratatui_core::{
 /// for more details on raw mode and alternate screen.
 ///
 /// [`Write`]: std::io::Write
-/// [`Terminal`]: crate::terminal::Terminal
-/// [`backend`]: crate::backend
+/// [`Terminal`]: ratatui::terminal::Terminal
+/// [`backend`]: ratatui_core::backend
 /// [Crossterm]: https://crates.io/crates/crossterm
 /// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]

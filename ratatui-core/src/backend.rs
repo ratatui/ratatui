@@ -56,7 +56,7 @@
 //! Each backend handles raw mode differently, so the behavior may vary depending on the backend
 //! being used. Be sure to consult the backend's specific documentation for exact details on how it
 //! implements raw mode.
-
+//!
 //! # Alternate Screen
 //!
 //! The alternate screen is a separate buffer that some terminals provide, distinct from the main
@@ -90,15 +90,15 @@
 //! backend being used, and developers should consult the specific backend's documentation to
 //! understand how it implements mouse capture.
 //!
-//! [`TermionBackend`]: termion/struct.TermionBackend.html
-//! [`Terminal`]: crate::terminal::Terminal
-//! [`TermionBackend`]: termion/struct.TermionBackend.html
+//! [`CrosstermBackend`]: ratatui::backend::CrosstermBackend
+//! [`TermionBackend`]: ratatui::backend::TermionBackend
+//! [`TermwizBackend`]: ratatui::backend::TermwizBackend
+//! [`Terminal`]: ratatui::terminal::Terminal
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
 //! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
-//! [Backend Comparison]:
-//!     https://ratatui.rs/concepts/backends/comparison/
+//! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
 use std::io;
 
@@ -147,7 +147,7 @@ pub struct WindowSize {
 /// Most applications should not need to interact with the `Backend` trait directly as the
 /// [`Terminal`] struct provides a higher level interface for interacting with the terminal.
 ///
-/// [`Terminal`]: crate::terminal::Terminal
+/// [`Terminal`]: ratatui::terminal::Terminal
 pub trait Backend {
     /// Draw the given content to the terminal screen.
     ///

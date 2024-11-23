@@ -11,14 +11,15 @@ default = ["underline-color"]
 ## and is not supported on Windows 7.
 underline-color = []
 
-## Use terminal scrolling regions to make some operations less prone to
-## flickering. (i.e. Terminal::insert_before).
-scrolling-regions = []
+## Use terminal scrolling regions to make Terminal::insert_before less prone to flickering.
+scrolling-regions = ["ratatui-core/scrolling-regions"]
 
 [dependencies]
-ratatui-core = { workspace = true }
 crossterm.workspace = true
+document-features = { workspace = true, optional = true }
 instability.workspace = true
+ratatui-core = { workspace = true }
 
 [dev-dependencies]
+ratatui = { workspace = true, features = ["crossterm"] }
 rstest.workspace = true
