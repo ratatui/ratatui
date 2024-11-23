@@ -85,7 +85,7 @@ use ratatui_core::{
 /// for more details on raw mode and alternate screen.
 ///
 /// [`Write`]: std::io::Write
-/// [`Terminal`]: ratatui::terminal::Terminal
+/// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 /// [`backend`]: ratatui_core::backend
 /// [Crossterm]: https://crates.io/crates/crossterm
 /// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md

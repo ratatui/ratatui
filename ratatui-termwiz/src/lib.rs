@@ -64,7 +64,7 @@ use termwiz::{
 /// for more details on raw mode and alternate screen.
 ///
 /// [`backend`]: ratatui_core::backend
-/// [`Terminal`]: ratatui::terminal::Terminal
+/// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 /// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
 /// [Termwiz]: https://crates.io/crates/termwiz
 /// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md

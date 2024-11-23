@@ -90,10 +90,10 @@
 //! backend being used, and developers should consult the specific backend's documentation to
 //! understand how it implements mouse capture.
 //!
-//! [`CrosstermBackend`]: ratatui::backend::CrosstermBackend
-//! [`TermionBackend`]: ratatui::backend::TermionBackend
-//! [`TermwizBackend`]: ratatui::backend::TermwizBackend
-//! [`Terminal`]: ratatui::terminal::Terminal
+//! [`CrosstermBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.CrosstermBackend.html
+//! [`TermionBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermionBackend.html
+//! [`TermwizBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermwizBackend.html
+//! [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
@@ -147,7 +147,7 @@ pub struct WindowSize {
 /// Most applications should not need to interact with the `Backend` trait directly as the
 /// [`Terminal`] struct provides a higher level interface for interacting with the terminal.
 ///
-/// [`Terminal`]: ratatui::terminal::Terminal
+/// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 pub trait Backend {
     /// Draw the given content to the terminal screen.
     ///
