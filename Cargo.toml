@@ -1,6 +1,15 @@
 [workspace]
 resolver = "2"
 members = ["ratatui", "ratatui-*", "xtask"]
+default-members = [
+    "ratatui",
+    "ratatui-core",
+    "ratatui-crossterm",
+    # this is not included as it doesn't compile on windows
+    # "ratatui-termion",
+    "ratatui-termwiz",
+    "ratatui-widgets",
+]
 
 [workspace.package]
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
