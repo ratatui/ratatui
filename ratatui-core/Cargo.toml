@@ -64,8 +64,6 @@ serde_json.workspace = true
 [target.'cfg(not(windows))'.dev-dependencies]
 ratatui = { workspace = true, features = ["termion"] }
 
-[profile.bench]
-
 [lints.clippy]
 # we often split up a module into multiple files with the main type in a file named after the
 # module, so we want to allow this pattern
