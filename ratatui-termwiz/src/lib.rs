@@ -6,8 +6,8 @@
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
 )]
 #![warn(missing_docs)]
-//! This module provides the [`TermwizBackend`] implementation for the [`Backend`] trait. It uses the
-//! [Termwiz] crate to interact with the terminal.
+//! This module provides the [`TermwizBackend`] implementation for the [`Backend`] trait. It uses
+//! the [Termwiz] crate to interact with the terminal.
 //!
 //! [`Backend`]: trait.Backend.html
 //! [Termwiz]: https://crates.io/crates/termwiz
