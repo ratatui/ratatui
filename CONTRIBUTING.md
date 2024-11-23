@@ -31,7 +31,7 @@ guarantee that the behavior is unchanged.
 
 ### Code formatting
 
-Run `cargo make format` before committing to ensure that code is consistently formatted with
+Run `cargo xtask format` before committing to ensure that code is consistently formatted with
 rustfmt. Configuration is in [`rustfmt.toml`](./rustfmt.toml).
 
 ### Search `tui-rs` for similar work
@@ -56,7 +56,7 @@ documented.
 
 ### Run CI tests before pushing a PR
 
-Running `cargo make ci` before pushing will perform the same checks that we do in the CI process.
+Running `cargo xtask ci` before pushing will perform the same checks that we do in the CI process.
 It's not mandatory to do this before pushing, however it may save you time to do so instead of
 waiting for GitHub to run the checks.
 
@@ -71,17 +71,17 @@ in GitHub docs.
 
 ### Setup
 
-Clone the repo and build it using [cargo-make](https://sagiegurari.github.io/cargo-make/)
+TL;DR: Clone the repo and build it using `cargo xtask`.
 
 Ratatui is an ordinary Rust project where common tasks are managed with
-[cargo-make](https://github.com/sagiegurari/cargo-make/). It wraps common `cargo` commands with sane
+[cargo-xtask](https://github.com/matklad/cargo-xtask). It wraps common `cargo` commands with sane
 defaults depending on your platform of choice. Building the project should be as easy as running
-`cargo make build`.
+`cargo xtask build`.
 
 ```shell
 git clone https://github.com/ratatui/ratatui.git
 cd ratatui
-cargo make build
+cargo xtask build
 ```
 
 ### Tests
@@ -182,7 +182,7 @@ We use GitHub Actions for the CI where we perform the following checks:
 - The code should conform to the default format enforced by `rustfmt`.
 - The code should not contain common style issues `clippy`.
 
-You can also check most of those things yourself locally using `cargo make ci` which will offer you
+You can also check most of those things yourself locally using `cargo xtask ci` which will offer you
 a shorter feedback loop than pushing to github.
 
 ## Relationship with `tui-rs`
