@@ -1,6 +1,6 @@
 [package]
 name = "ratatui-widgets"
-description = "A collection of Ratatui widgets for building terminal user interfaces."
+description = "A collection of Ratatui widgets for building terminal user interfaces using Ratatui."
 version = "0.3.0"
 readme = "README.md"
 authors.workspace = true
@@ -14,7 +14,13 @@ exclude.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
+default = []
+
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "ratatui-core/serde"]
@@ -36,10 +42,6 @@ unstable = ["unstable-rendered-line-info"]
 ## which are experimental and may change in the future.
 ## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
 unstable-rendered-line-info = []
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 bitflags.workspace = true

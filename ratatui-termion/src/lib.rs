@@ -1,21 +1,32 @@
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
+)]
+#![warn(missing_docs)]
 //! This module provides the [`TermionBackend`] implementation for the [`Backend`] trait. It uses
 //! the [Termion] crate to interact with the terminal.
 //!
-//! [`Backend`]: crate::backend::Backend
-//! [`TermionBackend`]: crate::backend::TermionBackend
+//! [`Backend`]: ratatui_core::backend::Backend
 //! [Termion]: https://docs.rs/termion
+#![cfg_attr(feature = "document-features", doc = "\n## Features")]
+#![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
+
 use std::{
     fmt,
     io::{self, Write},
 };
 
-use crate::{
+use ratatui_core::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
     layout::{Position, Size},
     style::{Color, Modifier, Style},
-    termion::{self, color as tcolor, color::Color as _, style as tstyle},
 };
+pub use termion;
+use termion::{color as tcolor, color::Color as _, style as tstyle};
 
 /// A [`Backend`] implementation that uses [Termion] to render to the terminal.
 ///
@@ -61,7 +72,7 @@ use crate::{
 ///
 /// [`IntoRawMode::into_raw_mode()`]: termion::raw::IntoRawMode
 /// [`IntoAlternateScreen::into_alternate_screen()`]: termion::screen::IntoAlternateScreen
-/// [`Terminal`]: crate::terminal::Terminal
+/// [`Terminal`]: ratatui::terminal::Terminal
 /// [Termion]: https://docs.rs/termion
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct TermionBackend<W>
@@ -532,8 +543,9 @@ impl fmt::Display for ResetRegion {
 
 #[cfg(test)]
 mod tests {
+    use ratatui_core::style::Stylize;
+
     use super::*;
-    use crate::style::Stylize;
 
     #[test]
     fn from_termion_color() {

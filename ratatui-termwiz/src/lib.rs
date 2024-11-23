@@ -1,24 +1,34 @@
-//! This module provides the `TermwizBackend` implementation for the [`Backend`] trait. It uses the
-//! [Termwiz] crate to interact with the terminal.
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
+)]
+#![warn(missing_docs)]
+//! This module provides the [`TermwizBackend`] implementation for the [`Backend`] trait. It uses
+//! the [Termwiz] crate to interact with the terminal.
 //!
 //! [`Backend`]: trait.Backend.html
-//! [`TermwizBackend`]: crate::backend::TermionBackend
 //! [Termwiz]: https://crates.io/crates/termwiz
+#![cfg_attr(feature = "document-features", doc = "\n## Features")]
+#![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
 use std::{error::Error, io};
 
-use crate::{
+use ratatui_core::{
     backend::{Backend, WindowSize},
     buffer::Cell,
     layout::{Position, Size},
     style::{Color, Modifier, Style},
-    termwiz::{
-        caps::Capabilities,
-        cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
-        color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
-        surface::{Change, CursorVisibility, Position as TermwizPosition},
-        terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
-    },
+};
+pub use termwiz;
+use termwiz::{
+    caps::Capabilities,
+    cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
+    color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
+    surface::{Change, CursorVisibility, Position as TermwizPosition},
+    terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
 };
 
 /// A [`Backend`] implementation that uses [Termwiz] to render to the terminal.
@@ -53,8 +63,8 @@ use crate::{
 /// See the the [Examples] directory for more examples. See the [`backend`] module documentation
 /// for more details on raw mode and alternate screen.
 ///
-/// [`backend`]: crate::backend
-/// [`Terminal`]: crate::terminal::Terminal
+/// [`backend`]: ratatui_core::backend
+/// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 /// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
 /// [Termwiz]: https://crates.io/crates/termwiz
 /// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
@@ -759,7 +769,7 @@ mod tests {
 
     #[test]
     fn from_cell_attribute_for_style() {
-        use crate::style::Stylize;
+        use ratatui_core::style::Stylize;
 
         #[cfg(feature = "underline-color")]
         const STYLE: Style = Style::new()

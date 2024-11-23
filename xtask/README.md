@@ -1,5 +1,11 @@
 # xtask for ratatui
 
-See <https://github.com/matklad/cargo-xtask> for details
+<!-- cargo-rdme start -->
 
-run with `cargo xtask ...`
+A simple task runner for the project.
+
+See <https://github.com/matklad/cargo-xtask> for details on the xtask pattern.
+
+Run `cargo xtask --help` for more information
+
+<!-- cargo-rdme end -->

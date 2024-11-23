@@ -1,7 +1,8 @@
 use std::io;
 
+use ratatui_core::backend::{Backend, ClearType};
+
 use crate::{
-    backend::{Backend, ClearType},
     buffer::{Buffer, Cell},
     layout::{Position, Rect, Size},
     CompletedFrame, Frame, TerminalOptions, Viewport,

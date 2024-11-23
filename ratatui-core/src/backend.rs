@@ -56,7 +56,7 @@
 //! Each backend handles raw mode differently, so the behavior may vary depending on the backend
 //! being used. Be sure to consult the backend's specific documentation for exact details on how it
 //! implements raw mode.
-
+//!
 //! # Alternate Screen
 //!
 //! The alternate screen is a separate buffer that some terminals provide, distinct from the main
@@ -90,15 +90,15 @@
 //! backend being used, and developers should consult the specific backend's documentation to
 //! understand how it implements mouse capture.
 //!
-//! [`TermionBackend`]: termion/struct.TermionBackend.html
-//! [`Terminal`]: crate::terminal::Terminal
-//! [`TermionBackend`]: termion/struct.TermionBackend.html
+//! [`CrosstermBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.CrosstermBackend.html
+//! [`TermionBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermionBackend.html
+//! [`TermwizBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermwizBackend.html
+//! [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
 //! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
-//! [Backend Comparison]:
-//!     https://ratatui.rs/concepts/backends/comparison/
+//! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
 use std::io;
 
@@ -108,21 +108,6 @@ use crate::{
     buffer::Cell,
     layout::{Position, Size},
 };
-
-#[cfg(feature = "crossterm")]
-mod crossterm;
-#[cfg(feature = "crossterm")]
-pub use self::crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
-
-#[cfg(all(not(windows), feature = "termion"))]
-mod termion;
-#[cfg(all(not(windows), feature = "termion"))]
-pub use self::termion::{FromTermion, IntoTermion, TermionBackend};
-
-#[cfg(feature = "termwiz")]
-mod termwiz;
-#[cfg(feature = "termwiz")]
-pub use self::termwiz::{FromTermwiz, IntoTermwiz, TermwizBackend};
 
 mod test;
 pub use self::test::TestBackend;
@@ -162,7 +147,7 @@ pub struct WindowSize {
 /// Most applications should not need to interact with the `Backend` trait directly as the
 /// [`Terminal`] struct provides a higher level interface for interacting with the terminal.
 ///
-/// [`Terminal`]: crate::terminal::Terminal
+/// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 pub trait Backend {
     /// Draw the given content to the terminal screen.
     ///

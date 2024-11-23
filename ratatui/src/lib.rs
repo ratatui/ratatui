@@ -326,25 +326,35 @@
 //! [Forum]: https://forum.ratatui.rs
 //! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
 
-/// re-export the `crossterm` crate so that users don't have to add it as a dependency
-#[cfg(feature = "crossterm")]
-pub use crossterm;
 /// re-export the `palette` crate so that users don't have to add it as a dependency
 #[cfg(feature = "palette")]
 pub use palette;
+/// re-export the `crossterm` crate so that users don't have to add it as a dependency
+#[cfg(feature = "crossterm")]
+pub use ratatui_crossterm::crossterm;
+/// re-export the `termion` crate so that users don't have to add it as a dependency
+#[cfg(all(not(windows), feature = "termion"))]
+pub use ratatui_termion::termion;
+/// re-export the `termwiz` crate so that users don't have to add it as a dependency
+#[cfg(feature = "termwiz")]
+pub use ratatui_termwiz::termwiz;
 #[cfg(feature = "crossterm")]
 pub use terminal::{
     init, init_with_options, restore, try_init, try_init_with_options, try_restore, DefaultTerminal,
 };
 pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
-/// re-export the `termion` crate so that users don't have to add it as a dependency
-#[cfg(all(not(windows), feature = "termion"))]
-pub use termion;
-/// re-export the `termwiz` crate so that users don't have to add it as a dependency
-#[cfg(feature = "termwiz")]
-pub use termwiz;
 
-pub mod backend;
+/// Re-exports for the backend implementations.
+pub mod backend {
+    pub use ratatui_core::backend::{Backend, ClearType, TestBackend, WindowSize};
+    #[cfg(feature = "crossterm")]
+    pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
+    #[cfg(all(not(windows), feature = "termion"))]
+    pub use ratatui_termion::{FromTermion, IntoTermion, TermionBackend};
+    #[cfg(feature = "termwiz")]
+    pub use ratatui_termwiz::{FromTermwiz, IntoTermwiz, TermwizBackend};
+}
+
 pub use ratatui_core::{buffer, layout};
 pub mod prelude;
 pub use ratatui_core::{style, symbols};

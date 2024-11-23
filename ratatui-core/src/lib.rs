@@ -38,6 +38,7 @@
 //!
 //! This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
 
+pub mod backend;
 pub mod buffer;
 pub mod layout;
 pub mod style;
