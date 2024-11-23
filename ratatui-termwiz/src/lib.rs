@@ -12,7 +12,6 @@
 //! [`Backend`]: trait.Backend.html
 //! [`TermwizBackend`]: crate::backend::TermionBackend
 //! [Termwiz]: https://crates.io/crates/termwiz
-//!
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 

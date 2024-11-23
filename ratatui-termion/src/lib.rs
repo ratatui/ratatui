@@ -11,7 +11,6 @@
 //!
 //! [`Backend`]: ratatui_core::backend::Backend
 //! [Termion]: https://docs.rs/termion
-//!
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
