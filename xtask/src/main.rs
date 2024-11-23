@@ -1,3 +1,9 @@
+//! A simple task runner for the project.
+//!
+//! See <https://github.com/matklad/cargo-xtask> for details on the xtask pattern.
+//!
+//! Run `cargo xtask --help` for more information
+
 use std::{fmt::Debug, io, process::Output, vec};
 
 use cargo_metadata::MetadataCommand;
@@ -99,6 +105,10 @@ enum Command {
     #[command(visible_alias = "fmt")]
     FixFormatting,
 
+    /// Fix README.md (by running cargo-rdme)
+    #[command(visible_alias = "fr")]
+    FixReadme,
+
     /// Fix typos in the project
     #[command(visible_alias = "typos")]
     FixTypos,
@@ -143,6 +153,7 @@ impl Command {
             Command::LintMarkdown => lint_markdown(),
             Command::FixClippy => fix_clippy(),
             Command::FixFormatting => fix_format(),
+            Command::FixReadme => fix_readme(),
             Command::FixTypos => fix_typos(),
             Command::Test => test(),
             Command::TestBackend { backend } => test_backend(backend),
@@ -174,6 +185,13 @@ fn check() -> Result<()> {
 fn check_readme() -> Result<()> {
     for package in get_workspace_packages()? {
         run_cargo(vec!["rdme", "--workspace-project", &package, "--check"])?;
+    }
+    Ok(())
+}
+
+fn fix_readme() -> Result<()> {
+    for package in get_workspace_packages()? {
+        run_cargo(vec!["rdme", "--workspace-project", &package])?;
     }
     Ok(())
 }
