@@ -346,7 +346,7 @@ pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 
 /// Re-exports for the backend implementations.
 pub mod backend {
-    pub use ratatui_core::backend::{Backend, TestBackend};
+    pub use ratatui_core::backend::{Backend, ClearType, TestBackend, WindowSize};
     #[cfg(feature = "crossterm")]
     pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
     #[cfg(all(not(windows), feature = "termion"))]
