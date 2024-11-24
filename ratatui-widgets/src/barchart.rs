@@ -172,6 +172,31 @@ impl<'a> BarChart<'a> {
         }
     }
 
+    /// Creates a new `BarChart` widget with a group of bars.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::{Bar, BarChart, BarGroup};
+    ///
+    /// BarChart::grouped(vec![
+    ///     BarGroup::with_label(
+    ///         "Group 1",
+    ///         vec![Bar::with_label("A", 10), Bar::with_label("B", 20)],
+    ///     ),
+    ///     BarGroup::with_label(
+    ///         "Group 2",
+    ///         [Bar::with_label("C", 30), Bar::with_label("D", 40)],
+    ///     ),
+    /// ]);
+    /// ```
+    pub fn grouped<T: Into<Vec<BarGroup<'a>>>>(groups: T) -> Self {
+        Self {
+            data: groups.into(),
+            ..Default::default()
+        }
+    }
+
     /// Add group of bars to the `BarChart`
     ///
     /// # Examples
