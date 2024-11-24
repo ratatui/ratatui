@@ -1,6 +1,7 @@
-//! # [Ratatui] Block example
+//! # [Ratatui] `Block` example
 //!
-//! The latest version of this example is available in the [examples] folder in the repository.
+//! The latest version of this example is available in the [widget examples] folder in the
+//! repository.
 //!
 //! Please note that the examples are designed to be run against the `main` branch of the Github
 //! repository. This means that you may not be able to compile with the latest release version on
@@ -10,10 +11,11 @@
 //! library you are using.
 //!
 //! [Ratatui]: https://github.com/ratatui/ratatui
-//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
+use itertools::Itertools;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
@@ -31,6 +33,7 @@ fn main() -> Result<()> {
     result
 }
 
+/// Run the application.
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
         terminal.draw(draw)?;
@@ -42,6 +45,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     }
 }
 
+/// Draw the UI with various blocks with text.
 fn draw(frame: &mut Frame) {
     let (title_area, layout) = calculate_layout(frame.area());
 
@@ -76,20 +80,28 @@ fn draw(frame: &mut Frame) {
 /// Returns a tuple of the title area and the main areas.
 fn calculate_layout(area: Rect) -> (Rect, Vec<Vec<Rect>>) {
     let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    let block_layout = Layout::vertical([Constraint::Max(4); 9]);
+    let block_layout =
+        Layout::vertical((0..9).flat_map(|_| vec![Constraint::Max(4), Constraint::Max(1)]));
     let [title_area, main_area] = main_layout.areas(area);
     let main_areas = block_layout
         .split(main_area)
         .iter()
-        .map(|&area| {
-            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(area)
-                .to_vec()
+        .collect_vec()
+        .chunks(2)
+        .map(|areas| {
+            let [left, _, right] = Layout::horizontal([
+                Constraint::Percentage(50),
+                Constraint::Length(1),
+                Constraint::Percentage(50),
+            ])
+            .areas(*areas[0]);
+            vec![left, right]
         })
         .collect();
     (title_area, main_areas)
 }
 
+/// Render the title of the application.
 fn render_title(frame: &mut Frame, area: Rect) {
     frame.render_widget(
         Paragraph::new("Block example. Press q to quit")
@@ -99,11 +111,13 @@ fn render_title(frame: &mut Frame, area: Rect) {
     );
 }
 
+/// Returns a Paragraph with placeholder text.
 fn placeholder_paragraph() -> Paragraph<'static> {
     let text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
     Paragraph::new(text.dark_gray()).wrap(Wrap { trim: true })
 }
 
+/// Render a text inside a block with the given borders.
 fn render_borders(paragraph: &Paragraph, border: Borders, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(border)
@@ -111,6 +125,7 @@ fn render_borders(paragraph: &Paragraph, border: Borders, frame: &mut Frame, are
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
+/// Render a text inside a block with the given border type.
 fn render_border_type(
     paragraph: &Paragraph,
     border_type: BorderType,
@@ -122,6 +137,8 @@ fn render_border_type(
         .title(format!("BorderType::{border_type:#?}"));
     frame.render_widget(paragraph.clone().block(block), area);
 }
+
+/// Render a text inside a block with colored borders.
 fn render_styled_borders(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
         .border_style(Style::new().blue().on_white().bold().italic())
@@ -129,6 +146,7 @@ fn render_styled_borders(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
+/// Render a block with foreground and background colors.
 fn render_styled_block(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
         .style(Style::new().blue().on_white().bold().italic())
@@ -136,6 +154,7 @@ fn render_styled_block(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
+/// Render a block with a colored title.
 fn render_styled_title(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
         .title("Styled title")
@@ -143,6 +162,7 @@ fn render_styled_title(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
+/// Render a block with a multi-colored title.
 fn render_styled_title_content(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let title = Line::from(vec![
         "Styled ".blue().on_white().bold().italic(),
@@ -152,6 +172,7 @@ fn render_styled_title_content(paragraph: &Paragraph, frame: &mut Frame, area: R
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
+/// Render a block with multiple titles.
 fn render_multiple_titles(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
         .title("Multiple".blue().on_white().bold().italic())
@@ -159,6 +180,7 @@ fn render_multiple_titles(paragraph: &Paragraph, frame: &mut Frame, area: Rect) 
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
+/// Render a block with multiple titles on different positions.
 fn render_multiple_title_positions(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
         .title(Line::from("top left").left_aligned())
@@ -170,6 +192,7 @@ fn render_multiple_title_positions(paragraph: &Paragraph, frame: &mut Frame, are
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
+/// Render a block with padding around it.
 fn render_padding(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
         .padding(Padding::new(5, 10, 1, 2))
@@ -177,6 +200,7 @@ fn render_padding(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
+/// Render nested blocks.
 fn render_nested_blocks(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let outer_block = Block::bordered().title("Outer block");
     let inner_block = Block::bordered().title("Inner block");

@@ -109,3 +109,7 @@ use_self = "warn"
 [[example]]
 name = "barchart"
 doc-scrape-examples = true
+
+[[example]]
+name = "block"
+doc-scrape-examples = true
