@@ -887,12 +887,9 @@ impl Table<'_> {
             .skip(state.offset)
             .take(end_index - start_index)
         {
-            let row_area = Rect::new(
-                area.x,
-                area.y + y_offset + row.top_margin,
-                area.width,
-                row.height_with_margin() - row.top_margin,
-            );
+            let row_top = area.y + y_offset + row.top_margin;
+            let row_bottom = (row_top + row.height).min(area.bottom());
+            let row_area = Rect::new(area.x, row_top, area.width, row_bottom - row_top);
             buf.set_style(row_area, row.style);
 
             let is_selected = state.selected.is_some_and(|index| index == i);
@@ -970,6 +967,12 @@ impl Table<'_> {
         rects.iter().map(|c| (c.x, c.width)).collect()
     }
 
+    /// Given an offset, calculate which rows may be viewed.  Includes rows that are partially
+    /// within the viewing window, which can occur if the table contains rows with height greater
+    /// than one.
+    ///
+    /// The `offset` parameter is specified in number of rows of the table, regardless of the
+    /// height of each individual row.
     fn get_row_bounds(
         &self,
         selected: Option<usize>,
@@ -988,32 +991,37 @@ impl Table<'_> {
             end += 1;
         }
 
-        let Some(selected) = selected else {
-            return (start, end);
-        };
+        if let Some(selected) = selected {
+            // clamp the selected row to the last row
+            let selected = selected.min(self.rows.len() - 1);
 
-        // clamp the selected row to the last row
-        let selected = selected.min(self.rows.len() - 1);
+            // scroll down until the selected row is visible
+            while selected >= end {
+                height = height.saturating_add(self.rows[end].height_with_margin());
+                end += 1;
+                while height > max_height {
+                    height = height.saturating_sub(self.rows[start].height_with_margin());
+                    start += 1;
+                }
+            }
 
-        // scroll down until the selected row is visible
-        while selected >= end {
-            height = height.saturating_add(self.rows[end].height_with_margin());
+            // scroll up until the selected row is visible
+            while selected < start {
+                start -= 1;
+                height = height.saturating_add(self.rows[start].height_with_margin());
+                while height > max_height {
+                    end -= 1;
+                    height = height.saturating_sub(self.rows[end].height_with_margin());
+                }
+            }
+        }
+
+        // If the table contains rows with a height greater than one, then an additional row of the
+        // table may be partially displayed.
+        if height < max_height && end < self.rows.len() {
             end += 1;
-            while height > max_height {
-                height = height.saturating_sub(self.rows[start].height_with_margin());
-                start += 1;
-            }
         }
 
-        // scroll up until the selected row is visible
-        while selected < start {
-            start -= 1;
-            height = height.saturating_add(self.rows[start].height_with_margin());
-            while height > max_height {
-                end -= 1;
-                height = height.saturating_sub(self.rows[end].height_with_margin());
-            }
-        }
         (start, end)
     }
 
@@ -1500,6 +1508,28 @@ mod tests {
                 "Cell1 Cell2    ",
                 "               ",
                 "Cell3 Cell4    ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_tall_row() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 23, 3));
+            let rows = vec![
+                Row::new(vec!["Cell1", "Cell2"]),
+                Row::new(vec![
+                    Text::raw("Cell3-Line1\nCell3-Line2\nCell3-Line3"),
+                    Text::raw("Cell4-Line1\nCell4-Line2\nCell4-Line3"),
+                ])
+                .height(3),
+            ];
+            let table = Table::new(rows, [Constraint::Length(11); 2]);
+            Widget::render(table, Rect::new(0, 0, 23, 3), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1       Cell2      ",
+                "Cell3-Line1 Cell4-Line1",
+                "Cell3-Line2 Cell4-Line2",
             ]);
             assert_eq!(buf, expected);
         }
