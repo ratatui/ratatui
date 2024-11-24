@@ -16,6 +16,7 @@ rust-version.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
@@ -58,9 +59,10 @@ document-features = { workspace = true, optional = true }
 line-clipping = "0.2.1"
 
 [dev-dependencies]
-rstest.workspace = true
+color-eyre.workspace = true
 pretty_assertions.workspace = true
 ratatui.workspace = true
+rstest.workspace = true
 
 [lints.rust]
 unsafe_code = "forbid"
@@ -103,3 +105,7 @@ string_slice = "warn"
 string_to_string = "warn"
 unnecessary_self_imports = "warn"
 use_self = "warn"
+
+[[example]]
+name = "barchart"
+doc-scrape-examples = true

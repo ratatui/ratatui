@@ -2241,6 +2241,7 @@ name = "ratatui-widgets"
 version = "0.3.0"
 dependencies = [
  "bitflags 2.6.0",
+ "color-eyre",
  "document-features",
  "indoc",
  "instability",
