@@ -27,9 +27,7 @@ use unicode_width::UnicodeWidthStr;
 ///     widgets::Bar,
 /// };
 ///
-/// Bar::default()
-///     .label("Bar 1")
-///     .value(10)
+/// Bar::with_label("Bar 1", 10)
 ///     .red()
 ///     .value_style(Style::new().red().on_white())
 ///     .text_value("10°C");
@@ -49,14 +47,54 @@ pub struct Bar<'a> {
 }
 
 impl<'a> Bar<'a> {
+    /// Creates a new `Bar` with the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::widgets::Bar;
+    ///
+    /// let bar = Bar::new(42);
+    /// ```
+    pub const fn new(value: u64) -> Self {
+        Self {
+            value,
+            label: None,
+            style: Style::new(),
+            value_style: Style::new(),
+            text_value: None,
+        }
+    }
+
+    /// Creates a new `Bar` with the given `label` and value.
+    ///
+    /// a `label` can be a [`&str`], [`String`] or anything that can be converted into [`Line`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::widgets::Bar;
+    ///
+    /// let bar = Bar::with_label("Label", 42);
+    /// ```
+    pub fn with_label<T: Into<Line<'a>>>(label: T, value: u64) -> Self {
+        Self {
+            value,
+            label: Some(label.into()),
+            style: Style::new(),
+            value_style: Style::new(),
+            text_value: None,
+        }
+    }
+
     /// Set the value of this bar.
     ///
     /// The value will be displayed inside the bar.
     ///
     /// # See also
     ///
-    /// [`Bar::value_style`] to style the value.
-    /// [`Bar::text_value`] to set the displayed value.
+    /// - [`Bar::value_style`] to style the value.
+    /// - [`Bar::text_value`] to set the displayed value.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn value(mut self, value: u64) -> Self {
         self.value = value;
@@ -265,6 +303,20 @@ mod tests {
     use ratatui_core::style::{Color, Modifier, Style, Stylize};
 
     use super::*;
+
+    #[test]
+    fn test_bar_new() {
+        let bar = Bar::new(42).label(Line::from("Label"));
+        assert_eq!(bar.label, Some(Line::from("Label")));
+        assert_eq!(bar.value, 42);
+    }
+
+    #[test]
+    fn test_bar_with_label() {
+        let bar = Bar::with_label("Label", 42);
+        assert_eq!(bar.label, Some(Line::from("Label")));
+        assert_eq!(bar.value, 42);
+    }
 
     #[test]
     fn test_bar_stylized() {

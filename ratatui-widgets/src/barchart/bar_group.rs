@@ -15,9 +15,7 @@ use crate::barchart::Bar;
 /// ```
 /// use ratatui::widgets::{Bar, BarGroup};
 ///
-/// BarGroup::default()
-///     .label("Group 1")
-///     .bars(&[Bar::default().value(200), Bar::default().value(150)]);
+/// let group = BarGroup::new([Bar::with_label("Red", 20), Bar::with_label("Blue", 15)]);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct BarGroup<'a> {
@@ -28,6 +26,25 @@ pub struct BarGroup<'a> {
 }
 
 impl<'a> BarGroup<'a> {
+    /// Creates a new `BarGroup` with the given bars.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::{
+    ///     style::{Style, Stylize},
+    ///     widgets::{Bar, BarGroup},
+    /// };
+    ///
+    /// let group = BarGroup::new(vec![Bar::with_label("A", 10), Bar::with_label("B", 20)]);
+    /// ```
+    pub fn new<T: Into<Vec<Bar<'a>>>>(bars: T) -> Self {
+        Self {
+            bars: bars.into(),
+            ..Self::default()
+        }
+    }
+
     /// Set the group label
     ///
     /// `label` can be a [`&str`], [`String`] or anything that can be converted into [`Line`].
@@ -98,7 +115,7 @@ impl<'a> From<&[(&'a str, u64)]> for BarGroup<'a> {
             label: None,
             bars: value
                 .iter()
-                .map(|&(text, v)| Bar::default().value(v).label(text))
+                .map(|&(text, v)| Bar::with_label(text, v))
                 .collect(),
         }
     }
@@ -115,5 +132,18 @@ impl<'a> From<&Vec<(&'a str, u64)>> for BarGroup<'a> {
     fn from(value: &Vec<(&'a str, u64)>) -> Self {
         let array: &[(&str, u64)] = value;
         Self::from(array)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bargroup_new() {
+        let group = BarGroup::new([Bar::with_label("Label1", 1), Bar::with_label("Label2", 2)])
+            .label(Line::from("Group1"));
+        assert_eq!(group.label, Some(Line::from("Group1")));
+        assert_eq!(group.bars.len(), 2);
     }
 }
