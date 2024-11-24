@@ -799,22 +799,14 @@ impl StatefulWidget for &Table<'_> {
         }
 
         let selection_width = self.selection_width(state);
-        let columns_widths =
-            self.get_columns_widths(table_area.width, selection_width, column_count);
+        let column_widths = self.get_column_widths(table_area.width, selection_width, column_count);
         let (header_area, rows_area, footer_area) = self.layout(table_area);
 
-        self.render_header(header_area, buf, &columns_widths);
+        self.render_header(header_area, buf, &column_widths);
 
-        self.render_rows(
-            rows_area,
-            buf,
-            state,
-            selection_width,
-            &self.highlight_symbol,
-            &columns_widths,
-        );
+        self.render_rows(rows_area, buf, state, selection_width, &column_widths);
 
-        self.render_footer(footer_area, buf, &columns_widths);
+        self.render_footer(footer_area, buf, &column_widths);
     }
 }
 
@@ -866,15 +858,13 @@ impl Table<'_> {
         buf: &mut Buffer,
         state: &mut TableState,
         selection_width: u16,
-        highlight_symbol: &Text<'_>,
         columns_widths: &[(u16, u16)],
     ) {
         if self.rows.is_empty() {
             return;
         }
 
-        let (start_index, end_index) =
-            self.get_row_bounds(state.selected, state.offset, area.height);
+        let (start_index, end_index) = self.visible_rows(state, area);
         state.offset = start_index;
 
         let mut y_offset = 0;
@@ -884,12 +874,12 @@ impl Table<'_> {
             .rows
             .iter()
             .enumerate()
-            .skip(state.offset)
+            .skip(start_index)
             .take(end_index - start_index)
         {
-            let row_top = area.y + y_offset + row.top_margin;
-            let row_bottom = (row_top + row.height).min(area.bottom());
-            let row_area = Rect::new(area.x, row_top, area.width, row_bottom - row_top);
+            let y = area.y + y_offset + row.top_margin;
+            let height = (y + row.height).min(area.bottom()).saturating_sub(y);
+            let row_area = Rect { y, height, ..area };
             buf.set_style(row_area, row.style);
 
             let is_selected = state.selected.is_some_and(|index| index == i);
@@ -899,7 +889,7 @@ impl Table<'_> {
                     ..row_area
                 };
                 buf.set_style(selection_area, row.style);
-                highlight_symbol.render(selection_area, buf);
+                (&self.highlight_symbol).render(selection_area, buf);
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
@@ -940,11 +930,65 @@ impl Table<'_> {
         }
     }
 
+    /// Return the indexes of the visible rows.
+    ///
+    /// The algorithm works as follows:
+    /// - start at the offset and calculate the height of the rows that can be displayed within the
+    ///   area.
+    /// - if the selected row is not visible, scroll the table to ensure it is visible.
+    /// - if there is still space to fill then there's a partial row at the end which should be
+    ///   included in the view.
+    fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
+        let last_row = self.rows.len().saturating_sub(1);
+        let mut start = state.offset.min(last_row);
+        let mut end = start;
+        let mut height = 0;
+
+        for item in self.rows.iter().skip(start) {
+            if height + item.height > area.height {
+                break;
+            }
+            height += item.height_with_margin();
+            end += 1;
+        }
+
+        if let Some(selected) = state.selected {
+            let selected = selected.min(last_row);
+
+            // scroll down until the selected row is visible
+            while selected >= end {
+                height = height.saturating_add(self.rows[end].height_with_margin());
+                end += 1;
+                while height > area.height {
+                    height = height.saturating_sub(self.rows[start].height_with_margin());
+                    start += 1;
+                }
+            }
+
+            // scroll up until the selected row is visible
+            while selected < start {
+                start -= 1;
+                height = height.saturating_add(self.rows[start].height_with_margin());
+                while height > area.height {
+                    end -= 1;
+                    height = height.saturating_sub(self.rows[end].height_with_margin());
+                }
+            }
+        }
+
+        // Include a partial row if there is space
+        if height < area.height && end < self.rows.len() {
+            end += 1;
+        }
+
+        (start, end)
+    }
+
     /// Get all offsets and widths of all user specified columns.
     ///
     /// Returns (x, width). When self.widths is empty, it is assumed `.widths()` has not been called
     /// and a default of equal widths is returned.
-    fn get_columns_widths(
+    fn get_column_widths(
         &self,
         max_width: u16,
         selection_width: u16,
@@ -965,64 +1009,6 @@ impl Table<'_> {
             .spacing(self.column_spacing)
             .split(columns_area);
         rects.iter().map(|c| (c.x, c.width)).collect()
-    }
-
-    /// Given an offset, calculate which rows may be viewed.  Includes rows that are partially
-    /// within the viewing window, which can occur if the table contains rows with height greater
-    /// than one.
-    ///
-    /// The `offset` parameter is specified in number of rows of the table, regardless of the
-    /// height of each individual row.
-    fn get_row_bounds(
-        &self,
-        selected: Option<usize>,
-        offset: usize,
-        max_height: u16,
-    ) -> (usize, usize) {
-        let offset = offset.min(self.rows.len().saturating_sub(1));
-        let mut start = offset;
-        let mut end = offset;
-        let mut height = 0;
-        for item in self.rows.iter().skip(offset) {
-            if height + item.height > max_height {
-                break;
-            }
-            height += item.height_with_margin();
-            end += 1;
-        }
-
-        if let Some(selected) = selected {
-            // clamp the selected row to the last row
-            let selected = selected.min(self.rows.len() - 1);
-
-            // scroll down until the selected row is visible
-            while selected >= end {
-                height = height.saturating_add(self.rows[end].height_with_margin());
-                end += 1;
-                while height > max_height {
-                    height = height.saturating_sub(self.rows[start].height_with_margin());
-                    start += 1;
-                }
-            }
-
-            // scroll up until the selected row is visible
-            while selected < start {
-                start -= 1;
-                height = height.saturating_add(self.rows[start].height_with_margin());
-                while height > max_height {
-                    end -= 1;
-                    height = height.saturating_sub(self.rows[end].height_with_margin());
-                }
-            }
-        }
-
-        // If the table contains rows with a height greater than one, then an additional row of the
-        // table may be partially displayed.
-        if height < max_height && end < self.rows.len() {
-            end += 1;
-        }
-
-        (start, end)
     }
 
     fn column_count(&self) -> usize {
@@ -1726,15 +1712,15 @@ mod tests {
         fn length_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 4), (5, 4)]);
+            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 4), (8, 4)]);
+            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 3), (4, 3)]);
+            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             // <--------7px-------->
@@ -1743,26 +1729,26 @@ mod tests {
             // └────────┘x└────────┘
             // column spacing (i.e. `x`) is always prioritized
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 2), (6, 1)]);
+            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 2), (6, 1)]);
         }
 
         #[test]
         fn max_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 4), (5, 4)]);
+            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 4), (8, 4)]);
+            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 3), (4, 3)]);
+            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 2), (6, 1)]);
+            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 2), (6, 1)]);
         }
 
         #[test]
@@ -1773,42 +1759,42 @@ mod tests {
 
             // without selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 10), (11, 9)]);
+            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 10), (11, 9)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 8), (12, 8)]);
+            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 8), (12, 8)]);
 
             // without selection, less than needed width
             // allocates spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 3), (4, 3)]);
+            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             // always allocates selection and spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 2), (6, 1)]);
+            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 2), (6, 1)]);
         }
 
         #[test]
         fn percentage_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 6), (7, 6)]);
+            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 6), (7, 6)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 5), (9, 5)]);
+            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 5), (9, 5)]);
 
             // without selection, less than needed width
             // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 2), (3, 2)]);
+            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 2), (3, 2)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 1), (5, 1)]);
+            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 1), (5, 1)]);
         }
 
         #[test]
@@ -1816,22 +1802,22 @@ mod tests {
             // without selection, more than needed width
             // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_columns_widths(20, 0, 0), [(0, 7), (8, 6)]);
+            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 7), (8, 6)]);
 
             // with selection, more than needed width
             // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_columns_widths(20, 3, 0), [(3, 6), (10, 5)]);
+            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 6), (10, 5)]);
 
             // without selection, less than needed width
             // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_columns_widths(7, 0, 0), [(0, 2), (3, 3)]);
+            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 2), (3, 3)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_columns_widths(7, 3, 0), [(3, 1), (5, 2)]);
+            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 1), (5, 2)]);
         }
 
         /// When more width is available than requested, the behavior is controlled by flex
@@ -1839,7 +1825,7 @@ mod tests {
         fn underconstrained_flex() {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
-                table.get_columns_widths(62, 0, 0),
+                table.get_column_widths(62, 0, 0),
                 &[(0, 20), (21, 20), (42, 20)]
             );
 
@@ -1847,7 +1833,7 @@ mod tests {
                 .widths([Min(10), Min(10), Min(1)])
                 .flex(Flex::Legacy);
             assert_eq!(
-                table.get_columns_widths(62, 0, 0),
+                table.get_column_widths(62, 0, 0),
                 &[(0, 10), (11, 10), (22, 40)]
             );
 
@@ -1855,7 +1841,7 @@ mod tests {
                 .widths([Min(10), Min(10), Min(1)])
                 .flex(Flex::SpaceBetween);
             assert_eq!(
-                table.get_columns_widths(62, 0, 0),
+                table.get_column_widths(62, 0, 0),
                 &[(0, 20), (21, 20), (42, 20)]
             );
         }
@@ -1866,7 +1852,7 @@ mod tests {
         fn underconstrained_segment_size() {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
-                table.get_columns_widths(62, 0, 0),
+                table.get_column_widths(62, 0, 0),
                 &[(0, 20), (21, 20), (42, 20)]
             );
 
@@ -1874,7 +1860,7 @@ mod tests {
                 .widths([Min(10), Min(10), Min(1)])
                 .flex(Flex::Legacy);
             assert_eq!(
-                table.get_columns_widths(62, 0, 0),
+                table.get_column_widths(62, 0, 0),
                 &[(0, 10), (11, 10), (22, 40)]
             );
         }
@@ -1891,7 +1877,7 @@ mod tests {
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
             assert_eq!(
-                table.get_columns_widths(30, 0, 3),
+                table.get_column_widths(30, 0, 3),
                 &[(0, 10), (10, 10), (20, 10)]
             );
         }
@@ -1902,7 +1888,7 @@ mod tests {
                 .rows(vec![])
                 .header(Row::new(vec!["f", "g"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0, 2), [(0, 5), (5, 5)]);
+            assert_eq!(table.get_column_widths(10, 0, 2), [(0, 5), (5, 5)]);
         }
 
         #[test]
@@ -1911,7 +1897,7 @@ mod tests {
                 .rows(vec![])
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0, 2), [(0, 5), (5, 5)]);
+            assert_eq!(table.get_column_widths(10, 0, 2), [(0, 5), (5, 5)]);
         }
 
         #[track_caller]
