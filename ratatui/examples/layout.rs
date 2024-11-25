@@ -34,6 +34,7 @@ fn main() -> color_eyre::Result<()> {
     app_result
 }
 
+/// Run the application.
 fn run(mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
     loop {
         terminal.draw(draw)?;
@@ -45,6 +46,7 @@ fn run(mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
     }
 }
 
+/// Draw the UI with various blocks with text.
 #[allow(clippy::too_many_lines)]
 fn draw(frame: &mut Frame) {
     let vertical = Layout::vertical([
@@ -58,9 +60,9 @@ fn draw(frame: &mut Frame) {
     frame.render_widget(
         Paragraph::new(vec![
             Line::from("Horizontal Layout Example. Press q to quit".dark_gray()).centered(),
-            Line::from("Each line has 2 constraints, plus Min(0) to fill the remaining space."),
-            Line::from("E.g. the second line of the Len/Min box is [Length(2), Min(2), Min(0)]"),
-            Line::from("Note: constraint labels that don't fit are truncated"),
+            "Each box contains a layout with two constraints".into(),
+            "For example: Perc/Perc shows different percentages on each line".into(),
+            "The numbers below the boxes are for better visualizing the alignment".into(),
         ]),
         text_area,
     );
@@ -161,7 +163,10 @@ fn render_example_combination(
     }
     // This is to make it easy to visually see the alignment of the examples
     // with the constraints.
-    frame.render_widget(Paragraph::new("123456789012"), layout[6]);
+    frame.render_widget(
+        Paragraph::new("123456789012".fg(Color::DarkGray)),
+        layout[6],
+    );
 }
 
 /// Renders a single example line
