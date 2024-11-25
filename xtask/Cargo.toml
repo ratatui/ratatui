@@ -6,9 +6,9 @@ license.workspace = true
 
 [dependencies]
 cargo_metadata = "0.18.1"
-clap = { version = "4.5.20", features = ["derive"] }
+clap = { version = "4.5.21", features = ["derive"] }
 clap-cargo = { version = "0.14.1", features = ["cargo_metadata"] }
-clap-verbosity-flag = "2.2.2"
+clap-verbosity-flag = "2.2.3"
 color-eyre = "0.6.3"
 duct = "0.13.7"
 tracing = "0.1.40"

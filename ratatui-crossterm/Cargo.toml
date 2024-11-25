@@ -1,0 +1,45 @@
+[package]
+name = "ratatui-crossterm"
+version = "0.1.0"
+description = "Crossterm backend for the Ratatui Terminal UI library."
+documentation = "https://docs.rs/ratatui-crossterm/"
+readme = "README.md"
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+exclude.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["underline-color"]
+
+## enables the backend code that sets the underline color.
+## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
+## and is not supported on Windows 7.
+underline-color = []
+
+## Use terminal scrolling regions to make Terminal::insert_before less prone to flickering.
+scrolling-regions = ["ratatui-core/scrolling-regions"]
+
+#! The following features are unstable and may change in the future:
+
+## Enable all unstable features.
+unstable = ["unstable-backend-writer"]
+
+## Enables getting access to backends' writers.
+unstable-backend-writer = []
+
+
+[dependencies]
+crossterm.workspace = true
+document-features = { workspace = true, optional = true }
+instability.workspace = true
+ratatui-core = { workspace = true }
+
+[dev-dependencies]
+ratatui = { workspace = true, features = ["crossterm"] }
+rstest.workspace = true

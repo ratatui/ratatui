@@ -1,7 +1,8 @@
 use std::io;
 
+use ratatui_core::backend::{Backend, ClearType};
+
 use crate::{
-    backend::{Backend, ClearType},
     buffer::{Buffer, Cell},
     layout::{Position, Rect, Size},
     CompletedFrame, Frame, TerminalOptions, Viewport,
@@ -271,7 +272,7 @@ where
     /// - return a [`CompletedFrame`] with the current buffer and the area of the terminal
     ///
     /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
-    /// purposes, but it is often not used in regular applicationss.
+    /// purposes, but it is often not used in regular applications.
     ///
     /// The render callback should fully render the entire frame when called, including areas that
     /// are unchanged from the previous frame. This is because each frame is compared to the
@@ -339,7 +340,7 @@ where
     /// [`std::io::Error`] and the terminal will not be updated.
     ///
     /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
-    /// purposes, but it is often not used in regular applicationss.
+    /// purposes, but it is often not used in regular applications.
     ///
     /// The render callback should fully render the entire frame when called, including areas that
     /// are unchanged from the previous frame. This is because each frame is compared to the

@@ -1,3 +1,9 @@
+//! A simple task runner for the project.
+//!
+//! See <https://github.com/matklad/cargo-xtask> for details on the xtask pattern.
+//!
+//! Run `cargo xtask --help` for more information
+
 use std::{fmt::Debug, io, process::Output, vec};
 
 use cargo_metadata::MetadataCommand;
@@ -59,6 +65,10 @@ enum Command {
     #[command(visible_alias = "c")]
     Check,
 
+    /// Check if README.md is up-to-date
+    #[command(visible_alias = "cr")]
+    CheckReadme,
+
     /// Generate code coverage report
     #[command(visible_alias = "cov")]
     Coverage,
@@ -95,6 +105,10 @@ enum Command {
     #[command(visible_alias = "fmt")]
     FixFormatting,
 
+    /// Fix README.md (by running cargo-rdme)
+    #[command(visible_alias = "fr")]
+    FixReadme,
+
     /// Fix typos in the project
     #[command(visible_alias = "typos")]
     FixTypos,
@@ -129,6 +143,7 @@ impl Command {
             Command::CI => ci(),
             Command::Build => build(),
             Command::Check => check(),
+            Command::CheckReadme => check_readme(),
             Command::Coverage => coverage(),
             Command::Lint => lint(),
             Command::LintClippy => lint_clippy(),
@@ -138,6 +153,7 @@ impl Command {
             Command::LintMarkdown => lint_markdown(),
             Command::FixClippy => fix_clippy(),
             Command::FixFormatting => fix_format(),
+            Command::FixReadme => fix_readme(),
             Command::FixTypos => fix_typos(),
             Command::Test => test(),
             Command::TestBackend { backend } => test_backend(backend),
@@ -163,6 +179,21 @@ fn build() -> Result<()> {
 /// Run cargo check
 fn check() -> Result<()> {
     run_cargo(vec!["check", "--all-targets", "--all-features"])
+}
+
+/// Run cargo-rdme to check if README.md is up-to-date with the library documentation
+fn check_readme() -> Result<()> {
+    for package in get_workspace_packages()? {
+        run_cargo(vec!["rdme", "--workspace-project", &package, "--check"])?;
+    }
+    Ok(())
+}
+
+fn fix_readme() -> Result<()> {
+    for package in get_workspace_packages()? {
+        run_cargo(vec!["rdme", "--workspace-project", &package])?;
+    }
+    Ok(())
 }
 
 /// Generate code coverage report
@@ -219,13 +250,21 @@ fn fix_clippy() -> Result<()> {
 
 /// Check that docs build without errors using flags for docs.rs
 fn lint_docs() -> Result<()> {
+    for package in get_workspace_packages()? {
+        run_cargo_nightly(vec!["docs-rs", "--package", &package])?;
+    }
+    Ok(())
+}
+
+fn get_workspace_packages() -> Result<Vec<String>> {
     let meta = MetadataCommand::new()
         .exec()
         .wrap_err("failed to get cargo metadata")?;
-    for package in meta.workspace_default_packages() {
-        run_cargo_nightly(vec!["docs-rs", "--package", &package.name])?;
-    }
-    Ok(())
+    Ok(meta
+        .workspace_default_packages()
+        .iter()
+        .map(|v| v.name.clone())
+        .collect())
 }
 
 /// Lint formatting issues in the project

@@ -27,14 +27,15 @@
 //! assert_eq!(text::Line::default(), ratatui::text::Line::from(vec![]));
 //! ```
 
+pub use ratatui_core::backend::{self, Backend};
 #[cfg(feature = "crossterm")]
-pub use crate::backend::CrosstermBackend;
+pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
+
 #[cfg(all(not(windows), feature = "termion"))]
-pub use crate::backend::TermionBackend;
+pub use crate::backend::{FromTermion, IntoTermion, TermionBackend};
 #[cfg(feature = "termwiz")]
-pub use crate::backend::TermwizBackend;
+pub use crate::backend::{FromTermwiz, IntoTermwiz, TermwizBackend};
 pub use crate::{
-    backend::{self, Backend},
     buffer::{self, Buffer},
     layout::{self, Alignment, Constraint, Direction, Layout, Margin, Position, Rect, Size},
     style::{self, Color, Modifier, Style, Stylize},

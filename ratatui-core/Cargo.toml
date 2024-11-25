@@ -1,0 +1,70 @@
+[package]
+name = "ratatui-core"
+description = """
+    Core types and traits for the Ratatui Terminal UI library.
+    Widget libraries should use this crate. Applications should use the main Ratatui crate.
+"""
+version = "0.3.0"
+readme = "README.md"
+authors.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+exclude.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+
+## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
+palette = ["dep:palette"]
+
+## enables the backend code that sets the underline color. Underline color is only supported by
+## the Crossterm backend, and is not supported on Windows 7.
+underline-color = []
+
+## Use terminal scrolling regions to make some operations less prone to
+## flickering. (i.e. Terminal::insert_before).
+scrolling-regions = []
+
+## enables serialization and deserialization of style and color types using the [`serde`] crate.
+## This is useful if you want to save themes to a file.
+serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
+
+[dependencies]
+bitflags = "2.3"
+cassowary = "0.3"
+compact_str = "0.8.0"
+document-features = { workspace = true, optional = true }
+indoc.workspace = true
+itertools.workspace = true
+lru = "0.12.0"
+palette = { version = "0.7.6", optional = true }
+paste = "1.0.2"
+serde = { workspace = true, optional = true }
+strum.workspace = true
+unicode-segmentation.workspace = true
+unicode-truncate = "2"
+unicode-width.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+ratatui = { workspace = true, features = ["crossterm", "termwiz"] }
+rstest.workspace = true
+serde_json.workspace = true
+
+[target.'cfg(not(windows))'.dev-dependencies]
+ratatui = { workspace = true, features = ["termion"] }
+
+[lints.clippy]
+# we often split up a module into multiple files with the main type in a file named after the
+# module, so we want to allow this pattern
+module_inception = "allow"

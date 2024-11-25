@@ -1,7 +1,15 @@
 [workspace]
 resolver = "2"
-members = ["ratatui", "xtask"]
-default-members = ["ratatui"]
+members = ["ratatui", "ratatui-*", "xtask"]
+default-members = [
+    "ratatui",
+    "ratatui-core",
+    "ratatui-crossterm",
+    # this is not included as it doesn't compile on windows
+    # "ratatui-termion",
+    "ratatui-termwiz",
+    "ratatui-widgets",
+]
 
 [workspace.package]
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
@@ -12,16 +20,34 @@ keywords = ["tui", "terminal", "dashboard"]
 categories = ["command-line-interface"]
 readme = "README.md"
 license = "MIT"
-exclude = [
-  "assets/*",
-  ".github",
-  "Makefile.toml",
-  "CONTRIBUTING.md",
-  "*.log",
-  "tags",
-]
+exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
 edition = "2021"
 rust-version = "1.74.0"
+
+[workspace.dependencies]
+bitflags = "2.6.0"
+color-eyre = "0.6.3"
+crossterm = "0.28.1"
+document-features = "0.2.7"
+indoc = "2.0.5"
+instability = "0.3.3"
+itertools = "0.13.0"
+pretty_assertions = "1.4.1"
+ratatui = { path = "ratatui" }
+ratatui-core = { path = "ratatui-core" }
+ratatui-crossterm = { path = "ratatui-crossterm" }
+ratatui-termion = { path = "ratatui-termion" }
+ratatui-termwiz = { path = "ratatui-termwiz" }
+ratatui-widgets = { path = "ratatui-widgets" }
+rstest = "0.23.0"
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
+strum = { version = "0.26.3", features = ["derive"] }
+termwiz = { version = "0.22.0" }
+unicode-segmentation = "1.12.0"
+# See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
+unicode-width = "=0.2.0"
+termion = "4.0.0"
 
 # Improve benchmark consistency
 [profile.bench]

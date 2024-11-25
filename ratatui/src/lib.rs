@@ -1,3 +1,11 @@
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
+)]
+#![warn(missing_docs)]
 //! ![Demo](https://github.com/ratatui/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
 //!
 //! <div align="center">
@@ -271,7 +279,7 @@
 //! [Layout]: https://ratatui.rs/how-to/layout/
 //! [Styling Text]: https://ratatui.rs/how-to/render/style-text/
 //! [templates]: https://github.com/ratatui/templates/
-//! [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
+//! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 //! [Report a bug]: https://github.com/ratatui/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
 //! [Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
 //! [Create a Pull Request]: https://github.com/ratatui/ratatui/compare
@@ -318,37 +326,39 @@
 //! [Forum]: https://forum.ratatui.rs
 //! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
 
-// show the feature flags in the generated documentation
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
-    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
-)]
-
-/// re-export the `crossterm` crate so that users don't have to add it as a dependency
-#[cfg(feature = "crossterm")]
-pub use crossterm;
 /// re-export the `palette` crate so that users don't have to add it as a dependency
 #[cfg(feature = "palette")]
 pub use palette;
+/// re-export the `crossterm` crate so that users don't have to add it as a dependency
+#[cfg(feature = "crossterm")]
+pub use ratatui_crossterm::crossterm;
+/// re-export the `termion` crate so that users don't have to add it as a dependency
+#[cfg(all(not(windows), feature = "termion"))]
+pub use ratatui_termion::termion;
+/// re-export the `termwiz` crate so that users don't have to add it as a dependency
+#[cfg(feature = "termwiz")]
+pub use ratatui_termwiz::termwiz;
 #[cfg(feature = "crossterm")]
 pub use terminal::{
     init, init_with_options, restore, try_init, try_init_with_options, try_restore, DefaultTerminal,
 };
 pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
-/// re-export the `termion` crate so that users don't have to add it as a dependency
-#[cfg(all(not(windows), feature = "termion"))]
-pub use termion;
-/// re-export the `termwiz` crate so that users don't have to add it as a dependency
-#[cfg(feature = "termwiz")]
-pub use termwiz;
 
-pub mod backend;
-pub mod buffer;
-pub mod layout;
+/// Re-exports for the backend implementations.
+pub mod backend {
+    pub use ratatui_core::backend::{Backend, ClearType, TestBackend, WindowSize};
+    #[cfg(feature = "crossterm")]
+    pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
+    #[cfg(all(not(windows), feature = "termion"))]
+    pub use ratatui_termion::{FromTermion, IntoTermion, TermionBackend};
+    #[cfg(feature = "termwiz")]
+    pub use ratatui_termwiz::{FromTermwiz, IntoTermwiz, TermwizBackend};
+}
+
+pub use ratatui_core::{buffer, layout};
 pub mod prelude;
-pub mod style;
-pub mod symbols;
+pub use ratatui_core::{style, symbols};
 mod terminal;
-pub mod text;
+pub use ratatui_core::text;
 pub mod widgets;
+pub use ratatui_widgets::border;

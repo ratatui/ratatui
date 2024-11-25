@@ -14,30 +14,102 @@ exclude.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+# see https://doc.rust-lang.org/nightly/rustdoc/scraped-examples.html
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+#! The crate provides a set of optional features that can be enabled in your `Cargo.toml` file.
+#!
+## By default, we enable the crossterm backend as this is a reasonable choice for most applications
+## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
+## which allows you to set the underline color of text.
+default = ["crossterm", "underline-color"]
+#! Generally an application will only use one backend, so you should only enable one of the following features:
+## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
+crossterm = ["dep:ratatui-crossterm"]
+## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
+termion = ["dep:ratatui-termion"]
+## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
+termwiz = ["dep:ratatui-termwiz"]
+
+#! The following optional features are available for all backends:
+## enables serialization and deserialization of style and color types using the [`serde`] crate.
+## This is useful if you want to save themes to a file.
+serde = ["dep:serde", "ratatui-core/serde", "ratatui-widgets/serde"]
+
+## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
+palette = ["ratatui-core/palette", "dep:palette"]
+
+## Use terminal scrolling regions to make some operations less prone to
+## flickering. (i.e. Terminal::insert_before).
+scrolling-regions = [
+    "ratatui-core/scrolling-regions",
+    "ratatui-crossterm?/scrolling-regions",
+    "ratatui-termion?/scrolling-regions",
+    "ratatui-termwiz?/scrolling-regions",
+]
+
+## enables all widgets.
+all-widgets = ["widget-calendar"]
+
+#! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
+#! dependencies. The available features are:
+## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
+widget-calendar = ["ratatui-widgets/calendar"]
+
+#! The following optional features are only available for some backends:
+
+## Enables the backend code that sets the underline color.
+## Underline color is only supported by the Crossterm and Termwiz backends, and is not supported on
+## Windows 7.
+underline-color = [
+    "ratatui-core/underline-color",
+    "ratatui-crossterm?/underline-color",
+    "ratatui-termwiz?/underline-color",
+]
+
+#! The following features are unstable and may change in the future:
+
+## Enable all unstable features.
+unstable = ["unstable-rendered-line-info", "unstable-widget-ref", "unstable-backend-writer"]
+
+## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
+## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
+## which are experimental and may change in the future.
+## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
+unstable-rendered-line-info = ["ratatui-widgets/unstable-rendered-line-info"]
+
+## enables the [`WidgetRef`] and [`StatefulWidgetRef`] traits which are experimental and may change
+## in the future.
+##
+## [`WidgetRef`]: widgets::WidgetRef
+## [`StatefulWidgetRef`]: widgets::StatefulWidgetRef
+unstable-widget-ref = []
+
+## Enables getting access to backends' writers. Only the Crossterm backend currently supports this.
+unstable-backend-writer = ["ratatui-crossterm?/unstable-backend-writer"]
+
 [dependencies]
-bitflags = "2.3"
-cassowary = "0.3"
-compact_str = "0.8.0"
-crossterm = { version = "0.28.1", optional = true }
-document-features = { version = "0.2.7", optional = true }
+document-features = { workspace = true, optional = true }
 indoc = "2"
-instability = "0.3.1"
-itertools = "0.13"
-lru = "0.12.0"
-paste = "1.0.2"
+instability.workspace = true
+itertools.workspace = true
 palette = { version = "0.7.6", optional = true }
-serde = { version = "1", optional = true, features = ["derive"] }
-strum = { version = "0.26.3", features = ["derive"] }
-termwiz = { version = "0.22.0", optional = true }
+ratatui-core = { workspace = true }
+ratatui-crossterm = { workspace = true, optional = true }
+ratatui-termwiz = { workspace = true, optional = true }
+ratatui-widgets = { workspace = true }
+serde = { workspace = true, optional = true }
+strum.workspace = true
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
-unicode-segmentation = "1.10"
-unicode-truncate = "1"
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
-unicode-width = "=0.2.0"
+unicode-width.workspace = true
 
 [target.'cfg(not(windows))'.dependencies]
-# termion is not supported on Windows
-termion = { version = "4.0.0", optional = true }
+ratatui-termion = { workspace = true, optional = true }
 
 [dev-dependencies]
 argh = "0.1.12"
@@ -48,18 +120,13 @@ fakeit = "1.1"
 font8x8 = "0.3.1"
 futures = "0.3.30"
 indoc = "2"
-octocrab = "0.41.0"
+octocrab = "0.42.0"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 rstest = "0.23.0"
-serde_json = "1.0.109"
-tokio = { version = "1.39.2", features = [
-    "rt",
-    "macros",
-    "time",
-    "rt-multi-thread",
-] }
+serde_json.workspace = true
+tokio = { version = "1.41.1", features = ["rt", "macros", "time", "rt-multi-thread"] }
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
@@ -105,79 +172,6 @@ string_slice = "warn"
 string_to_string = "warn"
 unnecessary_self_imports = "warn"
 use_self = "warn"
-
-[features]
-#! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
-#!
-## By default, we enable the crossterm backend as this is a reasonable choice for most applications
-## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
-## which allows you to set the underline color of text.
-default = ["crossterm", "underline-color"]
-#! Generally an application will only use one backend, so you should only enable one of the following features:
-## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
-crossterm = ["dep:crossterm"]
-## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
-termion = ["dep:termion"]
-## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
-termwiz = ["dep:termwiz"]
-
-#! The following optional features are available for all backends:
-## enables serialization and deserialization of style and color types using the [`serde`] crate.
-## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
-
-## enables the [`border!`] macro.
-macros = []
-
-## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
-palette = ["dep:palette"]
-
-## Use terminal scrolling regions to make some operations less prone to
-## flickering. (i.e. Terminal::insert_before).
-scrolling-regions = []
-
-## enables all widgets.
-all-widgets = ["widget-calendar"]
-
-#! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
-#! dependencies. The available features are:
-## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
-widget-calendar = ["dep:time"]
-
-#! The following optional features are only available for some backends:
-
-## enables the backend code that sets the underline color.
-## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
-## and is not supported on Windows 7.
-underline-color = ["dep:crossterm"]
-
-#! The following features are unstable and may change in the future:
-
-## Enable all unstable features.
-unstable = [
-    "unstable-rendered-line-info",
-    "unstable-widget-ref",
-    "unstable-backend-writer",
-]
-
-## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
-## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
-## which are experimental and may change in the future.
-## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
-unstable-rendered-line-info = []
-
-## Enables the [`WidgetRef`](widgets::WidgetRef) and [`StatefulWidgetRef`](widgets::StatefulWidgetRef) traits which are experimental and may change in
-## the future.
-unstable-widget-ref = []
-
-## Enables getting access to backends' writers.
-unstable-backend-writer = []
-
-[package.metadata.docs.rs]
-all-features = true
-# see https://doc.rust-lang.org/nightly/rustdoc/scraped-examples.html
-cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
-rustdoc-args = ["--cfg", "docsrs"]
 
 [lib]
 bench = false

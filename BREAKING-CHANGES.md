@@ -10,6 +10,8 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [Unreleased](#unreleased)
+  - The `From` impls for backend types are now replaced with more specific traits
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -71,6 +73,87 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## Unreleased (0.30.0)
+
+### `WidgetRef` no longer has a blanket implementation of Widget
+
+Previously there was a blanket implementation of Widget for WidgetRef. This has been reversed to
+instead be a blanket implementation of WidgetRef for all &W where W: Widget. Any widgets that
+previously implemented WidgetRef directly should now instead implement Widget for a reference to the
+type.
+
+```diff
+-impl WidgetRef for Foo {
+-    fn render_ref(&self, area: Rect, buf: &mut Buffer)
++impl Widget for &Foo {
++    fn render(self, area: Rect, buf: &mut Buffer)
+}
+```
+
+### The `From` impls for backend types are now replaced with more specific traits [#1464]
+
+[#1464]: https://github.com/ratatui/ratatui/pull/1464
+
+Crossterm gains `ratatui::backend::crossterm::{FromCrossterm, IntoCrossterm}`
+Termwiz gains `ratatui::backend::termwiz::{FromTermwiz, IntoTermwiz}`
+
+This is necessary in order to avoid the orphan rule when implementing `From` for crossterm types
+once the crossterm types are moved to a separate crate.
+
+```diff
++ use ratatui::backend::crossterm::{FromCrossterm, IntoCrossterm};
+
+let crossterm_color = crossterm::style::Color::Black;
+- let ratatui_color = crossterm_color.into();
+- let ratatui_color = ratatui::style::Color::from(crossterm_color);
++ let ratatui_color = ratatui::style::Color::from_crossterm(crossterm_color);
+- let crossterm_color = ratatui_color.into();
+- let crossterm_color = crossterm::style::Color::from(ratatui_color);
++ let crossterm_color = ratatui_color.into_crossterm();
+
+let crossterm_attribute = crossterm::style::types::Attribute::Bold;
+- let ratatui_modifier = crossterm_attribute.into();
+- let ratatui_modifier = ratatui::style::Modifier::from(crossterm_attribute);
++ let ratatui_modifier = ratatui::style::Modifier::from_crossterm(crossterm_attribute);
+- let crossterm_attribute = ratatui_modifier.into();
+- let crossterm_attribute = crossterm::style::types::Attribute::from(ratatui_modifier);
++ let crossterm_attribute = ratatui_modifier.into_crossterm();
+```
+
+Similar conversions for `ContentStyle` -> `Style` and `Attributes` -> `Modifier` exist for
+Crossterm and the various Termion and Termwiz types as well.
+
+### `Bar::label()` and `BarGroup::label()` now accepts `Into<Line<'a>>`. ([#1471])
+
+[#1471]: https://github.com/ratatui/ratatui/pull/1471
+
+Previously `Bar::label()` and `BarGroup::label()` accepted `Line<'a>`, but they now accepts `Into<Line<'a>>`.
+
+for `Bar::label()`:
+
+```diff
+- Bar::default().label("foo".into());
++ Bar::default().label("foo");
+```
+
+for `BarGroup::label()`:
+
+```diff
+- BarGroup::default().label("bar".into());
++ BarGroup::default().label("bar");
+```
+
+### `Bar::text_value` now accepts `Into<String>` ([#1471])
+
+Previously `Bar::text_value` accepted `String`, but now it accepts `Into<String>`.
+
+for `Bar::text_value()`:
+
+```diff
+- Bar::default().text_value("foobar".into());
++ Bar::default().text_value("foobar");
+```
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 

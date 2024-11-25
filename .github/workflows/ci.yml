@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DavidAnson/markdownlint-cli2-action@v17
+      - uses: DavidAnson/markdownlint-cli2-action@v18
         with:
           globs: |
             '**/*.md'
@@ -94,7 +94,7 @@ jobs:
       - uses: taiki-e/install-action@cargo-llvm-cov
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask coverage
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -115,6 +115,16 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask check
+
+  # Check if README.md is up-to-date with the crate's documentation.
+  check-readme:
+    name: Check README
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-rdme
+      - run: cargo xtask check-readme
 
   # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account the
   # package.metadata.docs.rs configured in Cargo.toml. https://github.com/dtolnay/cargo-docs-rs
