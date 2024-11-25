@@ -113,3 +113,8 @@ doc-scrape-examples = true
 [[example]]
 name = "block"
 doc-scrape-examples = true
+
+[[example]]
+name = "calendar"
+required-features = ["ratatui/widget-calendar"]
+doc-scrape-examples = true
