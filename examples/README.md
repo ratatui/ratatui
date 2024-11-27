@@ -35,3 +35,16 @@ of the `main` branch for code which is guaranteed to work with the released rata
 >
 > We don't keep the CHANGELOG updated with unreleased changes, check the git commit history or run
 > `git-cliff -u` against a cloned version of this repository.
+
+## Demo
+
+This is the original demo example from the main README. It is available for each of the backends.
+[Source](demo/).
+
+```shell
+cargo run --example=demo --features=crossterm
+cargo run --example=demo --no-default-features --features=termion
+cargo run --example=demo --no-default-features --features=termwiz
+```
+
+![Demo](https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true)

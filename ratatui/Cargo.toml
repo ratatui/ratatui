@@ -198,11 +198,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "demo"
-# this runs for all of the terminal backends, so it can't be built using --all-features or scraped
-doc-scrape-examples = false
-
-[[example]]
 name = "demo2"
 required-features = ["crossterm", "palette", "widget-calendar"]
 doc-scrape-examples = true
