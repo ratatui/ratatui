@@ -45,7 +45,7 @@ If you are new to Ratatui, check out the [Layout concepts] article on the Ratatu
 Use the `constraints!` macro to define layout constraints:
 
 ```rust
-use ratatui::prelude::*;
+# use ratatui_core::layout::Constraint;
 use ratatui_macros::constraints;
 
 assert_eq!(
@@ -62,7 +62,7 @@ assert_eq!(
 ```
 
 ```rust
-use ratatui::prelude::*;
+# use ratatui_core::layout::Constraint;
 use ratatui_macros::constraints;
 
 assert_eq!(
@@ -79,7 +79,7 @@ assert_eq!(
 Use the `constraint!` macro to define individual constraints:
 
 ```rust
-use ratatui::prelude::*;
+# use ratatui_core::layout::Constraint;
 use ratatui_macros::constraint;
 
 assert_eq!(
@@ -91,7 +91,7 @@ assert_eq!(
 Create vertical and horizontal layouts using the `vertical!` and `horizontal!` macros:
 
 ```rust
-use ratatui::prelude::*;
+# use ratatui_core::layout::Rect;
 use ratatui_macros::{vertical, horizontal};
 
 let area = Rect { x: 0, y: 0, width: 10, height: 10 };
@@ -114,7 +114,7 @@ The `span!` macro create raw and styled `Span`s. They each take a format string 
 `;` followed by the format string and arguments.
 
 ```rust
-use ratatui::prelude::*;
+# use ratatui_core::style::{Color, Modifier, Style, Stylize};
 use ratatui_macros::span;
 
 let name = "world!";
@@ -130,7 +130,6 @@ The `line!` macro creates a `Line` that contains a sequence of spans. It is simi
 macro.
 
 ```rust
-use ratatui::prelude::*;
 use ratatui_macros::line;
 
 let name = "world!";
@@ -144,7 +143,6 @@ The `text!` macro creates a `Text` that contains a sequence of lines. It is simi
 macro.
 
 ```rust
-use ratatui::prelude::*;
 use ratatui_macros::{span, line, text};
 
 let name = "world!";
@@ -155,7 +153,7 @@ let text = text!["bye"; 2];
 It is even possible to use `span!` and `line!` in the `text!` macro:
 
 ```rust
-use ratatui::prelude::*;
+# use ratatui_core::style::{Modifier, Stylize};
 use ratatui_macros::{span, line, text};
 let name = "Bye!!!";
 let text = text![line!["hello", "world".bold()], span!(Modifier::BOLD; "{name}")];
@@ -167,7 +165,6 @@ The `row!` macro creates a `Row` that contains a sequence of `Cell`. It is simil
 macro. A `Row` represents a sequence of `Cell`s in a single row of a table.
 
 ```rust
-use ratatui::prelude::*;
 use ratatui_macros::row;
 
 let rows = [
@@ -179,7 +176,7 @@ let rows = [
 It is even possible to use `span!`, `line!` and `text!` in the `row!` macro:
 
 ```rust
-use ratatui::prelude::*;
+# use ratatui_core::style::{Modifier, Stylize};
 use ratatui_macros::{span, line, text, row};
 let name = "Bye!!!";
 let text = row![text![line!["hello", "world".bold()]], span!(Modifier::BOLD; "{name}")];

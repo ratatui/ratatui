@@ -7,7 +7,7 @@
 /// * Create a [`Row`] containing a vector of [`Cell`]s:
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::style::Stylize;
 /// use ratatui_macros::row;
 ///
 /// let row = row!["hello", "world"];
@@ -17,7 +17,6 @@
 /// * Create an empty [`Row`]:
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
 /// # use ratatui_macros::row;
 /// let empty_row = row![];
 /// ```
@@ -25,7 +24,6 @@
 /// * Create a [`Row`] from a given [`Cell`] repeated some amount of times:
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
 /// # use ratatui_macros::row;
 /// let row = row!["hello"; 2];
 /// ```
@@ -33,7 +31,7 @@
 /// * Use [`text!`], [`line!`] or [`span!`] macro inside [`row!`] macro.
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::style::{Modifier};
 /// use ratatui_macros::{row, line, text, span};
 ///
 /// let row = row![
@@ -47,15 +45,15 @@
 #[macro_export]
 macro_rules! row {
     () => {
-        ::ratatui::widgets::Row::default()
+        ::ratatui_widgets::table::Row::default()
     };
     ($cell:expr; $n:expr) => {
-        ::ratatui::widgets::Row::new(vec![::ratatui::widgets::Cell::from($cell); $n])
+        ::ratatui_widgets::table::Row::new(vec![::ratatui_widgets::table::Cell::from($cell); $n])
     };
     ($($cell:expr),+ $(,)?) => {{
-        ::ratatui::widgets::Row::new(vec![
+        ::ratatui_widgets::table::Row::new(vec![
         $(
-            ::ratatui::widgets::Cell::from($cell),
+            ::ratatui_widgets::table::Cell::from($cell),
         )+
         ])
     }};
@@ -64,10 +62,8 @@ macro_rules! row {
 #[cfg(test)]
 mod tests {
 
-    use ratatui::{
-        text::Text,
-        widgets::{Cell, Row},
-    };
+    use ratatui_core::text::Text;
+    use ratatui_widgets::table::{Cell, Row};
 
     #[test]
     fn row_literal() {
@@ -127,15 +123,15 @@ mod tests {
             [
                 Row::new([
                     Cell::from("Find File"),
-                    Cell::from(Text::raw("ctrl+f").alignment(ratatui::layout::Alignment::Right)),
+                    Cell::from(Text::raw("ctrl+f").right_aligned()),
                 ]),
                 Row::new([
                     Cell::from("Open recent"),
-                    Cell::from(Text::raw("ctrl+r").alignment(ratatui::layout::Alignment::Right)),
+                    Cell::from(Text::raw("ctrl+r").right_aligned()),
                 ]),
                 Row::new([
                     Cell::from("Open config"),
-                    Cell::from(Text::raw("ctrl+k").alignment(ratatui::layout::Alignment::Right)),
+                    Cell::from(Text::raw("ctrl+k").right_aligned()),
                 ]),
             ]
         );

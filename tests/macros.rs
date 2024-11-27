@@ -1,4 +1,4 @@
-use ratatui::prelude::*;
+use ratatui_core::layout::{Constraint, Rect};
 use ratatui_macros::{constraints, horizontal, vertical};
 
 #[test]

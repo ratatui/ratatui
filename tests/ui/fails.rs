@@ -1,4 +1,4 @@
-use ratatui::prelude::*;
+use ratatui_core::layout::Constraint;
 use ratatui_macros::{constraints, span};
 
 fn main() {

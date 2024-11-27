@@ -6,7 +6,7 @@
 /// # Examples
 ///
 /// ```
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::layout::Constraint;
 /// use ratatui_macros::constraint;
 /// assert_eq!(constraint!(>= 3 + 4), Constraint::Min(7));
 /// assert_eq!(constraint!(<= 3 + 4), Constraint::Max(7));
@@ -18,22 +18,22 @@
 #[macro_export]
 macro_rules! constraint {
     (== $token:tt %) => {
-        ::ratatui::layout::Constraint::Percentage($token)
+        $crate::ratatui_core::layout::Constraint::Percentage($token)
     };
     (>= $expr:expr) => {
-        ::ratatui::layout::Constraint::Min($expr)
+        $crate::ratatui_core::layout::Constraint::Min($expr)
     };
     (<= $expr:expr) => {
-        ::ratatui::layout::Constraint::Max($expr)
+        $crate::ratatui_core::layout::Constraint::Max($expr)
     };
     (== $num:tt / $denom:tt) => {
-        ::ratatui::layout::Constraint::Ratio($num as u32, $denom as u32)
+        $crate::ratatui_core::layout::Constraint::Ratio($num as u32, $denom as u32)
     };
     (== $expr:expr) => {
-        ::ratatui::layout::Constraint::Length($expr)
+        $crate::ratatui_core::layout::Constraint::Length($expr)
     };
     (*= $expr:expr) => {
-        ::ratatui::layout::Constraint::Fill($expr)
+        $crate::ratatui_core::layout::Constraint::Fill($expr)
     };
 }
 
@@ -53,7 +53,7 @@ macro_rules! constraint {
 /// ```
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::layout::Constraint;
 /// # use ratatui_macros::constraints;
 /// assert_eq!(
 ///     constraints![==50, ==30%, >=3, <=1, ==1/2, *=1],
@@ -171,7 +171,7 @@ macro_rules! constraints {
 #[macro_export]
 macro_rules! vertical {
     ($( $constraint:tt )+) => {
-        ::ratatui::layout::Layout::vertical($crate::constraints!( $($constraint)+ ))
+        $crate::ratatui_core::layout::Layout::vertical($crate::constraints!( $($constraint)+ ))
     };
 }
 
@@ -192,6 +192,6 @@ macro_rules! vertical {
 #[macro_export]
 macro_rules! horizontal {
     ($( $constraint:tt )+) => {
-        ::ratatui::layout::Layout::horizontal($crate::constraints!( $($constraint)+ ))
+        $crate::ratatui_core::layout::Layout::horizontal($crate::constraints!( $($constraint)+ ))
     };
 }

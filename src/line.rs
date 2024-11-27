@@ -7,7 +7,7 @@
 /// * Create a [`Line`] containing a vector of [`Span`]s:
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::style::Stylize;
 /// use ratatui_macros::line;
 ///
 /// let line = line!["hello", "world"];
@@ -17,7 +17,6 @@
 /// * Create a [`Line`] from a given [`Span`] repeated some amount of times:
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
 /// # use ratatui_macros::line;
 /// let line = line!["hello"; 2];
 /// ```
@@ -25,7 +24,7 @@
 /// * Use [`span!`] macro inside [`line!`] macro for formatting.
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::style::Modifier;
 /// use ratatui_macros::{line, span};
 ///
 /// let line = line![span!("hello {}", "world"), span!(Modifier::BOLD; "goodbye {}", "world")];
@@ -36,13 +35,13 @@
 #[macro_export]
 macro_rules! line {
     () => {
-        ::ratatui::text::Line::default()
+        $crate::ratatui_core::text::Line::default()
     };
     ($span:expr; $n:expr) => {
-      ::ratatui::text::Line::from(vec![$span.into(); $n])
+      $crate::ratatui_core::text::Line::from(vec![$span.into(); $n])
     };
     ($($span:expr),+ $(,)?) => {{
-        ::ratatui::text::Line::from(vec![
+        $crate::ratatui_core::text::Line::from(vec![
         $(
             $span.into(),
         )+
@@ -52,7 +51,7 @@ macro_rules! line {
 
 #[cfg(test)]
 mod tests {
-    use ratatui::prelude::*;
+    use ratatui_core::text::{Line, Span};
 
     #[test]
     fn line_literal() {

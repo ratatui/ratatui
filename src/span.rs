@@ -11,7 +11,7 @@
 /// # Examples
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::style::{Color, Modifier, Style, Stylize};
 /// use ratatui_macros::span;
 ///
 /// let content = "content";
@@ -68,7 +68,7 @@
 /// But this will work:
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::style::{Modifier};
 /// # use ratatui_macros::span;
 /// let span = span!(Modifier::BOLD; "hello world");
 /// ```
@@ -84,7 +84,6 @@
 /// But this will work:
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
 /// # use ratatui_macros::span;
 /// let span = span!("hello {}", "world");
 /// ```
@@ -96,31 +95,34 @@
 #[macro_export]
 macro_rules! span {
     ($string:literal) => {
-        ::ratatui::text::Span::raw(format!($string))
+        $crate::ratatui_core::text::Span::raw(format!($string))
     };
     ($string:literal, $($arg:tt)*) => {
-        ::ratatui::text::Span::raw(format!($string, $($arg)*))
+        $crate::ratatui_core::text::Span::raw(format!($string, $($arg)*))
     };
     ($expr:expr) => {
-        ::ratatui::text::Span::raw(format!("{}", $expr))
+        $crate::ratatui_core::text::Span::raw(format!("{}", $expr))
     };
     ($style:expr, $($arg:tt)*) => {
         compile_error!("first parameter must be a formatting specifier followed by a comma OR a `Style` followed by a semicolon")
     };
     ($style:expr; $string:literal) => {
-        ::ratatui::text::Span::styled(format!($string), $style)
+        $crate::ratatui_core::text::Span::styled(format!($string), $style)
     };
     ($style:expr; $string:literal, $($arg:tt)*) => {
-        ::ratatui::text::Span::styled(format!($string, $($arg)*), $style)
+        $crate::ratatui_core::text::Span::styled(format!($string, $($arg)*), $style)
     };
     ($style:expr; $expr:expr) => {
-        ::ratatui::text::Span::styled(format!("{}", $expr), $style)
+        $crate::ratatui_core::text::Span::styled(format!("{}", $expr), $style)
     };
 }
 
 #[cfg(test)]
 mod tests {
-    use ratatui::prelude::*;
+    use ratatui_core::{
+        style::{Color, Modifier, Style, Stylize},
+        text::Span,
+    };
 
     #[test]
     fn raw() {

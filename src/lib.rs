@@ -5,3 +5,6 @@ mod line;
 mod row;
 mod span;
 mod text;
+
+// Re-export the core crate to use the types in macros
+pub use ratatui_core;

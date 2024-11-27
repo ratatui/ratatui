@@ -1,6 +1,6 @@
 [package]
 name = "ratatui-macros"
-version = "0.6.0"
+version = "0.7.0-alpha.0"
 edition = "2021"
 authors = ["The Ratatui Developers"]
 description = "Macros for Ratatui"
@@ -13,8 +13,8 @@ categories = ["command-line-interface"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# requires alpha version of ratatui for the Into<Style> changes
-ratatui = "0.29.0"
+ratatui-core = "0.1.0-alpha.0"
+ratatui-widgets = "0.3.0-alpha.0"
 
 [dev-dependencies]
 trybuild = { version = "1.0.101", features = ["diff"] }
