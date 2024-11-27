@@ -12,7 +12,7 @@ You can run these examples using:
 cargo run -p example-name
 ```
 
-This folder might use unreleased code. Consider vieing the examples in the `latest` branch instead
+This folder might use unreleased code. Consider viewing the examples in the `latest` branch instead
 of the `main` branch for code which is guaranteed to work with the released ratatui version.
 
 > [!WARNING]
