@@ -201,11 +201,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "demo2"
-required-features = ["crossterm", "palette", "widget-calendar"]
-doc-scrape-examples = true
-
-[[example]]
 name = "docsrs"
 required-features = ["crossterm"]
 doc-scrape-examples = false

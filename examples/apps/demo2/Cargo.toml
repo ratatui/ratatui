@@ -1,0 +1,27 @@
+[package]
+name = "demo2"
+version = "0.1.0"
+authors.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+license.workspace = true
+exclude.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+color-eyre = "0.6.3"
+crossterm.workspace = true
+indoc.workspace = true
+itertools.workspace = true
+palette = "0.7.6"
+rand = "0.8.5"
+rand_chacha = "0.3.1"
+ratatui = { workspace = true, features = ["all-widgets"] }
+strum.workspace = true
+time = "0.3.36"
+unicode-width = "0.2.0"
