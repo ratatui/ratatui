@@ -63,7 +63,7 @@ line-clipping = "0.2.1"
 [dev-dependencies]
 color-eyre.workspace = true
 pretty_assertions.workspace = true
-ratatui.workspace = true
+ratatui = { path = "../ratatui" }
 rstest.workspace = true
 
 [lints.rust]
