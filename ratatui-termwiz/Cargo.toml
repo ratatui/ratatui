@@ -35,5 +35,5 @@ ratatui-core = { workspace = true }
 termwiz.workspace = true
 
 [dev-dependencies]
-ratatui = { workspace = true, features = ["termwiz"] }
+ratatui = { path = "../ratatui", features = ["termwiz"] }
 rstest.workspace = true
