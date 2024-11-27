@@ -41,5 +41,5 @@ instability.workspace = true
 ratatui-core = { workspace = true }
 
 [dev-dependencies]
-ratatui = { workspace = true, features = ["crossterm"] }
+ratatui = { path = "../ratatui", features = ["crossterm"] }
 rstest.workspace = true
