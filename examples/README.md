@@ -41,10 +41,4 @@ of the `main` branch for code which is guaranteed to work with the released rata
 This is the original demo example from the main README. It is available for each of the backends.
 [Source](demo/).
 
-```shell
-cargo run --example=demo --features=crossterm
-cargo run --example=demo --no-default-features --features=termion
-cargo run --example=demo --no-default-features --features=termwiz
-```
-
 ![Demo](https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true)
