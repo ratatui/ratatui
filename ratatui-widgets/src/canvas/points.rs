@@ -11,7 +11,7 @@ pub struct Points<'a> {
     pub color: Color,
 }
 
-impl<'a> Shape for Points<'a> {
+impl Shape for Points<'_> {
     fn draw(&self, painter: &mut Painter) {
         for (x, y) in self.coords {
             if let Some((x, y)) = painter.get_point(*x, *y) {

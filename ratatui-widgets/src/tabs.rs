@@ -350,7 +350,7 @@ impl<'a> Tabs<'a> {
     }
 }
 
-impl<'a> Styled for Tabs<'a> {
+impl Styled for Tabs<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {

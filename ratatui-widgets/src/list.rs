@@ -430,7 +430,7 @@ impl<'a> List<'a> {
     }
 }
 
-impl<'a> Styled for List<'a> {
+impl Styled for List<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {
@@ -442,7 +442,7 @@ impl<'a> Styled for List<'a> {
     }
 }
 
-impl<'a> Styled for ListItem<'a> {
+impl Styled for ListItem<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {

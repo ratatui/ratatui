@@ -348,7 +348,7 @@ pub struct Painter<'a, 'b> {
     resolution: (f64, f64),
 }
 
-impl<'a, 'b> Painter<'a, 'b> {
+impl Painter<'_, '_> {
     /// Convert the `(x, y)` coordinates to location of a point on the grid
     ///
     /// `(x, y)` coordinates are expressed in the coordinate system of the canvas. The origin is in
@@ -646,7 +646,7 @@ where
     marker: Marker,
 }
 
-impl<'a, F> Default for Canvas<'a, F>
+impl<F> Default for Canvas<'_, F>
 where
     F: Fn(&mut Context),
 {

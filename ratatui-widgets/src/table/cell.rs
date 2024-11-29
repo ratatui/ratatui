@@ -179,7 +179,7 @@ where
     }
 }
 
-impl<'a> Styled for Cell<'a> {
+impl Styled for Cell<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {

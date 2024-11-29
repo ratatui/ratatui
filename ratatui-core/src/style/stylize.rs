@@ -250,7 +250,7 @@ pub trait Stylize<'a, T>: Sized {
     modifier!(crossed_out);
 }
 
-impl<'a, T, U> Stylize<'a, T> for U
+impl<T, U> Stylize<'_, T> for U
 where
     U: Styled<Item = T>,
 {
