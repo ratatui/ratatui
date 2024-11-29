@@ -34,7 +34,7 @@ impl<'a> StyledGrapheme<'a> {
     }
 }
 
-impl<'a> Styled for StyledGrapheme<'a> {
+impl Styled for StyledGrapheme<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {

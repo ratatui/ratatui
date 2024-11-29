@@ -108,7 +108,7 @@ pub struct BarChart<'a> {
     direction: Direction,
 }
 
-impl<'a> Default for BarChart<'a> {
+impl Default for BarChart<'_> {
     fn default() -> Self {
         Self {
             block: None,
@@ -682,7 +682,7 @@ impl Widget for &BarChart<'_> {
     }
 }
 
-impl<'a> Styled for BarChart<'a> {
+impl Styled for BarChart<'_> {
     type Item = Self;
     fn style(&self) -> Style {
         self.style

@@ -109,7 +109,7 @@ impl<'a> Button<'a> {
     }
 }
 
-impl<'a> Widget for Button<'a> {
+impl Widget for Button<'_> {
     #[allow(clippy::cast_possible_truncation)]
     fn render(self, area: Rect, buf: &mut Buffer) {
         let (background, text, shadow, highlight) = self.colors();

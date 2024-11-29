@@ -312,7 +312,7 @@ impl From<&Option<u64>> for SparklineBar {
     }
 }
 
-impl<'a> Styled for Sparkline<'a> {
+impl Styled for Sparkline<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {

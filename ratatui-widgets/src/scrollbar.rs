@@ -172,7 +172,7 @@ pub enum ScrollDirection {
     Backward,
 }
 
-impl<'a> Default for Scrollbar<'a> {
+impl Default for Scrollbar<'_> {
     fn default() -> Self {
         Self::new(ScrollbarOrientation::default())
     }
@@ -496,7 +496,7 @@ impl ScrollbarState {
     }
 }
 
-impl<'a> StatefulWidget for Scrollbar<'a> {
+impl StatefulWidget for Scrollbar<'_> {
     type State = ScrollbarState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {

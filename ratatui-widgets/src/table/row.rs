@@ -251,7 +251,7 @@ impl Row<'_> {
     }
 }
 
-impl<'a> Styled for Row<'a> {
+impl Styled for Row<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {

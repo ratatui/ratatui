@@ -489,7 +489,7 @@ impl<'a> Paragraph<'a> {
     }
 }
 
-impl<'a> Styled for Paragraph<'a> {
+impl Styled for Paragraph<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {

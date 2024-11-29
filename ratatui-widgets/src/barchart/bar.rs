@@ -285,7 +285,7 @@ impl<'a> Bar<'a> {
     }
 }
 
-impl<'a> Styled for Bar<'a> {
+impl Styled for Bar<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {
