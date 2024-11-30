@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["ratatui", "ratatui-*", "xtask", "examples/*"]
+members = ["ratatui", "ratatui-*", "xtask", "examples/apps/*"]
 default-members = [
     "ratatui",
     "ratatui-core",
@@ -9,7 +9,7 @@ default-members = [
     # "ratatui-termion",
     "ratatui-termwiz",
     "ratatui-widgets",
-    "examples/*",
+    "examples/apps/*",
 ]
 
 [workspace.package]

@@ -39,6 +39,6 @@ of the `main` branch for code which is guaranteed to work with the released rata
 ## Demo
 
 This is the original demo example from the main README. It is available for each of the backends.
-[Source](demo/).
+[Source](./apps/demo/).
 
 ![Demo](https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true)
