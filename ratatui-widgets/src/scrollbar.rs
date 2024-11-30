@@ -500,19 +500,17 @@ impl StatefulWidget for Scrollbar<'_> {
     type State = ScrollbarState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        if state.content_length == 0
-            || area.is_empty()
-            || self.track_length_excluding_arrow_heads(area) == 0
-        {
+        if state.content_length == 0 || self.track_length_excluding_arrow_heads(area) == 0 {
             return;
         }
 
-        let mut bar = self.bar_symbols(area, state);
-        let area = self.scrollbar_area(area);
-        for x in area.left()..area.right() {
-            for y in area.top()..area.bottom() {
-                if let Some(Some((symbol, style))) = bar.next() {
-                    buf.set_string(x, y, symbol, style);
+        if let Some(area) = self.scrollbar_area(area) {
+            let mut bar = self.bar_symbols(area, state);
+            for x in area.left()..area.right() {
+                for y in area.top()..area.bottom() {
+                    if let Some(Some((symbol, style))) = bar.next() {
+                        buf.set_string(x, y, symbol, style);
+                    }
                 }
             }
         }
@@ -584,14 +582,13 @@ impl Scrollbar<'_> {
         (thumb_start, thumb_length, track_end_length)
     }
 
-    fn scrollbar_area(&self, area: Rect) -> Rect {
+    fn scrollbar_area(&self, area: Rect) -> Option<Rect> {
         match self.orientation {
             ScrollbarOrientation::VerticalLeft => area.columns().next(),
             ScrollbarOrientation::VerticalRight => area.columns().last(),
             ScrollbarOrientation::HorizontalTop => area.rows().next(),
             ScrollbarOrientation::HorizontalBottom => area.rows().last(),
         }
-        .expect("Scrollbar area is empty") // this should never happen as we check for empty area
     }
 
     /// Calculates length of the track excluding the arrow heads
