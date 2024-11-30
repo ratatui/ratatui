@@ -1,11 +1,10 @@
 use std::io;
 
-use ratatui_core::backend::{Backend, ClearType};
-
 use crate::{
+    backend::{Backend, ClearType},
     buffer::{Buffer, Cell},
     layout::{Position, Rect, Size},
-    CompletedFrame, Frame, TerminalOptions, Viewport,
+    terminal::{CompletedFrame, Frame, TerminalOptions, Viewport},
 };
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.

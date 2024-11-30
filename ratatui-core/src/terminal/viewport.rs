@@ -15,7 +15,7 @@ use crate::layout::Rect;
 ///
 /// See [`Terminal::with_options`] for more information.
 ///
-/// [`Terminal::with_options`]: crate::Terminal::with_options
+/// [`Terminal::with_options`]: crate::terminal::Terminal::with_options
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub enum Viewport {
     /// The viewport is fullscreen

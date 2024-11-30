@@ -18,8 +18,7 @@ rust-version.workspace = true
 default = ["underline-color"]
 
 ## enables the backend code that sets the underline color.
-## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
-## and is not supported on Windows 7.
+## Underline color is not supported on Windows 7.
 underline-color = ["ratatui-core/underline-color"]
 
 ## Use terminal scrolling regions to make Terminal::insert_before less prone to flickering.

@@ -1,7 +1,7 @@
 use crate::{
     buffer::Buffer,
     layout::{Position, Rect},
-    widgets::{StatefulWidget, StatefulWidgetRef, Widget, WidgetRef},
+    widgets::{StatefulWidget, Widget},
 };
 
 /// A consistent view into the terminal state for rendering a single frame.
@@ -14,7 +14,7 @@ use crate::{
 /// to the terminal. This avoids drawing redundant cells.
 ///
 /// [`Buffer`]: crate::buffer::Buffer
-/// [`Terminal::draw`]: crate::Terminal::draw
+/// [`Terminal::draw`]: crate::terminal::Terminal::draw
 #[derive(Debug, Hash)]
 pub struct Frame<'a> {
     /// Where should the cursor be after drawing this frame?
@@ -37,7 +37,7 @@ pub struct Frame<'a> {
 /// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
 /// [`Terminal::draw`].
 ///
-/// [`Terminal::draw`]: crate::Terminal::draw
+/// [`Terminal::draw`]: crate::terminal::Terminal::draw
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CompletedFrame<'a> {
     /// The buffer that was used to draw the last frame.
@@ -96,32 +96,6 @@ impl Frame<'_> {
         widget.render(area, self.buffer);
     }
 
-    /// Render a [`WidgetRef`] to the current buffer using [`WidgetRef::render_ref`].
-    ///
-    /// Usually the area argument is the size of the current frame or a sub-area of the current
-    /// frame (which can be obtained using [`Layout`] to split the total area).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # #[cfg(feature = "unstable-widget-ref")] {
-    /// # use ratatui::{backend::TestBackend, Terminal};
-    /// # let backend = TestBackend::new(5, 5);
-    /// # let mut terminal = Terminal::new(backend).unwrap();
-    /// # let mut frame = terminal.get_frame();
-    /// use ratatui::{layout::Rect, widgets::Block};
-    ///
-    /// let block = Block::new();
-    /// let area = Rect::new(0, 0, 5, 5);
-    /// frame.render_widget_ref(&block, area);
-    /// # }
-    /// ```
-    #[allow(clippy::needless_pass_by_value)]
-    #[instability::unstable(feature = "widget-ref")]
-    pub fn render_widget_ref<W: WidgetRef>(&mut self, widget: W, area: Rect) {
-        widget.render_ref(area, self.buffer);
-    }
-
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
     ///
     /// Usually the area argument is the size of the current frame or a sub-area of the current
@@ -156,43 +130,6 @@ impl Frame<'_> {
         widget.render(area, self.buffer, state);
     }
 
-    /// Render a [`StatefulWidgetRef`] to the current buffer using
-    /// [`StatefulWidgetRef::render_ref`].
-    ///
-    /// Usually the area argument is the size of the current frame or a sub-area of the current
-    /// frame (which can be obtained using [`Layout`] to split the total area).
-    ///
-    /// The last argument should be an instance of the [`StatefulWidgetRef::State`] associated to
-    /// the given [`StatefulWidgetRef`].
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # #[cfg(feature = "unstable-widget-ref")] {
-    /// # use ratatui::{backend::TestBackend, Terminal};
-    /// # let backend = TestBackend::new(5, 5);
-    /// # let mut terminal = Terminal::new(backend).unwrap();
-    /// # let mut frame = terminal.get_frame();
-    /// use ratatui::{
-    ///     layout::Rect,
-    ///     widgets::{List, ListItem, ListState},
-    /// };
-    ///
-    /// let mut state = ListState::default().with_selected(Some(1));
-    /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);
-    /// let area = Rect::new(0, 0, 5, 5);
-    /// frame.render_stateful_widget_ref(&list, area, &mut state);
-    /// # }
-    /// ```
-    #[allow(clippy::needless_pass_by_value)]
-    #[instability::unstable(feature = "widget-ref")]
-    pub fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
-    where
-        W: StatefulWidgetRef,
-    {
-        widget.render_ref(area, self.buffer, state);
-    }
-
     /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
     /// coordinates. If this method is not called, the cursor will be hidden.
     ///
@@ -200,9 +137,9 @@ impl Frame<'_> {
     /// [`Terminal::show_cursor`], and [`Terminal::set_cursor_position`]. Pick one of the APIs and
     /// stick with it.
     ///
-    /// [`Terminal::hide_cursor`]: crate::Terminal::hide_cursor
-    /// [`Terminal::show_cursor`]: crate::Terminal::show_cursor
-    /// [`Terminal::set_cursor_position`]: crate::Terminal::set_cursor_position
+    /// [`Terminal::hide_cursor`]: crate::terminal::Terminal::hide_cursor
+    /// [`Terminal::show_cursor`]: crate::terminal::Terminal::show_cursor
+    /// [`Terminal::set_cursor_position`]: crate::terminal::Terminal::set_cursor_position
     pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P) {
         self.cursor_position = Some(position.into());
     }
@@ -214,9 +151,9 @@ impl Frame<'_> {
     /// [`Terminal::show_cursor`], and [`Terminal::set_cursor_position`]. Pick one of the APIs and
     /// stick with it.
     ///
-    /// [`Terminal::hide_cursor`]: crate::Terminal::hide_cursor
-    /// [`Terminal::show_cursor`]: crate::Terminal::show_cursor
-    /// [`Terminal::set_cursor_position`]: crate::Terminal::set_cursor_position
+    /// [`Terminal::hide_cursor`]: crate::terminal::Terminal::hide_cursor
+    /// [`Terminal::show_cursor`]: crate::terminal::Terminal::show_cursor
+    /// [`Terminal::set_cursor_position`]: crate::terminal::Terminal::set_cursor_position
     #[deprecated = "the method set_cursor_position indicates more clearly what about the cursor to set"]
     pub fn set_cursor(&mut self, x: u16, y: u16) {
         self.set_cursor_position(Position { x, y });
