@@ -183,14 +183,14 @@ fn check() -> Result<()> {
 
 /// Run cargo-rdme to check if README.md is up-to-date with the library documentation
 fn check_readme() -> Result<()> {
-    for package in get_workspace_packages(Some(TargetKind::Lib))? {
+    for package in workspace_packages(TargetKind::Lib)? {
         run_cargo(vec!["rdme", "--workspace-project", &package, "--check"])?;
     }
     Ok(())
 }
 
 fn fix_readme() -> Result<()> {
-    for package in get_workspace_packages(Some(TargetKind::Lib))? {
+    for package in workspace_packages(TargetKind::Lib)? {
         run_cargo(vec!["rdme", "--workspace-project", &package])?;
     }
     Ok(())
@@ -250,27 +250,21 @@ fn fix_clippy() -> Result<()> {
 
 /// Check that docs build without errors using flags for docs.rs
 fn lint_docs() -> Result<()> {
-    for package in get_workspace_packages(Some(TargetKind::Lib))? {
+    for package in workspace_packages(TargetKind::Lib)? {
         run_cargo_nightly(vec!["docs-rs", "--package", &package])?;
     }
     Ok(())
 }
 
 /// Return the available packages in the workspace
-fn get_workspace_packages(target_filter: Option<TargetKind>) -> Result<Vec<String>> {
+fn workspace_packages(kind: TargetKind) -> Result<Vec<String>> {
     let meta = MetadataCommand::new()
         .exec()
         .wrap_err("failed to get cargo metadata")?;
     let packages = meta
         .workspace_packages()
         .iter()
-        .filter(|v| {
-            if let Some(ref filter) = target_filter {
-                v.targets.iter().any(|t| t.kind.contains(filter))
-            } else {
-                true
-            }
-        })
+        .filter(|v| v.targets.iter().any(|t| t.kind.contains(&kind)))
         .map(|v| v.name.clone())
         .collect();
     Ok(packages)
