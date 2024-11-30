@@ -1,0 +1,25 @@
+[package]
+name = "demo"
+publish = false
+authors.workspace = true
+documentation.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+license.workspace = true
+exclude.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["crossterm"]
+crossterm = ["ratatui/crossterm"]
+termion = ["ratatui/termion"]
+termwiz = ["ratatui/termwiz"]
+
+[dependencies]
+argh = "0.1.12"
+rand = "0.8.5"
+ratatui.workspace = true
