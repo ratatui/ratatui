@@ -43,3 +43,6 @@ ratatui-core = { workspace = true }
 [dev-dependencies]
 ratatui = { path = "../ratatui", features = ["crossterm"] }
 rstest.workspace = true
+
+[lints]
+workspace = true
