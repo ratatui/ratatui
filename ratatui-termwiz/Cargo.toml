@@ -37,3 +37,6 @@ termwiz.workspace = true
 [dev-dependencies]
 ratatui = { path = "../ratatui", features = ["termwiz"] }
 rstest.workspace = true
+
+[lints]
+workspace = true
