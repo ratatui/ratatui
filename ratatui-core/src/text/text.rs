@@ -730,7 +730,7 @@ impl fmt::Display for Text<'_> {
 
 impl Widget for Text<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Widget::render(&self, area, buf)
+        Widget::render(&self, area, buf);
     }
 }
 
