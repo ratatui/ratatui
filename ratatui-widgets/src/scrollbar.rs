@@ -504,12 +504,12 @@ impl StatefulWidget for Scrollbar<'_> {
             return;
         }
 
-        let mut bar = self.bar_symbols(area, state);
-        let area = self.scollbar_area(area);
-        for x in area.left()..area.right() {
-            for y in area.top()..area.bottom() {
-                if let Some(Some((symbol, style))) = bar.next() {
-                    buf.set_string(x, y, symbol, style);
+        if let Some(area) = self.scrollbar_area(area) {
+            let areas = area.columns().flat_map(Rect::rows);
+            let bar_symbols = self.bar_symbols(area, state);
+            for (area, bar) in areas.zip(bar_symbols) {
+                if let Some((symbol, style)) = bar {
+                    buf.set_string(area.x, area.y, symbol, style);
                 }
             }
         }
@@ -581,14 +581,13 @@ impl Scrollbar<'_> {
         (thumb_start, thumb_length, track_end_length)
     }
 
-    fn scollbar_area(&self, area: Rect) -> Rect {
+    fn scrollbar_area(&self, area: Rect) -> Option<Rect> {
         match self.orientation {
             ScrollbarOrientation::VerticalLeft => area.columns().next(),
             ScrollbarOrientation::VerticalRight => area.columns().last(),
             ScrollbarOrientation::HorizontalTop => area.rows().next(),
             ScrollbarOrientation::HorizontalBottom => area.rows().last(),
         }
-        .expect("Scrollbar area is empty") // this should never happen as we check for empty area
     }
 
     /// Calculates length of the track excluding the arrow heads
@@ -1064,5 +1063,21 @@ mod tests {
             .viewport_content_length(2);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
+    }
+
+    #[rstest]
+    #[case::scrollbar_height_0(10, 0)]
+    #[case::scrollbar_width_0(0, 10)]
+    fn do_not_render_with_empty_area(#[case] width: u16, #[case] height: u16) {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("-"))
+            .thumb_symbol("#");
+        let zero_width_area = Rect::new(0, 0, width, height);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
+
+        let mut state = ScrollbarState::new(10);
+        scrollbar.render(zero_width_area, &mut buffer, &mut state);
     }
 }
