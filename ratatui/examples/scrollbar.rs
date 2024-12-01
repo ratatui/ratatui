@@ -78,6 +78,10 @@ impl App {
                                 .horizontal_scroll_state
                                 .position(self.horizontal_scroll);
                         }
+                        // If an unrecognized letter is entered, beep to alert.
+                        KeyCode::Char(_) => {
+                            let _ = terminal.bell();
+                        }
                         _ => {}
                     }
                 }
