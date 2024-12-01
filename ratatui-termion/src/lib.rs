@@ -72,7 +72,7 @@ use termion::{color as tcolor, color::Color as _, style as tstyle};
 ///
 /// [`IntoRawMode::into_raw_mode()`]: termion::raw::IntoRawMode
 /// [`IntoAlternateScreen::into_alternate_screen()`]: termion::screen::IntoAlternateScreen
-/// [`Terminal`]: ratatui::terminal::Terminal
+/// [`Terminal`]: ratatui_core::terminal::Terminal
 /// [Termion]: https://docs.rs/termion
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct TermionBackend<W>
