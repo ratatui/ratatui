@@ -820,6 +820,13 @@ where
         }
         Ok(())
     }
+
+    /// Alert the user in the manner of the VT100 "Bell" function.
+    /// Depending on the backend, the terminal app, and the user's settings,
+    /// this may play a beep, flash the screen, or do nothing at all.
+    pub fn bell(&mut self) -> io::Result<()> {
+        self.backend.bell()
+    }
 }
 
 fn compute_inline_size<B: Backend>(

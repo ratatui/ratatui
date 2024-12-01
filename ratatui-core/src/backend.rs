@@ -370,6 +370,18 @@ pub trait Backend {
         region: std::ops::Range<u16>,
         line_count: u16,
     ) -> io::Result<()>;
+
+    /// Alert the user in the manner of the VT100 "Bell" function.
+    ///
+    /// The exact effect is implementation-defined, and returning Ok(())
+    /// does not guarantee anything happened.
+    /// This default implementation is "good enough" on all known terminals.
+    /// If a backend categorically does not support this, it should override
+    /// and return Err(Errorkind::Unsupported).
+    fn bell(&mut self) -> io::Result<()> {
+        print!("\x07"); // ASCII BEL to STDOUT
+        Ok(())
+    }
 }
 
 #[cfg(test)]
