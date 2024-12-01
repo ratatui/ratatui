@@ -1,6 +1,6 @@
 [package]
 name = "demo2"
-version = "0.1.0"
+publish = false
 authors.workspace = true
 documentation.workspace = true
 repository.workspace = true

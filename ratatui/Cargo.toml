@@ -97,7 +97,6 @@ unstable-backend-writer = [
 
 [dependencies]
 document-features = { workspace = true, optional = true }
-indoc = "2"
 instability.workspace = true
 itertools.workspace = true
 palette = { version = "0.7.6", optional = true }
