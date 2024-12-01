@@ -731,6 +731,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "demo2"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "indoc",
+ "itertools 0.13.0",
+ "palette",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
+ "ratatui",
+ "strum",
+ "time",
+ "unicode-width",
+]
+
+[[package]]
 name = "deranged"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1393,9 +1410,9 @@ checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
 
 [[package]]
 name = "indexmap"
-version = "2.6.0"
+version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "707907fe3c25f5424cce2cb7e1cbcafee6bdbe735ca90ef77c29e84591e5b9da"
+checksum = "62f822373a4fe84d4bb149bf54e584a7f4abec90e072ed49cda0edea5b95471f"
 dependencies = [
  "equivalent",
  "hashbrown",

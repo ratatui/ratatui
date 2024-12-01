@@ -43,16 +43,6 @@ move some of these design choices into the core of Ratatui to simplify apps.
 
 [How to use color-eyre with Ratatui]: https://ratatui.rs/how-to/develop-apps/color_eyre/
 
-## Demo2
-
-This is the demo example from the main README and crate page. Source: [demo2](./demo2/).
-
-```shell
-cargo run --example=demo2 --features="crossterm widget-calendar"
-```
-
-![Demo2][demo2.gif]
-
 ## Demo
 
 This is the previous demo example from the main README. It is available for each of the backends. Source:
@@ -452,7 +442,6 @@ examples/vhs/generate.bash
 [constraints.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraints.gif?raw=true
 [custom_widget.gif]: https://github.com/ratatui/ratatui/blob/images/examples/custom_widget.gif?raw=true
 [demo.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true
-[demo2.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true
 [flex.gif]: https://github.com/ratatui/ratatui/blob/images/examples/flex.gif?raw=true
 [gauge.gif]: https://github.com/ratatui/ratatui/blob/images/examples/gauge.gif?raw=true
 [hello_world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello_world.gif?raw=true
