@@ -65,10 +65,13 @@ fn draw(frame: &mut Frame) {
 fn render_current_month(frame: &mut Frame, area: Rect) {
     let date = OffsetDateTime::now_utc().date();
 
-    let monthly = Monthly::new(date, CalendarEventStore::today(Style::new().red().bold()))
-        .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
-        .show_month_header(Style::new().bold())
-        .show_weekdays_header(Style::new().italic());
+    let monthly = Monthly::new(
+        date,
+        CalendarEventStore::today(Style::default().red().bold()),
+    )
+    .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
+    .show_month_header(Modifier::BOLD)
+    .show_weekdays_header(Modifier::ITALIC);
     frame.render_widget(monthly, area);
 }
 
@@ -77,21 +80,13 @@ fn render_styled_month(frame: &mut Frame, area: Rect) {
     // Release date of the movie Ratatouille.
     let date = Date::from_calendar_date(2007, Month::June, 29).unwrap();
 
-    let mut event_store = CalendarEventStore::today(Style::new().red().bold());
-    event_store.add(date, Style::new().blue().italic());
+    let mut event_store = CalendarEventStore::today(Style::default().red().bold());
+    event_store.add(date, Style::default().blue().italic());
 
     let monthly = Monthly::new(date, event_store)
-        .show_surrounding(Style::default().add_modifier(Modifier::DIM))
-        .show_month_header(Style::new().bold())
-        .show_weekdays_header(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .fg(Color::Green),
-        )
-        .default_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(Color::Rgb(50, 50, 50)),
-        );
+        .show_surrounding(Modifier::DIM)
+        .show_month_header(Modifier::BOLD)
+        .show_weekdays_header(Style::default().bold().green())
+        .default_style(Style::default().bold().bg(Color::Rgb(50, 50, 50)));
     frame.render_widget(monthly, area);
 }
