@@ -1,5 +1,6 @@
 use std::io::{self, stdout, Stdout};
 
+use ratatui_core::terminal::{Terminal, TerminalOptions};
 use ratatui_crossterm::{
     crossterm::{
         execute,
@@ -7,8 +8,6 @@ use ratatui_crossterm::{
     },
     CrosstermBackend,
 };
-
-use crate::{terminal::TerminalOptions, Terminal};
 
 /// A type alias for the default terminal type.
 ///

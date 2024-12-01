@@ -290,8 +290,7 @@
 //! [Contributing]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md
 //! [Breaking Changes]: https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md
 //! [FOSDEM 2024 talk]: https://www.youtube.com/watch?v=NU0q6NOLJ20
-//! [`Frame`]: terminal::Frame
-//! [`render_widget`]: terminal::Frame::render_widget
+//! [`render_widget`]: Frame::render_widget
 //! [`Widget`]: widgets::Widget
 //! [`Layout`]: layout::Layout
 //! [`Text`]: text::Text
@@ -329,6 +328,10 @@
 /// re-export the `palette` crate so that users don't have to add it as a dependency
 #[cfg(feature = "palette")]
 pub use palette;
+pub use ratatui_core::{
+    buffer, layout,
+    terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
+};
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
 pub use ratatui_crossterm::crossterm;
@@ -338,11 +341,11 @@ pub use ratatui_termion::termion;
 /// re-export the `termwiz` crate so that users don't have to add it as a dependency
 #[cfg(feature = "termwiz")]
 pub use ratatui_termwiz::termwiz;
+
 #[cfg(feature = "crossterm")]
-pub use terminal::{
+pub use crate::init::{
     init, init_with_options, restore, try_init, try_init_with_options, try_restore, DefaultTerminal,
 };
-pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 
 /// Re-exports for the backend implementations.
 pub mod backend {
@@ -355,10 +358,9 @@ pub mod backend {
     pub use ratatui_termwiz::{FromTermwiz, IntoTermwiz, TermwizBackend};
 }
 
-pub use ratatui_core::{buffer, layout};
 pub mod prelude;
-pub use ratatui_core::{style, symbols};
-mod terminal;
-pub use ratatui_core::text;
+pub use ratatui_core::{style, symbols, text};
 pub mod widgets;
 pub use ratatui_widgets::border;
+#[cfg(feature = "crossterm")]
+mod init;

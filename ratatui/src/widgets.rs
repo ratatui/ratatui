@@ -54,3 +54,88 @@ pub use {stateful_widget_ref::StatefulWidgetRef, widget_ref::WidgetRef};
 
 mod stateful_widget_ref;
 mod widget_ref;
+
+use ratatui_core::layout::Rect;
+
+/// Extension trait for [`Frame`] that provides methods to render [`WidgetRef`] and
+/// [`StatefulWidgetRef`] to the current buffer.
+#[instability::unstable(feature = "widget-ref")]
+pub trait FrameExt {
+    /// Render a [`WidgetRef`] to the current buffer using [`WidgetRef::render_ref`].
+    ///
+    /// Usually the area argument is the size of the current frame or a sub-area of the current
+    /// frame (which can be obtained using [`Layout`] to split the total area).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "unstable-widget-ref")] {
+    /// # use ratatui::{backend::TestBackend, Terminal};
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// # let mut frame = terminal.get_frame();
+    /// use ratatui::{
+    ///     layout::Rect,
+    ///     widgets::{Block, FrameExt},
+    /// };
+    ///
+    /// let block = Block::new();
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// frame.render_widget_ref(&block, area);
+    /// # }
+    /// ```
+    ///
+    /// [`Layout`]: crate::layout::Layout
+    #[allow(clippy::needless_pass_by_value)]
+    fn render_widget_ref<W: WidgetRef>(&mut self, widget: W, area: Rect);
+
+    /// Render a [`StatefulWidgetRef`] to the current buffer using
+    /// [`StatefulWidgetRef::render_ref`].
+    ///
+    /// Usually the area argument is the size of the current frame or a sub-area of the current
+    /// frame (which can be obtained using [`Layout`] to split the total area).
+    ///
+    /// The last argument should be an instance of the [`StatefulWidgetRef::State`] associated to
+    /// the given [`StatefulWidgetRef`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "unstable-widget-ref")] {
+    /// # use ratatui::{backend::TestBackend, Terminal};
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// # let mut frame = terminal.get_frame();
+    /// use ratatui::{
+    ///     layout::Rect,
+    ///     widgets::{FrameExt, List, ListItem, ListState},
+    /// };
+    ///
+    /// let mut state = ListState::default().with_selected(Some(1));
+    /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// frame.render_stateful_widget_ref(&list, area, &mut state);
+    /// # }
+    /// ```
+    /// [`Layout`]: crate::layout::Layout
+    #[allow(clippy::needless_pass_by_value)]
+    fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
+    where
+        W: StatefulWidgetRef;
+}
+
+#[cfg(feature = "unstable-widget-ref")]
+impl FrameExt for ratatui_core::terminal::Frame<'_> {
+    #[allow(clippy::needless_pass_by_value)]
+    fn render_widget_ref<W: WidgetRef>(&mut self, widget: W, area: Rect) {
+        widget.render_ref(area, self.buffer_mut());
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
+    fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
+    where
+        W: StatefulWidgetRef,
+    {
+        widget.render_ref(area, self.buffer_mut(), state);
+    }
+}

@@ -304,8 +304,7 @@ fn draw(frame: &mut Frame) {
 [Contributing]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md
 [Breaking Changes]: https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md
 [FOSDEM 2024 talk]: https://www.youtube.com/watch?v=NU0q6NOLJ20
-[`Frame`]: terminal::Frame
-[`render_widget`]: terminal::Frame::render_widget
+[`render_widget`]: Frame::render_widget
 [`Widget`]: widgets::Widget
 [`Layout`]: layout::Layout
 [`Text`]: text::Text

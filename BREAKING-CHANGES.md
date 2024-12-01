@@ -12,6 +12,7 @@ This is a quick summary of the sections below:
 
 - [Unreleased](#unreleased)
   - The `From` impls for backend types are now replaced with more specific traits
+  - `FrameExt` trait for `unstable-widget-ref` feature
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -75,6 +76,28 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased (0.30.0)
+
+### `FrameExt` trait for `unstable-widget-ref` feature ([#1530])
+
+[#1530]: https://github.com/ratatui/ratatui/pull/1530
+
+To call `Frame::render_widget_ref()` or `Frame::render_stateful_widget_ref()` you now need to:
+
+1. Import the `FrameExt` trait from `ratatui::widgets`.
+2. Enable the `unstable-widget-ref` feature.
+
+For example:
+
+```rust
+use ratatui::{
+    layout::Rect,
+    widgets::{Block, FrameExt},
+};
+
+let block = Block::new();
+let area = Rect::new(0, 0, 5, 5);
+frame.render_widget_ref(&block, area);
+```
 
 ### `WidgetRef` no longer has a blanket implementation of Widget
 

@@ -89,8 +89,11 @@ unstable-rendered-line-info = ["ratatui-widgets/unstable-rendered-line-info"]
 ## [`StatefulWidgetRef`]: widgets::StatefulWidgetRef
 unstable-widget-ref = []
 
-## Enables getting access to backends' writers. Only the Crossterm backend currently supports this.
-unstable-backend-writer = ["ratatui-crossterm?/unstable-backend-writer"]
+## Enables getting access to backends' writers.
+unstable-backend-writer = [
+    "ratatui-crossterm?/unstable-backend-writer",
+    "ratatui-termion?/unstable-backend-writer",
+]
 
 [dependencies]
 document-features = { workspace = true, optional = true }
