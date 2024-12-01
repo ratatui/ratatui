@@ -72,33 +72,22 @@ pub fn render_canvas(frame: &mut Frame, area: Rect) {
                 color: Color::White,
             });
             ctx.layer();
-            ctx.draw(&Line {
-                x1: 0.0,
-                y1: 10.0,
-                x2: 10.0,
-                y2: 10.0,
-                color: Color::Blue,
-            });
+            ctx.draw(&Line::new(0.0, 10.0, 10.0, 10.0, Color::Blue));
             ctx.draw(&Rectangle {
                 x: 10.0,
                 y: 20.0,
                 width: 10.0,
                 height: 10.0,
-                color: Color::Red,
+                color: Color::Green,
             });
             ctx.draw(&Points {
                 coords: &[
-                    (5.0, 0.0),
-                    (3.5, 3.5),
-                    (0.0, 5.0),
-                    (-3.5, 3.5),
-                    (-5.0, 0.0),
-                    (-3.5, -3.5),
-                    (0.0, -5.0),
-                    (3.5, -3.5),
-                    (5.0, 0.0),
+                    (2.3522, 48.8566),    // Paris
+                    (-122.3321, 47.6062), // Seattle
+                    (-79.3837, 43.6511),  // Toronto
+                    (32.8597, 39.9334),   // Ankara
                 ],
-                color: Color::Magenta,
+                color: Color::Red,
             });
         });
 
