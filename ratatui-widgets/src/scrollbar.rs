@@ -505,12 +505,11 @@ impl StatefulWidget for Scrollbar<'_> {
         }
 
         if let Some(area) = self.scrollbar_area(area) {
-            let mut bar = self.bar_symbols(area, state);
-            for x in area.left()..area.right() {
-                for y in area.top()..area.bottom() {
-                    if let Some(Some((symbol, style))) = bar.next() {
-                        buf.set_string(x, y, symbol, style);
-                    }
+            let areas = area.columns().flat_map(Rect::rows);
+            let bar_symbols = self.bar_symbols(area, state);
+            for (area, bar) in areas.zip(bar_symbols) {
+                if let Some((symbol, style)) = bar {
+                    buf.set_string(area.x, area.y, symbol, style);
                 }
             }
         }
