@@ -1,6 +1,7 @@
-//! # [Ratatui] Logo example
+//! # [Ratatui] `RatatuiLogo` example
 //!
-//! The latest version of this example is available in the [examples] folder in the repository.
+//! The latest version of this example is available in the [widget examples] folder in the
+//! repository.
 //!
 //! Please note that the examples are designed to be run against the `main` branch of the Github
 //! repository. This means that you may not be able to compile with the latest release version on
@@ -10,17 +11,17 @@
 //! library you are using.
 //!
 //! [Ratatui]: https://github.com/ratatui/ratatui
-//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use std::env::args;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event};
 use ratatui::{
+    crossterm::event::{self, Event},
     layout::{Constraint, Layout},
     widgets::{RatatuiLogo, RatatuiLogoSize},
-    DefaultTerminal, TerminalOptions, Viewport,
+    DefaultTerminal, Frame, TerminalOptions, Viewport,
 };
 
 fn main() -> Result<()> {
@@ -39,16 +40,21 @@ fn main() -> Result<()> {
     result
 }
 
+/// Run the application.
 fn run(mut terminal: DefaultTerminal, size: RatatuiLogoSize) -> Result<()> {
     loop {
-        terminal.draw(|frame| {
-            use Constraint::{Fill, Length};
-            let [top, bottom] = Layout::vertical([Length(1), Fill(1)]).areas(frame.area());
-            frame.render_widget("Powered by", top);
-            frame.render_widget(RatatuiLogo::new(size), bottom);
-        })?;
+        terminal.draw(|frame| draw(frame, size))?;
         if matches!(event::read()?, Event::Key(_)) {
             break Ok(());
         }
     }
+}
+
+/// Draw the UI with a logo.
+fn draw(frame: &mut Frame, size: RatatuiLogoSize) {
+    let [top, bottom] =
+        Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).areas(frame.area());
+
+    frame.render_widget("Powered by", top);
+    frame.render_widget(RatatuiLogo::new(size), bottom);
 }

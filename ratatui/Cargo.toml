@@ -272,11 +272,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "ratatui-logo"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "scrollbar"
 required-features = ["crossterm"]
 doc-scrape-examples = true
