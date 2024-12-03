@@ -14,10 +14,10 @@ use ratatui_core::{buffer::Buffer, layout::Rect, text::Text, widgets::Widget};
 /// argument:
 ///
 /// ```shell
-/// cargo run --example ratatui-logo [size]
+/// cargo run --example logo [size]
 /// ```
 ///
-/// [Ratatui-logo]: https://github.com/ratatui/ratatui/blob/main/examples/ratatui-logo.rs
+/// [Ratatui-logo]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples/logo.rs
 ///
 /// ## Tiny (default, 2x15 characters)
 ///
