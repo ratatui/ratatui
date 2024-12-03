@@ -68,3 +68,8 @@ rstest.workspace = true
 
 [lints]
 workspace = true
+
+# Adding a single example is enough for activating rustdoc-scrape-examples
+[[example]]
+name = "barchart"
+doc-scrape-examples = true
