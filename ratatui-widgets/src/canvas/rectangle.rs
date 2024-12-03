@@ -24,6 +24,19 @@ pub struct Rectangle {
     pub color: Color,
 }
 
+impl Rectangle {
+    /// Create a new rectangle with the given position, size, and color
+    pub const fn new(x: f64, y: f64, width: f64, height: f64, color: Color) -> Self {
+        Self {
+            x,
+            y,
+            width,
+            height,
+            color,
+        }
+    }
+}
+
 impl Shape for Rectangle {
     fn draw(&self, painter: &mut Painter) {
         let lines: [Line; 4] = [

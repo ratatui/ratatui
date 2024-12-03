@@ -15,6 +15,18 @@ pub struct Circle {
     pub color: Color,
 }
 
+impl Circle {
+    /// Create a new circle with the given center, radius, and color
+    pub const fn new(x: f64, y: f64, radius: f64, color: Color) -> Self {
+        Self {
+            x,
+            y,
+            radius,
+            color,
+        }
+    }
+}
+
 impl Shape for Circle {
     fn draw(&self, painter: &mut Painter<'_, '_>) {
         for angle in 0..360 {
