@@ -107,16 +107,16 @@ impl StatefulWidget for &List<'_> {
             };
             Widget::render(&item.content, item_area, buf);
 
-            for j in 0..item.content.height() {
-                // if the item is selected, we need to display the highlight symbol:
-                // - either for the first line of the item only,
-                // - or for each line of the item if the appropriate option is set
-                let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
-                    highlight_symbol
-                } else {
-                    &blank_symbol
-                };
-                if selection_spacing {
+            if selection_spacing {
+                for j in 0..item.content.height() {
+                    // if the item is selected, we need to display the highlight symbol:
+                    // - either for the first line of the item only,
+                    // - or for each line of the item if the appropriate option is set
+                    let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
+                        highlight_symbol
+                    } else {
+                        &blank_symbol
+                    };
                     buf.set_stringn(
                         x,
                         y + j as u16,

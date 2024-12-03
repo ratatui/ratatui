@@ -753,7 +753,7 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, span_skip_widt
     }
 }
 
-/// Returns an iterator over the spans that lie after a given skip widtch from the start of the
+/// Returns an iterator over the spans that lie after a given skip width from the start of the
 /// `Line` (including a partially visible span if the `skip_width` lands within a span).
 fn spans_after_width<'a>(
     spans: &'a [Span],
