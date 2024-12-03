@@ -405,10 +405,18 @@ impl ModifierDiff {
         if removed.contains(Modifier::REVERSED) {
             queue!(w, SetAttribute(CrosstermAttribute::NoReverse))?;
         }
-        if removed.contains(Modifier::BOLD) {
+        if removed.contains(Modifier::BOLD) || removed.contains(Modifier::DIM) {
+            // Bold and Dim are both reset by applying the Normal intensity
             queue!(w, SetAttribute(CrosstermAttribute::NormalIntensity))?;
+
+            // The remaining Bold and Dim attributes must be
+            // reapplied after the intensity reset above.
             if self.to.contains(Modifier::DIM) {
                 queue!(w, SetAttribute(CrosstermAttribute::Dim))?;
+            }
+
+            if self.to.contains(Modifier::BOLD) {
+                queue!(w, SetAttribute(CrosstermAttribute::Bold))?;
             }
         }
         if removed.contains(Modifier::ITALIC) {
@@ -416,9 +424,6 @@ impl ModifierDiff {
         }
         if removed.contains(Modifier::UNDERLINED) {
             queue!(w, SetAttribute(CrosstermAttribute::NoUnderline))?;
-        }
-        if removed.contains(Modifier::DIM) {
-            queue!(w, SetAttribute(CrosstermAttribute::NormalIntensity))?;
         }
         if removed.contains(Modifier::CROSSED_OUT) {
             queue!(w, SetAttribute(CrosstermAttribute::NotCrossedOut))?;
