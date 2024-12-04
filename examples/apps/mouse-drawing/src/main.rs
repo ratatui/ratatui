@@ -76,24 +76,24 @@ impl MouseDrawingApp {
     }
 
     fn render(&self, frame: &mut Frame) {
+        self.render_points(frame);
+        self.render_mouse_cursor(frame);
         let title = Line::from("Mouse Example (Press 'q' or 'Esc' to quit. Click / drag to draw)")
             .centered();
         frame.render_widget(title, frame.area());
-        self.render_mouse_cursor(frame);
-        self.render_points(frame);
-    }
-
-    fn render_mouse_cursor(&self, frame: &mut Frame<'_>) {
-        if let Some(position) = self.mouse_position {
-            let area = Rect::from((position, Size::new(1, 1))).clamp(frame.area());
-            frame.render_widget(symbols::block::FULL, area);
-        }
     }
 
     fn render_points(&self, frame: &mut Frame<'_>) {
         for point in &self.points {
             let area = Rect::from((*point, Size::new(1, 1))).clamp(frame.area());
             frame.render_widget(symbols::block::FULL, area);
+        }
+    }
+
+    fn render_mouse_cursor(&self, frame: &mut Frame<'_>) {
+        if let Some(position) = self.mouse_position {
+            let area = Rect::from((position, Size::new(1, 1))).clamp(frame.area());
+            frame.render_widget("╳", area);
         }
     }
 }
