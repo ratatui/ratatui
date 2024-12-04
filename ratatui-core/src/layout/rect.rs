@@ -40,6 +40,16 @@ pub struct Offset {
     pub y: i32,
 }
 
+impl Offset {
+    /// A zero offset
+    pub const ZERO: Self = Self { x: 0, y: 0 };
+
+    /// Creates a new `Offset` with the given values.
+    pub const fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+}
+
 impl fmt::Display for Rect {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}x{}+{}+{}", self.width, self.height, self.x, self.y)
