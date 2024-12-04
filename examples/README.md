@@ -48,3 +48,7 @@ This is the original demo example from the main README. It is available for each
 This is the demo example from the main README and crate page. [Source](./apps/demo2/).
 
 ![Demo2](https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true)
+
+## Mouse Drawing demo
+
+Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
