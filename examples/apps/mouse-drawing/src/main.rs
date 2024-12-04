@@ -1,18 +1,23 @@
-use color_eyre::Result;
 /// A Ratatui example that demonstrates how to handle mouse events.
 ///
-/// This example demonstrates how to handle mouse events in Ratatui. The example allows you to draw
-/// lines by clicking and dragging the mouse.
+/// This example demonstrates how to handle mouse events in Ratatui. You can draw lines by clicking
+/// and dragging the mouse.
 ///
-/// This example runs with the version of Ratatui found in the branch that you are currently
-/// reading. It may not work with the released version of Ratatui. See the `latest` branch for the
-/// latest code which works with the released version of Ratatui.
+/// This example runs with the Ratatui library code in the branch that you are currently reading.
+/// See the `latest` branch for the code which works with the most recent Ratatui release.
+///
+/// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+use color_eyre::Result;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode, MouseEvent, MouseEventKind},
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent,
+        MouseEventKind,
+    },
     execute,
 };
 use ratatui::{
     layout::{Position, Rect, Size},
+    style::{Color, Stylize},
     symbols,
     text::Line,
     DefaultTerminal, Frame,
@@ -28,11 +33,14 @@ fn main() -> Result<()> {
 
 #[derive(Default)]
 struct MouseDrawingApp {
+    // Whether the app should exit
     pub should_exit: bool,
     // The last known mouse position
     pub mouse_position: Option<Position>,
     // The points that have been clicked / drawn by dragging the mouse
-    pub points: Vec<Position>,
+    pub points: Vec<(Position, Color)>,
+    // The color to draw with
+    pub current_color: Color,
 }
 
 impl MouseDrawingApp {
@@ -48,52 +56,67 @@ impl MouseDrawingApp {
 
     fn handle_events(&mut self) -> Result<()> {
         match event::read()? {
-            event::Event::Mouse(event) => self.on_mouse_event(event),
-            event::Event::Key(event) if matches!(event.code, KeyCode::Char('q') | KeyCode::Esc) => {
-                self.should_exit = true;
-            }
+            Event::Key(event) => self.on_key_event(event),
+            Event::Mouse(event) => self.on_mouse_event(event),
             _ => {}
         }
         Ok(())
     }
 
+    /// Quit the app if the user presses 'q' or 'Esc'
+    fn on_key_event(&mut self, event: KeyEvent) {
+        match event.code {
+            KeyCode::Char(' ') => {
+                self.current_color = Color::Rgb(rand::random(), rand::random(), rand::random());
+            }
+            KeyCode::Char('q') | KeyCode::Esc => self.should_exit = true,
+            _ => {}
+        }
+    }
+
+    /// Adds any points which were clicked or dragged to the `points` vector.
     fn on_mouse_event(&mut self, event: MouseEvent) {
         let position = Position::new(event.column, event.row);
         match event.kind {
-            MouseEventKind::Down(_) => self.points.push(position),
-            MouseEventKind::Drag(_) => {
-                if let Some(start) = self.points.last() {
-                    let (x0, y0) = (start.x as i32, start.y as i32);
-                    let (x1, y1) = (position.x as i32, position.y as i32);
-                    for (x, y) in line_drawing::Bresenham::new((x0, y0), (x1, y1)) {
-                        self.points.push(Position::new(x as u16, y as u16));
-                    }
-                }
-            }
+            MouseEventKind::Down(_) => self.points.push((position, self.current_color)),
+            MouseEventKind::Drag(_) => self.draw_line(position),
             _ => {}
         }
         self.mouse_position = Some(position);
     }
 
+    /// Draw a line between the last point and the given position
+    fn draw_line(&mut self, position: Position) {
+        if let Some(start) = self.points.last() {
+            let (x0, y0) = (start.0.x as i32, start.0.y as i32);
+            let (x1, y1) = (position.x as i32, position.y as i32);
+            for (x, y) in line_drawing::Bresenham::new((x0, y0), (x1, y1)) {
+                let point = (Position::new(x as u16, y as u16), self.current_color);
+                self.points.push(point);
+            }
+        }
+    }
+
     fn render(&self, frame: &mut Frame) {
+        // call order is important here as later elements are drawn on top of earlier elements
         self.render_points(frame);
         self.render_mouse_cursor(frame);
-        let title = Line::from("Mouse Example (Press 'q' or 'Esc' to quit. Click / drag to draw)")
-            .centered();
+        let value = "Mouse Example ('Esc' to quit. Click / drag to draw. 'Space' to change color)";
+        let title = Line::from(value).centered();
         frame.render_widget(title, frame.area());
     }
 
     fn render_points(&self, frame: &mut Frame<'_>) {
-        for point in &self.points {
-            let area = Rect::from((*point, Size::new(1, 1))).clamp(frame.area());
-            frame.render_widget(symbols::block::FULL, area);
+        for (position, color) in &self.points {
+            let area = Rect::from((*position, Size::new(1, 1))).clamp(frame.area());
+            frame.render_widget(symbols::block::FULL.fg(*color), area);
         }
     }
 
     fn render_mouse_cursor(&self, frame: &mut Frame<'_>) {
         if let Some(position) = self.mouse_position {
             let area = Rect::from((position, Size::new(1, 1))).clamp(frame.area());
-            frame.render_widget("╳", area);
+            frame.render_widget("╳".bg(self.current_color), area);
         }
     }
 }

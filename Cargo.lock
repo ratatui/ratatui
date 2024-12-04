@@ -1696,6 +1696,7 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "line_drawing",
+ "rand 0.8.5",
  "ratatui",
 ]
 
