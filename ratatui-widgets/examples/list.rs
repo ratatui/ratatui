@@ -16,7 +16,7 @@
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{self, Event},
+    crossterm::event::{self, Event, KeyCode},
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
@@ -34,16 +34,22 @@ fn main() -> Result<()> {
 
 /// Run the application.
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
+    let mut selected_index = 0;
     loop {
-        terminal.draw(draw)?;
-        if matches!(event::read()?, Event::Key(_)) {
-            break Ok(());
+        terminal.draw(|frame| draw(frame, selected_index))?;
+        if let Event::Key(key) = event::read()? {
+            match key.code {
+                KeyCode::Char('q') => break Ok(()),
+                KeyCode::Down | KeyCode::Char('j') => selected_index = (selected_index + 1) % 4,
+                KeyCode::Up | KeyCode::Char('k') => selected_index = (selected_index + 3) % 4,
+                _ => {}
+            }
         }
     }
 }
 
 /// Draw the UI with various lists.
-fn draw(frame: &mut Frame) {
+fn draw(frame: &mut Frame, selected_index: usize) {
     let vertical = Layout::vertical([
         Constraint::Length(1),
         Constraint::Fill(1),
@@ -54,16 +60,16 @@ fn draw(frame: &mut Frame) {
 
     let title = Line::from_iter([
         Span::from("List Widget").bold(),
-        Span::from(" (Press 'q' to quit)"),
+        Span::from(" (Press 'q' to quit and arrow keys to navigate)"),
     ]);
     frame.render_widget(title.centered(), top);
 
-    render_list(frame, first);
+    render_list(frame, first, selected_index);
     render_bottom_list(frame, second);
 }
 
 /// Render a list.
-pub fn render_list(frame: &mut Frame, area: Rect) {
+pub fn render_list(frame: &mut Frame, area: Rect, selected_index: usize) {
     let items = ["Item 1", "Item 2", "Item 3", "Item 4"];
     let list = List::new(items)
         .style(Color::White)
@@ -71,7 +77,7 @@ pub fn render_list(frame: &mut Frame, area: Rect) {
         .highlight_symbol("> ");
 
     let mut state = ListState::default();
-    state.select(Some(2));
+    state.select(Some(selected_index));
 
     frame.render_stateful_widget(list, area, &mut state);
 }
