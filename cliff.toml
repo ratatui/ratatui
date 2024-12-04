@@ -24,7 +24,7 @@ body = """
 {%- if not version %}
 ## [unreleased]
 {% else -%}
-## [{{ version }}](https://github.com/ratatui/ratatui/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+## {{ package }} - [{{ version }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {% endif -%}
 
 {% macro commit(commit) -%}
@@ -47,26 +47,16 @@ body = """
 {%- endfor -%}
 {%- endfor %}
 
-{% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
-### New Contributors
-{%- endif %}\
-{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
-* @{{ contributor.username }} made their first contribution
-{%- if contributor.pr_number %} in \
-[#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
-{%- endif %}
-{%- endfor -%}
-
 {% if version %}
 {% if previous.version %}
-**Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}
+**Full Changelog**: {{ release_link }}
 {% endif %}
 {% else -%}
   {% raw %}\n{% endraw %}
 {% endif %}
 
 {%- macro remote_url() -%}
-https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
+https://github.com/{{ remote.owner }}/{{ remote.repo }}\
 {% endmacro %}
 """
 
