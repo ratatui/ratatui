@@ -89,8 +89,8 @@ impl MouseDrawingApp {
     /// Draw a line between the last point and the given position
     fn draw_line(&mut self, position: Position) {
         if let Some(start) = self.points.last() {
-            let (x0, y0) = (start.0.x as i32, start.0.y as i32);
-            let (x1, y1) = (position.x as i32, position.y as i32);
+            let (x0, y0) = (i32::from(start.0.x), i32::from(start.0.y));
+            let (x1, y1) = (i32::from(position.x), i32::from(position.y));
             for (x, y) in line_drawing::Bresenham::new((x0, y0), (x1, y1)) {
                 let point = (Position::new(x as u16, y as u16), self.current_color);
                 self.points.push(point);
