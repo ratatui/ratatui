@@ -1,10 +1,11 @@
 /// A Ratatui example that demonstrates how to handle mouse events.
 ///
-/// This example demonstrates how to handle mouse events in Ratatui. You can draw lines by clicking
-/// and dragging the mouse.
+/// This example demonstrates how to handle mouse events in Ratatui. You can draw lines by
+/// clicking and dragging the mouse.
 ///
-/// This example runs with the Ratatui library code in the branch that you are currently reading.
-/// See the [`latest`] branch for the code which works with the most recent Ratatui release.
+/// This example runs with the Ratatui library code in the branch that you are currently
+/// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+/// release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
