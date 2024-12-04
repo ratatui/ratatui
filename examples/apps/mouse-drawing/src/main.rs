@@ -4,7 +4,7 @@
 /// and dragging the mouse.
 ///
 /// This example runs with the Ratatui library code in the branch that you are currently reading.
-/// See the `latest` branch for the code which works with the most recent Ratatui release.
+/// See the [`latest`] branch for the code which works with the most recent Ratatui release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
