@@ -35,16 +35,17 @@ fn main() -> Result<()> {
 
 /// Run the application.
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    let (mut vertical, mut horizontal) = (0, 0);
+    let mut vertical = ScrollbarState::new(100);
+    let mut horizontal = ScrollbarState::new(100);
     loop {
-        terminal.draw(|frame| draw(frame, vertical, horizontal))?;
+        terminal.draw(|frame| draw(frame, &mut vertical, &mut horizontal))?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => break Ok(()),
-                KeyCode::Down | KeyCode::Char('j') => vertical += 1,
-                KeyCode::Up | KeyCode::Char('k') => vertical = vertical.saturating_sub(1),
-                KeyCode::Right | KeyCode::Char('l') => horizontal += 1,
-                KeyCode::Left | KeyCode::Char('h') => horizontal = horizontal.saturating_sub(1),
+                KeyCode::Down | KeyCode::Char('j') => vertical.next(),
+                KeyCode::Up | KeyCode::Char('k') => vertical.prev(),
+                KeyCode::Right | KeyCode::Char('l') => horizontal.next(),
+                KeyCode::Left | KeyCode::Char('h') => horizontal.prev(),
                 _ => {}
             }
         }
@@ -52,7 +53,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 }
 
 /// Draw the UI with vertical/horizontal scrollbars.
-fn draw(frame: &mut Frame, vertical: u16, horizontal: u16) {
+fn draw(frame: &mut Frame, vertical: &mut ScrollbarState, horizontal: &mut ScrollbarState) {
     let vertical_layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let [top, main] = vertical_layout.areas(frame.area());
 
@@ -68,21 +69,20 @@ fn draw(frame: &mut Frame, vertical: u16, horizontal: u16) {
 }
 
 /// Render a vertical scrollbar on the right side of the area.
-pub fn render_vertical_scrollbar(frame: &mut Frame, area: Rect, vertical: u16) {
+pub fn render_vertical_scrollbar(frame: &mut Frame, area: Rect, vertical: &mut ScrollbarState) {
     let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
-    let mut scrollbar_state = ScrollbarState::new(100).position(vertical.into());
     frame.render_stateful_widget(
         scrollbar,
         area.inner(Margin {
             vertical: 1,
             horizontal: 0,
         }),
-        &mut scrollbar_state,
+        vertical,
     );
 }
 
 /// Render a horizontal scrollbar at the bottom of the area.
-pub fn render_horizontal_scrollbar(frame: &mut Frame, area: Rect, horizontal: u16) {
+pub fn render_horizontal_scrollbar(frame: &mut Frame, area: Rect, horizontal: &mut ScrollbarState) {
     let scrollbar = Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
         .symbols(Set {
             track: "-",
@@ -94,24 +94,40 @@ pub fn render_horizontal_scrollbar(frame: &mut Frame, area: Rect, horizontal: u1
         .begin_style(Color::Green)
         .end_style(Color::Red);
 
-    let mut scrollbar_state = ScrollbarState::new(100).position(horizontal.into());
     frame.render_stateful_widget(
         scrollbar,
         area.inner(Margin {
             vertical: 0,
             horizontal: 1,
         }),
-        &mut scrollbar_state,
+        horizontal,
     );
 }
 
 /// Render some content.
-fn render_content(frame: &mut Frame, area: Rect, vertical: u16, horizontal: u16) {
+fn render_content(
+    frame: &mut Frame,
+    area: Rect,
+    vertical: &ScrollbarState,
+    horizontal: &ScrollbarState,
+) {
     let content = vec![
         Line::from("This is a paragraph with a vertical and horizontal scrollbar."),
         Line::from_iter(["Lorem ipsum dolor sit amet, consectetur adipiscing elit.".repeat(10)]),
-        Line::from_iter(["Horizontal: ".bold(), horizontal.to_string().yellow()]),
-        Line::from_iter(["Vertical: ".bold(), vertical.to_string().yellow()]),
+        Line::from_iter([
+            "Horizontal: ".bold(),
+            horizontal.current_position().to_string().yellow(),
+        ]),
+        Line::from_iter([
+            "Vertical: ".bold(),
+            vertical.current_position().to_string().yellow(),
+        ]),
     ];
-    frame.render_widget(Paragraph::new(content).scroll((vertical, horizontal)), area);
+    frame.render_widget(
+        Paragraph::new(content).scroll((
+            vertical.current_position() as u16,
+            horizontal.current_position() as u16,
+        )),
+        area,
+    );
 }
