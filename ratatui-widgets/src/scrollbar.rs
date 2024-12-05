@@ -494,6 +494,12 @@ impl ScrollbarState {
             }
         }
     }
+
+    /// Returns the current position within the scrollable content.
+    #[must_use = "returns the current position within the scrollable content"]
+    pub const fn get_position(&self) -> usize {
+        self.position
+    }
 }
 
 impl StatefulWidget for Scrollbar<'_> {
