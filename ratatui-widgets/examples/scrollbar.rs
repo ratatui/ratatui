@@ -116,17 +116,17 @@ fn render_content(
         Line::from_iter(["Lorem ipsum dolor sit amet, consectetur adipiscing elit.".repeat(10)]),
         Line::from_iter([
             "Horizontal: ".bold(),
-            horizontal.current_position().to_string().yellow(),
+            horizontal.get_position().to_string().yellow(),
         ]),
         Line::from_iter([
             "Vertical: ".bold(),
-            vertical.current_position().to_string().yellow(),
+            vertical.get_position().to_string().yellow(),
         ]),
     ];
     frame.render_widget(
         Paragraph::new(content).scroll((
-            vertical.current_position() as u16,
-            horizontal.current_position() as u16,
+            vertical.get_position() as u16,
+            horizontal.get_position() as u16,
         )),
         area,
     );
