@@ -272,11 +272,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "sparkline"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "table"
 required-features = ["crossterm"]
 doc-scrape-examples = true
