@@ -9,6 +9,9 @@ use crate::layout::{Margin, Position, Size};
 mod iter;
 pub use iter::*;
 
+/// An offset in the terminal.
+pub type Offset<T = i32> = Position<T>;
+
 /// A Rectangular area.
 ///
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
@@ -24,51 +27,6 @@ pub struct Rect {
     pub width: u16,
     /// The height of the `Rect`.
     pub height: u16,
-}
-
-/// Amounts by which to move a [`Rect`](crate::layout::Rect).
-///
-/// Positive numbers move to the right/bottom and negative to the left/top.
-///
-/// See [`Rect::move_by`]
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Offset {
-    /// How much to move on the X axis
-    pub x: i32,
-    /// How much to move on the Y axis
-    pub y: i32,
-}
-
-impl Offset {
-    /// A zero offset
-    pub const ZERO: Self = Self { x: 0, y: 0 };
-
-    /// Creates a new `Offset` with the given values.
-    pub const fn new(x: i32, y: i32) -> Self {
-        Self { x, y }
-    }
-}
-
-/// Amounts by which to resize a [`Rect`](crate::layout::Rect).
-///
-/// Positive numbers represent an increase and negative numbers a decrease in width/height.
-///
-/// See [`Rect::resize_by`]
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SizeDelta {
-    /// Difference in width
-    pub width: i32,
-    /// Difference in height
-    pub height: i32,
-}
-
-impl SizeDelta {
-    /// Creates a new `SizeDelta` from width and height.
-    pub const fn new(width: i32, height: i32) -> Self {
-        Self { width, height }
-    }
 }
 
 impl fmt::Display for Rect {
@@ -236,7 +194,7 @@ impl Rect {
     ///
     /// See [`SizeDelta`] for details.
     #[must_use = "method returns the modified value"]
-    pub fn resize_by(self, delta: SizeDelta) -> Self {
+    pub fn resize_by(self, delta: Size<i32>) -> Self {
         Self {
             width: i32::from(self.width)
                 .saturating_add(delta.width)
@@ -571,28 +529,28 @@ mod tests {
     }
 
     #[rstest]
-    #[case::positive(Rect::new(1, 2, 3, 4), SizeDelta::new(5, 6), Rect::new(1, 2, 8, 10))]
-    #[case::negative(Rect::new(1, 2, 3, 4), SizeDelta::new(-2, -3), Rect::new(1, 2, 1, 1))]
-    #[case::mixed(Rect::new(1, 2, 3, 4), SizeDelta::new(5, -2), Rect::new(1, 2, 8, 2))]
-    #[case::inverse(Rect::new(1, 2, 3, 4), SizeDelta::new(-3, -4), Rect::new(1, 2, 0, 0))]
-    #[case::identity(Rect::new(1, 2, 3, 4), SizeDelta::new(0, 0), Rect::new(1, 2, 3, 4))]
-    #[case::saturate_min(Rect::new(1, 2, 3, 4), SizeDelta::new(-5, -6), Rect::new(1, 2, 0, 0))]
+    #[case::positive(Rect::new(1, 2, 3, 4), Size::new(5, 6), Rect::new(1, 2, 8, 10))]
+    #[case::negative(Rect::new(1, 2, 3, 4), Size::new(-2, -3), Rect::new(1, 2, 1, 1))]
+    #[case::mixed(Rect::new(1, 2, 3, 4), Size::new(5, -2), Rect::new(1, 2, 8, 2))]
+    #[case::inverse(Rect::new(1, 2, 3, 4), Size::new(-3, -4), Rect::new(1, 2, 0, 0))]
+    #[case::identity(Rect::new(1, 2, 3, 4), Size::new(0, 0), Rect::new(1, 2, 3, 4))]
+    #[case::saturate_min(Rect::new(1, 2, 3, 4), Size::new(-5, -6), Rect::new(1, 2, 0, 0))]
     #[case::saturate_max(
         Rect::new(100, 100, u16::MAX - 500, u16::MAX - 500),
-        SizeDelta::new(1000, 1000),
+        Size::new(1000, 1000),
         Rect::new(100, 100, u16::MAX - 100, u16::MAX - 100)
     )]
     #[case::min_value(
         Rect::new(1, 2, 3, 4),
-        SizeDelta::new(i32::MIN, i32::MIN),
+        Size::new(i32::MIN, i32::MIN),
         Rect::new(1, 2, 0, 0)
     )]
     #[case::max_value(
         Rect::new(1, 2, 3, 4),
-        SizeDelta::new(i32::MAX, i32::MAX),
+        Size::new(i32::MAX, i32::MAX),
         Rect::new(1, 2, u16::MAX - 1, u16::MAX - 2)
     )]
-    fn resize_by(#[case] rect: Rect, #[case] delta: SizeDelta, #[case] expected: Rect) {
+    fn resize_by(#[case] rect: Rect, #[case] delta: Size<i32>, #[case] expected: Rect) {
         assert_eq!(rect.resize_by(delta), expected);
     }
 
