@@ -8,7 +8,7 @@ creating a new issue before making the change, or starting a discussion on
 
 ## Reporting issues
 
-Before reporting an issue on the [issue tracker](https://github.com/ratatui-org/ratatui/issues),
+Before reporting an issue on the [issue tracker](https://github.com/ratatui/ratatui/issues),
 please check that it has not already been reported by searching for some related keywords. Please
 also check [`tui-rs` issues](https://github.com/fdehau/tui-rs/issues/) and link any related issues
 found.
@@ -31,7 +31,7 @@ guarantee that the behavior is unchanged.
 
 ### Code formatting
 
-Run `cargo make format` before committing to ensure that code is consistently formatted with
+Run `cargo xtask format` before committing to ensure that code is consistently formatted with
 rustfmt. Configuration is in [`rustfmt.toml`](./rustfmt.toml).
 
 ### Search `tui-rs` for similar work
@@ -56,7 +56,7 @@ documented.
 
 ### Run CI tests before pushing a PR
 
-Running `cargo make ci` before pushing will perform the same checks that we do in the CI process.
+Running `cargo xtask ci` before pushing will perform the same checks that we do in the CI process.
 It's not mandatory to do this before pushing, however it may save you time to do so instead of
 waiting for GitHub to run the checks.
 
@@ -71,22 +71,22 @@ in GitHub docs.
 
 ### Setup
 
-Clone the repo and build it using [cargo-make](https://sagiegurari.github.io/cargo-make/)
+TL;DR: Clone the repo and build it using `cargo xtask`.
 
 Ratatui is an ordinary Rust project where common tasks are managed with
-[cargo-make](https://github.com/sagiegurari/cargo-make/). It wraps common `cargo` commands with sane
+[cargo-xtask](https://github.com/matklad/cargo-xtask). It wraps common `cargo` commands with sane
 defaults depending on your platform of choice. Building the project should be as easy as running
-`cargo make build`.
+`cargo xtask build`.
 
 ```shell
-git clone https://github.com/ratatui-org/ratatui.git
+git clone https://github.com/ratatui/ratatui.git
 cd ratatui
-cargo make build
+cargo xtask build
 ```
 
 ### Tests
 
-The [test coverage](https://app.codecov.io/gh/ratatui-org/ratatui) of the crate is reasonably
+The [test coverage](https://app.codecov.io/gh/ratatui/ratatui) of the crate is reasonably
 good, but this can always be improved. Focus on keeping the tests simple and obvious and write unit
 tests for all new or modified code. Beside the usual doc and unit tests, one of the most valuable
 test you can write for Ratatui is a test against the `TestBackend`. It allows you to assert the
@@ -171,7 +171,7 @@ time to update. However, if a deprecation is blocking for us to implement a new 
 
 We don't currently use any unsafe code in Ratatui, and would like to keep it that way. However, there
 may be specific cases that this becomes necessary in order to avoid slowness. Please see [this
-discussion](https://github.com/ratatui-org/ratatui/discussions/66) for more about the decision.
+discussion](https://github.com/ratatui/ratatui/discussions/66) for more about the decision.
 
 ## Continuous Integration
 
@@ -182,7 +182,7 @@ We use GitHub Actions for the CI where we perform the following checks:
 - The code should conform to the default format enforced by `rustfmt`.
 - The code should not contain common style issues `clippy`.
 
-You can also check most of those things yourself locally using `cargo make ci` which will offer you
+You can also check most of those things yourself locally using `cargo xtask ci` which will offer you
 a shorter feedback loop than pushing to github.
 
 ## Relationship with `tui-rs`
@@ -196,7 +196,7 @@ it is useful to refer to when contributing code, documentation, or issues with R
 
 We imported all the PRs from the original repository, implemented many of the smaller ones, and
 made notes on the leftovers. These are marked as draft PRs and labelled as [imported from
-tui](https://github.com/ratatui-org/ratatui/pulls?q=is%3Apr+is%3Aopen+label%3A%22imported+from+tui%22).
+tui](https://github.com/ratatui/ratatui/pulls?q=is%3Apr+is%3Aopen+label%3A%22imported+from+tui%22).
 We have documented the current state of those PRs, and anyone is welcome to pick them up and
 continue the work on them.
 

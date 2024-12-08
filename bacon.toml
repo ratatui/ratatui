@@ -8,58 +8,66 @@
 default_job = "check"
 
 [jobs.check]
-command = ["cargo", "check", "--all-features", "--color", "always"]
+command = ["cargo", "check", "--all-features"]
 need_stdout = false
 
 [jobs.check-all]
-command = ["cargo", "check", "--all-targets", "--all-features", "--color", "always"]
+command = ["cargo", "check", "--all-targets", "--all-features"]
 need_stdout = false
 
 [jobs.check-crossterm]
-command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "crossterm"]
+command = [
+    "cargo",
+    "check",
+    "--all-targets",
+    "--no-default-features",
+    "--features",
+    "crossterm",
+]
 need_stdout = false
 
 [jobs.check-termion]
-command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "termion"]
+command = [
+    "cargo",
+    "check",
+    "--all-targets",
+    "--no-default-features",
+    "--features",
+    "termion",
+]
 need_stdout = false
 
 [jobs.check-termwiz]
-command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "termwiz"]
+command = [
+    "cargo",
+    "check",
+    "--all-targets",
+    "--no-default-features",
+    "--features",
+    "termwiz",
+]
 need_stdout = false
 
 [jobs.clippy]
-command = [
-    "cargo", "clippy",
-    "--all-targets",
-    "--color", "always",
-]
+command = ["cargo", "clippy", "--all-targets"]
 need_stdout = false
 
 [jobs.test]
-command = [
-    "cargo", "test",
-    "--all-features",
-    "--color", "always",
-    "--", "--color", "always", # see https://github.com/Canop/bacon/issues/124
-]
+command = ["cargo", "test", "--all-features"]
 need_stdout = true
 
 [jobs.test-unit]
-command = [
-    "cargo", "test",
-    "--lib",
-    "--all-features",
-    "--color", "always",
-    "--", "--color", "always", # see https://github.com/Canop/bacon/issues/124
-]
+command = ["cargo", "test", "--lib", "--all-features"]
 need_stdout = true
 
 [jobs.doc]
 command = [
-    "cargo", "+nightly", "doc",
-    "-Zunstable-options", "-Zrustdoc-scrape-examples",
+    "cargo",
+    "+nightly",
+    "doc",
+    "-Zunstable-options",
+    "-Zrustdoc-scrape-examples",
     "--all-features",
-    "--color", "always",
     "--no-deps",
 ]
 env.RUSTDOCFLAGS = "--cfg docsrs"
@@ -69,10 +77,12 @@ need_stdout = false
 # to the previous job
 [jobs.doc-open]
 command = [
-    "cargo", "+nightly", "doc",
-    "-Zunstable-options", "-Zrustdoc-scrape-examples",
+    "cargo",
+    "+nightly",
+    "doc",
+    "-Zunstable-options",
+    "-Zrustdoc-scrape-examples",
     "--all-features",
-    "--color", "always",
     "--no-deps",
     "--open",
 ]
@@ -82,19 +92,34 @@ on_success = "job:doc" # so that we don't open the browser at each change
 
 [jobs.coverage]
 command = [
-    "cargo", "llvm-cov",
-    "--lcov", "--output-path", "target/lcov.info",
+    "cargo",
+    "llvm-cov",
+    "--lcov",
+    "--output-path",
+    "target/lcov.info",
     "--all-features",
-    "--color", "always",
 ]
 
 [jobs.coverage-unit-tests-only]
 command = [
-    "cargo", "llvm-cov",
-    "--lcov", "--output-path", "target/lcov.info",
+    "cargo",
+    "llvm-cov",
+    "--lcov",
+    "--output-path",
+    "target/lcov.info",
     "--lib",
     "--all-features",
-    "--color", "always",
+]
+
+[jobs.hack]
+command = [
+    "cargo",
+    "hack",
+    "test",
+    "--lib",
+    "--each-feature",
+    # "--all-targets",
+    "--workspace",
 ]
 
 # You may define here keybindings that would be specific to
@@ -102,7 +127,7 @@ command = [
 # Shortcuts to internal functions (scrolling, toggling, etc.)
 # should go in your personal global prefs.toml file instead.
 [keybindings]
-# alt-m = "job:my-job"
+ctrl-h = "job:hack"
 ctrl-c = "job:check-crossterm"
 ctrl-t = "job:check-termion"
 ctrl-w = "job:check-termwiz"

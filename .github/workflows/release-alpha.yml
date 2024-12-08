@@ -1,0 +1,48 @@
+name: Release alpha version
+
+on:
+  workflow_dispatch:
+  schedule:
+    # At 00:00 on Saturday
+    # https://crontab.guru/#0_0_*_*_6
+    - cron: "0 0 * * 6"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish-alpha:
+    name: Create an alpha release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate the next release
+        run: .github/workflows/calculate-alpha-release.bash
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish
+        run: cargo publish --allow-dirty --token ${{ secrets.CARGO_TOKEN }}
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --unreleased --tag ${{ env.NEXT_TAG }} --strip header
+        env:
+          OUTPUT: BODY.md
+
+      - name: Publish on GitHub
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.NEXT_TAG }}
+          prerelease: true
+          bodyFile: BODY.md
