@@ -106,7 +106,7 @@ ratatui-termwiz = { workspace = true, optional = true }
 ratatui-widgets = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
-time = { version = "0.3.11", optional = true, features = ["local-offset"] }
+time = { version = "0.3.37", optional = true, features = ["local-offset"] }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width.workspace = true
 
