@@ -1,9 +1,7 @@
 //! # [Ratatui] Async example
 //!
 //! This example demonstrates how to use Ratatui with widgets that fetch data asynchronously. It
-//! uses the `octocrab` crate to fetch a list of pull requests from the GitHub API. You will need an
-//! environment variable named `GITHUB_TOKEN` with a valid GitHub personal access token. The token
-//! does not need any special permissions.
+//! uses the `octocrab` crate to fetch a list of pull requests from the GitHub API.
 //!
 //! <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token>
 //! <https://github.com/settings/tokens/new> to create a new token (select classic, and no scopes)
@@ -34,11 +32,10 @@ use std::{
     time::Duration,
 };
 
-use color_eyre::{eyre::Context, Result, Section};
-use futures::StreamExt;
+use color_eyre::Result;
 use octocrab::{
     params::{pulls::Sort, Direction},
-    OctocrabBuilder, Page,
+    Page,
 };
 use ratatui::{
     buffer::Buffer,
@@ -49,27 +46,15 @@ use ratatui::{
     widgets::{Block, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget},
     DefaultTerminal, Frame,
 };
+use tokio_stream::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
-    init_octocrab()?;
     let terminal = ratatui::init();
     let app_result = App::default().run(terminal).await;
     ratatui::restore();
     app_result
-}
-
-fn init_octocrab() -> Result<()> {
-    let token = std::env::var("GITHUB_TOKEN")
-        .wrap_err("The GITHUB_TOKEN environment variable was not found")
-        .suggestion(
-            "Go to https://github.com/settings/tokens/new to create a token, and re-run:
-            GITHUB_TOKEN=ghp_... cargo run --example async --features crossterm",
-        )?;
-    let crab = OctocrabBuilder::new().personal_token(token).build()?;
-    octocrab::initialise(crab);
-    Ok(())
 }
 
 #[derive(Debug, Default)]

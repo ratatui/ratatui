@@ -24,7 +24,7 @@ of the `main` branch for code which is guaranteed to work with the released rata
 >
 > - View the examples as they were when the latest version was release by selecting the tag that
 >   matches that version. E.g. <https://github.com/ratatui/ratatui/tree/v0.26.1/examples>.
-> - If you're viewing this file on GitHub, there is a combo box at the top of this page  which
+> - If you're viewing this file on GitHub, there is a combo box at the top of this page which
 >   allows you to select any previous tagged version.
 > - To view the code locally, checkout the tag. E.g. `git switch --detach v0.26.1`.
 > - Use the latest [alpha version of Ratatui] in your app. These are released weekly on Saturdays.
@@ -52,3 +52,7 @@ This is the demo example from the main README and crate page. [Source](./apps/de
 ## Mouse Drawing demo
 
 Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
+
+## Async GitHub demo
+
+Shows how to fetch data from GitHub API asynchronously. [Source](./apps/async-github/).
