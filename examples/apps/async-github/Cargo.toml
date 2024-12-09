@@ -19,4 +19,4 @@ crossterm = { workspace = true, features = ["event-stream"] }
 octocrab = "0.42.1"
 ratatui.workspace = true
 tokio = { version = "1.41.1", features = ["rt-multi-thread", "macros"] }
-tokio-stream = "0.1.16"
+tokio-stream = "0.1.17"
