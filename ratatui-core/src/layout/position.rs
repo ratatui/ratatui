@@ -25,28 +25,30 @@ use crate::layout::Rect;
 /// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Position {
+pub struct Position<T = u16> {
     /// The x coordinate of the position
     ///
     /// The x coordinate is relative to the left edge of the terminal window, with the left edge
     /// being 0.
-    pub x: u16,
+    pub x: T,
 
     /// The y coordinate of the position
     ///
     /// The y coordinate is relative to the top edge of the terminal window, with the top edge
     /// being 0.
-    pub y: u16,
+    pub y: T,
 }
 
-impl Position {
-    /// Position at the origin, the top left edge at 0,0
-    pub const ORIGIN: Self = Self { x: 0, y: 0 };
-
+impl<T> Position<T> {
     /// Create a new position
-    pub const fn new(x: u16, y: u16) -> Self {
+    pub const fn new(x: T, y: T) -> Self {
         Self { x, y }
     }
+}
+
+impl Position<u16> {
+    /// Position at the origin, the top left edge at 0,0
+    pub const ORIGIN: Self = Self { x: 0, y: 0 };
 }
 
 impl From<(u16, u16)> for Position {
