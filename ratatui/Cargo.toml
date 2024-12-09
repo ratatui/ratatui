@@ -277,11 +277,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "tabs"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "tracing"
 required-features = ["crossterm"]
 doc-scrape-examples = true
