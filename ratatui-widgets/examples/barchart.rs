@@ -19,7 +19,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::Stylize,
     text::{Line, Span},
-    widgets::{Bar, BarChart},
+    widgets::{Bar, BarChart, BarGroup},
     DefaultTerminal, Frame,
 };
 
@@ -44,9 +44,14 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 /// Draw the UI with a title and two barcharts.
 fn draw(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
-    let horizontal = Layout::horizontal([Constraint::Length(28), Constraint::Fill(1)]).spacing(1);
+    let horizontal = Layout::horizontal([
+        Constraint::Length(28),
+        Constraint::Fill(1),
+        Constraint::Length(15),
+    ])
+    .spacing(1);
     let [top, main] = vertical.areas(frame.area());
-    let [left, right] = horizontal.areas(main);
+    let [left, mid, right] = horizontal.areas(main);
 
     let title = Line::from_iter([
         Span::from("BarChart Widget").bold(),
@@ -54,7 +59,8 @@ fn draw(frame: &mut Frame) {
     ]);
     frame.render_widget(title.centered(), top);
     render_vertical_barchart(frame, left);
-    render_horizontal_barchart(frame, right);
+    render_horizontal_barchart(frame, mid);
+    render_grouped_barchart(frame, right);
 }
 
 /// Render a horizontal barchart with some sample data.
@@ -78,6 +84,28 @@ fn render_vertical_barchart(frame: &mut Frame, area: Rect) {
         Bar::with_label("Yellow", 10).yellow(),
     ];
     let chart = BarChart::vertical(bars).bar_width(6);
+    frame.render_widget(chart, area);
+}
+
+// Render a grouped barchart with some sample data.
+fn render_grouped_barchart(frame: &mut Frame, area: Rect) {
+    let groups = vec![
+        BarGroup::with_label(
+            "Group 1",
+            vec![
+                Bar::with_label("A", 10).red(),
+                Bar::with_label("B", 20).blue(),
+            ],
+        ),
+        BarGroup::with_label(
+            "Group 2",
+            vec![
+                Bar::with_label("C", 15).green(),
+                Bar::with_label("D", 25).yellow(),
+            ],
+        ),
+    ];
+    let chart = BarChart::grouped(groups).bar_width(3);
     frame.render_widget(chart, area);
 }
 
