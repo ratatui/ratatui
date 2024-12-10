@@ -3695,6 +3695,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ee99da9c5ba11bd675621338ef6fa52296b76b83305e9b6e5c77d4c286d6d49"
 
 [[package]]
+name = "weather"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "rand 0.8.5",
+ "ratatui",
+]
+
+[[package]]
 name = "web-sys"
 version = "0.3.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
