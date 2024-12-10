@@ -1,4 +1,4 @@
-//! # [Ratatui] `BarChart` example
+//! # [Ratatui] `BarChart` example with grouped bars
 //!
 //! The latest version of this example is available in the [widget examples] folder in the
 //! repository.
@@ -17,10 +17,10 @@
 use color_eyre::Result;
 use ratatui::{
     crossterm::event::{self, Event},
-    layout::{Constraint, Layout, Rect},
-    style::Stylize,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style, Stylize},
     text::{Line, Span},
-    widgets::{Bar, BarChart},
+    widgets::{Bar, BarChart, BarGroup},
     DefaultTerminal, Frame,
 };
 
@@ -42,7 +42,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     }
 }
 
-/// Draw the UI with a title and two barcharts.
+/// Draw the UI with a barchart on the left and right side.
 fn draw(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let horizontal = Layout::horizontal([Constraint::Length(28), Constraint::Fill(1)]).spacing(1);
@@ -50,34 +50,52 @@ fn draw(frame: &mut Frame) {
     let [left, right] = horizontal.areas(main);
 
     let title = Line::from_iter([
-        Span::from("BarChart Widget").bold(),
+        Span::from("BarChart Widget (Grouped)").bold(),
         Span::from(" (Press 'q' to quit)"),
     ]);
     frame.render_widget(title.centered(), top);
-    render_vertical_barchart(frame, left);
-    render_horizontal_barchart(frame, right);
+    render_barchart(frame, left, Direction::Vertical, 6);
+    render_barchart(frame, right, Direction::Horizontal, 1);
 }
 
-/// Render a horizontal barchart with some sample data.
-fn render_horizontal_barchart(frame: &mut Frame, area: Rect) {
-    let bars = vec![
-        Bar::with_label("Red", 30).red(),
-        Bar::with_label("Blue", 20).blue(),
-        Bar::with_label("Green", 15).green(),
-        Bar::with_label("Yellow", 10).yellow(),
+/// Render a barchart with grouped bars.
+fn render_barchart(frame: &mut Frame, area: Rect, direction: Direction, bar_width: u16) {
+    let companies = [
+        ("BAKE", Color::LightRed),
+        ("BITE", Color::Blue),
+        ("TART", Color::White),
     ];
-    let chart = BarChart::horizontal(bars).bar_width(3);
-    frame.render_widget(chart, area);
-}
+    let revenues = [
+        ("Jan", [8500, 6500, 7000]),
+        ("Feb", [9000, 7500, 8500]),
+        ("Mar", [9500, 4500, 8200]),
+        ("Apr", [6300, 4000, 5000]),
+    ];
 
-/// Render a vertical barchart with some sample data.
-fn render_vertical_barchart(frame: &mut Frame, area: Rect) {
-    let bars = vec![
-        Bar::with_label("Red", 30).red(),
-        Bar::with_label("Blue", 20).blue(),
-        Bar::with_label("Green", 15).green(),
-        Bar::with_label("Yellow", 10).yellow(),
-    ];
-    let chart = BarChart::vertical(bars).bar_width(6);
-    frame.render_widget(chart, area);
+    let mut barchart = BarChart::default()
+        .bar_gap(0)
+        .bar_width(bar_width)
+        .group_gap(2)
+        .direction(direction);
+
+    for (period, values) in revenues {
+        let bars: Vec<Bar> = companies
+            .iter()
+            .zip(values)
+            .map(|(&(label, color), value)| {
+                Bar::default()
+                    .label(label)
+                    .value(value)
+                    .text_value(format!("{:.1}M", value as f64 / 1000.))
+                    .style(color)
+                    .value_style(Style::new().fg(Color::Black).bg(color))
+            })
+            .collect();
+        let group = BarGroup::default()
+            .label(Line::from(period).centered())
+            .bars(&bars);
+        barchart = barchart.data(group);
+    }
+
+    frame.render_widget(barchart, area);
 }
