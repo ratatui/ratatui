@@ -16,6 +16,7 @@
 
 use color_eyre::Result;
 use ratatui::{
+    crossterm::event::{self, Event},
     layout::{Constraint, Layout, Rect},
     style::Stylize,
     text::{Line, Span},
@@ -35,7 +36,7 @@ fn main() -> Result<()> {
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
         terminal.draw(draw)?;
-        if quit_key_pressed()? {
+        if matches!(event::read()?, Event::Key(_)) {
             break Ok(());
         }
     }
@@ -79,13 +80,4 @@ fn render_vertical_barchart(frame: &mut Frame, area: Rect) {
     ];
     let chart = BarChart::vertical(bars).bar_width(6);
     frame.render_widget(chart, area);
-}
-
-/// Wait for an event and return `true` if the Esc or 'q' key is pressed.
-fn quit_key_pressed() -> Result<bool> {
-    use ratatui::crossterm::event::{self, Event, KeyCode};
-    match event::read()? {
-        Event::Key(event) if matches!(event.code, KeyCode::Esc | KeyCode::Char('q')) => Ok(true),
-        _ => Ok(false),
-    }
 }
