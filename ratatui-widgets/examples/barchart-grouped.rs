@@ -1,0 +1,101 @@
+//! # [Ratatui] `BarChart` example with grouped bars
+//!
+//! The latest version of this example is available in the [widget examples] folder in the
+//! repository.
+//!
+//! Please note that the examples are designed to be run against the `main` branch of the Github
+//! repository. This means that you may not be able to compile with the latest release version on
+//! crates.io, or the one that you have installed locally.
+//!
+//! See the [examples readme] for more information on finding examples that match the version of the
+//! library you are using.
+//!
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
+
+use color_eyre::Result;
+use ratatui::{
+    crossterm::event::{self, Event},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style, Stylize},
+    text::{Line, Span},
+    widgets::{Bar, BarChart, BarGroup},
+    DefaultTerminal, Frame,
+};
+
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let result = run(terminal);
+    ratatui::restore();
+    result
+}
+
+/// Run the application.
+fn run(mut terminal: DefaultTerminal) -> Result<()> {
+    loop {
+        terminal.draw(draw)?;
+        if matches!(event::read()?, Event::Key(_)) {
+            break Ok(());
+        }
+    }
+}
+
+/// Draw the UI with a barchart on the left and right side.
+fn draw(frame: &mut Frame) {
+    let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
+    let horizontal = Layout::horizontal([Constraint::Length(28), Constraint::Fill(1)]).spacing(1);
+    let [top, main] = vertical.areas(frame.area());
+    let [left, right] = horizontal.areas(main);
+
+    let title = Line::from_iter([
+        Span::from("BarChart Widget (Grouped)").bold(),
+        Span::from(" (Press 'q' to quit)"),
+    ]);
+    frame.render_widget(title.centered(), top);
+    render_barchart(frame, left, Direction::Vertical, 6);
+    render_barchart(frame, right, Direction::Horizontal, 1);
+}
+
+/// Render a barchart with grouped bars.
+fn render_barchart(frame: &mut Frame, area: Rect, direction: Direction, bar_width: u16) {
+    let companies = [
+        ("BAKE", Color::LightRed),
+        ("BITE", Color::Blue),
+        ("TART", Color::White),
+    ];
+    let revenues = [
+        ("Jan", [8500, 6500, 7000]),
+        ("Feb", [9000, 7500, 8500]),
+        ("Mar", [9500, 4500, 8200]),
+        ("Apr", [6300, 4000, 5000]),
+    ];
+
+    let mut barchart = BarChart::default()
+        .bar_gap(0)
+        .bar_width(bar_width)
+        .group_gap(2)
+        .direction(direction);
+
+    for (period, values) in revenues {
+        let bars: Vec<Bar> = companies
+            .iter()
+            .zip(values)
+            .map(|(&(label, color), value)| {
+                Bar::default()
+                    .label(label)
+                    .value(value)
+                    .text_value(format!("{:.1}M", value as f64 / 1000.))
+                    .style(color)
+                    .value_style(Style::new().fg(Color::Black).bg(color))
+            })
+            .collect();
+        let group = BarGroup::default()
+            .label(Line::from(period).centered())
+            .bars(&bars);
+        barchart = barchart.data(group);
+    }
+
+    frame.render_widget(barchart, area);
+}

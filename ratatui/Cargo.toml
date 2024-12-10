@@ -148,11 +148,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "barchart-grouped"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "calendar"
 required-features = ["crossterm", "widget-calendar"]
 doc-scrape-examples = true
