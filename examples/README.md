@@ -56,3 +56,7 @@ Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
 ## Async GitHub demo
 
 Shows how to fetch data from GitHub API asynchronously. [Source](./apps/async-github/).
+
+## Weather demo
+
+Shows how to render weather data using barchart widget. [Source](./apps/weather/).
