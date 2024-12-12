@@ -24,7 +24,7 @@ Badge]][GitHub Sponsors]<br>
 
 </div>
 
-[Ratatui][Ratatui Website] is a crate for cooking up terminal user interfaces in Rust. It is a
+[Ratatui][Ratatui Website] (_ˌræ.təˈtu.i_) is a crate for cooking up terminal user interfaces in Rust. It is a
 lightweight library that provides a set of widgets and utilities to build complex TUIs.
 
 > Ratatui was forked from the [tui-rs] crate in 2023 in order to continue its development.
