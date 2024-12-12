@@ -14,11 +14,13 @@
 //! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
+use std::iter::zip;
+
 use color_eyre::Result;
 use ratatui::{
     crossterm::event::{self, Event},
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::{Color, Stylize},
     text::{Line, Span},
     widgets::{Bar, BarChart, BarGroup},
     DefaultTerminal, Frame,
@@ -45,7 +47,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 /// Draw the UI with a barchart on the left and right side.
 fn draw(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
-    let horizontal = Layout::horizontal([Constraint::Length(28), Constraint::Fill(1)]).spacing(1);
+    let horizontal = Layout::horizontal([Constraint::Fill(1); 2]).spacing(1);
     let [top, main] = vertical.areas(frame.area());
     let [left, right] = horizontal.areas(main);
 
@@ -61,9 +63,9 @@ fn draw(frame: &mut Frame) {
 /// Render a barchart with grouped bars.
 fn render_barchart(frame: &mut Frame, area: Rect, direction: Direction, bar_width: u16) {
     let companies = [
-        ("BAKE", Color::LightRed),
         ("BITE", Color::Blue),
         ("TART", Color::White),
+        ("BAKE", Color::LightRed),
     ];
     let revenues = [
         ("Jan", [8500, 6500, 7000]),
@@ -79,23 +81,22 @@ fn render_barchart(frame: &mut Frame, area: Rect, direction: Direction, bar_widt
         .direction(direction);
 
     for (period, values) in revenues {
-        let bars: Vec<Bar> = companies
-            .iter()
-            .zip(values)
-            .map(|(&(label, color), value)| {
-                Bar::default()
-                    .label(label)
-                    .value(value)
-                    .text_value(format!("{:.1}M", value as f64 / 1000.))
-                    .style(color)
-                    .value_style(Style::new().fg(Color::Black).bg(color))
-            })
+        let bars: Vec<_> = zip(companies, values)
+            .map(|((label, color), value)| bar(label, value, color))
             .collect();
-        let group = BarGroup::default()
-            .label(Line::from(period).centered())
-            .bars(&bars);
+        let label = Line::from(period).centered();
+        let group = BarGroup::new(bars).label(label);
         barchart = barchart.data(group);
     }
 
     frame.render_widget(barchart, area);
+}
+
+fn bar(label: &str, value: u64, color: Color) -> Bar<'_> {
+    Bar::default()
+        .label(label)
+        .value(value)
+        .text_value(format!("{:.1}M", value as f64 / 1000.))
+        .style(color)
+        .value_style((Color::Black, color))
 }
