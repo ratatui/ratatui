@@ -92,6 +92,7 @@ fn render_barchart(frame: &mut Frame, area: Rect, direction: Direction, bar_widt
     frame.render_widget(barchart, area);
 }
 
+/// Return a bar with the given label, value, and color.
 fn bar(label: &str, value: u64, color: Color) -> Bar<'_> {
     Bar::default()
         .label(label)
