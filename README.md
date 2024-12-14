@@ -31,7 +31,7 @@ which can be used for command-line applications, dashboards, and other interacti
 ## Quickstart
 
 Ratatui has [templates] available to help you get started quickly. You can use the
-[`cargo-generate`]  command to create a new project with Ratatui:
+[`cargo-generate`] command to create a new project with Ratatui:
 
 ```shell
 cargo install --locked cargo-generate
@@ -124,10 +124,8 @@ Ratatui was forked from the [tui-rs] crate in 2023 in order to continue its deve
 this could be possible without [Florian Dehau] who originally created [tui-rs] which inspired many
 Rust TUIs.
 
-- Special thanks to [Pavel Fomchenkov] for his work in designing an awesome logo for the Ratatui
-  project and organization.
-
-- A now unknown person in our community for coming up with the name "Ratatui".
+Special thanks to [Pavel Fomchenkov] for his work in designing an awesome logo for the Ratatui
+project and organization.
 
 ## License
 
