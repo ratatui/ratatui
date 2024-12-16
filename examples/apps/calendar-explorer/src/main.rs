@@ -165,22 +165,31 @@ impl StyledCalendar {
     }
 
     fn render_month(&self, frame: &mut Frame, area: Rect, date: Date, events: &CalendarEventStore) {
-        let calendar = Monthly::new(date, events)
-            .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
-            .show_month_header(Style::default());
         let calendar = match self {
-            StyledCalendar::Default => calendar,
-            StyledCalendar::Surrounding => calendar.show_surrounding(Style::new().dim()),
-            StyledCalendar::WeekdaysHeader => {
-                calendar.show_weekdays_header(Style::new().bold().green())
-            }
-            StyledCalendar::SurroundingAndWeekdaysHeader => calendar
+            StyledCalendar::Default => Monthly::new(date, events)
+                .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
+                .show_month_header(Style::default()),
+            StyledCalendar::Surrounding => Monthly::new(date, events)
+                .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
+                .show_month_header(Style::default())
+                .show_surrounding(Style::new().dim()),
+            StyledCalendar::WeekdaysHeader => Monthly::new(date, events)
+                .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
+                .show_month_header(Style::default())
+                .show_weekdays_header(Style::new().bold().green()),
+            StyledCalendar::SurroundingAndWeekdaysHeader => Monthly::new(date, events)
+                .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
+                .show_month_header(Style::default())
                 .show_surrounding(Style::new().dim())
                 .show_weekdays_header(Style::new().bold().green()),
-            StyledCalendar::MonthHeader => calendar.show_month_header(Style::new().bold().green()),
-            StyledCalendar::MonthAndWeekdaysHeader => {
-                calendar.show_weekdays_header(Style::new().bold().dim().light_yellow())
-            }
+            StyledCalendar::MonthHeader => Monthly::new(date, events)
+                .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
+                .show_month_header(Style::default())
+                .show_month_header(Style::new().bold().green()),
+            StyledCalendar::MonthAndWeekdaysHeader => Monthly::new(date, events)
+                .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
+                .show_month_header(Style::default())
+                .show_weekdays_header(Style::new().bold().dim().light_yellow()),
         };
         frame.render_widget(calendar, area);
     }
