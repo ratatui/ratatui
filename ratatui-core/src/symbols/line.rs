@@ -1,8 +1,10 @@
 pub const VERTICAL: &str = "│";
+pub const DOTTED_VERTICAL: &str = "┆";
 pub const DOUBLE_VERTICAL: &str = "║";
 pub const THICK_VERTICAL: &str = "┃";
 
 pub const HORIZONTAL: &str = "─";
+pub const DOTTED_HORIZONTAL: &str = "┄";
 pub const DOUBLE_HORIZONTAL: &str = "═";
 pub const THICK_HORIZONTAL: &str = "━";
 
@@ -79,6 +81,12 @@ pub const NORMAL: Set = Set {
     horizontal_down: HORIZONTAL_DOWN,
     horizontal_up: HORIZONTAL_UP,
     cross: CROSS,
+};
+
+pub const DOTTED: Set = Set {
+    vertical: DOTTED_VERTICAL,
+    horizontal: DOTTED_HORIZONTAL,
+    ..NORMAL
 };
 
 pub const ROUNDED: Set = Set {

@@ -37,6 +37,25 @@ pub const PLAIN: Set = Set {
     horizontal_bottom: line::NORMAL.horizontal,
 };
 
+/// Border Set with a single dotted line width
+///
+/// ```text
+/// ┌─────┐
+/// │xxxxx│
+/// │xxxxx│
+/// └─────┘
+/// ```
+pub const DOTTED: Set = Set {
+    top_left: line::DOTTED.top_left,
+    top_right: line::DOTTED.top_right,
+    bottom_left: line::DOTTED.bottom_left,
+    bottom_right: line::DOTTED.bottom_right,
+    vertical_left: line::DOTTED.vertical,
+    vertical_right: line::DOTTED.vertical,
+    horizontal_top: line::DOTTED.horizontal,
+    horizontal_bottom: line::DOTTED.horizontal,
+};
+
 /// Border Set with a single line width and rounded corners
 ///
 /// ```text
