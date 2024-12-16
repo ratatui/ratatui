@@ -8,7 +8,7 @@
 //! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 //! [`BarChart`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html
 
-use std::fmt::{self};
+use std::fmt;
 
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
@@ -42,7 +42,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
                     KeyCode::Char('s') => calendar_style = calendar_style.next(),
                     KeyCode::Char('n') | KeyCode::Tab => selected_date = next_month(selected_date),
                     KeyCode::Char('p') | KeyCode::BackTab => {
-                        selected_date = previous_month(selected_date)
+                        selected_date = previous_month(selected_date);
                     }
                     KeyCode::Char('h') | KeyCode::Left => selected_date -= 1.days(),
                     KeyCode::Char('j') | KeyCode::Down => selected_date += 1.weeks(),
@@ -112,7 +112,7 @@ enum StyledCalendar {
 
 impl StyledCalendar {
     // Cycle through the different styles.
-    fn next(&self) -> Self {
+    const fn next(self) -> Self {
         match self {
             Self::Default => Self::Surrounding,
             Self::Surrounding => Self::WeekdaysHeader,
@@ -138,7 +138,7 @@ impl fmt::Display for StyledCalendar {
 }
 
 impl StyledCalendar {
-    fn render_year(&self, frame: &mut Frame, area: Rect, date: Date) -> Result<()> {
+    fn render_year(self, frame: &mut Frame, area: Rect, date: Date) -> Result<()> {
         let events = events(date)?;
 
         let area = area.inner(Margin {
@@ -162,29 +162,29 @@ impl StyledCalendar {
         Ok(())
     }
 
-    fn render_month(&self, frame: &mut Frame, area: Rect, date: Date, events: &CalendarEventStore) {
+    fn render_month(self, frame: &mut Frame, area: Rect, date: Date, events: &CalendarEventStore) {
         let calendar = match self {
-            StyledCalendar::Default => Monthly::new(date, events)
+            Self::Default => Monthly::new(date, events)
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
                 .show_month_header(Style::default()),
-            StyledCalendar::Surrounding => Monthly::new(date, events)
+            Self::Surrounding => Monthly::new(date, events)
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
                 .show_month_header(Style::default())
                 .show_surrounding(Style::new().dim()),
-            StyledCalendar::WeekdaysHeader => Monthly::new(date, events)
+            Self::WeekdaysHeader => Monthly::new(date, events)
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
                 .show_month_header(Style::default())
                 .show_weekdays_header(Style::new().bold().green()),
-            StyledCalendar::SurroundingAndWeekdaysHeader => Monthly::new(date, events)
+            Self::SurroundingAndWeekdaysHeader => Monthly::new(date, events)
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
                 .show_month_header(Style::default())
                 .show_surrounding(Style::new().dim())
                 .show_weekdays_header(Style::new().bold().green()),
-            StyledCalendar::MonthHeader => Monthly::new(date, events)
+            Self::MonthHeader => Monthly::new(date, events)
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
                 .show_month_header(Style::default())
                 .show_month_header(Style::new().bold().green()),
-            StyledCalendar::MonthAndWeekdaysHeader => Monthly::new(date, events)
+            Self::MonthAndWeekdaysHeader => Monthly::new(date, events)
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
                 .show_month_header(Style::default())
                 .show_weekdays_header(Style::new().bold().dim().light_yellow()),
