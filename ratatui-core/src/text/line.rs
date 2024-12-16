@@ -1106,12 +1106,12 @@ mod tests {
 
     #[test]
     fn styled_graphemes() {
-        const RED: Style = Style::new().fg(Color::Red);
-        const GREEN: Style = Style::new().fg(Color::Green);
-        const BLUE: Style = Style::new().fg(Color::Blue);
-        const RED_ON_WHITE: Style = Style::new().fg(Color::Red).bg(Color::White);
-        const GREEN_ON_WHITE: Style = Style::new().fg(Color::Green).bg(Color::White);
-        const BLUE_ON_WHITE: Style = Style::new().fg(Color::Blue).bg(Color::White);
+        const RED: Style = Style::new().red();
+        const GREEN: Style = Style::new().green();
+        const BLUE: Style = Style::new().blue();
+        const RED_ON_WHITE: Style = Style::new().red().on_white();
+        const GREEN_ON_WHITE: Style = Style::new().green().on_white();
+        const BLUE_ON_WHITE: Style = Style::new().blue().on_white();
 
         let line = Line::from(vec![
             Span::styled("He", RED),
@@ -1192,9 +1192,9 @@ mod tests {
         use super::*;
         use crate::buffer::Cell;
 
-        const BLUE: Style = Style::new().fg(Color::Blue);
-        const GREEN: Style = Style::new().fg(Color::Green);
-        const ITALIC: Style = Style::new().add_modifier(Modifier::ITALIC);
+        const BLUE: Style = Style::new().blue();
+        const GREEN: Style = Style::new().green();
+        const ITALIC: Style = Style::new().italic();
 
         #[fixture]
         fn hello_world() -> Line<'static> {
