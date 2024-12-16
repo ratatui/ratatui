@@ -60,3 +60,7 @@ Shows how to fetch data from GitHub API asynchronously. [Source](./apps/async-gi
 ## Weather demo
 
 Shows how to render weather data using barchart widget. [Source](./apps/weather/).
+
+## Calendar explorer demo
+
+Shows how to render a calendar with different styles. [Source](./apps/calendar-explorer/).
