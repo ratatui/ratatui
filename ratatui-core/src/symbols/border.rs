@@ -40,10 +40,10 @@ pub const PLAIN: Set = Set {
 /// Border Set with a single dotted line width
 ///
 /// ```text
-/// ┌─────┐
-/// │xxxxx│
-/// │xxxxx│
-/// └─────┘
+/// ┌┄┄┄┄┄┐
+/// ┆xxxxx┆
+/// ┆xxxxx┆
+/// └┄┄┄┄┄┘
 /// ```
 pub const DOTTED: Set = Set {
     top_left: line::DOTTED.top_left,
