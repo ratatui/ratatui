@@ -10,8 +10,6 @@
 
 use std::fmt::{self};
 
-use time::ext::NumericalDuration;
-
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{
@@ -21,7 +19,7 @@ use ratatui::{
     widgets::calendar::{CalendarEventStore, Monthly},
     DefaultTerminal, Frame,
 };
-use time::{Date, Month, OffsetDateTime};
+use time::{ext::NumericalDuration, Date, Month, OffsetDateTime};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
