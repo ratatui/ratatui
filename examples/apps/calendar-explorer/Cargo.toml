@@ -9,7 +9,7 @@ rust-version.workspace = true
 color-eyre.workspace = true
 crossterm.workspace = true
 ratatui.workspace = true
-time = "0.3.37"
+time = { version = "0.3.37", features = ["formatting", "parsing"] }
 
 [lints]
 workspace = true
