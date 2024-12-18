@@ -153,12 +153,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "colors"
-required-features = ["crossterm"]
-# this example is a bit verbose, so we don't want to include it in the docs
-doc-scrape-examples = false
-
-[[example]]
 name = "colors_rgb"
 required-features = ["crossterm", "palette"]
 doc-scrape-examples = true
