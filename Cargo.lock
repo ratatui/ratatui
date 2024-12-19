@@ -317,6 +317,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "canvas"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "itertools 0.13.0",
+ "ratatui",
+]
+
+[[package]]
 name = "cargo-platform"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -394,6 +404,15 @@ name = "cfg_aliases"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
+
+[[package]]
+name = "chart"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "ratatui",
+]
 
 [[package]]
 name = "chrono"

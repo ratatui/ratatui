@@ -1,18 +1,13 @@
-//! # [Ratatui] Canvas example
-//!
-//! The latest version of this example is available in the [examples] folder in the repository.
-//!
-//! Please note that the examples are designed to be run against the `main` branch of the Github
-//! repository. This means that you may not be able to compile with the latest release version on
-//! crates.io, or the one that you have installed locally.
-//!
-//! See the [examples readme] for more information on finding examples that match the version of the
-//! library you are using.
-//!
-//! [Ratatui]: https://github.com/ratatui/ratatui
-//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
-
+/// A Ratatui example that demonstrates how to draw on a canvas.
+///
+/// This example demonstrates how to draw various shapes such as rectangles, circles, and lines
+/// on a canvas. It also demonstrates how to draw a map.
+///
+/// This example runs with the Ratatui library code in the branch that you are currently
+/// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+/// release.
+///
+/// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::{
     io::stdout,
     time::{Duration, Instant},
@@ -29,6 +24,7 @@ use ratatui::{
     layout::{Constraint, Layout, Position, Rect},
     style::{Color, Stylize},
     symbols::Marker,
+    text::Text,
     widgets::{
         canvas::{Canvas, Circle, Map, MapResolution, Points, Rectangle},
         Block, Widget,
@@ -54,7 +50,6 @@ struct App {
     playground: Rect,
     vx: f64,
     vy: f64,
-    tick_count: u64,
     marker: Marker,
     points: Vec<Position>,
     is_drawing: bool,
@@ -75,7 +70,6 @@ impl App {
             playground: Rect::new(10, 10, 200, 100),
             vx: 1.0,
             vy: 1.0,
-            tick_count: 0,
             marker: Marker::Dot,
             points: vec![],
             is_drawing: false,
@@ -114,6 +108,15 @@ impl App {
             KeyCode::Up | KeyCode::Char('k') => self.y -= 1.0,
             KeyCode::Right | KeyCode::Char('l') => self.x += 1.0,
             KeyCode::Left | KeyCode::Char('h') => self.x -= 1.0,
+            KeyCode::Enter => {
+                self.marker = match self.marker {
+                    Marker::Dot => Marker::Braille,
+                    Marker::Braille => Marker::Block,
+                    Marker::Block => Marker::HalfBlock,
+                    Marker::HalfBlock => Marker::Bar,
+                    Marker::Bar => Marker::Dot,
+                };
+            }
             _ => {}
         }
     }
@@ -130,17 +133,6 @@ impl App {
     }
 
     fn on_tick(&mut self) {
-        self.tick_count += 1;
-        // only change marker every 180 ticks (3s) to avoid stroboscopic effect
-        if (self.tick_count % 180) == 0 {
-            self.marker = match self.marker {
-                Marker::Dot => Marker::Braille,
-                Marker::Braille => Marker::Block,
-                Marker::Block => Marker::HalfBlock,
-                Marker::HalfBlock => Marker::Bar,
-                Marker::Bar => Marker::Dot,
-            };
-        }
         // bounce the ball by flipping the velocity vector
         let ball = &self.ball;
         let playground = self.playground;
@@ -154,18 +146,28 @@ impl App {
         {
             self.vy = -self.vy;
         }
-
         self.ball.x += self.vx;
         self.ball.y += self.vy;
     }
 
     fn draw(&self, frame: &mut Frame) {
+        let header = Text::from_iter([
+            "Canvas Example".bold(),
+            "<q> Quit | <enter> Change Marker | <hjkl> Move".into(),
+        ]);
+
+        let vertical = Layout::vertical([
+            Constraint::Length(header.height() as u16),
+            Constraint::Percentage(50),
+            Constraint::Percentage(50),
+        ]);
+        let [text_area, up, down] = vertical.areas(frame.area());
+        frame.render_widget(header.centered(), text_area);
+
         let horizontal =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [left, right] = horizontal.areas(frame.area());
-        let [draw, map] = vertical.areas(left);
-        let [pong, boxes] = vertical.areas(right);
+        let [draw, pong] = horizontal.areas(up);
+        let [map, boxes] = horizontal.areas(down);
 
         frame.render_widget(self.map_canvas(), map);
         frame.render_widget(self.draw_canvas(draw), draw);
