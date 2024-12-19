@@ -49,18 +49,30 @@ This is the demo example from the main README and crate page. [Source](./apps/de
 
 ![Demo2](https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true)
 
-## Mouse Drawing demo
-
-Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
-
 ## Async GitHub demo
 
 Shows how to fetch data from GitHub API asynchronously. [Source](./apps/async-github/).
 
-## Weather demo
-
-Shows how to render weather data using barchart widget. [Source](./apps/weather/).
-
 ## Calendar explorer demo
 
 Shows how to render a calendar with different styles. [Source](./apps/calendar-explorer/).
+
+## Canvas demo
+
+Shows how to render a canvas with different shapes. [Source](./apps/canvas/).
+
+## Colors-RGB demo
+
+This example shows the full range of RGB colors in an animation. [Source](./apps/colors-rgb/).
+
+## Input form
+
+Shows how to render a form with input fields. [Source](./apps/input-form/).
+
+## Mouse Drawing demo
+
+Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
+
+## Weather demo
+
+Shows how to render weather data using barchart widget. [Source](./apps/weather/).
