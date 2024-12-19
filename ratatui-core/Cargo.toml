@@ -24,6 +24,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = []
 
+## enables conversions to / from colors, modifiers, and styles in the ['answtyle'] crate
+anstyle = ["dep:anstyle"]
+
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["dep:palette"]
 
@@ -40,6 +43,7 @@ scrolling-regions = []
 serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
 [dependencies]
+anstyle = { version = "1", optional = true }
 bitflags = "2.3"
 cassowary = "0.3"
 compact_str = "0.8.0"
@@ -51,6 +55,7 @@ palette = { version = "0.7.6", optional = true }
 paste = "1.0.2"
 serde = { workspace = true, optional = true }
 strum.workspace = true
+thiserror = "2"
 unicode-segmentation.workspace = true
 unicode-truncate = "2"
 unicode-width.workspace = true
