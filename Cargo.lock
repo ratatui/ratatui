@@ -527,6 +527,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "color-explorer"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "itertools 0.13.0",
+ "ratatui",
+]
+
+[[package]]
 name = "color-eyre"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
