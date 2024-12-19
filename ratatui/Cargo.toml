@@ -143,11 +143,6 @@ name = "main"
 harness = false
 
 [[example]]
-name = "canvas"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "chart"
 required-features = ["crossterm"]
 doc-scrape-examples = true
