@@ -317,6 +317,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "canvas"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "itertools 0.13.0",
+ "ratatui",
+]
+
+[[package]]
 name = "cargo-platform"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
