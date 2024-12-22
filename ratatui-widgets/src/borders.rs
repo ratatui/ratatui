@@ -42,13 +42,12 @@ pub enum BorderType {
     /// ```
     #[default]
     Plain,
-    /// Border Set with a single dotted line width
+    /// A dotted border.
     ///
-    /// ```text
-    /// ┌┄┄┄┄┄┐
-    /// ┆xxxxx┆
-    /// ┆xxxxx┆
-    /// └┄┄┄┄┄┘
+    /// ```plain
+    /// ┌┄┄┄┄┄┄┄┐
+    /// ┆       ┆
+    /// └┄┄┄┄┄┄┄┘
     /// ```
     Dotted,
     /// A plain border with rounded corners.
