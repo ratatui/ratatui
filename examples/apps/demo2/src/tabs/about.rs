@@ -8,38 +8,38 @@ use ratatui::{
 use crate::{RgbSwatch, THEME};
 
 const RATATUI_LOGO: [&str; 32] = [
-    "               ███              ",
-    "             ██████             ",
-    "            ███████             ",
-    "           ████████             ",
-    "          █████████             ",
-    "         ██████████             ",
-    "        ████████████            ",
-    "        █████████████           ",
-    "        █████████████     ██████",
-    "         ███████████    ████████",
-    "              █████ ███████████ ",
-    "               ███ ██ee████████ ",
-    "                █ █████████████ ",
+    "               hhh              ",
+    "             hhhhhh             ",
+    "            hhhhhhh             ",
+    "           hhhhhhhh             ",
+    "          hhhhhhhhh             ",
+    "         hhhhhhhhhh             ",
+    "        hhhhhhhhhhhh            ",
+    "        hhhhhhhhhhhhh           ",
+    "        hhhhhhhhhhhhh     ██████",
+    "         hhhhhhhhhhh    ████████",
+    "              hhhhh ███████████ ",
+    "               hhh ██ee████████ ",
+    "                h █████████████ ",
     "            ████ █████████████  ",
     "           █████████████████    ",
     "           ████████████████     ",
     "           ████████████████     ",
     "            ███ ██████████      ",
-    "          ██    █████████       ",
-    "         █xx█   █████████       ",
-    "        █xxxx█ ██████████       ",
-    "       █xx█xxx█ █████████       ",
-    "      █xx██xxxx█ ████████       ",
-    "     █xxxxxxxxxx█ ██████████    ",
-    "    █xxxxxxxxxxxx█ ██████████   ",
-    "   █xxxxxxx██xxxxx█ █████████   ",
-    "  █xxxxxxxxx██xxxxx█ ████  ███  ",
-    " █xxxxxxxxxxxxxxxxxx█ ██   ███  ",
-    "█xxxxxxxxxxxxxxxxxxxx█ █   ███  ",
-    "█xxxxxxxxxxxxxxxxxxxxx█   ███   ",
-    " █xxxxxxxxxxxxxxxxxxxxx█ ███    ",
-    "  █xxxxxxxxxxxxxxxxxxxxx█ █     ",
+    "          bb    █████████       ",
+    "         bxxb   █████████       ",
+    "        bxxxxb ██████████       ",
+    "       bxx█xxxb █████████       ",
+    "      bxx██xxxxb ████████       ",
+    "     bxxxxxxxxxxb ██████████    ",
+    "    bxxxxxxxxxxxxb ██████████   ",
+    "   bxxxxxxx██xxxxxb █████████   ",
+    "  bxxxxxxxxx██xxxxxb ████  ███  ",
+    " bxxxxxxxxxxxxxxxxxxb ██   ███  ",
+    "bxxxxxxxxxxxxxxxxxxxxb █   ███  ",
+    "bxxxxxxxxxxxxxxxxxxxxxb   ███   ",
+    " bxxxxxxxxxxxxxxxxxxxxxb ███    ",
+    "  bxxxxxxxxxxxxxxxxxxxxxb █     ",
 ];
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -112,26 +112,62 @@ pub fn render_logo(selected_row: usize, area: Rect, buf: &mut Buffer) {
         vertical: 0,
         horizontal: 2,
     });
+    let rat_color = THEME.logo.rat;
+    let term_color = THEME.logo.term;
+    let hat_color = THEME.logo.hat;
+    let border_color = THEME.logo.term_border;
     for (y, (line1, line2)) in RATATUI_LOGO.iter().tuples().enumerate() {
         for (x, (ch1, ch2)) in line1.chars().zip(line2.chars()).enumerate() {
             let x = area.left() + x as u16;
             let y = area.top() + y as u16;
             let cell = &mut buf[(x, y)];
-            let rat_color = THEME.logo.rat;
-            let term_color = THEME.logo.term;
             match (ch1, ch2) {
                 ('█', '█') => {
                     cell.set_char('█');
                     cell.fg = rat_color;
                     cell.bg = rat_color;
                 }
+                ('h', 'h') => {
+                    cell.set_char('█');
+                    cell.fg = hat_color;
+                }
                 ('█', ' ') => {
                     cell.set_char('▀');
                     cell.fg = rat_color;
                 }
+                ('h', ' ') => {
+                    cell.set_char('▀');
+                    cell.fg = hat_color;
+                }
                 (' ', '█') => {
                     cell.set_char('▄');
                     cell.fg = rat_color;
+                }
+                (' ', 'h') => {
+                    cell.set_char('▄');
+                    cell.fg = hat_color;
+                }
+                (' ', 'b') => {
+                    cell.set_char('▄');
+                    cell.fg = border_color;
+                }
+                ('b', ' ') => {
+                    cell.set_char('▀');
+                    cell.fg = border_color;
+                }
+                ('b', 'b') => {
+                    cell.set_char('█');
+                    cell.fg = border_color;
+                }
+                ('b', 'x') => {
+                    cell.set_char('▀');
+                    cell.fg = border_color;
+                    cell.bg = term_color;
+                }
+                ('x', 'b') => {
+                    cell.set_char('▄');
+                    cell.fg = border_color;
+                    cell.bg = term_color;
                 }
                 ('█', 'x') => {
                     cell.set_char('▀');

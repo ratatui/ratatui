@@ -25,7 +25,9 @@ pub struct Logo {
     pub rat: Color,
     pub rat_eye: Color,
     pub rat_eye_alt: Color,
+    pub hat: Color,
     pub term: Color,
+    pub term_border: Color,
 }
 
 pub struct Email {
@@ -77,10 +79,12 @@ pub const THEME: Theme = Theme {
     description: Style::new().fg(LIGHT_GRAY).bg(DARK_BLUE),
     description_title: Style::new().fg(LIGHT_GRAY).add_modifier(Modifier::BOLD),
     logo: Logo {
-        rat: WHITE,
+        rat: MID_GRAY,
+        hat: WHITE,
         rat_eye: BLACK,
         rat_eye_alt: RED,
         term: BLACK,
+        term_border: LIGHT_GRAY,
     },
     key_binding: KeyBinding {
         key: Style::new().fg(BLACK).bg(DARK_GRAY),
