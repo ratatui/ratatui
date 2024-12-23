@@ -1,12 +1,6 @@
 //! The [`RatatuiLogo`] widget renders the Ratatui logo.
 use indoc::indoc;
-use ratatui_core::{
-    buffer::Buffer,
-    layout::{Margin, Rect},
-    style::Color,
-    text::Text,
-    widgets::Widget,
-};
+use ratatui_core::{buffer::Buffer, layout::Rect, style::Color, text::Text, widgets::Widget};
 
 /// A widget that renders the Ratatui logo
 ///
@@ -267,10 +261,6 @@ impl RatatuiMascot {
     /// The logo is rendered in three colors, one for the rat, one for the terminal, and one for the
     /// rat's eye. The eye color alternates between two colors based on the selected row.
     pub fn render_mascot(&self, area: Rect, buf: &mut Buffer) {
-        let area = area.inner(Margin {
-            vertical: 0,
-            horizontal: 2,
-        });
         let rat_color = self.colors.rat;
         let term_color = self.colors.term;
         let hat_color = self.colors.hat;
@@ -430,5 +420,67 @@ mod tests {
                 "█▀▀▄ █▀▀█ ▐▌ █▀▀█ ▐▌ ▀▄▄▀ █",
             ])
         );
+    }
+
+    #[test]
+    fn default_mascot_colors() {
+        let colors = MascotColors::default();
+        assert_eq!(
+            colors,
+            MascotColors {
+                rat: Color::Rgb(204, 204, 204),
+                hat: Color::Rgb(255, 255, 255),
+                rat_eye: Color::Rgb(8, 8, 8),
+                term: Color::Rgb(8, 8, 8),
+                term_border: Color::Rgb(188, 188, 188),
+            }
+        );
+    }
+
+    #[test]
+    fn new_mascot() {
+        let colors = MascotColors::default();
+        let mascot = RatatuiMascot::new(colors);
+        assert_eq!(mascot.colors, colors);
+    }
+
+    #[test]
+    fn set_eye_color() {
+        let colors = MascotColors::default();
+        let mascot = RatatuiMascot::new(colors).set_eye_color(Color::Rgb(255, 0, 0));
+        assert_eq!(
+            mascot.colors,
+            MascotColors {
+                rat: Color::Rgb(204, 204, 204),
+                hat: Color::Rgb(255, 255, 255),
+                rat_eye: Color::Rgb(255, 0, 0),
+                term: Color::Rgb(8, 8, 8),
+                term_border: Color::Rgb(188, 188, 188),
+            }
+        );
+    }
+
+    #[test]
+    fn render_mascot() {
+        let colors = MascotColors::default();
+        let mascot = RatatuiMascot::new(colors);
+        let mut buf = Buffer::empty(Rect::new(0, 0, 32, 32));
+        mascot.render_mascot(buf.area, &mut buf);
+        assert_eq!(buf.area.as_size(), (32, 32).into());
+    }
+
+    #[test]
+    fn render_mascot_with_custom_colors() {
+        let colors = MascotColors {
+            rat: Color::Rgb(255, 0, 0),
+            hat: Color::Rgb(0, 255, 0),
+            rat_eye: Color::Rgb(0, 0, 255),
+            term: Color::Rgb(255, 255, 0),
+            term_border: Color::Rgb(0, 255, 255),
+        };
+        let mascot = RatatuiMascot::new(colors);
+        let mut buf = Buffer::empty(Rect::new(0, 0, 32, 32));
+        mascot.render_mascot(buf.area, &mut buf);
+        assert_eq!(buf.area.as_size(), (32, 32).into());
     }
 }

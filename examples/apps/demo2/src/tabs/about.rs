@@ -32,9 +32,13 @@ impl Widget for AboutTab {
         } else {
             THEME.logo.rat_eye_alt
         };
+        let area = logo.inner(Margin {
+            vertical: 0,
+            horizontal: 2,
+        });
         RatatuiMascot::default()
             .set_eye_color(eye_color)
-            .render(logo, buf);
+            .render(area, buf);
     }
 }
 
