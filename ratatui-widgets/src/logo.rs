@@ -338,11 +338,6 @@ impl RatatuiMascot {
                         cell.fg = rat_color;
                         cell.bg = self.colors.rat_eye;
                     }
-                    ('e', '█') => {
-                        cell.set_char('▄');
-                        cell.fg = rat_color;
-                        cell.bg = self.colors.rat_eye;
-                    }
                     (_, _) => {}
                 };
             }
@@ -480,7 +475,7 @@ mod tests {
         };
         let mascot = RatatuiMascot::new(colors);
         let mut buf = Buffer::empty(Rect::new(0, 0, 32, 32));
-        mascot.render_mascot(buf.area, &mut buf);
+        mascot.render(buf.area, &mut buf);
         assert_eq!(buf.area.as_size(), (32, 32).into());
     }
 }
