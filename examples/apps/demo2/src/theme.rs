@@ -79,8 +79,8 @@ pub const THEME: Theme = Theme {
     description: Style::new().fg(LIGHT_GRAY).bg(DARK_BLUE),
     description_title: Style::new().fg(LIGHT_GRAY).add_modifier(Modifier::BOLD),
     logo: Logo {
-        rat: MID_GRAY,
-        hat: WHITE,
+        rat: Color::Rgb(204, 204, 204), // color of the website
+        hat: Color::Rgb(255, 255, 255),
         rat_eye: BLACK,
         rat_eye_alt: RED,
         term: BLACK,
