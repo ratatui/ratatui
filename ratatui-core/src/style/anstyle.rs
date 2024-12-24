@@ -8,11 +8,11 @@ use super::{Color, Modifier, Style};
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum TryFromColorError {
     #[error("cannot convert Ratatui Color to an Ansi256Color as it is not an indexed color")]
-    NotIndexedColor,
+    Ansi256,
     #[error("cannot convert Ratatui Color to AnsiColor as it is not a 4-bit color")]
-    NotAnsiColor,
+    Ansi,
     #[error("cannot convert Ratatui Color to RgbColor as it is not an RGB color")]
-    NotRgbColor,
+    RgbColor,
 }
 
 impl From<Ansi256Color> for Color {
@@ -27,7 +27,7 @@ impl TryFrom<Color> for Ansi256Color {
     fn try_from(color: Color) -> Result<Self, Self::Error> {
         match color {
             Color::Indexed(index) => Ok(Self(index)),
-            _ => Err(TryFromColorError::NotIndexedColor),
+            _ => Err(TryFromColorError::Ansi256),
         }
     }
 }
@@ -76,7 +76,7 @@ impl TryFrom<Color> for AnsiColor {
             Color::LightMagenta => Ok(Self::BrightMagenta),
             Color::LightCyan => Ok(Self::BrightCyan),
             Color::White => Ok(Self::BrightWhite),
-            _ => Err(TryFromColorError::NotAnsiColor),
+            _ => Err(TryFromColorError::Ansi),
         }
     }
 }
@@ -93,7 +93,7 @@ impl TryFrom<Color> for RgbColor {
     fn try_from(color: Color) -> Result<Self, Self::Error> {
         match color {
             Color::Rgb(red, green, blue) => Ok(Self(red, green, blue)),
-            _ => Err(TryFromColorError::NotRgbColor),
+            _ => Err(TryFromColorError::RgbColor),
         }
     }
 }
@@ -120,15 +120,15 @@ impl From<Color> for anstyle::Color {
 
 impl From<Effects> for Modifier {
     fn from(effect: Effects) -> Self {
-        let mut modifier = Modifier::empty();
+        let mut modifier = Self::empty();
         if effect.contains(Effects::BOLD) {
-            modifier |= Modifier::BOLD;
+            modifier |= Self::BOLD;
         }
         if effect.contains(Effects::DIMMED) {
-            modifier |= Modifier::DIM;
+            modifier |= Self::DIM;
         }
         if effect.contains(Effects::ITALIC) {
-            modifier |= Modifier::ITALIC;
+            modifier |= Self::ITALIC;
         }
         if effect.contains(Effects::UNDERLINE)
             || effect.contains(Effects::DOUBLE_UNDERLINE)
@@ -136,19 +136,19 @@ impl From<Effects> for Modifier {
             || effect.contains(Effects::DOTTED_UNDERLINE)
             || effect.contains(Effects::DASHED_UNDERLINE)
         {
-            modifier |= Modifier::UNDERLINED;
+            modifier |= Self::UNDERLINED;
         }
         if effect.contains(Effects::BLINK) {
-            modifier |= Modifier::SLOW_BLINK;
+            modifier |= Self::SLOW_BLINK;
         }
         if effect.contains(Effects::INVERT) {
-            modifier |= Modifier::REVERSED;
+            modifier |= Self::REVERSED;
         }
         if effect.contains(Effects::HIDDEN) {
-            modifier |= Modifier::HIDDEN;
+            modifier |= Self::HIDDEN;
         }
         if effect.contains(Effects::STRIKETHROUGH) {
-            modifier |= Modifier::CROSSED_OUT;
+            modifier |= Self::CROSSED_OUT;
         }
         modifier
     }
@@ -156,30 +156,30 @@ impl From<Effects> for Modifier {
 
 impl From<Modifier> for Effects {
     fn from(modifier: Modifier) -> Self {
-        let mut effects = Effects::new();
+        let mut effects = Self::new();
         if modifier.contains(Modifier::BOLD) {
-            effects |= Effects::BOLD;
+            effects |= Self::BOLD;
         }
         if modifier.contains(Modifier::DIM) {
-            effects |= Effects::DIMMED;
+            effects |= Self::DIMMED;
         }
         if modifier.contains(Modifier::ITALIC) {
-            effects |= Effects::ITALIC;
+            effects |= Self::ITALIC;
         }
         if modifier.contains(Modifier::UNDERLINED) {
-            effects |= Effects::UNDERLINE;
+            effects |= Self::UNDERLINE;
         }
         if modifier.contains(Modifier::SLOW_BLINK) || modifier.contains(Modifier::RAPID_BLINK) {
-            effects |= Effects::BLINK;
+            effects |= Self::BLINK;
         }
         if modifier.contains(Modifier::REVERSED) {
-            effects |= Effects::INVERT;
+            effects |= Self::INVERT;
         }
         if modifier.contains(Modifier::HIDDEN) {
-            effects |= Effects::HIDDEN;
+            effects |= Self::HIDDEN;
         }
         if modifier.contains(Modifier::CROSSED_OUT) {
-            effects |= Effects::STRIKETHROUGH;
+            effects |= Self::STRIKETHROUGH;
         }
         effects
     }
@@ -187,17 +187,18 @@ impl From<Modifier> for Effects {
 
 impl From<anstyle::Style> for Style {
     fn from(style: anstyle::Style) -> Self {
-        let mut ratatui_style = Style::default();
-        ratatui_style.fg = style.get_fg_color().map(Color::from);
-        ratatui_style.bg = style.get_bg_color().map(Color::from);
-        ratatui_style.add_modifier = style.get_effects().into();
-        ratatui_style
+        Self {
+            fg: style.get_fg_color().map(Color::from),
+            bg: style.get_bg_color().map(Color::from),
+            add_modifier: style.get_effects().into(),
+            ..Default::default()
+        }
     }
 }
 
 impl From<Style> for anstyle::Style {
     fn from(style: Style) -> Self {
-        let mut anstyle_style = anstyle::Style::new();
+        let mut anstyle_style = Self::new();
         if let Some(fg) = style.fg {
             let fg = anstyle::Color::from(fg);
             anstyle_style = anstyle_style.fg_color(Some(fg));
@@ -233,7 +234,7 @@ mod tests {
     fn color_to_ansi256color_error() {
         let color = Color::Rgb(0, 0, 0);
         let anstyle_color = Ansi256Color::try_from(color);
-        assert_eq!(anstyle_color, Err(TryFromColorError::NotIndexedColor));
+        assert_eq!(anstyle_color, Err(TryFromColorError::Ansi256));
     }
 
     #[test]
@@ -254,7 +255,7 @@ mod tests {
     fn color_to_ansicolor_error() {
         let color = Color::Rgb(0, 0, 0);
         let ansi_color = AnsiColor::try_from(color);
-        assert_eq!(ansi_color, Err(TryFromColorError::NotAnsiColor));
+        assert_eq!(ansi_color, Err(TryFromColorError::Ansi));
     }
 
     #[test]
@@ -275,7 +276,7 @@ mod tests {
     fn color_to_rgbcolor_error() {
         let color = Color::Indexed(42);
         let rgb_color = RgbColor::try_from(color);
-        assert_eq!(rgb_color, Err(TryFromColorError::NotRgbColor));
+        assert_eq!(rgb_color, Err(TryFromColorError::RgbColor));
     }
 
     #[test]
