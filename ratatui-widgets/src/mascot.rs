@@ -39,6 +39,9 @@ const RATATUI_MASCOT: &str = indoc::indoc! {"
       ▒░░░░░░░░░░░░░░░░░░░░░▒ █"
 };
 
+const RAT: char = '█';
+const HAT: char = 'h';
+const EYE: char = 'e';
 const TERM: char = '░';
 const TERM_BORDER: char = '▒';
 const TERM_CURSOR: char = '▓';
@@ -97,7 +100,7 @@ impl RatatuiMascot {
         }
     }
 
-    /// Tiny help to set the color of the rat's eye
+    /// Set the eye state (open / blinking)
     #[must_use]
     pub const fn set_eye(self, rat_eye: MascotEye) -> Self {
         Self {
@@ -105,11 +108,12 @@ impl RatatuiMascot {
             ..self
         }
     }
+
     const fn color_for(&self, c: char) -> Option<Color> {
         match c {
-            '█' => Some(self.rat_color),
-            'h' => Some(self.hat_color),
-            'e' => Some(match self.eye_state {
+            RAT => Some(self.rat_color),
+            HAT => Some(self.hat_color),
+            EYE => Some(match self.eye_state {
                 MascotEye::Default => self.rat_eye_color,
                 MascotEye::Red => self.rat_eye_blink,
             }),
@@ -124,8 +128,8 @@ impl RatatuiMascot {
 impl Widget for RatatuiMascot {
     /// Use half block characters to render a logo based on the `RATATUI_LOGO` const.
     ///
-    /// The logo is rendered in three colors, one for the rat, one for the terminal, and one for the
-    /// rat's eye. The eye color alternates between two colors based on the selected row.
+    /// The logo colors are hardcorded in the widget.
+    /// The eye color depends on whether it's open / blinking
     fn render(self, area: Rect, buf: &mut Buffer) {
         for (y, (line1, line2)) in RATATUI_MASCOT.lines().tuples().enumerate() {
             for (x, (ch1, ch2)) in line1.chars().zip(line2.chars()).enumerate() {
@@ -144,10 +148,10 @@ impl Widget for RatatuiMascot {
                 // symbol should make the empty space or terminal bg as the empty part of the block
                 let symbol = match (ch1, ch2) {
                     (TERM, TERM) => ' ',
-                    (_c, ' ' | TERM) => '▀',
-                    (' ' | TERM, _c) => '▄',
+                    (_, ' ' | TERM) => '▀',
+                    (' ' | TERM, _) => '▄',
                     (c, d) if c == d => '█',
-                    (_c, _d) => '▀',
+                    (_, _) => '▀',
                 };
                 if let Some(fg) = fg {
                     cell.fg = fg;
@@ -178,6 +182,7 @@ mod tests {
         let mascot = RatatuiMascot::new().set_eye(MascotEye::Red);
         mascot.render(buf.area, &mut buf);
         assert_eq!(mascot.eye_state, MascotEye::Red);
+        assert_eq!(buf[(21, 5)].bg, Color::Indexed(196));
     }
 
     #[test]
@@ -186,5 +191,6 @@ mod tests {
         let mut buf = Buffer::empty(Rect::new(0, 0, 32, 32));
         mascot.render(buf.area, &mut buf);
         assert_eq!(buf.area.as_size(), (32, 32).into());
+        assert_eq!(buf[(21, 5)].bg, Color::Indexed(236));
     }
 }
