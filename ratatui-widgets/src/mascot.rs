@@ -41,6 +41,7 @@ const RATATUI_MASCOT: &str = indoc::indoc! {"
 
 const TERM: char = '░';
 const TERM_BORDER: char = '▒';
+const TERM_CURSOR: char = '▓';
 
 /// State for the mascot's eye
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -81,7 +82,7 @@ impl Default for RatatuiMascot {
             rat_eye_color: Color::Indexed(236),     // dark_charcoal #303030
             rat_eye_blink: Color::Indexed(196),     // red #ff0000
             term_color: Color::Indexed(232),        // vampire_black #080808
-            term_border_color: Color::Indexed(235), // raisin_black  #262626
+            term_border_color: Color::Indexed(244), // gray  #808080
             term_cursor_color: Color::Indexed(248), // dark_gray #a8a8a8
             eye_state: MascotEye::Default,
         }
@@ -112,9 +113,9 @@ impl RatatuiMascot {
                 MascotEye::Default => self.rat_eye_color,
                 MascotEye::Red => self.rat_eye_blink,
             }),
-            '░' => Some(self.term_color),
-            '▓' => Some(self.term_cursor_color),
-            '▒' => Some(self.term_border_color),
+            TERM => Some(Color::Reset), // use the terminal color
+            TERM_CURSOR => Some(self.term_cursor_color),
+            TERM_BORDER => Some(self.term_border_color),
             _ => None,
         }
     }
@@ -136,9 +137,8 @@ impl Widget for RatatuiMascot {
                 let (fg, bg) = match (ch1, ch2) {
                     (' ', ' ') => (None, None),
                     (c, ' ') | (' ', c) => (self.color_for(c), None),
-                    (TERM, TERM_BORDER) => (self.color_for(TERM_BORDER), Some(Color::default())),
-                    (TERM, c) => (Some(Color::default()), self.color_for(c)), // treat the terminal background cells as empty
-                    (c, TERM) => (self.color_for(c), Some(Color::default())), // rather than having a character
+                    (TERM, TERM_BORDER) => (self.color_for(TERM_BORDER), self.color_for(TERM)),
+                    (TERM, c) | (c, TERM) => (self.color_for(c), self.color_for(TERM)),
                     (c1, c2) => (self.color_for(c1), self.color_for(c2)),
                 };
                 // symbol should make the empty space or terminal bg as the empty part of the block
@@ -174,8 +174,10 @@ mod tests {
 
     #[test]
     fn set_eye_color() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 32, 32));
         let mascot = RatatuiMascot::new().set_eye(MascotEye::Red);
-        assert_eq!(mascot.eye_state, MascotEye::Red,);
+        mascot.render(buf.area, &mut buf);
+        assert_eq!(mascot.eye_state, MascotEye::Red);
     }
 
     #[test]
