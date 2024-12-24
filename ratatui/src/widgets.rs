@@ -43,6 +43,7 @@ pub use ratatui_widgets::{
     gauge::{Gauge, LineGauge},
     list::{List, ListDirection, ListItem, ListState},
     logo::{RatatuiLogo, Size as RatatuiLogoSize},
+    mascot::{MascotEye, RatatuiMascot},
     paragraph::{Paragraph, Wrap},
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline, SparklineBar},
