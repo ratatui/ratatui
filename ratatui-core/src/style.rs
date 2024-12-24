@@ -79,6 +79,8 @@ pub use color::{Color, ParseColorError};
 use stylize::ColorDebugKind;
 pub use stylize::{Styled, Stylize};
 
+#[cfg(feature = "anstyle")]
+mod anstyle;
 mod color;
 pub mod palette;
 #[cfg(feature = "palette")]
