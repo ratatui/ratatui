@@ -574,7 +574,7 @@ impl<'a> Context<'a> {
 /// set of symbols. If your terminal or font does not support this unicode block, you will see
 /// unicode replacement characters (�) instead of braille dots. The Braille patterns provide a more
 /// fine grained result (2x4 dots) but you might want to use a simple dot, block, or bar instead by
-/// calling the [`marker`] method if your target environment does not support those symbols,
+/// calling the [`marker`] method if your target environment does not support those symbols.
 ///
 /// See [Unicode Braille Patterns](https://en.wikipedia.org/wiki/Braille_Patterns) for more info.
 ///
