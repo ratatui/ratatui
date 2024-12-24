@@ -143,7 +143,7 @@ impl Widget for RatatuiMascot {
                 };
                 // symbol should make the empty space or terminal bg as the empty part of the block
                 let symbol = match (ch1, ch2) {
-                    (' ', ' ') | (TERM, TERM) => ' ',
+                    (TERM, TERM) => ' ',
                     (_c, ' ' | TERM) => '▀',
                     (' ' | TERM, _c) => '▄',
                     (c, d) if c == d => '█',
