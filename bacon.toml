@@ -16,40 +16,19 @@ command = ["cargo", "check", "--all-targets", "--all-features"]
 need_stdout = false
 
 [jobs.check-crossterm]
-command = [
-    "cargo",
-    "check",
-    "--all-targets",
-    "--no-default-features",
-    "--features",
-    "crossterm",
-]
+command = ["cargo", "check", "--all-targets", "--no-default-features", "--features", "crossterm"]
 need_stdout = false
 
 [jobs.check-termion]
-command = [
-    "cargo",
-    "check",
-    "--all-targets",
-    "--no-default-features",
-    "--features",
-    "termion",
-]
+command = ["cargo", "check", "--all-targets", "--no-default-features", "--features", "termion"]
 need_stdout = false
 
 [jobs.check-termwiz]
-command = [
-    "cargo",
-    "check",
-    "--all-targets",
-    "--no-default-features",
-    "--features",
-    "termwiz",
-]
+command = ["cargo", "check", "--all-targets", "--no-default-features", "--features", "termwiz"]
 need_stdout = false
 
-[jobs.clippy]
-command = ["cargo", "clippy", "--all-targets"]
+[jobs.clippy-all]
+command = ["cargo", "xtask", "lint-clippy"]
 need_stdout = false
 
 [jobs.test]
@@ -91,14 +70,7 @@ need_stdout = false
 on_success = "job:doc" # so that we don't open the browser at each change
 
 [jobs.coverage]
-command = [
-    "cargo",
-    "llvm-cov",
-    "--lcov",
-    "--output-path",
-    "target/lcov.info",
-    "--all-features",
-]
+command = ["cargo", "llvm-cov", "--lcov", "--output-path", "target/lcov.info", "--all-features"]
 
 [jobs.coverage-unit-tests-only]
 command = [
