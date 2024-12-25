@@ -15,7 +15,7 @@
 
 use std::{error::Error, time::Duration};
 
-use argh::FromArgs;
+use clap::Parser;
 
 mod app;
 #[cfg(feature = "crossterm")]
@@ -28,28 +28,29 @@ mod termwiz;
 mod ui;
 
 /// Demo
-#[derive(Debug, FromArgs)]
+#[derive(Debug, Parser)]
 struct Cli {
     /// time in ms between two ticks.
-    #[argh(option, default = "250")]
+    #[arg(short, long, default_value_t = 250)]
     tick_rate: u64,
+
     /// whether unicode symbols are used to improve the overall look of the app
-    #[argh(option, default = "true")]
-    enhanced_graphics: bool,
+    #[arg(short, long, default_value_t = true)]
+    unicode: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let cli: Cli = argh::from_env();
+    let cli = Cli::parse();
     let tick_rate = Duration::from_millis(cli.tick_rate);
     #[cfg(feature = "crossterm")]
-    crate::crossterm::run(tick_rate, cli.enhanced_graphics)?;
+    crate::crossterm::run(tick_rate, cli.unicode)?;
     #[cfg(all(not(windows), feature = "termion", not(feature = "crossterm")))]
-    crate::termion::run(tick_rate, cli.enhanced_graphics)?;
+    crate::termion::run(tick_rate, cli.unicode)?;
     #[cfg(all(
         feature = "termwiz",
         not(feature = "crossterm"),
         not(feature = "termion")
     ))]
-    crate::termwiz::run(tick_rate, cli.enhanced_graphics)?;
+    crate::termwiz::run(tick_rate, cli.unicode)?;
     Ok(())
 }
