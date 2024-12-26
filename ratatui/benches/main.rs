@@ -2,6 +2,7 @@ pub mod main {
     pub mod barchart;
     pub mod block;
     pub mod buffer;
+    pub mod crossterm;
     pub mod line;
     pub mod list;
     pub mod paragraph;
@@ -15,6 +16,7 @@ criterion::criterion_main!(
     barchart::benches,
     block::benches,
     buffer::benches,
+    crossterm::benches,
     line::benches,
     list::benches,
     paragraph::benches,
