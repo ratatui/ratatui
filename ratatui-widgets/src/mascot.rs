@@ -1,6 +1,6 @@
 //! A Ratatui mascot widget
 //!
-//! The mascot takes 32x32 cells and is rendered using half block characters.
+//! The mascot takes 32x16 cells and is rendered using half block characters.
 use itertools::Itertools;
 use ratatui_core::{buffer::Buffer, layout::Rect, style::Color, widgets::Widget}; // tuples();
 
@@ -39,6 +39,7 @@ const RATATUI_MASCOT: &str = indoc::indoc! {"
       ▒░░░░░░░░░░░░░░░░░░░░░▒ █"
 };
 
+const EMPTY: char = ' ';
 const RAT: char = '█';
 const HAT: char = 'h';
 const EYE: char = 'e';
@@ -48,7 +49,7 @@ const TERM_CURSOR: char = '▓';
 
 /// State for the mascot's eye
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum MascotEye {
+pub enum MascotEyeColor {
     /// The default eye color
     #[default]
     Default,
@@ -60,7 +61,7 @@ pub enum MascotEye {
 /// A widget that renders the Ratatui mascot
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RatatuiMascot {
-    eye_state: MascotEye,
+    eye_state: MascotEyeColor,
     /// The color of the rat
     rat_color: Color,
     /// The color of the rat's eye
@@ -87,7 +88,7 @@ impl Default for RatatuiMascot {
             term_color: Color::Indexed(232),        // vampire_black #080808
             term_border_color: Color::Indexed(244), // gray  #808080
             term_cursor_color: Color::Indexed(248), // dark_gray #a8a8a8
-            eye_state: MascotEye::Default,
+            eye_state: MascotEyeColor::Default,
         }
     }
 }
@@ -102,7 +103,7 @@ impl RatatuiMascot {
 
     /// Set the eye state (open / blinking)
     #[must_use]
-    pub const fn set_eye(self, rat_eye: MascotEye) -> Self {
+    pub const fn set_eye(self, rat_eye: MascotEyeColor) -> Self {
         Self {
             eye_state: rat_eye,
             ..self
@@ -114,10 +115,10 @@ impl RatatuiMascot {
             RAT => Some(self.rat_color),
             HAT => Some(self.hat_color),
             EYE => Some(match self.eye_state {
-                MascotEye::Default => self.rat_eye_color,
-                MascotEye::Red => self.rat_eye_blink,
+                MascotEyeColor::Default => self.rat_eye_color,
+                MascotEyeColor::Red => self.rat_eye_blink,
             }),
-            TERM => Some(Color::Reset), // use the terminal color
+            TERM => Some(self.term_color),
             TERM_CURSOR => Some(self.term_cursor_color),
             TERM_BORDER => Some(self.term_border_color),
             _ => None,
@@ -139,19 +140,20 @@ impl Widget for RatatuiMascot {
                 // given two cells which make up the top and bottom of the character,
                 // Foreground color should be the non-space, non-terminal
                 let (fg, bg) = match (ch1, ch2) {
-                    (' ', ' ') => (None, None),
-                    (c, ' ') | (' ', c) => (self.color_for(c), None),
+                    (EMPTY, EMPTY) => (None, None),
+                    (c, EMPTY) | (EMPTY, c) => (self.color_for(c), None),
                     (TERM, TERM_BORDER) => (self.color_for(TERM_BORDER), self.color_for(TERM)),
                     (TERM, c) | (c, TERM) => (self.color_for(c), self.color_for(TERM)),
                     (c1, c2) => (self.color_for(c1), self.color_for(c2)),
                 };
                 // symbol should make the empty space or terminal bg as the empty part of the block
                 let symbol = match (ch1, ch2) {
-                    (TERM, TERM) => ' ',
-                    (_, ' ' | TERM) => '▀',
-                    (' ' | TERM, _) => '▄',
-                    (c, d) if c == d => '█',
-                    (_, _) => '▀',
+                    (EMPTY, EMPTY) => None,
+                    (TERM, TERM) => Some(EMPTY),
+                    (_, EMPTY | TERM) => Some('▀'),
+                    (EMPTY | TERM, _) => Some('▄'),
+                    (c, d) if c == d => Some('█'),
+                    (_, _) => Some('▀'),
                 };
                 if let Some(fg) = fg {
                     cell.fg = fg;
@@ -159,7 +161,9 @@ impl Widget for RatatuiMascot {
                 if let Some(bg) = bg {
                     cell.bg = bg;
                 }
-                cell.set_char(symbol);
+                if let Some(symb) = symbol {
+                    cell.set_char(symb);
+                }
             }
         }
     }
@@ -173,24 +177,49 @@ mod tests {
     #[test]
     fn new_mascot() {
         let mascot = RatatuiMascot::new();
-        assert_eq!(mascot.eye_state, MascotEye::Default);
+        assert_eq!(mascot.eye_state, MascotEyeColor::Default);
     }
 
     #[test]
     fn set_eye_color() {
-        let mut buf = Buffer::empty(Rect::new(0, 0, 32, 32));
-        let mascot = RatatuiMascot::new().set_eye(MascotEye::Red);
+        let mut buf = Buffer::empty(Rect::new(0, 0, 32, 16));
+        let mascot = RatatuiMascot::new().set_eye(MascotEyeColor::Red);
         mascot.render(buf.area, &mut buf);
-        assert_eq!(mascot.eye_state, MascotEye::Red);
+        assert_eq!(mascot.eye_state, MascotEyeColor::Red);
         assert_eq!(buf[(21, 5)].bg, Color::Indexed(196));
     }
 
     #[test]
     fn render_mascot() {
         let mascot = RatatuiMascot::new();
-        let mut buf = Buffer::empty(Rect::new(0, 0, 32, 32));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 32, 16));
         mascot.render(buf.area, &mut buf);
-        assert_eq!(buf.area.as_size(), (32, 32).into());
+        assert_eq!(buf.area.as_size(), (32, 16).into());
         assert_eq!(buf[(21, 5)].bg, Color::Indexed(236));
+        assert_eq!(
+            buf.content.iter().map(|c| c.symbol()).collect::<String>(),
+            Buffer::with_lines([
+                "             ▄▄███              ",
+                "           ▄███████             ",
+                "         ▄█████████             ",
+                "        ████████████            ",
+                "        ▀███████████▀   ▄▄██████",
+                "              ▀███▀▄█▀▀████████ ",
+                "            ▄▄▄▄▀▄████████████  ",
+                "           ████████████████     ",
+                "           ▀███▀██████████      ",
+                "         ▄▀▀▄   █████████       ",
+                "       ▄▀ ▄  ▀▄▀█████████       ",
+                "     ▄▀  ▀▀    ▀▄▀███████       ",
+                "   ▄▀      ▄▄    ▀▄▀█████████   ",
+                " ▄▀         ▀▀     ▀▄▀██▀  ███  ",
+                "█                    ▀▄▀  ▄██   ",
+                " ▀▄                    ▀▄▀█     ",
+            ])
+            .content
+            .iter()
+            .map(|c| c.symbol())
+            .collect::<String>()
+        );
     }
 }

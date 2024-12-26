@@ -1,7 +1,9 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Layout, Margin, Rect},
-    widgets::{Block, Borders, Clear, MascotEye, Padding, Paragraph, RatatuiMascot, Widget, Wrap},
+    widgets::{
+        Block, Borders, Clear, MascotEyeColor, Padding, Paragraph, RatatuiMascot, Widget, Wrap,
+    },
 };
 
 use crate::{RgbSwatch, THEME};
@@ -28,9 +30,9 @@ impl Widget for AboutTab {
         let [logo_area, description] = horizontal.areas(area);
         render_crate_description(description, buf);
         let eye_state = if self.row_index % 2 == 0 {
-            MascotEye::Default
+            MascotEyeColor::Default
         } else {
-            MascotEye::Red
+            MascotEyeColor::Red
         };
         RatatuiMascot::default().set_eye(eye_state).render(
             logo_area.inner(Margin {
