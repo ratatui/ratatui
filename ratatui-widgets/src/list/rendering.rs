@@ -1,9 +1,9 @@
 use ratatui_core::{
     buffer::Buffer,
     layout::Rect,
+    text::Line,
     widgets::{StatefulWidget, Widget},
 };
-use unicode_width::UnicodeWidthStr;
 
 use crate::{
     block::BlockExt,
@@ -62,8 +62,13 @@ impl StatefulWidget for &List<'_> {
         state.offset = first_visible_index;
 
         // Get our set highlighted symbol (if one was set)
-        let highlight_symbol = self.highlight_symbol.unwrap_or("");
-        let blank_symbol = " ".repeat(highlight_symbol.width());
+        let default_highlight_symbol = Line::default();
+        let highlight_symbol = self
+            .highlight_symbol
+            .as_ref()
+            .unwrap_or(&default_highlight_symbol);
+        let highlight_symbol_width = highlight_symbol.width() as u16;
+        let empty_symbol = " ".repeat(highlight_symbol_width as usize);
 
         let mut current_height = 0;
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
@@ -96,7 +101,6 @@ impl StatefulWidget for &List<'_> {
             let is_selected = state.selected == Some(i);
 
             let item_area = if selection_spacing {
-                let highlight_symbol_width = self.highlight_symbol.unwrap_or("").width() as u16;
                 Rect {
                     x: row_area.x + highlight_symbol_width,
                     width: row_area.width.saturating_sub(highlight_symbol_width),
@@ -107,28 +111,26 @@ impl StatefulWidget for &List<'_> {
             };
             Widget::render(&item.content, item_area, buf);
 
+            if is_selected {
+                buf.set_style(row_area, self.highlight_style);
+            }
             if selection_spacing {
                 for j in 0..item.content.height() {
                     // if the item is selected, we need to display the highlight symbol:
                     // - either for the first line of the item only,
                     // - or for each line of the item if the appropriate option is set
-                    let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
-                        highlight_symbol
+                    if is_selected && (j == 0 || self.repeat_highlight_symbol) {
+                        buf.set_line(x, y + j as u16, highlight_symbol, list_area.width);
                     } else {
-                        &blank_symbol
+                        buf.set_stringn(
+                            x,
+                            y + j as u16,
+                            &empty_symbol,
+                            list_area.width as usize,
+                            item_style,
+                        );
                     };
-                    buf.set_stringn(
-                        x,
-                        y + j as u16,
-                        symbol,
-                        list_area.width as usize,
-                        item_style,
-                    );
                 }
-            }
-
-            if is_selected {
-                buf.set_style(row_area, self.highlight_style);
             }
         }
     }
@@ -676,6 +678,25 @@ mod tests {
     }
 
     #[test]
+    fn highlight_symbol_style_and_style() {
+        let list = List::new(["Item 0", "Item 1", "Item 2"])
+            .highlight_symbol(Line::from(">>").red().bold())
+            .highlight_style(Style::default().fg(Color::Yellow));
+        let mut state = ListState::default();
+        state.select(Some(1));
+        let buffer = stateful_widget(list, &mut state, 10, 5);
+        let mut expected = Buffer::with_lines([
+            "  Item 0  ".into(),
+            ">>Item 1  ".yellow(),
+            "  Item 2  ".into(),
+            "          ".into(),
+            "          ".into(),
+        ]);
+        expected.set_style(Rect::new(0, 1, 2, 1), Style::new().red().bold());
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
     fn highlight_spacing_default_when_selected() {
         // when not selected
         {
@@ -788,19 +809,20 @@ mod tests {
     #[test]
     fn repeat_highlight_symbol() {
         let list = List::new(["Item 0\nLine 2", "Item 1", "Item 2"])
-            .highlight_symbol(">>")
+            .highlight_symbol(Line::from(">>").red().bold())
             .highlight_style(Style::default().fg(Color::Yellow))
             .repeat_highlight_symbol(true);
         let mut state = ListState::default();
         state.select(Some(0));
         let buffer = stateful_widget(list, &mut state, 10, 5);
-        let expected = Buffer::with_lines([
+        let mut expected = Buffer::with_lines([
             ">>Item 0  ".yellow(),
             ">>Line 2  ".yellow(),
             "  Item 1  ".into(),
             "  Item 2  ".into(),
             "          ".into(),
         ]);
+        expected.set_style(Rect::new(0, 0, 2, 2), Style::new().red().bold());
         assert_eq!(buffer, expected);
     }
 
