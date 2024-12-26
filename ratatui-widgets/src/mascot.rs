@@ -197,7 +197,7 @@ mod tests {
         assert_eq!(buf.area.as_size(), (32, 16).into());
         assert_eq!(buf[(21, 5)].bg, Color::Indexed(236));
         assert_eq!(
-            buf.content.iter().map(|c| c.symbol()).collect::<String>(),
+            buf.content.iter().map(ratatui_core::buffer::Cell::symbol).collect::<String>(),
             Buffer::with_lines([
                 "             ▄▄███              ",
                 "           ▄███████             ",
@@ -218,7 +218,7 @@ mod tests {
             ])
             .content
             .iter()
-            .map(|c| c.symbol())
+            .map(ratatui_core::buffer::Cell::symbol)
             .collect::<String>()
         );
     }
