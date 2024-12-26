@@ -1,46 +1,12 @@
-use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Layout, Margin, Rect},
-    widgets::{Block, Borders, Clear, Padding, Paragraph, Widget, Wrap},
+    widgets::{
+        Block, Borders, Clear, MascotEyeColor, Padding, Paragraph, RatatuiMascot, Widget, Wrap,
+    },
 };
 
 use crate::{RgbSwatch, THEME};
-
-const RATATUI_LOGO: [&str; 32] = [
-    "               ███              ",
-    "             ██████             ",
-    "            ███████             ",
-    "           ████████             ",
-    "          █████████             ",
-    "         ██████████             ",
-    "        ████████████            ",
-    "        █████████████           ",
-    "        █████████████     ██████",
-    "         ███████████    ████████",
-    "              █████ ███████████ ",
-    "               ███ ██ee████████ ",
-    "                █ █████████████ ",
-    "            ████ █████████████  ",
-    "           █████████████████    ",
-    "           ████████████████     ",
-    "           ████████████████     ",
-    "            ███ ██████████      ",
-    "          ██    █████████       ",
-    "         █xx█   █████████       ",
-    "        █xxxx█ ██████████       ",
-    "       █xx█xxx█ █████████       ",
-    "      █xx██xxxx█ ████████       ",
-    "     █xxxxxxxxxx█ ██████████    ",
-    "    █xxxxxxxxxxxx█ ██████████   ",
-    "   █xxxxxxx██xxxxx█ █████████   ",
-    "  █xxxxxxxxx██xxxxx█ ████  ███  ",
-    " █xxxxxxxxxxxxxxxxxx█ ██   ███  ",
-    "█xxxxxxxxxxxxxxxxxxxx█ █   ███  ",
-    "█xxxxxxxxxxxxxxxxxxxxx█   ███   ",
-    " █xxxxxxxxxxxxxxxxxxxxx█ ███    ",
-    "  █xxxxxxxxxxxxxxxxxxxxx█ █     ",
-];
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct AboutTab {
@@ -61,9 +27,20 @@ impl Widget for AboutTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
         let horizontal = Layout::horizontal([Constraint::Length(34), Constraint::Min(0)]);
-        let [description, logo] = horizontal.areas(area);
+        let [logo_area, description] = horizontal.areas(area);
         render_crate_description(description, buf);
-        render_logo(self.row_index, logo, buf);
+        let eye_state = if self.row_index % 2 == 0 {
+            MascotEyeColor::Default
+        } else {
+            MascotEyeColor::Red
+        };
+        RatatuiMascot::default().set_eye(eye_state).render(
+            logo_area.inner(Margin {
+                vertical: 0,
+                horizontal: 2,
+            }),
+            buf,
+        );
     }
 }
 
@@ -95,71 +72,4 @@ fn render_crate_description(area: Rect, buf: &mut Buffer) {
         .wrap(Wrap { trim: true })
         .scroll((0, 0))
         .render(area, buf);
-}
-
-/// Use half block characters to render a logo based on the `RATATUI_LOGO` const.
-///
-/// The logo is rendered in three colors, one for the rat, one for the terminal, and one for the
-/// rat's eye. The eye color alternates between two colors based on the selected row.
-#[allow(clippy::cast_possible_truncation)]
-pub fn render_logo(selected_row: usize, area: Rect, buf: &mut Buffer) {
-    let eye_color = if selected_row % 2 == 0 {
-        THEME.logo.rat_eye
-    } else {
-        THEME.logo.rat_eye_alt
-    };
-    let area = area.inner(Margin {
-        vertical: 0,
-        horizontal: 2,
-    });
-    for (y, (line1, line2)) in RATATUI_LOGO.iter().tuples().enumerate() {
-        for (x, (ch1, ch2)) in line1.chars().zip(line2.chars()).enumerate() {
-            let x = area.left() + x as u16;
-            let y = area.top() + y as u16;
-            let cell = &mut buf[(x, y)];
-            let rat_color = THEME.logo.rat;
-            let term_color = THEME.logo.term;
-            match (ch1, ch2) {
-                ('█', '█') => {
-                    cell.set_char('█');
-                    cell.fg = rat_color;
-                    cell.bg = rat_color;
-                }
-                ('█', ' ') => {
-                    cell.set_char('▀');
-                    cell.fg = rat_color;
-                }
-                (' ', '█') => {
-                    cell.set_char('▄');
-                    cell.fg = rat_color;
-                }
-                ('█', 'x') => {
-                    cell.set_char('▀');
-                    cell.fg = rat_color;
-                    cell.bg = term_color;
-                }
-                ('x', '█') => {
-                    cell.set_char('▄');
-                    cell.fg = rat_color;
-                    cell.bg = term_color;
-                }
-                ('x', 'x') => {
-                    cell.set_char(' ');
-                    cell.fg = term_color;
-                    cell.bg = term_color;
-                }
-                ('█', 'e') => {
-                    cell.set_char('▀');
-                    cell.fg = rat_color;
-                    cell.bg = eye_color;
-                }
-                ('e', '█') => {
-                    cell.set_char('▄');
-                    cell.fg = rat_color;
-                    cell.bg = eye_color;
-                }
-                (_, _) => {}
-            };
-        }
-    }
 }

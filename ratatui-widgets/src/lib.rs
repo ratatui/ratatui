@@ -43,6 +43,7 @@
 //! - [`LineGauge`]: displays progress as a line.
 //! - [`List`]: displays a list of items and allows selection.
 //! - [`RatatuiLogo`]: displays the Ratatui logo.
+//! - [`RatatuiMascot`]: displays the Ratatui mascot.
 //! - [`Paragraph`]: displays a paragraph of optionally styled and wrapped text.
 //! - [`Scrollbar`]: displays a scrollbar.
 //! - [`Sparkline`]: displays a single dataset as a sparkline.
@@ -59,6 +60,7 @@
 //! [`LineGauge`]: crate::gauge::LineGauge
 //! [`List`]: crate::list::List
 //! [`RatatuiLogo`]: crate::logo::RatatuiLogo
+//! [`RatatuiMascot`]: crate::mascot::RatatuiMascot
 //! [`Paragraph`]: crate::paragraph::Paragraph
 //! [`Scrollbar`]: crate::scrollbar::Scrollbar
 //! [`Sparkline`]: crate::sparkline::Sparkline
@@ -86,6 +88,7 @@ pub mod clear;
 pub mod gauge;
 pub mod list;
 pub mod logo;
+pub mod mascot;
 pub mod paragraph;
 pub mod scrollbar;
 pub mod sparkline;

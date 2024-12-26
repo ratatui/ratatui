@@ -25,6 +25,8 @@
 //! - [`Sparkline`]: display a single data set as a sparkline.
 //! - [`Table`]: displays multiple rows and columns in a grid and allows selection.
 //! - [`Tabs`]: displays a tab bar and allows selection.
+//! - [`RatatuiLogo`]: displays the Ratatui logo.
+//! - [`RatatuiMascot`]: displays the Ratatui mascot.
 //!
 //! [`Canvas`]: crate::widgets::canvas::Canvas
 
@@ -43,6 +45,7 @@ pub use ratatui_widgets::{
     gauge::{Gauge, LineGauge},
     list::{List, ListDirection, ListItem, ListState},
     logo::{RatatuiLogo, Size as RatatuiLogoSize},
+    mascot::{MascotEyeColor, RatatuiMascot},
     paragraph::{Paragraph, Wrap},
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline, SparklineBar},

@@ -44,6 +44,7 @@ cargo add ratatui-widgets
 - [`LineGauge`]: displays progress as a line.
 - [`List`]: displays a list of items and allows selection.
 - [`RatatuiLogo`]: displays the Ratatui logo.
+- [`RatatuiMascot`]: displays the Ratatui mascot.
 - [`Paragraph`]: displays a paragraph of optionally styled and wrapped text.
 - [`Scrollbar`]: displays a scrollbar.
 - [`Sparkline`]: displays a single dataset as a sparkline.
@@ -60,6 +61,7 @@ cargo add ratatui-widgets
 [`LineGauge`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/gauge/struct.LineGauge.html
 [`List`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/list/struct.List.html
 [`RatatuiLogo`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/logo/struct.RatatuiLogo.html
+[`RatatuiMascot`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/mascot/struct.RatatuiMascot.html
 [`Paragraph`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/paragraph/struct.Paragraph.html
 [`Scrollbar`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/scrollbar/struct.Scrollbar.html
 [`Sparkline`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/sparkline/struct.Sparkline.html
