@@ -13,7 +13,7 @@ This is a quick summary of the sections below:
 - [Unreleased](#unreleased)
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
-  - `List::hightlight_symbol` cannot be used in const context
+  - `List::highlight_symbol` cannot be used in const context
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
