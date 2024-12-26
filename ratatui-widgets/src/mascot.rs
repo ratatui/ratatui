@@ -86,7 +86,7 @@ impl Default for RatatuiMascot {
             rat_eye_color: Color::Indexed(236),     // dark_charcoal #303030
             rat_eye_blink: Color::Indexed(196),     // red #ff0000
             term_color: Color::Indexed(232),        // vampire_black #080808
-            term_border_color: Color::Indexed(244), // gray  #808080
+            term_border_color: Color::Indexed(237), // gray  #808080
             term_cursor_color: Color::Indexed(248), // dark_gray #a8a8a8
             eye_state: MascotEyeColor::Default,
         }
