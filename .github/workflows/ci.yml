@@ -114,7 +114,7 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo xtask check
+      - run: cargo xtask check-all
 
   # Check if README.md is up-to-date with the crate's documentation.
   check-readme:

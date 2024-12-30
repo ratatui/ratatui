@@ -4995,6 +4995,7 @@ dependencies = [
  "clap-verbosity-flag",
  "color-eyre",
  "duct",
+ "itertools 0.13.0",
  "taplo-cli",
  "tracing",
  "tracing-log",

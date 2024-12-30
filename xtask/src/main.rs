@@ -11,6 +11,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use color_eyre::{eyre::Context, Result};
 use duct::cmd;
+use itertools::{Itertools, Position};
 use tracing::level_filters::LevelFilter;
 use tracing_log::AsTrace;
 
@@ -65,6 +66,22 @@ enum Command {
     #[command(visible_alias = "c")]
     Check,
 
+    /// Run cargo check (all features)
+    #[command(visible_alias = "ca")]
+    CheckAll,
+
+    /// Run cargo check with crossterm feature
+    #[command(visible_alias = "cc")]
+    CheckCrossterm,
+
+    /// Run cargo check with termion feature
+    #[command(visible_alias = "ct")]
+    CheckTermion,
+
+    /// Run cargo check with termwiz feature
+    #[command(visible_alias = "cw")]
+    CheckTermwiz,
+
     /// Check if README.md is up-to-date
     #[command(visible_alias = "cr")]
     CheckReadme,
@@ -72,6 +89,10 @@ enum Command {
     /// Generate code coverage report
     #[command(visible_alias = "cov")]
     Coverage,
+
+    /// Generate code coverage for unit tests only
+    #[command(visible_alias = "covu")]
+    CoverageUnit,
 
     /// Lint formatting, typos, clippy, and docs
     #[command(visible_alias = "l")]
@@ -84,6 +105,10 @@ enum Command {
     /// Check documentation for errors and warnings
     #[command(visible_alias = "d")]
     LintDocs,
+
+    /// Check documentation for errors and warnings and open in the browser
+    #[command(visible_alias = "do")]
+    LintDocsOpen,
 
     /// Check for formatting issues in the project
     #[command(visible_alias = "lf")]
@@ -128,6 +153,10 @@ enum Command {
     /// Run lib tests
     #[command(visible_alias = "tl")]
     TestLibs,
+
+    /// Run cargo hack to test each feature in isolation
+    #[command(visible_alias = "h")]
+    Hack,
 }
 
 #[derive(Clone, Debug, ValueEnum, PartialEq, Eq)]
@@ -143,11 +172,17 @@ impl Command {
             Command::CI => ci(),
             Command::Build => build(),
             Command::Check => check(),
+            Command::CheckAll => check_all(),
+            Command::CheckCrossterm => check_crossterm(),
+            Command::CheckTermion => check_termion(),
+            Command::CheckTermwiz => check_termwiz(),
             Command::CheckReadme => check_readme(),
             Command::Coverage => coverage(),
+            Command::CoverageUnit => coverage_unit(),
             Command::Lint => lint(),
             Command::LintClippy => lint_clippy(),
             Command::LintDocs => lint_docs(),
+            Command::LintDocsOpen => lint_docs_open(),
             Command::LintFormatting => lint_format(),
             Command::LintTypos => lint_typos(),
             Command::LintMarkdown => lint_markdown(),
@@ -159,6 +194,7 @@ impl Command {
             Command::TestBackend { backend } => test_backend(backend),
             Command::TestDocs => test_docs(),
             Command::TestLibs => test_libs(),
+            Command::Hack => hack(),
         }
     }
 }
@@ -178,7 +214,48 @@ fn build() -> Result<()> {
 
 /// Run cargo check
 fn check() -> Result<()> {
+    run_cargo(vec!["check", "--all-targets"])
+}
+
+/// Run cargo check (all features)
+fn check_all() -> Result<()> {
     run_cargo(vec!["check", "--all-targets", "--all-features"])
+}
+
+/// Run cargo check with crossterm feature
+fn check_crossterm() -> Result<()> {
+    run_cargo(vec![
+        "check",
+        "--all-targets",
+        "--all-features",
+        "--no-default-features",
+        "--features",
+        "crossterm",
+    ])
+}
+
+/// Run cargo check with termion feature
+fn check_termion() -> Result<()> {
+    run_cargo(vec![
+        "check",
+        "--all-targets",
+        "--all-features",
+        "--no-default-features",
+        "--features",
+        "termion",
+    ])
+}
+
+/// Run cargo check with termwiz feature
+fn check_termwiz() -> Result<()> {
+    run_cargo(vec![
+        "check",
+        "--all-targets",
+        "--all-features",
+        "--no-default-features",
+        "--features",
+        "termwiz",
+    ])
 }
 
 /// Run cargo-rdme to check if README.md is up-to-date with the library documentation
@@ -204,6 +281,18 @@ fn coverage() -> Result<()> {
         "--output-path",
         "target/lcov.info",
         "--all-features",
+    ])
+}
+
+/// Generate code coverage for unit tests only
+fn coverage_unit() -> Result<()> {
+    run_cargo(vec![
+        "llvm-cov",
+        "--lcov",
+        "--output-path",
+        "target/lcov-unit.info",
+        "--all-features",
+        "--lib",
     ])
 }
 
@@ -253,6 +342,22 @@ fn lint_docs() -> Result<()> {
     for package in workspace_packages(TargetKind::Lib)? {
         run_cargo_nightly(vec!["docs-rs", "--package", &package])?;
     }
+    Ok(())
+}
+
+fn lint_docs_open() -> Result<()> {
+    let packages = workspace_packages(TargetKind::Lib)?;
+    for (position, package) in packages.iter().with_position() {
+        match position {
+            Position::First | Position::Middle => {
+                run_cargo_nightly(vec!["docs-rs", "--package", &package])?;
+            }
+            Position::Last | Position::Only => {
+                run_cargo_nightly(vec!["docs-rs", "--package", &package, "--open"])?;
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -338,7 +443,18 @@ fn test_docs() -> Result<()> {
 
 /// Run lib tests for the workspace's default packages
 fn test_libs() -> Result<()> {
-    run_cargo(vec!["test", "--all-targets", "--all-features"])
+    run_cargo(vec!["test", "--lib", "--all-targets", "--all-features"])
+}
+
+/// Run cargo hack to test each feature in isolation
+fn hack() -> Result<()> {
+    run_cargo(vec![
+        "hack",
+        "test",
+        "--lib",
+        "--each-feature",
+        "--workspace",
+    ])
 }
 
 /// Run a cargo subcommand with the default toolchain

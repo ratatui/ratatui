@@ -11,6 +11,7 @@ clap-cargo = { version = "0.15.1", features = ["cargo_metadata"] }
 clap-verbosity-flag = "3.0.2"
 color-eyre = "0.6.3"
 duct = "0.13.7"
+itertools.workspace = true
 taplo-cli = "0.9.3"
 tracing = "0.1.40"
 tracing-log = "0.2.0"
