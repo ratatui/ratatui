@@ -28,6 +28,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
         with: { components: rustfmt }
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: taplo-cli
       - run: cargo xtask format --check
 
   # Check for typos in the codebase.
@@ -67,7 +71,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with: { components: clippy }
       - uses: Swatinem/rust-cache@v2
-      - run: cargo xtask lint-clippy
+      - run: cargo xtask clippy
 
   # Run markdownlint on all markdown files in the repository.
   lint-markdown:
