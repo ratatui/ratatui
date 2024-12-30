@@ -102,7 +102,7 @@ enum Command {
     FixClippy,
 
     /// Fix formatting issues in the project
-    #[command(visible_alias = "fmt")]
+    #[command(visible_alias = "fmt", alias = "format")]
     FixFormatting,
 
     /// Fix README.md (by running cargo-rdme)
@@ -272,12 +272,16 @@ fn workspace_packages(kind: TargetKind) -> Result<Vec<String>> {
 
 /// Lint formatting issues in the project
 fn lint_format() -> Result<()> {
-    run_cargo_nightly(vec!["fmt", "--all", "--check"])
+    run_cargo_nightly(vec!["fmt", "--all", "--check"])?;
+    cmd!("taplo", "format", "--check").run_with_trace()?;
+    Ok(())
 }
 
 /// Fix formatting issues in the project
 fn fix_format() -> Result<()> {
-    run_cargo_nightly(vec!["fmt", "--all"])
+    run_cargo_nightly(vec!["fmt", "--all"])?;
+    cmd!("taplo", "format").run_with_trace()?;
+    Ok(())
 }
 
 /// Lint markdown files using [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
