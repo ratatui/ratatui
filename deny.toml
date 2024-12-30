@@ -4,16 +4,16 @@
 version = 2
 confidence-threshold = 0.8
 allow = [
-    "Apache-2.0",
-    "BSD-2-Clause",
-    "BSD-3-Clause",
-    "ISC",
-    "MIT",
-    "OpenSSL",
-    "Unicode-3.0",
-    "Unicode-DFS-2016",
-    "WTFPL",
-    "Zlib",
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "MIT",
+  "OpenSSL",
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+  "WTFPL",
+  "Zlib",
 ]
 
 [advisories]

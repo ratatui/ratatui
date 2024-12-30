@@ -48,17 +48,17 @@ unstable-rendered-line-info = []
 
 [dependencies]
 bitflags.workspace = true
-itertools.workspace = true
+document-features = { workspace = true, optional = true }
 indoc.workspace = true
 instability.workspace = true
+itertools.workspace = true
+line-clipping = "0.2.1"
 ratatui-core = { workspace = true }
+serde = { workspace = true, optional = true }
 strum.workspace = true
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation.workspace = true
 unicode-width.workspace = true
-serde = { workspace = true, optional = true }
-document-features = { workspace = true, optional = true }
-line-clipping = "0.2.1"
 
 [dev-dependencies]
 color-eyre.workspace = true

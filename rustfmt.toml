@@ -1,9 +1,9 @@
 # configuration for https://rust-lang.github.io/rustfmt/
 comment_width = 100
 format_code_in_doc_comments = true
-format_macro_matchers=true
+format_macro_matchers = true
 group_imports = "StdExternalCrate"
 imports_granularity = "Crate"
-normalize_doc_attributes=true
-use_field_init_shorthand=true
+normalize_doc_attributes = true
+use_field_init_shorthand = true
 wrap_comments = true

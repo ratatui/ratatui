@@ -32,17 +32,17 @@ schema_pattern = "(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)
 type = "list"
 name = "change_type"
 choices = [
-    { value = "build", name = "build: Changes that affect the build system or external dependencies (example scopes: pip, docker, npm)", key = "b" },
-    { value = "chore", name = "chore: A modification that generally does not fall into any other category", key = "c" },
-    { value = "ci", name = "ci: Changes to our CI configuration files and scripts (example scopes: GitLabCI)", key = "i" },
-    { value = "docs", name = "docs: Documentation only changes", key = "d" },
-    { value = "feat", name = "feat: A new feature.", key = "f" },
-    { value = "fix", name = "fix: A bug fix.", key = "x" },
-    { value = "perf", name = "perf: A code change that improves performance", key = "p" },
-    { value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature", key = "r" },
-    { value = "revert", name = "revert: Revert previous commits", key = "v" },
-    { value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)", key = "s" },
-    { value = "test", name = "test: Adding missing or correcting existing tests", key = "t" },
+  { value = "build", name = "build: Changes that affect the build system or external dependencies (example scopes: pip, docker, npm)", key = "b" },
+  { value = "chore", name = "chore: A modification that generally does not fall into any other category", key = "c" },
+  { value = "ci", name = "ci: Changes to our CI configuration files and scripts (example scopes: GitLabCI)", key = "i" },
+  { value = "docs", name = "docs: Documentation only changes", key = "d" },
+  { value = "feat", name = "feat: A new feature.", key = "f" },
+  { value = "fix", name = "fix: A bug fix.", key = "x" },
+  { value = "perf", name = "perf: A code change that improves performance", key = "p" },
+  { value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature", key = "r" },
+  { value = "revert", name = "revert: Revert previous commits", key = "v" },
+  { value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)", key = "s" },
+  { value = "test", name = "test: Adding missing or correcting existing tests", key = "t" },
 ]
 message = "Select the type of change you are committing"
 
