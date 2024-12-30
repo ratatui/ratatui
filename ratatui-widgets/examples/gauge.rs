@@ -80,6 +80,7 @@ pub fn render_line_gauge(frame: &mut Frame, area: Rect) {
         .unfilled_style(Style::new().gray().on_black())
         .label("❤️ HP")
         .ratio(0.42)
-        .line_set(symbols::line::THICK);
+        .filled_symbol(symbols::line::THICK_HORIZONTAL)
+        .unfilled_symbol(symbols::line::THICK_HORIZONTAL);
     frame.render_widget(line_gauge, area);
 }
