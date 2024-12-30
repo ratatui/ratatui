@@ -12,7 +12,7 @@ command = ["cargo", "xtask", "check"]
 need_stdout = false
 
 [jobs.check-all]
-command = ["cargo", "xtask", "check-all"]
+command = ["cargo", "xtask", "check", "--all-features"]
 need_stdout = false
 
 [jobs.check-crossterm]
@@ -28,7 +28,7 @@ command = ["cargo", "xtask", "check-termwiz"]
 need_stdout = false
 
 [jobs.clippy-all]
-command = ["cargo", "xtask", "lint-clippy"]
+command = ["cargo", "xtask", "clippy"]
 need_stdout = false
 
 [jobs.test]
@@ -40,11 +40,11 @@ command = ["cargo", "xtask", "test-libs"]
 need_stdout = true
 
 [jobs.doc]
-command = ["cargo", "xtask", "lint-docs"]
+command = ["cargo", "xtask", "docs"]
 need_stdout = false
 
 [jobs.doc-open]
-command = ["cargo", "xtask", "lint-docs-open"]
+command = ["cargo", "xtask", "docs", "--open"]
 on_success = "job:doc"
 need_stdout = false
 
@@ -52,7 +52,7 @@ need_stdout = false
 command = ["cargo", "xtask", "coverage"]
 
 [jobs.coverage-unit-tests-only]
-command = ["cargo", "xtask", "coverage-unit-tests-only"]
+command = ["cargo", "xtask", "coverage-unit"]
 
 [jobs.hack]
 command = ["cargo", "xtask", "hack"]

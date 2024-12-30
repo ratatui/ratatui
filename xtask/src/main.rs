@@ -12,14 +12,12 @@ use clap_verbosity_flag::{InfoLevel, Verbosity};
 use color_eyre::{eyre::Context, Result};
 use duct::cmd;
 use itertools::{Itertools, Position};
-use tracing::level_filters::LevelFilter;
-use tracing_log::AsTrace;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
     let args = Args::parse();
     tracing_subscriber::fmt()
-        .with_max_level(args.log_level())
+        .with_max_level(args.verbosity)
         .without_time()
         .init();
 
@@ -47,10 +45,6 @@ impl Args {
     fn run(self) -> Result<()> {
         self.command.run()
     }
-
-    fn log_level(&self) -> LevelFilter {
-        self.verbosity.log_level_filter().as_trace()
-    }
 }
 
 #[derive(Clone, Debug, Subcommand)]
@@ -62,13 +56,8 @@ enum Command {
     #[command(visible_alias = "b")]
     Build,
 
-    /// Run cargo check
     #[command(visible_alias = "c")]
-    Check,
-
-    /// Run cargo check (all features)
-    #[command(visible_alias = "ca")]
-    CheckAll,
+    Check(CheckCommand),
 
     /// Run cargo check with crossterm feature
     #[command(visible_alias = "cc")]
@@ -82,9 +71,9 @@ enum Command {
     #[command(visible_alias = "cw")]
     CheckTermwiz,
 
-    /// Check if README.md is up-to-date
-    #[command(visible_alias = "cr")]
-    CheckReadme,
+    /// Check if README.md is up-to-date (using cargo-rdme)
+    #[command(visible_alias = "cr", alias = "rdme")]
+    Readme(ReadmeCommand),
 
     /// Generate code coverage report
     #[command(visible_alias = "cov")]
@@ -100,43 +89,23 @@ enum Command {
 
     /// Run clippy on the project
     #[command(visible_alias = "cl")]
-    LintClippy,
+    Clippy(ClippyCommand),
 
     /// Check documentation for errors and warnings
-    #[command(visible_alias = "d")]
-    LintDocs,
-
-    /// Check documentation for errors and warnings and open in the browser
-    #[command(visible_alias = "do")]
-    LintDocsOpen,
+    #[command(name = "docs", visible_alias = "d")]
+    Docs(DocsCommand),
 
     /// Check for formatting issues in the project
-    #[command(visible_alias = "lf")]
-    LintFormatting,
+    #[command(visible_aliases = ["fmt", "f"])]
+    Format(FormatCommand),
 
     /// Lint markdown files
     #[command(visible_alias = "md")]
     LintMarkdown,
 
     /// Check for typos in the project
-    #[command(visible_alias = "lt")]
-    LintTypos,
-
-    /// Fix clippy warnings in the project
-    #[command(visible_alias = "fc")]
-    FixClippy,
-
-    /// Fix formatting issues in the project
-    #[command(visible_alias = "fmt", alias = "format")]
-    FixFormatting,
-
-    /// Fix README.md (by running cargo-rdme)
-    #[command(visible_alias = "fr")]
-    FixReadme,
-
-    /// Fix typos in the project
-    #[command(visible_alias = "typos")]
-    FixTypos,
+    #[command(visible_alias = "ty")]
+    Typos(TyposCommand),
 
     /// Run tests
     #[command(visible_alias = "t")]
@@ -159,6 +128,54 @@ enum Command {
     Hack,
 }
 
+/// Run cargo check
+#[derive(Clone, Debug, clap::Args)]
+struct CheckCommand {
+    /// Check all features
+    #[arg(long, visible_alias = "all")]
+    all_features: bool,
+}
+
+/// Check documentation for errors and warnings
+#[derive(Clone, Debug, clap::Args)]
+struct DocsCommand {
+    /// Open the documentation in the browser
+    #[arg(long)]
+    open: bool,
+}
+
+/// Check for formatting issues in the project
+#[derive(Clone, Debug, clap::Args)]
+struct FormatCommand {
+    /// Check formatting issues
+    #[arg(long)]
+    check: bool,
+}
+
+/// Run clippy on the project
+#[derive(Clone, Debug, clap::Args)]
+struct ClippyCommand {
+    /// Fix clippy warnings
+    #[arg(long)]
+    fix: bool,
+}
+
+/// Check if README.md is up-to-date (using cargo-rdme)
+#[derive(Clone, Debug, clap::Args)]
+struct ReadmeCommand {
+    /// Check if README.md is up-to-date
+    #[arg(long)]
+    check: bool,
+}
+
+/// Check for typos in the project
+#[derive(Clone, Debug, clap::Args)]
+struct TyposCommand {
+    /// Fix typos
+    #[arg(long)]
+    fix: bool,
+}
+
 #[derive(Clone, Debug, ValueEnum, PartialEq, Eq)]
 enum Backend {
     Crossterm,
@@ -171,25 +188,19 @@ impl Command {
         match self {
             Command::CI => ci(),
             Command::Build => build(),
-            Command::Check => check(),
-            Command::CheckAll => check_all(),
+            Command::Check(command) => command.run(),
             Command::CheckCrossterm => check_crossterm(),
             Command::CheckTermion => check_termion(),
             Command::CheckTermwiz => check_termwiz(),
-            Command::CheckReadme => check_readme(),
+            Command::Readme(command) => command.run(),
             Command::Coverage => coverage(),
             Command::CoverageUnit => coverage_unit(),
             Command::Lint => lint(),
-            Command::LintClippy => lint_clippy(),
-            Command::LintDocs => lint_docs(),
-            Command::LintDocsOpen => lint_docs_open(),
-            Command::LintFormatting => lint_format(),
-            Command::LintTypos => lint_typos(),
+            Command::Clippy(command) => command.run(),
+            Command::Docs(command) => command.run(),
+            Command::Format(command) => command.run(),
+            Command::Typos(command) => command.run(),
             Command::LintMarkdown => lint_markdown(),
-            Command::FixClippy => fix_clippy(),
-            Command::FixFormatting => fix_format(),
-            Command::FixReadme => fix_readme(),
-            Command::FixTypos => fix_typos(),
             Command::Test => test(),
             Command::TestBackend { backend } => test_backend(backend),
             Command::TestDocs => test_docs(),
@@ -212,14 +223,14 @@ fn build() -> Result<()> {
     run_cargo(vec!["build", "--all-targets", "--all-features"])
 }
 
-/// Run cargo check
-fn check() -> Result<()> {
-    run_cargo(vec!["check", "--all-targets"])
-}
-
-/// Run cargo check (all features)
-fn check_all() -> Result<()> {
-    run_cargo(vec!["check", "--all-targets", "--all-features"])
+impl CheckCommand {
+    fn run(self) -> Result<()> {
+        if self.all_features {
+            run_cargo(vec!["check", "--all-targets", "--all-features"])
+        } else {
+            run_cargo(vec!["check", "--all-targets"])
+        }
+    }
 }
 
 /// Run cargo check with crossterm feature
@@ -258,19 +269,25 @@ fn check_termwiz() -> Result<()> {
     ])
 }
 
-/// Run cargo-rdme to check if README.md is up-to-date with the library documentation
-fn check_readme() -> Result<()> {
-    for package in workspace_packages(TargetKind::Lib)? {
-        run_cargo(vec!["rdme", "--workspace-project", &package, "--check"])?;
+impl ReadmeCommand {
+    fn run(self) -> Result<()> {
+        let args = if self.check {
+            vec!["rdme", "--check"]
+        } else {
+            vec!["rdme"]
+        };
+        for package in workspace_packages(TargetKind::Lib)? {
+            if package == "ratatui" {
+                // Skip the main crate as we removed rdme
+                continue;
+            }
+            let mut package_args = args.clone();
+            package_args.push("--workspace-project");
+            package_args.push(&package);
+            run_cargo(package_args)?;
+        }
+        Ok(())
     }
-    Ok(())
-}
-
-fn fix_readme() -> Result<()> {
-    for package in workspace_packages(TargetKind::Lib)? {
-        run_cargo(vec!["rdme", "--workspace-project", &package])?;
-    }
-    Ok(())
 }
 
 /// Generate code coverage report
@@ -298,67 +315,47 @@ fn coverage_unit() -> Result<()> {
 
 /// Lint formatting, typos, clippy, and docs (and a soft fail on markdown)
 fn lint() -> Result<()> {
-    lint_clippy()?;
-    lint_docs()?;
-    lint_format()?;
-    lint_typos()?;
+    ClippyCommand { fix: false }.run()?;
+    DocsCommand { open: false }.run()?;
+    FormatCommand { check: true }.run()?;
+    TyposCommand { fix: false }.run()?;
     if let Err(err) = lint_markdown() {
         tracing::warn!("known issue: markdownlint is currently noisy and can be ignored: {err}");
     }
     Ok(())
 }
 
-/// Run clippy on the project
-fn lint_clippy() -> Result<()> {
-    run_cargo(vec![
-        "clippy",
-        "--all-targets",
-        "--all-features",
-        "--tests",
-        "--benches",
-        "--",
-        "-D",
-        "warnings",
-    ])
-}
-
-/// Fix clippy warnings in the project
-fn fix_clippy() -> Result<()> {
-    run_cargo(vec![
-        "clippy",
-        "--all-targets",
-        "--all-features",
-        "--tests",
-        "--benches",
-        "--",
-        "-D",
-        "warnings",
-        "--fix",
-    ])
-}
-
-/// Check that docs build without errors using flags for docs.rs
-fn lint_docs() -> Result<()> {
-    for package in workspace_packages(TargetKind::Lib)? {
-        run_cargo_nightly(vec!["docs-rs", "--package", &package])?;
-    }
-    Ok(())
-}
-
-fn lint_docs_open() -> Result<()> {
-    let packages = workspace_packages(TargetKind::Lib)?;
-    for (position, package) in packages.iter().with_position() {
-        match position {
-            Position::First | Position::Middle => {
-                run_cargo_nightly(vec!["docs-rs", "--package", &package])?;
-            }
-            Position::Last | Position::Only => {
-                run_cargo_nightly(vec!["docs-rs", "--package", &package, "--open"])?;
-            }
+impl ClippyCommand {
+    fn run(self) -> Result<()> {
+        let mut args = vec![
+            "clippy",
+            "--all-targets",
+            "--all-features",
+            "--tests",
+            "--benches",
+            "--",
+            "-D",
+            "warnings",
+        ];
+        if self.fix {
+            args.push("--fix");
         }
+        run_cargo(args)
     }
+}
 
-    Ok(())
+impl DocsCommand {
+    fn run(self) -> Result<()> {
+        let packages = workspace_packages(TargetKind::Lib)?;
+        for (position, package) in packages.iter().with_position() {
+            let mut args = vec!["docs-rs", "--package", &package];
+            if self.open && matches!(position, Position::Last | Position::Only) {
+                args.push("--open");
+            }
+            run_cargo_nightly(args)?;
+        }
+        Ok(())
+    }
 }
 
 /// Return the available packages in the workspace
@@ -375,18 +372,30 @@ fn workspace_packages(kind: TargetKind) -> Result<Vec<String>> {
     Ok(packages)
 }
 
-/// Lint formatting issues in the project
-fn lint_format() -> Result<()> {
-    run_cargo_nightly(vec!["fmt", "--all", "--check"])?;
-    cmd!("taplo", "format", "--check").run_with_trace()?;
-    Ok(())
-}
+impl FormatCommand {
+    fn run(self) -> Result<()> {
+        self.run_rustfmt()?;
+        self.run_taplo()?;
+        Ok(())
+    }
 
-/// Fix formatting issues in the project
-fn fix_format() -> Result<()> {
-    run_cargo_nightly(vec!["fmt", "--all"])?;
-    cmd!("taplo", "format").run_with_trace()?;
-    Ok(())
+    fn run_rustfmt(&self) -> Result<(), color_eyre::eyre::Error> {
+        let mut args = vec!["fmt", "--all"];
+        if self.check {
+            args.push("--check");
+        }
+        run_cargo_nightly(args)?;
+        Ok(())
+    }
+
+    fn run_taplo(&self) -> Result<(), color_eyre::eyre::Error> {
+        let mut args = vec!["format", "--colors", "always"];
+        if self.check {
+            args.push("--check");
+        }
+        cmd("taplo", args).run_with_trace()?;
+        Ok(())
+    }
 }
 
 /// Lint markdown files using [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
@@ -395,16 +404,15 @@ fn lint_markdown() -> Result<()> {
     Ok(())
 }
 
-/// Check for typos in the project using [typos-cli](https://github.com/crate-ci/typos/)
-fn lint_typos() -> Result<()> {
-    cmd!("typos").run_with_trace()?;
-    Ok(())
-}
-
-/// Fix typos in the project
-fn fix_typos() -> Result<()> {
-    cmd!("typos", "-w").run_with_trace()?;
-    Ok(())
+impl TyposCommand {
+    fn run(self) -> Result<()> {
+        if self.fix {
+            cmd!("typos", "--write-changes").run_with_trace()?;
+        } else {
+            cmd!("typos").run_with_trace()?;
+        }
+        Ok(())
+    }
 }
 
 /// Run tests for libs, backends, and docs
