@@ -41,13 +41,13 @@ need_stdout = true
 
 [jobs.doc]
 command = [
-    "cargo",
-    "+nightly",
-    "doc",
-    "-Zunstable-options",
-    "-Zrustdoc-scrape-examples",
-    "--all-features",
-    "--no-deps",
+  "cargo",
+  "+nightly",
+  "doc",
+  "-Zunstable-options",
+  "-Zrustdoc-scrape-examples",
+  "--all-features",
+  "--no-deps",
 ]
 env.RUSTDOCFLAGS = "--cfg docsrs"
 need_stdout = false
@@ -56,14 +56,14 @@ need_stdout = false
 # to the previous job
 [jobs.doc-open]
 command = [
-    "cargo",
-    "+nightly",
-    "doc",
-    "-Zunstable-options",
-    "-Zrustdoc-scrape-examples",
-    "--all-features",
-    "--no-deps",
-    "--open",
+  "cargo",
+  "+nightly",
+  "doc",
+  "-Zunstable-options",
+  "-Zrustdoc-scrape-examples",
+  "--all-features",
+  "--no-deps",
+  "--open",
 ]
 env.RUSTDOCFLAGS = "--cfg docsrs"
 need_stdout = false
@@ -74,24 +74,24 @@ command = ["cargo", "llvm-cov", "--lcov", "--output-path", "target/lcov.info", "
 
 [jobs.coverage-unit-tests-only]
 command = [
-    "cargo",
-    "llvm-cov",
-    "--lcov",
-    "--output-path",
-    "target/lcov.info",
-    "--lib",
-    "--all-features",
+  "cargo",
+  "llvm-cov",
+  "--lcov",
+  "--output-path",
+  "target/lcov.info",
+  "--lib",
+  "--all-features",
 ]
 
 [jobs.hack]
 command = [
-    "cargo",
-    "hack",
-    "test",
-    "--lib",
-    "--each-feature",
-    # "--all-targets",
-    "--workspace",
+  "cargo",
+  "hack",
+  "test",
+  "--lib",
+  "--each-feature",
+  # "--all-targets",
+  "--workspace",
 ]
 
 # You may define here keybindings that would be specific to
