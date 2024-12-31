@@ -30,9 +30,9 @@ unstable-backend-writer = []
 
 [dependencies]
 document-features = { workspace = true, optional = true }
+instability.workspace = true
 ratatui-core = { workspace = true }
 termion.workspace = true
-instability.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true
