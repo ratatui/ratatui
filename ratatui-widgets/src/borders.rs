@@ -42,6 +42,14 @@ pub enum BorderType {
     /// ```
     #[default]
     Plain,
+    /// A dotted border.
+    ///
+    /// ```plain
+    /// ┌┄┄┄┄┄┄┄┐
+    /// ┆       ┆
+    /// └┄┄┄┄┄┄┄┘
+    /// ```
+    Dotted,
     /// A plain border with rounded corners.
     ///
     /// # Example
@@ -102,6 +110,7 @@ impl BorderType {
     pub const fn border_symbols(border_type: Self) -> border::Set {
         match border_type {
             Self::Plain => border::PLAIN,
+            Self::Dotted => border::DOTTED,
             Self::Rounded => border::ROUNDED,
             Self::Double => border::DOUBLE,
             Self::Thick => border::THICK,
