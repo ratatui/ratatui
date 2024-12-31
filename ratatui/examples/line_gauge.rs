@@ -46,7 +46,7 @@ struct App {
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 enum AppState {
     #[default]
-    Running,
+    Paused,
     Started,
     Quitting,
 }
@@ -76,7 +76,14 @@ impl App {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
                     match key.code {
-                        KeyCode::Char(' ') | KeyCode::Enter => self.start(),
+                        KeyCode::Char(' ') | KeyCode::Enter => {
+                            if self.state == AppState::Paused {
+                                self.start();
+                            } else {
+                                self.pause();
+                            }
+                        }
+                        KeyCode::Char('r') => self.reset(),
                         KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                         _ => {}
                     }
@@ -90,6 +97,16 @@ impl App {
         self.state = AppState::Started;
     }
 
+    fn pause(&mut self) {
+        self.state = AppState::Paused;
+    }
+
+    fn reset(&mut self) {
+        self.progress = 0.0;
+        self.progress_columns = 0;
+        self.state = AppState::Paused;
+    }
+
     fn quit(&mut self) {
         self.state = AppState::Quitting;
     }
@@ -101,8 +118,8 @@ impl Widget for &App {
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
         let [header_area, main_area, footer_area] = layout.areas(area);
 
-        let layout = Layout::vertical([Ratio(1, 3); 3]);
-        let [gauge1_area, gauge2_area, gauge3_area] = layout.areas(main_area);
+        let [gauge1_area, gauge2_area, gauge3_area, gauge4_area, gauge5_area, gauge6_area] =
+            Layout::vertical([Ratio(1, 6); 6]).areas(main_area);
 
         header().render(header_area, buf);
         footer().render(footer_area, buf);
@@ -110,6 +127,9 @@ impl Widget for &App {
         self.render_gauge1(gauge1_area, buf);
         self.render_gauge2(gauge2_area, buf);
         self.render_gauge3(gauge3_area, buf);
+        self.render_gauge4(gauge4_area, buf);
+        self.render_gauge5(gauge5_area, buf);
+        self.render_gauge6(gauge6_area, buf);
     }
 }
 
@@ -121,53 +141,10 @@ fn header() -> impl Widget {
 }
 
 fn footer() -> impl Widget {
-    Paragraph::new("Press ENTER / SPACE to start")
-        .alignment(Alignment::Center)
+    Paragraph::new("Press ENTER / SPACE to start or stop progress. Press 'r' to reset.")
+        .centered()
         .fg(CUSTOM_LABEL_COLOR)
         .bold()
-}
-
-impl App {
-    fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Blue / red only foreground");
-        LineGauge::default()
-            .block(title)
-            .filled_style(Style::default().fg(Color::Blue))
-            .unfilled_style(Style::default().fg(Color::Red))
-            .label("Foreground:")
-            .ratio(self.progress)
-            .render(area, buf);
-    }
-
-    fn render_gauge2(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Blue / red only background");
-        LineGauge::default()
-            .block(title)
-            .filled_style(Style::default().fg(Color::Blue).bg(Color::Blue))
-            .unfilled_style(Style::default().fg(Color::Red).bg(Color::Red))
-            .label("Background:")
-            .ratio(self.progress)
-            .render(area, buf);
-    }
-
-    fn render_gauge3(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Fully styled with background");
-        LineGauge::default()
-            .block(title)
-            .filled_style(
-                Style::default()
-                    .fg(tailwind::BLUE.c400)
-                    .bg(tailwind::BLUE.c600),
-            )
-            .unfilled_style(
-                Style::default()
-                    .fg(tailwind::RED.c400)
-                    .bg(tailwind::RED.c800),
-            )
-            .label("Both:")
-            .ratio(self.progress)
-            .render(area, buf);
-    }
 }
 
 fn title_block(title: &str) -> Block {
@@ -176,4 +153,83 @@ fn title_block(title: &str) -> Block {
         .borders(Borders::NONE)
         .fg(CUSTOM_LABEL_COLOR)
         .padding(Padding::vertical(1))
+}
+
+impl App {
+    fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
+        let title = title_block("customized foreground (fg) and / or background (bg)");
+        LineGauge::default()
+            .block(title)
+            .filled_style(Style::default().fg(tailwind::LIME.c400))
+            .unfilled_style(Style::default().fg(tailwind::LIME.c800))
+            .label("fg")
+            .ratio(self.progress)
+            .render(area, buf);
+    }
+
+    fn render_gauge2(&self, area: Rect, buf: &mut Buffer) {
+        LineGauge::default()
+            .filled_style(
+                Style::default()
+                    .fg(tailwind::CYAN.c400)
+                    .bg(tailwind::CYAN.c400),
+            )
+            .unfilled_style(
+                Style::default()
+                    .fg(tailwind::CYAN.c800)
+                    .bg(tailwind::CYAN.c800),
+            )
+            .label("bg")
+            .ratio(self.progress)
+            .render(area, buf);
+    }
+
+    fn render_gauge3(&self, area: Rect, buf: &mut Buffer) {
+        LineGauge::default()
+            .filled_style(
+                Style::default()
+                    .fg(tailwind::BLUE.c400)
+                    .bg(tailwind::BLUE.c600),
+            )
+            .unfilled_style(
+                Style::default()
+                    .fg(tailwind::BLUE.c400)
+                    .bg(tailwind::BLUE.c800),
+            )
+            .label("both")
+            .ratio(self.progress)
+            .render(area, buf);
+    }
+
+    fn render_gauge4(&self, area: Rect, buf: &mut Buffer) {
+        let title = title_block("customized symbols");
+        LineGauge::default()
+            .block(title)
+            .filled_symbol("⣿")
+            .unfilled_symbol("⣿")
+            .filled_style(Style::default().fg(tailwind::CYAN.c400))
+            .unfilled_style(Style::default().fg(tailwind::CYAN.c800))
+            .ratio(self.progress)
+            .render(area, buf);
+    }
+
+    fn render_gauge5(&self, area: Rect, buf: &mut Buffer) {
+        LineGauge::default()
+            .filled_symbol("|")
+            .unfilled_symbol("─")
+            .filled_style(Style::default().fg(tailwind::BLUE.c400))
+            .unfilled_style(Style::default().fg(tailwind::BLUE.c800))
+            .ratio(self.progress)
+            .render(area, buf);
+    }
+
+    fn render_gauge6(&self, area: Rect, buf: &mut Buffer) {
+        LineGauge::default()
+            .filled_symbol("▰")
+            .unfilled_symbol("▱")
+            .filled_style(Style::default().fg(tailwind::FUCHSIA.c400))
+            .unfilled_style(Style::default().fg(tailwind::FUCHSIA.c800))
+            .ratio(self.progress)
+            .render(area, buf);
+    }
 }
