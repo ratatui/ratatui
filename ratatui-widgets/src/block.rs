@@ -1387,6 +1387,7 @@ mod tests {
     fn border_type_to_string() {
         assert_eq!(format!("{}", BorderType::Plain), "Plain");
         assert_eq!(format!("{}", BorderType::Rounded), "Rounded");
+        assert_eq!(format!("{}", BorderType::Dotted), "Dotted");
         assert_eq!(format!("{}", BorderType::Double), "Double");
         assert_eq!(format!("{}", BorderType::Thick), "Thick");
     }
@@ -1395,6 +1396,7 @@ mod tests {
     fn border_type_from_str() {
         assert_eq!("Plain".parse(), Ok(BorderType::Plain));
         assert_eq!("Rounded".parse(), Ok(BorderType::Rounded));
+        assert_eq!("Dotted".parse(), Ok(BorderType::Dotted));
         assert_eq!("Double".parse(), Ok(BorderType::Double));
         assert_eq!("Thick".parse(), Ok(BorderType::Thick));
         assert_eq!("".parse::<BorderType>(), Err(ParseError::VariantNotFound));
@@ -1426,6 +1428,21 @@ mod tests {
             "╭────────╮",
             "│        │",
             "╰────────╯",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_dotted_border() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
+            .border_type(BorderType::Dotted)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌┄┄┄┄┄┄┄┄┐",
+            "┆        ┆",
+            "└┄┄┄┄┄┄┄┄┘",
         ]);
         assert_eq!(buffer, expected);
     }
