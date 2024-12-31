@@ -3997,7 +3997,6 @@ dependencies = [
  "duct",
  "itertools 0.13.0",
  "tracing",
- "tracing-log",
  "tracing-subscriber",
 ]
 

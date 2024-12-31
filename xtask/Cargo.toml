@@ -8,12 +8,9 @@ license.workspace = true
 cargo_metadata = "0.19.1"
 clap = { version = "4.5.23", features = ["derive"] }
 clap-cargo = { version = "0.15.1", features = ["cargo_metadata"] }
-clap-verbosity-flag = { version = "3.0.2", default-features = false, features = [
-    "tracing",
-] }
+clap-verbosity-flag = { version = "3.0.2", default-features = false, features = ["tracing"] }
 color-eyre = "0.6.3"
 duct = "0.13.7"
 itertools.workspace = true
 tracing = "0.1.40"
-tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3.18" }
