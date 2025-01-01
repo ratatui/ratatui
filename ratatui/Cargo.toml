@@ -173,7 +173,7 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "gauge"
+name = "gauge-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
@@ -203,7 +203,7 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "list"
+name = "list-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
@@ -230,12 +230,12 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "scrollbar"
+name = "scrollbar-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "table"
+name = "table-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
