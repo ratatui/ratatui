@@ -20,6 +20,12 @@ impl Size {
     /// A zero sized Size
     pub const ZERO: Self = Self::new(0, 0);
 
+    /// The minimum possible Size
+    pub const MIN: Self = Self::ZERO;
+
+    /// The maximum possible Size
+    pub const MAX: Self = Self::new(u16::MAX, u16::MAX);
+
     /// Create a new `Size` struct
     pub const fn new(width: u16, height: u16) -> Self {
         Self { width, height }

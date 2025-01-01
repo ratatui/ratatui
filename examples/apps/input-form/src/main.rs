@@ -130,9 +130,9 @@ impl InputForm {
         frame.render_widget(&self.age, age_area);
 
         let cursor_position = match self.focus {
-            Focus::FirstName => first_name_area.offset(self.first_name.cursor_offset()),
-            Focus::LastName => last_name_area.offset(self.last_name.cursor_offset()),
-            Focus::Age => age_area.offset(self.age.cursor_offset()),
+            Focus::FirstName => first_name_area + self.first_name.cursor_offset(),
+            Focus::LastName => last_name_area + self.last_name.cursor_offset(),
+            Focus::Age => age_area + self.age.cursor_offset(),
         };
         frame.set_cursor_position(cursor_position);
     }
