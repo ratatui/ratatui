@@ -557,6 +557,27 @@ mod tests {
     }
 
     #[test]
+    fn line_gauge_set_filled_symbol() {
+        assert_eq!(LineGauge::default().filled_symbol("▰").filled_symbol, "▰");
+    }
+
+    #[test]
+    fn line_gauge_set_unfilled_symbol() {
+        assert_eq!(
+            LineGauge::default().unfilled_symbol("▱").unfilled_symbol,
+            "▱"
+        );
+    }
+
+    #[allow(deprecated)]
+    #[test]
+    fn line_gauge_deprecated_line_set() {
+        let gauge = LineGauge::default().line_set(symbols::line::DOUBLE);
+        assert_eq!(gauge.filled_symbol, symbols::line::DOUBLE.horizontal);
+        assert_eq!(gauge.unfilled_symbol, symbols::line::DOUBLE.horizontal);
+    }
+
+    #[test]
     fn line_gauge_default() {
         assert_eq!(
             LineGauge::default(),
