@@ -90,7 +90,7 @@ impl App {
 
     /// Returns the byte index based on the character position.
     ///
-    /// Since each character in a string can be contain multiple bytes, it's necessary to calculate
+    /// Since each character in a string can contain multiple bytes, it's necessary to calculate
     /// the byte index based on the index of the character.
     fn byte_index(&self) -> usize {
         self.input
@@ -216,7 +216,7 @@ impl App {
             #[allow(clippy::cast_possible_truncation)]
             InputMode::Editing => frame.set_cursor_position(Position::new(
                 // Draw the cursor at the current position in the input field.
-                // This position is can be controlled via the left and right arrow key
+                // This position can be controlled via the left and right arrow key
                 input_area.x + self.character_index as u16 + 1,
                 // Move one line down, from the border to the input line
                 input_area.y + 1,
