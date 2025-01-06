@@ -1489,13 +1489,12 @@ dependencies = [
 
 [[package]]
 name = "instability"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "898e106451f7335950c9cc64f8ec67b5f65698679ac67ed00619aeef14e1cf75"
+checksum = "894813a444908c0c8c0e221b041771d107c4a21de1d317dc49bcc66e3c9e5b3f"
 dependencies = [
  "darling",
  "indoc",
- "pretty_assertions",
  "proc-macro2",
  "quote",
  "syn 2.0.91",
