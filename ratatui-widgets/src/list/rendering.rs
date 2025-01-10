@@ -93,7 +93,7 @@ impl StatefulWidget for &List<'_> {
             let item_style = self.style.patch(item.style);
             buf.set_style(row_area, item_style);
 
-            let is_selected = state.selected.map_or(false, |s| s == i);
+            let is_selected = state.selected == Some(i);
 
             let item_area = if selection_spacing {
                 let highlight_symbol_width = self.highlight_symbol.unwrap_or("").width() as u16;
