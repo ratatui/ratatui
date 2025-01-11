@@ -113,8 +113,8 @@ impl Widget for &App {
         header(header_area, buf);
 
         self.render_gauge1(gauge1_area, buf);
-        self.render_gauge4(gauge4_area, buf);
-        self.render_gauge6(gauge6_area, buf);
+        self.render_gauge2(gauge4_area, buf);
+        self.render_gauge3(gauge6_area, buf);
     }
 }
 
@@ -139,7 +139,7 @@ impl App {
             .render(area, buf);
     }
 
-    fn render_gauge4(&self, area: Rect, buf: &mut Buffer) {
+    fn render_gauge2(&self, area: Rect, buf: &mut Buffer) {
         LineGauge::default()
             .filled_symbol("⣿")
             .unfilled_symbol("⣿")
@@ -149,7 +149,7 @@ impl App {
             .render(area, buf);
     }
 
-    fn render_gauge6(&self, area: Rect, buf: &mut Buffer) {
+    fn render_gauge3(&self, area: Rect, buf: &mut Buffer) {
         LineGauge::default()
             .filled_symbol("▰")
             .unfilled_symbol("▱")
