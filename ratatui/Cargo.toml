@@ -193,11 +193,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "line_gauge"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "hyperlink"
 required-features = ["crossterm"]
 doc-scrape-examples = true

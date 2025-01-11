@@ -5,7 +5,7 @@ Set Theme "Aardvark Blue"
 Set Width 1200
 Set Height 850
 Hide
-Type "cargo run -p ratatui --example line_gauge --features=crossterm"
+Type "cargo run -p ratatui-widgets --example line_gauge"
 Enter
 Sleep 1s
 Show
