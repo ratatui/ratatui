@@ -9,6 +9,4 @@ Type "cargo run -p ratatui-widgets --example line_gauge"
 Enter
 Sleep 1s
 Show
-Sleep 1s
-Enter 1
-Sleep 5s
+Sleep 6s
