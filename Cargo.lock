@@ -1477,9 +1477,9 @@ dependencies = [
 
 [[package]]
 name = "instability"
-version = "0.3.6"
+version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "894813a444908c0c8c0e221b041771d107c4a21de1d317dc49bcc66e3c9e5b3f"
+checksum = "0bf9fed6d91cfb734e7476a06bde8300a1b94e217e1b523b6f0cd1a01998c71d"
 dependencies = [
  "darling",
  "indoc",
