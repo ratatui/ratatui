@@ -2,14 +2,14 @@
 resolver = "2"
 members = ["ratatui", "ratatui-*", "xtask", "examples/apps/*"]
 default-members = [
-    "ratatui",
-    "ratatui-core",
-    "ratatui-crossterm",
-    # this is not included as it doesn't compile on windows
-    # "ratatui-termion",
-    "ratatui-termwiz",
-    "ratatui-widgets",
-    "examples/apps/*",
+  "ratatui",
+  "ratatui-core",
+  "ratatui-crossterm",
+  # this is not included as it doesn't compile on windows
+  # "ratatui-termion",
+  "ratatui-termwiz",
+  "ratatui-widgets",
+  "examples/apps/*",
 ]
 
 [workspace.package]
@@ -47,8 +47,8 @@ strum = { version = "0.26.3", features = ["derive"] }
 termwiz = { version = "0.22.0" }
 unicode-segmentation = "1.12.0"
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
-unicode-width = "=0.2.0"
 termion = "4.0.0"
+unicode-width = "=0.2.0"
 
 # Improve benchmark consistency
 [profile.bench]
