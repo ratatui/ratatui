@@ -13,6 +13,7 @@ This is a quick summary of the sections below:
 - [Unreleased](#unreleased)
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
+  - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -76,6 +77,13 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased (0.30.0)
+
+### `List::highlight_symbol` accepts `Into<Line>` ([#1595])
+
+[#1595]: https://github.com/ratatui/ratatui/pull/1595
+
+Previously `List::highlight_symbol` accepted `&str`. Any code that uses conversion methods will need
+to be rewritten. Since `Into::into` is not const, this function cannot be called in const context.
 
 ### `FrameExt` trait for `unstable-widget-ref` feature ([#1530])
 
