@@ -41,7 +41,13 @@ pub struct Position {
 
 impl Position {
     /// Position at the origin, the top left edge at 0,0
-    pub const ORIGIN: Self = Self { x: 0, y: 0 };
+    pub const ORIGIN: Self = Self::new(0, 0);
+
+    /// Position at the minimum x and y values
+    pub const MIN: Self = Self::ORIGIN;
+
+    /// Position at the maximum x and y values
+    pub const MAX: Self = Self::new(u16::MAX, u16::MAX);
 
     /// Create a new position
     pub const fn new(x: u16, y: u16) -> Self {
