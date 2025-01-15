@@ -1,16 +1,226 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+<!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
+<!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
-_"Food will come, Remy. Food always comes to those who love to cook." – Gusteau_
+## [0.30.0-alpha.1](https://github.com/ratatui/ratatui/releases/tag/0.30.0-alpha.1) - 2025-01-14
+
+0.30.0-alpha.1 is a pre-release of the upcoming 0.30.0 release. It is intended for testing and
+feedback. Please report any issues you encounter. The primary change is that we've split the crate
+into multiple crates. The main crate is now `ratatui-core` and the widgets are in `ratatui-widgets`.
+This allows for widget crates to depend on a stable core crate, and for the core crate to be used
+without widgets.
+
+### Features
+
+- [56d5e05](https://github.com/ratatui/ratatui/commit/56d5e057625378f1bdf732dabb57208453fb84d6) *(bar)* Update label and text_value to accept Into<> by @Emivvvvv in [#1471](https://github.com/ratatui/ratatui/pull/1471) [**breaking**]
+
+- [b76ad3b](https://github.com/ratatui/ratatui/commit/b76ad3b02ea1c3381b6434c40e620f28d642948e) *(bar)* Impl Styled for Bar by @Emivvvvv in [#1476](https://github.com/ratatui/ratatui/pull/1476)
+
+- [369b18e](https://github.com/ratatui/ratatui/commit/369b18eef2e4220147e7c7264ad7f8e023a1d2dd) *(barchart)* Reduce barchart creation verbosity by @Emivvvvv in [#1453](https://github.com/ratatui/ratatui/pull/1453)
+
+- [9275d34](https://github.com/ratatui/ratatui/commit/9275d3421c088174bcf9de0832340bcbea76367a) *(layout)* Add Offset::new() constructor by @joshka in [#1547](https://github.com/ratatui/ratatui/pull/1547)
+
+- [ff729b7](https://github.com/ratatui/ratatui/commit/ff729b7607e0099a155f10dfe0ce42320641b74d) *(scrollbar)* Support retrieving the current position of state by @orhun in [#1552](https://github.com/ratatui/ratatui/pull/1552)
+
+- [ce4856a](https://github.com/ratatui/ratatui/commit/ce4856a65f3c76db714a45338ba3be9b638c6c35) *(widgets)* Add the missing constructor to canvas types by @orhun in [#1538](https://github.com/ratatui/ratatui/pull/1538)
+
+- [50ba965](https://github.com/ratatui/ratatui/commit/50ba96518f01454cff185784a1e9676093ce06cf) *(uncategorized)* Add a new RatatuiMascot widget by @Its-Just-Nans in [#1584](https://github.com/ratatui/ratatui/pull/1584)
+
+- [1d28c89](https://github.com/ratatui/ratatui/commit/1d28c89fe50f1a11cf1719233acca1a12d5e2d7b) *(uncategorized)* Add conversions for anstyle by @joshka in [#1581](https://github.com/ratatui/ratatui/pull/1581)
+
+### Bug Fixes
+
+- [860e48b](https://github.com/ratatui/ratatui/commit/860e48b0f0ec51c8596bc12985a8b37bad4fba00) *(buffer)* Buffer::get_pos() now correctly handles index > u16::MAX by @joshka in [#1447](https://github.com/ratatui/ratatui/pull/1447)
+
+- [ec30390](https://github.com/ratatui/ratatui/commit/ec30390446b998cba97a25db63b2e3d27db7a12d) *(canvas)* Round coordinates to nearest grid cell by @joshka in [#1507](https://github.com/ratatui/ratatui/pull/1507)
+
+- [afd1ce1](https://github.com/ratatui/ratatui/commit/afd1ce179b74f10ea786ed6f9b2999288bc94e7a) *(canvas)* Lines that start outside the visible grid are now drawn by @renesat in [#1501](https://github.com/ratatui/ratatui/pull/1501)
+
+- [18e70d3](https://github.com/ratatui/ratatui/commit/18e70d3d51b654bb895843224edf0c21a3114dc9) *(crossterm)* Terminal should keep Bold when removing Dim by @MarSik in [#1541](https://github.com/ratatui/ratatui/pull/1541)
+
+- [a692a6e](https://github.com/ratatui/ratatui/commit/a692a6e37114f39a3eb15b0cdc486dee8a7e91ff) *(lint)* Apply rust 1.84 clippy suggestions by @joshka in [#1612](https://github.com/ratatui/ratatui/pull/1612)
+
+- [3b13240](https://github.com/ratatui/ratatui/commit/3b13240728597a8c459c4bb5f913372185e9df91) *(scrollbar)* Check for area.is_empty() before rendering by @farmeroy in [#1529](https://github.com/ratatui/ratatui/pull/1529)
+
+- [f57b696](https://github.com/ratatui/ratatui/commit/f57b696fdc3bac381bccda0414400453f5abecf2) *(span)* Dont render control characters by @EdJoPaTo in [#1312](https://github.com/ratatui/ratatui/pull/1312)
+
+- [2ce958e](https://github.com/ratatui/ratatui/commit/2ce958e38cf1ebab49b1817b669631dc349a0ebb) *(table)* Allow display of additional table row, if row height > 1 by @Lunderberg in [#1452](https://github.com/ratatui/ratatui/pull/1452)
+
+- [2892bdd](https://github.com/ratatui/ratatui/commit/2892bddce66daf0b285a6d9f6fb3fdb2581cda2b) *(uncategorized)* Rust 1.83 clippy lints by @joshka in [#1527](https://github.com/ratatui/ratatui/pull/1527)
+
+- [36e2d1b](https://github.com/ratatui/ratatui/commit/36e2d1bda1d8b4e1d0fbd09ba2894d56bd7eeeca) *(uncategorized)* Add feature(doc_cfg) when generating docs by @joshka in [#1506](https://github.com/ratatui/ratatui/pull/1506)
+
+- [4d7704f](https://github.com/ratatui/ratatui/commit/4d7704fba5dcebda34c8c04bf4b5ac48e3a22008) *(uncategorized)* Make StatefulWidget and Ref work with unsized State by @thscharler in [#1505](https://github.com/ratatui/ratatui/pull/1505)
+
+- [7b87509](https://github.com/ratatui/ratatui/commit/7b875091e18b894f53af6331a8ad5b7101a75d1e) *(uncategorized)* Typo by @marcoieni in [#1480](https://github.com/ratatui/ratatui/pull/1480)
+
+### Refactor
+
+- [f132fa1](https://github.com/ratatui/ratatui/commit/f132fa1715ea0893c52e35c65d505abadb75cec6) *(table)* Small readability improvements by @joshka in [#1510](https://github.com/ratatui/ratatui/pull/1510)
+
+- [904b0aa](https://github.com/ratatui/ratatui/commit/904b0aa723e63d3fb68802b797949619506bf3a9) *(uncategorized)* Move symbols to modules by @joshka in [#1594](https://github.com/ratatui/ratatui/pull/1594)
+
+- [7c8573f](https://github.com/ratatui/ratatui/commit/7c8573f5750ea8cf87101f81314803c834ea4942) *(uncategorized)* Rearrange selection_spacing code by @raylu in [#1540](https://github.com/ratatui/ratatui/pull/1540)
+
+- [217c57c](https://github.com/ratatui/ratatui/commit/217c57cd60628abde1ca2f0c39b014e22c9edc4e) *(uncategorized)* Modularize backends by @orhun in [#1508](https://github.com/ratatui/ratatui/pull/1508)
+
+- [e461b72](https://github.com/ratatui/ratatui/commit/e461b724a6b010fe242f9bd6d9746007cbf24219) *(uncategorized)* Move {Stateful,}Widget{,Ref} types into individual files by @joshka in [#1479](https://github.com/ratatui/ratatui/pull/1479)
+
+### Documentation
+
+- [d291042](https://github.com/ratatui/ratatui/commit/d291042e69ad930ae0d3c5d1f991d9e68320c00e) *(block)* Revise the block example by @orhun in [#1520](https://github.com/ratatui/ratatui/pull/1520)
+
+- [fcde9cb](https://github.com/ratatui/ratatui/commit/fcde9cb9c3c5e9752fefbcc7cdeac95e2db9d684) *(changelog)* Fix typo by @orhun in [#1463](https://github.com/ratatui/ratatui/pull/1463)
+
+- [3ae6bf1](https://github.com/ratatui/ratatui/commit/3ae6bf1d6f24407de400024dcb5924d841a2e1ba) *(contributing)* Use cargo-xtask for instructions by @orhun in [#1509](https://github.com/ratatui/ratatui/pull/1509)
+
+- [04e1b32](https://github.com/ratatui/ratatui/commit/04e1b32cd2e77653266fa8e7269a2e08d774220e) *(layout)* Rename cassowary-rs references to cassowary by @miroim in [#1448](https://github.com/ratatui/ratatui/pull/1448)
+
+- [088aac1](https://github.com/ratatui/ratatui/commit/088aac136d8b22557081ab4c657f5c9f5cde80d8) *(readme)* Tweak links and badges by @joshka in [#1598](https://github.com/ratatui/ratatui/pull/1598)
+
+- [6e43672](https://github.com/ratatui/ratatui/commit/6e436725e4f8c58be527b07c464a0d8b5d306eb6) *(readme)* Reimagine README.md by @orhun in [#1569](https://github.com/ratatui/ratatui/pull/1569)
+
+- [8f28247](https://github.com/ratatui/ratatui/commit/8f282473b21d7693f20b5f0cdad2f12b9ed209ff) *(readme)* Correct examples links by @HoKim98 in [#1484](https://github.com/ratatui/ratatui/pull/1484)
+
+- [9f90f74](https://github.com/ratatui/ratatui/commit/9f90f7495fd46b3b7ac34160f094bc1583f82b70) *(readme)* Fix broken link by @nilsmartel in [#1485](https://github.com/ratatui/ratatui/pull/1485)
+
+- [260af68](https://github.com/ratatui/ratatui/commit/260af68a347b527281265f7bf259eb1336aa49b2) *(readme)* Include iocraft as an alternative by @kdheepak in [#1483](https://github.com/ratatui/ratatui/pull/1483)
+
+- [dafb716](https://github.com/ratatui/ratatui/commit/dafb716f9d8acb5dda303dc1e155dc90eb54b926) *(widgets)* Add example for grouped barchart by @orhun in [#1566](https://github.com/ratatui/ratatui/pull/1566)
+
+- [ed5dd73](https://github.com/ratatui/ratatui/commit/ed5dd73084e2c8ccf3d36bc23048d67755a90e6a) *(widgets)* Add example for tabs by @orhun in [#1559](https://github.com/ratatui/ratatui/pull/1559)
+
+- [fab5321](https://github.com/ratatui/ratatui/commit/fab532171d1c8e9639298550565e4eefb8737275) *(widgets)* Add example for scrollbar by @orhun in [#1545](https://github.com/ratatui/ratatui/pull/1545)
+
+- [898aef6](https://github.com/ratatui/ratatui/commit/898aef6e2f38655e58684a2d842f03bcde0ebf0c) *(widgets)* Add example for list by @orhun in [#1542](https://github.com/ratatui/ratatui/pull/1542)
+
+- [452366a](https://github.com/ratatui/ratatui/commit/452366aa9e666f26946ebccf6046a0bed393f5c1) *(widgets)* Add example for sparkline by @orhun in [#1556](https://github.com/ratatui/ratatui/pull/1556)
+
+- [6ddde0e](https://github.com/ratatui/ratatui/commit/6ddde0e8a84b0909ba5631afac2dfc7878764786) *(widgets)* Add example for table by @orhun in [#1557](https://github.com/ratatui/ratatui/pull/1557)
+
+- [93ad6b8](https://github.com/ratatui/ratatui/commit/93ad6b828c3a34be982447390d17b7953a9c328e) *(widgets)* Update values in chart example by @orhun in [#1558](https://github.com/ratatui/ratatui/pull/1558)
+
+- [15f442a](https://github.com/ratatui/ratatui/commit/15f442a71ed4ce3faeaac3b2a3a7798940eb1846) *(widgets)* Add example for paragraph by @orhun in [#1544](https://github.com/ratatui/ratatui/pull/1544)
+
+- [17bba14](https://github.com/ratatui/ratatui/commit/17bba14540449ae584a9cafbe2a39cc7fa451ef4) *(widgets)* Move the logo example to widgets by @orhun in [#1543](https://github.com/ratatui/ratatui/pull/1543)
+
+- [f2451e7](https://github.com/ratatui/ratatui/commit/f2451e7f1ed1d5bd38e8901f139bc2916a4b005e) *(widgets)* Add example for gauge by @orhun in [#1539](https://github.com/ratatui/ratatui/pull/1539)
+
+- [4f0a8b2](https://github.com/ratatui/ratatui/commit/4f0a8b21af49b825debb13695f8c1f368f4f56b5) *(widgets)* Add example for canvas by @orhun in [#1533](https://github.com/ratatui/ratatui/pull/1533)
+
+- [91147c4](https://github.com/ratatui/ratatui/commit/91147c4d75bee207052b06a7dca4b610df321de1) *(widgets)* Add example for chart by @orhun in [#1536](https://github.com/ratatui/ratatui/pull/1536)
+
+- [6dd25a3](https://github.com/ratatui/ratatui/commit/6dd25a311152abf3e0938c9a59e54c98e2a327a6) *(widgets)* Add example for calendar by @orhun in [#1532](https://github.com/ratatui/ratatui/pull/1532)
+
+- [99ac005](https://github.com/ratatui/ratatui/commit/99ac005b06f807c79060dba43b33ec9b1f7c1a3a) *(widgets)* Add simple barchart example by @joshka in [#1511](https://github.com/ratatui/ratatui/pull/1511)
+
+- [da05957](https://github.com/ratatui/ratatui/commit/da05957fa01fcc420519400d82ef9df6acace0e8) *(uncategorized)* Add widget-ref-container example by @joshka in [#1603](https://github.com/ratatui/ratatui/pull/1603)
+
+- [1798512](https://github.com/ratatui/ratatui/commit/1798512e94b277fdfafeddb4043f7174ce2ac64a) *(uncategorized)* Fix wording in user_input example by @dawedawe in [#1611](https://github.com/ratatui/ratatui/pull/1611)
+
+- [03066d8](https://github.com/ratatui/ratatui/commit/03066d81bfc7fb4356e8d188f3d6a15b45509c15) *(uncategorized)* Fix punctuation in canvas.rs documentation by @dawedawe in [#1583](https://github.com/ratatui/ratatui/pull/1583)
+
+- [e411d9e](https://github.com/ratatui/ratatui/commit/e411d9ec3e921e812b7e8d2836c2ad0b60a0e6f8) *(uncategorized)* Add input form example by @joshka in [#1551](https://github.com/ratatui/ratatui/pull/1551)
+
+- [ed071f3](https://github.com/ratatui/ratatui/commit/ed071f37232fae47a2193235d57934cc5c678baa) *(uncategorized)* Add mouse-drawing example by @joshka in [#1546](https://github.com/ratatui/ratatui/pull/1546)
+
+- [46902f5](https://github.com/ratatui/ratatui/commit/46902f5587efe2b27c39b5e3c39109c62a636ba3) *(uncategorized)* Improve docs for workspace crates by @orhun in [#1490](https://github.com/ratatui/ratatui/pull/1490)
+
+- [a6b5792](https://github.com/ratatui/ratatui/commit/a6b579223fd83c36e024428df49a3027cd1c21bc) *(uncategorized)* Fix example link in readme by @thomas-tacquet in [#1462](https://github.com/ratatui/ratatui/pull/1462)
+
+### Miscellaneous Tasks
+
+- [abe2f27](https://github.com/ratatui/ratatui/commit/abe2f273289d3798968a645a38a7a38571530065) *(backend)* Change From<T> impls to new backend specific IntoBackend and FromBackend traits by @joshka in [#1464](https://github.com/ratatui/ratatui/pull/1464) [**breaking**]
+
+- [0a47ebd](https://github.com/ratatui/ratatui/commit/0a47ebd94bbc7a89c9e2aa893cf13a988756ec19) *(bencher)* Update bencher CLI usage by @epompeii in [#1470](https://github.com/ratatui/ratatui/pull/1470)
+
+- [a0979d6](https://github.com/ratatui/ratatui/commit/a0979d68715b2c67b32b8909189bc103f0e81f6e) *(build)* Remove cargo lint by @joshka in [#1549](https://github.com/ratatui/ratatui/pull/1549)
+
+- [eaa4038](https://github.com/ratatui/ratatui/commit/eaa403856ecb60338619e2e727a0388187ae017c) *(ci)* Install pre-built binaries for cargo-rdme by @orhun in [#1477](https://github.com/ratatui/ratatui/pull/1477)
+
+- [e5e2316](https://github.com/ratatui/ratatui/commit/e5e2316451fb4c085f205b4884cc82ba8a4930e6) *(ci)* Add check for keeping README.md up-to-date by @orhun in [#1473](https://github.com/ratatui/ratatui/pull/1473)
+
+- [2ef3583](https://github.com/ratatui/ratatui/commit/2ef3583effdeb6492d76d977177b4363129a8c8c) *(ci)* Replace cargo-make with a custom cargo-xtask by @joshka in [#1461](https://github.com/ratatui/ratatui/pull/1461)
+
+- [98df774](https://github.com/ratatui/ratatui/commit/98df774d7f9b69a2a474d25adf38e38a428f1b77) *(core)* Move core types to ratatui-core by @joshka in [#1460](https://github.com/ratatui/ratatui/pull/1460)
+
+- [35eba76](https://github.com/ratatui/ratatui/commit/35eba76b4dff047dde2d1e01bc427eb1b992b490) *(example)* Move demo2 to top level folder by @joshka in [#1524](https://github.com/ratatui/ratatui/pull/1524)
+
+- [5f57d35](https://github.com/ratatui/ratatui/commit/5f57d3523436e944b60ccc7a937d69336c9f82b8) *(examples)* Add colors explorer demo app by @orhun in [#1580](https://github.com/ratatui/ratatui/pull/1580)
+
+- [5c021bf](https://github.com/ratatui/ratatui/commit/5c021bf344b17fc4075e9663dfb270bead180e25) *(examples)* Add chart demo app by @orhun in [#1579](https://github.com/ratatui/ratatui/pull/1579)
+
+- [9721300](https://github.com/ratatui/ratatui/commit/9721300a473096daf6b34f6cc7c13643d61a4e00) *(examples)* Add canvas demo app by @orhun in [#1578](https://github.com/ratatui/ratatui/pull/1578)
+
+- [a6a1368](https://github.com/ratatui/ratatui/commit/a6a13682507846320a79538ffad673a58c1143f0) *(examples)* Add calendar explorer demo app by @orhun in [#1571](https://github.com/ratatui/ratatui/pull/1571)
+
+- [819e92c](https://github.com/ratatui/ratatui/commit/819e92cd44b6bee7d21115ff465c2f3f8c82ed9b) *(examples)* Add weather demo app by @orhun in [#1567](https://github.com/ratatui/ratatui/pull/1567)
+
+- [b5f7e44](https://github.com/ratatui/ratatui/commit/b5f7e4418364c9710d14567c73122af67e0a63ae) *(examples)* Move async example to apps by @joshka in [#1503](https://github.com/ratatui/ratatui/pull/1503)
+
+- [17316ec](https://github.com/ratatui/ratatui/commit/17316ec5d0a4807600dd116736d66938b985e718) *(github)* Enable sponsorship button by @orhun in [#1478](https://github.com/ratatui/ratatui/pull/1478)
+
+- [d3f01eb](https://github.com/ratatui/ratatui/commit/d3f01ebf6ea97e71bcda8c84b054943e1f24cd4e) *(lint)* Ensure lint config is correct by @joshka in [#1528](https://github.com/ratatui/ratatui/pull/1528)
+
+- [2b7ec5c](https://github.com/ratatui/ratatui/commit/2b7ec5cb7f34edb65fc81d362d3b512b98d246ac) *(widgets)* Enable calendar widget as default by @orhun in [#1521](https://github.com/ratatui/ratatui/pull/1521)
+
+- [d201b8e](https://github.com/ratatui/ratatui/commit/d201b8e5ddd98a1887252179dec8f09e1f342b0c) *(xtask)* Check lints for only library targets by @orhun in [#1531](https://github.com/ratatui/ratatui/pull/1531)
+
+- [6f21319](https://github.com/ratatui/ratatui/commit/6f213191efd528fd7e0d5c99fda3e6d028ee0f98) *(uncategorized)* Rename examples with clashing names by @joshka in [#1597](https://github.com/ratatui/ratatui/pull/1597)
+
+- [11cbb2b](https://github.com/ratatui/ratatui/commit/11cbb2ba87e557a04674973a39d59124d8683ed1) *(uncategorized)* Use cargo xtask for bacon clippy command by @joshka in [#1592](https://github.com/ratatui/ratatui/pull/1592)
+
+- [b544e39](https://github.com/ratatui/ratatui/commit/b544e394c97fffdeddaccd44bea2214ebffa1616) *(uncategorized)* Use clap instead of argh for demo example by @joshka in [#1591](https://github.com/ratatui/ratatui/pull/1591)
+
+- [9a54198](https://github.com/ratatui/ratatui/commit/9a541981b8accd9efe17c0893d18b520bc569b15) *(uncategorized)* Make source files non-executable by @orhun in [#1577](https://github.com/ratatui/ratatui/pull/1577)
+
+- [357ae7e](https://github.com/ratatui/ratatui/commit/357ae7e251721f2e7fcb539de5e6fc60eaa30e29) *(uncategorized)* Move terminal types to ratatui-core by @joshka in [#1530](https://github.com/ratatui/ratatui/pull/1530) [**breaking**]
+
+- [21e62d8](https://github.com/ratatui/ratatui/commit/21e62d84c2d2fa2d5563caf0c0974c2514e56ee5) *(uncategorized)* Move the demo example to main folder by @joshka in [#1523](https://github.com/ratatui/ratatui/pull/1523)
+
+- [fbf6050](https://github.com/ratatui/ratatui/commit/fbf6050c867b63276ae3d6f5bca4d741c2ce355c) *(uncategorized)* Prepare alpha modularization release by @joshka in [#1525](https://github.com/ratatui/ratatui/pull/1525)
+
+- [e4e95bc](https://github.com/ratatui/ratatui/commit/e4e95bcecf15deb09416a0e53193d261f012222a) *(uncategorized)* Remove --color always flags from bacon.toml by @joshka in [#1502](https://github.com/ratatui/ratatui/pull/1502)
+
+- [a41c97b](https://github.com/ratatui/ratatui/commit/a41c97b413b28d0db6d1ea09dcc1d5b8556148b1) *(uncategorized)* Move unstable widget refs to ratatui by @joshka in [#1491](https://github.com/ratatui/ratatui/pull/1491) [**breaking**]
+
+- [e7085e3](https://github.com/ratatui/ratatui/commit/e7085e3a3ec4b3b90a4e69d49add96e7ba65616c) *(uncategorized)* Move widgets into ratatui-widgets crate by @joshka in [#1474](https://github.com/ratatui/ratatui/pull/1474)
+
+- [f1d0a18](https://github.com/ratatui/ratatui/commit/f1d0a1837564d69f00e4b5d9eb94cc001cd3a3a7) *(uncategorized)* Move ratatui crate into workspace folder by @joshka in [#1459](https://github.com/ratatui/ratatui/pull/1459)
+
+- [55fb2d2](https://github.com/ratatui/ratatui/commit/55fb2d2e56b492f0f4131fde9d44951b504cf50c) *(uncategorized)* Update repo links to ratatui instead of ratatui-org by @joshka in [#1458](https://github.com/ratatui/ratatui/pull/1458)
+
+### Continuous Integration
+
+- [4a871f9](https://github.com/ratatui/ratatui/commit/4a871f993ea38069da513660707a072be299b791) *(uncategorized)* Refactor xtask / toml formatting by @joshka in [#1602](https://github.com/ratatui/ratatui/pull/1602)
+
+### New Contributors
+
+* @dawedawe made their first contribution in [#1611](https://github.com/ratatui/ratatui/pull/1611)
+* @Its-Just-Nans made their first contribution in [#1584](https://github.com/ratatui/ratatui/pull/1584)
+* @MarSik made their first contribution in [#1541](https://github.com/ratatui/ratatui/pull/1541)
+* @raylu made their first contribution in [#1540](https://github.com/ratatui/ratatui/pull/1540)
+* @renesat made their first contribution in [#1501](https://github.com/ratatui/ratatui/pull/1501)
+* @HoKim98 made their first contribution in [#1484](https://github.com/ratatui/ratatui/pull/1484)
+* @nilsmartel made their first contribution in [#1485](https://github.com/ratatui/ratatui/pull/1485)
+* @marcoieni made their first contribution in [#1480](https://github.com/ratatui/ratatui/pull/1480)
+* @epompeii made their first contribution in [#1470](https://github.com/ratatui/ratatui/pull/1470)
+* @thomas-tacquet made their first contribution in [#1462](https://github.com/ratatui/ratatui/pull/1462)
+* @miroim made their first contribution in [#1448](https://github.com/ratatui/ratatui/pull/1448)
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/v0.29.0...0.30.0-alpha.1
+
+## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0) - 2024-10-21
+
+> _"Food will come, Remy. Food always comes to those who love to cook."_ – Gusteau
 
 We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 👨‍🍳🐀
 
 ✨ **Release highlights**: <https://ratatui.rs/highlights/v029/>
 
 ⚠️ List of breaking changes can be found [here](https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md).
-
-## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0) - 2024-10-21
 
 ### Features
 
@@ -433,6 +643,7 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
   > <https://github.com/ratatui/ratatui/issues/738>
   >
   > To update your code:
+>
   > ```rust
   >
   > Block::new().title(Title::from("foo"));
@@ -483,17 +694,18 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
   > Given:```rust
   >
   > Text::from_iter([
-  >     Line::from("without line fields"),
-  >     Line::from("with line fields").bold().centered(),
-  >     Line::from_iter([
-  >         Span::from("without span fields"),
-  >         Span::from("with span fields")
-  >             .green()
-  >             .on_black()
-  >             .italic()
-  >             .not_dim(),
-  >     ]),
+  > Line::from("without line fields"),
+  > Line::from("with line fields").bold().centered(),
+  > Line::from_iter([
+  > Span::from("without span fields"),
+  > Span::from("with span fields")
+  > .green()
+  > .on_black()
+  > .italic()
+  > .not_dim(),
+  > ]),
   > ])
+>
   > ```
   >
   > Debug:```

@@ -23,7 +23,7 @@ use crate::{
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,ignore
 /// use ratatui::backend::{Backend, TestBackend};
 ///
 /// let mut backend = TestBackend::new(10, 2);

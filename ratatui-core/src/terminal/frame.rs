@@ -79,7 +79,7 @@ impl Frame<'_> {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// # use ratatui::{backend::TestBackend, Terminal};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
@@ -106,7 +106,7 @@ impl Frame<'_> {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// # use ratatui::{backend::TestBackend, Terminal};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
@@ -180,7 +180,7 @@ impl Frame<'_> {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// # use ratatui::{backend::TestBackend, Terminal};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
