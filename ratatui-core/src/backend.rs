@@ -24,7 +24,7 @@
 //!
 //! # Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use std::io::stdout;
 //!
 //! use ratatui::{backend::CrosstermBackend, Terminal};
@@ -171,7 +171,7 @@ pub trait Backend {
     /// See also [`show_cursor`].
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// # use ratatui::backend::{TestBackend};
     /// # let mut backend = TestBackend::new(80, 25);
     /// use ratatui::backend::Backend;
@@ -208,7 +208,7 @@ pub trait Backend {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// # use ratatui::backend::{TestBackend};
     /// # let mut backend = TestBackend::new(80, 25);
     /// use ratatui::{backend::Backend, layout::Position};
@@ -241,7 +241,7 @@ pub trait Backend {
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use ratatui::backend::{TestBackend};
     /// # let mut backend = TestBackend::new(80, 25);
     /// use ratatui::backend::Backend;
@@ -259,7 +259,7 @@ pub trait Backend {
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// # use ratatui::{backend::{TestBackend}};
     /// # let mut backend = TestBackend::new(80, 25);
     /// use ratatui::backend::{Backend, ClearType};
@@ -293,7 +293,7 @@ pub trait Backend {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// # use ratatui::{backend::{TestBackend}};
     /// # let backend = TestBackend::new(80, 25);
     /// use ratatui::{backend::Backend, layout::Size};

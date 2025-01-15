@@ -35,7 +35,7 @@ instability = "0.3.7"
 itertools = "0.13.0"
 pretty_assertions = "1.4.1"
 ratatui = { path = "ratatui", version = "0.30.0-alpha.1" }
-ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.1" }
+ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.2" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.1" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.1" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-alpha.1" }
