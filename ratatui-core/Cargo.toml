@@ -62,12 +62,8 @@ unicode-width.workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true
-ratatui = { workspace = true, features = ["crossterm", "termwiz"] }
 rstest.workspace = true
 serde_json.workspace = true
-
-[target.'cfg(not(windows))'.dev-dependencies]
-ratatui = { workspace = true, features = ["termion"] }
 
 [lints]
 workspace = true
