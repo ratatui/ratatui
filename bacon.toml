@@ -16,15 +16,15 @@ command = ["cargo", "xtask", "check", "--all-features"]
 need_stdout = false
 
 [jobs.check-crossterm]
-command = ["cargo", "xtask", "check-crossterm"]
+command = ["cargo", "xtask", "check-backend", "crossterm"]
 need_stdout = false
 
 [jobs.check-termion]
-command = ["cargo", "xtask", "check-termion"]
+command = ["cargo", "xtask", "check-backend", "termion"]
 need_stdout = false
 
 [jobs.check-termwiz]
-command = ["cargo", "xtask", "check-termwiz"]
+command = ["cargo", "xtask", "check-backend", "termwiz"]
 need_stdout = false
 
 [jobs.clippy-all]
@@ -52,7 +52,7 @@ need_stdout = false
 command = ["cargo", "xtask", "coverage"]
 
 [jobs.coverage-unit-tests-only]
-command = ["cargo", "xtask", "coverage-unit"]
+command = ["cargo", "xtask", "coverage", "--lib"]
 
 [jobs.hack]
 command = ["cargo", "xtask", "hack"]
