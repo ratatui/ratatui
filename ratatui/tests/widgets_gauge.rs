@@ -175,7 +175,7 @@ fn widgets_gauge_supports_large_labels() {
 
 #[test]
 fn widgets_line_gauge_renders() {
-    let backend = TestBackend::new(20, 4);
+    let backend = TestBackend::new(20, 6);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
@@ -192,10 +192,12 @@ fn widgets_line_gauge_renders() {
                     height: 1,
                 },
             );
+            // custom (same) symbols for filled and unfilled parts
             let gauge = LineGauge::default()
                 .block(Block::bordered().title("Gauge 2"))
                 .filled_style(Style::default().fg(Color::Green))
-                .line_set(symbols::line::THICK)
+                .filled_symbol(symbols::line::THICK_HORIZONTAL)
+                .unfilled_symbol(symbols::line::THICK_HORIZONTAL)
                 .ratio(0.211_313_934_313_1);
             f.render_widget(
                 gauge,
@@ -206,6 +208,31 @@ fn widgets_line_gauge_renders() {
                     height: 3,
                 },
             );
+            // default symbol for filled part, but empty for unfilled part
+            let gauge = LineGauge::default().unfilled_symbol(" ").ratio(0.50);
+            f.render_widget(
+                gauge,
+                Rect {
+                    x: 0,
+                    y: 4,
+                    width: 20,
+                    height: 1,
+                },
+            );
+            // different custom symbols for filled unfilled parts
+            let gauge = LineGauge::default()
+                .filled_symbol("█") // similar to `symbols::bar::FULL`
+                .unfilled_symbol("░") // similar to `symbols::shade::LIGHT`
+                .ratio(0.80);
+            f.render_widget(
+                gauge,
+                Rect {
+                    x: 0,
+                    y: 5,
+                    width: 20,
+                    height: 1,
+                },
+            );
         })
         .unwrap();
     let mut expected = Buffer::with_lines([
@@ -213,6 +240,8 @@ fn widgets_line_gauge_renders() {
         "┌Gauge 2───────────┐",
         "│21% ━━━━━━━━━━━━━━│",
         "└──────────────────┘",
+        "50% ────────        ",
+        "80% ████████████░░░░",
     ]);
     for col in 4..10 {
         expected[(col, 0)].set_fg(Color::Green);
