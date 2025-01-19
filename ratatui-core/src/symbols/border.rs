@@ -502,6 +502,96 @@ mod tests {
     }
 
     #[test]
+    fn light_double_dashed() {
+        assert_eq!(
+            render(LIGHT_DOUBLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┌╌╌┐░
+                 ░╎░░╎░
+                 ░╎░░╎░
+                 ░└╌╌┘░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn heavy_double_dashed() {
+        assert_eq!(
+            render(HEAVY_DOUBLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┏╍╍┓░
+                 ░╏░░╏░
+                 ░╏░░╏░
+                 ░┗╍╍┛░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn light_triple_dashed() {
+        assert_eq!(
+            render(LIGHT_TRIPLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┌┄┄┐░
+                 ░┆░░┆░
+                 ░┆░░┆░
+                 ░└┄┄┘░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn heavy_triple_dashed() {
+        assert_eq!(
+            render(HEAVY_TRIPLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┏┅┅┓░
+                 ░┇░░┇░
+                 ░┇░░┇░
+                 ░┗┅┅┛░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn light_quadruple_dashed() {
+        assert_eq!(
+            render(LIGHT_QUADRUPLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┌┈┈┐░
+                 ░┊░░┊░
+                 ░┊░░┊░
+                 ░└┈┈┘░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn heavy_quadruple_dashed() {
+        assert_eq!(
+            render(HEAVY_QUADRUPLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┏┉┉┓░
+                 ░┋░░┋░
+                 ░┋░░┋░
+                 ░┗┉┉┛░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
     fn quadrant_outside() {
         assert_eq!(
             render(QUADRANT_OUTSIDE),
