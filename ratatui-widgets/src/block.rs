@@ -1389,12 +1389,30 @@ mod tests {
         assert_eq!(format!("{}", BorderType::Rounded), "Rounded");
         assert_eq!(format!("{}", BorderType::Double), "Double");
         assert_eq!(format!("{}", BorderType::Thick), "Thick");
-        assert_eq!(format!("{}", BorderType::LightDoubleDashed), "LightDoubleDashed");
-        assert_eq!(format!("{}", BorderType::HeavyDoubleDashed), "HeavyDoubleDashed");
-        assert_eq!(format!("{}", BorderType::LightTripleDashed), "LightTripleDashed");
-        assert_eq!(format!("{}", BorderType::HeavyTripleDashed), "HeavyTripleDashed");
-        assert_eq!(format!("{}", BorderType::LightQuadrupleDashed), "LightQuadrupleDashed");
-        assert_eq!(format!("{}", BorderType::HeavyQuadrupleDashed), "HeavyQuadrupleDashed");
+        assert_eq!(
+            format!("{}", BorderType::LightDoubleDashed),
+            "LightDoubleDashed"
+        );
+        assert_eq!(
+            format!("{}", BorderType::HeavyDoubleDashed),
+            "HeavyDoubleDashed"
+        );
+        assert_eq!(
+            format!("{}", BorderType::LightTripleDashed),
+            "LightTripleDashed"
+        );
+        assert_eq!(
+            format!("{}", BorderType::HeavyTripleDashed),
+            "HeavyTripleDashed"
+        );
+        assert_eq!(
+            format!("{}", BorderType::LightQuadrupleDashed),
+            "LightQuadrupleDashed"
+        );
+        assert_eq!(
+            format!("{}", BorderType::HeavyQuadrupleDashed),
+            "HeavyQuadrupleDashed"
+        );
     }
 
     #[test]
@@ -1403,12 +1421,30 @@ mod tests {
         assert_eq!("Rounded".parse(), Ok(BorderType::Rounded));
         assert_eq!("Double".parse(), Ok(BorderType::Double));
         assert_eq!("Thick".parse(), Ok(BorderType::Thick));
-        assert_eq!("LightDoubleDashed".parse(), Ok(BorderType::LightDoubleDashed));
-        assert_eq!("HeavyDoubleDashed".parse(), Ok(BorderType::HeavyDoubleDashed));
-        assert_eq!("LightTripleDashed".parse(), Ok(BorderType::LightTripleDashed));
-        assert_eq!("HeavyTripleDashed".parse(), Ok(BorderType::HeavyTripleDashed));
-        assert_eq!("LightQuadrupleDashed".parse(), Ok(BorderType::LightQuadrupleDashed));
-        assert_eq!("HeavyQuadrupleDashed".parse(), Ok(BorderType::HeavyQuadrupleDashed));
+        assert_eq!(
+            "LightDoubleDashed".parse(),
+            Ok(BorderType::LightDoubleDashed)
+        );
+        assert_eq!(
+            "HeavyDoubleDashed".parse(),
+            Ok(BorderType::HeavyDoubleDashed)
+        );
+        assert_eq!(
+            "LightTripleDashed".parse(),
+            Ok(BorderType::LightTripleDashed)
+        );
+        assert_eq!(
+            "HeavyTripleDashed".parse(),
+            Ok(BorderType::HeavyTripleDashed)
+        );
+        assert_eq!(
+            "LightQuadrupleDashed".parse(),
+            Ok(BorderType::LightQuadrupleDashed)
+        );
+        assert_eq!(
+            "HeavyQuadrupleDashed".parse(),
+            Ok(BorderType::HeavyQuadrupleDashed)
+        );
         assert_eq!("".parse::<BorderType>(), Err(ParseError::VariantNotFound));
     }
 
