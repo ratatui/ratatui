@@ -1,12 +1,22 @@
 pub const VERTICAL: &str = "│";
-pub const DOTTED_VERTICAL: &str = "┆";
 pub const DOUBLE_VERTICAL: &str = "║";
 pub const THICK_VERTICAL: &str = "┃";
+pub const LIGHT_DOUBLE_DASH_VERTICAL: &str = "╎";
+pub const HEAVY_DOUBLE_DASH_VERTICAL: &str = "╏";
+pub const LIGHT_TRIPLE_DASH_VERTICAL: &str = "┆";
+pub const HEAVY_TRIPLE_DASH_VERTICAL: &str = "┇";
+pub const LIGHT_QUADRUPLE_DASH_VERTICAL: &str = "┊";
+pub const HEAVY_QUADRUPLE_DASH_VERTICAL: &str = "┋";
 
 pub const HORIZONTAL: &str = "─";
-pub const DOTTED_HORIZONTAL: &str = "┄";
 pub const DOUBLE_HORIZONTAL: &str = "═";
 pub const THICK_HORIZONTAL: &str = "━";
+pub const LIGHT_DOUBLE_DASH_HORIZONTAL: &str = "╌";
+pub const HEAVY_DOUBLE_DASH_HORIZONTAL: &str = "╍";
+pub const LIGHT_TRIPLE_DASH_HORIZONTAL: &str = "┄";
+pub const HEAVY_TRIPLE_DASH_HORIZONTAL: &str = "┅";
+pub const LIGHT_QUADRUPLE_DASH_HORIZONTAL: &str = "┈";
+pub const HEAVY_QUADRUPLE_DASH_HORIZONTAL: &str = "┉";
 
 pub const TOP_RIGHT: &str = "┐";
 pub const ROUNDED_TOP_RIGHT: &str = "╮";
@@ -83,12 +93,6 @@ pub const NORMAL: Set = Set {
     cross: CROSS,
 };
 
-pub const DOTTED: Set = Set {
-    vertical: DOTTED_VERTICAL,
-    horizontal: DOTTED_HORIZONTAL,
-    ..NORMAL
-};
-
 pub const ROUNDED: Set = Set {
     top_right: ROUNDED_TOP_RIGHT,
     top_left: ROUNDED_TOP_LEFT,
@@ -123,6 +127,42 @@ pub const THICK: Set = Set {
     horizontal_down: THICK_HORIZONTAL_DOWN,
     horizontal_up: THICK_HORIZONTAL_UP,
     cross: THICK_CROSS,
+};
+
+pub const LIGHT_DOUBLE_DASHED: Set = Set {
+    vertical: LIGHT_DOUBLE_DASH_VERTICAL,
+    horizontal: LIGHT_DOUBLE_DASH_HORIZONTAL,
+    ..NORMAL
+};
+
+pub const HEAVY_DOUBLE_DASHED: Set = Set {
+    vertical: HEAVY_DOUBLE_DASH_VERTICAL,
+    horizontal: HEAVY_DOUBLE_DASH_HORIZONTAL,
+    ..THICK
+};
+
+pub const LIGHT_TRIPLE_DASHED: Set = Set {
+    vertical: LIGHT_TRIPLE_DASH_VERTICAL,
+    horizontal: LIGHT_TRIPLE_DASH_HORIZONTAL,
+    ..NORMAL
+};
+
+pub const HEAVY_TRIPLE_DASHED: Set = Set {
+    vertical: HEAVY_TRIPLE_DASH_VERTICAL,
+    horizontal: HEAVY_TRIPLE_DASH_HORIZONTAL,
+    ..THICK
+};
+
+pub const LIGHT_QUADRUPLE_DASHED: Set = Set {
+    vertical: LIGHT_QUADRUPLE_DASH_VERTICAL,
+    horizontal: LIGHT_QUADRUPLE_DASH_HORIZONTAL,
+    ..NORMAL
+};
+
+pub const HEAVY_QUADRUPLE_DASHED: Set = Set {
+    vertical: HEAVY_QUADRUPLE_DASH_VERTICAL,
+    horizontal: HEAVY_QUADRUPLE_DASH_HORIZONTAL,
+    ..THICK
 };
 
 #[cfg(test)]
