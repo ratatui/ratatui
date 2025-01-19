@@ -42,14 +42,6 @@ pub enum BorderType {
     /// ```
     #[default]
     Plain,
-    /// A dotted border.
-    ///
-    /// ```plain
-    /// ┌┄┄┄┄┄┄┄┐
-    /// ┆       ┆
-    /// └┄┄┄┄┄┄┄┘
-    /// ```
-    Dotted,
     /// A plain border with rounded corners.
     ///
     /// # Example
@@ -82,6 +74,54 @@ pub enum BorderType {
     /// ┗━━━━━━━┛
     /// ```
     Thick,
+    /// A light double-dashed border.
+    ///
+    /// ```plain
+    /// ┌╌╌╌╌╌╌╌┐
+    /// ╎       ╎
+    /// └╌╌╌╌╌╌╌┘
+    /// ```
+    LightDoubleDashed,
+    /// A heavy double-dashed border.
+    ///
+    /// ```plain
+    /// ┏╍╍╍╍╍╍╍┓
+    /// ╏       ╏
+    /// ┗╍╍╍╍╍╍╍┛
+    /// ```
+    HeavyDoubleDashed,
+    /// A light triple-dashed border.
+    ///
+    /// ```plain
+    /// ┌┄┄┄┄┄┄┄┐
+    /// ┆       ┆
+    /// └┄┄┄┄┄┄┄┘
+    /// ```
+    LightTripleDashed,
+    /// A heavy triple-dashed border.
+    ///
+    /// ```plain
+    /// ┏┅┅┅┅┅┅┅┓
+    /// ┇       ┇
+    /// ┗┅┅┅┅┅┅┅┛
+    /// ```
+    HeavyTripleDashed,
+    /// A light quadruple-dashed border.
+    ///
+    /// ```plain
+    /// ┌┈┈┈┈┈┈┈┐
+    /// ┊       ┊
+    /// └┈┈┈┈┈┈┈┘
+    /// ```
+    LightQuadrupleDashed,
+    /// A heavy quadruple-dashed border.
+    ///
+    /// ```plain
+    /// ┏┉┉┉┉┉┉┉┓
+    /// ┋       ┋
+    /// ┗┉┉┉┉┉┉┉┛
+    /// ```
+    HeavyQuadrupleDashed,
     /// A border with a single line on the inside of a half block.
     ///
     /// # Example
@@ -110,10 +150,15 @@ impl BorderType {
     pub const fn border_symbols(border_type: Self) -> border::Set {
         match border_type {
             Self::Plain => border::PLAIN,
-            Self::Dotted => border::DOTTED,
             Self::Rounded => border::ROUNDED,
             Self::Double => border::DOUBLE,
             Self::Thick => border::THICK,
+            Self::LightDoubleDashed => border::LIGHT_DOUBLE_DASHED,
+            Self::HeavyDoubleDashed => border::HEAVY_DOUBLE_DASHED,
+            Self::LightTripleDashed => border::LIGHT_TRIPLE_DASHED,
+            Self::HeavyTripleDashed => border::HEAVY_TRIPLE_DASHED,
+            Self::LightQuadrupleDashed => border::LIGHT_QUADRUPLE_DASHED,
+            Self::HeavyQuadrupleDashed => border::HEAVY_QUADRUPLE_DASHED,
             Self::QuadrantInside => border::QUADRANT_INSIDE,
             Self::QuadrantOutside => border::QUADRANT_OUTSIDE,
         }
