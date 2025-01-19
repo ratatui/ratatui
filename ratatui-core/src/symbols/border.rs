@@ -37,25 +37,6 @@ pub const PLAIN: Set = Set {
     horizontal_bottom: line::NORMAL.horizontal,
 };
 
-/// Border Set with a single dotted line width
-///
-/// ```text
-/// ┌┄┄┄┄┄┐
-/// ┆xxxxx┆
-/// ┆xxxxx┆
-/// └┄┄┄┄┄┘
-/// ```
-pub const DOTTED: Set = Set {
-    top_left: line::DOTTED.top_left,
-    top_right: line::DOTTED.top_right,
-    bottom_left: line::DOTTED.bottom_left,
-    bottom_right: line::DOTTED.bottom_right,
-    vertical_left: line::DOTTED.vertical,
-    vertical_right: line::DOTTED.vertical,
-    horizontal_top: line::DOTTED.horizontal,
-    horizontal_bottom: line::DOTTED.horizontal,
-};
-
 /// Border Set with a single line width and rounded corners
 ///
 /// ```text
@@ -111,6 +92,120 @@ pub const THICK: Set = Set {
     vertical_right: line::THICK.vertical,
     horizontal_top: line::THICK.horizontal,
     horizontal_bottom: line::THICK.horizontal,
+};
+
+/// Border Set with light double-dashed border lines
+///
+/// ```text
+/// ┌╌╌╌╌╌┐
+/// ╎xxxxx╎
+/// ╎xxxxx╎
+/// └╌╌╌╌╌┘
+/// ```
+pub const LIGHT_DOUBLE_DASHED: Set = Set {
+    top_left: line::LIGHT_DOUBLE_DASHED.top_left,
+    top_right: line::LIGHT_DOUBLE_DASHED.top_right,
+    bottom_left: line::LIGHT_DOUBLE_DASHED.bottom_left,
+    bottom_right: line::LIGHT_DOUBLE_DASHED.bottom_right,
+    vertical_left: line::LIGHT_DOUBLE_DASHED.vertical,
+    vertical_right: line::LIGHT_DOUBLE_DASHED.vertical,
+    horizontal_top: line::LIGHT_DOUBLE_DASHED.horizontal,
+    horizontal_bottom: line::LIGHT_DOUBLE_DASHED.horizontal,
+};
+
+/// Border Set with thick double-dashed border lines
+///
+/// ```text
+/// ┏╍╍╍╍╍┓
+/// ╏xxxxx╏
+/// ╏xxxxx╏
+/// ┗╍╍╍╍╍┛
+/// ```
+pub const HEAVY_DOUBLE_DASHED: Set = Set {
+    top_left: line::HEAVY_DOUBLE_DASHED.top_left,
+    top_right: line::HEAVY_DOUBLE_DASHED.top_right,
+    bottom_left: line::HEAVY_DOUBLE_DASHED.bottom_left,
+    bottom_right: line::HEAVY_DOUBLE_DASHED.bottom_right,
+    vertical_left: line::HEAVY_DOUBLE_DASHED.vertical,
+    vertical_right: line::HEAVY_DOUBLE_DASHED.vertical,
+    horizontal_top: line::HEAVY_DOUBLE_DASHED.horizontal,
+    horizontal_bottom: line::HEAVY_DOUBLE_DASHED.horizontal,
+};
+
+/// Border Set with light triple-dashed border lines
+///
+/// ```text
+/// ┌┄┄┄┄┄┐
+/// ┆xxxxx┆
+/// ┆xxxxx┆
+/// └┄┄┄┄┄┘
+/// ```
+pub const LIGHT_TRIPLE_DASHED: Set = Set {
+    top_left: line::LIGHT_TRIPLE_DASHED.top_left,
+    top_right: line::LIGHT_TRIPLE_DASHED.top_right,
+    bottom_left: line::LIGHT_TRIPLE_DASHED.bottom_left,
+    bottom_right: line::LIGHT_TRIPLE_DASHED.bottom_right,
+    vertical_left: line::LIGHT_TRIPLE_DASHED.vertical,
+    vertical_right: line::LIGHT_TRIPLE_DASHED.vertical,
+    horizontal_top: line::LIGHT_TRIPLE_DASHED.horizontal,
+    horizontal_bottom: line::LIGHT_TRIPLE_DASHED.horizontal,
+};
+
+/// Border Set with thick triple-dashed border lines
+///
+/// ```text
+/// ┏┅┅┅┅┅┓
+/// ┇xxxxx┇
+/// ┇xxxxx┇
+/// ┗┅┅┅┅┅┛
+/// ```
+pub const HEAVY_TRIPLE_DASHED: Set = Set {
+    top_left: line::HEAVY_TRIPLE_DASHED.top_left,
+    top_right: line::HEAVY_TRIPLE_DASHED.top_right,
+    bottom_left: line::HEAVY_TRIPLE_DASHED.bottom_left,
+    bottom_right: line::HEAVY_TRIPLE_DASHED.bottom_right,
+    vertical_left: line::HEAVY_TRIPLE_DASHED.vertical,
+    vertical_right: line::HEAVY_TRIPLE_DASHED.vertical,
+    horizontal_top: line::HEAVY_TRIPLE_DASHED.horizontal,
+    horizontal_bottom: line::HEAVY_TRIPLE_DASHED.horizontal,
+};
+
+/// Border Set with light quadruple-dashed border lines
+///
+/// ```text
+/// ┌┈┈┈┈┈┐
+/// ┊xxxxx┊
+/// ┊xxxxx┊
+/// └┈┈┈┈┈┘
+/// ```
+pub const LIGHT_QUADRUPLE_DASHED: Set = Set {
+    top_left: line::LIGHT_QUADRUPLE_DASHED.top_left,
+    top_right: line::LIGHT_QUADRUPLE_DASHED.top_right,
+    bottom_left: line::LIGHT_QUADRUPLE_DASHED.bottom_left,
+    bottom_right: line::LIGHT_QUADRUPLE_DASHED.bottom_right,
+    vertical_left: line::LIGHT_QUADRUPLE_DASHED.vertical,
+    vertical_right: line::LIGHT_QUADRUPLE_DASHED.vertical,
+    horizontal_top: line::LIGHT_QUADRUPLE_DASHED.horizontal,
+    horizontal_bottom: line::LIGHT_QUADRUPLE_DASHED.horizontal,
+};
+
+/// Border Set with thick quadruple-dashed border lines
+///
+/// ```text
+/// ┏┉┉┉┉┉┓
+/// ┋xxxxx┋
+/// ┋xxxxx┋
+/// ┗┉┉┉┉┉┛
+/// ```
+pub const HEAVY_QUADRUPLE_DASHED: Set = Set {
+    top_left: line::HEAVY_QUADRUPLE_DASHED.top_left,
+    top_right: line::HEAVY_QUADRUPLE_DASHED.top_right,
+    bottom_left: line::HEAVY_QUADRUPLE_DASHED.bottom_left,
+    bottom_right: line::HEAVY_QUADRUPLE_DASHED.bottom_right,
+    vertical_left: line::HEAVY_QUADRUPLE_DASHED.vertical,
+    vertical_right: line::HEAVY_QUADRUPLE_DASHED.vertical,
+    horizontal_top: line::HEAVY_QUADRUPLE_DASHED.horizontal,
+    horizontal_bottom: line::HEAVY_QUADRUPLE_DASHED.horizontal,
 };
 
 pub const QUADRANT_TOP_LEFT: &str = "▘";
