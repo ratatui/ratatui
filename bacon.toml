@@ -8,91 +8,57 @@
 default_job = "check"
 
 [jobs.check]
-command = ["cargo", "check", "--all-features"]
+command = ["cargo", "xtask", "check"]
 need_stdout = false
 
 [jobs.check-all]
-command = ["cargo", "check", "--all-targets", "--all-features"]
+command = ["cargo", "xtask", "check", "--all-features"]
 need_stdout = false
 
 [jobs.check-crossterm]
-command = ["cargo", "check", "--all-targets", "--no-default-features", "--features", "crossterm"]
+command = ["cargo", "xtask", "check-backend", "crossterm"]
 need_stdout = false
 
 [jobs.check-termion]
-command = ["cargo", "check", "--all-targets", "--no-default-features", "--features", "termion"]
+command = ["cargo", "xtask", "check-backend", "termion"]
 need_stdout = false
 
 [jobs.check-termwiz]
-command = ["cargo", "check", "--all-targets", "--no-default-features", "--features", "termwiz"]
+command = ["cargo", "xtask", "check-backend", "termwiz"]
 need_stdout = false
 
 [jobs.clippy-all]
-command = ["cargo", "xtask", "lint-clippy"]
+command = ["cargo", "xtask", "clippy"]
 need_stdout = false
 
 [jobs.test]
-command = ["cargo", "test", "--all-features"]
+command = ["cargo", "xtask", "test"]
 need_stdout = true
 
 [jobs.test-unit]
-command = ["cargo", "test", "--lib", "--all-features"]
+command = ["cargo", "xtask", "test-libs"]
 need_stdout = true
 
 [jobs.doc]
-command = [
-    "cargo",
-    "+nightly",
-    "doc",
-    "-Zunstable-options",
-    "-Zrustdoc-scrape-examples",
-    "--all-features",
-    "--no-deps",
-]
-env.RUSTDOCFLAGS = "--cfg docsrs"
+command = ["cargo", "xtask", "docs"]
 need_stdout = false
 
-# If the doc compiles, then it opens in your browser and bacon switches
-# to the previous job
 [jobs.doc-open]
-command = [
-    "cargo",
-    "+nightly",
-    "doc",
-    "-Zunstable-options",
-    "-Zrustdoc-scrape-examples",
-    "--all-features",
-    "--no-deps",
-    "--open",
-]
-env.RUSTDOCFLAGS = "--cfg docsrs"
+command = ["cargo", "xtask", "docs", "--open"]
+on_success = "job:doc"
 need_stdout = false
-on_success = "job:doc" # so that we don't open the browser at each change
 
 [jobs.coverage]
-command = ["cargo", "llvm-cov", "--lcov", "--output-path", "target/lcov.info", "--all-features"]
+command = ["cargo", "xtask", "coverage"]
 
 [jobs.coverage-unit-tests-only]
-command = [
-    "cargo",
-    "llvm-cov",
-    "--lcov",
-    "--output-path",
-    "target/lcov.info",
-    "--lib",
-    "--all-features",
-]
+command = ["cargo", "xtask", "coverage", "--lib"]
 
 [jobs.hack]
-command = [
-    "cargo",
-    "hack",
-    "test",
-    "--lib",
-    "--each-feature",
-    # "--all-targets",
-    "--workspace",
-]
+command = ["cargo", "xtask", "hack"]
+
+[jobs.format]
+command = ["cargo", "xtask", "format"]
 
 # You may define here keybindings that would be specific to
 # a project, for example a shortcut to launch a specific job.
@@ -107,3 +73,4 @@ v = "job:coverage"
 ctrl-v = "job:coverage-unit-tests-only"
 u = "job:test-unit"
 n = "job:nextest"
+f = "job:format"

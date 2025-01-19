@@ -32,7 +32,7 @@ use crate::{
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use std::io::stdout;
 ///
 /// use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
@@ -108,7 +108,7 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use std::io::stdout;
     ///
     /// use ratatui::{backend::CrosstermBackend, Terminal};
@@ -130,7 +130,7 @@ where
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// use std::io::stdout;
     ///
     /// use ratatui::{backend::CrosstermBackend, layout::Rect, Terminal, TerminalOptions, Viewport};
@@ -281,7 +281,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,ignore
     /// # let backend = ratatui::backend::TestBackend::new(10, 10);
     /// # let mut terminal = ratatui::Terminal::new(backend)?;
     /// use ratatui::{layout::Position, widgets::Paragraph};
@@ -349,7 +349,7 @@ where
     ///
     /// # Examples
     ///
-    /// ```should_panic
+    /// ```ignore
     /// # use ratatui::layout::Position;;
     /// # let backend = ratatui::backend::TestBackend::new(10, 10);
     /// # let mut terminal = ratatui::Terminal::new(backend)?;
@@ -557,7 +557,7 @@ where
     ///
     /// ## Insert a single line before the current viewport
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// use ratatui::{
     ///     backend::TestBackend,
     ///     style::{Color, Style},

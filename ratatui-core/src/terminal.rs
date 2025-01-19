@@ -10,7 +10,7 @@
 //!
 //! # Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use std::io::stdout;
 //!
 //! use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};

@@ -3,7 +3,7 @@ name = "ratatui-widgets"
 description = "A collection of Ratatui widgets for building terminal user interfaces using Ratatui."
 # Note that this started at 0.3.0 as there was a previous crate using the name `ratatui-widgets`.
 # <https://github.com/joshka/ratatui-widgets/issues/46>
-version = "0.3.0-alpha.0"
+version = "0.3.0-alpha.1"
 readme = "README.md"
 authors.workspace = true
 documentation.workspace = true
@@ -48,17 +48,17 @@ unstable-rendered-line-info = []
 
 [dependencies]
 bitflags.workspace = true
-itertools.workspace = true
+document-features = { workspace = true, optional = true }
 indoc.workspace = true
 instability.workspace = true
+itertools.workspace = true
+line-clipping = "0.2.1"
 ratatui-core = { workspace = true }
+serde = { workspace = true, optional = true }
 strum.workspace = true
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation.workspace = true
 unicode-width.workspace = true
-serde = { workspace = true, optional = true }
-document-features = { workspace = true, optional = true }
-line-clipping = "0.2.1"
 
 [dev-dependencies]
 color-eyre.workspace = true

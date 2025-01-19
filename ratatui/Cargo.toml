@@ -1,7 +1,7 @@
 [package]
 name = "ratatui"
 description = "A library that's all about cooking up terminal user interfaces"
-version = "0.30.0-alpha.0"
+version = "0.30.0-alpha.1"
 authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
@@ -46,10 +46,10 @@ palette = ["ratatui-core/palette", "dep:palette"]
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).
 scrolling-regions = [
-    "ratatui-core/scrolling-regions",
-    "ratatui-crossterm?/scrolling-regions",
-    "ratatui-termion?/scrolling-regions",
-    "ratatui-termwiz?/scrolling-regions",
+  "ratatui-core/scrolling-regions",
+  "ratatui-crossterm?/scrolling-regions",
+  "ratatui-termion?/scrolling-regions",
+  "ratatui-termwiz?/scrolling-regions",
 ]
 
 ## enables all widgets.
@@ -66,9 +66,9 @@ widget-calendar = ["ratatui-widgets/calendar", "dep:time"]
 ## Underline color is only supported by the Crossterm and Termwiz backends, and is not supported on
 ## Windows 7.
 underline-color = [
-    "ratatui-core/underline-color",
-    "ratatui-crossterm?/underline-color",
-    "ratatui-termwiz?/underline-color",
+  "ratatui-core/underline-color",
+  "ratatui-crossterm?/underline-color",
+  "ratatui-termwiz?/underline-color",
 ]
 
 #! The following features are unstable and may change in the future:
@@ -91,8 +91,8 @@ unstable-widget-ref = []
 
 ## Enables getting access to backends' writers.
 unstable-backend-writer = [
-    "ratatui-crossterm?/unstable-backend-writer",
-    "ratatui-termion?/unstable-backend-writer",
+  "ratatui-crossterm?/unstable-backend-writer",
+  "ratatui-termion?/unstable-backend-writer",
 ]
 
 [dependencies]
@@ -125,9 +125,9 @@ indoc = "2"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
-rstest = "0.23.0"
+rstest = "0.24.0"
 serde_json.workspace = true
-tokio = { version = "1.42.0", features = ["rt", "macros", "time", "rt-multi-thread"] }
+tokio = { version = "1.43.0", features = ["rt", "macros", "time", "rt-multi-thread"] }
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
@@ -246,6 +246,11 @@ doc-scrape-examples = true
 
 [[example]]
 name = "widget_impl"
+required-features = ["crossterm", "unstable-widget-ref"]
+doc-scrape-examples = true
+
+[[example]]
+name = "widget-ref-container"
 required-features = ["crossterm", "unstable-widget-ref"]
 doc-scrape-examples = true
 
