@@ -25,10 +25,10 @@ const fn from_line_set(line_set: line::Set) -> Set {
         top_right: line_set.top_right,
         bottom_left: line_set.bottom_left,
         bottom_right: line_set.bottom_right,
-        vertical_left: line_set.vertical_left,
-        vertical_right: line_set.vertical_right,
-        horizontal_top: line_set.horizontal_up,
-        horizontal_bottom: line_set.horizontal_down,
+        vertical_left: line_set.vertical,
+        vertical_right: line_set.vertical,
+        horizontal_top: line_set.horizontal,
+        horizontal_bottom: line_set.horizontal,
     }
 }
 
