@@ -426,10 +426,10 @@ mod tests {
                 top_right: "b",
                 bottom_left: "c",
                 bottom_right: "d",
-                vertical_left: "g",
-                vertical_right: "h",
-                horizontal_bottom: "i",
-                horizontal_top: "j",
+                vertical_left: "e",
+                vertical_right: "e",
+                horizontal_bottom: "f",
+                horizontal_top: "f",
             }
         );
     }
