@@ -18,6 +18,20 @@ impl Default for Set {
     }
 }
 
+// Helper function to convert a line set to a border set
+const fn from_line_set(line_set: line::Set) -> Set {
+    Set {
+        top_left: line_set.top_left,
+        top_right: line_set.top_right,
+        bottom_left: line_set.bottom_left,
+        bottom_right: line_set.bottom_right,
+        vertical_left: line_set.vertical,
+        vertical_right: line_set.vertical,
+        horizontal_top: line_set.horizontal,
+        horizontal_bottom: line_set.horizontal,
+    }
+}
+
 /// Border Set with a single line width
 ///
 /// ```text
@@ -102,16 +116,7 @@ pub const THICK: Set = Set {
 /// ╎xxxxx╎
 /// └╌╌╌╌╌┘
 /// ```
-pub const LIGHT_DOUBLE_DASHED: Set = Set {
-    top_left: line::LIGHT_DOUBLE_DASHED.top_left,
-    top_right: line::LIGHT_DOUBLE_DASHED.top_right,
-    bottom_left: line::LIGHT_DOUBLE_DASHED.bottom_left,
-    bottom_right: line::LIGHT_DOUBLE_DASHED.bottom_right,
-    vertical_left: line::LIGHT_DOUBLE_DASHED.vertical,
-    vertical_right: line::LIGHT_DOUBLE_DASHED.vertical,
-    horizontal_top: line::LIGHT_DOUBLE_DASHED.horizontal,
-    horizontal_bottom: line::LIGHT_DOUBLE_DASHED.horizontal,
-};
+pub const LIGHT_DOUBLE_DASHED: Set = from_line_set(line::LIGHT_DOUBLE_DASHED);
 
 /// Border Set with thick double-dashed border lines
 ///
@@ -121,16 +126,7 @@ pub const LIGHT_DOUBLE_DASHED: Set = Set {
 /// ╏xxxxx╏
 /// ┗╍╍╍╍╍┛
 /// ```
-pub const HEAVY_DOUBLE_DASHED: Set = Set {
-    top_left: line::HEAVY_DOUBLE_DASHED.top_left,
-    top_right: line::HEAVY_DOUBLE_DASHED.top_right,
-    bottom_left: line::HEAVY_DOUBLE_DASHED.bottom_left,
-    bottom_right: line::HEAVY_DOUBLE_DASHED.bottom_right,
-    vertical_left: line::HEAVY_DOUBLE_DASHED.vertical,
-    vertical_right: line::HEAVY_DOUBLE_DASHED.vertical,
-    horizontal_top: line::HEAVY_DOUBLE_DASHED.horizontal,
-    horizontal_bottom: line::HEAVY_DOUBLE_DASHED.horizontal,
-};
+pub const HEAVY_DOUBLE_DASHED: Set = from_line_set(line::HEAVY_DOUBLE_DASHED);
 
 /// Border Set with light triple-dashed border lines
 ///
@@ -140,16 +136,7 @@ pub const HEAVY_DOUBLE_DASHED: Set = Set {
 /// ┆xxxxx┆
 /// └┄┄┄┄┄┘
 /// ```
-pub const LIGHT_TRIPLE_DASHED: Set = Set {
-    top_left: line::LIGHT_TRIPLE_DASHED.top_left,
-    top_right: line::LIGHT_TRIPLE_DASHED.top_right,
-    bottom_left: line::LIGHT_TRIPLE_DASHED.bottom_left,
-    bottom_right: line::LIGHT_TRIPLE_DASHED.bottom_right,
-    vertical_left: line::LIGHT_TRIPLE_DASHED.vertical,
-    vertical_right: line::LIGHT_TRIPLE_DASHED.vertical,
-    horizontal_top: line::LIGHT_TRIPLE_DASHED.horizontal,
-    horizontal_bottom: line::LIGHT_TRIPLE_DASHED.horizontal,
-};
+pub const LIGHT_TRIPLE_DASHED: Set = from_line_set(line::LIGHT_TRIPLE_DASHED);
 
 /// Border Set with thick triple-dashed border lines
 ///
@@ -159,16 +146,7 @@ pub const LIGHT_TRIPLE_DASHED: Set = Set {
 /// ┇xxxxx┇
 /// ┗┅┅┅┅┅┛
 /// ```
-pub const HEAVY_TRIPLE_DASHED: Set = Set {
-    top_left: line::HEAVY_TRIPLE_DASHED.top_left,
-    top_right: line::HEAVY_TRIPLE_DASHED.top_right,
-    bottom_left: line::HEAVY_TRIPLE_DASHED.bottom_left,
-    bottom_right: line::HEAVY_TRIPLE_DASHED.bottom_right,
-    vertical_left: line::HEAVY_TRIPLE_DASHED.vertical,
-    vertical_right: line::HEAVY_TRIPLE_DASHED.vertical,
-    horizontal_top: line::HEAVY_TRIPLE_DASHED.horizontal,
-    horizontal_bottom: line::HEAVY_TRIPLE_DASHED.horizontal,
-};
+pub const HEAVY_TRIPLE_DASHED: Set = from_line_set(line::HEAVY_TRIPLE_DASHED);
 
 /// Border Set with light quadruple-dashed border lines
 ///
@@ -178,16 +156,7 @@ pub const HEAVY_TRIPLE_DASHED: Set = Set {
 /// ┊xxxxx┊
 /// └┈┈┈┈┈┘
 /// ```
-pub const LIGHT_QUADRUPLE_DASHED: Set = Set {
-    top_left: line::LIGHT_QUADRUPLE_DASHED.top_left,
-    top_right: line::LIGHT_QUADRUPLE_DASHED.top_right,
-    bottom_left: line::LIGHT_QUADRUPLE_DASHED.bottom_left,
-    bottom_right: line::LIGHT_QUADRUPLE_DASHED.bottom_right,
-    vertical_left: line::LIGHT_QUADRUPLE_DASHED.vertical,
-    vertical_right: line::LIGHT_QUADRUPLE_DASHED.vertical,
-    horizontal_top: line::LIGHT_QUADRUPLE_DASHED.horizontal,
-    horizontal_bottom: line::LIGHT_QUADRUPLE_DASHED.horizontal,
-};
+pub const LIGHT_QUADRUPLE_DASHED: Set = from_line_set(line::LIGHT_QUADRUPLE_DASHED);
 
 /// Border Set with thick quadruple-dashed border lines
 ///
@@ -197,16 +166,7 @@ pub const LIGHT_QUADRUPLE_DASHED: Set = Set {
 /// ┋xxxxx┋
 /// ┗┉┉┉┉┉┛
 /// ```
-pub const HEAVY_QUADRUPLE_DASHED: Set = Set {
-    top_left: line::HEAVY_QUADRUPLE_DASHED.top_left,
-    top_right: line::HEAVY_QUADRUPLE_DASHED.top_right,
-    bottom_left: line::HEAVY_QUADRUPLE_DASHED.bottom_left,
-    bottom_right: line::HEAVY_QUADRUPLE_DASHED.bottom_right,
-    vertical_left: line::HEAVY_QUADRUPLE_DASHED.vertical,
-    vertical_right: line::HEAVY_QUADRUPLE_DASHED.vertical,
-    horizontal_top: line::HEAVY_QUADRUPLE_DASHED.horizontal,
-    horizontal_bottom: line::HEAVY_QUADRUPLE_DASHED.horizontal,
-};
+pub const HEAVY_QUADRUPLE_DASHED: Set = from_line_set(line::HEAVY_QUADRUPLE_DASHED);
 
 pub const QUADRANT_TOP_LEFT: &str = "▘";
 pub const QUADRANT_TOP_RIGHT: &str = "▝";
