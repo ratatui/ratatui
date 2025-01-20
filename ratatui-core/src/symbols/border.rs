@@ -402,6 +402,39 @@ mod tests {
     }
 
     #[test]
+    fn border_set_from_line_set() {
+        let custom_line_set = line::Set {
+            top_left: "a",
+            top_right: "b",
+            bottom_left: "c",
+            bottom_right: "d",
+            vertical: "e",
+            horizontal: "f",
+            vertical_left: "g",
+            vertical_right: "h",
+            horizontal_down: "i",
+            horizontal_up: "j",
+            cross: "k",
+        };
+
+        let border_set = from_line_set(custom_line_set);
+
+        assert_eq!(
+            border_set,
+            Set {
+                top_left: "a",
+                top_right: "b",
+                bottom_left: "c",
+                bottom_right: "d",
+                vertical_left: "g",
+                vertical_right: "h",
+                horizontal_bottom: "i",
+                horizontal_top: "j",
+            }
+        );
+    }
+
+    #[test]
     fn plain() {
         assert_eq!(
             render(PLAIN),
