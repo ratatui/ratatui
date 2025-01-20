@@ -21,7 +21,7 @@ use ratatui::{
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{
-        Constraint::{Length, Min, Ratio},
+        Constraint::{Length, Min},
         Layout, Rect,
     },
     style::{palette::tailwind, Style, Stylize},
@@ -108,7 +108,7 @@ impl Widget for &App {
         let [header_area, main_area] = layout.areas(area);
 
         let [gauge1_area, gauge4_area, gauge6_area] =
-            Layout::vertical([Ratio(1, 3); 3]).areas(main_area);
+            Layout::vertical([Length(2); 3]).areas(main_area);
 
         header(header_area, buf);
 

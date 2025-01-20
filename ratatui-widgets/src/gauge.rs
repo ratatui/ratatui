@@ -329,7 +329,7 @@ impl<'a> LineGauge<'a> {
     /// [`THICK`](symbols::line::THICK).
     #[must_use = "method moves the value of self and returns the modified value"]
     #[deprecated(
-        since = "0.29.1",
+        since = "0.30.0",
         note = "You should use `LineGauge::filled_symbol` and `LineGauge::unfilled_symbol` instead."
     )]
     pub const fn line_set(mut self, set: symbols::line::Set) -> Self {
