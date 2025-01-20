@@ -446,10 +446,20 @@ impl Paragraph<'_> {
         });
 
         if let Some(Wrap { trim }) = self.wrap {
-            let line_composer = WordWrapper::new(styled, text_area.width, trim);
+            let mut line_composer = WordWrapper::new(styled, text_area.width, trim);
+            // because WordWrapper is a stateful line composer, we need to compute the lines
+            // iteratively until we reach the desired scroll offset.
+            for _ in 0..self.scroll.y {
+                if line_composer.next_line().is_none() {
+                    return;
+                }
+            }
             self.render_text(line_composer, text_area, buf);
         } else {
-            let mut line_composer = LineTruncator::new(styled, text_area.width);
+            // because LineTruncator is not a stateful line composer, we can skip directly to the
+            // relevant line and start rendering from there which avoids unnecessary work.
+            let mut line_composer =
+                LineTruncator::new(styled.skip(self.scroll.y.into()), text_area.width);
             line_composer.set_horizontal_offset(self.scroll.x);
             self.render_text(line_composer, text_area, buf);
         }
@@ -457,6 +467,7 @@ impl Paragraph<'_> {
 }
 
 impl<'a> Paragraph<'a> {
+    #[allow(clippy::unused_self)]
     fn render_text<C: LineComposer<'a>>(&self, mut composer: C, area: Rect, buf: &mut Buffer) {
         let mut y = 0;
         while let Some(WrappedLine {
@@ -465,24 +476,22 @@ impl<'a> Paragraph<'a> {
             alignment: current_line_alignment,
         }) = composer.next_line()
         {
-            if y >= self.scroll.y {
-                let mut x = get_line_offset(current_line_width, area.width, current_line_alignment);
-                for StyledGrapheme { symbol, style } in current_line {
-                    let width = symbol.width();
-                    if width == 0 {
-                        continue;
-                    }
-                    // If the symbol is empty, the last char which rendered last time will
-                    // leave on the line. It's a quick fix.
-                    let symbol = if symbol.is_empty() { " " } else { symbol };
-                    buf[(area.left() + x, area.top() + y - self.scroll.y)]
-                        .set_symbol(symbol)
-                        .set_style(*style);
-                    x += width as u16;
+            let mut x = get_line_offset(current_line_width, area.width, current_line_alignment);
+            for StyledGrapheme { symbol, style } in current_line {
+                let width = symbol.width();
+                if width == 0 {
+                    continue;
                 }
+                // If the symbol is empty, the last char which rendered last time will
+                // leave on the line. It's a quick fix.
+                let symbol = if symbol.is_empty() { " " } else { symbol };
+                buf[(area.left() + x, area.top() + y)]
+                    .set_symbol(symbol)
+                    .set_style(*style);
+                x += u16::try_from(width).unwrap_or(u16::MAX);
             }
             y += 1;
-            if y >= area.height + self.scroll.y {
+            if y >= area.height {
                 break;
             }
         }
