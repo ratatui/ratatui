@@ -18,6 +18,20 @@ impl Default for Set {
     }
 }
 
+// Helper function to convert a line set to a border set
+const fn from_line_set(line_set: line::Set) -> Set {
+    Set {
+        top_left: line_set.top_left,
+        top_right: line_set.top_right,
+        bottom_left: line_set.bottom_left,
+        bottom_right: line_set.bottom_right,
+        vertical_left: line_set.vertical,
+        vertical_right: line_set.vertical,
+        horizontal_top: line_set.horizontal,
+        horizontal_bottom: line_set.horizontal,
+    }
+}
+
 /// Border Set with a single line width
 ///
 /// ```text
@@ -93,6 +107,66 @@ pub const THICK: Set = Set {
     horizontal_top: line::THICK.horizontal,
     horizontal_bottom: line::THICK.horizontal,
 };
+
+/// Border Set with light double-dashed border lines
+///
+/// ```text
+/// ┌╌╌╌╌╌┐
+/// ╎xxxxx╎
+/// ╎xxxxx╎
+/// └╌╌╌╌╌┘
+/// ```
+pub const LIGHT_DOUBLE_DASHED: Set = from_line_set(line::LIGHT_DOUBLE_DASHED);
+
+/// Border Set with thick double-dashed border lines
+///
+/// ```text
+/// ┏╍╍╍╍╍┓
+/// ╏xxxxx╏
+/// ╏xxxxx╏
+/// ┗╍╍╍╍╍┛
+/// ```
+pub const HEAVY_DOUBLE_DASHED: Set = from_line_set(line::HEAVY_DOUBLE_DASHED);
+
+/// Border Set with light triple-dashed border lines
+///
+/// ```text
+/// ┌┄┄┄┄┄┐
+/// ┆xxxxx┆
+/// ┆xxxxx┆
+/// └┄┄┄┄┄┘
+/// ```
+pub const LIGHT_TRIPLE_DASHED: Set = from_line_set(line::LIGHT_TRIPLE_DASHED);
+
+/// Border Set with thick triple-dashed border lines
+///
+/// ```text
+/// ┏┅┅┅┅┅┓
+/// ┇xxxxx┇
+/// ┇xxxxx┇
+/// ┗┅┅┅┅┅┛
+/// ```
+pub const HEAVY_TRIPLE_DASHED: Set = from_line_set(line::HEAVY_TRIPLE_DASHED);
+
+/// Border Set with light quadruple-dashed border lines
+///
+/// ```text
+/// ┌┈┈┈┈┈┐
+/// ┊xxxxx┊
+/// ┊xxxxx┊
+/// └┈┈┈┈┈┘
+/// ```
+pub const LIGHT_QUADRUPLE_DASHED: Set = from_line_set(line::LIGHT_QUADRUPLE_DASHED);
+
+/// Border Set with thick quadruple-dashed border lines
+///
+/// ```text
+/// ┏┉┉┉┉┉┓
+/// ┋xxxxx┋
+/// ┋xxxxx┋
+/// ┗┉┉┉┉┉┛
+/// ```
+pub const HEAVY_QUADRUPLE_DASHED: Set = from_line_set(line::HEAVY_QUADRUPLE_DASHED);
 
 pub const QUADRANT_TOP_LEFT: &str = "▘";
 pub const QUADRANT_TOP_RIGHT: &str = "▝";
@@ -328,6 +402,39 @@ mod tests {
     }
 
     #[test]
+    fn border_set_from_line_set() {
+        let custom_line_set = line::Set {
+            top_left: "a",
+            top_right: "b",
+            bottom_left: "c",
+            bottom_right: "d",
+            vertical: "e",
+            horizontal: "f",
+            vertical_left: "g",
+            vertical_right: "h",
+            horizontal_down: "i",
+            horizontal_up: "j",
+            cross: "k",
+        };
+
+        let border_set = from_line_set(custom_line_set);
+
+        assert_eq!(
+            border_set,
+            Set {
+                top_left: "a",
+                top_right: "b",
+                bottom_left: "c",
+                bottom_right: "d",
+                vertical_left: "e",
+                vertical_right: "e",
+                horizontal_bottom: "f",
+                horizontal_top: "f",
+            }
+        );
+    }
+
+    #[test]
     fn plain() {
         assert_eq!(
             render(PLAIN),
@@ -382,6 +489,96 @@ mod tests {
                  ░┃░░┃░
                  ░┃░░┃░
                  ░┗━━┛░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn light_double_dashed() {
+        assert_eq!(
+            render(LIGHT_DOUBLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┌╌╌┐░
+                 ░╎░░╎░
+                 ░╎░░╎░
+                 ░└╌╌┘░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn heavy_double_dashed() {
+        assert_eq!(
+            render(HEAVY_DOUBLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┏╍╍┓░
+                 ░╏░░╏░
+                 ░╏░░╏░
+                 ░┗╍╍┛░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn light_triple_dashed() {
+        assert_eq!(
+            render(LIGHT_TRIPLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┌┄┄┐░
+                 ░┆░░┆░
+                 ░┆░░┆░
+                 ░└┄┄┘░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn heavy_triple_dashed() {
+        assert_eq!(
+            render(HEAVY_TRIPLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┏┅┅┓░
+                 ░┇░░┇░
+                 ░┇░░┇░
+                 ░┗┅┅┛░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn light_quadruple_dashed() {
+        assert_eq!(
+            render(LIGHT_QUADRUPLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┌┈┈┐░
+                 ░┊░░┊░
+                 ░┊░░┊░
+                 ░└┈┈┘░
+                 ░░░░░░"
+            )
+        );
+    }
+
+    #[test]
+    fn heavy_quadruple_dashed() {
+        assert_eq!(
+            render(HEAVY_QUADRUPLE_DASHED),
+            indoc!(
+                "░░░░░░
+                 ░┏┉┉┓░
+                 ░┋░░┋░
+                 ░┋░░┋░
+                 ░┗┉┉┛░
                  ░░░░░░"
             )
         );
