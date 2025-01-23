@@ -3,12 +3,10 @@
 Output "target/line_gauge.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
-Set Height 850
+Set Height 400
 Hide
-Type "cargo run --example=line_gauge --features=crossterm"
+Type "cargo run -p ratatui-widgets --example line_gauge"
 Enter
-Sleep 2s
+Sleep 1s
 Show
-Sleep 2s
-Enter 1
-Sleep 15s
+Sleep 6s

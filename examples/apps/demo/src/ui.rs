@@ -84,10 +84,15 @@ fn draw_gauges(frame: &mut Frame, app: &mut App, area: Rect) {
     let line_gauge = LineGauge::default()
         .block(Block::new().title("LineGauge:"))
         .filled_style(Style::default().fg(Color::Magenta))
-        .line_set(if app.enhanced_graphics {
-            symbols::line::THICK
+        .filled_symbol(if app.enhanced_graphics {
+            symbols::line::THICK_HORIZONTAL
         } else {
-            symbols::line::NORMAL
+            symbols::line::HORIZONTAL
+        })
+        .unfilled_symbol(if app.enhanced_graphics {
+            symbols::line::THICK_HORIZONTAL
+        } else {
+            symbols::line::HORIZONTAL
         })
         .ratio(app.progress);
     frame.render_widget(line_gauge, chunks[2]);
