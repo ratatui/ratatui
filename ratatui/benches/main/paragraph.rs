@@ -10,6 +10,7 @@ use ratatui::{
 /// scroll offset to a u32.
 const NO_WRAP_WIDTH: u16 = 200;
 const WRAP_WIDTH: u16 = 100;
+const PARAGRAPH_DEFAULT_HEIGHT: u16 = 50;
 
 /// Benchmark for rendering a paragraph with a given number of lines. The design of this benchmark
 /// allows comparison of the performance of rendering a paragraph with different numbers of lines.
@@ -65,8 +66,6 @@ fn paragraph(c: &mut Criterion) {
     }
     group.finish();
 }
-
-const PARAGRAPH_DEFAULT_HEIGHT: u16 = 50;
 
 /// render the paragraph into a buffer with the given width
 fn render(bencher: &mut Bencher, paragraph: &Paragraph, width: u16) {
