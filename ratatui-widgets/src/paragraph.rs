@@ -14,14 +14,6 @@ use crate::{
     reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
 };
 
-const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
-    match alignment {
-        Alignment::Center => (text_area_width / 2).saturating_sub(line_width / 2),
-        Alignment::Right => text_area_width.saturating_sub(line_width),
-        Alignment::Left => 0,
-    }
-}
-
 /// A widget to display some text.
 ///
 /// It is used to display a block of text. The text can be styled and aligned. It can also be
@@ -446,46 +438,55 @@ impl Paragraph<'_> {
         });
 
         if let Some(Wrap { trim }) = self.wrap {
-            let line_composer = WordWrapper::new(styled, text_area.width, trim);
-            self.render_text(line_composer, text_area, buf);
+            let mut line_composer = WordWrapper::new(styled, text_area.width, trim);
+            // compute the lines iteratively until we reach the desired scroll offset.
+            for _ in 0..self.scroll.y {
+                if line_composer.next_line().is_none() {
+                    return;
+                }
+            }
+            render_lines(line_composer, text_area, buf);
         } else {
-            let mut line_composer = LineTruncator::new(styled, text_area.width);
+            // avoid unnecessary work by skipping directly to the relevant line before rendering
+            let lines = styled.skip(self.scroll.y as usize);
+            let mut line_composer = LineTruncator::new(lines, text_area.width);
             line_composer.set_horizontal_offset(self.scroll.x);
-            self.render_text(line_composer, text_area, buf);
+            render_lines(line_composer, text_area, buf);
         }
     }
 }
 
-impl<'a> Paragraph<'a> {
-    fn render_text<C: LineComposer<'a>>(&self, mut composer: C, area: Rect, buf: &mut Buffer) {
-        let mut y = 0;
-        while let Some(WrappedLine {
-            line: current_line,
-            width: current_line_width,
-            alignment: current_line_alignment,
-        }) = composer.next_line()
-        {
-            if y >= self.scroll.y {
-                let mut x = get_line_offset(current_line_width, area.width, current_line_alignment);
-                for StyledGrapheme { symbol, style } in current_line {
-                    let width = symbol.width();
-                    if width == 0 {
-                        continue;
-                    }
-                    // If the symbol is empty, the last char which rendered last time will
-                    // leave on the line. It's a quick fix.
-                    let symbol = if symbol.is_empty() { " " } else { symbol };
-                    buf[(area.left() + x, area.top() + y - self.scroll.y)]
-                        .set_symbol(symbol)
-                        .set_style(*style);
-                    x += width as u16;
-                }
-            }
-            y += 1;
-            if y >= area.height + self.scroll.y {
-                break;
-            }
+fn render_lines<'a, C: LineComposer<'a>>(mut composer: C, area: Rect, buf: &mut Buffer) {
+    let mut y = 0;
+    while let Some(ref wrapped) = composer.next_line() {
+        render_line(wrapped, area, buf, y);
+        y += 1;
+        if y >= area.height {
+            break;
         }
+    }
+}
+
+fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u16) {
+    let mut x = get_line_offset(wrapped.width, area.width, wrapped.alignment);
+    for StyledGrapheme { symbol, style } in wrapped.graphemes {
+        let width = symbol.width();
+        if width == 0 {
+            continue;
+        }
+        // Make sure to overwrite any previous character with a space (rather than a zero-width)
+        let symbol = if symbol.is_empty() { " " } else { symbol };
+        let position = Position::new(area.left() + x, area.top() + y);
+        buf[position].set_symbol(symbol).set_style(*style);
+        x += u16::try_from(width).unwrap_or(u16::MAX);
+    }
+}
+
+const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
+    match alignment {
+        Alignment::Center => (text_area_width / 2).saturating_sub(line_width / 2),
+        Alignment::Right => text_area_width.saturating_sub(line_width),
+        Alignment::Left => 0,
     }
 }
 

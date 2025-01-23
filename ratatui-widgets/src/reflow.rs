@@ -15,7 +15,7 @@ pub trait LineComposer<'a> {
 /// A line that has been wrapped to a certain width.
 pub struct WrappedLine<'lend, 'text> {
     /// One line reflowed to the correct width
-    pub line: &'lend [StyledGrapheme<'text>],
+    pub graphemes: &'lend [StyledGrapheme<'text>],
     /// The width of the line
     pub width: u16,
     /// Whether the line was aligned left or right
@@ -215,7 +215,7 @@ where
 
                 self.replace_current_line(line);
                 return Some(WrappedLine {
-                    line: &self.current_line,
+                    graphemes: &self.current_line,
                     width: line_width,
                     alignment: self.current_alignment,
                 });
@@ -321,7 +321,7 @@ where
             None
         } else {
             Some(WrappedLine {
-                line: &self.current_line,
+                graphemes: &self.current_line,
                 width: current_line_width,
                 alignment: current_alignment,
             })
@@ -385,12 +385,12 @@ mod tests {
         let mut widths = vec![];
         let mut alignments = vec![];
         while let Some(WrappedLine {
-            line: styled,
+            graphemes,
             width,
             alignment,
         }) = composer.next_line()
         {
-            let line = styled
+            let line = graphemes
                 .iter()
                 .map(|StyledGrapheme { symbol, .. }| *symbol)
                 .collect::<String>();
