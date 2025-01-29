@@ -9,7 +9,7 @@
 //! [`BarChart`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html
 
 use color_eyre::Result;
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout},
@@ -34,8 +34,8 @@ struct App {
 
 impl App {
     fn new() -> Self {
-        let mut rng = thread_rng();
-        let temperatures = (0..24).map(|_| rng.gen_range(50..90)).collect();
+        let mut rng = rng();
+        let temperatures = (0..24).map(|_| rng.random_range(50..90)).collect();
         Self {
             should_exit: false,
             temperatures,

@@ -1,5 +1,5 @@
 use rand::{
-    distributions::{Distribution, Uniform},
+    distr::{Distribution, Uniform},
     rngs::ThreadRng,
 };
 use ratatui::widgets::ListState;
@@ -75,8 +75,8 @@ pub struct RandomSignal {
 impl RandomSignal {
     pub fn new(lower: u64, upper: u64) -> Self {
         Self {
-            distribution: Uniform::new(lower, upper),
-            rng: rand::thread_rng(),
+            distribution: Uniform::new(lower, upper).expect("invalid range"),
+            rng: rand::rng(),
         }
     }
 }
