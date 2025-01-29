@@ -781,7 +781,7 @@ dependencies = [
  "itertools 0.13.0",
  "palette",
  "rand 0.9.0",
- "rand_chacha 0.3.1",
+ "rand_chacha 0.9.0",
  "ratatui",
  "strum",
  "time",
@@ -2319,16 +2319,6 @@ dependencies = [
 
 [[package]]
 name = "rand_chacha"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
-dependencies = [
- "ppv-lite86",
- "rand_core 0.6.4",
-]
-
-[[package]]
-name = "rand_chacha"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3022b5f1df60f26e1ffddd6c66e8aa15de382ae63b3a0c1bfc0e4d3e3f325cb"
@@ -2448,7 +2438,7 @@ dependencies = [
  "palette",
  "pretty_assertions",
  "rand 0.9.0",
- "rand_chacha 0.3.1",
+ "rand_chacha 0.9.0",
  "ratatui-core",
  "ratatui-crossterm",
  "ratatui-termion",

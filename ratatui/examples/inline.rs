@@ -21,7 +21,7 @@ use std::{
 };
 
 use color_eyre::Result;
-use rand::distributions::{Distribution, Uniform};
+use rand::distr::{Distribution, Uniform};
 use ratatui::{
     backend::Backend,
     crossterm::event,
@@ -152,8 +152,8 @@ fn workers(tx: mpsc::Sender<Event>) -> Vec<Worker> {
 }
 
 fn downloads() -> Downloads {
-    let distribution = Uniform::new(0, 1000);
-    let mut rng = rand::thread_rng();
+    let distribution = Uniform::new(0, 1000).expect("invalid range");
+    let mut rng = rand::rng();
     let pending = (0..NUM_DOWNLOADS)
         .map(|id| {
             let size = distribution.sample(&mut rng);

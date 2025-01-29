@@ -47,20 +47,20 @@ fn drip(frame_count: usize, area: Rect, buf: &mut Buffer) {
     let variable_speed = DRIP_SPEED as f64 * fractional_speed * fractional_speed * fractional_speed;
     let pixel_count = (frame_count as f64 * variable_speed).floor() as usize;
     for _ in 0..pixel_count {
-        let src_x = rng.gen_range(0..area.width);
-        let src_y = rng.gen_range(1..area.height - 2);
+        let src_x = rng.random_range(0..area.width);
+        let src_y = rng.random_range(1..area.height - 2);
         let src = buf[(src_x, src_y)].clone();
         // 1% of the time, move a blank or pixel (10:1) to the top line of the screen
-        if rng.gen_ratio(1, 100) {
+        if rng.random_ratio(1, 100) {
             let dest_x = rng
-                .gen_range(src_x.saturating_sub(5)..src_x.saturating_add(5))
+                .random_range(src_x.saturating_sub(5)..src_x.saturating_add(5))
                 .clamp(area.left(), area.right() - 1);
             let dest_y = area.top() + 1;
 
             let dest = &mut buf[(dest_x, dest_y)];
             // copy the cell to the new location about 1/10 of the time blank out the cell the rest
             // of the time. This has the effect of gradually removing the pixels from the screen.
-            if rng.gen_ratio(1, 10) {
+            if rng.random_ratio(1, 10) {
                 *dest = src;
             } else {
                 dest.reset();

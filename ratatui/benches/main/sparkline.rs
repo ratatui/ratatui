@@ -9,11 +9,11 @@ use ratatui::{
 /// Benchmark for rendering a sparkline.
 fn sparkline(c: &mut Criterion) {
     let mut group = c.benchmark_group("sparkline");
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     for data_count in [64, 256, 2048] {
         let data: Vec<u64> = (0..data_count)
-            .map(|_| rng.gen_range(0..data_count))
+            .map(|_| rng.random_range(0..data_count))
             .collect();
 
         // Render a basic sparkline
