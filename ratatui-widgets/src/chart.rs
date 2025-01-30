@@ -896,18 +896,19 @@ impl<'a> Chart<'a> {
         };
 
         let mut t = 0.0;
-        let fract = 1.0 / (labels_len - 1) as f64;
+        let fract = 1.0 / f64::from(labels_len - 1);
 
         Self::render_label(buf, labels.first().unwrap(), label_area, label_alignment);
 
-        for label in labels[1..labels.len() - 1].iter() {
+        for label in &labels[1..labels.len() - 1] {
             t += fract;
 
             // We use linear interpolation to find where the center of the next
             // label should be positioned under the x-axis.
             // We subtract 1 from the area's width to make sure there is at least
             // one space between labels.
-            let x = ((1.0 - t) * graph_area.left() as f64 + t * graph_area.right() as f64) as u16;
+            let x = ((1.0 - t) * f64::from(graph_area.left()) + t * f64::from(graph_area.right()))
+                as u16;
             let label_area = Rect::new(
                 x - width_between_ticks / 2,
                 y,
