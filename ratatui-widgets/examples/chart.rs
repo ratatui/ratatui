@@ -80,7 +80,9 @@ pub fn render_chart(frame: &mut Frame, area: Rect) {
     let x_axis = Axis::default()
         .title("Hustle".blue())
         .bounds([0.0, 10.0])
-        .labels(["0%", "50%", "100%"]);
+        .labels([
+            "0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%",
+        ]);
 
     let y_axis = Axis::default()
         .title("Profit".blue())

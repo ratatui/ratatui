@@ -895,19 +895,31 @@ impl<'a> Chart<'a> {
             Alignment::Right => Alignment::Left,
         };
 
+        let mut t = 0.0;
+        let fract = 1.0 / (labels_len - 1) as f64;
+
         Self::render_label(buf, labels.first().unwrap(), label_area, label_alignment);
 
-        for (i, label) in labels[1..labels.len() - 1].iter().enumerate() {
-            // We add 1 to x (and width-1 below) to leave at least one space before each
-            // intermediate labels
-            let x = graph_area.left() + (i + 1) as u16 * width_between_ticks + 1;
-            let label_area = Rect::new(x, y, width_between_ticks.saturating_sub(1), 1);
+        for label in labels[1..labels.len() - 1].iter() {
+            t += fract;
+
+            // We use linear interpolation to find where the center of the next
+            // label should be positioned under the x-axis.
+            // We subtract 1 from the area's width to make sure there is at least
+            // one space between labels.
+            let x = ((1.0 - t) * graph_area.left() as f64 + t * graph_area.right() as f64) as u16;
+            let label_area = Rect::new(
+                x - width_between_ticks / 2,
+                y,
+                width_between_ticks.saturating_sub(1),
+                1,
+            );
 
             Self::render_label(buf, label, label_area, Alignment::Center);
         }
 
-        let x = graph_area.right() - width_between_ticks;
-        let label_area = Rect::new(x, y, width_between_ticks, 1);
+        let x = graph_area.right() - width_between_ticks + width_between_ticks / 2;
+        let label_area = Rect::new(x, y, width_between_ticks.saturating_sub(1), 1);
         // The last label should be aligned Right to be at the edge of the graph area
         Self::render_label(buf, labels.last().unwrap(), label_area, Alignment::Right);
     }
