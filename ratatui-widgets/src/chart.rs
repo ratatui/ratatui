@@ -4,7 +4,7 @@ use std::{cmp::max, ops::Not};
 use ratatui_core::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Flex, Layout, Position, Rect},
-    style::{Color, Style, Styled},
+    style::{Color, Style, Styled, Stylize},
     symbols::{self},
     text::Line,
     widgets::Widget,
@@ -539,6 +539,8 @@ pub struct Chart<'a> {
     /// The position determine where the length is shown or hide regardless of
     /// `hidden_legend_constraints`
     legend_position: Option<LegendPosition>,
+    /// Whether to show a grid underneath the graph
+    show_grid: bool,
 }
 
 impl<'a> Chart<'a> {
@@ -578,6 +580,7 @@ impl<'a> Chart<'a> {
             datasets,
             hidden_legend_constraints: (Constraint::Ratio(1, 4), Constraint::Ratio(1, 4)),
             legend_position: Some(LegendPosition::default()),
+            show_grid: false,
         }
     }
 
@@ -737,6 +740,15 @@ impl<'a> Chart<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn legend_position(mut self, position: Option<LegendPosition>) -> Self {
         self.legend_position = position;
+        self
+    }
+
+    /// Sets whether to show a grid underneath the graph.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn show_grid(mut self, show: bool) -> Self {
+        self.show_grid = show;
         self
     }
 
@@ -1052,9 +1064,9 @@ impl Widget for &Chart<'_> {
             }
 
             if self.x_axis.tick_marks {
-                if let Some(ticks) = x_ticks {
+                if let Some(ticks) = &x_ticks {
                     for x in ticks {
-                        buf[(x, y)].set_symbol(symbols::line::CROSS);
+                        buf[(*x, y)].set_symbol(symbols::line::CROSS);
                     }
                 }
             }
@@ -1068,9 +1080,9 @@ impl Widget for &Chart<'_> {
             }
 
             if self.y_axis.tick_marks {
-                if let Some(ticks) = y_ticks {
+                if let Some(ticks) = &y_ticks {
                     for y in ticks {
-                        buf[(x, y)].set_symbol(symbols::line::CROSS);
+                        buf[(x, *y)].set_symbol(symbols::line::CROSS);
                     }
                 }
             }
@@ -1180,6 +1192,38 @@ impl Widget for &Chart<'_> {
                     },
                     buf,
                 );
+            }
+        }
+
+        if self.show_grid {
+            if let Some(ticks) = x_ticks {
+                for x in ticks {
+                    for y in graph_area.top()..graph_area.bottom() {
+                        let cell = &mut buf[(x, y)];
+
+                        if cell.symbol() == " " {
+                            cell.set_symbol(symbols::line::VERTICAL)
+                                .set_style(Style::new().dim());
+                        }
+                    }
+                }
+            }
+
+            if let Some(ticks) = y_ticks {
+                for y in &ticks[1..ticks.len().saturating_sub(1)] {
+                    for x in graph_area.left()..graph_area.right() {
+                        let cell = &mut buf[(x, *y)];
+
+                        if cell.symbol() == " " {
+                            cell.set_symbol(symbols::line::HORIZONTAL)
+                                .set_style(Style::new().dim());
+                        } else if cell.symbol() == symbols::line::VERTICAL {
+                            cell.set_symbol(symbols::line::CROSS);
+                        } else {
+                            continue;
+                        }
+                    }
+                }
             }
         }
     }
