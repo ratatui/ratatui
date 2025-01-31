@@ -872,6 +872,10 @@ impl<'a> Chart<'a> {
         chart_area: Rect,
         graph_area: Rect,
     ) {
+        fn linear_interpolation(min: u16, max: u16, t: f64) -> u16 {
+            ((1.0 - t) * f64::from(min) + t * f64::from(max)) as u16
+        }
+
         let Some(y) = layout.label_x else { return };
         let labels = &self.x_axis.labels;
         let labels_len = labels.len() as u16;
@@ -879,12 +883,12 @@ impl<'a> Chart<'a> {
             return;
         }
 
-        let width_between_ticks = graph_area.width / labels_len;
+        let width_per_tick = graph_area.width / labels_len;
 
         let label_area = self.first_x_label_area(
             y,
             labels.first().unwrap().width() as u16,
-            width_between_ticks,
+            width_per_tick,
             chart_area,
             graph_area,
         );
@@ -895,32 +899,43 @@ impl<'a> Chart<'a> {
             Alignment::Right => Alignment::Left,
         };
 
-        let mut t = 0.0;
-        let fract = 1.0 / f64::from(labels_len - 1);
-
+        // The first label will be drawn in the space offered by y labels on the left
         Self::render_label(buf, labels.first().unwrap(), label_area, label_alignment);
 
-        for label in &labels[1..labels.len() - 1] {
-            t += fract;
+        // Finding positions for the labels by incrementing the
+        // `width_per_tick` each step is not a good solution because
+        // it accumulates rounding error at each iteration.
+        // A correct solution is to find the center position for the
+        // label box, i.e. where the tick mark would be, in terms
+        // of percentage of the graph area's width.
+        // To this end we use linear interpolation, that is able to
+        // return a segment's point situated at a given percentage of
+        // the segment.
+        let width_percentage_increment = 1.0 / f64::from(labels_len - 1);
+
+        for (i, label) in labels[1..labels.len() - 1].iter().enumerate() {
+            let current_label_width_percentage = (i + 1) as f64 * width_percentage_increment;
 
             // We use linear interpolation to find where the center of the next
             // label should be positioned under the x-axis.
+            let x = linear_interpolation(graph_area.left(), graph_area.right(), current_label_width_percentage);
+
+            // We offset x by minus half the `width_per_tick` to find the left
+            // of the label bounding box.
             // We subtract 1 from the area's width to make sure there is at least
             // one space between labels.
-            let x = ((1.0 - t) * f64::from(graph_area.left()) + t * f64::from(graph_area.right()))
-                as u16;
             let label_area = Rect::new(
-                x - width_between_ticks / 2,
+                x - width_per_tick / 2,
                 y,
-                width_between_ticks.saturating_sub(1),
+                width_per_tick.saturating_sub(1),
                 1,
             );
 
             Self::render_label(buf, label, label_area, Alignment::Center);
         }
 
-        let x = graph_area.right() - width_between_ticks + width_between_ticks / 2;
-        let label_area = Rect::new(x, y, width_between_ticks.saturating_sub(1), 1);
+        let x = graph_area.right() - width_per_tick + width_per_tick / 2;
+        let label_area = Rect::new(x, y, width_per_tick.saturating_sub(1), 1);
         // The last label should be aligned Right to be at the edge of the graph area
         Self::render_label(buf, labels.last().unwrap(), label_area, Alignment::Right);
     }
