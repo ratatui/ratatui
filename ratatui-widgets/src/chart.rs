@@ -52,6 +52,8 @@ pub struct Axis<'a> {
     style: Style,
     /// The alignment of the labels of the Axis
     labels_alignment: Alignment,
+    /// Whether to display tick marks
+    tick_marks: bool,
 }
 
 impl<'a> Axis<'a> {
@@ -151,6 +153,15 @@ impl<'a> Axis<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn labels_alignment(mut self, alignment: Alignment) -> Self {
         self.labels_alignment = alignment;
+        self
+    }
+
+    /// Sets whether to display tick marks on the axis using the '┼' symbol.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn tick_marks(mut self, show: bool) -> Self {
+        self.tick_marks = show;
         self
     }
 }
@@ -871,19 +882,20 @@ impl<'a> Chart<'a> {
         layout: &ChartLayout,
         chart_area: Rect,
         graph_area: Rect,
-    ) {
+    ) -> Option<Vec<u16>> {
         fn linear_interpolation(min: u16, max: u16, t: f64) -> u16 {
             ((1.0 - t) * f64::from(min) + t * f64::from(max)) as u16
         }
 
-        let Some(y) = layout.label_x else { return };
+        let y = layout.label_x?;
         let labels = &self.x_axis.labels;
         let labels_len = labels.len() as u16;
         if labels_len < 2 {
-            return;
+            return None;
         }
 
         let width_per_tick = graph_area.width / labels_len;
+        let mut ticks = Vec::with_capacity((labels_len - 1) as usize);
 
         let label_area = self.first_x_label_area(
             y,
@@ -918,7 +930,13 @@ impl<'a> Chart<'a> {
 
             // We use linear interpolation to find where the center of the next
             // label should be positioned under the x-axis.
-            let x = linear_interpolation(graph_area.left(), graph_area.right(), current_label_width_percentage);
+            let x = linear_interpolation(
+                graph_area.left(),
+                graph_area.right(),
+                current_label_width_percentage,
+            );
+
+            ticks.push(x);
 
             // We offset x by minus half the `width_per_tick` to find the left
             // of the label bounding box.
@@ -938,6 +956,10 @@ impl<'a> Chart<'a> {
         let label_area = Rect::new(x, y, width_per_tick.saturating_sub(1), 1);
         // The last label should be aligned Right to be at the edge of the graph area
         Self::render_label(buf, labels.last().unwrap(), label_area, Alignment::Right);
+
+        ticks.push(graph_area.right().saturating_sub(1));
+
+        Some(ticks)
     }
 
     fn first_x_label_area(
@@ -978,22 +1000,26 @@ impl<'a> Chart<'a> {
         layout: &ChartLayout,
         chart_area: Rect,
         graph_area: Rect,
-    ) {
-        let Some(x) = layout.label_y else { return };
+    ) -> Option<Vec<u16>> {
+        let x = layout.label_y?;
         let labels = &self.y_axis.labels;
         let labels_len = labels.len() as u16;
+        let mut ticks = Vec::with_capacity(labels_len as usize);
         for (i, label) in labels.iter().enumerate() {
             let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
             if dy < graph_area.bottom() {
+                let y = graph_area.bottom().saturating_sub(1) - dy;
                 let label_area = Rect::new(
                     x,
-                    graph_area.bottom().saturating_sub(1) - dy,
+                    y,
                     (graph_area.left() - chart_area.left()).saturating_sub(1),
                     1,
                 );
                 Self::render_label(buf, label, label_area, self.y_axis.labels_alignment);
+                ticks.push(y);
             }
         }
+        Some(ticks)
     }
 }
 
@@ -1020,14 +1046,22 @@ impl Widget for &Chart<'_> {
         // axis names).
         let original_style = buf[(area.left(), area.top())].style();
 
-        self.render_x_labels(buf, &layout, chart_area, graph_area);
-        self.render_y_labels(buf, &layout, chart_area, graph_area);
+        let x_ticks = self.render_x_labels(buf, &layout, chart_area, graph_area);
+        let y_ticks = self.render_y_labels(buf, &layout, chart_area, graph_area);
 
         if let Some(y) = layout.axis_x {
             for x in graph_area.left()..graph_area.right() {
                 buf[(x, y)]
                     .set_symbol(symbols::line::HORIZONTAL)
                     .set_style(self.x_axis.style);
+            }
+
+            if self.x_axis.tick_marks {
+                if let Some(ticks) = x_ticks {
+                    for x in ticks {
+                        buf[(x, y)].set_symbol(symbols::line::CROSS);
+                    }
+                }
             }
         }
 
@@ -1036,6 +1070,14 @@ impl Widget for &Chart<'_> {
                 buf[(x, y)]
                     .set_symbol(symbols::line::VERTICAL)
                     .set_style(self.y_axis.style);
+            }
+
+            if self.y_axis.tick_marks {
+                if let Some(ticks) = y_ticks {
+                    for y in ticks {
+                        buf[(x, y)].set_symbol(symbols::line::CROSS);
+                    }
+                }
             }
         }
 
