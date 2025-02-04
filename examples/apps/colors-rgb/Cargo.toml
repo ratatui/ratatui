@@ -1,0 +1,15 @@
+[package]
+name = "colors-rgb"
+version = "0.1.0"
+publish = false
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+color-eyre.workspace = true
+palette = "0.7.6"
+ratatui.workspace = true
+
+[lints]
+workspace = true
