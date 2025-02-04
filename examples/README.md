@@ -85,6 +85,10 @@ This interactive example shows how to use the flex layouts. [Source](./apps/flex
 
 This example shows how to create a simple TUI with a text. [Source](./apps/hello-world/).
 
+## Gauge demo
+
+This example shows different types of gauges. [Source](./apps/gauge/).
+
 ## Input form
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
