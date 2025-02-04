@@ -143,11 +143,6 @@ name = "main"
 harness = false
 
 [[example]]
-name = "colors_rgb"
-required-features = ["crossterm", "palette"]
-doc-scrape-examples = true
-
-[[example]]
 name = "constraint-explorer"
 required-features = ["crossterm"]
 doc-scrape-examples = true
