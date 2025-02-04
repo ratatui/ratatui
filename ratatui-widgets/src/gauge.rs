@@ -234,7 +234,8 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 ///
 /// This can be useful to indicate the progression of a task, like a download.
 ///
-/// A `LineGauge` renders a thin line filled according to the value given to [`LineGauge::ratio`].
+/// A `LineGauge` renders a line filled with symbols defined by [`LineGauge::filled_symbol`] and
+/// [`LineGauge::unfilled_symbol`] according to the value given to [`LineGauge::ratio`].
 /// Unlike [`Gauge`], only the width can be defined by the [rendering](Widget::render) [`Rect`]. The
 /// height is always 1.
 ///
@@ -259,22 +260,38 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 /// LineGauge::default()
 ///     .block(Block::bordered().title("Progress"))
 ///     .filled_style(Style::new().white().on_black().bold())
-///     .line_set(symbols::line::THICK)
+///     .filled_symbol(symbols::line::THICK_HORIZONTAL)
 ///     .ratio(0.4);
 /// ```
 ///
 /// # See also
 ///
 /// - [`Gauge`] for bigger, higher precision and more configurable progress bar
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LineGauge<'a> {
     block: Option<Block<'a>>,
     ratio: f64,
     label: Option<Line<'a>>,
-    line_set: symbols::line::Set,
     style: Style,
+    filled_symbol: &'a str,
+    unfilled_symbol: &'a str,
     filled_style: Style,
     unfilled_style: Style,
+}
+
+impl Default for LineGauge<'_> {
+    fn default() -> Self {
+        Self {
+            block: None,
+            ratio: 0.0,
+            label: None,
+            style: Style::default(),
+            filled_symbol: symbols::line::HORIZONTAL,
+            unfilled_symbol: symbols::line::HORIZONTAL,
+            filled_style: Style::default(),
+            unfilled_style: Style::default(),
+        }
+    }
 }
 
 impl<'a> LineGauge<'a> {
@@ -311,8 +328,27 @@ impl<'a> LineGauge<'a> {
     /// [`NORMAL`](symbols::line::NORMAL), [`DOUBLE`](symbols::line::DOUBLE) and
     /// [`THICK`](symbols::line::THICK).
     #[must_use = "method moves the value of self and returns the modified value"]
+    #[deprecated(
+        since = "0.30.0",
+        note = "You should use `LineGauge::filled_symbol` and `LineGauge::unfilled_symbol` instead."
+    )]
     pub const fn line_set(mut self, set: symbols::line::Set) -> Self {
-        self.line_set = set;
+        self.filled_symbol = set.horizontal;
+        self.unfilled_symbol = set.horizontal;
+        self
+    }
+
+    /// Sets the symbol for the filled part of the gauge.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn filled_symbol(mut self, symbol: &'a str) -> Self {
+        self.filled_symbol = symbol;
+        self
+    }
+
+    /// Sets the symbol for the unfilled part of the gauge.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn unfilled_symbol(mut self, symbol: &'a str) -> Self {
+        self.unfilled_symbol = symbol;
         self
     }
 
@@ -412,12 +448,12 @@ impl Widget for &LineGauge<'_> {
             + (f64::from(gauge_area.right().saturating_sub(start)) * self.ratio).floor() as u16;
         for col in start..end {
             buf[(col, row)]
-                .set_symbol(self.line_set.horizontal)
+                .set_symbol(self.filled_symbol)
                 .set_style(self.filled_style);
         }
         for col in end..gauge_area.right() {
             buf[(col, row)]
-                .set_symbol(self.line_set.horizontal)
+                .set_symbol(self.unfilled_symbol)
                 .set_style(self.unfilled_style);
         }
     }
@@ -521,6 +557,27 @@ mod tests {
     }
 
     #[test]
+    fn line_gauge_set_filled_symbol() {
+        assert_eq!(LineGauge::default().filled_symbol("▰").filled_symbol, "▰");
+    }
+
+    #[test]
+    fn line_gauge_set_unfilled_symbol() {
+        assert_eq!(
+            LineGauge::default().unfilled_symbol("▱").unfilled_symbol,
+            "▱"
+        );
+    }
+
+    #[allow(deprecated)]
+    #[test]
+    fn line_gauge_deprecated_line_set() {
+        let gauge = LineGauge::default().line_set(symbols::line::DOUBLE);
+        assert_eq!(gauge.filled_symbol, symbols::line::DOUBLE.horizontal);
+        assert_eq!(gauge.unfilled_symbol, symbols::line::DOUBLE.horizontal);
+    }
+
+    #[test]
     fn line_gauge_default() {
         assert_eq!(
             LineGauge::default(),
@@ -529,7 +586,8 @@ mod tests {
                 ratio: 0.0,
                 label: None,
                 style: Style::default(),
-                line_set: symbols::line::NORMAL,
+                filled_symbol: symbols::line::HORIZONTAL,
+                unfilled_symbol: symbols::line::HORIZONTAL,
                 filled_style: Style::default(),
                 unfilled_style: Style::default()
             }

@@ -9,14 +9,14 @@ use ratatui::{
 /// Benchmark for rendering a barchart.
 fn barchart(c: &mut Criterion) {
     let mut group = c.benchmark_group("barchart");
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     for data_count in [64, 256, 2048] {
         let data: Vec<Bar> = (0..data_count)
             .map(|i| {
                 Bar::default()
                     .label(format!("B{i}"))
-                    .value(rng.gen_range(0..data_count))
+                    .value(rng.random_range(0..data_count))
             })
             .collect();
 

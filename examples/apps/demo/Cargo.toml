@@ -12,6 +12,6 @@ termion = ["ratatui/termion"]
 termwiz = ["ratatui/termwiz"]
 
 [dependencies]
-clap = { version = "4.5.23", features = ["derive"] }
-rand = "0.8.5"
+clap = { version = "4.5.27", features = ["derive"] }
+rand = "0.9.0"
 ratatui.workspace = true
