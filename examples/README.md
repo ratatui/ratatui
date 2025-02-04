@@ -69,6 +69,10 @@ This example shows the full range of RGB colors in an animation. [Source](./apps
 
 This interactive example shows how different constraints can be used to layout widgets. [Source](./apps/constraint-explorer/).
 
+## Constraints demo
+
+This example shows different types of constraints. [Source](./apps/constraints/).
+
 ## Hello World demo
 
 This example shows how to create a simple TUI with a text. [Source](./apps/hello-world/).
