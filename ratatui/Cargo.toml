@@ -153,11 +153,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = false
 
 [[example]]
-name = "flex"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "gauge-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true

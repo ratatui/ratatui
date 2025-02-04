@@ -73,6 +73,10 @@ This interactive example shows how different constraints can be used to layout w
 
 This example shows different types of constraints. [Source](./apps/constraints/).
 
+## Flex demo
+
+This interactive example shows how to use the flex layouts. [Source](./apps/flex/).
+
 ## Hello World demo
 
 This example shows how to create a simple TUI with a text. [Source](./apps/hello-world/).
