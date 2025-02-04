@@ -65,6 +65,10 @@ Shows how to render a canvas with different shapes. [Source](./apps/canvas/).
 
 This example shows the full range of RGB colors in an animation. [Source](./apps/colors-rgb/).
 
+## Constraint Explorer demo
+
+This interactive example shows how different constraints can be used to layout widgets. [Source](./apps/constraint-explorer/).
+
 ## Hello World demo
 
 This example shows how to create a simple TUI with a text. [Source](./apps/hello-world/).
