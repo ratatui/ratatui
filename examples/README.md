@@ -73,6 +73,10 @@ This interactive example shows how different constraints can be used to layout w
 
 This example shows different types of constraints. [Source](./apps/constraints/).
 
+## Custom widget demo
+
+This example shows how to create a custom widget that can be interacted with the mouse. [Source](./apps/custom-widget/).
+
 ## Flex demo
 
 This interactive example shows how to use the flex layouts. [Source](./apps/flex/).
