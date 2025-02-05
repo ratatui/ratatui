@@ -2522,7 +2522,6 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
- "strum",
  "time",
  "tokio",
  "tracing",
