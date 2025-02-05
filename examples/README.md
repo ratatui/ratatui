@@ -110,6 +110,10 @@ Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
 
 Shows how to create a minimal application. [Source](./apps/minimal/).
 
+## Tracing demo
+
+Shows how to use the [tracing](https://crates.io/crates/tracing) crate to log to a file. [Source](./apps/tracing/).
+
 ## Weather demo
 
 Shows how to render weather data using barchart widget. [Source](./apps/weather/).
