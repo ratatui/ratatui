@@ -3251,6 +3251,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "table"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "fakeit",
+ "itertools 0.13.0",
+ "ratatui",
+ "unicode-width",
+]
+
+[[package]]
 name = "tempfile"
 version = "3.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
