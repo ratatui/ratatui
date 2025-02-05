@@ -3446,6 +3446,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "todo-list"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "ratatui",
+]
+
+[[package]]
 name = "tokio"
 version = "1.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

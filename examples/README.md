@@ -102,6 +102,10 @@ Shows how to use the inlined viewport to render in a specific area of the screen
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
 
+## Todo List demo
+
+Shows how to create a simple todo list application. [Source](./apps/todo-list/).
+
 ## Mouse Drawing demo
 
 Shows how to handle mouse events. [Source](./apps/mouse-drawing/).

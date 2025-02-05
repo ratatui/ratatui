@@ -142,11 +142,6 @@ name = "main"
 harness = false
 
 [[example]]
-name = "list-widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "modifiers"
 required-features = ["crossterm"]
 # this example is a bit verbose, so we don't want to include it in the docs
