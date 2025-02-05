@@ -110,6 +110,10 @@ Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
 
 Shows how to create a minimal application. [Source](./apps/minimal/).
 
+## Popup demo
+
+Shows how to handle popups. [Source](./apps/popup/).
+
 ## Weather demo
 
 Shows how to render weather data using barchart widget. [Source](./apps/weather/).
