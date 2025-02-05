@@ -77,6 +77,10 @@ This example shows different types of constraints. [Source](./apps/constraints/)
 
 This example shows how to create a custom widget that can be interacted with the mouse. [Source](./apps/custom-widget/).
 
+## Hyperlink demo
+
+Shows how to render hyperlinks in a terminal using [OSC 8](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda). [Source](./apps/hyperlink/).
+
 ## Flex demo
 
 This interactive example shows how to use the flex layouts. [Source](./apps/flex/).
