@@ -97,6 +97,10 @@ Shows how to render a form with input fields. [Source](./apps/input-form/).
 
 Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
 
+## Minimal demo
+
+Shows how to create a minimal application. [Source](./apps/minimal/).
+
 ## Weather demo
 
 Shows how to render weather data using barchart widget. [Source](./apps/weather/).
