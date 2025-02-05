@@ -23,7 +23,7 @@ note: while trying to match `==`
    |      ^^
    = note: this error originates in the macro `$crate::constraints` which comes from the expansion of the macro `constraints` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: no rules expected the token `;`
+error: no rules expected `;`
   --> tests/ui/fails.rs:15:53
    |
 15 |     let [a, b, c] = constraints![ == 1, == 10%, == 2; 4];
