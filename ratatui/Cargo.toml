@@ -147,11 +147,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "hyperlink"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "list-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
