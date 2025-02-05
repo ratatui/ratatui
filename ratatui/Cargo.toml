@@ -173,11 +173,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "hello_world"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
