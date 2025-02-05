@@ -143,22 +143,7 @@ name = "main"
 harness = false
 
 [[example]]
-name = "docsrs"
-required-features = ["crossterm"]
-doc-scrape-examples = false
-
-[[example]]
-name = "gauge-widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "inline"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "layout"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
