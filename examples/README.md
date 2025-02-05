@@ -93,6 +93,10 @@ This example shows how to create a simple TUI with a text. [Source](./apps/hello
 
 This example shows different types of gauges. [Source](./apps/gauge/).
 
+## Inline demo
+
+Shows how to use the inlined viewport to render in a specific area of the screen. [Source](./apps/inline/).
+
 ## Input form
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
