@@ -79,7 +79,8 @@ This example shows how to create a custom widget that can be interacted with the
 
 ## Hyperlink demo
 
-Shows how to render hyperlinks in a terminal using [OSC 8](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda). [Source](./apps/hyperlink/).
+Shows how to render hyperlinks in a terminal using [OSC
+8](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda). [Source](./apps/hyperlink/).
 
 ## Flex demo
 
@@ -92,6 +93,10 @@ This example shows how to create a simple TUI with a text. [Source](./apps/hello
 ## Gauge demo
 
 This example shows different types of gauges. [Source](./apps/gauge/).
+
+## Inline demo
+
+Shows how to use the inlined viewport to render in a specific area of the screen. [Source](./apps/inline/).
 
 ## Input form
 

@@ -1555,6 +1555,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b248f5224d1d606005e02c97f5aa4e88eeb230488bcc03bc9ca4d7991399f2b5"
 
 [[package]]
+name = "inline"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "rand 0.9.0",
+ "ratatui",
+]
+
+[[package]]
 name = "input-form"
 version = "0.0.0"
 dependencies = [
@@ -3738,12 +3748,12 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "1.12.1"
+version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3758f5e68192bb96cc8f9b7e2c2cfdabb435499a28499a42f8f984092adad4b"
+checksum = "ced87ca4be083373936a67f8de945faa23b6b42384bd5b64434850802c6dccd0"
 dependencies = [
  "atomic",
- "getrandom 0.2.15",
+ "getrandom 0.3.1",
 ]
 
 [[package]]
@@ -3911,7 +3921,7 @@ dependencies = [
  "once_cell",
  "sha2",
  "thiserror 1.0.69",
- "uuid 1.12.1",
+ "uuid 1.13.1",
 ]
 
 [[package]]
