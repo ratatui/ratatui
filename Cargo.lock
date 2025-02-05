@@ -752,6 +752,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "custom-widget"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "ratatui",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -143,11 +143,6 @@ name = "main"
 harness = false
 
 [[example]]
-name = "custom_widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "docsrs"
 required-features = ["crossterm"]
 doc-scrape-examples = false
