@@ -88,10 +88,9 @@
 /// let span = span!("hello {}", "world");
 /// ```
 ///
-/// [`Color`]: crate::style::Color
-/// [`Style`]: crate::style::Style
-/// [`Span`]: crate::text::Span
-/// [`Style`]: crate::style::Style
+/// [`Color`]: ratatui_core::style::Color
+/// [`Span`]: ratatui_core::text::Span
+/// [`Style`]: ratatui_core::style::Style
 #[macro_export]
 macro_rules! span {
     ($string:literal) => {

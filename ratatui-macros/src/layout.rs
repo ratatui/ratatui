@@ -15,6 +15,8 @@
 /// assert_eq!(constraint!(== 10 %), Constraint::Percentage(10));
 /// assert_eq!(constraint!(*= 1), Constraint::Fill(1));
 /// ```
+///
+/// [`constraints!`]: crate::constraints
 #[macro_export]
 macro_rules! constraint {
     (== $token:tt %) => {
@@ -67,6 +69,10 @@ macro_rules! constraint {
 ///     ]
 /// )
 /// ```
+///
+/// [`constraint!`]: crate::constraint
+/// [`vertical!`]: crate::vertical
+/// [`horizontal!`]: crate::horizontal
 #[macro_export]
 macro_rules! constraints {
     // Note: this implementation forgoes speed for the sake of simplicity. Adding variations of the

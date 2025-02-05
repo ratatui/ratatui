@@ -30,8 +30,9 @@
 /// let line = line![span!("hello {}", "world"), span!(Modifier::BOLD; "goodbye {}", "world")];
 /// ```
 ///
-/// [`Line`]: crate::text::Line
-/// [`Span`]: crate::text::Span
+/// [`span!`]: crate::span
+/// [`Line`]: ratatui_core::text::Line
+/// [`Span`]: ratatui_core::text::Span
 #[macro_export]
 macro_rules! line {
     () => {

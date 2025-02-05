@@ -40,8 +40,12 @@
 /// ];
 /// ```
 ///
-/// [`Row`]: crate::widgets::Row
-/// [`Cell`]: crate::widgets::Cell
+/// [`text!`]: crate::text
+/// [`line!`]: crate::line
+/// [`span!`]: crate::span
+/// [`row!`]: crate::row
+/// [`Row`]: ratatui_widgets::table::Row
+/// [`Cell`]: ratatui_widgets::table::Cell
 #[macro_export]
 macro_rules! row {
     () => {
