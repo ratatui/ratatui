@@ -102,6 +102,10 @@ Shows how to use the inlined viewport to render in a specific area of the screen
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
 
+## Modifiers demo
+
+Shows different types of modifiers. [Source](./apps/modifiers/).
+
 ## Mouse Drawing demo
 
 Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
