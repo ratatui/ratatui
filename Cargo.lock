@@ -584,6 +584,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "constraint-explorer"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "itertools 0.13.0",
+ "ratatui",
+ "strum",
+]
+
+[[package]]
 name = "core-foundation"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

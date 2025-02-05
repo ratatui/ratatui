@@ -143,11 +143,6 @@ name = "main"
 harness = false
 
 [[example]]
-name = "constraint-explorer"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "constraints"
 required-features = ["crossterm"]
 doc-scrape-examples = false
