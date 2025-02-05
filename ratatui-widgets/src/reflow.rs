@@ -167,6 +167,7 @@ where
         if pending_line.is_empty()
             && self.pending_word.is_empty()
             && !self.pending_whitespace.is_empty()
+            && self.trim
         {
             self.wrapped_lines.push_back(vec![]);
         }
