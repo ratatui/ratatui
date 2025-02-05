@@ -105,7 +105,6 @@ ratatui-crossterm = { workspace = true, optional = true }
 ratatui-termwiz = { workspace = true, optional = true }
 ratatui-widgets = { workspace = true }
 serde = { workspace = true, optional = true }
-strum.workspace = true
 time = { version = "0.3.37", optional = true, features = ["local-offset"] }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width.workspace = true
@@ -156,12 +155,6 @@ doc-scrape-examples = true
 name = "list-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
-
-[[example]]
-name = "minimal"
-required-features = ["crossterm"]
-# prefer to show the more featureful examples in the docs
-doc-scrape-examples = false
 
 [[example]]
 name = "modifiers"

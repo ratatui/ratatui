@@ -1793,6 +1793,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "minimal"
+version = "0.0.0"
+dependencies = [
+ "crossterm",
+ "ratatui",
+]
+
+[[package]]
 name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2514,7 +2522,6 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
- "strum",
  "time",
  "tokio",
  "tracing",
