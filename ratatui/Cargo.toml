@@ -153,11 +153,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = false
 
 [[example]]
-name = "panic"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "popup"
 required-features = ["crossterm"]
 doc-scrape-examples = true
