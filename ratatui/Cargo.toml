@@ -159,11 +159,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "popup"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "scrollbar-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
