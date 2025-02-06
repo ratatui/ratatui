@@ -335,6 +335,8 @@ pub use ratatui_core::{
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
 pub use ratatui_crossterm::crossterm;
+#[cfg(feature = "macros")]
+pub use ratatui_macros as macros;
 /// re-export the `termion` crate so that users don't have to add it as a dependency
 #[cfg(all(not(windows), feature = "termion"))]
 pub use ratatui_termion::termion;
