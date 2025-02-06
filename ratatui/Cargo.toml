@@ -148,11 +148,6 @@ name = "main"
 harness = false
 
 [[example]]
-name = "list-widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "panic"
 required-features = ["crossterm"]
 doc-scrape-examples = true
