@@ -7,6 +7,7 @@ default-members = [
   "ratatui-crossterm",
   # this is not included as it doesn't compile on windows
   # "ratatui-termion",
+  "ratatui-macros",
   "ratatui-termwiz",
   "ratatui-widgets",
   "examples/apps/*",
@@ -37,6 +38,7 @@ pretty_assertions = "1.4.1"
 ratatui = { path = "ratatui", version = "0.30.0-alpha.1" }
 ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.2" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.1" }
+ratatui-macros = { path = "ratatui-macros", version = "0.7.0-alpha.0" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.1" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-alpha.1" }
 ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-alpha.1" }
