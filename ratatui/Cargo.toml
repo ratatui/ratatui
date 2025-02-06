@@ -25,8 +25,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 #!
 ## By default, we enable the crossterm backend as this is a reasonable choice for most applications
 ## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
-## which allows you to set the underline color of text.
-default = ["crossterm", "underline-color", "all-widgets"]
+## which allows you to set the underline color of text and the `macros` feature which provides
+## some useful macros.
+default = ["crossterm", "underline-color", "all-widgets", "macros"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["dep:ratatui-crossterm"]
@@ -51,6 +52,10 @@ scrolling-regions = [
   "ratatui-termion?/scrolling-regions",
   "ratatui-termwiz?/scrolling-regions",
 ]
+
+## enables the [`macros`](macros) module which provides some useful macros for creating spans,
+## lines, text, and layouts
+macros = ["dep:ratatui-macros"]
 
 ## enables all widgets.
 all-widgets = ["widget-calendar"]
@@ -102,6 +107,7 @@ itertools.workspace = true
 palette = { version = "0.7.6", optional = true }
 ratatui-core = { workspace = true }
 ratatui-crossterm = { workspace = true, optional = true }
+ratatui-macros = { workspace = true, optional = true }
 ratatui-termwiz = { workspace = true, optional = true }
 ratatui-widgets = { workspace = true }
 serde = { workspace = true, optional = true }
