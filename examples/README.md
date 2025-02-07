@@ -106,6 +106,10 @@ Shows how to render a form with input fields. [Source](./apps/input-form/).
 
 Shows how to create a simple todo list application. [Source](./apps/todo-list/).
 
+## Modifiers demo
+
+Shows different types of modifiers. [Source](./apps/modifiers/).
+
 ## Mouse Drawing demo
 
 Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
