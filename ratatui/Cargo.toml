@@ -148,38 +148,7 @@ name = "main"
 harness = false
 
 [[example]]
-name = "list-widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "modifiers"
-required-features = ["crossterm"]
-# this example is a bit verbose, so we don't want to include it in the docs
-doc-scrape-examples = false
-
-[[example]]
-name = "panic"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "popup"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "scrollbar-widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "table-widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "tracing"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
