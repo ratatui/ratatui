@@ -1854,6 +1854,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "modifiers"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "itertools 0.13.0",
+ "ratatui",
+]
+
+[[package]]
 name = "mouse-drawing"
 version = "0.0.0"
 dependencies = [
@@ -2301,6 +2311,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51bae2ac328883f7acdfea3d66a7c35751187f870bc81f94563733a154d7a670"
 dependencies = [
  "plotters-backend",
+]
+
+[[package]]
+name = "popup"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "ratatui",
 ]
 
 [[package]]
@@ -3492,6 +3511,15 @@ checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "todo-list"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "ratatui",
 ]
 
 [[package]]

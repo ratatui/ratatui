@@ -102,6 +102,14 @@ Shows how to use the inlined viewport to render in a specific area of the screen
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
 
+## Todo List demo
+
+Shows how to create a simple todo list application. [Source](./apps/todo-list/).
+
+## Modifiers demo
+
+Shows different types of modifiers. [Source](./apps/modifiers/).
+
 ## Mouse Drawing demo
 
 Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
@@ -113,6 +121,10 @@ Shows how to create a minimal application. [Source](./apps/minimal/).
 ## Panic demo
 
 Shows how to handle panics in your application. [Source](./apps/panic/).
+
+## Popup demo
+
+Shows how to handle popups. [Source](./apps/popup/).
 
 ## Weather demo
 
