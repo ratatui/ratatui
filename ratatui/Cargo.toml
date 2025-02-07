@@ -153,11 +153,6 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "table-widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "user_input"
 required-features = ["crossterm"]
 doc-scrape-examples = true

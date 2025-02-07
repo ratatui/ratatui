@@ -3304,6 +3304,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "table"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "fakeit",
+ "itertools 0.13.0",
+ "ratatui",
+ "unicode-width",
+]
+
+[[package]]
 name = "target-triple"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
