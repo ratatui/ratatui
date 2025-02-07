@@ -2563,7 +2563,6 @@ dependencies = [
  "futures",
  "indoc",
  "instability",
- "itertools 0.13.0",
  "palette",
  "pretty_assertions",
  "rand 0.9.0",
@@ -2582,7 +2581,6 @@ dependencies = [
  "tracing 0.1.41",
  "tracing-appender",
  "tracing-subscriber",
- "unicode-width",
 ]
 
 [[package]]

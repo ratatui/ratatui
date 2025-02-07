@@ -103,7 +103,6 @@ unstable-backend-writer = [
 [dependencies]
 document-features = { workspace = true, optional = true }
 instability.workspace = true
-itertools.workspace = true
 palette = { version = "0.7.6", optional = true }
 ratatui-core = { workspace = true }
 ratatui-crossterm = { workspace = true, optional = true }
@@ -112,8 +111,6 @@ ratatui-termwiz = { workspace = true, optional = true }
 ratatui-widgets = { workspace = true }
 serde = { workspace = true, optional = true }
 time = { version = "0.3.37", optional = true, features = ["local-offset"] }
-# See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
-unicode-width.workspace = true
 
 [target.'cfg(not(windows))'.dependencies]
 ratatui-termion = { workspace = true, optional = true }
