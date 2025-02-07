@@ -118,6 +118,10 @@ Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
 
 Shows how to create a minimal application. [Source](./apps/minimal/).
 
+## User input demo
+
+Shows how to handle user input. [Source](./apps/user-input/).
+
 ## Weather demo
 
 Shows how to render weather data using barchart widget. [Source](./apps/weather/).
