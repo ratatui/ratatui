@@ -1357,7 +1357,7 @@ dependencies = [
  "socket2",
  "tokio",
  "tower-service",
- "tracing",
+ "tracing 0.1.41",
 ]
 
 [[package]]
@@ -2024,7 +2024,7 @@ dependencies = [
  "tokio",
  "tower",
  "tower-http",
- "tracing",
+ "tracing 0.1.41",
  "url",
  "web-time",
 ]
@@ -2579,7 +2579,7 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
- "tracing",
+ "tracing 0.1.41",
  "tracing-appender",
  "tracing-subscriber",
  "unicode-width",
@@ -3642,7 +3642,7 @@ dependencies = [
  "tokio-util",
  "tower-layer",
  "tower-service",
- "tracing",
+ "tracing 0.1.41",
 ]
 
 [[package]]
@@ -3661,7 +3661,7 @@ dependencies = [
  "tower",
  "tower-layer",
  "tower-service",
- "tracing",
+ "tracing 0.1.41",
 ]
 
 [[package]]
@@ -3675,6 +3675,18 @@ name = "tower-service"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
+
+[[package]]
+name = "tracing"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "ratatui",
+ "tracing 0.1.41",
+ "tracing-appender",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "tracing"
@@ -3727,7 +3739,7 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b1581020d7a273442f5b45074a6a57d5757ad0a47dac0e9f0bd57b81936f3db"
 dependencies = [
- "tracing",
+ "tracing 0.1.41",
  "tracing-subscriber",
 ]
 
@@ -3755,7 +3767,7 @@ dependencies = [
  "sharded-slab",
  "smallvec",
  "thread_local",
- "tracing",
+ "tracing 0.1.41",
  "tracing-core",
  "tracing-log",
 ]
@@ -4257,7 +4269,7 @@ dependencies = [
  "color-eyre",
  "duct",
  "itertools 0.13.0",
- "tracing",
+ "tracing 0.1.41",
  "tracing-subscriber",
 ]
 
