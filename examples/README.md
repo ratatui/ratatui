@@ -118,6 +118,10 @@ Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
 
 Shows how to create a minimal application. [Source](./apps/minimal/).
 
+## Panic demo
+
+Shows how to handle panics in your application. [Source](./apps/panic/).
+
 ## Popup demo
 
 Shows how to handle popups. [Source](./apps/popup/).

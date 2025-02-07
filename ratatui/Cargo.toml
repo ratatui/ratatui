@@ -148,11 +148,6 @@ name = "main"
 harness = false
 
 [[example]]
-name = "panic"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
 name = "scrollbar-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
