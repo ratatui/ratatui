@@ -118,6 +118,10 @@ Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
 
 Shows how to create a minimal application. [Source](./apps/minimal/).
 
+## Scrollbar demo
+
+Shows how to render different types of scrollbars. [Source](./apps/scrollbar/).
+
 ## User input demo
 
 Shows how to handle user input. [Source](./apps/user-input/).

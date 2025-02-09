@@ -144,11 +144,6 @@ bench = false
 name = "main"
 harness = false
 
-[[example]]
-name = "scrollbar-widget"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
 [[test]]
 name = "state_serde"
 required-features = ["serde"]
