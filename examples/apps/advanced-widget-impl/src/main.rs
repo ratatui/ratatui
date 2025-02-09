@@ -1,21 +1,14 @@
-//! # [Ratatui] Widgets implementation examples
-//!
-//! This example demonstrates various ways to implement widget traits in Ratatui on a type, a
-//! reference, and a mutable reference. It also shows how to use the `WidgetRef` trait to render
-//! boxed widgets.
-//!
-//! The latest version of this example is available in the [examples] folder in the repository.
-//!
-//! Please note that the examples are designed to be run against the `main` branch of the Github
-//! repository. This means that you may not be able to compile with the latest release version on
-//! crates.io, or the one that you have installed locally.
-//!
-//! See the [examples readme] for more information on finding examples that match the version of the
-//! library you are using.
-//!
-//! [Ratatui]: https://github.com/ratatui/ratatui
-//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
+/// A Ratatui example that demonstrates how to implement the `Widget` trait.
+///
+/// This example demonstrates various ways to implement `Widget` traits in Ratatui on a type, a
+/// reference, and a mutable reference. It also shows how to use the `WidgetRef` trait to
+/// render boxed widgets.
+///
+/// This example runs with the Ratatui library code in the branch that you are currently
+/// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+/// release.
+///
+/// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
@@ -40,7 +33,6 @@ fn main() -> Result<()> {
 struct App {
     should_quit: bool,
     timer: Timer,
-    #[cfg(feature = "unstable-widget-ref")]
     boxed_squares: BoxedSquares,
     green_square: RightAlignedSquare,
 }
@@ -93,7 +85,6 @@ impl Widget for &mut App {
         self.timer.render(timer, buf);
 
         // render a boxed widget containing red and blue squares
-        #[cfg(feature = "unstable-widget-ref")]
         self.boxed_squares.render(squares, buf);
 
         // render a mutable reference to the green square widget
