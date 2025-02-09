@@ -149,11 +149,6 @@ name = "scrollbar-widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
-[[example]]
-name = "widget-ref-container"
-required-features = ["crossterm", "unstable-widget-ref"]
-doc-scrape-examples = true
-
 [[test]]
 name = "state_serde"
 required-features = ["serde"]
