@@ -129,3 +129,7 @@ Shows how to handle user input. [Source](./apps/user-input/).
 ## Weather demo
 
 Shows how to render weather data using barchart widget. [Source](./apps/weather/).
+
+## WidgetRef Container demo
+
+Shows how to use [`WidgetRef`](https://docs.rs/ratatui/latest/ratatui/widgets/trait.WidgetRef.html) to store widgets in a container. [Source](./apps/widget-ref-container/).
