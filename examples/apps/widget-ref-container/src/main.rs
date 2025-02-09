@@ -1,19 +1,15 @@
-//! An example of how to use [`WidgetRef`] to store heterogeneous widgets in a container.
-//!
-//! This example creates a `StackContainer` widget that can hold any number of widgets of different
-//! types. It creates two widgets, `Greeting` and `Farewell`, and stores them in a `StackContainer`
-//! with a vertical layout. The `StackContainer` widget renders each of its child widgets in the
-//! order they were added.
-//!
-//! `Greetings` and `Farewell` both implement the Widget trait on references to themselves, which
-//! triggers the blanket implementation of [`WidgetRef`] for them. This allows them to be stored in
-//! the `StackContainer` in a boxed form.
-//!
-//! This example runs with the Ratatui library code in the branch that you are currently reading.
-//! See the [`latest`] branch for the code which works with the most recent Ratatui release.
-//!
-//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
-
+/// An example of how to use [`WidgetRef`] to store heterogeneous widgets in a container.
+///
+/// This example creates a `StackContainer` widget that can hold any number of widgets of
+/// different types. It creates two widgets, `Greeting` and `Farewell`, and stores them in a
+/// `StackContainer` with a vertical layout. The `StackContainer` widget renders each of its
+/// child widgets in the order they were added.
+///
+/// This example runs with the Ratatui library code in the branch that you are currently
+/// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+/// release.
+///
+/// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::iter::zip;
 
 use color_eyre::Result;
