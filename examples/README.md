@@ -118,6 +118,10 @@ Shows how to handle mouse events. [Source](./apps/mouse-drawing/).
 
 Shows how to create a minimal application. [Source](./apps/minimal/).
 
+## Scrollbar demo
+
+Shows how to render different types of scrollbars. [Source](./apps/scrollbar/).
+
 ## User input demo
 
 Shows how to handle user input. [Source](./apps/user-input/).
@@ -125,3 +129,7 @@ Shows how to handle user input. [Source](./apps/user-input/).
 ## Weather demo
 
 Shows how to render weather data using barchart widget. [Source](./apps/weather/).
+
+## WidgetRef Container demo
+
+Shows how to use [`WidgetRef`](https://docs.rs/ratatui/latest/ratatui/widgets/trait.WidgetRef.html) to store widgets in a container. [Source](./apps/widget-ref-container/).
