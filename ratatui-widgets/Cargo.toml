@@ -63,7 +63,7 @@ unicode-width.workspace = true
 [dev-dependencies]
 color-eyre.workspace = true
 pretty_assertions.workspace = true
-ratatui = { path = "../ratatui" }
+# ratatui = { path = "../ratatui" }
 rstest.workspace = true
 
 [lints]
