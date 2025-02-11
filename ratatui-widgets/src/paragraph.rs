@@ -406,6 +406,7 @@ impl Widget for Paragraph<'_> {
 
 impl Widget for &Paragraph<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
@@ -500,6 +501,7 @@ mod tests {
     use ratatui_core::style::{Color, Modifier, Style, Stylize};
     use ratatui_core::text::{Line, Span, Text};
     use ratatui_core::widgets::Widget;
+    use rstest::rstest;
 
     use super::*;
     use crate::block::TitlePosition;
@@ -1192,5 +1194,29 @@ mod tests {
         ]);
         expected.set_style(Rect::new(1, 1, 11, 1), Style::default().fg(Color::Green));
         assert_eq!(buf, expected);
+    }
+
+    #[rstest]
+    #[case::bottom(Rect::new(0, 5, 15, 1))]
+    #[case::right(Rect::new(20, 0, 15, 1))]
+    #[case::bottom_right(Rect::new(20, 5, 15, 1))]
+    fn test_render_paragraph_out_of_bounds(#[case] area: Rect) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Paragraph::new("Beyond the pale").render(area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(vec!["          "; 3]));
+    }
+
+    #[test]
+    fn partial_out_of_bounds() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        Paragraph::new("Hello World").render(Rect::new(10, 0, 10, 3), &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "          Hello",
+                "               ",
+                "               ",
+            ])
+        );
     }
 }
