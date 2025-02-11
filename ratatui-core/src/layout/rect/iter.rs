@@ -151,7 +151,7 @@ impl Iterator for Positions {
     ///
     /// Returns `None` when there are no more positions to iterate through.
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_position.y >= self.rect.bottom() {
+        if !self.rect.contains(self.current_position) {
             return None;
         }
         let position = self.current_position;
@@ -322,6 +322,33 @@ mod tests {
         assert_eq!(positions.next(), Some(Position::new(0, 1)));
         assert_eq!(positions.size_hint(), (1, Some(1)));
         assert_eq!(positions.next(), Some(Position::new(1, 1)));
+        assert_eq!(positions.size_hint(), (0, Some(0)));
+        assert_eq!(positions.next(), None);
+        assert_eq!(positions.size_hint(), (0, Some(0)));
+    }
+
+    #[test]
+    fn positions_zero_width() {
+        let rect = Rect::new(0, 0, 0, 1);
+        let mut positions = Positions::new(rect);
+        assert_eq!(positions.size_hint(), (0, Some(0)));
+        assert_eq!(positions.next(), None);
+        assert_eq!(positions.size_hint(), (0, Some(0)));
+    }
+
+    #[test]
+    fn positions_zero_height() {
+        let rect = Rect::new(0, 0, 1, 0);
+        let mut positions = Positions::new(rect);
+        assert_eq!(positions.size_hint(), (0, Some(0)));
+        assert_eq!(positions.next(), None);
+        assert_eq!(positions.size_hint(), (0, Some(0)));
+    }
+
+    #[test]
+    fn positions_zero_by_zero() {
+        let rect = Rect::new(0, 0, 0, 0);
+        let mut positions = Positions::new(rect);
         assert_eq!(positions.size_hint(), (0, Some(0)));
         assert_eq!(positions.next(), None);
         assert_eq!(positions.size_hint(), (0, Some(0)));
