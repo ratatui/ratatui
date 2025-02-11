@@ -95,6 +95,11 @@ impl StatefulWidget for &List<'_> {
                         item_rendering_height -= skip_lines;
                     }
                     area_y += item_rendering_height;
+                    if area_y > list_area.height {
+                        // This will be the last item we render and there aren't enough lines left
+                        // in the area
+                        item_rendering_height -= area_y - list_area.height;
+                    }
                     pos
                 }
             };
@@ -1153,6 +1158,23 @@ mod tests {
                 "   Item 1 ",
                 ">> Item 2 ",
                 "   Item 3 "])
+        );
+    }
+
+    #[test]
+    fn multiline_last_item_overflow() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 4));
+        let items = vec![
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2\nsecond line\nthird line"),
+        ];
+        let list = List::new(items);
+        let list_area = Rect::new(0, 0, 11, 3);
+        Widget::render(list, list_area, &mut buffer);
+
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(["Item 1     ", "Item 2     ", "second line", "           "])
         );
     }
 
