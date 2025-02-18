@@ -5,7 +5,7 @@ Set Theme "Aardvark Blue"
 Set Width 1200
 Set Height 800
 Hide
-Type "cargo run -p canvas"
+Type "cargo run -p chart"
 Enter
 Sleep 1s
 Show
