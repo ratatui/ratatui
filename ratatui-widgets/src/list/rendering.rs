@@ -53,41 +53,62 @@ impl StatefulWidget for &List<'_> {
             state.select(Some(self.items.len().saturating_sub(1)));
         }
 
-        let list_height = list_area.height as usize;
-
-        let (first_visible_index, last_visible_index) =
-            self.get_items_bounds(state.selected, state.offset, list_height);
-
-        // Important: this changes the state's offset to be the beginning of the now viewable items
-        state.offset = first_visible_index;
+        if let Some(selected) = state.selected {
+            state.offset = self.scroll_offset(state.offset, selected, list_area);
+        }
 
         // Get our set highlighted symbol (if one was set)
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let blank_symbol = " ".repeat(highlight_symbol.width());
 
-        let mut current_height = 0;
+        let mut current_height = 0; // The height of all the items we've seen
+        let mut area_y = 0; // The height of the rows we've rendered
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
-        for (i, item) in self
-            .items
-            .iter()
-            .enumerate()
-            .skip(state.offset)
-            .take(last_visible_index - first_visible_index)
-        {
-            let (x, y) = if self.direction == ListDirection::BottomToTop {
-                current_height += item.height() as u16;
-                (list_area.left(), list_area.bottom() - current_height)
-            } else {
-                let pos = (list_area.left(), list_area.top() + current_height);
-                current_height += item.height() as u16;
-                pos
+        for (i, item) in self.items.iter().enumerate() {
+            current_height += item.height();
+            if current_height < state.offset {
+                continue;
+            }
+
+            let mut skip_lines = 0;
+            let mut item_rendering_height = item.height() as u16;
+            let (x, y) = match self.direction {
+                ListDirection::BottomToTop => {
+                    area_y += item.height() as u16;
+                    if area_y > list_area.height {
+                        // This will be the last item we render and there aren't enough lines left
+                        // in the area
+                        skip_lines = area_y - list_area.height;
+                        item_rendering_height -= skip_lines;
+                    }
+                    (
+                        list_area.left(),
+                        list_area.bottom().saturating_sub(area_y) + skip_lines,
+                    )
+                }
+                ListDirection::TopToBottom => {
+                    let pos = (list_area.left(), list_area.top() + area_y);
+                    if area_y == 0 {
+                        // This will be the first item we render and we may need to cut off the top
+                        skip_lines =
+                            state.offset.saturating_sub(current_height - item.height()) as u16;
+                        item_rendering_height -= skip_lines;
+                    }
+                    area_y += item_rendering_height;
+                    if area_y > list_area.height {
+                        // This will be the last item we render and there aren't enough lines left
+                        // in the area
+                        item_rendering_height -= area_y - list_area.height;
+                    }
+                    pos
+                }
             };
 
             let row_area = Rect {
                 x,
                 y,
                 width: list_area.width,
-                height: item.height() as u16,
+                height: item_rendering_height,
             };
 
             let item_style = self.style.patch(item.style);
@@ -105,10 +126,12 @@ impl StatefulWidget for &List<'_> {
             } else {
                 row_area
             };
-            Widget::render(&item.content, item_area, buf);
+            item.content.render_skip(item_area, buf, skip_lines);
 
             if selection_spacing {
-                for j in 0..item.content.height() {
+                for j in skip_lines
+                    ..(item.content.height() as u16).min(list_area.height.saturating_sub(y))
+                {
                     // if the item is selected, we need to display the highlight symbol:
                     // - either for the first line of the item only,
                     // - or for each line of the item if the appropriate option is set
@@ -117,151 +140,55 @@ impl StatefulWidget for &List<'_> {
                     } else {
                         &blank_symbol
                     };
-                    buf.set_stringn(
-                        x,
-                        y + j as u16,
-                        symbol,
-                        list_area.width as usize,
-                        item_style,
-                    );
+                    buf.set_stringn(x, y + j, symbol, list_area.width as usize, item_style);
                 }
             }
 
             if is_selected {
                 buf.set_style(row_area, self.highlight_style);
             }
+
+            if area_y >= list_area.height {
+                // We've filled the list_area
+                break;
+            }
         }
     }
 }
 
 impl List<'_> {
-    /// Given an offset, calculate which items can fit in a given area
-    fn get_items_bounds(
-        &self,
-        selected: Option<usize>,
-        offset: usize,
-        max_height: usize,
-    ) -> (usize, usize) {
-        let offset = offset.min(self.items.len().saturating_sub(1));
+    /// Make the minimum adjustment to offset so that the selected item is in view
+    #[allow(clippy::else_if_without_else)]
+    fn scroll_offset(&self, offset: usize, selected: usize, list_area: Rect) -> usize {
+        let mut current_height = 0;
+        for (i, item) in self.items.iter().enumerate() {
+            current_height += item.height();
+            if selected == i {
+                let mut scroll_padding = self.scroll_padding;
+                if item.height() + 2 * scroll_padding > list_area.height as usize {
+                    // There isn't enough room for the item and padding on both the top and bottom
+                    scroll_padding = (list_area.height as usize).saturating_sub(item.height()) / 2;
+                }
 
-        // Note: visible here implies visible in the given area
-        let mut first_visible_index = offset;
-        let mut last_visible_index = offset;
-
-        // Current height of all items in the list to render, beginning at the offset
-        let mut height_from_offset = 0;
-
-        // Calculate the last visible index and total height of the items
-        // that will fit in the available space
-        for item in self.items.iter().skip(offset) {
-            if height_from_offset + item.height() > max_height {
-                break;
-            }
-
-            height_from_offset += item.height();
-
-            last_visible_index += 1;
-        }
-
-        // Get the selected index and apply scroll_padding to it, but still honor the offset if
-        // nothing is selected. This allows for the list to stay at a position after select()ing
-        // None.
-        let index_to_display = self
-            .apply_scroll_padding_to_selected_index(
-                selected,
-                max_height,
-                first_visible_index,
-                last_visible_index,
-            )
-            .unwrap_or(offset);
-
-        // Recall that last_visible_index is the index of what we
-        // can render up to in the given space after the offset
-        // If we have an item selected that is out of the viewable area (or
-        // the offset is still set), we still need to show this item
-        while index_to_display >= last_visible_index {
-            height_from_offset =
-                height_from_offset.saturating_add(self.items[last_visible_index].height());
-
-            last_visible_index += 1;
-
-            // Now we need to hide previous items since we didn't have space
-            // for the selected/offset item
-            while height_from_offset > max_height {
-                height_from_offset =
-                    height_from_offset.saturating_sub(self.items[first_visible_index].height());
-
-                // Remove this item to view by starting at the next item index
-                first_visible_index += 1;
+                if current_height - item.height() < offset + scroll_padding {
+                    // Before the beginning of the list area
+                    return (current_height - item.height()).saturating_sub(scroll_padding);
+                } else if current_height + scroll_padding > offset + list_area.height as usize {
+                    // Past the end of the list area
+                    let mut new_offset = current_height.saturating_sub(list_area.height as usize);
+                    if i < self.items.len() - 1 {
+                        new_offset += scroll_padding;
+                    }
+                    return new_offset;
+                }
+                return offset;
             }
         }
-
-        // Here we're doing something similar to what we just did above
-        // If the selected item index is not in the viewable area, let's try to show the item
-        while index_to_display < first_visible_index {
-            first_visible_index -= 1;
-
-            height_from_offset =
-                height_from_offset.saturating_add(self.items[first_visible_index].height());
-
-            // Don't show an item if it is beyond our viewable height
-            while height_from_offset > max_height {
-                last_visible_index -= 1;
-
-                height_from_offset =
-                    height_from_offset.saturating_sub(self.items[last_visible_index].height());
-            }
-        }
-
-        (first_visible_index, last_visible_index)
-    }
-
-    /// Applies scroll padding to the selected index, reducing the padding value to keep the
-    /// selected item on screen even with items of inconsistent sizes
-    ///
-    /// This function is sensitive to how the bounds checking function handles item height
-    fn apply_scroll_padding_to_selected_index(
-        &self,
-        selected: Option<usize>,
-        max_height: usize,
-        first_visible_index: usize,
-        last_visible_index: usize,
-    ) -> Option<usize> {
-        let last_valid_index = self.items.len().saturating_sub(1);
-        let selected = selected?.min(last_valid_index);
-
-        // The bellow loop handles situations where the list item sizes may not be consistent,
-        // where the offset would have excluded some items that we want to include, or could
-        // cause the offset value to be set to an inconsistent value each time we render.
-        // The padding value will be reduced in case any of these issues would occur
-        let mut scroll_padding = self.scroll_padding;
-        while scroll_padding > 0 {
-            let mut height_around_selected = 0;
-            for index in selected.saturating_sub(scroll_padding)
-                ..=selected
-                    .saturating_add(scroll_padding)
-                    .min(last_valid_index)
-            {
-                height_around_selected += self.items[index].height();
-            }
-            if height_around_selected <= max_height {
-                break;
-            }
-            scroll_padding -= 1;
-        }
-
-        Some(
-            if (selected + scroll_padding).min(last_valid_index) >= last_visible_index {
-                selected + scroll_padding
-            } else if selected.saturating_sub(scroll_padding) < first_visible_index {
-                selected.saturating_sub(scroll_padding)
-            } else {
-                selected
-            }
-            .min(last_valid_index),
-        )
+        offset
     }
 }
+
+impl List<'_> {}
 
 #[cfg(test)]
 mod tests {
@@ -1198,17 +1125,16 @@ mod tests {
 
         #[rustfmt::skip]
         let expected = [
-            "   Item 1 ",
             "   Item 2 ",
             ">> Item 3 ",
+            "   Item 4 ",
         ];
         assert_eq!(buffer, Buffer::with_lines(expected));
     }
 
-    // Tests to make sure when it's pushing back the first visible index value that it doesnt
-    // include an item that's too large
+    // Tests to make sure we render part of a multi-line item to fill the buffer
     #[test]
-    fn padding_offset_pushback_break() {
+    fn multiline_skip() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 4));
         let mut state = ListState::default();
 
@@ -1228,10 +1154,27 @@ mod tests {
         assert_eq!(
             buffer,
             Buffer::with_lines([
+                "   Test   ",
                 "   Item 1 ",
                 ">> Item 2 ",
-                "   Item 3 ",
-                "          "])
+                "   Item 3 "])
+        );
+    }
+
+    #[test]
+    fn multiline_last_item_overflow() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 4));
+        let items = vec![
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2\nsecond line\nthird line"),
+        ];
+        let list = List::new(items);
+        let list_area = Rect::new(0, 0, 11, 3);
+        Widget::render(list, list_area, &mut buffer);
+
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(["Item 1     ", "Item 2     ", "second line", "           "])
         );
     }
 

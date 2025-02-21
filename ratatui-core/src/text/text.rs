@@ -568,6 +568,15 @@ impl<'a> Text<'a> {
             self.lines.push(Line::from(span));
         }
     }
+
+    /// Render the text, skipping the first `skip` lines.
+    pub fn render_skip(&self, area: Rect, buf: &mut Buffer, skip: u16) {
+        let area = area.intersection(buf.area);
+        buf.set_style(area, self.style);
+        for (line, line_area) in self.iter().skip(skip as usize).zip(area.rows()) {
+            line.render_with_alignment(line_area, buf, self.alignment);
+        }
+    }
 }
 
 impl<'a> IntoIterator for Text<'a> {
@@ -735,11 +744,7 @@ impl Widget for Text<'_> {
 
 impl Widget for &Text<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let area = area.intersection(buf.area);
-        buf.set_style(area, self.style);
-        for (line, line_area) in self.iter().zip(area.rows()) {
-            line.render_with_alignment(line_area, buf, self.alignment);
-        }
+        self.render_skip(area, buf, 0);
     }
 }
 
