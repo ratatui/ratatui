@@ -178,6 +178,15 @@ for `Bar::text_value()`:
 + Bar::default().text_value("foobar");
 ```
 
+### `termwiz` is upgraded to 0.23.0 ([#1682])
+
+[#1682]: https://github.com/ratatui/ratatui/pull/1682
+
+The `termwiz` backend is upgraded from 0.22.0 to 0.23.0.
+
+This release has a few fixes for hyperlinks and input handling, plus some dependency updates.
+See the [commits](https://github.com/wezterm/wezterm/commits/main/termwiz) for more details.
+
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 
 ### `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const ([#1326])
