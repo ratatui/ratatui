@@ -191,7 +191,6 @@ use crate::{
 /// # }
 /// ```
 ///
-/// [`Paragraph`]: crate::widgets::Paragraph
 /// [`Stylize`]: crate::style::Stylize
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Text<'a> {
