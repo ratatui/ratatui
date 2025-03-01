@@ -9,7 +9,7 @@ rust-version.workspace = true
 color-eyre.workspace = true
 crossterm.workspace = true
 ## a collection of line drawing algorithms (e.g. Bresenham's line algorithm)
-line_drawing = "1.0.0"
+line_drawing = "1.0.1"
 rand = "0.9.0"
 ratatui.workspace = true
 
