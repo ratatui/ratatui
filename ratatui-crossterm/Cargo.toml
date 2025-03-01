@@ -1,6 +1,6 @@
 [package]
 name = "ratatui-crossterm"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 description = "Crossterm backend for the Ratatui Terminal UI library."
 documentation = "https://docs.rs/ratatui-crossterm/"
 readme = "README.md"

@@ -1,7 +1,7 @@
 [package]
 name = "ratatui"
 description = "A library that's all about cooking up terminal user interfaces"
-version = "0.30.0-alpha.1"
+version = "0.30.0-alpha.2"
 authors.workspace = true
 documentation.workspace = true
 repository.workspace = true

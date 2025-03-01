@@ -4,6 +4,239 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+## ratatui - [0.30.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.1...ratatui-v0.30.0-alpha.2) - 2025-03-01
+
+### Features
+
+- [be8def9](https://github.com/ratatui/ratatui/commit/be8def963956c605bca28bcd8df673bd7ec3740b) *(layout)* Use *= instead of =* (#45) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652) [**breaking**]
+
+- [f33d51e](https://github.com/ratatui/ratatui/commit/f33d51e7d9ccf9fe52ec3289d04d97c722d9ee17) *(text)* Add raw! and styled! macros (#4) by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [d441520](https://github.com/ratatui/ratatui/commit/d4415204e1eb3aed2a74a722aeaaa274975dd2d7) *(uncategorized)* Add ratatui-macros crate by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [3855c3a](https://github.com/ratatui/ratatui/commit/3855c3a84a77037aeee40dbe9e52454fb1f9afee) *(uncategorized)* Add text! macro (#36) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [8ecdd89](https://github.com/ratatui/ratatui/commit/8ecdd892f53d7db95bbb53a61700d36e3fcefdd4) *(uncategorized)* Add fill constraint (#34) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [a0c35f1](https://github.com/ratatui/ratatui/commit/a0c35f1d7bcce10e092582b95f5b0a3f20ad7bf3) *(uncategorized)* Replace raw! and styled! with span! macro (#30) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [9a7467b](https://github.com/ratatui/ratatui/commit/9a7467b30576d5cb7491ea6e09efcae97eadf9bb) *(uncategorized)* Add `line!` attribute macro (#29) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [39bd72b](https://github.com/ratatui/ratatui/commit/39bd72b1f702dadb1ebbaf4e77ad2fada166ac49) *(uncategorized)* Add pub visibility to color ✨ by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [29edc3a](https://github.com/ratatui/ratatui/commit/29edc3a7a38c512611a80cf5d8d42027558419b2) *(uncategorized)* Add color palette based on tailwindcss ✨ by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+### Documentation
+
+- [4393fae](https://github.com/ratatui/ratatui/commit/4393fae54c18c148e7c24206350f0b9e235e5d69) *(examples)* Move scrollbar example to examples folder (#1665) by @orhun in [#1665](https://github.com/ratatui/ratatui/pull/1665)
+
+- [9ea70e2](https://github.com/ratatui/ratatui/commit/9ea70e28c639d967f361a35e851fc450d0b797d7) *(examples)* Move widget-impl example to examples folder (#1663) by @orhun in [#1663](https://github.com/ratatui/ratatui/pull/1663)
+
+- [774ab78](https://github.com/ratatui/ratatui/commit/774ab788d4fcdf4862710573dd519b3999044a4b) *(examples)* Move widget-ref-container example to examples folder (#1664) by @orhun in [#1664](https://github.com/ratatui/ratatui/pull/1664)
+
+- [910d16e](https://github.com/ratatui/ratatui/commit/910d16e63af92844ad4d2bed061fb2eec5ac75e3) *(examples)* Move user-input example to examples folder (#1659) by @orhun in [#1659](https://github.com/ratatui/ratatui/pull/1659)
+
+- [dbfb7da](https://github.com/ratatui/ratatui/commit/dbfb7da9e36ccf9f89da40e98519e1056f8ab882) *(examples)* Move table example to examples folder (#1657) by @orhun in [#1657](https://github.com/ratatui/ratatui/pull/1657)
+
+- [cb2a58a](https://github.com/ratatui/ratatui/commit/cb2a58aaa01d6829f24f7766ad064d7f3c5242ab) *(examples)* Move tracing example to examples folder (#1658) by @orhun in [#1658](https://github.com/ratatui/ratatui/pull/1658)
+
+- [7e00b64](https://github.com/ratatui/ratatui/commit/7e00b646fcca58d00ec5b142f71d2b46acb43819) *(examples)* Move panic example to examples folder (#1655) by @orhun in [#1655](https://github.com/ratatui/ratatui/pull/1655)
+
+- [8127590](https://github.com/ratatui/ratatui/commit/8127590812ee46231a13ad4279af773bca4daefe) *(examples)* Move modifiers example to examples folder (#1654) by @orhun in [#1654](https://github.com/ratatui/ratatui/pull/1654)
+
+- [7c40c0b](https://github.com/ratatui/ratatui/commit/7c40c0bbddca0276523ac717d9df3d2b49594bb6) *(examples)* Move popup example to examples folder (#1656) by @orhun in [#1656](https://github.com/ratatui/ratatui/pull/1656)
+
+- [d87354f](https://github.com/ratatui/ratatui/commit/d87354f4001f501ed9693073a7afcf10d8c6c7a4) *(examples)* Move list example to examples folder (#1653) by @orhun in [#1653](https://github.com/ratatui/ratatui/pull/1653)
+
+- [89d7dd4](https://github.com/ratatui/ratatui/commit/89d7dd46031511f0556b2d29ab34035f42e3a24c) *(uncategorized)* Update README with row! documentation (#56) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [570c358](https://github.com/ratatui/ratatui/commit/570c35868147a2400a13331e85d562d1ef96a011) *(uncategorized)* Use `.areas(area)` instead of `.split(area).to_vec().try_into().unwrap()` (#37) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [8060f7b](https://github.com/ratatui/ratatui/commit/8060f7bc578b29dde6ca0c4c64569f9c73218f46) *(uncategorized)* Update README.md with short description of span and line macros (#33) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [2c02a56](https://github.com/ratatui/ratatui/commit/2c02a56bce31519386303571e0b66b7d4beb378e) *(uncategorized)* Readme tweaks (#5) by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [7d23bd2](https://github.com/ratatui/ratatui/commit/7d23bd2ceaf96e81972b5f746fdcba0d17f6391f) *(uncategorized)* Update README.md by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [778f2f5](https://github.com/ratatui/ratatui/commit/778f2f5ec511bef431b54157242b91d083ea9840) *(uncategorized)* Update README.md by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [0a09977](https://github.com/ratatui/ratatui/commit/0a0997702dd4cf2217160f5652f5c39cbd4a1010) *(uncategorized)* Update README.md by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [5cee13a](https://github.com/ratatui/ratatui/commit/5cee13ab6d9c49751cf9283d9099e37f0cc3632c) *(uncategorized)* Update README.md by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [903bb0a](https://github.com/ratatui/ratatui/commit/903bb0ae32d22393783edfda96db900739864f0a) *(uncategorized)* Add link to ratatui by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [38b2f27](https://github.com/ratatui/ratatui/commit/38b2f27efe0e1829bc503df7fd64b94b7bb80d97) *(uncategorized)* Update README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [7419475](https://github.com/ratatui/ratatui/commit/74194759756bb111b4da3e9a5cdb968275a2fab0) *(uncategorized)* Update README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [b820c0c](https://github.com/ratatui/ratatui/commit/b820c0c7e4c576c1e39b5e482a8aac08076a039c) *(uncategorized)* Update README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [92540b2](https://github.com/ratatui/ratatui/commit/92540b2f6ab25f3a5400aebb28af3c498ac793a4) *(uncategorized)* Improved documentation 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [20e41f1](https://github.com/ratatui/ratatui/commit/20e41f1d1da6db8abbc2504814531d4d97bdf94b) *(uncategorized)* Update README 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [2dc8183](https://github.com/ratatui/ratatui/commit/2dc81833c60951d16f9bd60f3da003edfc9a11f5) *(uncategorized)* Improve README examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [12aa586](https://github.com/ratatui/ratatui/commit/12aa58601ddd0704256c56019bd2c7139d41f7a2) *(uncategorized)* Improve README examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [57a0a34](https://github.com/ratatui/ratatui/commit/57a0a34f924e0d488c9e9f917900e677c3488dc4) *(uncategorized)* Improve README examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [76d1e5b](https://github.com/ratatui/ratatui/commit/76d1e5b1733d47a7f05acf563db26cb1a66b540d) *(uncategorized)* Improve README examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [8b32f82](https://github.com/ratatui/ratatui/commit/8b32f82b4dd526580d00fa13f053bf507e8ea933) *(uncategorized)* Update README with better tests 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [131b9ec](https://github.com/ratatui/ratatui/commit/131b9ec41751163d43d94564363247b60f031486) *(uncategorized)* Update README with better tests 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [57b681b](https://github.com/ratatui/ratatui/commit/57b681b053c019b66e0ed92959638997fea731b1) *(uncategorized)* Update README with better tests 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [31a2c45](https://github.com/ratatui/ratatui/commit/31a2c4548c304270a8c852f19baa7a4eaac5e75c) *(uncategorized)* Update README with better examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [7148024](https://github.com/ratatui/ratatui/commit/71480242a926f98e9081ed6e2dc8c381757b3a42) *(uncategorized)* Better README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [8339cce](https://github.com/ratatui/ratatui/commit/8339cce10a51c9c951b3c9750d527d80168626eb) *(uncategorized)* Update README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [250c222](https://github.com/ratatui/ratatui/commit/250c222cc4aaab09184a28efc68f75ca03133794) *(uncategorized)* README.md update 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [adc8fdc](https://github.com/ratatui/ratatui/commit/adc8fdc35aa57d6dad2ae8dd30ec2e9256576c09) *(uncategorized)* Add README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+### Miscellaneous Tasks
+
+- [7eab88f](https://github.com/ratatui/ratatui/commit/7eab88fe9ab207f6df02581a873b6cb2c2b0a9d5) *(uncategorized)* Remove unused deps (#1661) by @joshka in [#1661](https://github.com/ratatui/ratatui/pull/1661)
+
+- [92c4078](https://github.com/ratatui/ratatui/commit/92c4078413fc79fcc83f5d3d8708abb58696ff1a) *(uncategorized)* Prep for merge with ratatui by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+- [16ba867](https://github.com/ratatui/ratatui/commit/16ba867c5877d8c97968987ecb5f8bff966d0a82) *(uncategorized)* Use modularized ratatui crates (#75) by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.1...ratatui-v0.30.0-alpha.2
+
+
+<!-- generated by git-cliff -->
+
+
+## ratatui-termion - [0.1.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.1...ratatui-termion-v0.1.0-alpha.2) - 2025-03-01
+
+### Miscellaneous Tasks
+
+- [0000000](https://github.com/ratatui/ratatui/commit/0000000) *(uncategorized)* Update Cargo.toml dependencies
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.1...ratatui-termion-v0.1.0-alpha.2
+
+
+<!-- generated by git-cliff -->
+
+
+## ratatui-termwiz - [0.1.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.1...ratatui-termwiz-v0.1.0-alpha.2) - 2025-03-01
+
+### Miscellaneous Tasks
+
+- [0000000](https://github.com/ratatui/ratatui/commit/0000000) *(uncategorized)* Update Cargo.toml dependencies
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.1...ratatui-termwiz-v0.1.0-alpha.2
+
+
+<!-- generated by git-cliff -->
+
+
+## ratatui-macros - [0.7.0-alpha.1](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.0...ratatui-macros-v0.7.0-alpha.1) - 2025-03-01
+
+### Features
+
+- [d441520](https://github.com/ratatui/ratatui/commit/d4415204e1eb3aed2a74a722aeaaa274975dd2d7) *(uncategorized)* Add ratatui-macros crate by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+### Bug Fixes
+
+- [e48bcf5](https://github.com/ratatui/ratatui/commit/e48bcf5f21f14acb27996fdc02231c140f5b817c) *(uncategorized)* Ratatui-macros readme and doc links by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+### Miscellaneous Tasks
+
+- [92c4078](https://github.com/ratatui/ratatui/commit/92c4078413fc79fcc83f5d3d8708abb58696ff1a) *(uncategorized)* Prep for merge with ratatui by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.0...ratatui-macros-v0.7.0-alpha.1
+
+
+<!-- generated by git-cliff -->
+
+
+## ratatui-widgets - [0.3.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.1...ratatui-widgets-v0.3.0-alpha.2) - 2025-03-01
+
+### Features
+
+- [7ad9c29](https://github.com/ratatui/ratatui/commit/7ad9c29eac6f70cab270dfbd84dc66c05f1e1307) *(linegauge)* Customized symbols (#1601) by @sectore in [#1601](https://github.com/ratatui/ratatui/pull/1601)
+
+- [985cd05](https://github.com/ratatui/ratatui/commit/985cd05573b71cf0caed0537714fb005ad219894) *(symbols)* Add dashed borders (#1573) by @theotchlx in [#1573](https://github.com/ratatui/ratatui/pull/1573)
+
+### Bug Fixes
+
+- [f5fc819](https://github.com/ratatui/ratatui/commit/f5fc8197ffd0cdc17432e4f8c0cc9368ccef692b) *(uncategorized)* Avoid extra line break on whitespace only lines when wrapping paragraphs (#1636) by @dotdash in [#1636](https://github.com/ratatui/ratatui/pull/1636)
+
+### Documentation
+
+- [bb94d1c](https://github.com/ratatui/ratatui/commit/bb94d1c0fad69606d3d7a8323d4a7dff76a00123) *(examples)* Move minimal example to examples folder (#1649) by @orhun in [#1649](https://github.com/ratatui/ratatui/pull/1649)
+
+### Performance
+
+- [1f41a61](https://github.com/ratatui/ratatui/commit/1f41a610083bb941024bd0116df1f0ac37e9cf33) *(paragraph)* Avoid unnecessary work when rendering (#1622) by @alexpasmantier in [#1622](https://github.com/ratatui/ratatui/pull/1622)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.1...ratatui-widgets-v0.3.0-alpha.2
+
+
+<!-- generated by git-cliff -->
+
+
+## ratatui-crossterm - [0.1.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.1...ratatui-crossterm-v0.1.0-alpha.2) - 2025-03-01
+
+### Miscellaneous Tasks
+
+- [0000000](https://github.com/ratatui/ratatui/commit/0000000) *(uncategorized)* Update Cargo.toml dependencies
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.1...ratatui-crossterm-v0.1.0-alpha.2
+
+
+<!-- generated by git-cliff -->
+
+
+## ratatui-core - [0.1.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.2...ratatui-core-v0.1.0-alpha.3) - 2025-03-01
+
+### Features
+
+- [985cd05](https://github.com/ratatui/ratatui/commit/985cd05573b71cf0caed0537714fb005ad219894) *(symbols)* Add dashed borders (#1573) by @theotchlx in [#1573](https://github.com/ratatui/ratatui/pull/1573)
+
+### Bug Fixes
+
+- [35a8642](https://github.com/ratatui/ratatui/commit/35a86427abd30393fc4759c8b164cf422333feee) *(uncategorized)* `Rect::positions()` should be empty when width is 0 and height is nonzero (#1669) by @jwodder in [#1669](https://github.com/ratatui/ratatui/pull/1669)
+
+### Documentation
+
+- [22e3e84](https://github.com/ratatui/ratatui/commit/22e3e84de8d26fd938220bdf3d00f8ec3ca7e597) *(core)* Remove link to Paragraph widget (#1683) by @orhun in [#1683](https://github.com/ratatui/ratatui/pull/1683)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.2...ratatui-core-v0.1.0-alpha.3
+
+
+<!-- generated by git-cliff -->
+
+
 ## [0.30.0-alpha.1](https://github.com/ratatui/ratatui/releases/tag/0.30.0-alpha.1) - 2025-01-14
 
 0.30.0-alpha.1 is a pre-release of the upcoming 0.30.0 release. It is intended for testing and
