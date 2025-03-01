@@ -4,7 +4,7 @@ description = """
     Core types and traits for the Ratatui Terminal UI library.
     Widget libraries should use this crate. Applications should use the main Ratatui crate.
 """
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 readme = "README.md"
 authors.workspace = true
 documentation.workspace = true

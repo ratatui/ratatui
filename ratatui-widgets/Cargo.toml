@@ -3,7 +3,7 @@ name = "ratatui-widgets"
 description = "A collection of Ratatui widgets for building terminal user interfaces using Ratatui."
 # Note that this started at 0.3.0 as there was a previous crate using the name `ratatui-widgets`.
 # <https://github.com/joshka/ratatui-widgets/issues/46>
-version = "0.3.0-alpha.1"
+version = "0.3.0-alpha.2"
 readme = "README.md"
 authors.workspace = true
 documentation.workspace = true

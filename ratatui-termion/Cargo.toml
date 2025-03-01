@@ -1,6 +1,6 @@
 [package]
 name = "ratatui-termion"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 description = "Termion backend for the Ratatui Terminal UI library."
 documentation = "https://docs.rs/ratatui-termion/"
 readme = "README.md"
