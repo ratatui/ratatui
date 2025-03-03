@@ -127,7 +127,7 @@ indoc = "2"
 pretty_assertions = "1.4.0"
 rand = "0.9.0"
 rand_chacha = "0.9.0"
-rstest = "0.24.0"
+rstest = "0.25.0"
 serde_json.workspace = true
 tokio = { version = "1.43.0", features = ["rt", "macros", "time", "rt-multi-thread"] }
 tracing = "0.1.40"
