@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: bnjbvr/cargo-machete@v0.7.0
+      - uses: bnjbvr/cargo-machete@v0.8.0
 
   # Run cargo clippy.
   lint-clippy:
