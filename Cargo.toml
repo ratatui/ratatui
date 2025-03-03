@@ -27,7 +27,7 @@ edition = "2021"
 rust-version = "1.74.0"
 
 [workspace.dependencies]
-bitflags = "2.7.0"
+bitflags = "2.9.0"
 color-eyre = "0.6.3"
 crossterm = "0.28.1"
 document-features = "0.2.11"
