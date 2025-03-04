@@ -4,6 +4,7 @@
 //!
 //! In its simplest form, a `Block` is a [border](Borders) around another widget. It can have a
 //! [title](Block::title) and [padding](Block::padding).
+#![allow(deprecated)] // to avoid having to add `#[deprecated]` to every use of `Title`
 
 use itertools::Itertools;
 use ratatui_core::{

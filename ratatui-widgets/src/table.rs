@@ -580,7 +580,7 @@ impl<'a> Table<'a> {
     ///
     /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
-    #[deprecated(note = "use `Table::row_highlight_style` instead")]
+    #[deprecated(note = "use `row_highlight_style()` instead")]
     pub fn highlight_style<S: Into<Style>>(self, highlight_style: S) -> Self {
         self.row_highlight_style(highlight_style)
     }

@@ -330,7 +330,7 @@ impl<'a> LineGauge<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     #[deprecated(
         since = "0.30.0",
-        note = "You should use `LineGauge::filled_symbol` and `LineGauge::unfilled_symbol` instead."
+        note = "use `filled_symbol()` and `unfilled_symbol()` instead"
     )]
     pub const fn line_set(mut self, set: symbols::line::Set) -> Self {
         self.filled_symbol = set.horizontal;
@@ -382,10 +382,7 @@ impl<'a> LineGauge<'a> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
-    #[deprecated(
-        since = "0.27.0",
-        note = "You should use `LineGauge::filled_style` instead."
-    )]
+    #[deprecated(since = "0.27.0", note = "use `filled_style()` instead")]
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn gauge_style<S: Into<Style>>(mut self, style: S) -> Self {
         let style: Style = style.into();

@@ -67,7 +67,7 @@ impl Frame<'_> {
     /// If your app listens for a resize event from the backend, it should ignore the values from
     /// the event for any calculations that are used to render the current frame and use this value
     /// instead as this is the area of the buffer that is used to render the current frame.
-    #[deprecated = "use .area() as it's the more correct name"]
+    #[deprecated = "use `area()` instead"]
     pub const fn size(&self) -> Rect {
         self.viewport_area
     }
@@ -154,7 +154,7 @@ impl Frame<'_> {
     /// [`Terminal::hide_cursor`]: crate::terminal::Terminal::hide_cursor
     /// [`Terminal::show_cursor`]: crate::terminal::Terminal::show_cursor
     /// [`Terminal::set_cursor_position`]: crate::terminal::Terminal::set_cursor_position
-    #[deprecated = "the method set_cursor_position indicates more clearly what about the cursor to set"]
+    #[deprecated = "use `set_cursor_position((x, y))` instead which takes `impl Into<Position>`"]
     pub fn set_cursor(&mut self, x: u16, y: u16) {
         self.set_cursor_position(Position { x, y });
     }
