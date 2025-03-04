@@ -129,7 +129,7 @@ impl Buffer {
     ///
     /// Panics if the index is out of bounds.
     #[track_caller]
-    #[deprecated(note = "Use Buffer[] or Buffer::cell instead")]
+    #[deprecated = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell((x, y))`. Both methods take `impl Into<Position>`."]
     #[must_use]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
@@ -149,7 +149,7 @@ impl Buffer {
     ///
     /// Panics if the position is outside the `Buffer`'s area.
     #[track_caller]
-    #[deprecated(note = "Use Buffer[] or Buffer::cell_mut instead")]
+    #[deprecated = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell_mut((x, y))`. Both methods take `impl Into<Position>`."]
     #[must_use]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);

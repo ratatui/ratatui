@@ -440,14 +440,14 @@ where
     ///
     /// This is the position of the cursor after the last draw call and is returned as a tuple of
     /// `(x, y)` coordinates.
-    #[deprecated = "the method get_cursor_position indicates more clearly what about the cursor to get"]
+    #[deprecated = "use `get_cursor_position()` instead which returns `Result<Position>`"]
     pub fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
         let Position { x, y } = self.get_cursor_position()?;
         Ok((x, y))
     }
 
     /// Sets the cursor position.
-    #[deprecated = "the method set_cursor_position indicates more clearly what about the cursor to set"]
+    #[deprecated = "use `set_cursor_position((x, y))` instead which takes `impl Into<Position>`"]
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.set_cursor_position(Position { x, y })
     }

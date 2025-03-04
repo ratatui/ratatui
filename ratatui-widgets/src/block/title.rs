@@ -57,6 +57,7 @@ use strum::{Display, EnumString};
 ///     .alignment(Alignment::Right);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[deprecated = "use `title_top()` or `title_bottom()` instead"]
 pub struct Title<'a> {
     /// Title content
     pub content: Line<'a>,
@@ -101,7 +102,6 @@ pub enum Position {
     Bottom,
 }
 
-#[deprecated = "use Block::title_top() or Block::title_bottom() instead. This will be removed in a future release."]
 impl<'a> Title<'a> {
     /// Set the title content.
     #[must_use = "method moves the value of self and returns the modified value"]
