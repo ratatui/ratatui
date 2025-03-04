@@ -474,6 +474,34 @@ impl Color {
     }
 }
 
+impl From<[u8; 3]> for Color {
+    /// Converts an array of 3 u8 values to a `Color::Rgb` instance.
+    fn from([r, g, b]: [u8; 3]) -> Self {
+        Self::Rgb(r, g, b)
+    }
+}
+
+impl From<(u8, u8, u8)> for Color {
+    /// Converts a tuple of 3 u8 values to a `Color::Rgb` instance.
+    fn from((r, g, b): (u8, u8, u8)) -> Self {
+        Self::Rgb(r, g, b)
+    }
+}
+
+impl From<[u8; 4]> for Color {
+    /// Converts an array of 4 u8 values to a `Color::Rgb` instance (ignoring the alpha value).
+    fn from([r, g, b, _]: [u8; 4]) -> Self {
+        Self::Rgb(r, g, b)
+    }
+}
+
+impl From<(u8, u8, u8, u8)> for Color {
+    /// Converts a tuple of 4 u8 values to a `Color::Rgb` instance (ignoring the alpha value).
+    fn from((r, g, b, _): (u8, u8, u8, u8)) -> Self {
+        Self::Rgb(r, g, b)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::error::Error;
@@ -733,5 +761,20 @@ mod tests {
             serde_json::from_str::<Color>(r#"{"Indexed":10}"#)?
         );
         Ok(())
+    }
+
+    #[test]
+    fn test_from_array_and_tuple_conversions() {
+        let from_array3 = Color::from([123, 45, 67]);
+        assert_eq!(from_array3, Color::Rgb(123, 45, 67));
+
+        let from_tuple3 = Color::from((89, 76, 54));
+        assert_eq!(from_tuple3, Color::Rgb(89, 76, 54));
+
+        let from_array4 = Color::from([10, 20, 30, 255]);
+        assert_eq!(from_array4, Color::Rgb(10, 20, 30));
+
+        let from_tuple4 = Color::from((200, 150, 100, 0));
+        assert_eq!(from_tuple4, Color::Rgb(200, 150, 100));
     }
 }
