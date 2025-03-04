@@ -183,7 +183,7 @@ fn widgets_chart_handles_long_labels<'line, Lines>(
         "          ",
         "          ",
         "   ───────",
-        "AAA   B  C",
+        "AAA  B   C",
     ],
 )]
 #[case::center(
