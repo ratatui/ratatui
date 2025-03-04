@@ -91,7 +91,7 @@ pub fn render_bottom_list(frame: &mut Frame, area: Rect) {
     let list = List::new(items)
         .style(Color::White)
         .highlight_style(Style::new().yellow().italic())
-        .highlight_symbol("> ")
+        .highlight_symbol("> ".red())
         .scroll_padding(1)
         .direction(ListDirection::BottomToTop)
         .repeat_highlight_symbol(true);

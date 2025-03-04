@@ -1,6 +1,9 @@
 //! The [`List`] widget is used to display a list of items and allows selecting one or multiple
 //! items.
-use ratatui_core::style::{Style, Styled};
+use ratatui_core::{
+    style::{Style, Styled},
+    text::Line,
+};
 use strum::{Display, EnumString};
 
 pub use self::{item::ListItem, state::ListState};
@@ -116,7 +119,7 @@ pub struct List<'a> {
     /// Style used to render selected item
     pub(crate) highlight_style: Style,
     /// Symbol in front of the selected item (Shift all items to the right)
-    pub(crate) highlight_symbol: Option<&'a str>,
+    pub(crate) highlight_symbol: Option<Line<'a>>,
     /// Whether to repeat the highlight symbol for each line of the selected item
     pub(crate) repeat_highlight_symbol: bool,
     /// Decides when to allocate spacing for the selection symbol
@@ -298,8 +301,8 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
-        self.highlight_symbol = Some(highlight_symbol);
+    pub fn highlight_symbol<L: Into<Line<'a>>>(mut self, highlight_symbol: L) -> Self {
+        self.highlight_symbol = Some(highlight_symbol.into());
         self
     }
 
