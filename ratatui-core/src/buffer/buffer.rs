@@ -7,7 +7,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    buffer::Cell,
+    buffer::{cell::CellDiffOption, Cell},
     layout::{Position, Rect},
     style::Style,
     text::{Line, Span},
@@ -496,14 +496,15 @@ impl Buffer {
         // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
         let mut to_skip: usize = 0;
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
-            if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
+            let skip = matches!(current.diff_option, CellDiffOption::Skip);
+            if !skip && (current != previous || invalidated > 0) && to_skip == 0 {
                 let (x, y) = self.pos_of(i);
                 updates.push((x, y, &next_buffer[i]));
             }
 
-            to_skip = current.symbol().width().saturating_sub(1);
+            to_skip = current.width().saturating_sub(1);
 
-            let affected_width = std::cmp::max(current.symbol().width(), previous.symbol().width());
+            let affected_width = std::cmp::max(current.width(), previous.width());
             invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
         }
         updates
@@ -1110,11 +1111,64 @@ mod tests {
     }
 
     #[test]
+    fn merge_diff_idempotent() {
+        let mut prev = Buffer::with_lines(["123"]);
+        let next = Buffer::with_lines(["456"]);
+        prev.merge(&next);
+
+        let diff = prev.diff(&next);
+        assert_eq!(diff, []);
+    }
+
+    #[test]
+    fn merge_diff_idempotent_multi_width() {
+        let mut sequences = Buffer::empty(Rect::new(0, 0, 20, 1));
+
+        let mut kitty_image_placeholder_start = String::new();
+        // The first control sequence is to store the cursors state, including foreground color.
+        // It is necessary because we need to introduce a foreground color, but restore later to
+        // the previous foreground color, to which we don't have access in this buffer.
+        // At this point, the symbol width is already greater than one and would cause the next
+        // cell to be skipped, if we don't `set_forced_width(Some(1))`.
+        kitty_image_placeholder_start.push_str("\x1b[s");
+        // The second control sequence sets the foreground color to some 24 bit value, which is an
+        // imaginary "kitty protocol image id".
+        kitty_image_placeholder_start.push_str("\x1b[38;2;0;0;0m");
+        // The following are some special (reserved) unicode placeholder symbols.
+        // 10EEEE is the actual placeholder, and the 3 following characters would contain some row,
+        // column, and extra "image id" data.
+        kitty_image_placeholder_start.push_str("\u{10EEEE}\u{305}\u{305}\u{305}");
+
+        sequences
+            .cell_mut((0, 0))
+            .unwrap()
+            .set_symbol(&kitty_image_placeholder_start)
+            .set_diff_option(CellDiffOption::UnitWidth);
+
+        // Add two follow up placeholder symbols that have a natural width of 1.
+        sequences.cell_mut((1, 0)).unwrap().set_char('\u{10EEEE}');
+        sequences.cell_mut((2, 0)).unwrap().set_char('\u{10EEEE}');
+        // The last symbol also has a control sequence which restores the style, so we need to
+        // force the width again to 1 to avoid skipping the next cell.
+        sequences
+            .cell_mut((3, 0))
+            .unwrap()
+            .set_symbol("\u{10EEEE}\x1b[u")
+            .set_diff_option(CellDiffOption::UnitWidth);
+
+        let mut buffer = Buffer::filled(Rect::new(0, 0, 20, 1), Cell::new("x"));
+        buffer.merge(&sequences);
+
+        let diff = buffer.diff(&sequences);
+        assert_eq!(diff, []);
+    }
+
+    #[test]
     fn diff_skip() {
         let prev = Buffer::with_lines(["123"]);
         let mut next = Buffer::with_lines(["456"]);
         for i in 1..3 {
-            next.content[i].set_skip(true);
+            next.content[i].set_diff_option(CellDiffOption::Skip);
         }
 
         let diff = prev.diff(&next);
@@ -1167,9 +1221,13 @@ mod tests {
     }
 
     #[rstest]
-    #[case(false, true, [false, false, true, true, true, true])]
-    #[case(true, false, [true, true, false, false, false, false])]
-    fn merge_skip(#[case] skip_one: bool, #[case] skip_two: bool, #[case] expected: [bool; 6]) {
+    #[case(CellDiffOption::None, CellDiffOption::Skip, [CellDiffOption::None, CellDiffOption::None, CellDiffOption::Skip, CellDiffOption::Skip, CellDiffOption::Skip, CellDiffOption::Skip])]
+    #[case(CellDiffOption::Skip, CellDiffOption::None, [CellDiffOption::Skip, CellDiffOption::Skip, CellDiffOption::None, CellDiffOption::None, CellDiffOption::None, CellDiffOption::None])]
+    fn merge_skip(
+        #[case] skip_one: CellDiffOption,
+        #[case] skip_two: CellDiffOption,
+        #[case] expected: [CellDiffOption; 6],
+    ) {
         let mut one = {
             let area = Rect {
                 x: 0,
@@ -1178,7 +1236,7 @@ mod tests {
                 height: 2,
             };
             let mut cell = Cell::new("1");
-            cell.skip = skip_one;
+            cell.diff_option = skip_one;
             Buffer::filled(area, cell)
         };
         let two = {
@@ -1189,11 +1247,15 @@ mod tests {
                 height: 2,
             };
             let mut cell = Cell::new("2");
-            cell.skip = skip_two;
+            cell.diff_option = skip_two;
             Buffer::filled(area, cell)
         };
         one.merge(&two);
-        let skipped = one.content().iter().map(|c| c.skip).collect::<Vec<_>>();
+        let skipped = one
+            .content()
+            .iter()
+            .map(|c| c.diff_option)
+            .collect::<Vec<_>>();
         assert_eq!(skipped, expected);
     }
 
