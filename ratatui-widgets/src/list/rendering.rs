@@ -1,7 +1,7 @@
 use ratatui_core::{
     buffer::Buffer,
     layout::Rect,
-    text::Line,
+    text::{Line, ToLine},
     widgets::{StatefulWidget, Widget},
 };
 
@@ -69,6 +69,7 @@ impl StatefulWidget for &List<'_> {
             .unwrap_or(&default_highlight_symbol);
         let highlight_symbol_width = highlight_symbol.width() as u16;
         let empty_symbol = " ".repeat(highlight_symbol_width as usize);
+        let empty_symbol = empty_symbol.to_line();
 
         let mut current_height = 0;
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
@@ -88,12 +89,7 @@ impl StatefulWidget for &List<'_> {
                 pos
             };
 
-            let row_area = Rect {
-                x,
-                y,
-                width: list_area.width,
-                height: item.height() as u16,
-            };
+            let row_area = Rect::new(x, y, list_area.width, item.height() as u16);
 
             let item_style = self.style.patch(item.style);
             buf.set_style(row_area, item_style);
@@ -119,17 +115,13 @@ impl StatefulWidget for &List<'_> {
                     // if the item is selected, we need to display the highlight symbol:
                     // - either for the first line of the item only,
                     // - or for each line of the item if the appropriate option is set
-                    if is_selected && (j == 0 || self.repeat_highlight_symbol) {
-                        buf.set_line(x, y + j as u16, highlight_symbol, list_area.width);
+                    let line = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
+                        highlight_symbol
                     } else {
-                        buf.set_stringn(
-                            x,
-                            y + j as u16,
-                            &empty_symbol,
-                            list_area.width as usize,
-                            item_style,
-                        );
+                        &empty_symbol
                     };
+                    let highlight_area = Rect::new(x, y + j as u16, highlight_symbol_width, 1);
+                    line.render(highlight_area, buf);
                 }
             }
         }
