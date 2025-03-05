@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use paste::paste;
 
@@ -291,6 +291,18 @@ impl<'a> Styled for &'a str {
     }
 }
 
+impl<'a> Styled for Cow<'a, str> {
+    type Item = Span<'a>;
+
+    fn style(&self) -> Style {
+        Style::default()
+    }
+
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
+        Span::styled(self, style)
+    }
+}
+
 impl Styled for String {
     type Item = Span<'static>;
 
@@ -302,6 +314,39 @@ impl Styled for String {
         Span::styled(self, style)
     }
 }
+
+macro_rules! styled {
+    ($impl_type:ty) => {
+        impl Styled for $impl_type {
+            type Item = Span<'static>;
+
+            fn style(&self) -> Style {
+                Style::default()
+            }
+
+            fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
+                Span::styled(self.to_string(), style)
+            }
+        }
+    };
+}
+
+styled!(bool);
+styled!(char);
+styled!(f32);
+styled!(f64);
+styled!(i8);
+styled!(i16);
+styled!(i32);
+styled!(i64);
+styled!(i128);
+styled!(isize);
+styled!(u8);
+styled!(u16);
+styled!(u32);
+styled!(u64);
+styled!(u128);
+styled!(usize);
 
 #[cfg(test)]
 mod tests {
@@ -411,6 +456,12 @@ mod tests {
     }
 
     #[test]
+    fn cow_string_styled() {
+        let s = Cow::Borrowed("a");
+        assert_eq!(s.red(), "a".red());
+    }
+
+    #[test]
     fn temporary_string_styled() {
         // to_string() is used to create a temporary String, which is then styled. Without the
         // `Styled` trait impl for `String`, this would fail to compile with the error: "temporary
@@ -423,6 +474,26 @@ mod tests {
         let items = [String::from("a"), String::from("b")];
         let sss = items.iter().map(|s| format!("{s}{s}").red()).collect_vec();
         assert_eq!(sss, [Span::from("aa").red(), Span::from("bb").red()]);
+    }
+
+    #[test]
+    fn other_primitives_styled() {
+        assert_eq!(true.red(), "true".red());
+        assert_eq!('a'.red(), "a".red());
+        assert_eq!(0.1f32.red(), "0.1".red());
+        assert_eq!(0.1f64.red(), "0.1".red());
+        assert_eq!(0i8.red(), "0".red());
+        assert_eq!(0i16.red(), "0".red());
+        assert_eq!(0i32.red(), "0".red());
+        assert_eq!(0i64.red(), "0".red());
+        assert_eq!(0i128.red(), "0".red());
+        assert_eq!(0isize.red(), "0".red());
+        assert_eq!(0u8.red(), "0".red());
+        assert_eq!(0u16.red(), "0".red());
+        assert_eq!(0u32.red(), "0".red());
+        assert_eq!(0u64.red(), "0".red());
+        assert_eq!(0u64.red(), "0".red());
+        assert_eq!(0usize.red(), "0".red());
     }
 
     #[test]
