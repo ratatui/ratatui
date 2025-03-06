@@ -16,7 +16,7 @@
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Offset, Rect},
     style::{Color, Style, Stylize},
     symbols,
@@ -39,13 +39,15 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
         terminal.draw(|frame| draw(frame, selected_tab))?;
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Right | KeyCode::Char('l') | KeyCode::Tab => {
-                    selected_tab = (selected_tab + 1) % 3;
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => break Ok(()),
+                    KeyCode::Right | KeyCode::Char('l') | KeyCode::Tab => {
+                        selected_tab = (selected_tab + 1) % 3;
+                    }
+                    KeyCode::Left | KeyCode::Char('h') => selected_tab = (selected_tab + 2) % 3,
+                    _ => {}
                 }
-                KeyCode::Left | KeyCode::Char('h') => selected_tab = (selected_tab + 2) % 3,
-                _ => {}
             }
         }
     }
