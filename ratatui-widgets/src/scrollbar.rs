@@ -19,7 +19,7 @@ use ratatui_core::{
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
-/// A widget to display a scrollbar
+/// A stateful widget to display a scrollbar
 ///
 /// The following components of the scrollbar are customizable in symbol and style. Note the
 /// scrollbar is represented horizontally but it can also be set vertically (which is actually the
@@ -120,7 +120,7 @@ pub enum ScrollbarOrientation {
     HorizontalTop,
 }
 
-/// A struct representing the state of a Scrollbar widget.
+/// A struct representing the state of a [`Scrollbar`] widget.
 ///
 /// # Important
 ///
@@ -136,15 +136,32 @@ pub enum ScrollbarOrientation {
 ///
 /// ```text
 /// ┌───────────────┐
-/// │1. this is a   █
+/// │1. First item  █
+/// │2. Second item ║
+/// └───────────────┘
+/// ```
+///
+/// This example contains also 4 bullets point but each item takes up 2 lines:
+///
+/// - the `content_length` is 8
+/// - the `position` is 0
+/// - the `viewport_content_length` is 4
+///
+/// ```text
+/// ┌───────────────┐
+/// │1. This is a   █
 /// │   single item █
-/// │2. this is a   ║
+/// │2. This is a   ║
 /// │   second item ║
 /// └───────────────┘
 /// ```
 ///
 /// If you don't have multi-line content, you can leave the `viewport_content_length` set to the
 /// default and it'll use the track size as a `viewport_content_length`.
+///
+/// Note that this scrollbar behaves differently to what you might be used to for example
+/// from your web browser in that it scrolls when selecting an item,
+/// regardless of whether all content fits into the current viewport.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ScrollbarState {
@@ -276,6 +293,8 @@ impl<'a> Scrollbar<'a> {
     /// Sets the symbol that represents the track of the scrollbar.
     ///
     /// See [`Scrollbar`] for a visual example of what this represents.
+    /// To use a solid color for the track, set this to `Some(" ")` and
+    /// apply a style with [`Scrollbar::track_style`].
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -290,6 +309,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    /// The style will only be applied if [`Scrollbar::track_symbol`] is not set to [`None`].
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -451,7 +471,11 @@ impl ScrollbarState {
         self
     }
 
-    /// Sets the items' size.
+    /// Sets the viewport size.
+    ///
+    /// This needs to be set if the viewport size differs
+    /// from the track length, which may be the case if begin
+    /// and end symbols are set.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
