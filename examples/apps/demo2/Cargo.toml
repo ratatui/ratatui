@@ -15,5 +15,5 @@ rand = "0.9.0"
 rand_chacha = "0.9.0"
 ratatui = { workspace = true, features = ["all-widgets"] }
 strum.workspace = true
-time = "0.3.37"
+time = "0.3.39"
 unicode-width = "0.2.0"
