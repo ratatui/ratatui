@@ -54,7 +54,7 @@ impl App {
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.is_running() {
             terminal
-                .draw(|frame| self.draw(frame))
+                .draw(|frame| self.render(frame))
                 .wrap_err("terminal.draw")?;
             self.handle_events()?;
         }
@@ -66,7 +66,7 @@ impl App {
     }
 
     /// Draw a single frame of the app.
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         frame.render_widget(self, frame.area());
         if self.mode == Mode::Destroy {
             destroy::destroy(frame);

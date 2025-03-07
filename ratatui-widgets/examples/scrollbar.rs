@@ -16,44 +16,39 @@
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Margin, Rect},
     style::{Color, Stylize},
     symbols::scrollbar::Set,
     text::{Line, Span},
     widgets::{Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
-    DefaultTerminal, Frame,
+    Frame,
 };
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut vertical = ScrollbarState::new(100);
     let mut horizontal = ScrollbarState::new(100);
-    loop {
-        terminal.draw(|frame| draw(frame, &mut vertical, &mut horizontal))?;
+    ratatui::run(|terminal| loop {
+        terminal.draw(|frame| render(frame, &mut vertical, &mut horizontal))?;
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Down | KeyCode::Char('j') => vertical.next(),
-                KeyCode::Up | KeyCode::Char('k') => vertical.prev(),
-                KeyCode::Right | KeyCode::Char('l') => horizontal.next(),
-                KeyCode::Left | KeyCode::Char('h') => horizontal.prev(),
-                _ => {}
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => break Ok(()),
+                    KeyCode::Char('j') | KeyCode::Down => vertical.next(),
+                    KeyCode::Char('k') | KeyCode::Up => vertical.prev(),
+                    KeyCode::Char('l') | KeyCode::Right => horizontal.next(),
+                    KeyCode::Char('h') | KeyCode::Left => horizontal.prev(),
+                    _ => {}
+                }
             }
         }
-    }
+    })
 }
 
 /// Draw the UI with vertical/horizontal scrollbars.
-fn draw(frame: &mut Frame, vertical: &mut ScrollbarState, horizontal: &mut ScrollbarState) {
+fn render(frame: &mut Frame, vertical: &mut ScrollbarState, horizontal: &mut ScrollbarState) {
     let vertical_layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let [top, main] = vertical_layout.areas(frame.area());
 

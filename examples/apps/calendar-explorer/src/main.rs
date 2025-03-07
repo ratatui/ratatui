@@ -23,81 +23,99 @@ use time::{ext::NumericalDuration, Date, Month, OffsetDateTime};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    let mut selected_date = OffsetDateTime::now_local()?.date();
-    let mut calendar_style = StyledCalendar::Default;
-    loop {
-        terminal.draw(|frame| render(frame, calendar_style, selected_date))?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Char('q') => break Ok(()),
-                    KeyCode::Char('s') => calendar_style = calendar_style.next(),
-                    KeyCode::Char('n') | KeyCode::Tab => selected_date = next_month(selected_date),
-                    KeyCode::Char('p') | KeyCode::BackTab => {
-                        selected_date = previous_month(selected_date);
-                    }
-                    KeyCode::Char('h') | KeyCode::Left => selected_date -= 1.days(),
-                    KeyCode::Char('j') | KeyCode::Down => selected_date += 1.weeks(),
-                    KeyCode::Char('k') | KeyCode::Up => selected_date -= 1.weeks(),
-                    KeyCode::Char('l') | KeyCode::Right => selected_date += 1.days(),
-                    _ => {}
-                }
-            }
+struct App {
+    exit: bool,
+    selected_date: Date,
+    calendar_style: StyledCalendar,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self {
+            exit: false,
+            selected_date: OffsetDateTime::now_local()
+                .expect("cannot get current date")
+                .date(),
+            calendar_style: StyledCalendar::Default,
         }
     }
 }
 
-fn next_month(date: Date) -> Date {
-    if date.month() == Month::December {
-        date.replace_month(Month::January)
-            .unwrap()
-            .replace_year(date.year() + 1)
-            .unwrap()
-    } else {
-        date.replace_month(date.month().next()).unwrap()
+impl App {
+    /// Run the application.
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        while !self.exit {
+            terminal.draw(|frame| self.render(frame))?;
+            self.handle_events()?;
+        }
+        Ok(())
     }
-}
 
-fn previous_month(date: Date) -> Date {
-    if date.month() == Month::January {
-        date.replace_month(Month::December)
-            .unwrap()
-            .replace_year(date.year() - 1)
-            .unwrap()
-    } else {
-        date.replace_month(date.month().previous()).unwrap()
+    /// Draw the UI with a calendar.
+    fn render(&self, frame: &mut Frame) {
+        let header = Text::from_iter([
+            Line::from("Calendar Example".bold()),
+            Line::from(
+                "<q> Quit | <s> Change Style | <n> Next Month | <p> Previous Month, <hjkl> Move",
+            ),
+            Line::from(format!(
+                "Current date: {} | Current style: {}",
+                self.selected_date, self.calendar_style
+            )),
+        ]);
+
+        let vertical = Layout::vertical([
+            Constraint::Length(header.height() as u16),
+            Constraint::Fill(1),
+        ]);
+        let [text_area, area] = vertical.areas(frame.area());
+        frame.render_widget(header.centered(), text_area);
+        self.calendar_style
+            .render_year(frame, area, self.selected_date)
+            .unwrap();
     }
-}
 
-/// Draw the UI with a calendar.
-fn render(frame: &mut Frame, calendar_style: StyledCalendar, selected_date: Date) {
-    let header = Text::from_iter([
-        Line::from("Calendar Example".bold()),
-        Line::from(
-            "<q> Quit | <s> Change Style | <n> Next Month | <p> Previous Month, <hjkl> Move",
-        ),
-        Line::from(format!(
-            "Current date: {selected_date} | Current style: {calendar_style}"
-        )),
-    ]);
+    fn handle_events(&mut self) -> Result<()> {
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => self.exit = true,
+                    KeyCode::Char('s') => self.select_next_style(),
+                    KeyCode::Char('n') | KeyCode::Tab => self.increment_month(),
+                    KeyCode::Char('p') | KeyCode::BackTab => self.decrement_month(),
+                    KeyCode::Char('h') | KeyCode::Left => self.selected_date -= 1.days(),
+                    KeyCode::Char('j') | KeyCode::Down => self.selected_date += 1.weeks(),
+                    KeyCode::Char('k') | KeyCode::Up => self.selected_date -= 1.weeks(),
+                    KeyCode::Char('l') | KeyCode::Right => self.selected_date += 1.days(),
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+    }
 
-    let vertical = Layout::vertical([
-        Constraint::Length(header.height() as u16),
-        Constraint::Fill(1),
-    ]);
-    let [text_area, area] = vertical.areas(frame.area());
-    frame.render_widget(header.centered(), text_area);
-    calendar_style
-        .render_year(frame, area, selected_date)
-        .unwrap();
+    fn select_next_style(&mut self) {
+        self.calendar_style = self.calendar_style.next();
+    }
+
+    fn increment_month(&mut self) {
+        let date = &mut self.selected_date;
+        if date.month() == Month::December {
+            date.replace_year(date.year() + 1).unwrap();
+        }
+        date.replace_month(date.month().next()).unwrap();
+    }
+
+    fn decrement_month(&mut self) {
+        let date = &mut self.selected_date;
+        if date.month() == Month::January {
+            date.replace_year(date.year() - 1).unwrap();
+        }
+        date.replace_month(date.month().previous()).unwrap();
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

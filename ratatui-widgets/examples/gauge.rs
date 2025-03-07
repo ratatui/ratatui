@@ -22,29 +22,21 @@ use ratatui::{
     symbols,
     text::{Line, Span},
     widgets::{Gauge, LineGauge},
-    DefaultTerminal, Frame,
+    Frame,
 };
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
-
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(draw)?;
+    ratatui::run(|terminal| loop {
+        terminal.draw(render)?;
         if matches!(event::read()?, Event::Key(_)) {
             break Ok(());
         }
-    }
+    })
 }
 
 /// Draw the UI with various progress bars.
-fn draw(frame: &mut Frame) {
+fn render(frame: &mut Frame) {
     let vertical = Layout::vertical([
         Constraint::Length(1),
         Constraint::Max(2),

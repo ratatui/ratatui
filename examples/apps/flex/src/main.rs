@@ -32,10 +32,7 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
@@ -153,7 +150,7 @@ enum SelectedTab {
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         // increase the layout cache to account for the number of layout events. This ensures that
         // layout is not generally reprocessed on every frame (which would lead to possible janky
         // results when there are more than one possible solution to the requested layout). This

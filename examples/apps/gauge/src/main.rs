@@ -44,14 +44,11 @@ enum AppState {
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while self.state != AppState::Quitting {
             terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
             self.handle_events()?;

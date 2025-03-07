@@ -16,41 +16,36 @@
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{List, ListDirection, ListState},
-    DefaultTerminal, Frame,
+    Frame,
 };
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut list_state = ListState::default();
     list_state.select_first();
-    loop {
-        terminal.draw(|frame| draw(frame, &mut list_state))?;
+    ratatui::run(|terminal| loop {
+        terminal.draw(|frame| render(frame, &mut list_state))?;
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Down | KeyCode::Char('j') => list_state.select_next(),
-                KeyCode::Up | KeyCode::Char('k') => list_state.select_previous(),
-                _ => {}
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => break Ok(()),
+                    KeyCode::Down | KeyCode::Char('j') => list_state.select_next(),
+                    KeyCode::Up | KeyCode::Char('k') => list_state.select_previous(),
+                    _ => {}
+                }
             }
         }
-    }
+    })
 }
 
 /// Draw the UI with various lists.
-fn draw(frame: &mut Frame, list_state: &mut ListState) {
+fn render(frame: &mut Frame, list_state: &mut ListState) {
     let vertical = Layout::vertical([
         Constraint::Length(1),
         Constraint::Fill(1),

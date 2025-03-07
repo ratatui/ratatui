@@ -75,14 +75,14 @@ impl App {
 
         while !self.should_quit {
             tokio::select! {
-                _ = interval.tick() => { terminal.draw(|frame| self.draw(frame))?; },
+                _ = interval.tick() => { terminal.draw(|frame| self.render(frame))?; },
                 Some(Ok(event)) = events.next() => self.handle_event(&event),
             }
         }
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
         let [title_area, body_area] = vertical.areas(frame.area());
         let title = Line::from("Ratatui async example").centered().bold();

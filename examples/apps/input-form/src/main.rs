@@ -28,12 +28,8 @@ use serde::Serialize;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = App::default().run(terminal);
-    ratatui::restore();
-
     // serialize the form to JSON if the user submitted it, otherwise print "Canceled"
-    match result {
+    match ratatui::run(|terminal| App::default().run(terminal)) {
         Ok(Some(form)) => println!("{}", serde_json::to_string_pretty(&form)?),
         Ok(None) => println!("Canceled"),
         Err(err) => eprintln!("{err}"),
@@ -56,7 +52,7 @@ enum AppState {
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<Option<InputForm>> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<Option<InputForm>> {
         while self.state == AppState::Running {
             terminal.draw(|frame| self.render(frame))?;
             self.handle_events()?;
