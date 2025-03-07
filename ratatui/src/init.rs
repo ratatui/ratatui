@@ -48,7 +48,7 @@ pub type DefaultTerminal = Terminal<CrosstermBackend<Stdout>>;
 /// ```rust,no_run
 /// use crossterm::event;
 ///
-/// type Result = std::result::Result<(), Box<dyn std::error::Error>>;
+/// type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 ///
 /// fn main() -> Result<()> {
 ///     ratatui::run(app)
@@ -72,10 +72,10 @@ pub type DefaultTerminal = Terminal<CrosstermBackend<Stdout>>;
 /// ```rust,no_run
 /// use crossterm::event;
 ///
-/// type Result = std::result::Result<(), Box<dyn std::error::Error>>;
+/// type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 ///
 /// fn main() -> Result<()> {
-///     let app = App { should_quit: false };
+///     let mut app = App::new();
 ///     ratatui::run(|terminal| app.run(terminal))
 /// }
 ///
@@ -97,17 +97,20 @@ pub type DefaultTerminal = Terminal<CrosstermBackend<Stdout>>;
 ///             terminal.draw(|frame| frame.render_widget("Hello, world!", frame.area()))?;
 ///             self.handle_events()?;
 ///         }
+///         Ok(())
 ///     }
 ///
 ///     fn render(&mut self, frame: &mut ratatui::Frame) -> Result<()> {
 ///         let greeting = format!("Hello, {}!", self.name);
-///         frame.render_widget(greeting, frame.area())
+///         frame.render_widget(greeting, frame.area());
+///         Ok(())
 ///     }
 ///
 ///     fn handle_events(&mut self) -> Result<()> {
-///         if matches!(event::read()?, event::Event::Key(_)) {
+///         if event::read()?.is_key_press() {
 ///             self.should_quit = true;
 ///         }
+///         Ok(())
 ///     }
 /// }
 /// ```

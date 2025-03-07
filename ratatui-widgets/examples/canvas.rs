@@ -16,30 +16,24 @@
 
 use color_eyre::Result;
 use crossterm::event;
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Stylize};
 use ratatui::symbols::Marker;
 use ratatui::text::{Line as TextLine, Span};
 use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
-use ratatui::{DefaultTerminal, Frame};
 use ratatui_widgets::canvas::Points;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
-
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(render)?;
-        if event::read()?.is_key_press() {
-            return Ok(());
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(render)?;
+            if event::read()?.is_key_press() {
+                break Ok(());
+            }
         }
-    }
+    })
 }
 
 /// Render the UI with a canvas widget.

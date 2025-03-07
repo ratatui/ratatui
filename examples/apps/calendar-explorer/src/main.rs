@@ -22,21 +22,18 @@ use time::{Date, Month, OffsetDateTime};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
+    ratatui::run(run)
 }
 
 /// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
+fn run(terminal: &mut DefaultTerminal) -> Result<()> {
     let mut selected_date = OffsetDateTime::now_local()?.date();
     let mut calendar_style = StyledCalendar::Default;
     loop {
         terminal.draw(|frame| render(frame, calendar_style, selected_date))?;
         if let Some(key) = event::read()?.as_key_press_event() {
             match key.code {
-                KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                KeyCode::Char('q') => break Ok(()),
                 KeyCode::Char('s') => calendar_style = calendar_style.next(),
                 KeyCode::Char('n') | KeyCode::Tab => selected_date = next_month(selected_date),
                 KeyCode::Char('p') | KeyCode::BackTab => selected_date = prev_month(selected_date),

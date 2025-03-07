@@ -10,7 +10,7 @@ use ratatui::{Frame, symbols};
 
 use crate::app::App;
 
-pub fn draw(frame: &mut Frame, app: &mut App) {
+pub fn render(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(frame.area());
     let tabs = app
         .tabs

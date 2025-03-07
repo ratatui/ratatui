@@ -21,10 +21,7 @@ use ratatui::widgets::{Widget, WidgetRef};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = App::default().run(terminal);
-    ratatui::restore();
-    result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 #[derive(Default)]
@@ -36,15 +33,15 @@ struct App {
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while !self.should_quit {
-            self.draw(&mut terminal)?;
+            self.render(terminal)?;
             self.handle_events()?;
         }
         Ok(())
     }
 
-    fn draw(&mut self, tui: &mut DefaultTerminal) -> Result<()> {
+    fn render(&mut self, tui: &mut DefaultTerminal) -> Result<()> {
         tui.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
