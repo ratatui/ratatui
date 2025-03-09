@@ -22,30 +22,22 @@ use ratatui::{
     symbols::Marker,
     text::{Line as TextLine, Span},
     widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
-    DefaultTerminal, Frame,
+    Frame,
 };
 use ratatui_widgets::canvas::Points;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
-
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(draw)?;
+    ratatui::run(|terminal| loop {
+        terminal.draw(render)?;
         if matches!(event::read()?, Event::Key(_)) {
             break Ok(());
         }
-    }
+    })
 }
 
 /// Draw the UI with a canvas widget.
-fn draw(frame: &mut Frame) {
+fn render(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let horizontal = Layout::horizontal([Constraint::Percentage(100)]).spacing(1);
     let [top, main] = vertical.areas(frame.area());

@@ -22,19 +22,16 @@ use ratatui::{
 /// and exits when the user presses 'q'.
 fn main() -> Result<()> {
     color_eyre::install()?; // augment errors / panics with easy to read messages
-    let terminal = ratatui::init();
-    let app_result = run(terminal).context("app loop failed");
-    ratatui::restore();
-    app_result
+    ratatui::run(run).context("failed to run app")
 }
 
 /// Run the application loop. This is where you would handle events and update the application
 /// state. This example exits when the user presses 'q'. Other styles of application loops are
 /// possible, for example, you could have multiple application states and switch between them based
 /// on events, or you could have a single application state and update it based on events.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
+fn run(terminal: &mut DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(draw)?;
+        terminal.draw(render)?;
         if should_quit()? {
             break;
         }
@@ -44,7 +41,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 
 /// Render the application. This is where you would draw the application UI. This example draws a
 /// greeting.
-fn draw(frame: &mut Frame) {
+fn render(frame: &mut Frame) {
     let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
     frame.render_widget(greeting, frame.area());
 }

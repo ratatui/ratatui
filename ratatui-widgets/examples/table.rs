@@ -21,39 +21,34 @@ use ratatui::{
     style::{Color, Style, Stylize},
     text::{Line, Span},
     widgets::{Row, Table, TableState},
-    DefaultTerminal, Frame,
+    Frame,
 };
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut table_state = TableState::default();
     table_state.select_first();
     table_state.select_first_column();
-    loop {
-        terminal.draw(|frame| draw(frame, &mut table_state))?;
+    ratatui::run(|terminal| loop {
+        terminal.draw(|frame| render(frame, &mut table_state))?;
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Down | KeyCode::Char('j') => table_state.select_next(),
-                KeyCode::Up | KeyCode::Char('k') => table_state.select_previous(),
-                KeyCode::Right | KeyCode::Char('l') => table_state.select_next_column(),
-                KeyCode::Left | KeyCode::Char('h') => table_state.select_previous_column(),
-                _ => {}
+            if key.kind == event::KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => break Ok(()),
+                    KeyCode::Char('j') | KeyCode::Down => table_state.select_next(),
+                    KeyCode::Char('k') | KeyCode::Up => table_state.select_previous(),
+                    KeyCode::Char('l') | KeyCode::Right => table_state.select_next_column(),
+                    KeyCode::Char('h') | KeyCode::Left => table_state.select_previous_column(),
+                    _ => {}
+                }
             }
         }
-    }
+    })
 }
 
 /// Draw the UI with a table.
-fn draw(frame: &mut Frame, table_state: &mut TableState) {
+fn render(frame: &mut Frame, table_state: &mut TableState) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let [top, main] = vertical.areas(frame.area());
 

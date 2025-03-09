@@ -11,44 +11,35 @@
 use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    crossterm::event::{self, Event},
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Style, Stylize},
     text::Line,
     widgets::{Block, Borders, Paragraph},
-    DefaultTerminal, Frame,
+    Frame,
 };
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = run(terminal);
-    ratatui::restore();
-    app_result
-}
-
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(draw)?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                return Ok(());
-            }
+    ratatui::run(|terminal| loop {
+        terminal.draw(render)?;
+        if matches!(event::read()?, Event::Key(_)) {
+            break Ok(());
         }
-    }
+    })
 }
 
-fn draw(frame: &mut Frame) {
-    let layout = Layout::vertical([
+fn render(frame: &mut Frame) {
+    let [named, indexed_colors, indexed_greys] = Layout::vertical([
         Constraint::Length(30),
         Constraint::Length(17),
         Constraint::Length(2),
     ])
-    .split(frame.area());
+    .areas(frame.area());
 
-    render_named_colors(frame, layout[0]);
-    render_indexed_colors(frame, layout[1]);
-    render_indexed_grayscale(frame, layout[2]);
+    render_named_colors(frame, named);
+    render_indexed_colors(frame, indexed_colors);
+    render_indexed_grayscale(frame, indexed_greys);
 }
 
 const NAMED_COLORS: [Color; 16] = [

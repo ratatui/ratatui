@@ -43,7 +43,7 @@ fn main() -> Result<()> {
 /// Run the application.
 fn run(mut terminal: DefaultTerminal, size: RatatuiLogoSize) -> Result<()> {
     loop {
-        terminal.draw(|frame| draw(frame, size))?;
+        terminal.draw(|frame| render(frame, size))?;
         if matches!(event::read()?, Event::Key(_)) {
             break Ok(());
         }
@@ -51,7 +51,7 @@ fn run(mut terminal: DefaultTerminal, size: RatatuiLogoSize) -> Result<()> {
 }
 
 /// Draw the UI with a logo.
-fn draw(frame: &mut Frame, size: RatatuiLogoSize) {
+fn render(frame: &mut Frame, size: RatatuiLogoSize) {
     let [top, bottom] =
         Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).areas(frame.area());
 
