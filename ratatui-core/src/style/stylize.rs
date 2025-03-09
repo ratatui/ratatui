@@ -1,7 +1,5 @@
 use std::fmt;
 
-use paste::paste;
-
 use crate::{
     style::{Color, Modifier, Style},
     text::Span,
@@ -99,7 +97,7 @@ impl fmt::Debug for ColorDebug {
 /// the color of the style to the corresponding color.
 ///
 /// ```rust,ignore
-/// color!(black);
+/// color!(Color::Black, black(), on_black() -> T);
 ///
 /// // generates
 ///
@@ -114,19 +112,31 @@ impl fmt::Debug for ColorDebug {
 /// }
 /// ```
 macro_rules! color {
-    ( $color:ident ) => {
-        paste! {
-            #[doc = "Sets the foreground color to [`" $color "`](Color::" $color:camel ")."]
-            #[must_use = concat!("`", stringify!($color), "` returns the modified style without modifying the original")]
-            fn $color(self) -> T {
-                self.fg(Color::[<$color:camel>])
-            }
+    ( $variant:expr, $color:ident(), $on_color:ident() -> $ty:ty ) => {
+        #[doc = concat!("Sets the foreground color to [`", stringify!($color), "`](", stringify!($variant), ").")]
+        #[must_use = concat!("`", stringify!($color), "` returns the modified style without modifying the original")]
+        fn $color(self) -> $ty {
+            self.fg($variant)
+        }
 
-            #[doc = "Sets the background color to [`" $color "`](Color::" $color:camel ")."]
-            #[must_use = concat!("`on_", stringify!($color), "` returns the modified style without modifying the original")]
-            fn [<on_ $color>](self) -> T {
-                self.bg(Color::[<$color:camel>])
-            }
+        #[doc = concat!("Sets the background color to [`", stringify!($color), "`](", stringify!($variant), ").")]
+        #[must_use = concat!("`", stringify!($on_color), "` returns the modified style without modifying the original")]
+        fn $on_color(self) -> $ty {
+            self.bg($variant)
+        }
+    };
+
+    ( const $variant:ident, $fg:ident(), $bg:ident() -> $ty:ty ) => {
+        #[doc = concat!("Sets the foreground color to [`", stringify!($color), "`](", stringify!($variant), ").")]
+        #[must_use = concat!("`", stringify!($color), "` returns the modified style without modifying the original")]
+        const fn $color(self) -> $ty {
+            self.fg($variant)
+        }
+
+        #[doc = concat!("Sets the background color to [`", stringify!($color), "`](", stringify!($variant), ").")]
+        #[must_use = concat!("`", stringify!($on_color), "` returns the modified style without modifying the original")]
+        const fn $on_color(self) -> $ty {
+            self.bg($variant)
         }
     };
 }
@@ -137,36 +147,46 @@ macro_rules! color {
 /// # Examples
 ///
 /// ```rust,ignore
-/// modifier!(bold);
+/// modifier!(Modifier::BOLD, bold(), not_bold() -> T);
 ///
 /// // generates
 ///
-/// #[doc = "Adds the [`BOLD`](Modifier::BOLD) modifier."]
+/// #[doc = "Adds the [`bold`](Modifier::BOLD) modifier."]
 /// fn bold(self) -> T {
 ///     self.add_modifier(Modifier::BOLD)
 /// }
 ///
-/// #[doc = "Removes the [`BOLD`](Modifier::BOLD) modifier."]
+/// #[doc = "Removes the [`bold`](Modifier::BOLD) modifier."]
 /// fn not_bold(self) -> T {
 ///     self.remove_modifier(Modifier::BOLD)
 /// }
 /// ```
 macro_rules! modifier {
-    ( $modifier:ident ) => {
-        paste! {
-            #[doc = "Adds the [`" $modifier:upper "`](Modifier::" $modifier:upper ") modifier."]
-            #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
-            fn [<$modifier>](self) -> T {
-                self.add_modifier(Modifier::[<$modifier:upper>])
-            }
+    ( $variant:expr, $modifier:ident(), $not_modifier:ident() -> $ty:ty ) => {
+        #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
+        fn $modifier(self) -> $ty {
+            self.add_modifier($variant)
         }
 
-        paste! {
-            #[doc = "Removes the [`" $modifier:upper "`](Modifier::" $modifier:upper ") modifier."]
-            #[must_use = concat!("`not_", stringify!($modifier), "` returns the modified style without modifying the original")]
-            fn [<not_ $modifier>](self) -> T {
-                self.remove_modifier(Modifier::[<$modifier:upper>])
-            }
+        #[doc = concat!("Removes the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
+        fn $not_modifier(self) -> $ty {
+            self.remove_modifier($variant)
+        }
+    };
+
+    ( const $variant:expr, $modifier:ident(), $not_modifier:ident() -> $ty:ty ) => {
+        #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
+        const fn $modifier>(self) -> $ty {
+            self.add_modifier($variant)
+        }
+
+        #[doc = concat!("Removes the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
+        const fn $not_modifier(self) -> $ty {
+            self.remove_modifier($variant)
         }
     };
 }
@@ -222,32 +242,32 @@ pub trait Stylize<'a, T>: Sized {
     #[must_use = "`remove_modifier` returns the modified style without modifying the original"]
     fn remove_modifier(self, modifier: Modifier) -> T;
 
-    color!(black);
-    color!(red);
-    color!(green);
-    color!(yellow);
-    color!(blue);
-    color!(magenta);
-    color!(cyan);
-    color!(gray);
-    color!(dark_gray);
-    color!(light_red);
-    color!(light_green);
-    color!(light_yellow);
-    color!(light_blue);
-    color!(light_magenta);
-    color!(light_cyan);
-    color!(white);
+    color!(Color::Black, black(), on_black() -> T);
+    color!(Color::Red, red(), on_red() -> T);
+    color!(Color::Green, green(), on_green() -> T);
+    color!(Color::Yellow, yellow(), on_yellow() -> T);
+    color!(Color::Blue, blue(), on_blue() -> T);
+    color!(Color::Magenta, magenta(), on_magenta() -> T);
+    color!(Color::Cyan, cyan(), on_cyan() -> T);
+    color!(Color::Gray, gray(), on_gray() -> T);
+    color!(Color::DarkGray, dark_gray(), on_dark_gray() -> T);
+    color!(Color::LightRed, light_red(), on_light_red() -> T);
+    color!(Color::LightGreen, light_green(), on_light_green() -> T);
+    color!(Color::LightYellow, light_yellow(), on_light_yellow() -> T);
+    color!(Color::LightBlue, light_blue(), on_light_blue() -> T);
+    color!(Color::LightMagenta, light_magenta(), on_light_magenta() -> T);
+    color!(Color::LightCyan, light_cyan(), on_light_cyan() -> T);
+    color!(Color::White, white(), on_white() -> T);
 
-    modifier!(bold);
-    modifier!(dim);
-    modifier!(italic);
-    modifier!(underlined);
-    modifier!(slow_blink);
-    modifier!(rapid_blink);
-    modifier!(reversed);
-    modifier!(hidden);
-    modifier!(crossed_out);
+    modifier!(Modifier::BOLD, bold(), not_bold() -> T);
+    modifier!(Modifier::DIM, dim(), not_dim() -> T);
+    modifier!(Modifier::ITALIC, italic(), not_italic() -> T);
+    modifier!(Modifier::UNDERLINED, underlined(), not_underlined() -> T);
+    modifier!(Modifier::SLOW_BLINK, slow_blink(), not_slow_blink() -> T);
+    modifier!(Modifier::RAPID_BLINK, rapid_blink(), not_rapid_blink() -> T);
+    modifier!(Modifier::REVERSED, reversed(), not_reversed() -> T);
+    modifier!(Modifier::HIDDEN, hidden(), not_hidden() -> T);
+    modifier!(Modifier::CROSSED_OUT, crossed_out(), not_crossed_out() -> T);
 }
 
 impl<T, U> Stylize<'_, T> for U
