@@ -2121,12 +2121,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "paste"
-version = "1.0.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
-
-[[package]]
 name = "pem"
 version = "3.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2581,7 +2575,6 @@ dependencies = [
  "itertools 0.13.0",
  "lru",
  "palette",
- "paste",
  "pretty_assertions",
  "rstest",
  "serde",
