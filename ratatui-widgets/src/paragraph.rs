@@ -477,7 +477,11 @@ fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u
         // Make sure to overwrite any previous character with a space (rather than a zero-width)
         let symbol = if symbol.is_empty() { " " } else { symbol };
         let position = Position::new(area.left() + x, area.top() + y);
-        buf[position].set_symbol(symbol).set_style(*style);
+        if let Some(cell) = buf.cell_mut(position) {
+            cell.set_symbol(symbol).set_style(*style);
+        } else {
+            break;
+        }
         x += u16::try_from(width).unwrap_or(u16::MAX);
     }
 }
@@ -1202,5 +1206,19 @@ mod tests {
         ]);
         expected.set_style(Rect::new(1, 1, 11, 1), Style::default().fg(Color::Green));
         assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn test_render_paragraph_out_of_bounds() {
+        let paragraph = Paragraph::new("Beyond the pale");
+        for area in [
+            Rect::new(0, 5, 15, 1),
+            Rect::new(20, 0, 15, 1),
+            Rect::new(20, 5, 15, 1),
+        ] {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+            (&paragraph).render(area, &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines(vec!["          "; 3]));
+        }
     }
 }
