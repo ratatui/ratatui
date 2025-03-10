@@ -129,7 +129,7 @@ rand = "0.9.0"
 rand_chacha = "0.9.0"
 rstest = "0.25.0"
 serde_json.workspace = true
-tokio = { version = "1.43.0", features = ["rt", "macros", "time", "rt-multi-thread"] }
+tokio = { version = "1.44.0", features = ["rt", "macros", "time", "rt-multi-thread"] }
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
