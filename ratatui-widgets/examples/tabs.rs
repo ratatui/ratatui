@@ -63,7 +63,7 @@ fn draw(frame: &mut Frame, selected_tab: usize) {
     frame.render_widget(title.centered(), top);
 
     render_content(frame, main, selected_tab);
-    render_tabs(frame, main.offset(Offset { x: 1, y: 0 }), selected_tab);
+    render_tabs(frame, main + Offset::new(1, 0), selected_tab);
 }
 
 /// Render the tabs.
