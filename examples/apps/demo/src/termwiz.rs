@@ -41,7 +41,7 @@ fn run_app(
 ) -> Result<(), Box<dyn Error>> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|frame| ui::draw(frame, &mut app))?;
+        terminal.draw(|frame| ui::render(frame, &mut app))?;
 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if let Some(input) = terminal

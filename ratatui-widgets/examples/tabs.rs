@@ -22,37 +22,30 @@ use ratatui::{
     symbols,
     text::{Line, Span},
     widgets::{Block, Paragraph, Tabs},
-    DefaultTerminal, Frame,
+    Frame,
 };
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    let mut selected_tab = 0;
-    loop {
-        terminal.draw(|frame| draw(frame, selected_tab))?;
+    let mut selection = 0;
+    ratatui::run(|terminal| loop {
+        terminal.draw(|frame| render(frame, selection))?;
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Right | KeyCode::Char('l') | KeyCode::Tab => {
-                    selected_tab = (selected_tab + 1) % 3;
+            if key.kind == event::KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => break Ok(()),
+                    KeyCode::Char('l') | KeyCode::Right => selection = (selection + 1) % 3,
+                    KeyCode::Char('h') | KeyCode::Left => selection = (selection + 2) % 3,
+                    _ => {}
                 }
-                KeyCode::Left | KeyCode::Char('h') => selected_tab = (selected_tab + 2) % 3,
-                _ => {}
             }
         }
-    }
+    })
 }
 
 /// Draw the UI with tabs.
-fn draw(frame: &mut Frame, selected_tab: usize) {
+fn render(frame: &mut Frame, selected_tab: usize) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let [top, main] = vertical.areas(frame.area());
 

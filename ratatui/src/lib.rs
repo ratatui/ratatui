@@ -346,7 +346,8 @@ pub use ratatui_termwiz::termwiz;
 
 #[cfg(feature = "crossterm")]
 pub use crate::init::{
-    init, init_with_options, restore, try_init, try_init_with_options, try_restore, DefaultTerminal,
+    init, init_with_options, restore, run, try_init, try_init_with_options, try_restore,
+    DefaultTerminal,
 };
 
 /// Re-exports for the backend implementations.

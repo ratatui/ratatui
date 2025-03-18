@@ -151,7 +151,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut selected_button: usize = 0;
     let mut button_states = [State::Selected, State::Normal, State::Normal];
     loop {
-        terminal.draw(|frame| draw(frame, button_states))?;
+        terminal.draw(|frame| render(frame, button_states))?;
         if !event::poll(Duration::from_millis(100))? {
             continue;
         }
@@ -173,7 +173,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     Ok(())
 }
 
-fn draw(frame: &mut Frame, states: [State; 3]) {
+fn render(frame: &mut Frame, states: [State; 3]) {
     let vertical = Layout::vertical([
         Constraint::Length(1),
         Constraint::Max(3),

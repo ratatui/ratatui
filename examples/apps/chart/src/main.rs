@@ -23,10 +23,7 @@ use ratatui::{
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::new().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::new().run(terminal))
 }
 
 struct App {
@@ -80,11 +77,11 @@ impl App {
         }
     }
 
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         let tick_rate = Duration::from_millis(250);
         let mut last_tick = Instant::now();
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
 
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
@@ -112,7 +109,7 @@ impl App {
         self.window[1] += 1.0;
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
         let [animated_chart, bar_chart] =
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]).areas(top);

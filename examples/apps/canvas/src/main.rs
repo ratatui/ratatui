@@ -80,7 +80,7 @@ impl App {
         let tick_rate = Duration::from_millis(16);
         let mut last_tick = Instant::now();
         while !self.exit {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
                 match event::read()? {
@@ -150,7 +150,7 @@ impl App {
         self.ball.y += self.vy;
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let header = Text::from_iter([
             "Canvas Example".bold(),
             "<q> Quit | <enter> Change Marker | <hjkl> Move".into(),

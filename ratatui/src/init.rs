@@ -16,6 +16,111 @@ use ratatui_crossterm::{
 /// use [`Terminal`] and a [backend][`crate::backend`] of your choice directly.
 pub type DefaultTerminal = Terminal<CrosstermBackend<Stdout>>;
 
+/// Run a closure with a terminal initialized with reasonable defaults for most applications.
+///
+/// This function creates a new [`DefaultTerminal`] with [`init`] and then runs the given closure
+/// with a mutable reference to the terminal. After the closure completes, the terminal is restored
+/// to its original state with [`restore`].
+///
+/// This function is a convenience wrapper around [`init`] and [`restore`], and is useful for simple
+/// applications that need a terminal with reasonable defaults for the entire lifetime of the
+/// application.
+///
+/// # Examples
+///
+/// A simple example where the app logic is contained in the closure:
+///
+/// ```rust,no_run
+/// use crossterm::event;
+///
+/// fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     ratatui::run(|terminal| loop {
+///         terminal.draw(|frame| frame.render_widget("Hello, world!", frame.area()))?;
+///         if matches!(event::read()?, event::Event::Key(_)) {
+///             break Ok(());
+///         }
+///     })
+/// }
+/// ```
+///
+/// A more complex example where the app logic is contained in a separate function:
+///
+/// ```rust,no_run
+/// use crossterm::event;
+///
+/// type Result = std::result::Result<(), Box<dyn std::error::Error>>;
+///
+/// fn main() -> Result<()> {
+///     ratatui::run(app)
+/// }
+///
+/// fn app(terminal: &mut ratatui::DefaultTerminal) -> Result<()> {
+///     const GREETING: &str = "Hello, world!";
+///     loop {
+///         terminal.draw(|frame| frame.render_widget(format!("{GREETING}"), frame.area()))?;
+///         if matches!(event::read()?, event::Event::Key(_)) {
+///             break Ok(());
+///         }
+///     }
+/// }
+/// ```
+///
+/// Once the app logic becomes more complex, it may be beneficial to move the app logic into a
+/// separate struct. This allows the app logic to be split into multiple methods with each having
+/// access to the state of the app. This can make the app logic easier to understand and maintain.
+///
+/// ```rust,no_run
+/// use crossterm::event;
+///
+/// type Result = std::result::Result<(), Box<dyn std::error::Error>>;
+///
+/// fn main() -> Result<()> {
+///     let app = App { should_quit: false };
+///     ratatui::run(|terminal| app.run(terminal))
+/// }
+///
+/// struct App {
+///     should_quit: bool,
+///     name: String,
+/// }
+///
+/// impl App {
+///     fn new() -> Self {
+///         Self {
+///             should_quit: false,
+///             name: "world".to_string(),
+///         }
+///     }
+///
+///     fn run(&mut self, terminal: &mut ratatui::DefaultTerminal) -> Result<()> {
+///         while !self.should_quit {
+///             terminal.draw(|frame| frame.render_widget("Hello, world!", frame.area()))?;
+///             self.handle_events()?;
+///         }
+///     }
+///
+///     fn render(&mut self, frame: &mut ratatui::Frame) -> Result<()> {
+///         let greeting = format!("Hello, {}!", self.name);
+///         frame.render_widget(greeting, frame.area())
+///     }
+///
+///     fn handle_events(&mut self) -> Result<()> {
+///         if matches!(event::read()?, event::Event::Key(_)) {
+///             self.should_quit = true;
+///         }
+///     }
+/// }
+/// ```
+pub fn run<F, R>(f: F) -> R
+where
+    F: FnOnce(&mut DefaultTerminal) -> R,
+{
+    let mut terminal = init();
+    let result = f(&mut terminal);
+    restore();
+    result
+}
+
 /// Initialize a terminal with reasonable defaults for most applications.
 ///
 /// This will create a new [`DefaultTerminal`] and initialize it with the following defaults:

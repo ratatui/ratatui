@@ -12,36 +12,27 @@ use std::{error::Error, iter::once, result};
 
 use itertools::Itertools;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    crossterm::event::{self, Event},
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
     text::Line,
     widgets::Paragraph,
-    DefaultTerminal, Frame,
+    Frame,
 };
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = run(terminal);
-    ratatui::restore();
-    app_result
-}
-
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(draw)?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                return Ok(());
-            }
+    ratatui::run(|terminal| loop {
+        terminal.draw(render)?;
+        if matches!(event::read()?, Event::Key(_)) {
+            break Ok(());
         }
-    }
+    })
 }
 
-fn draw(frame: &mut Frame) {
+fn render(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     let [text_area, main_area] = vertical.areas(frame.area());
     frame.render_widget(
