@@ -1,6 +1,25 @@
 use compact_str::CompactString;
+use unicode_width::UnicodeWidthStr;
 
 use crate::style::{Color, Modifier, Style};
+
+/// Cell diffing options
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CellDiffOption {
+    /// No special option.
+    None,
+    /// Skip this cell when diffing.
+    ///
+    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
+    /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
+    Skip,
+    /// Forcea width of 1, even if the symbol width is longer.
+    ///
+    /// This is useful if the symbol contains some characters that are zero-width in a terminal
+    /// context, like for example control sequences.
+    UnitWidth,
+}
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -29,8 +48,8 @@ pub struct Cell {
     /// The modifier of the cell.
     pub modifier: Modifier,
 
-    /// Whether the cell should be skipped when copying (diffing) the buffer to the screen.
-    pub skip: bool,
+    /// Special option applied when copying (diffing) the buffer to the screen (or another buffer).
+    pub diff_option: CellDiffOption,
 }
 
 impl Cell {
@@ -51,7 +70,7 @@ impl Cell {
             #[cfg(feature = "underline-color")]
             underline_color: Color::Reset,
             modifier: Modifier::empty(),
-            skip: false,
+            diff_option: CellDiffOption::None,
         }
     }
 
@@ -128,12 +147,9 @@ impl Cell {
         }
     }
 
-    /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.
-    ///
-    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
-    /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
-    pub fn set_skip(&mut self, skip: bool) -> &mut Self {
-        self.skip = skip;
+    /// Sets cell diffing options.
+    pub fn set_diff_option(&mut self, diff_option: CellDiffOption) -> &mut Self {
+        self.diff_option = diff_option;
         self
     }
 
@@ -147,7 +163,14 @@ impl Cell {
             self.underline_color = Color::Reset;
         }
         self.modifier = Modifier::empty();
-        self.skip = false;
+        self.diff_option = CellDiffOption::None;
+    }
+
+    pub(crate) fn width(&self) -> usize {
+        match self.diff_option {
+            CellDiffOption::UnitWidth => 1,
+            _ => self.symbol.width(),
+        }
     }
 }
 
@@ -181,7 +204,7 @@ mod tests {
                 #[cfg(feature = "underline-color")]
                 underline_color: Color::Reset,
                 modifier: Modifier::empty(),
-                skip: false,
+                diff_option: CellDiffOption::None,
             }
         );
     }
@@ -241,8 +264,8 @@ mod tests {
     #[test]
     fn set_skip() {
         let mut cell = Cell::EMPTY;
-        cell.set_skip(true);
-        assert!(cell.skip);
+        cell.set_diff_option(CellDiffOption::Skip);
+        assert_eq!(cell.diff_option, CellDiffOption::Skip);
     }
 
     #[test]
@@ -251,12 +274,12 @@ mod tests {
         cell.set_symbol("あ");
         cell.set_fg(Color::Red);
         cell.set_bg(Color::Blue);
-        cell.set_skip(true);
+        cell.set_diff_option(CellDiffOption::Skip);
         cell.reset();
         assert_eq!(cell.symbol(), " ");
         assert_eq!(cell.fg, Color::Reset);
         assert_eq!(cell.bg, Color::Reset);
-        assert!(!cell.skip);
+        assert_eq!(cell.diff_option, CellDiffOption::None);
     }
 
     #[test]
