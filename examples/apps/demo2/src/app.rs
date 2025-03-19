@@ -93,7 +93,7 @@ impl App {
         match key.code {
             KeyCode::Char('q') | KeyCode::Esc => self.mode = Mode::Quit,
             KeyCode::Char('h') | KeyCode::Left => self.prev_tab(),
-            KeyCode::Char('l') | KeyCode::Right => self.next_tab(),
+            KeyCode::Char('l') | KeyCode::Right | KeyCode::Tab => self.next_tab(),
             KeyCode::Char('k') | KeyCode::Up => self.prev(),
             KeyCode::Char('j') | KeyCode::Down => self.next(),
             KeyCode::Char('d') | KeyCode::Delete => self.destroy(),
