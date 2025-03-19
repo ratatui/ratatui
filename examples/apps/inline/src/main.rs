@@ -15,17 +15,14 @@ use std::{
 };
 
 use color_eyre::Result;
+use crossterm::event;
 use rand::distr::{Distribution, Uniform};
-use ratatui::{
-    backend::Backend,
-    crossterm::event,
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Modifier, Style},
-    symbols,
-    text::{Line, Span},
-    widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
-    Frame, Terminal, TerminalOptions, Viewport,
-};
+use ratatui::backend::Backend;
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget};
+use ratatui::{symbols, Frame, Terminal, TerminalOptions, Viewport};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

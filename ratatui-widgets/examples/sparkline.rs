@@ -17,15 +17,12 @@
 use std::time::Duration;
 
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event},
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Style, Stylize},
-    symbols,
-    text::{Line, Span},
-    widgets::{RenderDirection, Sparkline},
-    DefaultTerminal, Frame,
-};
+use crossterm::event::{self, Event};
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{RenderDirection, Sparkline};
+use ratatui::{symbols, DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

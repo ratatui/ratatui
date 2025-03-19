@@ -1,11 +1,9 @@
-use ratatui::{
-    backend::TestBackend,
-    buffer::Buffer,
-    style::{Color, Style},
-    text::Span,
-    widgets::canvas::Canvas,
-    Terminal,
-};
+use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
+use ratatui::style::{Color, Style};
+use ratatui::text::Span;
+use ratatui::widgets::canvas::Canvas;
+use ratatui::Terminal;
 
 #[test]
 fn widgets_canvas_draw_labels() {

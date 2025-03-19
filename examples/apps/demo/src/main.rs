@@ -13,7 +13,8 @@
 //! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, time::Duration};
+use std::error::Error;
+use std::time::Duration;
 
 use clap::Parser;
 

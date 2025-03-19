@@ -13,25 +13,22 @@
 //!
 //! You can also implement your own custom [`Shape`]s.
 
-use std::{fmt, iter::zip};
+use std::fmt;
+use std::iter::zip;
 
 use itertools::Itertools;
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Color, Style},
-    symbols::{self, Marker},
-    text::Line as TextLine,
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::style::{Color, Style};
+use ratatui_core::symbols::{self, Marker};
+use ratatui_core::text::Line as TextLine;
+use ratatui_core::widgets::Widget;
 
-pub use self::{
-    circle::Circle,
-    line::Line,
-    map::{Map, MapResolution},
-    points::Points,
-    rectangle::Rectangle,
-};
+pub use self::circle::Circle;
+pub use self::line::Line;
+pub use self::map::{Map, MapResolution};
+pub use self::points::Points;
+pub use self::rectangle::Rectangle;
 use crate::block::{Block, BlockExt};
 
 mod circle;
@@ -368,10 +365,8 @@ impl Painter<'_, '_> {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::{
-    ///     symbols,
-    ///     widgets::canvas::{Context, Painter},
-    /// };
+    /// use ratatui::symbols;
+    /// use ratatui::widgets::canvas::{Context, Painter};
     ///
     /// let mut ctx = Context::new(2, 2, [1.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -412,11 +407,9 @@ impl Painter<'_, '_> {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{
-    ///     style::Color,
-    ///     symbols,
-    ///     widgets::canvas::{Context, Painter},
-    /// };
+    /// use ratatui::style::Color;
+    /// use ratatui::symbols;
+    /// use ratatui::widgets::canvas::{Context, Painter};
     ///
     /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -431,11 +424,9 @@ impl Painter<'_, '_> {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{
-    ///     style::Color,
-    ///     symbols,
-    ///     widgets::canvas::{Context, Painter},
-    /// };
+    /// use ratatui::style::Color;
+    /// use ratatui::symbols;
+    /// use ratatui::widgets::canvas::{Context, Painter};
     ///
     /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -483,7 +474,8 @@ impl<'a> Context<'a> {
     /// example, if you want to draw a map of the world, you might want to use the following bounds:
     ///
     /// ```
-    /// use ratatui::{symbols, widgets::canvas::Context};
+    /// use ratatui::symbols;
+    /// use ratatui::widgets::canvas::Context;
     ///
     /// let ctx = Context::new(
     ///     100,
@@ -597,13 +589,9 @@ impl<'a> Context<'a> {
 /// # Examples
 ///
 /// ```
-/// use ratatui::{
-///     style::Color,
-///     widgets::{
-///         canvas::{Canvas, Line, Map, MapResolution, Rectangle},
-///         Block,
-///     },
-/// };
+/// use ratatui::style::Color;
+/// use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
+/// use ratatui::widgets::Block;
 ///
 /// Canvas::default()
 ///     .block(Block::bordered().title("Canvas"))
@@ -737,7 +725,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use ratatui::{symbols, widgets::canvas::Canvas};
+    /// use ratatui::symbols;
+    /// use ratatui::widgets::canvas::Canvas;
     ///
     /// Canvas::default()
     ///     .marker(symbols::Marker::Braille)

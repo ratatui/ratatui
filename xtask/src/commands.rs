@@ -7,9 +7,12 @@ use coverage::Coverage;
 use duct::cmd;
 use rdme::Readme;
 
-use self::{
-    backend::CheckBackend, check::Check, clippy::Clippy, docs::Docs, format::Format, typos::Typos,
-};
+use self::backend::CheckBackend;
+use self::check::Check;
+use self::clippy::Clippy;
+use self::docs::Docs;
+use self::format::Format;
+use self::typos::Typos;
 use crate::{run_cargo, ExpressionExt, Run};
 
 mod backend;

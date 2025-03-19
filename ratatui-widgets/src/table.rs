@@ -2,15 +2,16 @@
 //! one or multiple cells.
 
 use itertools::Itertools;
-use ratatui_core::{
-    buffer::Buffer,
-    layout::{Constraint, Flex, Layout, Rect},
-    style::{Style, Styled},
-    text::Text,
-    widgets::{StatefulWidget, Widget},
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::{Constraint, Flex, Layout, Rect};
+use ratatui_core::style::{Style, Styled};
+use ratatui_core::text::Text;
+use ratatui_core::widgets::{StatefulWidget, Widget};
 
-pub use self::{cell::Cell, highlight_spacing::HighlightSpacing, row::Row, state::TableState};
+pub use self::cell::Cell;
+pub use self::highlight_spacing::HighlightSpacing;
+pub use self::row::Row;
+pub use self::state::TableState;
 use crate::block::{Block, BlockExt};
 
 mod cell;
@@ -71,11 +72,9 @@ mod state;
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{
-///     layout::Constraint,
-///     style::{Style, Stylize},
-///     widgets::{Block, Row, Table},
-/// };
+/// use ratatui::layout::Constraint;
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::{Block, Row, Table};
 ///
 /// let rows = [Row::new(vec!["Cell1", "Cell2", "Cell3"])];
 /// // Columns widths are constrained in the same way as Layout...
@@ -112,11 +111,9 @@ mod state;
 /// bottom margin, and style. See [`Row`] for more details.
 ///
 /// ```rust
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     text::{Line, Span},
-///     widgets::{Cell, Row, Table},
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::text::{Line, Span};
+/// use ratatui::widgets::{Cell, Row, Table};
 ///
 /// // a Row can be created from simple strings.
 /// let row = Row::new(vec!["Row11", "Row12", "Row13"]);
@@ -144,11 +141,9 @@ mod state;
 /// details.
 ///
 /// ```rust
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     text::{Line, Span, Text},
-///     widgets::Cell,
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::text::{Line, Span, Text};
+/// use ratatui::widgets::Cell;
 ///
 /// Cell::from("simple string");
 /// Cell::from("simple styled span".red());
@@ -166,10 +161,8 @@ mod state;
 /// These default columns widths can be overridden using the `Table::widths` method.
 ///
 /// ```rust
-/// use ratatui::{
-///     layout::Constraint,
-///     widgets::{Row, Table},
-/// };
+/// use ratatui::layout::Constraint;
+/// use ratatui::widgets::{Row, Table};
 ///
 /// let text = "Mary had a\nlittle lamb.";
 ///
@@ -184,11 +177,9 @@ mod state;
 /// the [`Stylize`] trait to set the style of the widget more concisely.
 ///
 /// ```rust
-/// use ratatui::{
-///     layout::Constraint,
-///     style::Stylize,
-///     widgets::{Row, Table},
-/// };
+/// use ratatui::layout::Constraint;
+/// use ratatui::style::Stylize;
+/// use ratatui::widgets::{Row, Table};
 ///
 /// let rows = [Row::new(vec!["Cell1", "Cell2", "Cell3"])];
 /// let widths = [
@@ -205,12 +196,10 @@ mod state;
 /// user to scroll through the rows and select one of them.
 ///
 /// ```rust
-/// use ratatui::{
-///     layout::{Constraint, Rect},
-///     style::{Style, Stylize},
-///     widgets::{Block, Row, Table, TableState},
-///     Frame,
-/// };
+/// use ratatui::layout::{Constraint, Rect};
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::{Block, Row, Table, TableState};
+/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
@@ -313,10 +302,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     widgets::{Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{Row, Table};
     ///
     /// let rows = [
     ///     Row::new(vec!["Cell1", "Cell2"]),
@@ -435,10 +422,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     widgets::{Cell, Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{Cell, Row, Table};
     ///
     /// let table = Table::default().widths([Constraint::Length(5), Constraint::Length(5)]);
     /// let table = Table::default().widths(vec![Constraint::Length(5); 2]);
@@ -466,10 +451,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     widgets::{Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{Row, Table};
     ///
     /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// let widths = [Constraint::Length(5), Constraint::Length(5)];
@@ -491,10 +474,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     widgets::{Block, Cell, Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{Block, Cell, Row, Table};
     ///
     /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// let widths = [Constraint::Length(5), Constraint::Length(5)];
@@ -520,11 +501,9 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     style::{Style, Stylize},
-    ///     widgets::{Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::{Row, Table};
     ///
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
@@ -535,11 +514,9 @@ impl<'a> Table<'a> {
     /// the [`Stylize`] trait to set the style of the widget more concisely.
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     style::Stylize,
-    ///     widgets::{Cell, Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::{Cell, Row, Table};
     ///
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = vec![Constraint::Length(5), Constraint::Length(5)];
@@ -567,11 +544,9 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     style::{Style, Stylize},
-    ///     widgets::{Cell, Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::{Cell, Row, Table};
     ///
     /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// let widths = [Constraint::Length(5), Constraint::Length(5)];
@@ -667,10 +642,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     widgets::{Cell, Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{Cell, Row, Table};
     ///
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
@@ -703,10 +676,8 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Constraint,
-    ///     widgets::{HighlightSpacing, Row, Table},
-    /// };
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{HighlightSpacing, Row, Table};
     ///
     /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// let widths = [Constraint::Length(5), Constraint::Length(5)];
@@ -731,10 +702,8 @@ impl<'a> Table<'a> {
     /// Create a table that needs at least 30 columns to display.  Any extra space will be assigned
     /// to the last column.
     /// ```
-    /// use ratatui::{
-    ///     layout::{Constraint, Flex},
-    ///     widgets::{Row, Table},
-    /// };
+    /// use ratatui::layout::{Constraint, Flex};
+    /// use ratatui::widgets::{Row, Table};
     ///
     /// let widths = [
     ///     Constraint::Min(10),
@@ -1074,11 +1043,9 @@ where
 mod tests {
     use std::vec;
 
-    use ratatui_core::{
-        layout::Constraint::*,
-        style::{Color, Modifier, Style, Stylize},
-        text::Line,
-    };
+    use ratatui_core::layout::Constraint::*;
+    use ratatui_core::style::{Color, Modifier, Style, Stylize};
+    use ratatui_core::text::Line;
     use rstest::{fixture, rstest};
 
     use super::*;
@@ -1267,11 +1234,9 @@ mod tests {
 
     #[cfg(test)]
     mod state {
-        use ratatui_core::{
-            buffer::Buffer,
-            layout::{Constraint, Rect},
-            widgets::StatefulWidget,
-        };
+        use ratatui_core::buffer::Buffer;
+        use ratatui_core::layout::{Constraint, Rect};
+        use ratatui_core::widgets::StatefulWidget;
 
         use super::*;
         use crate::table::{Row, Table, TableState};

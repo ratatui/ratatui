@@ -1,14 +1,12 @@
 use itertools::Itertools;
-use ratatui::{
-    buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Margin, Rect},
-    style::{Styled, Stylize},
-    symbols::Marker,
-    widgets::{
-        canvas::{self, Canvas, Map, MapResolution, Points},
-        Block, BorderType, Clear, Padding, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
-        Sparkline, StatefulWidget, Table, TableState, Widget,
-    },
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Constraint, Layout, Margin, Rect};
+use ratatui::style::{Styled, Stylize};
+use ratatui::symbols::Marker;
+use ratatui::widgets::canvas::{self, Canvas, Map, MapResolution, Points};
+use ratatui::widgets::{
+    Block, BorderType, Clear, Padding, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
+    Sparkline, StatefulWidget, Table, TableState, Widget,
 };
 
 use crate::{RgbSwatch, THEME};

@@ -14,19 +14,16 @@
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
-use std::{
-    fmt,
-    io::{self, Write},
-};
+use std::fmt;
+use std::io::{self, Write};
 
-use ratatui_core::{
-    backend::{Backend, ClearType, WindowSize},
-    buffer::Cell,
-    layout::{Position, Size},
-    style::{Color, Modifier, Style},
-};
+use ratatui_core::backend::{Backend, ClearType, WindowSize};
+use ratatui_core::buffer::Cell;
+use ratatui_core::layout::{Position, Size};
+use ratatui_core::style::{Color, Modifier, Style};
 pub use termion;
-use termion::{color as tcolor, color::Color as _, style as tstyle};
+use termion::color::Color as _;
+use termion::{color as tcolor, style as tstyle};
 
 /// A [`Backend`] implementation that uses [Termion] to render to the terminal.
 ///
@@ -50,11 +47,10 @@ use termion::{color as tcolor, color::Color as _, style as tstyle};
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
-/// use ratatui::{
-///     backend::TermionBackend,
-///     termion::{raw::IntoRawMode, screen::IntoAlternateScreen},
-///     Terminal,
-/// };
+/// use ratatui::backend::TermionBackend;
+/// use ratatui::termion::raw::IntoRawMode;
+/// use ratatui::termion::screen::IntoAlternateScreen;
+/// use ratatui::Terminal;
 ///
 /// let writer = stdout().into_raw_mode()?.into_alternate_screen()?;
 /// let mut backend = TermionBackend::new(writer);

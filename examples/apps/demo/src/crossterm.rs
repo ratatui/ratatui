@@ -1,20 +1,19 @@
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
-};
+use std::error::Error;
+use std::io;
+use std::time::{Duration, Instant};
 
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
-    Terminal,
+use crossterm::event::{
+    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind,
 };
+use crossterm::execute;
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
+use ratatui::backend::{Backend, CrosstermBackend};
+use ratatui::Terminal;
 
-use crate::{app::App, ui};
+use crate::app::App;
+use crate::ui;
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
     // setup terminal

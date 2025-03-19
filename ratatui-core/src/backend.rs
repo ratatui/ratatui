@@ -104,10 +104,8 @@ use std::io;
 
 use strum::{Display, EnumString};
 
-use crate::{
-    buffer::Cell,
-    layout::{Position, Size},
-};
+use crate::buffer::Cell;
+use crate::layout::{Position, Size};
 
 mod test;
 pub use self::test::TestBackend;

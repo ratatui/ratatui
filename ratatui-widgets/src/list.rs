@@ -1,13 +1,13 @@
 //! The [`List`] widget is used to display a list of items and allows selecting one or multiple
 //! items.
-use ratatui_core::{
-    style::{Style, Styled},
-    text::Line,
-};
+use ratatui_core::style::{Style, Styled};
+use ratatui_core::text::Line;
 use strum::{Display, EnumString};
 
-pub use self::{item::ListItem, state::ListState};
-use crate::{block::Block, table::HighlightSpacing};
+pub use self::item::ListItem;
+pub use self::state::ListState;
+use crate::block::Block;
+use crate::table::HighlightSpacing;
 
 mod item;
 mod rendering;
@@ -44,12 +44,10 @@ mod state;
 /// # Examples
 ///
 /// ```
-/// use ratatui::{
-///     layout::Rect,
-///     style::{Style, Stylize},
-///     widgets::{Block, List, ListDirection, ListItem},
-///     Frame,
-/// };
+/// use ratatui::layout::Rect;
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::{Block, List, ListDirection, ListItem};
+/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
@@ -69,12 +67,10 @@ mod state;
 /// # Stateful example
 ///
 /// ```rust
-/// use ratatui::{
-///     layout::Rect,
-///     style::{Style, Stylize},
-///     widgets::{Block, List, ListState},
-///     Frame,
-/// };
+/// use ratatui::layout::Rect;
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::{Block, List, ListState};
+/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
@@ -161,11 +157,9 @@ impl<'a> List<'a> {
     /// From [`Text`]
     ///
     /// ```
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     text::Text,
-    ///     widgets::List,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::text::Text;
+    /// use ratatui::widgets::List;
     ///
     /// let list = List::new([
     ///     Text::styled("Item 1", Style::new().red()),
@@ -258,10 +252,8 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     widgets::List,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::List;
     ///
     /// let items = ["Item 1"];
     /// let list = List::new(items).style(Style::new().red().italic());
@@ -273,7 +265,8 @@ impl<'a> List<'a> {
     /// [`Stylize`]: ratatui_core::style::Stylize
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, widgets::List};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::List;
     ///
     /// let items = ["Item 1"];
     /// let list = List::new(items).red().italic();
@@ -320,10 +313,8 @@ impl<'a> List<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     widgets::List,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::List;
     ///
     /// let items = ["Item 1", "Item 2"];
     /// let list = List::new(items).highlight_style(Style::new().red().italic());

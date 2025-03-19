@@ -1,8 +1,6 @@
-use crate::{
-    buffer::Buffer,
-    layout::{Position, Rect},
-    widgets::{StatefulWidget, Widget},
-};
+use crate::buffer::Buffer;
+use crate::layout::{Position, Rect};
+use crate::widgets::{StatefulWidget, Widget};
 
 /// A consistent view into the terminal state for rendering a single frame.
 ///

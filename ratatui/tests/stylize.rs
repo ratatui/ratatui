@@ -1,13 +1,11 @@
 use std::io;
 
-use ratatui::{
-    backend::TestBackend,
-    buffer::Buffer,
-    layout::Rect,
-    style::{Color, Style, Stylize},
-    widgets::{BarChart, Block, Paragraph},
-    Terminal,
-};
+use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::widgets::{BarChart, Block, Paragraph};
+use ratatui::Terminal;
 
 #[test]
 fn barchart_can_be_stylized() {

@@ -10,15 +10,13 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::{error::Error, iter::once, result};
 
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use itertools::Itertools;
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout},
-    style::{Color, Modifier, Style, Stylize},
-    text::Line,
-    widgets::Paragraph,
-    DefaultTerminal, Frame,
-};
+use ratatui::layout::{Constraint, Layout};
+use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::text::Line;
+use ratatui::widgets::Paragraph;
+use ratatui::{DefaultTerminal, Frame};
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 

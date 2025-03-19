@@ -1,8 +1,6 @@
 #![warn(missing_docs)]
-use std::{
-    cmp::{max, min},
-    fmt,
-};
+use std::cmp::{max, min};
+use std::fmt;
 
 use crate::layout::{Margin, Position, Size};
 
@@ -273,7 +271,10 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// use ratatui_core::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::text::Line;
+    /// use ratatui_core::widgets::Widget;
     ///
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for row in area.rows() {
@@ -290,7 +291,10 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// use ratatui_core::{buffer::Buffer, layout::Rect, text::Text, widgets::Widget};
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::text::Text;
+    /// use ratatui_core::widgets::Widget;
     ///
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for (i, column) in area.columns().enumerate() {
@@ -309,7 +313,8 @@ impl Rect {
     /// # Example
     ///
     /// ```
-    /// use ratatui_core::{buffer::Buffer, layout::Rect};
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
     ///
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for position in area.positions() {

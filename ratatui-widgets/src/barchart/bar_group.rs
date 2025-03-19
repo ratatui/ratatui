@@ -1,10 +1,8 @@
-use ratatui_core::{
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::Style,
-    text::Line,
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::{Alignment, Rect};
+use ratatui_core::style::Style;
+use ratatui_core::text::Line;
+use ratatui_core::widgets::Widget;
 
 use crate::barchart::Bar;
 
@@ -31,10 +29,8 @@ impl<'a> BarGroup<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     widgets::{Bar, BarGroup},
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::{Bar, BarGroup};
     ///
     /// let group = BarGroup::new(vec![Bar::with_label("A", 10), Bar::with_label("B", 20)]);
     /// ```
@@ -63,7 +59,9 @@ impl<'a> BarGroup<'a> {
     /// From a [`Line`] with red foreground color:
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, text::Line, widgets::BarGroup};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::text::Line;
+    /// use ratatui::widgets::BarGroup;
     ///
     /// BarGroup::default().label(Line::from("Line").red());
     /// ```

@@ -209,10 +209,8 @@ impl fmt::Debug for Borders {
 /// ## Examples
 ///
 /// ```
-/// use ratatui::{
-///     border,
-///     widgets::{Block, Borders},
-/// };
+/// use ratatui::border;
+/// use ratatui::widgets::{Block, Borders};
 ///
 /// Block::new()
 ///     .title("Construct Borders and use them in place")
@@ -222,7 +220,8 @@ impl fmt::Debug for Borders {
 /// `border!` can be called with any number of individual sides:
 ///
 /// ```
-/// use ratatui::{border, widgets::Borders};
+/// use ratatui::border;
+/// use ratatui::widgets::Borders;
 /// let right_open = border!(TOP, LEFT, BOTTOM);
 /// assert_eq!(right_open, Borders::TOP | Borders::LEFT | Borders::BOTTOM);
 /// ```
@@ -230,7 +229,8 @@ impl fmt::Debug for Borders {
 /// Single borders work but using `Borders::` directly would be simpler.
 ///
 /// ```
-/// use ratatui::{border, widgets::Borders};
+/// use ratatui::border;
+/// use ratatui::widgets::Borders;
 ///
 /// assert_eq!(border!(TOP), Borders::TOP);
 /// assert_eq!(border!(ALL), Borders::ALL);

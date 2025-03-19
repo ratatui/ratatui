@@ -1,13 +1,10 @@
-use ratatui::{
-    backend::TestBackend,
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
-    symbols,
-    text::Span,
-    widgets::{Block, Gauge, LineGauge},
-    Terminal,
-};
+use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::text::Span;
+use ratatui::widgets::{Block, Gauge, LineGauge};
+use ratatui::{symbols, Terminal};
 
 #[test]
 fn widgets_gauge_renders() {

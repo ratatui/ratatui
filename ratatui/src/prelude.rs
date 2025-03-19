@@ -18,7 +18,8 @@
 //! modules to make it easy to qualify types that would otherwise collide. E.g.:
 //!
 //! ```rust
-//! use ratatui::{prelude::*, widgets::*};
+//! use ratatui::prelude::*;
+//! use ratatui::widgets::*;
 //!
 //! #[derive(Debug, Default, PartialEq, Eq)]
 //! struct Line;
@@ -35,12 +36,12 @@ pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
 pub use crate::backend::{FromTermion, IntoTermion, TermionBackend};
 #[cfg(feature = "termwiz")]
 pub use crate::backend::{FromTermwiz, IntoTermwiz, TermwizBackend};
-pub use crate::{
-    buffer::{self, Buffer},
-    layout::{self, Alignment, Constraint, Direction, Layout, Margin, Position, Rect, Size},
-    style::{self, Color, Modifier, Style, Stylize},
-    symbols::{self},
-    text::{self, Line, Masked, Span, Text},
-    widgets::{block::BlockExt, StatefulWidget, Widget},
-    Frame, Terminal,
+pub use crate::buffer::{self, Buffer};
+pub use crate::layout::{
+    self, Alignment, Constraint, Direction, Layout, Margin, Position, Rect, Size,
 };
+pub use crate::style::{self, Color, Modifier, Style, Stylize};
+pub use crate::text::{self, Line, Masked, Span, Text};
+pub use crate::widgets::block::BlockExt;
+pub use crate::widgets::{StatefulWidget, Widget};
+pub use crate::{symbols, Frame, Terminal};

@@ -1,15 +1,12 @@
-use ratatui::{
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Modifier, Style},
-    symbols,
-    text::{self, Span},
-    widgets::{
-        canvas::{self, Canvas, Circle, Map, MapResolution, Rectangle},
-        Axis, BarChart, Block, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem, Paragraph,
-        Row, Sparkline, Table, Tabs, Wrap,
-    },
-    Frame,
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::{self, Span};
+use ratatui::widgets::canvas::{self, Canvas, Circle, Map, MapResolution, Rectangle};
+use ratatui::widgets::{
+    Axis, BarChart, Block, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem, Paragraph, Row,
+    Sparkline, Table, Tabs, Wrap,
 };
+use ratatui::{symbols, Frame};
 
 use crate::app::App;
 

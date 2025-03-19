@@ -1,11 +1,9 @@
 use std::io;
 
-use crate::{
-    backend::{Backend, ClearType},
-    buffer::{Buffer, Cell},
-    layout::{Position, Rect, Size},
-    terminal::{CompletedFrame, Frame, TerminalOptions, Viewport},
-};
+use crate::backend::{Backend, ClearType};
+use crate::buffer::{Buffer, Cell};
+use crate::layout::{Position, Rect, Size};
+use crate::terminal::{CompletedFrame, Frame, TerminalOptions, Viewport};
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///

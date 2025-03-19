@@ -1,13 +1,11 @@
-use ratatui::{
-    backend::TestBackend,
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::{Color, Style},
-    symbols,
-    text::{self, Span},
-    widgets::{Axis, Block, Chart, Dataset, GraphType::Line},
-    Terminal,
-};
+use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::text::{self, Span};
+use ratatui::widgets::GraphType::Line;
+use ratatui::widgets::{Axis, Block, Chart, Dataset};
+use ratatui::{symbols, Terminal};
 use rstest::rstest;
 
 fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {

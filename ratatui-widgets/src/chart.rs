@@ -1,20 +1,17 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
-use std::{cmp::max, ops::Not};
+use std::cmp::max;
+use std::ops::Not;
 
-use ratatui_core::{
-    buffer::Buffer,
-    layout::{Alignment, Constraint, Flex, Layout, Position, Rect},
-    style::{Color, Style, Styled},
-    symbols::{self},
-    text::Line,
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::{Alignment, Constraint, Flex, Layout, Position, Rect};
+use ratatui_core::style::{Color, Style, Styled};
+use ratatui_core::symbols;
+use ratatui_core::text::Line;
+use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
-use crate::{
-    block::{Block, BlockExt},
-    canvas::{Canvas, Line as CanvasLine, Points},
-};
+use crate::block::{Block, BlockExt};
+use crate::canvas::{Canvas, Line as CanvasLine, Points};
 
 /// An X or Y axis for the [`Chart`] widget
 ///
@@ -29,10 +26,8 @@ use crate::{
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     widgets::Axis,
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::Axis;
 ///
 /// let axis = Axis::default()
 ///     .title("X Axis")
@@ -102,7 +97,8 @@ impl<'a> Axis<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, widgets::Axis};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::Axis;
     ///
     /// let axis = Axis::default()
     ///     .bounds([0.0, 50.0])
@@ -131,7 +127,8 @@ impl<'a> Axis<'a> {
     /// it like so
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, widgets::Axis};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::Axis;
     ///
     /// let axis = Axis::default().red();
     /// ```
@@ -307,11 +304,9 @@ impl LegendPosition {
 /// This example draws a red line between two points.
 ///
 /// ```rust
-/// use ratatui::{
-///     style::Stylize,
-///     symbols::Marker,
-///     widgets::{Dataset, GraphType},
-/// };
+/// use ratatui::style::Stylize;
+/// use ratatui::symbols::Marker;
+/// use ratatui::widgets::{Dataset, GraphType};
 ///
 /// let dataset = Dataset::default()
 ///     .name("dataset 1")
@@ -415,7 +410,8 @@ impl<'a> Dataset<'a> {
     /// style it like so
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, widgets::Dataset};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::Dataset;
     ///
     /// let dataset = Dataset::default().red();
     /// ```
@@ -467,11 +463,9 @@ struct ChartLayout {
 /// # Examples
 ///
 /// ```
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     symbols,
-///     widgets::{Axis, Block, Chart, Dataset, GraphType},
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::symbols;
+/// use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType};
 ///
 /// // Create the datasets to fill the chart with
 /// let datasets = vec![
@@ -658,7 +652,8 @@ impl<'a> Chart<'a> {
     /// its height is greater than 25% of the total widget height.
     ///
     /// ```
-    /// use ratatui::{layout::Constraint, widgets::Chart};
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::Chart;
     ///
     /// let constraints = (Constraint::Ratio(1, 3), Constraint::Ratio(1, 4));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
@@ -668,7 +663,8 @@ impl<'a> Chart<'a> {
     /// first one is always true.
     ///
     /// ```
-    /// use ratatui::{layout::Constraint, widgets::Chart};
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::Chart;
     ///
     /// let constraints = (Constraint::Min(0), Constraint::Ratio(1, 4));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
@@ -678,7 +674,8 @@ impl<'a> Chart<'a> {
     /// [`Chart::legend_position`].
     ///
     /// ```
-    /// use ratatui::{layout::Constraint, widgets::Chart};
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::Chart;
     ///
     /// let constraints = (Constraint::Length(0), Constraint::Ratio(1, 4));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);

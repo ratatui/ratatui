@@ -1,13 +1,11 @@
 use itertools::Itertools;
-use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Layout, Margin, Rect},
-    style::{Styled, Stylize},
-    text::Line,
-    widgets::{
-        Block, BorderType, Borders, Clear, List, ListItem, ListState, Padding, Paragraph,
-        Scrollbar, ScrollbarState, StatefulWidget, Tabs, Widget,
-    },
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Layout, Margin, Rect};
+use ratatui::style::{Styled, Stylize};
+use ratatui::text::Line;
+use ratatui::widgets::{
+    Block, BorderType, Borders, Clear, List, ListItem, ListState, Padding, Paragraph, Scrollbar,
+    ScrollbarState, StatefulWidget, Tabs, Widget,
 };
 use unicode_width::UnicodeWidthStr;
 

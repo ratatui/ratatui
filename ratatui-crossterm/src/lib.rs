@@ -16,24 +16,20 @@
 use std::io::{self, Write};
 
 pub use crossterm;
+use crossterm::cursor::{Hide, MoveTo, Show};
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
-use crossterm::{
-    cursor::{Hide, MoveTo, Show},
-    execute, queue,
-    style::{
-        Attribute as CrosstermAttribute, Attributes as CrosstermAttributes,
-        Color as CrosstermColor, Colors as CrosstermColors, ContentStyle, Print, SetAttribute,
-        SetBackgroundColor, SetColors, SetForegroundColor,
-    },
-    terminal::{self, Clear},
+use crossterm::style::{
+    Attribute as CrosstermAttribute, Attributes as CrosstermAttributes, Color as CrosstermColor,
+    Colors as CrosstermColors, ContentStyle, Print, SetAttribute, SetBackgroundColor, SetColors,
+    SetForegroundColor,
 };
-use ratatui_core::{
-    backend::{Backend, ClearType, WindowSize},
-    buffer::Cell,
-    layout::{Position, Size},
-    style::{Color, Modifier, Style},
-};
+use crossterm::terminal::{self, Clear};
+use crossterm::{execute, queue};
+use ratatui_core::backend::{Backend, ClearType, WindowSize};
+use ratatui_core::buffer::Cell;
+use ratatui_core::layout::{Position, Size};
+use ratatui_core::style::{Color, Modifier, Style};
 
 /// A [`Backend`] implementation that uses [Crossterm] to render to the terminal.
 ///
@@ -56,11 +52,12 @@ use ratatui_core::{
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
-/// use crossterm::{
-///     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-///     ExecutableCommand,
+/// use crossterm::terminal::{
+///     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 /// };
-/// use ratatui::{backend::CrosstermBackend, Terminal};
+/// use crossterm::ExecutableCommand;
+/// use ratatui::backend::CrosstermBackend;
+/// use ratatui::Terminal;
 ///
 /// let mut backend = CrosstermBackend::new(stdout());
 /// // or

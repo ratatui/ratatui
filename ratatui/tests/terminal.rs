@@ -1,11 +1,9 @@
 use std::error::Error;
 
-use ratatui::{
-    backend::TestBackend,
-    layout::Rect,
-    widgets::{Block, Paragraph, Widget},
-    Terminal, TerminalOptions, Viewport,
-};
+use ratatui::backend::TestBackend;
+use ratatui::layout::Rect;
+use ratatui::widgets::{Block, Paragraph, Widget};
+use ratatui::{Terminal, TerminalOptions, Viewport};
 
 #[test]
 fn swap_buffer_clears_prev_buffer() {

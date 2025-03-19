@@ -141,13 +141,11 @@ fn draw_line_high(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: us
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{
-        buffer::Buffer,
-        layout::Rect,
-        style::{Style, Stylize},
-        symbols::Marker,
-        widgets::Widget,
-    };
+    use ratatui_core::buffer::Buffer;
+    use ratatui_core::layout::Rect;
+    use ratatui_core::style::{Style, Stylize};
+    use ratatui_core::symbols::Marker;
+    use ratatui_core::widgets::Widget;
     use rstest::rstest;
 
     use super::*;

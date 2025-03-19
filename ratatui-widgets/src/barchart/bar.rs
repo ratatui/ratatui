@@ -1,10 +1,8 @@
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Style, Styled},
-    text::Line,
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::style::{Style, Styled};
+use ratatui_core::text::Line;
+use ratatui_core::widgets::Widget;
 use unicode_width::UnicodeWidthStr;
 
 /// A bar to be shown by the [`BarChart`](super::BarChart) widget.
@@ -22,10 +20,8 @@ use unicode_width::UnicodeWidthStr;
 /// The following example creates a bar with the label "Bar 1", a value "10",
 /// red background and a white value foreground.
 /// ```
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     widgets::Bar,
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::Bar;
 ///
 /// Bar::with_label("Bar 1", 10)
 ///     .red()
@@ -119,7 +115,9 @@ impl<'a> Bar<'a> {
     /// From a [`Line`] with red foreground color:
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, text::Line, widgets::Bar};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::text::Line;
+    /// use ratatui::widgets::Bar;
     ///
     /// Bar::default().label(Line::from("Line").red());
     /// ```

@@ -9,23 +9,17 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use itertools::Itertools;
-use ratatui::{
-    buffer::Buffer,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{
-        Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
-        Flex, Layout, Rect,
-    },
-    style::{
-        palette::tailwind::{BLUE, SKY, SLATE, STONE},
-        Color, Style, Stylize,
-    },
-    symbols::{self, line},
-    text::{Line, Span, Text},
-    widgets::{Block, Paragraph, Widget, Wrap},
-    DefaultTerminal,
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
+use ratatui::layout::{Flex, Layout, Rect};
+use ratatui::style::palette::tailwind::{BLUE, SKY, SLATE, STONE};
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::symbols::{self, line};
+use ratatui::text::{Line, Span, Text};
+use ratatui::widgets::{Block, Paragraph, Widget, Wrap};
+use ratatui::DefaultTerminal;
 use strum::{Display, EnumIter, FromRepr};
 
 fn main() -> Result<()> {

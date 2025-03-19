@@ -16,14 +16,12 @@
 
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Layout, Offset, Rect},
-    style::Stylize,
-    text::Line,
-    widgets::Widget,
-    DefaultTerminal, Frame,
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Layout, Offset, Rect};
+use ratatui::style::Stylize;
+use ratatui::text::Line;
+use ratatui::widgets::Widget;
+use ratatui::{DefaultTerminal, Frame};
 use serde::Serialize;
 
 fn main() -> Result<()> {

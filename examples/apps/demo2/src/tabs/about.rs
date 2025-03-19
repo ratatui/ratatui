@@ -1,9 +1,7 @@
-use ratatui::{
-    buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Margin, Rect},
-    widgets::{
-        Block, Borders, Clear, MascotEyeColor, Padding, Paragraph, RatatuiMascot, Widget, Wrap,
-    },
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Constraint, Layout, Margin, Rect};
+use ratatui::widgets::{
+    Block, Borders, Clear, MascotEyeColor, Padding, Paragraph, RatatuiMascot, Widget, Wrap,
 };
 
 use crate::{RgbSwatch, THEME};

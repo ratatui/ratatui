@@ -1,5 +1,8 @@
 use palette::{IntoColor, Okhsv, Srgb};
-use ratatui::{buffer::Buffer, layout::Rect, style::Color, widgets::Widget};
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::style::Color;
+use ratatui::widgets::Widget;
 
 /// A widget that renders a color swatch of RGB colors.
 ///

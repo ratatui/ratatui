@@ -2,7 +2,10 @@
 //!
 //! The mascot takes 32x16 cells and is rendered using half block characters.
 use itertools::Itertools;
-use ratatui_core::{buffer::Buffer, layout::Rect, style::Color, widgets::Widget}; // tuples();
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::style::Color;
+use ratatui_core::widgets::Widget; // tuples();
 
 const RATATUI_MASCOT: &str = indoc::indoc! {"
                    hhh

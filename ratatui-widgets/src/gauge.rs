@@ -1,12 +1,10 @@
 //! The [`Gauge`] widget is used to display a horizontal progress bar.
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Color, Style, Styled},
-    symbols::{self},
-    text::{Line, Span},
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::style::{Color, Style, Styled};
+use ratatui_core::symbols;
+use ratatui_core::text::{Line, Span};
+use ratatui_core::widgets::Widget;
 
 use crate::block::{Block, BlockExt};
 
@@ -26,10 +24,8 @@ use crate::block::{Block, BlockExt};
 /// # Example
 ///
 /// ```
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     widgets::{Block, Gauge},
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::{Block, Gauge};
 ///
 /// Gauge::default()
 ///     .block(Block::bordered().title("Progress"))
@@ -251,11 +247,9 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 /// # Examples:
 ///
 /// ```
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     symbols,
-///     widgets::{Block, LineGauge},
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::symbols;
+/// use ratatui::widgets::{Block, LineGauge};
 ///
 /// LineGauge::default()
 ///     .block(Block::bordered().title("Progress"))
@@ -482,10 +476,8 @@ impl Styled for LineGauge<'_> {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{
-        style::{Color, Modifier, Style, Stylize},
-        symbols,
-    };
+    use ratatui_core::style::{Color, Modifier, Style, Stylize};
+    use ratatui_core::symbols;
 
     use super::*;
 

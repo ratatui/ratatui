@@ -1,14 +1,10 @@
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    text::{Line, ToLine},
-    widgets::{StatefulWidget, Widget},
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::text::{Line, ToLine};
+use ratatui_core::widgets::{StatefulWidget, Widget};
 
-use crate::{
-    block::BlockExt,
-    list::{List, ListDirection, ListState},
-};
+use crate::block::BlockExt;
+use crate::list::{List, ListDirection, ListState};
 
 impl Widget for List<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -260,16 +256,16 @@ impl List<'_> {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use ratatui_core::{
-        layout::{Alignment, Rect},
-        style::{Color, Modifier, Style, Stylize},
-        text::Line,
-        widgets::{StatefulWidget, Widget},
-    };
+    use ratatui_core::layout::{Alignment, Rect};
+    use ratatui_core::style::{Color, Modifier, Style, Stylize};
+    use ratatui_core::text::Line;
+    use ratatui_core::widgets::{StatefulWidget, Widget};
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::{block::Block, list::ListItem, table::HighlightSpacing};
+    use crate::block::Block;
+    use crate::list::ListItem;
+    use crate::table::HighlightSpacing;
 
     #[fixture]
     fn single_line_buf() -> Buffer {

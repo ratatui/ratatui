@@ -8,13 +8,11 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Flex, Layout, Rect},
-    style::Stylize,
-    widgets::{Block, Clear, Paragraph, Wrap},
-    DefaultTerminal, Frame,
-};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::layout::{Constraint, Flex, Layout, Rect};
+use ratatui::style::Stylize;
+use ratatui::widgets::{Block, Clear, Paragraph, Wrap};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
