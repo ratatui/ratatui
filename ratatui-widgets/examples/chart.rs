@@ -80,13 +80,20 @@ pub fn render_chart(frame: &mut Frame, area: Rect) {
     let x_axis = Axis::default()
         .title("Hustle".blue())
         .bounds([0.0, 10.0])
-        .labels(["0%", "50%", "100%"]);
+        .tick_marks(true)
+        .labels([
+            "0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%",
+        ]);
 
     let y_axis = Axis::default()
         .title("Profit".blue())
         .bounds([0.0, 10.0])
-        .labels(["0", "5", "10"]);
+        .tick_marks(true)
+        .labels(["0", "2.5", "5", "7.5", "10"]);
 
-    let chart = Chart::new(vec![dataset]).x_axis(x_axis).y_axis(y_axis);
+    let chart = Chart::new(vec![dataset])
+        .x_axis(x_axis)
+        .y_axis(y_axis)
+        .show_grid(true);
     frame.render_widget(chart, area);
 }
