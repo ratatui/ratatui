@@ -66,11 +66,22 @@ pub struct Label<'a> {
 /// multiple shapes on the canvas in specific order.
 #[derive(Debug)]
 struct Layer {
-    // A string of characters representing the grid. This will be wrapped to the width of the grid
-    // when rendering
-    string: String,
-    // Colors for foreground and background of each cell
-    colors: Vec<(Color, Color)>,
+    contents: Vec<LayerCell>,
+}
+
+/// A cell within a layer.
+///
+/// If a Context contains multiple layers, then the symbol,
+/// foreground, and background colors for a character will be
+/// determined by the top-most layer that provides a value for that
+/// character.  For example, a chart drawn with `Marker::Block` may
+/// provide the background color, and a later chart drawn with
+/// `Marker::Braille` may provide the symbol and foreground color.
+#[derive(Debug)]
+struct LayerCell {
+    symbol: Option<char>,
+    fg: Option<Color>,
+    bg: Option<Color>,
 }
 
 /// A grid of cells that can be painted on.
@@ -118,7 +129,7 @@ struct BrailleGrid {
     utf16_code_points: Vec<u16>,
     /// The color of each cell only supports foreground colors for now as there's no way to
     /// individually set the background color of each dot in the braille pattern.
-    colors: Vec<Color>,
+    colors: Vec<Option<Color>>,
 }
 
 impl BrailleGrid {
@@ -130,7 +141,7 @@ impl BrailleGrid {
             width,
             height,
             utf16_code_points: vec![symbols::braille::BLANK; length],
-            colors: vec![Color::Reset; length],
+            colors: vec![None; length],
         }
     }
 }
@@ -141,15 +152,31 @@ impl Grid for BrailleGrid {
     }
 
     fn save(&self) -> Layer {
-        let string = String::from_utf16(&self.utf16_code_points).unwrap();
-        // the background color is always reset for braille patterns
-        let colors = self.colors.iter().map(|c| (*c, Color::Reset)).collect();
-        Layer { string, colors }
+        let contents = self
+            .utf16_code_points
+            .iter()
+            .zip(&self.colors)
+            .map(|(&code_point, &color)| {
+                let symbol = if code_point == symbols::braille::BLANK {
+                    None
+                } else {
+                    Some(char::from_u32(code_point.into()).unwrap())
+                };
+
+                LayerCell {
+                    symbol,
+                    fg: color,
+                    bg: None,
+                }
+            })
+            .collect();
+
+        Layer { contents }
     }
 
     fn reset(&mut self) {
         self.utf16_code_points.fill(symbols::braille::BLANK);
-        self.colors.fill(Color::Reset);
+        self.colors.fill(None);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
@@ -160,7 +187,7 @@ impl Grid for BrailleGrid {
             *c |= symbols::braille::DOTS[y % 4][x % 2];
         }
         if let Some(c) = self.colors.get_mut(index) {
-            *c = color;
+            *c = Some(color);
         }
     }
 }
@@ -175,12 +202,18 @@ struct CharGrid {
     width: u16,
     /// Height of the grid in number of terminal rows
     height: u16,
-    /// Represents a single character for each cell
-    cells: Vec<char>,
     /// The color of each cell
-    colors: Vec<Color>,
+    cells: Vec<Option<Color>>,
+
     /// The character to use for every cell - e.g. a block, dot, etc.
     cell_char: char,
+
+    /// If true, apply the color to the background as well as the
+    /// foreground.  This is used for `Marker::Block`, so that it will
+    /// overwrite any previous foreground character, but also leave a
+    /// background that can be overlaid with an additional foreground
+    /// character.
+    apply_color_to_bg: bool,
 }
 
 impl CharGrid {
@@ -191,9 +224,16 @@ impl CharGrid {
         Self {
             width,
             height,
-            cells: vec![' '; length],
-            colors: vec![Color::Reset; length],
+            cells: vec![None; length],
             cell_char,
+            apply_color_to_bg: false,
+        }
+    }
+
+    fn apply_color_to_bg(self) -> Self {
+        Self {
+            apply_color_to_bg: true,
+            ..self
         }
     }
 }
@@ -205,14 +245,20 @@ impl Grid for CharGrid {
 
     fn save(&self) -> Layer {
         Layer {
-            string: self.cells.iter().collect(),
-            colors: self.colors.iter().map(|c| (*c, Color::Reset)).collect(),
+            contents: self
+                .cells
+                .iter()
+                .map(|&color| LayerCell {
+                    symbol: color.map(|_| self.cell_char),
+                    fg: color,
+                    bg: color.filter(|_| self.apply_color_to_bg),
+                })
+                .collect(),
         }
     }
 
     fn reset(&mut self) {
-        self.cells.fill(' ');
-        self.colors.fill(Color::Reset);
+        self.cells.fill(None);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
@@ -220,10 +266,7 @@ impl Grid for CharGrid {
         // using get_mut here because we are indexing the vector with usize values
         // and we want to make sure we don't panic if the index is out of bounds
         if let Some(c) = self.cells.get_mut(index) {
-            *c = self.cell_char;
-        }
-        if let Some(c) = self.colors.get_mut(index) {
-            *c = color;
+            *c = Some(color);
         }
     }
 }
@@ -248,7 +291,7 @@ struct HalfBlockGrid {
     /// Height of the grid in number of terminal rows
     height: u16,
     /// Represents a single color for each "pixel" arranged in column, row order
-    pixels: Vec<Vec<Color>>,
+    pixels: Vec<Vec<Option<Color>>>,
 }
 
 impl HalfBlockGrid {
@@ -258,7 +301,7 @@ impl HalfBlockGrid {
         Self {
             width,
             height,
-            pixels: vec![vec![Color::Reset; width as usize]; height as usize * 2],
+            pixels: vec![vec![None; width as usize]; height as usize * 2],
         }
     }
 }
@@ -296,45 +339,47 @@ impl Grid for HalfBlockGrid {
             .tuples()
             .flat_map(|(upper_row, lower_row)| zip(upper_row, lower_row));
 
-        // then we work out what character to print for each pair of pixels
-        let string = vertical_color_pairs
-            .clone()
+        // Then we determine the character to print for each pair,
+        // along with the color of the foreground and background.
+        let contents = vertical_color_pairs
             .map(|(upper, lower)| match (upper, lower) {
-                (Color::Reset, Color::Reset) => ' ',
-                (Color::Reset, _) => symbols::half_block::LOWER,
-                (_, Color::Reset) => symbols::half_block::UPPER,
-                (&lower, &upper) => {
-                    if lower == upper {
-                        symbols::half_block::FULL
-                    } else {
-                        symbols::half_block::UPPER
-                    }
-                }
+                (None, None) => LayerCell {
+                    symbol: None,
+                    fg: None,
+                    bg: None,
+                },
+                (None, Some(lower)) => LayerCell {
+                    symbol: Some(symbols::half_block::LOWER),
+                    fg: Some(*lower),
+                    bg: None,
+                },
+                (Some(upper), None) => LayerCell {
+                    symbol: Some(symbols::half_block::UPPER),
+                    fg: Some(*upper),
+                    bg: None,
+                },
+                (Some(upper), Some(lower)) if lower == upper => LayerCell {
+                    symbol: Some(symbols::half_block::FULL),
+                    fg: Some(*upper),
+                    bg: Some(*lower),
+                },
+                (Some(upper), Some(lower)) => LayerCell {
+                    symbol: Some(symbols::half_block::UPPER),
+                    fg: Some(*upper),
+                    bg: Some(*lower),
+                },
             })
             .collect();
 
-        // then we convert these each vertical pair of pixels into a foreground and background color
-        let colors = vertical_color_pairs
-            .map(|(upper, lower)| {
-                let (fg, bg) = match (upper, lower) {
-                    (Color::Reset, Color::Reset) => (Color::Reset, Color::Reset),
-                    (Color::Reset, &lower) => (lower, Color::Reset),
-                    (&upper, Color::Reset) => (upper, Color::Reset),
-                    (&upper, &lower) => (upper, lower),
-                };
-                (fg, bg)
-            })
-            .collect();
-
-        Layer { string, colors }
+        Layer { contents }
     }
 
     fn reset(&mut self) {
-        self.pixels.fill(vec![Color::Reset; self.width as usize]);
+        self.pixels.fill(vec![None; self.width as usize]);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
-        self.pixels[y][x] = color;
+        self.pixels[y][x] = Some(color);
     }
 }
 
@@ -462,6 +507,8 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
 /// this as similar to the `Frame` struct that is used to draw widgets on the terminal.
 #[derive(Debug)]
 pub struct Context<'a> {
+    width: u16,
+    height: u16,
     x_bounds: [f64; 2],
     y_bounds: [f64; 2],
     grid: Box<dyn Grid>,
@@ -500,17 +547,10 @@ impl<'a> Context<'a> {
         y_bounds: [f64; 2],
         marker: Marker,
     ) -> Self {
-        let dot = symbols::DOT.chars().next().unwrap();
-        let block = symbols::block::FULL.chars().next().unwrap();
-        let bar = symbols::bar::HALF.chars().next().unwrap();
-        let grid: Box<dyn Grid> = match marker {
-            Marker::Dot => Box::new(CharGrid::new(width, height, dot)),
-            Marker::Block => Box::new(CharGrid::new(width, height, block)),
-            Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
-            Marker::Braille => Box::new(BrailleGrid::new(width, height)),
-            Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
-        };
+        let grid = Self::marker_to_grid(width, height, marker);
         Self {
+            width,
+            height,
             x_bounds,
             y_bounds,
             grid,
@@ -518,6 +558,25 @@ impl<'a> Context<'a> {
             layers: Vec::new(),
             labels: Vec::new(),
         }
+    }
+
+    fn marker_to_grid(width: u16, height: u16, marker: Marker) -> Box<dyn Grid> {
+        let dot = symbols::DOT.chars().next().unwrap();
+        let block = symbols::block::FULL.chars().next().unwrap();
+        let bar = symbols::bar::HALF.chars().next().unwrap();
+        match marker {
+            Marker::Dot => Box::new(CharGrid::new(width, height, dot)),
+            Marker::Block => Box::new(CharGrid::new(width, height, block).apply_color_to_bg()),
+            Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
+            Marker::Braille => Box::new(BrailleGrid::new(width, height)),
+            Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
+        }
+    }
+
+    /// Change the marker being used in this context
+    pub fn marker(&mut self, marker: Marker) {
+        self.finish();
+        self.grid = Self::marker_to_grid(self.width, self.height, marker);
     }
 
     /// Draw the given [`Shape`] in this context
@@ -804,19 +863,21 @@ where
 
         // Retrieve painted points for each layer
         for layer in ctx.layers {
-            for (index, (ch, colors)) in layer.string.chars().zip(layer.colors).enumerate() {
-                if ch != ' ' && ch != '\u{2800}' {
-                    let (x, y) = (
-                        (index % width) as u16 + canvas_area.left(),
-                        (index / width) as u16 + canvas_area.top(),
-                    );
-                    let cell = buf[(x, y)].set_char(ch);
-                    if colors.0 != Color::Reset {
-                        cell.set_fg(colors.0);
-                    }
-                    if colors.1 != Color::Reset {
-                        cell.set_bg(colors.1);
-                    }
+            for (index, layer_cell) in layer.contents.iter().enumerate() {
+                let (x, y) = (
+                    (index % width) as u16 + canvas_area.left(),
+                    (index / width) as u16 + canvas_area.top(),
+                );
+                let cell = &mut buf[(x, y)];
+
+                if let Some(symbol) = layer_cell.symbol {
+                    cell.set_char(symbol);
+                }
+                if let Some(fg) = layer_cell.fg {
+                    cell.set_fg(fg);
+                }
+                if let Some(bg) = layer_cell.bg {
+                    cell.set_bg(bg);
                 }
             }
         }
@@ -849,12 +910,52 @@ where
 mod tests {
     use indoc::indoc;
     use ratatui_core::buffer::Cell;
+    use rstest::rstest;
 
     use super::*;
 
-    // helper to test the canvas checks that drawing a vertical and horizontal line
-    // results in the expected output
-    fn test_marker(marker: Marker, expected: &str) {
+    #[rstest]
+    #[case::block(Marker::Block, indoc!(
+                "
+                █xxxx
+                █xxxx
+                █xxxx
+                █xxxx
+                █████"
+            ))]
+    #[case::half_block(Marker::HalfBlock, indoc!(
+                "
+                █xxxx
+                █xxxx
+                █xxxx
+                █xxxx
+                █▄▄▄▄"
+            ))]
+    #[case::bar(Marker::Bar, indoc!(
+                "
+                ▄xxxx
+                ▄xxxx
+                ▄xxxx
+                ▄xxxx
+                ▄▄▄▄▄"
+            ))]
+    #[case::braille(Marker::Braille, indoc!(
+                "
+                ⡇xxxx
+                ⡇xxxx
+                ⡇xxxx
+                ⡇xxxx
+                ⣇⣀⣀⣀⣀"
+            ))]
+    #[case::dot(Marker::Dot, indoc!(
+                "
+                •xxxx
+                •xxxx
+                •xxxx
+                •xxxx
+                •••••"
+            ))]
+    fn test_horizontal_with_vertical(#[case] marker: Marker, #[case] expected: &'static str) {
         let area = Rect::new(0, 0, 5, 5);
         let mut buf = Buffer::filled(area, Cell::new("x"));
         let horizontal_line = Line {
@@ -883,63 +984,72 @@ mod tests {
         assert_eq!(buf, Buffer::with_lines(expected.lines()));
     }
 
-    #[test]
-    fn test_bar_marker() {
-        test_marker(
-            Marker::Bar,
-            indoc!(
+    #[rstest]
+    #[case::block(Marker::Block, indoc!(
                 "
-                ▄xxxx
-                ▄xxxx
-                ▄xxxx
-                ▄xxxx
-                ▄▄▄▄▄"
-            ),
-        );
-    }
-
-    #[test]
-    fn test_block_marker() {
-        test_marker(
-            Marker::Block,
-            indoc!(
+                █xxx█
+                x█x█x
+                xx█xx
+                x█x█x
+                █xxx█"))]
+    #[case::half_block(Marker::HalfBlock,
+           indoc!(
                 "
-                █xxxx
-                █xxxx
-                █xxxx
-                █xxxx
-                █████"
-            ),
-        );
-    }
-
-    #[test]
-    fn test_braille_marker() {
-        test_marker(
-            Marker::Braille,
-            indoc!(
+                █xxx█
+                x█x█x
+                xx█xx
+                x█x█x
+                █xxx█")
+    )]
+    #[case::bar(Marker::Bar, indoc!(
                 "
-                ⡇xxxx
-                ⡇xxxx
-                ⡇xxxx
-                ⡇xxxx
-                ⣇⣀⣀⣀⣀"
-            ),
-        );
-    }
-
-    #[test]
-    fn test_dot_marker() {
-        test_marker(
-            Marker::Dot,
-            indoc!(
+                ▄xxx▄
+                x▄x▄x
+                xx▄xx
+                x▄x▄x
+                ▄xxx▄"))]
+    #[case::braille(Marker::Braille, indoc!(
                 "
-                •xxxx
-                •xxxx
-                •xxxx
-                •xxxx
-                •••••"
-            ),
-        );
+                ⢣xxx⡜
+                x⢣x⡜x
+                xx⣿xx
+                x⡜x⢣x
+                ⡜xxx⢣"
+            ))]
+    #[case::dot(Marker::Dot, indoc!(
+                "
+                •xxx•
+                x•x•x
+                xx•xx
+                x•x•x
+                •xxx•"
+            ))]
+    fn test_diagonal_lines(#[case] marker: Marker, #[case] expected: &'static str) {
+        let area = Rect::new(0, 0, 5, 5);
+        let mut buf = Buffer::filled(area, Cell::new("x"));
+        let diagonal_up = Line {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 10.0,
+            y2: 10.0,
+            color: Color::Reset,
+        };
+        let diagonal_down = Line {
+            x1: 0.0,
+            y1: 10.0,
+            x2: 10.0,
+            y2: 0.0,
+            color: Color::Reset,
+        };
+        Canvas::default()
+            .marker(marker)
+            .paint(|ctx| {
+                ctx.draw(&diagonal_down);
+                ctx.draw(&diagonal_up);
+            })
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .render(area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(expected.lines()));
     }
 }
