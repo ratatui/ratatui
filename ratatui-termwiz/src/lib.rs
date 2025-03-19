@@ -14,22 +14,20 @@
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
-use std::{error::Error, io};
+use std::error::Error;
+use std::io;
 
-use ratatui_core::{
-    backend::{Backend, WindowSize},
-    buffer::Cell,
-    layout::{Position, Size},
-    style::{Color, Modifier, Style},
-};
+use ratatui_core::backend::{Backend, WindowSize};
+use ratatui_core::buffer::Cell;
+use ratatui_core::layout::{Position, Size};
+use ratatui_core::style::{Color, Modifier, Style};
 pub use termwiz;
-use termwiz::{
-    caps::Capabilities,
-    cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
-    color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
-    surface::{Change, CursorVisibility, Position as TermwizPosition},
-    terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
-};
+use termwiz::caps::Capabilities;
+use termwiz::cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline};
+use termwiz::color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple};
+use termwiz::surface::{Change, CursorVisibility, Position as TermwizPosition};
+use termwiz::terminal::buffered::BufferedTerminal;
+use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 
 /// A [`Backend`] implementation that uses [Termwiz] to render to the terminal.
 ///
@@ -48,7 +46,8 @@ use termwiz::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use ratatui::{backend::TermwizBackend, Terminal};
+/// use ratatui::backend::TermwizBackend;
+/// use ratatui::Terminal;
 ///
 /// let backend = TermwizBackend::new()?;
 /// let mut terminal = Terminal::new(backend)?;

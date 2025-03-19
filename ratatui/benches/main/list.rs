@@ -1,9 +1,7 @@
 use criterion::{criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
-use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    widgets::{List, ListItem, ListState, StatefulWidget, Widget},
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::widgets::{List, ListItem, ListState, StatefulWidget, Widget};
 
 /// Benchmark for rendering a list.
 /// It only benchmarks the render with a different amount of items.

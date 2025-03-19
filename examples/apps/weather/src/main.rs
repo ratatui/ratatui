@@ -10,14 +10,12 @@
 
 use color_eyre::Result;
 use rand::{rng, Rng};
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout},
-    style::{Color, Style, Stylize},
-    text::Line,
-    widgets::{Bar, BarChart, BarGroup},
-    DefaultTerminal, Frame,
-};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::layout::{Constraint, Layout};
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::text::Line;
+use ratatui::widgets::{Bar, BarChart, BarGroup};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

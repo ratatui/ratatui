@@ -1,17 +1,13 @@
-use std::{
-    fmt,
-    ops::{Index, IndexMut},
-};
+use std::fmt;
+use std::ops::{Index, IndexMut};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{
-    buffer::Cell,
-    layout::{Position, Rect},
-    style::Style,
-    text::{Line, Span},
-};
+use crate::buffer::Cell;
+use crate::layout::{Position, Rect};
+use crate::style::Style;
+use crate::text::{Line, Span};
 
 /// A buffer that maps to the desired content of the terminal after the draw call
 ///
@@ -23,11 +19,9 @@ use crate::{
 /// # Examples:
 ///
 /// ```
-/// use ratatui_core::{
-///     buffer::{Buffer, Cell},
-///     layout::{Position, Rect},
-///     style::{Color, Style},
-/// };
+/// use ratatui_core::buffer::{Buffer, Cell};
+/// use ratatui_core::layout::{Position, Rect};
+/// use ratatui_core::style::{Color, Style};
 ///
 /// # fn foo() -> Option<()> {
 /// let mut buf = Buffer::empty(Rect {
@@ -168,10 +162,8 @@ impl Buffer {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     buffer::{Buffer, Cell},
-    ///     layout::{Position, Rect},
-    /// };
+    /// use ratatui_core::buffer::{Buffer, Cell};
+    /// use ratatui_core::layout::{Position, Rect};
     ///
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
@@ -199,11 +191,9 @@ impl Buffer {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     buffer::{Buffer, Cell},
-    ///     layout::{Position, Rect},
-    ///     style::{Color, Style},
-    /// };
+    /// use ratatui_core::buffer::{Buffer, Cell};
+    /// use ratatui_core::layout::{Position, Rect};
+    /// use ratatui_core::style::{Color, Style};
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
     /// if let Some(cell) = buffer.cell_mut(Position::new(0, 0)) {
@@ -227,7 +217,8 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// use ratatui_core::{buffer::Buffer, layout::Rect};
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
     ///
     /// let buffer = Buffer::empty(Rect::new(200, 100, 10, 10));
     /// // Global coordinates to the top corner of this buffer's area
@@ -239,7 +230,8 @@ impl Buffer {
     /// Panics when given an coordinate that is outside of this Buffer's area.
     ///
     /// ```should_panic
-    /// use ratatui_core::{buffer::Buffer, layout::Rect};
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
     ///
     /// let buffer = Buffer::empty(Rect::new(200, 100, 10, 10));
     /// // Top coordinate is outside of the buffer in global coordinate space, as the Buffer's area
@@ -282,7 +274,8 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// use ratatui_core::{buffer::Buffer, layout::Rect};
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
     ///
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
@@ -295,7 +288,8 @@ impl Buffer {
     /// Panics when given an index that is outside the Buffer's content.
     ///
     /// ```should_panic
-    /// use ratatui_core::{buffer::Buffer, layout::Rect};
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
     ///
     /// let rect = Rect::new(0, 0, 10, 10); // 100 cells in total
     /// let buffer = Buffer::empty(rect);
@@ -526,10 +520,8 @@ impl<P: Into<Position>> Index<P> for Buffer {
     /// # Examples
     ///
     /// ```
-    /// use ratatui_core::{
-    ///     buffer::{Buffer, Cell},
-    ///     layout::{Position, Rect},
-    /// };
+    /// use ratatui_core::buffer::{Buffer, Cell};
+    /// use ratatui_core::layout::{Position, Rect};
     ///
     /// let buf = Buffer::empty(Rect::new(0, 0, 10, 10));
     /// let cell = &buf[(0, 0)];
@@ -556,10 +548,8 @@ impl<P: Into<Position>> IndexMut<P> for Buffer {
     /// # Examples
     ///
     /// ```
-    /// use ratatui_core::{
-    ///     buffer::{Buffer, Cell},
-    ///     layout::{Position, Rect},
-    /// };
+    /// use ratatui_core::buffer::{Buffer, Cell};
+    /// use ratatui_core::layout::{Position, Rect};
     ///
     /// let mut buf = Buffer::empty(Rect::new(0, 0, 10, 10));
     /// buf[(0, 0)].set_symbol("A");

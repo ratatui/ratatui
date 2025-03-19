@@ -1,7 +1,8 @@
 //! This module holds the [`Title`] element and its related configuration types.
 //! A title is a piece of [`Block`](crate::block::Block) configuration.
 
-use ratatui_core::{layout::Alignment, text::Line};
+use ratatui_core::layout::Alignment;
+use ratatui_core::text::Line;
 use strum::{Display, EnumString};
 
 /// A [`Block`](crate::block::Block) title.
@@ -30,27 +31,26 @@ use strum::{Display, EnumString};
 ///
 /// Blue title on a white background (via [`Stylize`](ratatui_core::style::Stylize) trait).
 /// ```
-/// use ratatui::{style::Stylize, widgets::block::Title};
+/// use ratatui::style::Stylize;
+/// use ratatui::widgets::block::Title;
 ///
 /// Title::from("Title".blue().on_white());
 /// ```
 ///
 /// Title with multiple styles (see [`Line`] and [`Stylize`](ratatui_core::style::Stylize)).
 /// ```
-/// use ratatui::{style::Stylize, text::Line, widgets::block::Title};
+/// use ratatui::style::Stylize;
+/// use ratatui::text::Line;
+/// use ratatui::widgets::block::Title;
 ///
 /// Title::from(Line::from(vec!["Q".white().underlined(), "uit".gray()]));
 /// ```
 ///
 /// Complete example
 /// ```
-/// use ratatui::{
-///     layout::Alignment,
-///     widgets::{
-///         block::{Position, Title},
-///         Block,
-///     },
-/// };
+/// use ratatui::layout::Alignment;
+/// use ratatui::widgets::block::{Position, Title};
+/// use ratatui::widgets::Block;
 ///
 /// Title::from("Title")
 ///     .position(Position::Top)
@@ -84,10 +84,8 @@ pub struct Title<'a> {
 /// # Example
 ///
 /// ```
-/// use ratatui::widgets::{
-///     block::{Position, Title},
-///     Block,
-/// };
+/// use ratatui::widgets::block::{Position, Title};
+/// use ratatui::widgets::Block;
 ///
 /// Block::new().title(Title::from("title").position(Position::Bottom));
 /// ```

@@ -1,4 +1,5 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
 use crate::text::Text;
 
@@ -10,12 +11,10 @@ use crate::text::Text;
 /// # Examples
 ///
 /// ```rust
-/// use ratatui_core::{
-///     buffer::Buffer,
-///     layout::Rect,
-///     text::{Masked, Text},
-///     widgets::Widget,
-/// };
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::text::{Masked, Text};
+/// use ratatui_core::widgets::Widget;
 ///
 /// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
 /// let password = Masked::new("12345", 'x');

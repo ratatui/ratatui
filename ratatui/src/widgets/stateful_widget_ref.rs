@@ -1,6 +1,7 @@
 use ratatui_core::widgets::StatefulWidget;
 
-use crate::{buffer::Buffer, layout::Rect};
+use crate::buffer::Buffer;
+use crate::layout::Rect;
 
 /// A `StatefulWidgetRef` is a trait that allows rendering a stateful widget by reference.
 ///
@@ -23,13 +24,11 @@ use crate::{buffer::Buffer, layout::Rect};
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
 /// use ratatui::widgets::StatefulWidgetRef;
-/// use ratatui_core::{
-///     buffer::Buffer,
-///     layout::Rect,
-///     style::Stylize,
-///     text::Line,
-///     widgets::{StatefulWidget, Widget},
-/// };
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::style::Stylize;
+/// use ratatui_core::text::Line;
+/// use ratatui_core::widgets::{StatefulWidget, Widget};
 ///
 /// struct PersonalGreeting;
 ///
@@ -85,7 +84,10 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+    use crate::buffer::Buffer;
+    use crate::layout::Rect;
+    use crate::text::Line;
+    use crate::widgets::Widget;
 
     #[fixture]
     fn buf() -> Buffer {

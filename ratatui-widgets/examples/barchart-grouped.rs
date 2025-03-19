@@ -17,14 +17,12 @@
 use std::iter::zip;
 
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event},
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Stylize},
-    text::{Line, Span},
-    widgets::{Bar, BarChart, BarGroup},
-    DefaultTerminal, Frame,
-};
+use ratatui::crossterm::event::{self, Event};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::style::{Color, Stylize};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Bar, BarChart, BarGroup};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

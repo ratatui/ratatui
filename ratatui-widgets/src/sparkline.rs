@@ -1,13 +1,11 @@
 //! The [`Sparkline`] widget is used to display a sparkline over one or more lines.
 use std::cmp::min;
 
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Style, Styled},
-    symbols::{self},
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::style::{Style, Styled};
+use ratatui_core::symbols;
+use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 use crate::block::{Block, BlockExt};
@@ -48,11 +46,9 @@ use crate::block::{Block, BlockExt};
 /// # Examples
 ///
 /// ```
-/// use ratatui::{
-///     style::{Color, Style, Stylize},
-///     symbols,
-///     widgets::{Block, RenderDirection, Sparkline},
-/// };
+/// use ratatui::style::{Color, Style, Stylize};
+/// use ratatui::symbols;
+/// use ratatui::widgets::{Block, RenderDirection, Sparkline};
 ///
 /// Sparkline::default()
 ///     .block(Block::bordered().title("Sparkline"))
@@ -167,7 +163,9 @@ impl<'a> Sparkline<'a> {
     /// Create a `Sparkline` from a slice of `u64`:
     ///
     /// ```
-    /// use ratatui::{layout::Rect, widgets::Sparkline, Frame};
+    /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::Sparkline;
+    /// use ratatui::Frame;
     ///
     /// # fn ui(frame: &mut Frame) {
     /// # let area = Rect::default();
@@ -436,10 +434,8 @@ impl Sparkline<'_> {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{
-        buffer::Cell,
-        style::{Color, Modifier, Stylize},
-    };
+    use ratatui_core::buffer::Cell;
+    use ratatui_core::style::{Color, Modifier, Stylize};
     use strum::ParseError;
 
     use super::*;

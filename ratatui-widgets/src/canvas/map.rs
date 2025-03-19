@@ -1,10 +1,8 @@
 use ratatui_core::style::Color;
 use strum::{Display, EnumString};
 
-use crate::canvas::{
-    world::{WORLD_HIGH_RESOLUTION, WORLD_LOW_RESOLUTION},
-    Painter, Shape,
-};
+use crate::canvas::world::{WORLD_HIGH_RESOLUTION, WORLD_LOW_RESOLUTION};
+use crate::canvas::{Painter, Shape};
 
 /// Defines how many points are going to be used to draw a [`Map`].
 ///
@@ -60,7 +58,10 @@ impl Shape for Map {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{buffer::Buffer, layout::Rect, symbols::Marker, widgets::Widget};
+    use ratatui_core::buffer::Buffer;
+    use ratatui_core::layout::Rect;
+    use ratatui_core::symbols::Marker;
+    use ratatui_core::widgets::Widget;
     use strum::ParseError;
 
     use super::*;

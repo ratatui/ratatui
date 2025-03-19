@@ -1,18 +1,18 @@
 #![allow(dead_code)]
-use std::{error::Error, io, sync::mpsc, thread, time::Duration};
+use std::error::Error;
+use std::sync::mpsc;
+use std::time::Duration;
+use std::{io, thread};
 
-use ratatui::{
-    backend::{Backend, TermionBackend},
-    termion::{
-        event::Key,
-        input::{MouseTerminal, TermRead},
-        raw::IntoRawMode,
-        screen::IntoAlternateScreen,
-    },
-    Terminal,
-};
+use ratatui::backend::{Backend, TermionBackend};
+use ratatui::termion::event::Key;
+use ratatui::termion::input::{MouseTerminal, TermRead};
+use ratatui::termion::raw::IntoRawMode;
+use ratatui::termion::screen::IntoAlternateScreen;
+use ratatui::Terminal;
 
-use crate::{app::App, ui};
+use crate::app::App;
+use crate::ui;
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
     // setup terminal

@@ -1,4 +1,5 @@
-use crate::{buffer::Buffer, layout::Rect};
+use crate::buffer::Buffer;
+use crate::layout::Rect;
 
 /// A `StatefulWidget` is a widget that can take advantage of some local state to remember things
 /// between two draw calls.
@@ -132,7 +133,10 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+    use crate::buffer::Buffer;
+    use crate::layout::Rect;
+    use crate::text::Line;
+    use crate::widgets::Widget;
 
     #[fixture]
     fn buf() -> Buffer {

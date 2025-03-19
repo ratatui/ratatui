@@ -24,11 +24,9 @@
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{
-///     layout::{Constraint, Rect},
-///     widgets::{Row, Table, TableState},
-///     Frame,
-/// };
+/// use ratatui::layout::{Constraint, Rect};
+/// use ratatui::widgets::{Row, Table, TableState};
+/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();

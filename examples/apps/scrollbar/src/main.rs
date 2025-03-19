@@ -11,15 +11,13 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
-    layout::{Alignment, Constraint, Layout, Margin},
-    style::{Color, Style, Stylize},
-    symbols::scrollbar,
-    text::{Line, Masked, Span},
-    widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
-    DefaultTerminal, Frame,
-};
+use ratatui::crossterm::event::{self, Event, KeyCode};
+use ratatui::layout::{Alignment, Constraint, Layout, Margin};
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::symbols::scrollbar;
+use ratatui::text::{Line, Masked, Span};
+use ratatui::widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState};
+use ratatui::{DefaultTerminal, Frame};
 
 #[derive(Default)]
 struct App {

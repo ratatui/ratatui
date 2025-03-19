@@ -1,13 +1,14 @@
 #![cfg(feature = "unstable-widget-ref")]
 
-use std::{
-    any::{type_name, Any},
-    cell::RefCell,
-};
+use std::any::{type_name, Any};
+use std::cell::RefCell;
 
 use pretty_assertions::assert_eq;
 use ratatui::widgets::StatefulWidgetRef;
-use ratatui_core::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::text::Line;
+use ratatui_core::widgets::Widget;
 
 trait AnyWindow: StatefulWidgetRef<State = dyn Any> {
     fn title(&self) -> &str {

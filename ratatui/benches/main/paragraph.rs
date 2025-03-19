@@ -1,9 +1,7 @@
 use criterion::{black_box, criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
-use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    widgets::{Paragraph, Widget, Wrap},
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::widgets::{Paragraph, Widget, Wrap};
 
 /// because the scroll offset is a u16, the maximum number of lines that can be scrolled is 65535.
 /// This is a limitation of the current implementation and may be fixed by changing the type of the

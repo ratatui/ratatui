@@ -14,23 +14,17 @@ use std::{
 };
 
 use color_eyre::Result;
-use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture, KeyEventKind},
-    ExecutableCommand,
-};
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture, KeyEventKind};
+use crossterm::ExecutableCommand;
 use itertools::Itertools;
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode, MouseEventKind},
-    layout::{Constraint, Layout, Position, Rect},
-    style::{Color, Stylize},
-    symbols::Marker,
-    text::Text,
-    widgets::{
-        canvas::{Canvas, Circle, Map, MapResolution, Points, Rectangle},
-        Block, Widget,
-    },
-    DefaultTerminal, Frame,
-};
+use ratatui::crossterm::event::{self, Event, KeyCode, MouseEventKind};
+use ratatui::layout::{Constraint, Layout, Position, Rect};
+use ratatui::style::{Color, Stylize};
+use ratatui::symbols::Marker;
+use ratatui::text::Text;
+use ratatui::widgets::canvas::{Canvas, Circle, Map, MapResolution, Points, Rectangle};
+use ratatui::widgets::{Block, Widget};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

@@ -11,15 +11,13 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
-    symbols::{self, Marker},
-    text::{Line, Span},
-    widgets::{Axis, Block, Chart, Dataset, GraphType, LegendPosition},
-    DefaultTerminal, Frame,
-};
+use ratatui::crossterm::event::{self, Event, KeyCode};
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::symbols::{self, Marker};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType, LegendPosition};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

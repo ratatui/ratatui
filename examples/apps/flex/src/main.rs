@@ -11,23 +11,18 @@
 use std::num::NonZeroUsize;
 
 use color_eyre::Result;
-use ratatui::{
-    buffer::Buffer,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{
-        Alignment,
-        Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
-        Flex, Layout, Rect,
-    },
-    style::{palette::tailwind, Color, Modifier, Style, Stylize},
-    symbols::{self, line},
-    text::{Line, Text},
-    widgets::{
-        Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Tabs,
-        Widget,
-    },
-    DefaultTerminal,
+use ratatui::buffer::Buffer;
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
+use ratatui::layout::{Alignment, Flex, Layout, Rect};
+use ratatui::style::palette::tailwind;
+use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::symbols::{self, line};
+use ratatui::text::{Line, Text};
+use ratatui::widgets::{
+    Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Tabs, Widget,
 };
+use ratatui::DefaultTerminal;
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 fn main() -> Result<()> {

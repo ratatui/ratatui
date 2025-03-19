@@ -1,9 +1,7 @@
 use std::fmt;
 
-use crate::{
-    style::{Color, Modifier, Style},
-    text::Span,
-};
+use crate::style::{Color, Modifier, Style};
+use crate::text::Span;
 
 /// A trait for objects that have a `Style`.
 ///

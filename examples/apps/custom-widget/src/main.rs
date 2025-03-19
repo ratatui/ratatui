@@ -9,21 +9,17 @@
 use std::{io::stdout, ops::ControlFlow, time::Duration};
 
 use color_eyre::Result;
-use ratatui::{
-    buffer::Buffer,
-    crossterm::{
-        event::{
-            self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
-            MouseEventKind,
-        },
-        execute,
-    },
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Style},
-    text::Line,
-    widgets::{Paragraph, Widget},
-    DefaultTerminal, Frame,
+use ratatui::buffer::Buffer;
+use ratatui::crossterm::event::{
+    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
+    MouseEventKind,
 };
+use ratatui::crossterm::execute;
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::text::Line;
+use ratatui::widgets::{Paragraph, Widget};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

@@ -10,13 +10,11 @@
 //! [`Monthly`] has several controls for what should be displayed
 use std::collections::HashMap;
 
-use ratatui_core::{
-    buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Rect},
-    style::Style,
-    text::{Line, Span},
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::{Alignment, Constraint, Layout, Rect};
+use ratatui_core::style::Style;
+use ratatui_core::text::{Line, Span};
+use ratatui_core::widgets::Widget;
 use time::{Date, Duration, OffsetDateTime};
 
 use crate::block::{Block, BlockExt};

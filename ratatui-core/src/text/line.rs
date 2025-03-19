@@ -1,16 +1,15 @@
 #![deny(missing_docs)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::arithmetic_side_effects)]
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
 use unicode_truncate::UnicodeTruncateStr;
 
-use crate::{
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::{Style, Styled},
-    text::{Span, StyledGrapheme, Text},
-    widgets::Widget,
-};
+use crate::buffer::Buffer;
+use crate::layout::{Alignment, Rect};
+use crate::style::{Style, Styled};
+use crate::text::{Span, StyledGrapheme, Text};
+use crate::widgets::Widget;
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
@@ -75,10 +74,8 @@ use crate::{
 /// [`Style`].
 ///
 /// ```rust
-/// use ratatui_core::{
-///     style::{Color, Modifier, Style, Stylize},
-///     text::{Line, Span},
-/// };
+/// use ratatui_core::style::{Color, Modifier, Style, Stylize};
+/// use ratatui_core::text::{Line, Span};
 ///
 /// let style = Style::new().yellow();
 /// let line = Line::raw("Hello, world!").style(style);
@@ -102,10 +99,8 @@ use crate::{
 /// methods of the [`Stylize`] trait.
 ///
 /// ```rust
-/// use ratatui_core::{
-///     style::{Color, Modifier, Style, Stylize},
-///     text::Line,
-/// };
+/// use ratatui_core::style::{Color, Modifier, Style, Stylize};
+/// use ratatui_core::text::Line;
 ///
 /// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
 /// let line = Line::from("Hello world!").style(Color::Yellow);
@@ -121,7 +116,8 @@ use crate::{
 /// ignored and the line is truncated.
 ///
 /// ```rust
-/// use ratatui_core::{layout::Alignment, text::Line};
+/// use ratatui_core::layout::Alignment;
+/// use ratatui_core::text::Line;
 ///
 /// let line = Line::from("Hello world!").alignment(Alignment::Right);
 /// let line = Line::from("Hello world!").centered();
@@ -134,13 +130,11 @@ use crate::{
 /// `Line` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`].
 ///
 /// ```rust
-/// use ratatui_core::{
-///     buffer::Buffer,
-///     layout::Rect,
-///     style::{Style, Stylize},
-///     text::Line,
-///     widgets::Widget,
-/// };
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::style::{Style, Stylize};
+/// use ratatui_core::text::Line;
+/// use ratatui_core::widgets::Widget;
 ///
 /// # fn render(area: Rect, buf: &mut Buffer) {
 /// // in another widget's render method
@@ -274,10 +268,8 @@ impl<'a> Line<'a> {
     /// ```rust
     /// use std::borrow::Cow;
     ///
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::Line,
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Line;
     ///
     /// let style = Style::new().yellow().italic();
     /// Line::styled("My text", style);
@@ -306,7 +298,8 @@ impl<'a> Line<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{style::Stylize, text::Line};
+    /// use ratatui_core::style::Stylize;
+    /// use ratatui_core::text::Line;
     ///
     /// let line = Line::default().spans(vec!["Hello".blue(), " world!".green()]);
     /// let line = Line::default().spans([1, 2, 3].iter().map(|i| format!("Item {}", i)));
@@ -334,10 +327,8 @@ impl<'a> Line<'a> {
     ///
     /// # Examples
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::Line,
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Line;
     ///
     /// let mut line = Line::from("foo").style(Style::new().red());
     /// ```
@@ -358,7 +349,8 @@ impl<'a> Line<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{layout::Alignment, text::Line};
+    /// use ratatui_core::layout::Alignment;
+    /// use ratatui_core::text::Line;
     ///
     /// let mut line = Line::from("Hi, what's up?");
     /// assert_eq!(None, line.alignment);
@@ -434,7 +426,8 @@ impl<'a> Line<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{style::Stylize, text::Line};
+    /// use ratatui_core::style::Stylize;
+    /// use ratatui_core::text::Line;
     ///
     /// let line = Line::from(vec!["Hello".blue(), " world!".green()]);
     /// assert_eq!(12, line.width());
@@ -456,10 +449,8 @@ impl<'a> Line<'a> {
     /// ```rust
     /// use std::iter::Iterator;
     ///
-    /// use ratatui_core::{
-    ///     style::{Color, Style},
-    ///     text::{Line, StyledGrapheme},
-    /// };
+    /// use ratatui_core::style::{Color, Style};
+    /// use ratatui_core::text::{Line, StyledGrapheme};
     ///
     /// let line = Line::styled("Text", Style::default().fg(Color::Yellow));
     /// let style = Style::default().fg(Color::Green).bg(Color::Black);
@@ -500,10 +491,8 @@ impl<'a> Line<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Color, Modifier},
-    ///     text::Line,
-    /// };
+    /// use ratatui_core::style::{Color, Modifier};
+    /// use ratatui_core::text::Line;
     ///
     /// let line = Line::styled("My text", Modifier::ITALIC);
     ///
@@ -529,10 +518,8 @@ impl<'a> Line<'a> {
     ///
     /// ```rust
     /// # let style = Style::default().yellow();
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::Line,
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Line;
     ///
     /// let line = Line::styled("My text", style);
     ///

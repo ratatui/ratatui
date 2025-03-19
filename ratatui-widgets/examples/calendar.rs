@@ -15,14 +15,12 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event},
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
-    text::{Line, Span},
-    widgets::{Block, Padding},
-    DefaultTerminal, Frame,
-};
+use ratatui::crossterm::event::{self, Event};
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Padding};
+use ratatui::{DefaultTerminal, Frame};
 use ratatui_widgets::calendar::{CalendarEventStore, Monthly};
 use time::{Date, Month, OffsetDateTime};
 

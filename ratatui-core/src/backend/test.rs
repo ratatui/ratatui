@@ -1,18 +1,14 @@
 //! This module provides the `TestBackend` implementation for the [`Backend`] trait.
 //! It is used in the integration tests to verify the correctness of the library.
 
-use std::{
-    fmt::{self, Write},
-    io, iter,
-};
+use std::fmt::{self, Write};
+use std::{io, iter};
 
 use unicode_width::UnicodeWidthStr;
 
-use crate::{
-    backend::{Backend, ClearType, WindowSize},
-    buffer::{Buffer, Cell},
-    layout::{Position, Rect, Size},
-};
+use crate::backend::{Backend, ClearType, WindowSize};
+use crate::buffer::{Buffer, Cell};
+use crate::layout::{Position, Rect, Size};
 
 /// A [`Backend`] implementation used for integration testing that renders to an memory buffer.
 ///

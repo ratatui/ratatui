@@ -9,20 +9,15 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::{
-    event::{
-        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent,
-        MouseEventKind,
-    },
-    execute,
+use crossterm::event::{
+    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEvent,
+    MouseEventKind,
 };
-use ratatui::{
-    layout::{Position, Rect, Size},
-    style::{Color, Stylize},
-    symbols,
-    text::Line,
-    DefaultTerminal, Frame,
-};
+use crossterm::execute;
+use ratatui::layout::{Position, Rect, Size};
+use ratatui::style::{Color, Stylize};
+use ratatui::text::Line;
+use ratatui::{symbols, DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

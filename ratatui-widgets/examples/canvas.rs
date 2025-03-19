@@ -15,15 +15,13 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event},
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Stylize},
-    symbols::Marker,
-    text::{Line as TextLine, Span},
-    widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
-    DefaultTerminal, Frame,
-};
+use ratatui::crossterm::event::{self, Event};
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Color, Stylize};
+use ratatui::symbols::Marker;
+use ratatui::text::{Line as TextLine, Span};
+use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
+use ratatui::{DefaultTerminal, Frame};
 use ratatui_widgets::canvas::Points;
 
 fn main() -> Result<()> {

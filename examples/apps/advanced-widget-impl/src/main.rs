@@ -13,13 +13,11 @@ use std::time::{Duration, Instant};
 
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode};
-use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Layout, Position, Rect, Size},
-    style::{Color, Style},
-    widgets::{Widget, WidgetRef},
-    DefaultTerminal,
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Layout, Position, Rect, Size};
+use ratatui::style::{Color, Style};
+use ratatui::widgets::{Widget, WidgetRef};
+use ratatui::DefaultTerminal;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

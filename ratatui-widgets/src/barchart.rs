@@ -1,15 +1,14 @@
 //! The [`BarChart`] widget and its related types (e.g. [`Bar`], [`BarGroup`]).
 
-use ratatui_core::{
-    buffer::Buffer,
-    layout::{Direction, Rect},
-    style::{Style, Styled},
-    symbols::{self},
-    text::Line,
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::{Direction, Rect};
+use ratatui_core::style::{Style, Styled};
+use ratatui_core::symbols;
+use ratatui_core::text::Line;
+use ratatui_core::widgets::Widget;
 
-pub use self::{bar::Bar, bar_group::BarGroup};
+pub use self::bar::Bar;
+pub use self::bar_group::BarGroup;
 use crate::block::{Block, BlockExt};
 
 mod bar;
@@ -51,10 +50,8 @@ mod bar_group;
 /// The first group is added by an array slice (`&[(&str, u64)]`).
 /// The second group is added by a [`BarGroup`] instance.
 /// ```
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     widgets::{Bar, BarChart, BarGroup, Block},
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::{Bar, BarChart, BarGroup, Block};
 ///
 /// BarChart::default()
 ///     .block(Block::bordered().title("BarChart"))
@@ -135,10 +132,8 @@ impl<'a> BarChart<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     layout::Direction,
-    ///     widgets::{Bar, BarChart},
-    /// };
+    /// use ratatui::layout::Direction;
+    /// use ratatui::widgets::{Bar, BarChart};
     ///
     /// BarChart::new(vec![Bar::with_label("A", 10), Bar::with_label("B", 10)]);
     /// ```
@@ -696,11 +691,9 @@ impl Styled for BarChart<'_> {
 #[cfg(test)]
 mod tests {
     use itertools::iproduct;
-    use ratatui_core::{
-        layout::Alignment,
-        style::{Color, Modifier, Stylize},
-        text::Span,
-    };
+    use ratatui_core::layout::Alignment;
+    use ratatui_core::style::{Color, Modifier, Stylize};
+    use ratatui_core::text::Span;
 
     use super::*;
     use crate::borders::BorderType;

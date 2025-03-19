@@ -1,7 +1,5 @@
-use rand::{
-    distr::{Distribution, Uniform},
-    rngs::ThreadRng,
-};
+use rand::distr::{Distribution, Uniform};
+use rand::rngs::ThreadRng;
 use ratatui::widgets::ListState;
 
 const TASKS: [&str; 24] = [

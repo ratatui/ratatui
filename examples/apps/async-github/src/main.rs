@@ -27,25 +27,20 @@
 //! [Ratatui]: https://github.com/ratatui/ratatui
 //! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
-use std::{
-    sync::{Arc, RwLock},
-    time::Duration,
-};
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
 
 use color_eyre::Result;
-use octocrab::{
-    params::{pulls::Sort, Direction},
-    Page,
-};
-use ratatui::{
-    buffer::Buffer,
-    crossterm::event::{Event, EventStream, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout, Rect},
-    style::{Style, Stylize},
-    text::Line,
-    widgets::{Block, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget},
-    DefaultTerminal, Frame,
-};
+use octocrab::params::pulls::Sort;
+use octocrab::params::Direction;
+use octocrab::Page;
+use ratatui::buffer::Buffer;
+use ratatui::crossterm::event::{Event, EventStream, KeyCode, KeyEventKind};
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Style, Stylize};
+use ratatui::text::Line;
+use ratatui::widgets::{Block, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget};
+use ratatui::{DefaultTerminal, Frame};
 use tokio_stream::StreamExt;
 
 #[tokio::main]

@@ -25,10 +25,8 @@ use super::Cell;
 /// If you need a bit more control over individual cells, you can explicitly create [`Cell`]s:
 ///
 /// ```rust
-/// use ratatui::{
-///     style::Stylize,
-///     widgets::{Cell, Row},
-/// };
+/// use ratatui::style::Stylize;
+/// use ratatui::widgets::{Cell, Row};
 ///
 /// Row::new(vec![
 ///     Cell::from("Cell1"),
@@ -61,7 +59,8 @@ use super::Cell;
 /// to set the style of the row concisely.
 ///
 /// ```rust
-/// use ratatui::{style::Stylize, widgets::Row};
+/// use ratatui::style::Stylize;
+/// use ratatui::widgets::Row;
 ///
 /// let cells = vec!["Cell1", "Cell2", "Cell3"];
 /// Row::new(cells).red().italic();
@@ -213,10 +212,8 @@ impl<'a> Row<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     widgets::Row,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::Row;
     /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).style(Style::new().red().italic());
     /// ```
@@ -225,7 +222,8 @@ impl<'a> Row<'a> {
     /// the [`Stylize`] trait to set the style of the widget more concisely.
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, widgets::Row};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::Row;
     ///
     /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).red().italic();

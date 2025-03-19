@@ -7,12 +7,11 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::time::Duration;
 
-use color_eyre::{eyre::Context, Result};
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
-    widgets::Paragraph,
-    DefaultTerminal, Frame,
-};
+use color_eyre::eyre::Context;
+use color_eyre::Result;
+use ratatui::crossterm::event::{self, Event, KeyCode};
+use ratatui::widgets::Paragraph;
+use ratatui::{DefaultTerminal, Frame};
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so
 /// this is not meant to be prescriptive. It is only meant to demonstrate the basic setup and

@@ -1,15 +1,16 @@
 #[cfg(all(not(windows), feature = "termion"))]
 #[test]
 fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::Error>> {
-    use std::{fmt::Write, io::Cursor};
+    use std::fmt::Write;
+    use std::io::Cursor;
 
     let mut bytes = Vec::new();
     let mut stdout = Cursor::new(&mut bytes);
     {
-        use ratatui::{
-            backend::TermionBackend, layout::Rect, widgets::Paragraph, Terminal, TerminalOptions,
-            Viewport,
-        };
+        use ratatui::backend::TermionBackend;
+        use ratatui::layout::Rect;
+        use ratatui::widgets::Paragraph;
+        use ratatui::{Terminal, TerminalOptions, Viewport};
         let backend = TermionBackend::new(&mut stdout);
         let area = Rect::new(0, 0, 3, 1);
         let mut terminal = Terminal::with_options(

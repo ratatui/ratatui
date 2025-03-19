@@ -1,10 +1,8 @@
-use ratatui::{
-    backend::TestBackend,
-    buffer::Buffer,
-    style::{Color, Style},
-    widgets::{Bar, BarChart, BarGroup, Block},
-    Terminal,
-};
+use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
+use ratatui::style::{Color, Style};
+use ratatui::widgets::{Bar, BarChart, BarGroup, Block};
+use ratatui::Terminal;
 
 // check that bars fill up correctly up to max value
 #[test]

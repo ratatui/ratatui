@@ -1,4 +1,6 @@
-use crate::{buffer::Buffer, layout::Rect, style::Style};
+use crate::buffer::Buffer;
+use crate::layout::Rect;
+use crate::style::Style;
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
 ///
@@ -45,7 +47,10 @@ use crate::{buffer::Buffer, layout::Rect, style::Style};
 /// It's common to render widgets inside other widgets:
 ///
 /// ```rust
-/// use ratatui_core::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::text::Line;
+/// use ratatui_core::widgets::Widget;
 ///
 /// struct MyWidget;
 ///
@@ -98,7 +103,9 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::{buffer::Buffer, layout::Rect, text::Line};
+    use crate::buffer::Buffer;
+    use crate::layout::Rect;
+    use crate::text::Line;
 
     #[fixture]
     fn buf() -> Buffer {
