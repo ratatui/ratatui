@@ -48,6 +48,7 @@ unstable-rendered-line-info = []
 
 [dependencies]
 bitflags.workspace = true
+crossterm.workspace = true
 document-features = { workspace = true, optional = true }
 indoc.workspace = true
 instability.workspace = true

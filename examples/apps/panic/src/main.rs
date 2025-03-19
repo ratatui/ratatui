@@ -30,7 +30,7 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 /// [Color Eyre recipe]: https://ratatui.rs/recipes/apps/color-eyre
 use color_eyre::{eyre::bail, Result};
-use ratatui::crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::{DefaultTerminal, Frame};

@@ -31,11 +31,11 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 use color_eyre::Result;
+use crossterm::event::{Event, EventStream, KeyCode, KeyEventKind};
 use octocrab::params::pulls::Sort;
 use octocrab::params::Direction;
 use octocrab::Page;
 use ratatui::buffer::Buffer;
-use ratatui::crossterm::event::{Event, EventStream, KeyCode, KeyEventKind};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Style, Stylize};
 use ratatui::text::Line;

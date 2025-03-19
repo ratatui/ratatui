@@ -9,12 +9,12 @@
 use std::{io::stdout, ops::ControlFlow, time::Duration};
 
 use color_eyre::Result;
-use ratatui::buffer::Buffer;
-use ratatui::crossterm::event::{
+use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
     MouseEventKind,
 };
-use ratatui::crossterm::execute;
+use crossterm::execute;
+use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::Line;

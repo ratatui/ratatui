@@ -7,11 +7,14 @@ rust-version.workspace = true
 
 [features]
 default = ["crossterm"]
-crossterm = ["ratatui/crossterm"]
-termion = ["ratatui/termion"]
-termwiz = ["ratatui/termwiz"]
+crossterm = ["ratatui/crossterm", "dep:crossterm"]
+termion = ["ratatui/termion", "dep:termion"]
+termwiz = ["ratatui/termwiz", "dep:termwiz"]
 
 [dependencies]
 clap = { version = "4.5.32", features = ["derive"] }
+crossterm = { workspace = true, optional = true }
 rand = "0.9.0"
 ratatui.workspace = true
+termion = { workspace = true, optional = true }
+termwiz = { workspace = true, optional = true }

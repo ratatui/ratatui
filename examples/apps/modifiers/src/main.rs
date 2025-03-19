@@ -10,8 +10,8 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::{error::Error, iter::once, result};
 
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use itertools::Itertools;
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;

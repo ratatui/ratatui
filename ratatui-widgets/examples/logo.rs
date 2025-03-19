@@ -17,7 +17,7 @@
 use std::env::args;
 
 use color_eyre::Result;
-use ratatui::crossterm::event::{self, Event};
+use crossterm::event::{self, Event};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::widgets::{RatatuiLogo, RatatuiLogoSize};
 use ratatui::{DefaultTerminal, Frame, TerminalOptions, Viewport};

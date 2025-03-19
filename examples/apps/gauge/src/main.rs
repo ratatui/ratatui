@@ -8,8 +8,8 @@
 use std::time::Duration;
 
 use color_eyre::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::buffer::Buffer;
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::palette::tailwind;
 use ratatui::style::{Color, Style, Stylize};

@@ -9,8 +9,8 @@
 //! [`BarChart`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html
 
 use color_eyre::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use rand::{rng, Rng};
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;

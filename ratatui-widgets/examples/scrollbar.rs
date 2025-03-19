@@ -15,7 +15,7 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use ratatui::crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{Color, Stylize};
 use ratatui::symbols::scrollbar::Set;

@@ -6,9 +6,8 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::KeyModifiers;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use itertools::Itertools;
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{self, Color, Modifier, Style, Stylize};
 use ratatui::text::Text;

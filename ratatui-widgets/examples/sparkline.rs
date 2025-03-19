@@ -17,7 +17,7 @@
 use std::time::Duration;
 
 use color_eyre::Result;
-use ratatui::crossterm::event::{self, Event};
+use crossterm::event::{self, Event};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};

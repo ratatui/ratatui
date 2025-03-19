@@ -15,9 +15,9 @@ use std::{
 };
 
 use color_eyre::Result;
+use crossterm::event;
 use rand::distr::{Distribution, Uniform};
 use ratatui::backend::Backend;
-use ratatui::crossterm::event;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};

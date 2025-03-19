@@ -22,7 +22,7 @@ use std::{fs::File, time::Duration};
 
 use color_eyre::eyre::Context;
 use color_eyre::Result;
-use ratatui::crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::Frame;
 use tracing::{debug, info, instrument, trace, Level};

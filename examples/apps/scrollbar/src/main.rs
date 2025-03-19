@@ -11,7 +11,7 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use ratatui::crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::layout::{Alignment, Constraint, Layout, Margin};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::symbols::scrollbar;

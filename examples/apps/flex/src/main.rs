@@ -11,8 +11,8 @@
 use std::num::NonZeroUsize;
 
 use color_eyre::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::buffer::Buffer;
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
 use ratatui::layout::{Alignment, Flex, Layout, Rect};
 use ratatui::style::palette::tailwind;

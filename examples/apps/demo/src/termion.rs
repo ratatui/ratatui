@@ -5,11 +5,11 @@ use std::time::Duration;
 use std::{io, thread};
 
 use ratatui::backend::{Backend, TermionBackend};
-use ratatui::termion::event::Key;
-use ratatui::termion::input::{MouseTerminal, TermRead};
-use ratatui::termion::raw::IntoRawMode;
-use ratatui::termion::screen::IntoAlternateScreen;
 use ratatui::Terminal;
+use termion::event::Key;
+use termion::input::{MouseTerminal, TermRead};
+use termion::raw::IntoRawMode;
+use termion::screen::IntoAlternateScreen;
 
 use crate::app::App;
 use crate::ui;

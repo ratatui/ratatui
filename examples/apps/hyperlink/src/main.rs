@@ -7,9 +7,9 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 /// [OSC 8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
 use color_eyre::Result;
+use crossterm::event::{self, Event, KeyCode};
 use itertools::Itertools;
 use ratatui::buffer::Buffer;
-use ratatui::crossterm::event::{self, Event, KeyCode};
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
 use ratatui::text::{Line, Text};

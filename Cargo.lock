@@ -579,6 +579,7 @@ name = "colors-rgb"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
+ "crossterm",
  "palette",
  "ratatui",
 ]
@@ -821,8 +822,11 @@ name = "demo"
 version = "0.0.0"
 dependencies = [
  "clap",
+ "crossterm",
  "rand 0.9.0",
  "ratatui",
+ "termion",
+ "termwiz",
 ]
 
 [[package]]
@@ -2635,6 +2639,7 @@ version = "0.3.0-alpha.2"
 dependencies = [
  "bitflags 2.9.0",
  "color-eyre",
+ "crossterm",
  "document-features",
  "indoc",
  "instability",

@@ -19,10 +19,10 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use palette::convert::FromColorUnclamped;
 use palette::{Okhsv, Srgb};
 use ratatui::buffer::Buffer;
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::style::Color;
 use ratatui::text::Text;

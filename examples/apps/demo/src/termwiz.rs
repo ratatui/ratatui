@@ -3,9 +3,9 @@ use std::error::Error;
 use std::time::{Duration, Instant};
 
 use ratatui::backend::TermwizBackend;
-use ratatui::termwiz::input::{InputEvent, KeyCode};
-use ratatui::termwiz::terminal::Terminal as TermwizTerminal;
 use ratatui::Terminal;
+use termwiz::input::{InputEvent, KeyCode};
+use termwiz::terminal::Terminal as TermwizTerminal;
 
 use crate::app::App;
 use crate::ui;

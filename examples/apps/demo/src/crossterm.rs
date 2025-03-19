@@ -2,14 +2,14 @@ use std::error::Error;
 use std::io;
 use std::time::{Duration, Instant};
 
-use ratatui::backend::{Backend, CrosstermBackend};
-use ratatui::crossterm::event::{
+use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind,
 };
-use ratatui::crossterm::execute;
-use ratatui::crossterm::terminal::{
+use crossterm::execute;
+use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
+use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::Terminal;
 
 use crate::app::App;
