@@ -1,11 +1,6 @@
 use crate::symbols::line::{DOUBLE, NORMAL, ROUNDED, THICK};
 use std::collections::HashMap;
-use std::sync::OnceLock;
-
-/// Map to know how to merge the two given symbols.
-/// If a couple of symbols are not is the map there is nothing to merge.
-/// This map should be symetric.
-static MERGE_MAP: OnceLock<HashMap<(&'static str, &'static str), &'static str>> = OnceLock::new();
+use std::sync::LazyLock;
 
 macro_rules! insert_merge_rules {
     ($map:expr, $s:ident) => {
@@ -143,14 +138,14 @@ macro_rules! insert_merge_rules {
     };
 }
 
-/// Lazy initialization of `MERGE_MAP`
-pub fn get_merge_map() -> &'static HashMap<(&'static str, &'static str), &'static str> {
-    MERGE_MAP.get_or_init(|| {
+/// Map to know how to merge two given symbols.
+/// If a couple of symbols are not is the map there is nothing to merge.
+/// This map should be symetric.
+pub static MERGE_MAP: LazyLock<HashMap<(&'static str, &'static str), &'static str>> = LazyLock::new(||{
         let mut map = HashMap::new();
         insert_merge_rules!(map, NORMAL);
         insert_merge_rules!(map, ROUNDED);
         insert_merge_rules!(map, THICK);
         insert_merge_rules!(map, DOUBLE);
         map
-    })
-}
+});
