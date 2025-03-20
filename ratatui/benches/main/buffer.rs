@@ -1,9 +1,7 @@
 use criterion::{black_box, BenchmarkId, Criterion};
-use ratatui::{
-    buffer::{Buffer, Cell},
-    layout::Rect,
-    text::Line,
-};
+use ratatui::buffer::{Buffer, Cell};
+use ratatui::layout::Rect;
+use ratatui::text::Line;
 
 criterion::criterion_group!(benches, empty, filled, with_lines);
 

@@ -38,7 +38,8 @@
 //!
 //! ```rust,no_run
 //! use crossterm::event::{self, Event};
-//! use ratatui::{text::Text, Frame};
+//! use ratatui::text::Text;
+//! use ratatui::Frame;
 //!
 //! fn main() {
 //!     let mut terminal = ratatui::init();
@@ -134,7 +135,8 @@
 //! The closure passed to the [`Terminal::draw`] method should handle the rendering of a full frame.
 //!
 //! ```rust,no_run
-//! use ratatui::{widgets::Paragraph, Frame};
+//! use ratatui::widgets::Paragraph;
+//! use ratatui::Frame;
 //!
 //! fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> {
 //!     loop {
@@ -184,11 +186,9 @@
 //! section of the [Ratatui Website] for more info.
 //!
 //! ```rust,no_run
-//! use ratatui::{
-//!     layout::{Constraint, Layout},
-//!     widgets::Block,
-//!     Frame,
-//! };
+//! use ratatui::layout::{Constraint, Layout};
+//! use ratatui::widgets::Block;
+//! use ratatui::Frame;
 //!
 //! fn draw(frame: &mut Frame) {
 //!     use Constraint::{Fill, Length, Min};
@@ -228,13 +228,11 @@
 //! [Ratatui Website] for more info.
 //!
 //! ```rust,no_run
-//! use ratatui::{
-//!     layout::{Constraint, Layout},
-//!     style::{Color, Modifier, Style, Stylize},
-//!     text::{Line, Span},
-//!     widgets::{Block, Paragraph},
-//!     Frame,
-//! };
+//! use ratatui::layout::{Constraint, Layout};
+//! use ratatui::style::{Color, Modifier, Style, Stylize};
+//! use ratatui::text::{Line, Span};
+//! use ratatui::widgets::{Block, Paragraph};
+//! use ratatui::Frame;
 //!
 //! fn draw(frame: &mut Frame) {
 //!     let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.area());
@@ -328,10 +326,8 @@
 /// re-export the `palette` crate so that users don't have to add it as a dependency
 #[cfg(feature = "palette")]
 pub use palette;
-pub use ratatui_core::{
-    buffer, layout,
-    terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
-};
+pub use ratatui_core::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
+pub use ratatui_core::{buffer, layout};
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
 pub use ratatui_crossterm::crossterm;

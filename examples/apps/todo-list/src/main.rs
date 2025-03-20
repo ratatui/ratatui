@@ -6,22 +6,17 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use ratatui::{
-    buffer::Buffer,
-    crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
-    layout::{Constraint, Layout, Rect},
-    style::{
-        palette::tailwind::{BLUE, GREEN, SLATE},
-        Color, Modifier, Style, Stylize,
-    },
-    symbols,
-    text::Line,
-    widgets::{
-        Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
-        StatefulWidget, Widget, Wrap,
-    },
-    DefaultTerminal,
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::palette::tailwind::{BLUE, GREEN, SLATE};
+use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::text::Line;
+use ratatui::widgets::{
+    Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
+    StatefulWidget, Widget, Wrap,
 };
+use ratatui::{symbols, DefaultTerminal};
 
 const TODO_HEADER_STYLE: Style = Style::new().fg(SLATE.c100).bg(BLUE.c800);
 const NORMAL_ROW_BG: Color = SLATE.c950;

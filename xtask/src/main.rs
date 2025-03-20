@@ -4,12 +4,14 @@
 //!
 //! Run `cargo xtask --help` for more information
 
-use std::{io, process::Output};
+use std::io;
+use std::process::Output;
 
 use cargo_metadata::{MetadataCommand, TargetKind};
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
-use color_eyre::{eyre::Context, Result};
+use color_eyre::eyre::Context;
+use color_eyre::Result;
 use commands::Command;
 use duct::cmd;
 

@@ -41,11 +41,9 @@ macro_rules! assert_buffer_eq {
 #[allow(deprecated)]
 #[cfg(test)]
 mod tests {
-    use crate::{
-        buffer::Buffer,
-        layout::Rect,
-        style::{Color, Style},
-    };
+    use crate::buffer::Buffer;
+    use crate::layout::Rect;
+    use crate::style::{Color, Style};
 
     #[test]
     fn assert_buffer_eq_does_not_panic_on_equal_buffers() {

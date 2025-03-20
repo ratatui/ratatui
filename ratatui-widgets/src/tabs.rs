@@ -1,13 +1,11 @@
 //! The [`Tabs`] widget displays a horizontal set of tabs with a single tab selected.
 use itertools::Itertools;
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Modifier, Style, Styled},
-    symbols::{self},
-    text::{Line, Span},
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::style::{Modifier, Style, Styled};
+use ratatui_core::symbols;
+use ratatui_core::text::{Line, Span};
+use ratatui_core::widgets::Widget;
 
 use crate::block::{Block, BlockExt};
 
@@ -25,11 +23,9 @@ const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVER
 /// # Example
 ///
 /// ```
-/// use ratatui::{
-///     style::{Style, Stylize},
-///     symbols,
-///     widgets::{Block, Tabs},
-/// };
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::symbols;
+/// use ratatui::widgets::{Block, Tabs};
 ///
 /// Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
 ///     .block(Block::bordered().title("Tabs"))
@@ -121,7 +117,8 @@ impl<'a> Tabs<'a> {
     ///
     /// Styled titles
     /// ```
-    /// use ratatui::{style::Stylize, widgets::Tabs};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::Tabs;
     ///
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
@@ -164,7 +161,8 @@ impl<'a> Tabs<'a> {
     /// Styled titles.
     ///
     /// ```
-    /// use ratatui::{style::Stylize, widgets::Tabs};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::Tabs;
     ///
     /// let tabs = Tabs::default().titles(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
@@ -259,7 +257,8 @@ impl<'a> Tabs<'a> {
     ///
     /// Use a dot (`•`) as separator.
     /// ```
-    /// use ratatui::{symbols, widgets::Tabs};
+    /// use ratatui::symbols;
+    /// use ratatui::widgets::Tabs;
     ///
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider(symbols::DOT);
     /// ```

@@ -1,10 +1,12 @@
-use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc};
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::iter;
+use std::num::NonZeroUsize;
+use std::rc::Rc;
 
-use cassowary::{
-    strength::REQUIRED,
-    AddConstraintError, Expression, Solver, Variable,
-    WeightedRelation::{EQ, GE, LE},
-};
+use cassowary::strength::REQUIRED;
+use cassowary::WeightedRelation::{EQ, GE, LE};
+use cassowary::{AddConstraintError, Expression, Solver, Variable};
 use itertools::Itertools;
 use lru::LruCache;
 
@@ -148,12 +150,10 @@ impl From<i16> for Spacing {
 /// # Example
 ///
 /// ```rust
-/// use ratatui_core::{
-///     buffer::Buffer,
-///     layout::{Constraint, Direction, Layout, Rect},
-///     text::Text,
-///     widgets::Widget,
-/// };
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::{Constraint, Direction, Layout, Rect};
+/// use ratatui_core::text::Text;
+/// use ratatui_core::widgets::Widget;
 ///
 /// fn render(area: Rect, buf: &mut ratatui_core::buffer::Buffer) {
 ///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
@@ -440,7 +440,8 @@ impl Layout {
     /// In this example, the items in the layout will be aligned to the start.
     ///
     /// ```rust
-    /// use ratatui_core::layout::{Constraint::*, Flex, Layout};
+    /// use ratatui_core::layout::Constraint::*;
+    /// use ratatui_core::layout::{Flex, Layout};
     ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Start);
     /// ```
@@ -449,7 +450,8 @@ impl Layout {
     /// space.
     ///
     /// ```rust
-    /// use ratatui_core::layout::{Constraint::*, Flex, Layout};
+    /// use ratatui_core::layout::Constraint::*;
+    /// use ratatui_core::layout::{Flex, Layout};
     ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Legacy);
     /// ```
@@ -477,7 +479,8 @@ impl Layout {
     /// In this example, the spacing between each item in the layout is set to 2 cells.
     ///
     /// ```rust
-    /// use ratatui_core::layout::{Constraint::*, Layout};
+    /// use ratatui_core::layout::Constraint::*;
+    /// use ratatui_core::layout::Layout;
     ///
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(2);
     /// ```
@@ -486,7 +489,8 @@ impl Layout {
     /// three segments will have an overlapping border.
     ///
     /// ```rust
-    /// use ratatui_core::layout::{Constraint::*, Layout};
+    /// use ratatui_core::layout::Constraint::*;
+    /// use ratatui_core::layout::Layout;
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(-1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -1406,15 +1410,11 @@ mod tests {
         use pretty_assertions::assert_eq;
         use rstest::rstest;
 
-        use crate::{
-            buffer::Buffer,
-            layout::{
-                Constraint::{self, *},
-                Direction, Flex, Layout, Rect,
-            },
-            text::Text,
-            widgets::Widget,
-        };
+        use crate::buffer::Buffer;
+        use crate::layout::Constraint::{self, *};
+        use crate::layout::{Direction, Flex, Layout, Rect};
+        use crate::text::Text;
+        use crate::widgets::Widget;
 
         /// Test that the given constraints applied to the given area result in the expected layout.
         /// Each chunk is filled with a letter repeated as many times as the width of the chunk. The

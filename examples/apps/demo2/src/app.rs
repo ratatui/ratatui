@@ -1,24 +1,20 @@
 use std::time::Duration;
 
-use color_eyre::{eyre::Context, Result};
+use color_eyre::eyre::Context;
+use color_eyre::Result;
 use crossterm::event;
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use itertools::Itertools;
-use ratatui::{
-    buffer::Buffer,
-    crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
-    layout::{Constraint, Layout, Rect},
-    style::Color,
-    text::{Line, Span},
-    widgets::{Block, Tabs, Widget},
-    DefaultTerminal, Frame,
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::Color;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Tabs, Widget};
+use ratatui::{DefaultTerminal, Frame};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
-use crate::{
-    destroy,
-    tabs::{AboutTab, EmailTab, RecipeTab, TracerouteTab, WeatherTab},
-    THEME,
-};
+use crate::tabs::{AboutTab, EmailTab, RecipeTab, TracerouteTab, WeatherTab};
+use crate::{destroy, THEME};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct App {
@@ -93,7 +89,7 @@ impl App {
         match key.code {
             KeyCode::Char('q') | KeyCode::Esc => self.mode = Mode::Quit,
             KeyCode::Char('h') | KeyCode::Left => self.prev_tab(),
-            KeyCode::Char('l') | KeyCode::Right => self.next_tab(),
+            KeyCode::Char('l') | KeyCode::Right | KeyCode::Tab => self.next_tab(),
             KeyCode::Char('k') | KeyCode::Up => self.prev(),
             KeyCode::Char('j') | KeyCode::Down => self.next(),
             KeyCode::Char('d') | KeyCode::Delete => self.destroy(),

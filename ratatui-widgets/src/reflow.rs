@@ -1,7 +1,9 @@
 //! Internal module for reflowing text to fit into a certain width.
-use std::{collections::VecDeque, mem};
+use std::collections::VecDeque;
+use std::mem;
 
-use ratatui_core::{layout::Alignment, text::StyledGrapheme};
+use ratatui_core::layout::Alignment;
+use ratatui_core::text::StyledGrapheme;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -349,10 +351,8 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{
-        style::Style,
-        text::{Line, Text},
-    };
+    use ratatui_core::style::Style;
+    use ratatui_core::text::{Line, Text};
 
     use super::*;
 

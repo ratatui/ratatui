@@ -1,13 +1,12 @@
 #![warn(missing_docs)]
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
-use crate::{
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::{Style, Styled},
-    text::{Line, Span},
-    widgets::Widget,
-};
+use crate::buffer::Buffer;
+use crate::layout::{Alignment, Rect};
+use crate::style::{Style, Styled};
+use crate::text::{Line, Span};
+use crate::widgets::Widget;
 
 /// A string split over one or more lines.
 ///
@@ -66,12 +65,11 @@ use crate::{
 /// [`core::iter::Extend`] which enables the concatenation of several [`Text`] blocks.
 ///
 /// ```rust
-/// use std::{borrow::Cow, iter};
+/// use std::borrow::Cow;
+/// use std::iter;
 ///
-/// use ratatui_core::{
-///     style::{Color, Modifier, Style, Stylize},
-///     text::{Line, Span, Text},
-/// };
+/// use ratatui_core::style::{Color, Modifier, Style, Stylize};
+/// use ratatui_core::text::{Line, Span, Text};
 ///
 /// let style = Style::new().yellow().italic();
 /// let text = Text::raw("The first line\nThe second line").style(style);
@@ -108,10 +106,8 @@ use crate::{
 /// [`Stylize`] trait.
 ///
 /// ```rust
-/// use ratatui_core::{
-///     style::{Color, Modifier, Style, Stylize},
-///     text::{Line, Text},
-/// };
+/// use ratatui_core::style::{Color, Modifier, Style, Stylize};
+/// use ratatui_core::text::{Line, Text};
 ///
 /// let text = Text::from("The first line\nThe second line").style(Style::new().yellow().italic());
 /// let text = Text::from("The first line\nThe second line")
@@ -129,10 +125,8 @@ use crate::{
 /// Lines composing the text can also be individually aligned with [`Line::alignment`].
 ///
 /// ```rust
-/// use ratatui_core::{
-///     layout::Alignment,
-///     text::{Line, Text},
-/// };
+/// use ratatui_core::layout::Alignment;
+/// use ratatui_core::text::{Line, Text};
 ///
 /// let text = Text::from("The first line\nThe second line").alignment(Alignment::Right);
 /// let text = Text::from("The first line\nThe second line").right_aligned();
@@ -150,7 +144,8 @@ use crate::{
 ///
 /// ```rust
 /// # use ratatui_core::{buffer::Buffer, layout::Rect};
-/// use ratatui_core::{text::Text, widgets::Widget};
+/// use ratatui_core::text::Text;
+/// use ratatui_core::widgets::Widget;
 ///
 /// // within another widget's `render` method:
 /// # fn render(area: Rect, buf: &mut Buffer) {
@@ -256,10 +251,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Color, Modifier, Style},
-    ///     text::Text,
-    /// };
+    /// use ratatui_core::style::{Color, Modifier, Style};
+    /// use ratatui_core::text::Text;
     ///
     /// let style = Style::default()
     ///     .fg(Color::Yellow)
@@ -318,10 +311,8 @@ impl<'a> Text<'a> {
     ///
     /// # Examples
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::Text,
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Text;
     ///
     /// let mut line = Text::from("foo").style(Style::new().red());
     /// ```
@@ -350,10 +341,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Color, Modifier},
-    ///     text::Text,
-    /// };
+    /// use ratatui_core::style::{Color, Modifier};
+    /// use ratatui_core::text::Text;
     ///
     /// let raw_text = Text::styled("The first line\nThe second line", Modifier::ITALIC);
     /// let styled_text = Text::styled(
@@ -383,10 +372,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Color, Modifier, Style},
-    ///     text::Text,
-    /// };
+    /// use ratatui_core::style::{Color, Modifier, Style};
+    /// use ratatui_core::text::Text;
     ///
     /// let text = Text::styled(
     ///     "The first line\nThe second line",
@@ -414,7 +401,8 @@ impl<'a> Text<'a> {
     /// Set alignment to the whole text.
     ///
     /// ```rust
-    /// use ratatui_core::{layout::Alignment, text::Text};
+    /// use ratatui_core::layout::Alignment;
+    /// use ratatui_core::text::Text;
     ///
     /// let mut text = Text::from("Hi, what's up?");
     /// assert_eq!(None, text.alignment);
@@ -427,10 +415,8 @@ impl<'a> Text<'a> {
     /// Set a default alignment and override it on a per line basis.
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     layout::Alignment,
-    ///     text::{Line, Text},
-    /// };
+    /// use ratatui_core::layout::Alignment;
+    /// use ratatui_core::text::{Line, Text};
     ///
     /// let text = Text::from(vec![
     ///     Line::from("left").alignment(Alignment::Left),

@@ -6,22 +6,18 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use ratatui::{
-    buffer::Buffer,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{
-        Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
-        Layout, Rect,
-    },
-    style::{palette::tailwind, Color, Modifier, Style, Stylize},
-    symbols,
-    text::Line,
-    widgets::{
-        Block, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
-        Tabs, Widget,
-    },
-    DefaultTerminal,
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::buffer::Buffer;
+use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
+use ratatui::layout::{Layout, Rect};
+use ratatui::style::palette::tailwind;
+use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::text::Line;
+use ratatui::widgets::{
+    Block, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
+    Tabs, Widget,
 };
+use ratatui::{symbols, DefaultTerminal};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 const SPACER_HEIGHT: u16 = 0;

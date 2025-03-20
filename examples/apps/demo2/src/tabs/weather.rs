@@ -1,15 +1,11 @@
 use itertools::Itertools;
 use palette::Okhsv;
-use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Margin, Rect},
-    style::{Color, Style, Stylize},
-    symbols,
-    widgets::{
-        calendar::{CalendarEventStore, Monthly},
-        Bar, BarChart, BarGroup, Block, Clear, LineGauge, Padding, Widget,
-    },
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Direction, Layout, Margin, Rect};
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::symbols;
+use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
+use ratatui::widgets::{Bar, BarChart, BarGroup, Block, Clear, LineGauge, Padding, Widget};
 use time::OffsetDateTime;
 
 use crate::{color_from_oklab, RgbSwatch, THEME};

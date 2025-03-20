@@ -15,15 +15,13 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
-    layout::{Constraint, Layout, Margin, Rect},
-    style::{Color, Stylize},
-    symbols::scrollbar::Set,
-    text::{Line, Span},
-    widgets::{Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
-    DefaultTerminal, Frame,
-};
+use crossterm::event::{self, Event, KeyCode};
+use ratatui::layout::{Constraint, Layout, Margin, Rect};
+use ratatui::style::{Color, Stylize};
+use ratatui::symbols::scrollbar::Set;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

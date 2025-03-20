@@ -1,5 +1,7 @@
 use super::Widget;
-use crate::{buffer::Buffer, layout::Rect, style::Style};
+use crate::buffer::Buffer;
+use crate::layout::Rect;
+use crate::style::Style;
 
 /// A `WidgetRef` is a trait that allows rendering a widget by reference.
 ///
@@ -25,7 +27,10 @@ use crate::{buffer::Buffer, layout::Rect, style::Style};
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
 /// use ratatui::widgets::WidgetRef;
-/// use ratatui_core::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::text::Line;
+/// use ratatui_core::widgets::Widget;
 ///
 /// struct Greeting;
 ///
@@ -127,7 +132,10 @@ impl WidgetRef for String {
 /// ```rust
 /// # #[cfg(feature = "unstable-widget-ref")] {
 /// use ratatui::widgets::WidgetRef;
-/// use ratatui_core::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::text::Line;
+/// use ratatui_core::widgets::Widget;
 ///
 /// struct Parent {
 ///     child: Option<Child>,
@@ -161,7 +169,9 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::{buffer::Buffer, layout::Rect, text::Line};
+    use crate::buffer::Buffer;
+    use crate::layout::Rect;
+    use crate::text::Line;
 
     #[fixture]
     fn buf() -> Buffer {

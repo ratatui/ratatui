@@ -9,13 +9,11 @@
 
 use std::iter;
 
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Style,
-    symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL},
-    widgets::StatefulWidget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::style::Style;
+use ratatui_core::symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL};
+use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
@@ -42,15 +40,12 @@ use unicode_width::UnicodeWidthStr;
 /// # Examples
 ///
 /// ```rust
-/// use ratatui::{
-///     layout::{Margin, Rect},
-///     text::Line,
-///     widgets::{
-///         Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
-///         StatefulWidget,
-///     },
-///     Frame,
+/// use ratatui::layout::{Margin, Rect};
+/// use ratatui::text::Line;
+/// use ratatui::widgets::{
+///     Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
 /// };
+/// use ratatui::Frame;
 ///
 /// # fn render_paragraph_with_scrollbar(frame: &mut Frame, area: Rect) {
 /// let vertical_scroll = 0; // from app state
@@ -643,7 +638,8 @@ impl ScrollbarOrientation {
 mod tests {
     use std::str::FromStr;
 
-    use ratatui_core::{text::Text, widgets::Widget};
+    use ratatui_core::text::Text;
+    use ratatui_core::widgets::Widget;
     use rstest::{fixture, rstest};
     use strum::ParseError;
 

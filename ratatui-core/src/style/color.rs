@@ -1,6 +1,7 @@
 #![allow(clippy::unreadable_literal)]
 
-use std::{fmt, str::FromStr};
+use std::fmt;
+use std::str::FromStr;
 
 use crate::style::stylize::{ColorDebug, ColorDebugKind};
 

@@ -19,16 +19,15 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
-use ratatui::{
-    buffer::Buffer,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout, Position, Rect},
-    style::Color,
-    text::Text,
-    widgets::Widget,
-    DefaultTerminal,
-};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use palette::convert::FromColorUnclamped;
+use palette::{Okhsv, Srgb};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Layout, Position, Rect};
+use ratatui::style::Color;
+use ratatui::text::Text;
+use ratatui::widgets::Widget;
+use ratatui::DefaultTerminal;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

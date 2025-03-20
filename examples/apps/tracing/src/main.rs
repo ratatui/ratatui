@@ -20,14 +20,14 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::{fs::File, time::Duration};
 
-use color_eyre::{eyre::Context, Result};
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
-    widgets::{Block, Paragraph},
-    Frame,
-};
+use color_eyre::eyre::Context;
+use color_eyre::Result;
+use crossterm::event::{self, Event, KeyCode};
+use ratatui::widgets::{Block, Paragraph};
+use ratatui::Frame;
 use tracing::{debug, info, instrument, trace, Level};
-use tracing_appender::{non_blocking, non_blocking::WorkerGuard};
+use tracing_appender::non_blocking;
+use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::EnvFilter;
 
 fn main() -> Result<()> {

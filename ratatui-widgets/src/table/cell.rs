@@ -1,10 +1,8 @@
-use ratatui_core::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Style, Styled},
-    text::Text,
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::Rect;
+use ratatui_core::style::{Style, Styled};
+use ratatui_core::text::Text;
+use ratatui_core::widgets::Widget;
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
 ///
@@ -22,11 +20,9 @@ use ratatui_core::{
 /// ```rust
 /// use std::borrow::Cow;
 ///
-/// use ratatui::{
-///     style::Stylize,
-///     text::{Line, Span, Text},
-///     widgets::Cell,
-/// };
+/// use ratatui::style::Stylize;
+/// use ratatui::text::{Line, Span, Text};
+/// use ratatui::widgets::Cell;
 ///
 /// Cell::from("simple string");
 /// Cell::from(Span::from("span"));
@@ -42,7 +38,8 @@ use ratatui_core::{
 /// to set the style of the cell concisely.
 ///
 /// ```rust
-/// use ratatui::{style::Stylize, widgets::Cell};
+/// use ratatui::style::Stylize;
+/// use ratatui::widgets::Cell;
 ///
 /// Cell::new("Cell 1").red().italic();
 /// ```
@@ -64,11 +61,9 @@ impl<'a> Cell<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::Stylize,
-    ///     text::{Line, Span, Text},
-    ///     widgets::Cell,
-    /// };
+    /// use ratatui::style::Stylize;
+    /// use ratatui::text::{Line, Span, Text};
+    /// use ratatui::widgets::Cell;
     ///
     /// Cell::new("simple string");
     /// Cell::new(Span::from("span"));
@@ -97,11 +92,9 @@ impl<'a> Cell<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::Stylize,
-    ///     text::{Line, Span, Text},
-    ///     widgets::Cell,
-    /// };
+    /// use ratatui::style::Stylize;
+    /// use ratatui::text::{Line, Span, Text};
+    /// use ratatui::widgets::Cell;
     ///
     /// Cell::default().content("simple string");
     /// Cell::default().content(Span::from("span"));
@@ -133,10 +126,8 @@ impl<'a> Cell<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     widgets::Cell,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::Cell;
     ///
     /// Cell::new("Cell 1").style(Style::new().red().italic());
     /// ```
@@ -145,7 +136,8 @@ impl<'a> Cell<'a> {
     /// the [`Stylize`] trait to set the style of the widget more concisely.
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, widgets::Cell};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::Cell;
     ///
     /// Cell::new("Cell 1").red().italic();
     /// ```

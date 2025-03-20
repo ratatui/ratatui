@@ -1,12 +1,9 @@
-use ratatui::{
-    backend::TestBackend,
-    buffer::Buffer,
-    layout::Rect,
-    style::{Style, Stylize},
-    symbols,
-    widgets::Tabs,
-    Terminal,
-};
+use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::style::{Style, Stylize};
+use ratatui::widgets::Tabs;
+use ratatui::{symbols, Terminal};
 
 #[test]
 fn widgets_tabs_should_not_panic_on_narrow_areas() {

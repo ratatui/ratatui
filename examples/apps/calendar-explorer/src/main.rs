@@ -12,14 +12,13 @@ use std::fmt;
 
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
-use ratatui::{
-    layout::{Constraint, Layout, Margin, Rect},
-    style::{Color, Modifier, Style, Stylize},
-    text::{Line, Text},
-    widgets::calendar::{CalendarEventStore, Monthly},
-    DefaultTerminal, Frame,
-};
-use time::{ext::NumericalDuration, Date, Month, OffsetDateTime};
+use ratatui::layout::{Constraint, Layout, Margin, Rect};
+use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::text::{Line, Text};
+use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
+use ratatui::{DefaultTerminal, Frame};
+use time::ext::NumericalDuration;
+use time::{Date, Month, OffsetDateTime};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

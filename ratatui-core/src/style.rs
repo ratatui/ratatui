@@ -13,10 +13,8 @@
 //! ## Example
 //!
 //! ```
-//! use ratatui_core::{
-//!     style::{Color, Modifier, Style},
-//!     text::Span,
-//! };
+//! use ratatui_core::style::{Color, Modifier, Style};
+//! use ratatui_core::text::Span;
 //!
 //! let heading_style = Style::new()
 //!     .fg(Color::Black)
@@ -43,10 +41,8 @@
 //! ## Example
 //!
 //! ```
-//! use ratatui_core::{
-//!     style::{Color, Modifier, Style, Stylize},
-//!     text::{Span, Text},
-//! };
+//! use ratatui_core::style::{Color, Modifier, Style, Stylize};
+//! use ratatui_core::text::{Span, Text};
 //!
 //! assert_eq!(
 //!     "hello".red().on_blue().bold(),
@@ -156,10 +152,8 @@ impl fmt::Debug for Modifier {
 /// anywhere that accepts `Into<Style>`.
 ///
 /// ```rust
-/// use ratatui_core::{
-///     style::{Color, Modifier, Style},
-///     text::Line,
-/// };
+/// use ratatui_core::style::{Color, Modifier, Style};
+/// use ratatui_core::text::Line;
 ///
 /// Line::styled("hello", Style::new().fg(Color::Red));
 /// // simplifies to
@@ -175,11 +169,9 @@ impl fmt::Debug for Modifier {
 /// just S3.
 ///
 /// ```rust
-/// use ratatui_core::{
-///     buffer::Buffer,
-///     layout::Rect,
-///     style::{Color, Modifier, Style},
-/// };
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::style::{Color, Modifier, Style};
 ///
 /// let styles = [
 ///     Style::default()
@@ -215,11 +207,9 @@ impl fmt::Debug for Modifier {
 /// reset all properties until that point use [`Style::reset`].
 ///
 /// ```
-/// use ratatui_core::{
-///     buffer::Buffer,
-///     layout::Rect,
-///     style::{Color, Modifier, Style},
-/// };
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::style::{Color, Modifier, Style};
 ///
 /// let styles = [
 ///     Style::default()
@@ -689,7 +679,8 @@ mod tests {
 
     #[test]
     fn combine_individual_modifiers() {
-        use crate::{buffer::Buffer, layout::Rect};
+        use crate::buffer::Buffer;
+        use crate::layout::Rect;
 
         let mods = [
             Modifier::BOLD,

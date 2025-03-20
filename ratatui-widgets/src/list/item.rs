@@ -1,4 +1,5 @@
-use ratatui_core::{style::Style, text::Text};
+use ratatui_core::style::Style;
+use ratatui_core::text::Text;
 
 /// A single item in a [`List`]
 ///
@@ -26,7 +27,8 @@ use ratatui_core::{style::Style, text::Text};
 /// Anything that can be converted to [`Text`] can be a [`ListItem`].
 ///
 /// ```rust
-/// use ratatui::{text::Line, widgets::ListItem};
+/// use ratatui::text::Line;
+/// use ratatui::widgets::ListItem;
 ///
 /// let item1: ListItem = "Item 1".into();
 /// let item2: ListItem = Line::raw("Item 2").into();
@@ -35,7 +37,8 @@ use ratatui_core::{style::Style, text::Text};
 /// A [`ListItem`] styled with [`Stylize`]
 ///
 /// ```rust
-/// use ratatui::{style::Stylize, widgets::ListItem};
+/// use ratatui::style::Stylize;
+/// use ratatui::widgets::ListItem;
 ///
 /// let item = ListItem::new("Item 1").red().on_white();
 /// ```
@@ -44,11 +47,9 @@ use ratatui_core::{style::Style, text::Text};
 /// [`Text`]
 ///
 /// ```rust
-/// use ratatui::{
-///     style::Stylize,
-///     text::{Span, Text},
-///     widgets::ListItem,
-/// };
+/// use ratatui::style::Stylize;
+/// use ratatui::text::{Span, Text};
+/// use ratatui::widgets::ListItem;
 ///
 /// let mut text = Text::default();
 /// text.extend(["Item".blue(), Span::raw(" "), "1".bold().red()]);
@@ -58,7 +59,8 @@ use ratatui_core::{style::Style, text::Text};
 /// A right-aligned `ListItem`
 ///
 /// ```rust
-/// use ratatui::{text::Text, widgets::ListItem};
+/// use ratatui::text::Text;
+/// use ratatui::widgets::ListItem;
 ///
 /// ListItem::new(Text::from("foo").right_aligned());
 /// ```
@@ -91,7 +93,8 @@ impl<'a> ListItem<'a> {
     /// Anything that can be converted to [`Text`] can be a [`ListItem`].
     ///
     /// ```rust
-    /// use ratatui::{text::Line, widgets::ListItem};
+    /// use ratatui::text::Line;
+    /// use ratatui::widgets::ListItem;
     ///
     /// let item1: ListItem = "Item 1".into();
     /// let item2: ListItem = Line::raw("Item 2").into();
@@ -131,10 +134,8 @@ impl<'a> ListItem<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     widgets::ListItem,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::ListItem;
     ///
     /// let item = ListItem::new("Item 1").style(Style::new().red().italic());
     /// ```
@@ -144,7 +145,8 @@ impl<'a> ListItem<'a> {
     /// concisely.
     ///
     /// ```rust
-    /// use ratatui::{style::Stylize, widgets::ListItem};
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::ListItem;
     ///
     /// let item = ListItem::new("Item 1").red().italic();
     /// ```
@@ -219,10 +221,8 @@ mod tests {
     use std::borrow::Cow;
 
     use pretty_assertions::assert_eq;
-    use ratatui_core::{
-        style::{Color, Modifier, Stylize},
-        text::{Line, Span},
-    };
+    use ratatui_core::style::{Color, Modifier, Stylize};
+    use ratatui_core::text::{Line, Span};
 
     use super::*;
 

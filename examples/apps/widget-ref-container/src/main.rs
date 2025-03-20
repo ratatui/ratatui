@@ -14,12 +14,10 @@ use std::iter::zip;
 
 use color_eyre::Result;
 use crossterm::event;
-use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Paragraph, Widget, WidgetRef},
-    DefaultTerminal, Frame,
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::widgets::{Block, Paragraph, Widget, WidgetRef};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

@@ -6,19 +6,16 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::KeyModifiers;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use itertools::Itertools;
-use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout, Margin, Rect},
-    style::{self, Color, Modifier, Style, Stylize},
-    text::Text,
-    widgets::{
-        Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
-        ScrollbarState, Table, TableState,
-    },
-    DefaultTerminal, Frame,
+use ratatui::layout::{Constraint, Layout, Margin, Rect};
+use ratatui::style::{self, Color, Modifier, Style, Stylize};
+use ratatui::text::Text;
+use ratatui::widgets::{
+    Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
+    ScrollbarState, Table, TableState,
 };
+use ratatui::{DefaultTerminal, Frame};
 use style::palette::tailwind;
 use unicode_width::UnicodeWidthStr;
 

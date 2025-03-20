@@ -1,18 +1,14 @@
 //! The [`Paragraph`] widget and related types allows displaying a block of text with optional
 //! wrapping, alignment, and block styling.
-use ratatui_core::{
-    buffer::Buffer,
-    layout::{Alignment, Position, Rect},
-    style::{Style, Styled},
-    text::{Line, StyledGrapheme, Text},
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::{Alignment, Position, Rect};
+use ratatui_core::style::{Style, Styled};
+use ratatui_core::text::{Line, StyledGrapheme, Text};
+use ratatui_core::widgets::Widget;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{
-    block::{Block, BlockExt},
-    reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
-};
+use crate::block::{Block, BlockExt};
+use crate::reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine};
 
 /// A widget to display some text.
 ///
@@ -55,12 +51,10 @@ use crate::{
 /// # Example
 ///
 /// ```
-/// use ratatui::{
-///     layout::Alignment,
-///     style::{Style, Stylize},
-///     text::{Line, Span},
-///     widgets::{Block, Paragraph, Wrap},
-/// };
+/// use ratatui::layout::Alignment;
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::text::{Line, Span};
+/// use ratatui::widgets::{Block, Paragraph, Wrap};
 ///
 /// let text = vec![
 ///     Line::from(vec![
@@ -100,10 +94,8 @@ pub struct Paragraph<'a> {
 /// ## Examples
 ///
 /// ```
-/// use ratatui::{
-///     text::Text,
-///     widgets::{Paragraph, Wrap},
-/// };
+/// use ratatui::text::Text;
+/// use ratatui::widgets::{Paragraph, Wrap};
 ///
 /// let bullet_points = Text::from(
 ///     r#"Some indented points:
@@ -145,11 +137,9 @@ impl<'a> Paragraph<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     text::{Line, Text},
-    ///     widgets::Paragraph,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::text::{Line, Text};
+    /// use ratatui::widgets::Paragraph;
     ///
     /// let paragraph = Paragraph::new("Hello, world!");
     /// let paragraph = Paragraph::new(String::from("Hello, world!"));
@@ -197,10 +187,8 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     widgets::Paragraph,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::Paragraph;
     ///
     /// let paragraph = Paragraph::new("Hello, world!").style(Style::new().red().on_white());
     /// ```
@@ -257,7 +245,8 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui::{layout::Alignment, widgets::Paragraph};
+    /// use ratatui::layout::Alignment;
+    /// use ratatui::widgets::Paragraph;
     ///
     /// let paragraph = Paragraph::new("Hello World").alignment(Alignment::Center);
     /// ```
@@ -504,16 +493,15 @@ impl Styled for Paragraph<'_> {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{
-        buffer::Buffer,
-        layout::{Alignment, Rect},
-        style::{Color, Modifier, Style, Stylize},
-        text::{Line, Span, Text},
-        widgets::Widget,
-    };
+    use ratatui_core::buffer::Buffer;
+    use ratatui_core::layout::{Alignment, Rect};
+    use ratatui_core::style::{Color, Modifier, Style, Stylize};
+    use ratatui_core::text::{Line, Span, Text};
+    use ratatui_core::widgets::Widget;
 
     use super::*;
-    use crate::{block::Position, borders::Borders};
+    use crate::block::Position;
+    use crate::borders::Borders;
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
     /// area and comparing the rendered and expected content.

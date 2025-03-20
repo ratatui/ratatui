@@ -8,15 +8,14 @@
 use std::time::Duration;
 
 use color_eyre::Result;
-use ratatui::{
-    buffer::Buffer,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Alignment, Constraint, Layout, Rect},
-    style::{palette::tailwind, Color, Style, Stylize},
-    text::{Line, Span},
-    widgets::{Block, Borders, Gauge, Padding, Paragraph, Widget},
-    DefaultTerminal,
-};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Constraint, Layout, Rect};
+use ratatui::style::palette::tailwind;
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Borders, Gauge, Padding, Paragraph, Widget};
+use ratatui::DefaultTerminal;
 
 const GAUGE1_COLOR: Color = tailwind::RED.c800;
 const GAUGE2_COLOR: Color = tailwind::GREEN.c800;

@@ -7,19 +7,15 @@
 #![allow(deprecated)] // to avoid having to add `#[deprecated]` to every use of `Title`
 
 use itertools::Itertools;
-use ratatui_core::{
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::{Style, Styled},
-    symbols::border,
-    text::Line,
-    widgets::Widget,
-};
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::{Alignment, Rect};
+use ratatui_core::style::{Style, Styled};
+use ratatui_core::symbols::border;
+use ratatui_core::text::Line;
+use ratatui_core::widgets::Widget;
 
-pub use self::{
-    padding::Padding,
-    title::{Position, Title},
-};
+pub use self::padding::Padding;
+pub use self::title::{Position, Title};
 use crate::borders::{BorderType, Borders};
 
 mod padding;
@@ -76,10 +72,8 @@ pub mod title;
 /// # Examples
 ///
 /// ```
-/// use ratatui::{
-///     style::{Color, Style},
-///     widgets::{Block, BorderType, Borders},
-/// };
+/// use ratatui::style::{Color, Style};
+/// use ratatui::widgets::{Block, BorderType, Borders};
 ///
 /// Block::new()
 ///     .border_type(BorderType::Rounded)
@@ -91,10 +85,8 @@ pub mod title;
 ///
 /// You may also use multiple titles like in the following:
 /// ```
-/// use ratatui::widgets::{
-///     block::{Position, Title},
-///     Block,
-/// };
+/// use ratatui::widgets::block::{Position, Title};
+/// use ratatui::widgets::Block;
 ///
 /// Block::new()
 ///     .title("Title 1")
@@ -201,10 +193,8 @@ impl<'a> Block<'a> {
     ///   the leftover space)
     /// - Two titles with the same alignment (notice the left titles are separated)
     /// ```
-    /// use ratatui::{
-    ///     text::Line,
-    ///     widgets::{Block, Borders},
-    /// };
+    /// use ratatui::text::Line;
+    /// use ratatui::widgets::{Block, Borders};
     ///
     /// Block::new()
     ///     .title("Title") // By default in the top left corner
@@ -330,7 +320,9 @@ impl<'a> Block<'a> {
     /// This example aligns all titles in the center except the "right" title which explicitly sets
     /// [`Alignment::Right`].
     /// ```
-    /// use ratatui::{layout::Alignment, text::Line, widgets::Block};
+    /// use ratatui::layout::Alignment;
+    /// use ratatui::text::Line;
+    /// use ratatui::widgets::Block;
     ///
     /// Block::new()
     ///     .title_alignment(Alignment::Center)
@@ -354,7 +346,8 @@ impl<'a> Block<'a> {
     /// This example positions all titles on the bottom except the "top" title which explicitly sets
     /// [`Position::Top`].
     /// ```
-    /// use ratatui::widgets::{block::Position, Block};
+    /// use ratatui::widgets::block::Position;
+    /// use ratatui::widgets::Block;
     ///
     /// Block::new()
     ///     .title_position(Position::Bottom)
@@ -383,10 +376,8 @@ impl<'a> Block<'a> {
     ///
     /// This example shows a `Block` with blue borders.
     /// ```
-    /// use ratatui::{
-    ///     style::{Style, Stylize},
-    ///     widgets::Block,
-    /// };
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::Block;
     /// Block::bordered().border_style(Style::new().blue());
     /// ```
     ///
@@ -413,10 +404,8 @@ impl<'a> Block<'a> {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{
-    ///     style::{Color, Style, Stylize},
-    ///     widgets::{Block, Paragraph},
-    /// };
+    /// use ratatui::style::{Color, Style, Stylize};
+    /// use ratatui::widgets::{Block, Paragraph};
     ///
     /// let block = Block::new().style(Style::new().red().on_black());
     ///
@@ -545,7 +534,8 @@ impl<'a> Block<'a> {
     ///
     /// Draw a block nested within another block
     /// ```
-    /// use ratatui::{widgets::Block, Frame};
+    /// use ratatui::widgets::Block;
+    /// use ratatui::Frame;
     ///
     /// # fn render_nested_block(frame: &mut Frame) {
     /// let outer_block = Block::bordered().title("Outer");

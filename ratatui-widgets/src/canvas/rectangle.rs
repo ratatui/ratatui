@@ -77,13 +77,11 @@ impl Shape for Rectangle {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{
-        buffer::Buffer,
-        layout::{Margin, Rect},
-        style::{Style, Stylize},
-        symbols::Marker,
-        widgets::Widget,
-    };
+    use ratatui_core::buffer::Buffer;
+    use ratatui_core::layout::{Margin, Rect};
+    use ratatui_core::style::{Style, Stylize};
+    use ratatui_core::symbols::Marker;
+    use ratatui_core::widgets::Widget;
 
     use super::*;
     use crate::canvas::Canvas;

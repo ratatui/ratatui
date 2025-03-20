@@ -1,19 +1,14 @@
 #![allow(dead_code)]
-use std::{
-    error::Error,
-    time::{Duration, Instant},
-};
+use std::error::Error;
+use std::time::{Duration, Instant};
 
-use ratatui::{
-    backend::TermwizBackend,
-    termwiz::{
-        input::{InputEvent, KeyCode},
-        terminal::Terminal as TermwizTerminal,
-    },
-    Terminal,
-};
+use ratatui::backend::TermwizBackend;
+use ratatui::Terminal;
+use termwiz::input::{InputEvent, KeyCode};
+use termwiz::terminal::Terminal as TermwizTerminal;
 
-use crate::{app::App, ui};
+use crate::app::App;
+use crate::ui;
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
     let backend = TermwizBackend::new()?;

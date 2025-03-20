@@ -1,9 +1,7 @@
 use criterion::{criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
-use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Rect},
-    widgets::{Row, StatefulWidget, Table, TableState, Widget},
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Rect};
+use ratatui::widgets::{Row, StatefulWidget, Table, TableState, Widget};
 
 /// Benchmark for rendering a table.
 /// It only benchmarks the render with a different number of rows, and columns.

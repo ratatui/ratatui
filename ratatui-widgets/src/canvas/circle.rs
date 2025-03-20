@@ -42,9 +42,11 @@ impl Shape for Circle {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::{
-        buffer::Buffer, layout::Rect, style::Color, symbols::Marker, widgets::Widget,
-    };
+    use ratatui_core::buffer::Buffer;
+    use ratatui_core::layout::Rect;
+    use ratatui_core::style::Color;
+    use ratatui_core::symbols::Marker;
+    use ratatui_core::widgets::Widget;
 
     use crate::canvas::{Canvas, Circle};
 

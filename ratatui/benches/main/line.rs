@@ -1,13 +1,11 @@
 use std::hint::black_box;
 
 use criterion::{criterion_group, Criterion};
-use ratatui::{
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::Stylize,
-    text::Line,
-    widgets::Widget,
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Rect};
+use ratatui::style::Stylize;
+use ratatui::text::Line;
+use ratatui::widgets::Widget;
 
 fn line_render(criterion: &mut Criterion) {
     for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {

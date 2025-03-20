@@ -31,27 +31,27 @@
 //! [`Canvas`]: crate::widgets::canvas::Canvas
 
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
+pub use ratatui_widgets::barchart::{Bar, BarChart, BarGroup};
 // TODO remove this module once title etc. are gone
 pub use ratatui_widgets::block;
+pub use ratatui_widgets::block::{Block, Padding};
+pub use ratatui_widgets::borders::{BorderType, Borders};
 #[cfg(feature = "widget-calendar")]
 pub use ratatui_widgets::calendar;
-pub use ratatui_widgets::{
-    barchart::{Bar, BarChart, BarGroup},
-    block::{Block, Padding},
-    borders::{BorderType, Borders},
-    canvas,
-    chart::{Axis, Chart, Dataset, GraphType, LegendPosition},
-    clear::Clear,
-    gauge::{Gauge, LineGauge},
-    list::{List, ListDirection, ListItem, ListState},
-    logo::{RatatuiLogo, Size as RatatuiLogoSize},
-    mascot::{MascotEyeColor, RatatuiMascot},
-    paragraph::{Paragraph, Wrap},
-    scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
-    sparkline::{RenderDirection, Sparkline, SparklineBar},
-    table::{Cell, HighlightSpacing, Row, Table, TableState},
-    tabs::Tabs,
+pub use ratatui_widgets::canvas;
+pub use ratatui_widgets::chart::{Axis, Chart, Dataset, GraphType, LegendPosition};
+pub use ratatui_widgets::clear::Clear;
+pub use ratatui_widgets::gauge::{Gauge, LineGauge};
+pub use ratatui_widgets::list::{List, ListDirection, ListItem, ListState};
+pub use ratatui_widgets::logo::{RatatuiLogo, Size as RatatuiLogoSize};
+pub use ratatui_widgets::mascot::{MascotEyeColor, RatatuiMascot};
+pub use ratatui_widgets::paragraph::{Paragraph, Wrap};
+pub use ratatui_widgets::scrollbar::{
+    ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState,
 };
+pub use ratatui_widgets::sparkline::{RenderDirection, Sparkline, SparklineBar};
+pub use ratatui_widgets::table::{Cell, HighlightSpacing, Row, Table, TableState};
+pub use ratatui_widgets::tabs::Tabs;
 #[instability::unstable(feature = "widget-ref")]
 pub use {stateful_widget_ref::StatefulWidgetRef, widget_ref::WidgetRef};
 
@@ -77,10 +77,8 @@ pub trait FrameExt {
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
-    /// use ratatui::{
-    ///     layout::Rect,
-    ///     widgets::{Block, FrameExt},
-    /// };
+    /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{Block, FrameExt};
     ///
     /// let block = Block::new();
     /// let area = Rect::new(0, 0, 5, 5);
@@ -109,10 +107,8 @@ pub trait FrameExt {
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
-    /// use ratatui::{
-    ///     layout::Rect,
-    ///     widgets::{FrameExt, List, ListItem, ListState},
-    /// };
+    /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{FrameExt, List, ListItem, ListState};
     ///
     /// let mut state = ListState::default().with_selected(Some(1));
     /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);

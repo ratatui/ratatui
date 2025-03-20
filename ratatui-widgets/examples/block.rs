@@ -15,14 +15,12 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use ratatui::{
-    crossterm::event::{self, Event},
-    layout::{Constraint, Layout, Rect},
-    style::{Style, Stylize},
-    text::{Line, Span},
-    widgets::{Block, BorderType},
-    DefaultTerminal, Frame,
-};
+use crossterm::event::{self, Event};
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Style, Stylize};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, BorderType};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

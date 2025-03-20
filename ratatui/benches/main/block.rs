@@ -1,10 +1,8 @@
 use criterion::{criterion_group, BatchSize, Bencher, Criterion};
-use ratatui::{
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    text::Line,
-    widgets::{Block, Padding, Widget},
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Rect};
+use ratatui::text::Line;
+use ratatui::widgets::{Block, Padding, Widget};
 
 /// Benchmark for rendering a block.
 fn block(c: &mut Criterion) {

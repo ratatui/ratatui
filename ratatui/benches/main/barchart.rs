@@ -1,10 +1,8 @@
 use criterion::{criterion_group, Bencher, BenchmarkId, Criterion};
 use rand::Rng;
-use ratatui::{
-    buffer::Buffer,
-    layout::{Direction, Rect},
-    widgets::{Bar, BarChart, BarGroup, Widget},
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Direction, Rect};
+use ratatui::widgets::{Bar, BarChart, BarGroup, Widget};
 
 /// Benchmark for rendering a barchart.
 fn barchart(c: &mut Criterion) {

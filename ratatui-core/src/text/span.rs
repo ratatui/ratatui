@@ -1,15 +1,14 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Style, Styled},
-    text::{Line, StyledGrapheme},
-    widgets::Widget,
-};
+use crate::buffer::Buffer;
+use crate::layout::Rect;
+use crate::style::{Style, Styled};
+use crate::text::{Line, StyledGrapheme};
+use crate::widgets::Widget;
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
 ///
@@ -56,10 +55,8 @@ use crate::{
 /// the [`Stylize`] trait.
 ///
 /// ```rust
-/// use ratatui_core::{
-///     style::{Style, Stylize},
-///     text::Span,
-/// };
+/// use ratatui_core::style::{Style, Stylize};
+/// use ratatui_core::text::Span;
 ///
 /// let span = Span::styled("test content", Style::new().green());
 /// let span = Span::styled(String::from("test content"), Style::new().green());
@@ -73,7 +70,8 @@ use crate::{
 /// defined in the [`Stylize`] trait.
 ///
 /// ```rust
-/// use ratatui_core::{style::Stylize, text::Span};
+/// use ratatui_core::style::Stylize;
+/// use ratatui_core::text::Span;
 ///
 /// let span = Span::raw("test content").green().on_yellow().italic();
 /// let span = Span::raw(String::from("test content"))
@@ -150,10 +148,8 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::Span,
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Span;
     ///
     /// let style = Style::new().yellow().on_green().italic();
     /// Span::styled("test content", style);
@@ -208,10 +204,8 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::Span,
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Span;
     ///
     /// let mut span = Span::default().style(Style::new().green());
     /// ```
@@ -233,10 +227,8 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::Span,
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Span;
     ///
     /// let span = Span::styled("test content", Style::new().green().italic())
     ///     .patch_style(Style::new().red().on_yellow().bold());
@@ -259,10 +251,8 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::Span,
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Span;
     ///
     /// let span = Span::styled(
     ///     "Test Content",
@@ -294,10 +284,8 @@ impl<'a> Span<'a> {
     /// ```rust
     /// use std::iter::Iterator;
     ///
-    /// use ratatui_core::{
-    ///     style::{Style, Stylize},
-    ///     text::{Span, StyledGrapheme},
-    /// };
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::{Span, StyledGrapheme};
     ///
     /// let span = Span::styled("Test", Style::new().green().italic());
     /// let style = Style::new().red().on_yellow();
@@ -509,7 +497,9 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::{buffer::Cell, layout::Alignment, style::Stylize};
+    use crate::buffer::Cell;
+    use crate::layout::Alignment;
+    use crate::style::Stylize;
 
     #[fixture]
     fn small_buf() -> Buffer {

@@ -1,13 +1,10 @@
-use ratatui::{
-    backend::TestBackend,
-    buffer::Buffer,
-    layout::Rect,
-    style::{Color, Style},
-    symbols,
-    text::Line,
-    widgets::{Block, Borders, HighlightSpacing, List, ListItem, ListState},
-    Terminal,
-};
+use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::style::{Color, Style};
+use ratatui::text::Line;
+use ratatui::widgets::{Block, Borders, HighlightSpacing, List, ListItem, ListState};
+use ratatui::{symbols, Terminal};
 use rstest::rstest;
 
 #[test]
