@@ -218,11 +218,10 @@ impl Layout {
     ///
     /// Layout::new(Direction::Horizontal, vec![1, 2]);
     /// ```
-    pub fn new<I>(direction: Direction, constraints: I) -> Self
-    where
-        I: IntoIterator,
-        I::Item: Into<Constraint>,
-    {
+    pub fn new<I: IntoIterator<Item: Into<Constraint>>>(
+        direction: Direction,
+        constraints: I,
+    ) -> Self {
         Self {
             direction,
             constraints: constraints.into_iter().map(Into::into).collect(),
@@ -242,11 +241,7 @@ impl Layout {
     ///
     /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
-    pub fn vertical<I>(constraints: I) -> Self
-    where
-        I: IntoIterator,
-        I::Item: Into<Constraint>,
-    {
+    pub fn vertical<I: IntoIterator<Item: Into<Constraint>>>(constraints: I) -> Self {
         Self::new(Direction::Vertical, constraints.into_iter().map(Into::into))
     }
 
@@ -262,11 +257,7 @@ impl Layout {
     ///
     /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
-    pub fn horizontal<I>(constraints: I) -> Self
-    where
-        I: IntoIterator,
-        I::Item: Into<Constraint>,
-    {
+    pub fn horizontal<I: IntoIterator<Item: Into<Constraint>>>(constraints: I) -> Self {
         Self::new(
             Direction::Horizontal,
             constraints.into_iter().map(Into::into),
@@ -353,11 +344,7 @@ impl Layout {
     /// Layout::default().constraints(vec![1, 2, 3]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn constraints<I>(mut self, constraints: I) -> Self
-    where
-        I: IntoIterator,
-        I::Item: Into<Constraint>,
-    {
+    pub fn constraints<I: IntoIterator<Item: Into<Constraint>>>(mut self, constraints: I) -> Self {
         self.constraints = constraints.into_iter().map(Into::into).collect();
         self
     }
@@ -494,10 +481,7 @@ impl Layout {
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(-1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn spacing<T>(mut self, spacing: T) -> Self
-    where
-        T: Into<Spacing>,
-    {
+    pub fn spacing<T: Into<Spacing>>(mut self, spacing: T) -> Self {
         self.spacing = spacing.into();
         self
     }

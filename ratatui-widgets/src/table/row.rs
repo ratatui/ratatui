@@ -96,11 +96,7 @@ impl<'a> Row<'a> {
     ///     Cell::new("Cell 3"),
     /// ]);
     /// ```
-    pub fn new<T>(cells: T) -> Self
-    where
-        T: IntoIterator,
-        T::Item: Into<Cell<'a>>,
-    {
+    pub fn new<T: IntoIterator<Item: Into<Cell<'a>>>>(cells: T) -> Self {
         Self {
             cells: cells.into_iter().map(Into::into).collect(),
             height: 1,
@@ -128,11 +124,7 @@ impl<'a> Row<'a> {
     /// ]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn cells<T>(mut self, cells: T) -> Self
-    where
-        T: IntoIterator,
-        T::Item: Into<Cell<'a>>,
-    {
+    pub fn cells<T: IntoIterator<Item: Into<Cell<'a>>>>(mut self, cells: T) -> Self {
         self.cells = cells.into_iter().map(Into::into).collect();
         self
     }
@@ -261,10 +253,7 @@ impl Styled for Row<'_> {
     }
 }
 
-impl<'a, Item> FromIterator<Item> for Row<'a>
-where
-    Item: Into<Cell<'a>>,
-{
+impl<'a, Item: Into<Cell<'a>>> FromIterator<Item> for Row<'a> {
     fn from_iter<IterCells: IntoIterator<Item = Item>>(cells: IterCells) -> Self {
         Self::new(cells)
     }

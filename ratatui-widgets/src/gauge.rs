@@ -104,10 +104,7 @@ impl<'a> Gauge<'a> {
     /// For a left-aligned label, see [`LineGauge`].
     /// If the label is not defined, it is the percentage filled.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label<T>(mut self, label: T) -> Self
-    where
-        T: Into<Span<'a>>,
-    {
+    pub fn label<T: Into<Span<'a>>>(mut self, label: T) -> Self {
         self.label = Some(label.into());
         self
     }
@@ -351,10 +348,7 @@ impl<'a> LineGauge<'a> {
     /// With `LineGauge`, labels are only on the left, see [`Gauge`] for a centered label.
     /// If the label is not defined, it is the percentage filled.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label<T>(mut self, label: T) -> Self
-    where
-        T: Into<Line<'a>>,
-    {
+    pub fn label<T: Into<Line<'a>>>(mut self, label: T) -> Self {
         self.label = Some(label.into());
         self
     }

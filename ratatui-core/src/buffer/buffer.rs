@@ -86,11 +86,7 @@ impl Buffer {
 
     /// Returns a Buffer containing the given lines
     #[must_use]
-    pub fn with_lines<'a, Iter>(lines: Iter) -> Self
-    where
-        Iter: IntoIterator,
-        Iter::Item: Into<Line<'a>>,
-    {
+    pub fn with_lines<'a, Iter: IntoIterator<Item: Into<Line<'a>>>>(lines: Iter) -> Self {
         let lines = lines.into_iter().map(Into::into).collect::<Vec<_>>();
         let height = lines.len() as u16;
         let width = lines.iter().map(Line::width).max().unwrap_or_default() as u16;
@@ -312,11 +308,13 @@ impl Buffer {
     }
 
     /// Print a string, starting at the position (x, y)
-    pub fn set_string<T, S>(&mut self, x: u16, y: u16, string: T, style: S)
-    where
-        T: AsRef<str>,
-        S: Into<Style>,
-    {
+    pub fn set_string<T: AsRef<str>, S: Into<Style>>(
+        &mut self,
+        x: u16,
+        y: u16,
+        string: T,
+        style: S,
+    ) {
         self.set_stringn(x, y, string, usize::MAX, style);
     }
 
@@ -324,18 +322,14 @@ impl Buffer {
     /// until the end of the line. Skips zero-width graphemes and control characters.
     ///
     /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
-    pub fn set_stringn<T, S>(
+    pub fn set_stringn<T: AsRef<str>, S: Into<Style>>(
         &mut self,
         mut x: u16,
         y: u16,
         string: T,
         max_width: usize,
         style: S,
-    ) -> (u16, u16)
-    where
-        T: AsRef<str>,
-        S: Into<Style>,
-    {
+    ) -> (u16, u16) {
         let max_width = max_width.try_into().unwrap_or(u16::MAX);
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
@@ -1114,11 +1108,11 @@ mod tests {
     #[rstest]
     #[case(Rect::new(0, 0, 2, 2), Rect::new(0, 2, 2, 2), ["11", "11", "22", "22"])]
     #[case(Rect::new(2, 2, 2, 2), Rect::new(0, 0, 2, 2), ["22  ", "22  ", "  11", "  11"])]
-    fn merge<'line, Lines>(#[case] one: Rect, #[case] two: Rect, #[case] expected: Lines)
-    where
-        Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
-    {
+    fn merge<'line, Lines: IntoIterator<Item: Into<Line<'line>>>>(
+        #[case] one: Rect,
+        #[case] two: Rect,
+        #[case] expected: Lines,
+    ) {
         let mut one = Buffer::filled(one, Cell::new("1"));
         let two = Buffer::filled(two, Cell::new("2"));
         one.merge(&two);
