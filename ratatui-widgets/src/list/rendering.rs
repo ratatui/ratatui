@@ -373,11 +373,10 @@ mod tests {
     #[test]
     fn combinations() {
         #[track_caller]
-        fn test_case_render<'line, Lines>(items: &[ListItem], expected: Lines)
-        where
-            Lines: IntoIterator,
-            Lines::Item: Into<Line<'line>>,
-        {
+        fn test_case_render<'line, Lines: IntoIterator<Item: Into<Line<'line>>>>(
+            items: &[ListItem],
+            expected: Lines,
+        ) {
             let list = List::new(items.to_owned()).highlight_symbol(">>");
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
             Widget::render(list, buffer.area, &mut buffer);
@@ -385,14 +384,11 @@ mod tests {
         }
 
         #[track_caller]
-        fn test_case_render_stateful<'line, Lines>(
+        fn test_case_render_stateful<'line, Lines: IntoIterator<Item: Into<Line<'line>>>>(
             items: &[ListItem],
             selected: Option<usize>,
             expected: Lines,
-        ) where
-            Lines: IntoIterator,
-            Lines::Item: Into<Line<'line>>,
-        {
+        ) {
             let list = List::new(items.to_owned()).highlight_symbol(">>");
             let mut state = ListState::default().with_selected(selected);
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
@@ -827,11 +823,10 @@ mod tests {
         "Item 1    ",
         "Item 0    ",
     ])]
-    fn list_direction<'line, Lines>(#[case] direction: ListDirection, #[case] expected: Lines)
-    where
-        Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
-    {
+    fn list_direction<'line, Lines: IntoIterator<Item: Into<Line<'line>>>>(
+        #[case] direction: ListDirection,
+        #[case] expected: Lines,
+    ) {
         let list = List::new(["Item 0", "Item 1", "Item 2"]).direction(direction);
         let buffer = widget(list, 10, 4);
         assert_eq!(buffer, Buffer::with_lines(expected));
@@ -873,11 +868,10 @@ mod tests {
         "  Item 1       ",
         "  Item 2       ",
     ])]
-    fn long_lines<'line, Lines>(#[case] selected: Option<usize>, #[case] expected: Lines)
-    where
-        Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
-    {
+    fn long_lines<'line, Lines: IntoIterator<Item: Into<Line<'line>>>>(
+        #[case] selected: Option<usize>,
+        #[case] expected: Lines,
+    ) {
         let items = [
             "Item 0 with a very long line that will be truncated",
             "Item 1",
@@ -1140,16 +1134,13 @@ mod tests {
             "   Item 3 ",
         ]
     )]
-    fn with_padding<'line, Lines>(
+    fn with_padding<'line, Lines: IntoIterator<Item: Into<Line<'line>>>>(
         #[case] render_height: u16,
         #[case] offset: usize,
         #[case] padding: usize,
         #[case] selected: Option<usize>,
         #[case] expected: Lines,
-    ) where
-        Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
-    {
+    ) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, render_height));
         let mut state = ListState::default();
 

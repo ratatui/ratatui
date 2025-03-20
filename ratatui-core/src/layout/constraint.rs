@@ -230,10 +230,7 @@ impl Constraint {
     /// let constraints = Constraint::from_lengths([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_lengths<T>(lengths: T) -> Vec<Self>
-    where
-        T: IntoIterator<Item = u16>,
-    {
+    pub fn from_lengths<T: IntoIterator<Item = u16>>(lengths: T) -> Vec<Self> {
         lengths.into_iter().map(Self::Length).collect()
     }
 
@@ -248,10 +245,7 @@ impl Constraint {
     /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_ratios<T>(ratios: T) -> Vec<Self>
-    where
-        T: IntoIterator<Item = (u32, u32)>,
-    {
+    pub fn from_ratios<T: IntoIterator<Item = (u32, u32)>>(ratios: T) -> Vec<Self> {
         ratios.into_iter().map(|(n, d)| Self::Ratio(n, d)).collect()
     }
 
@@ -266,10 +260,7 @@ impl Constraint {
     /// let constraints = Constraint::from_percentages([25, 50, 25]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_percentages<T>(percentages: T) -> Vec<Self>
-    where
-        T: IntoIterator<Item = u16>,
-    {
+    pub fn from_percentages<T: IntoIterator<Item = u16>>(percentages: T) -> Vec<Self> {
         percentages.into_iter().map(Self::Percentage).collect()
     }
 
@@ -284,10 +275,7 @@ impl Constraint {
     /// let constraints = Constraint::from_maxes([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_maxes<T>(maxes: T) -> Vec<Self>
-    where
-        T: IntoIterator<Item = u16>,
-    {
+    pub fn from_maxes<T: IntoIterator<Item = u16>>(maxes: T) -> Vec<Self> {
         maxes.into_iter().map(Self::Max).collect()
     }
 
@@ -302,10 +290,7 @@ impl Constraint {
     /// let constraints = Constraint::from_mins([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_mins<T>(mins: T) -> Vec<Self>
-    where
-        T: IntoIterator<Item = u16>,
-    {
+    pub fn from_mins<T: IntoIterator<Item = u16>>(mins: T) -> Vec<Self> {
         mins.into_iter().map(Self::Min).collect()
     }
 
@@ -320,10 +305,7 @@ impl Constraint {
     /// let constraints = Constraint::from_fills([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_fills<T>(proportional_factors: T) -> Vec<Self>
-    where
-        T: IntoIterator<Item = u16>,
-    {
+    pub fn from_fills<T: IntoIterator<Item = u16>>(proportional_factors: T) -> Vec<Self> {
         proportional_factors.into_iter().map(Self::Fill).collect()
     }
 }

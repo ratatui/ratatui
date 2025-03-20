@@ -214,7 +214,7 @@ impl fmt::Debug for Line<'_> {
     }
 }
 
-fn cow_to_spans<'a>(content: impl Into<Cow<'a, str>>) -> Vec<Span<'a>> {
+fn cow_to_spans<'a, T: Into<Cow<'a, str>>>(content: T) -> Vec<Span<'a>> {
     match content.into() {
         Cow::Borrowed(s) => s.lines().map(Span::raw).collect(),
         Cow::Owned(s) => s.lines().map(|v| Span::raw(v.to_string())).collect(),
@@ -243,10 +243,7 @@ impl<'a> Line<'a> {
     /// Line::raw(String::from("test content"));
     /// Line::raw(Cow::from("test content"));
     /// ```
-    pub fn raw<T>(content: T) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-    {
+    pub fn raw<T: Into<Cow<'a, str>>>(content: T) -> Self {
         Self {
             spans: cow_to_spans(content),
             ..Default::default()
@@ -278,11 +275,7 @@ impl<'a> Line<'a> {
     /// ```
     ///
     /// [`Color`]: crate::style::Color
-    pub fn styled<T, S>(content: T, style: S) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-        S: Into<Style>,
-    {
+    pub fn styled<T: Into<Cow<'a, str>>, S: Into<Style>>(content: T, style: S) -> Self {
         Self {
             spans: cow_to_spans(content),
             style: style.into(),
@@ -305,11 +298,7 @@ impl<'a> Line<'a> {
     /// let line = Line::default().spans([1, 2, 3].iter().map(|i| format!("Item {}", i)));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn spans<I>(mut self, spans: I) -> Self
-    where
-        I: IntoIterator,
-        I::Item: Into<Span<'a>>,
-    {
+    pub fn spans<I: IntoIterator<Item: Into<Span<'a>>>>(mut self, spans: I) -> Self {
         self.spans = spans.into_iter().map(Into::into).collect();
         self
     }
@@ -628,10 +617,7 @@ impl<'a> From<Line<'a>> for String {
     }
 }
 
-impl<'a, T> FromIterator<T> for Line<'a>
-where
-    T: Into<Span<'a>>,
-{
+impl<'a, T: Into<Span<'a>>> FromIterator<T> for Line<'a> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         Self::from(iter.into_iter().map(Into::into).collect::<Vec<_>>())
     }

@@ -147,10 +147,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new(Text::styled("Hello, world!", Style::default()));
     /// let paragraph = Paragraph::new(Line::from(vec!["Hello, ".into(), "world!".red()]));
     /// ```
-    pub fn new<T>(text: T) -> Self
-    where
-        T: Into<Text<'a>>,
-    {
+    pub fn new<T: Into<Text<'a>>>(text: T) -> Self {
         Self {
             block: None,
             style: Style::default(),

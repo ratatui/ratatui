@@ -122,11 +122,7 @@ impl<'a> Tabs<'a> {
     ///
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
-    pub fn new<Iter>(titles: Iter) -> Self
-    where
-        Iter: IntoIterator,
-        Iter::Item: Into<Line<'a>>,
-    {
+    pub fn new<Iter: IntoIterator<Item: Into<Line<'a>>>>(titles: Iter) -> Self {
         let titles = titles.into_iter().map(Into::into).collect_vec();
         let selected = if titles.is_empty() { None } else { Some(0) };
         Self {
@@ -167,11 +163,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::default().titles(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn titles<Iter>(mut self, titles: Iter) -> Self
-    where
-        Iter: IntoIterator,
-        Iter::Item: Into<Line<'a>>,
-    {
+    pub fn titles<Iter: IntoIterator<Item: Into<Line<'a>>>>(mut self, titles: Iter) -> Self {
         self.titles = titles.into_iter().map(Into::into).collect_vec();
         self.selected = if self.titles.is_empty() {
             None
@@ -269,10 +261,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider("-");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn divider<T>(mut self, divider: T) -> Self
-    where
-        T: Into<Span<'a>>,
-    {
+    pub fn divider<T: Into<Span<'a>>>(mut self, divider: T) -> Self {
         self.divider = divider.into();
         self
     }
@@ -296,11 +285,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding("", "");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn padding<T, U>(mut self, left: T, right: U) -> Self
-    where
-        T: Into<Line<'a>>,
-        U: Into<Line<'a>>,
-    {
+    pub fn padding<T: Into<Line<'a>>, U: Into<Line<'a>>>(mut self, left: T, right: U) -> Self {
         self.padding_left = left.into();
         self.padding_right = right.into();
         self
@@ -319,10 +304,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_left("->");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn padding_left<T>(mut self, padding: T) -> Self
-    where
-        T: Into<Line<'a>>,
-    {
+    pub fn padding_left<T: Into<Line<'a>>>(mut self, padding: T) -> Self {
         self.padding_left = padding.into();
         self
     }
@@ -340,10 +322,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_right("<-");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn padding_right<T>(mut self, padding: T) -> Self
-    where
-        T: Into<Line<'a>>,
-    {
+    pub fn padding_right<T: Into<Line<'a>>>(mut self, padding: T) -> Self {
         self.padding_left = padding.into();
         self
     }
@@ -433,10 +412,7 @@ impl Tabs<'_> {
     }
 }
 
-impl<'a, Item> FromIterator<Item> for Tabs<'a>
-where
-    Item: Into<Line<'a>>,
-{
+impl<'a, Item: Into<Line<'a>>> FromIterator<Item> for Tabs<'a> {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
         Self::new(iter)
     }

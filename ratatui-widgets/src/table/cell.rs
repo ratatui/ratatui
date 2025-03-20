@@ -73,10 +73,7 @@ impl<'a> Cell<'a> {
     /// ]));
     /// Cell::new(Text::from("a text"));
     /// ```
-    pub fn new<T>(content: T) -> Self
-    where
-        T: Into<Text<'a>>,
-    {
+    pub fn new<T: Into<Text<'a>>>(content: T) -> Self {
         Self {
             content: content.into(),
             style: Style::default(),
@@ -105,10 +102,7 @@ impl<'a> Cell<'a> {
     /// Cell::default().content(Text::from("a text"));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn content<T>(mut self, content: T) -> Self
-    where
-        T: Into<Text<'a>>,
-    {
+    pub fn content<T: Into<Text<'a>>>(mut self, content: T) -> Self {
         self.content = content.into();
         self
     }
@@ -159,10 +153,7 @@ impl Cell<'_> {
     }
 }
 
-impl<'a, T> From<T> for Cell<'a>
-where
-    T: Into<Text<'a>>,
-{
+impl<'a, T: Into<Text<'a>>> From<T> for Cell<'a> {
     fn from(content: T) -> Self {
         Self {
             content: content.into(),

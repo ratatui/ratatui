@@ -29,7 +29,7 @@ pub struct Masked<'a> {
 }
 
 impl<'a> Masked<'a> {
-    pub fn new(s: impl Into<Cow<'a, str>>, mask_char: char) -> Self {
+    pub fn new<T: Into<Cow<'a, str>>>(s: T, mask_char: char) -> Self {
         Self {
             inner: s.into(),
             mask_char,

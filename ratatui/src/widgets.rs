@@ -118,9 +118,12 @@ pub trait FrameExt {
     /// ```
     /// [`Layout`]: crate::layout::Layout
     #[allow(clippy::needless_pass_by_value)]
-    fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
-    where
-        W: StatefulWidgetRef;
+    fn render_stateful_widget_ref<W: StatefulWidgetRef>(
+        &mut self,
+        widget: W,
+        area: Rect,
+        state: &mut W::State,
+    );
 }
 
 #[cfg(feature = "unstable-widget-ref")]
@@ -131,10 +134,12 @@ impl FrameExt for ratatui_core::terminal::Frame<'_> {
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
-    where
-        W: StatefulWidgetRef,
-    {
+    fn render_stateful_widget_ref<W: StatefulWidgetRef>(
+        &mut self,
+        widget: W,
+        area: Rect,
+        state: &mut W::State,
+    ) {
         widget.render_ref(area, self.buffer_mut(), state);
     }
 }

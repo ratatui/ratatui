@@ -152,9 +152,7 @@ pub trait Backend {
     /// The content is provided as an iterator over `(u16, u16, &Cell)` tuples, where the first two
     /// elements represent the x and y coordinates, and the third element is a reference to the
     /// [`Cell`] to be drawn.
-    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
-    where
-        I: Iterator<Item = (u16, u16, &'a Cell)>;
+    fn draw<'a, I: Iterator<Item = (u16, u16, &'a Cell)>>(&mut self, content: I) -> io::Result<()>;
 
     /// Insert `n` line breaks to the terminal screen.
     ///

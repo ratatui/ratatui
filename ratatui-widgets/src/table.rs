@@ -312,13 +312,10 @@ impl<'a> Table<'a> {
     /// let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths);
     /// ```
-    pub fn new<R, C>(rows: R, widths: C) -> Self
-    where
-        R: IntoIterator,
-        R::Item: Into<Row<'a>>,
-        C: IntoIterator,
-        C::Item: Into<Constraint>,
-    {
+    pub fn new<R: IntoIterator<Item: Into<Row<'a>>>, C: IntoIterator<Item: Into<Constraint>>>(
+        rows: R,
+        widths: C,
+    ) -> Self {
         let widths = widths.into_iter().map(Into::into).collect_vec();
         ensure_percentages_less_than_100(&widths);
 
@@ -354,10 +351,7 @@ impl<'a> Table<'a> {
     /// let table = Table::default().rows(rows);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn rows<T>(mut self, rows: T) -> Self
-    where
-        T: IntoIterator<Item = Row<'a>>,
-    {
+    pub fn rows<T: IntoIterator<Item = Row<'a>>>(mut self, rows: T) -> Self {
         self.rows = rows.into_iter().collect();
         self
     }
@@ -433,11 +427,7 @@ impl<'a> Table<'a> {
     /// let table = Table::default().widths(widths);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn widths<I>(mut self, widths: I) -> Self
-    where
-        I: IntoIterator,
-        I::Item: Into<Constraint>,
-    {
+    pub fn widths<I: IntoIterator<Item: Into<Constraint>>>(mut self, widths: I) -> Self {
         let widths = widths.into_iter().map(Into::into).collect_vec();
         ensure_percentages_less_than_100(&widths);
         self.widths = widths;
@@ -1025,10 +1015,7 @@ impl Styled for Table<'_> {
     }
 }
 
-impl<'a, Item> FromIterator<Item> for Table<'a>
-where
-    Item: Into<Row<'a>>,
-{
+impl<'a, Item: Into<Row<'a>>> FromIterator<Item> for Table<'a> {
     /// Collects an iterator of rows into a table.
     ///
     /// When collecting from an iterator into a table, the user must provide the widths using
@@ -1866,16 +1853,13 @@ mod tests {
         }
 
         #[track_caller]
-        fn test_table_with_selection<'line, Lines>(
+        fn test_table_with_selection<'line, Lines: IntoIterator<Item: Into<Line<'line>>>>(
             highlight_spacing: HighlightSpacing,
             columns: u16,
             spacing: u16,
             selection: Option<usize>,
             expected: Lines,
-        ) where
-            Lines: IntoIterator,
-            Lines::Item: Into<Line<'line>>,
-        {
+        ) {
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
                 .highlight_spacing(highlight_spacing)

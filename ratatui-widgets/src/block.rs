@@ -221,10 +221,7 @@ impl<'a> Block<'a> {
     ///
     /// [Block example]: https://github.com/ratatui/ratatui/blob/main/examples/README.md#block
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title<T>(mut self, title: T) -> Self
-    where
-        T: Into<Title<'a>>,
-    {
+    pub fn title<T: Into<Title<'a>>>(mut self, title: T) -> Self {
         let title = title.into();
         let position = title.position;
         let mut content = title.content;

@@ -230,10 +230,7 @@ impl<'a> Text<'a> {
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
-    pub fn raw<T>(content: T) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-    {
+    pub fn raw<T: Into<Cow<'a, str>>>(content: T) -> Self {
         let lines: Vec<_> = match content.into() {
             Cow::Borrowed("") => vec![Line::from("")],
             Cow::Borrowed(s) => s.lines().map(Line::from).collect(),
@@ -262,11 +259,7 @@ impl<'a> Text<'a> {
     /// ```
     ///
     /// [`Color`]: crate::style::Color
-    pub fn styled<T, S>(content: T, style: S) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-        S: Into<Style>,
-    {
+    pub fn styled<T: Into<Cow<'a, str>>, S: Into<Style>>(content: T, style: S) -> Self {
         Self::raw(content).patch_style(style)
     }
 
@@ -628,10 +621,7 @@ impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     }
 }
 
-impl<'a, T> FromIterator<T> for Text<'a>
-where
-    T: Into<Line<'a>>,
-{
+impl<'a, T: Into<Line<'a>>> FromIterator<T> for Text<'a> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let lines = iter.into_iter().map(Into::into).collect();
         Self {
@@ -668,10 +658,7 @@ impl<'a> std::ops::AddAssign<Line<'a>> for Text<'a> {
     }
 }
 
-impl<'a, T> Extend<T> for Text<'a>
-where
-    T: Into<Line<'a>>,
-{
+impl<'a, T: Into<Line<'a>>> Extend<T> for Text<'a> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let lines = iter.into_iter().map(Into::into);
         self.lines.extend(lines);

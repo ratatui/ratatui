@@ -57,10 +57,7 @@ impl<'a> Axis<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title<T>(mut self, title: T) -> Self
-    where
-        T: Into<Line<'a>>,
-    {
+    pub fn title<T: Into<Line<'a>>>(mut self, title: T) -> Self {
         self.title = Some(title.into());
         self
     }
@@ -105,11 +102,7 @@ impl<'a> Axis<'a> {
     ///     .labels(["0".bold(), "25".into(), "50".bold()]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn labels<Labels>(mut self, labels: Labels) -> Self
-    where
-        Labels: IntoIterator,
-        Labels::Item: Into<Line<'a>>,
-    {
+    pub fn labels<Labels: IntoIterator<Item: Into<Line<'a>>>>(mut self, labels: Labels) -> Self {
         self.labels = labels.into_iter().map(Into::into).collect();
         self
     }
@@ -341,10 +334,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn name<S>(mut self, name: S) -> Self
-    where
-        S: Into<Line<'a>>,
-    {
+    pub fn name<S: Into<Line<'a>>>(mut self, name: S) -> Self {
         self.name = Some(name.into());
         self
     }

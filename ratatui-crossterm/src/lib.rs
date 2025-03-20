@@ -92,10 +92,7 @@ pub struct CrosstermBackend<W: Write> {
     writer: W,
 }
 
-impl<W> CrosstermBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> CrosstermBackend<W> {
     /// Creates a new `CrosstermBackend` with the given writer.
     ///
     /// Most applications will use either [`stdout`](std::io::stdout) or
@@ -138,10 +135,7 @@ where
     }
 }
 
-impl<W> Write for CrosstermBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> Write for CrosstermBackend<W> {
     /// Writes a buffer of bytes to the underlying buffer.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.writer.write(buf)
@@ -153,14 +147,8 @@ where
     }
 }
 
-impl<W> Backend for CrosstermBackend<W>
-where
-    W: Write,
-{
-    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
-    where
-        I: Iterator<Item = (u16, u16, &'a Cell)>,
-    {
+impl<W: Write> Backend for CrosstermBackend<W> {
+    fn draw<'a, I: Iterator<Item = (u16, u16, &'a Cell)>>(&mut self, content: I) -> io::Result<()> {
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         #[cfg(feature = "underline-color")]
@@ -393,10 +381,7 @@ struct ModifierDiff {
 }
 
 impl ModifierDiff {
-    fn queue<W>(self, mut w: W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
+    fn queue<W: io::Write>(self, mut w: W) -> io::Result<()> {
         //use crossterm::Attribute;
         let removed = self.from - self.to;
         if removed.contains(Modifier::REVERSED) {

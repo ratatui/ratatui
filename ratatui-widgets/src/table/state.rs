@@ -105,10 +105,7 @@ impl TableState {
     /// let state = TableState::new().with_selected(Some(1));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_selected<T>(mut self, selected: T) -> Self
-    where
-        T: Into<Option<usize>>,
-    {
+    pub fn with_selected<T: Into<Option<usize>>>(mut self, selected: T) -> Self {
         self.selected = selected.into();
         self
     }
@@ -124,10 +121,7 @@ impl TableState {
     /// let state = TableState::new().with_selected_column(Some(1));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_selected_column<T>(mut self, selected: T) -> Self
-    where
-        T: Into<Option<usize>>,
-    {
+    pub fn with_selected_column<T: Into<Option<usize>>>(mut self, selected: T) -> Self {
         self.selected_column = selected.into();
         self
     }
@@ -143,10 +137,7 @@ impl TableState {
     /// let state = TableState::new().with_selected_cell(Some((1, 5)));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_selected_cell<T>(mut self, selected: T) -> Self
-    where
-        T: Into<Option<(usize, usize)>>,
-    {
+    pub fn with_selected_cell<T: Into<Option<(usize, usize)>>>(mut self, selected: T) -> Self {
         if let Some((r, c)) = selected.into() {
             self.selected = Some(r);
             self.selected_column = Some(c);

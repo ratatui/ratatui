@@ -437,7 +437,7 @@ impl Backend for TestBackend {
 /// Append the provided cells to the bottom of a scrollback buffer. The number of cells must be a
 /// multiple of the buffer's width. If the scrollback buffer ends up larger than 65535 lines tall,
 /// then lines will be removed from the top to get it down to size.
-fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item = Cell>) {
+fn append_to_scrollback<T: IntoIterator<Item = Cell>>(scrollback: &mut Buffer, cells: T) {
     scrollback.content.extend(cells);
     let width = scrollback.area.width as usize;
     let new_height = (scrollback.content.len() / width).min(u16::MAX as usize);

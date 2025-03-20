@@ -127,10 +127,7 @@ impl<'a> Span<'a> {
     /// Span::raw("test content");
     /// Span::raw(String::from("test content"));
     /// ```
-    pub fn raw<T>(content: T) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-    {
+    pub fn raw<T: Into<Cow<'a, str>>>(content: T) -> Self {
         Self {
             content: content.into(),
             style: Style::default(),
@@ -157,11 +154,7 @@ impl<'a> Span<'a> {
     /// ```
     ///
     /// [`Color`]: crate::style::Color
-    pub fn styled<T, S>(content: T, style: S) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-        S: Into<Style>,
-    {
+    pub fn styled<T: Into<Cow<'a, str>>, S: Into<Style>>(content: T, style: S) -> Self {
         Self {
             content: content.into(),
             style: style.into(),
@@ -183,10 +176,7 @@ impl<'a> Span<'a> {
     /// let mut span = Span::default().content("content");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn content<T>(mut self, content: T) -> Self
-    where
-        T: Into<Cow<'a, str>>,
-    {
+    pub fn content<T: Into<Cow<'a, str>>>(mut self, content: T) -> Self {
         self.content = content.into();
         self
     }
@@ -375,10 +365,7 @@ impl<'a> Span<'a> {
     }
 }
 
-impl<'a, T> From<T> for Span<'a>
-where
-    T: Into<Cow<'a, str>>,
-{
+impl<'a, T: Into<Cow<'a, str>>> From<T> for Span<'a> {
     fn from(s: T) -> Self {
         Span::raw(s.into())
     }

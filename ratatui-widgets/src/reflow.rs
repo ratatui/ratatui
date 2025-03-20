@@ -26,14 +26,14 @@ pub struct WrappedLine<'lend, 'text> {
 
 /// A state machine that wraps lines on word boundaries.
 #[derive(Debug, Default, Clone)]
-pub struct WordWrapper<'a, O, I>
-where
+pub struct WordWrapper<
+    'a,
     // Outer iterator providing the individual lines
     O: Iterator<Item = (I, Alignment)>,
     // Inner iterator providing the styled symbols of a line Each line consists of an alignment and
     // a series of symbols
     I: Iterator<Item = StyledGrapheme<'a>>,
-{
+> {
     /// The given, unprocessed lines
     input_lines: O,
     max_line_width: u16,
@@ -49,10 +49,8 @@ where
     pending_line_pool: Vec<Vec<StyledGrapheme<'a>>>,
 }
 
-impl<'a, O, I> WordWrapper<'a, O, I>
-where
-    O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+impl<'a, O: Iterator<Item = (I, Alignment)>, I: Iterator<Item = StyledGrapheme<'a>>>
+    WordWrapper<'a, O, I>
 {
     /// Create a new `WordWrapper` with the given lines and maximum line width.
     pub const fn new(lines: O, max_line_width: u16, trim: bool) -> Self {
@@ -72,7 +70,7 @@ where
 
     /// Split an input line (`line_symbols`) into wrapped lines
     /// and cache them to be emitted later
-    fn process_input(&mut self, line_symbols: impl IntoIterator<Item = StyledGrapheme<'a>>) {
+    fn process_input<T: IntoIterator<Item = StyledGrapheme<'a>>>(&mut self, line_symbols: T) {
         let mut pending_line = self.pending_line_pool.pop().unwrap_or_default();
         let mut line_width = 0;
         let mut word_width = 0;
@@ -197,10 +195,8 @@ where
     }
 }
 
-impl<'a, O, I> LineComposer<'a> for WordWrapper<'a, O, I>
-where
-    O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+impl<'a, O: Iterator<Item = (I, Alignment)>, I: Iterator<Item = StyledGrapheme<'a>>>
+    LineComposer<'a> for WordWrapper<'a, O, I>
 {
     #[allow(clippy::too_many_lines)]
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
@@ -234,14 +230,14 @@ where
 
 /// A state machine that truncates overhanging lines.
 #[derive(Debug, Default, Clone)]
-pub struct LineTruncator<'a, O, I>
-where
+pub struct LineTruncator<
+    'a,
     // Outer iterator providing the individual lines
     O: Iterator<Item = (I, Alignment)>,
     // Inner iterator providing the styled symbols of a line Each line consists of an alignment and
     // a series of symbols
     I: Iterator<Item = StyledGrapheme<'a>>,
-{
+> {
     /// The given, unprocessed lines
     input_lines: O,
     max_line_width: u16,
@@ -250,10 +246,8 @@ where
     horizontal_offset: u16,
 }
 
-impl<'a, O, I> LineTruncator<'a, O, I>
-where
-    O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+impl<'a, O: Iterator<Item = (I, Alignment)>, I: Iterator<Item = StyledGrapheme<'a>>>
+    LineTruncator<'a, O, I>
 {
     /// Create a new `LineTruncator` with the given lines and maximum line width.
     pub const fn new(lines: O, max_line_width: u16) -> Self {
@@ -271,10 +265,8 @@ where
     }
 }
 
-impl<'a, O, I> LineComposer<'a> for LineTruncator<'a, O, I>
-where
-    O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+impl<'a, O: Iterator<Item = (I, Alignment)>, I: Iterator<Item = StyledGrapheme<'a>>>
+    LineComposer<'a> for LineTruncator<'a, O, I>
 {
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
         if self.max_line_width == 0 {
@@ -362,9 +354,9 @@ mod tests {
         LineTruncator,
     }
 
-    fn run_composer<'a>(
+    fn run_composer<'a, T: Into<Text<'a>>>(
         which: Composer,
-        text: impl Into<Text<'a>>,
+        text: T,
         text_area_width: u16,
     ) -> (Vec<String>, Vec<u16>, Vec<Alignment>) {
         let text = text.into();
