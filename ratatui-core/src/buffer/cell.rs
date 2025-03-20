@@ -1,6 +1,7 @@
 use compact_str::CompactString;
 
 use crate::style::{Color, Modifier, Style};
+use crate::symbols::merge::merge_symbol;
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -59,6 +60,19 @@ impl Cell {
     #[must_use]
     pub fn symbol(&self) -> &str {
         self.symbol.as_str()
+    }
+
+    /// Merge the symbol of the cell with the one already on the cell.
+    pub fn merge_symbol(&mut self, symbol: &str) -> &mut Self {
+        match merge_symbol(self.symbol.as_str(), symbol) {
+            None => {
+                self.symbol = CompactString::new(symbol);
+            }
+            Some(new_symbol) => {
+                self.symbol = CompactString::new(new_symbol);
+            }
+        }
+        self
     }
 
     /// Sets the symbol of the cell.
