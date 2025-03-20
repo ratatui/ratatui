@@ -637,6 +637,8 @@ impl Block<'_> {
 
     fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::LEFT) {
+            // First and last element of the line are not drawn
+            // to avoid wrong merging with the corner.
             for y in area.top() + 1..area.bottom() - 1 {
                 buf[(area.left(), y)]
                     .merge_symbol(self.border_set.vertical_left)
