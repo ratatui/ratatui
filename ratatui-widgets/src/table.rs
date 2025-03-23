@@ -268,7 +268,7 @@ pub struct Table<'a> {
     flex: Flex,
 
     /// How many items to try to keep visible before and after the selected item, the List widget
-    /// also supports such funtionality, it is 0 by default
+    /// also supports such functionality, it is 0 by default
     scroll_padding: usize,
 }
 
@@ -2380,7 +2380,7 @@ mod tests {
             &mut state,
         );
 
-        assert_eq!(expected, buf)
+        assert_eq!(expected, buf);
     }
 
     /// If there isn't enough room for the selected item and the requested padding the table can
