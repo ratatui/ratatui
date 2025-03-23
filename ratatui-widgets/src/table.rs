@@ -267,7 +267,8 @@ pub struct Table<'a> {
     /// Controls how to distribute extra space among the columns
     flex: Flex,
 
-    /// How many items to try to keep visible before and after the selected item, the List widget also supports such funtionality, it is 0 by default
+    /// How many items to try to keep visible before and after the selected item, the List widget
+    /// also supports such funtionality, it is 0 by default
     scroll_padding: usize,
 }
 
@@ -722,7 +723,8 @@ impl<'a> Table<'a> {
         self
     }
 
-    /// Sets the number of items around the currently selected/highligted item that should be kept visible
+    /// Sets the number of items around the currently selected/highligted item that should be kept
+    /// visible
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -2381,9 +2383,9 @@ mod tests {
         assert_eq!(expected, buf)
     }
 
-    /// If there isn't enough room for the selected item and the requested padding the table can jump
-    /// up and down every frame if something isn't done about it. This code tests to make sure that
-    /// isn't currently happening
+    /// If there isn't enough room for the selected item and the requested padding the table can
+    /// jump up and down every frame if something isn't done about it. This code tests to make
+    /// sure that isn't currently happening
     #[test]
     fn padding_flicker() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
