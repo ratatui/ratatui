@@ -14,6 +14,7 @@ This is a quick summary of the sections below:
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
+  - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -77,6 +78,26 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased (0.30.0)
+
+### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
+
+[#1735]: https://github.com/ratatui/ratatui/pull/1691
+
+The `Alignment` enum has been renamed to `HorizontalAlignment` to better reflect its purpose. A type
+alias has been added to maintain backwards compatibility, however there are some cases where type
+aliases are not enough to maintain backwards compatibility. E.g. when using glob imports to import
+all the enum variants.
+
+We don't expect to remove or deprecate the type alias in the near future, but it is recommended to
+update your imports to use the new name.
+
+```diff
+- use ratatui::layout::Alignment;
++ use ratatui::layout::HorizontalAlignment;
+
+- use Alignment::*;
++ use HorizontalAlignment::*;
+```
 
 ### `List::highlight_symbol` accepts `Into<Line>` ([#1595])
 

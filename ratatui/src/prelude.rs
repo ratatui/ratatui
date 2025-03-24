@@ -38,7 +38,8 @@ pub use crate::backend::{FromTermion, IntoTermion, TermionBackend};
 pub use crate::backend::{FromTermwiz, IntoTermwiz, TermwizBackend};
 pub use crate::buffer::{self, Buffer};
 pub use crate::layout::{
-    self, Alignment, Constraint, Direction, Layout, Margin, Position, Rect, Size,
+    self, Alignment, Constraint, Direction, HorizontalAlignment, Layout, Margin, Position, Rect,
+    Size, VerticalAlignment,
 };
 pub use crate::style::{self, Color, Modifier, Style, Stylize};
 pub use crate::text::{self, Line, Masked, Span, Text};
