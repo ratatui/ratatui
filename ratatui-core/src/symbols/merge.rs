@@ -1,7 +1,8 @@
 use crate::symbols::line::{BorderSymbol, LineStyle};
 
 pub const fn merge_border(prev: BorderSymbol, next: BorderSymbol) -> BorderSymbol {
-    let mut res = BorderSymbol::new(None, None, None, None);
+    use LineStyle::*;
+    let mut res = BorderSymbol::new(Nothing, Nothing, Nothing, Nothing);
 
     res.right = merge_line_style(prev.right, next.right);
     res.up = merge_line_style(prev.up, next.up);
@@ -11,23 +12,19 @@ pub const fn merge_border(prev: BorderSymbol, next: BorderSymbol) -> BorderSymbo
     res
 }
 
-pub const fn merge_line_style(
-    prev: Option<LineStyle>,
-    next: Option<LineStyle>,
-) -> Option<LineStyle> {
+pub const fn merge_line_style(prev: LineStyle, next: LineStyle) -> LineStyle {
+    use LineStyle::*;
     match (prev, next) {
-        (None, None) => None,
-        (Some(s), None) | (None, Some(s)) => Some(s),
-        (Some(LineStyle::Thick), Some(LineStyle::Normal | LineStyle::Thick))
-        | (Some(LineStyle::Normal), Some(LineStyle::Thick)) => Some(LineStyle::Thick),
-        (Some(LineStyle::Double), Some(LineStyle::Normal | LineStyle::Double))
-        | (Some(LineStyle::Normal), Some(LineStyle::Double)) => Some(LineStyle::Double),
-        (Some(LineStyle::Normal), Some(LineStyle::Normal)) => Some(LineStyle::Normal),
-        (Some(LineStyle::DoubleDash), Some(LineStyle::DoubleDash)) => Some(LineStyle::DoubleDash),
-        (Some(LineStyle::TripleDash), Some(LineStyle::TripleDash)) => Some(LineStyle::TripleDash),
-        (Some(LineStyle::QuadrupleDash), Some(LineStyle::QuadrupleDash)) => {
-            Some(LineStyle::QuadrupleDash)
-        }
-        (_, Some(next)) => Some(next),
+        (Nothing, Nothing) => Nothing,
+        (s, Nothing) | (Nothing, s) => s,
+        (LineStyle::Thick, LineStyle::Plain | LineStyle::Thick)
+        | (LineStyle::Plain, LineStyle::Thick) => LineStyle::Thick,
+        (LineStyle::Double, LineStyle::Plain | LineStyle::Double)
+        | (LineStyle::Plain, LineStyle::Double) => LineStyle::Double,
+        (LineStyle::Plain, LineStyle::Plain) => LineStyle::Plain,
+        (LineStyle::DoubleDash, LineStyle::DoubleDash) => LineStyle::DoubleDash,
+        (LineStyle::TripleDash, LineStyle::TripleDash) => LineStyle::TripleDash,
+        (LineStyle::QuadrupleDash, LineStyle::QuadrupleDash) => LineStyle::QuadrupleDash,
+        (_, next) => next,
     }
 }
