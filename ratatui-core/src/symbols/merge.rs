@@ -1,7 +1,7 @@
 use crate::symbols::line::{BorderSymbol, LineStyle};
 
 pub const fn merge_border(prev: BorderSymbol, next: BorderSymbol) -> BorderSymbol {
-    use LineStyle::*;
+    use LineStyle::Nothing;
     let mut res = BorderSymbol::new(Nothing, Nothing, Nothing, Nothing);
 
     res.right = merge_line_style(prev.right, next.right);
@@ -13,18 +13,21 @@ pub const fn merge_border(prev: BorderSymbol, next: BorderSymbol) -> BorderSymbo
 }
 
 pub const fn merge_line_style(prev: LineStyle, next: LineStyle) -> LineStyle {
-    use LineStyle::*;
+    use LineStyle::{
+        Double, DoubleDash, Nothing, Plain, QuadrupleDash, QuadrupleDashThick, Thick, TripleDash,
+        TripleDashThick,
+    };
     match (prev, next) {
         (Nothing, Nothing) => Nothing,
         (s, Nothing) | (Nothing, s) => s,
-        (LineStyle::Thick, LineStyle::Plain | LineStyle::Thick)
-        | (LineStyle::Plain, LineStyle::Thick) => LineStyle::Thick,
-        (LineStyle::Double, LineStyle::Plain | LineStyle::Double)
-        | (LineStyle::Plain, LineStyle::Double) => LineStyle::Double,
-        (LineStyle::Plain, LineStyle::Plain) => LineStyle::Plain,
-        (LineStyle::DoubleDash, LineStyle::DoubleDash) => LineStyle::DoubleDash,
-        (LineStyle::TripleDash, LineStyle::TripleDash) => LineStyle::TripleDash,
-        (LineStyle::QuadrupleDash, LineStyle::QuadrupleDash) => LineStyle::QuadrupleDash,
+        (Thick, Plain | Thick) | (Plain, Thick) => Thick,
+        (Double, Plain | Double) | (Plain, Double) => Double,
+        (Plain, Plain) => Plain,
+        (DoubleDash, DoubleDash) => DoubleDash,
+        (TripleDash, TripleDash) => TripleDash,
+        (TripleDashThick, TripleDashThick) => TripleDashThick,
+        (QuadrupleDash, QuadrupleDash) => QuadrupleDash,
+        (QuadrupleDashThick, QuadrupleDashThick) => QuadrupleDashThick,
         (_, next) => next,
     }
 }
