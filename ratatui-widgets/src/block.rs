@@ -900,6 +900,7 @@ impl Styled for Block<'_> {
 
 #[cfg(test)]
 mod tests {
+    use ratatui_core::layout::HorizontalAlignment;
     use ratatui_core::style::{Color, Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;
@@ -1222,7 +1223,7 @@ mod tests {
 
     #[test]
     fn title() {
-        use Alignment::*;
+        use HorizontalAlignment::*;
         use Position::*;
         let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
         #[allow(deprecated)] // until Title is removed
