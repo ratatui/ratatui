@@ -148,7 +148,7 @@ impl<'a> BarChart<'a> {
     /// Creates a new `BarChart` widget with a vertical direction.
     ///
     /// This function is equivalent to `BarChart::new()`.
-    pub fn vertical(bars: impl Into<Vec<Bar<'a>>>) -> Self {
+    pub fn vertical<T: Into<Vec<Bar<'a>>>>(bars: T) -> Self {
         Self::new(bars)
     }
 
@@ -161,7 +161,7 @@ impl<'a> BarChart<'a> {
     ///
     /// BarChart::horizontal(vec![Bar::with_label("A", 10), Bar::with_label("B", 20)]);
     /// ```
-    pub fn horizontal(bars: impl Into<Vec<Bar<'a>>>) -> Self {
+    pub fn horizontal<T: Into<Vec<Bar<'a>>>>(bars: T) -> Self {
         Self {
             data: vec![BarGroup::new(bars.into())],
             direction: Direction::Horizontal,
@@ -187,7 +187,7 @@ impl<'a> BarChart<'a> {
     ///     ]));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> Self {
+    pub fn data<T: Into<BarGroup<'a>>>(mut self, data: T) -> Self {
         let group: BarGroup = data.into();
         if !group.bars.is_empty() {
             self.data.push(group);

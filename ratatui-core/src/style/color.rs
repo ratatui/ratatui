@@ -141,10 +141,7 @@ impl Color {
 #[cfg(feature = "serde")]
 impl serde::Serialize for Color {
     /// This utilises the [`fmt::Display`] implementation for serialization.
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&self.to_string())
     }
 }
@@ -202,10 +199,7 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// # Ok(())
     /// # }
     /// ```
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         /// Colors are currently serialized with the `Display` implementation, so
         /// RGB values are serialized via hex, for example "#FFFFFF".
         ///
