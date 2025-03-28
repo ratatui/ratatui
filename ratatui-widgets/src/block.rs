@@ -11,6 +11,7 @@ use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols::border;
+use ratatui_core::symbols::merge::MergeStyle;
 use ratatui_core::text::Line;
 use ratatui_core::widgets::Widget;
 
@@ -124,6 +125,8 @@ pub struct Block<'a> {
     style: Style,
     /// Block padding
     padding: Padding,
+    /// Merging Style
+    merge_style: Option<MergeStyle>,
 }
 
 impl<'a> Block<'a> {
@@ -139,6 +142,7 @@ impl<'a> Block<'a> {
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
             padding: Padding::ZERO,
+            merge_style: None,
         }
     }
 
@@ -528,6 +532,13 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// TODO
+    /// Nice small example with two block merging, two block not merging
+    pub fn merge_style(mut self, merge_style: MergeStyle) -> Self {
+        self.merge_style = Some(merge_style);
+        self
+    }
+
     /// Compute the inner area of a block based on its border visibility rules.
     ///
     /// # Examples
@@ -637,22 +648,44 @@ impl Block<'_> {
 
     fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::LEFT) {
-            // First and last element of the line are not drawn
-            // to avoid wrong merging with the corner.
-            for y in area.top() + 1..area.bottom() - 1 {
-                buf[(area.left(), y)]
-                    .merge_symbol(self.border_set.vertical_left)
-                    .set_style(self.border_style);
+            match &self.merge_style {
+                None => {
+                    for y in area.top()..area.bottom() {
+                        buf[(area.left(), y)]
+                            .set_symbol(self.border_set.vertical_left)
+                            .set_style(self.border_style);
+                    }
+                }
+                Some(merge_style) => {
+                    // First and last element of the line are not drawn
+                    // to avoid wrong merging with the corner.
+                    for y in area.top() + 1..area.bottom() - 1 {
+                        buf[(area.left(), y)]
+                            .merge_symbol(self.border_set.vertical_left, merge_style)
+                            .set_style(self.border_style);
+                    }
+                }
             }
         }
     }
 
     fn render_top_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::TOP) {
-            for x in area.left() + 1..area.right() - 1 {
-                buf[(x, area.top())]
-                    .merge_symbol(self.border_set.horizontal_top)
-                    .set_style(self.border_style);
+            match &self.merge_style {
+                None => {
+                    for x in area.left()..area.right() {
+                        buf[(x, area.top())]
+                            .set_symbol(self.border_set.horizontal_top)
+                            .set_style(self.border_style);
+                    }
+                }
+                Some(merge_style) => {
+                    for x in area.left() + 1..area.right() - 1 {
+                        buf[(x, area.top())]
+                            .merge_symbol(self.border_set.horizontal_top, merge_style)
+                            .set_style(self.border_style);
+                    }
+                }
             }
         }
     }
@@ -660,10 +693,21 @@ impl Block<'_> {
     fn render_right_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::RIGHT) {
             let x = area.right() - 1;
-            for y in area.top() + 1..area.bottom() - 1 {
-                buf[(x, y)]
-                    .merge_symbol(self.border_set.vertical_right)
-                    .set_style(self.border_style);
+            match &self.merge_style {
+                None => {
+                    for y in area.top()..area.bottom() {
+                        buf[(x, y)]
+                            .set_symbol(self.border_set.vertical_right)
+                            .set_style(self.border_style);
+                    }
+                }
+                Some(merge_style) => {
+                    for y in area.top() + 1..area.bottom() - 1 {
+                        buf[(x, y)]
+                            .merge_symbol(self.border_set.vertical_right, merge_style)
+                            .set_style(self.border_style);
+                    }
+                }
             }
         }
     }
@@ -671,43 +715,86 @@ impl Block<'_> {
     fn render_bottom_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::BOTTOM) {
             let y = area.bottom() - 1;
-            for x in area.left() + 1..area.right() - 1 {
-                buf[(x, y)]
-                    .merge_symbol(self.border_set.horizontal_bottom)
-                    .set_style(self.border_style);
+            match &self.merge_style {
+                None => {
+                    for x in area.left()..area.right() {
+                        buf[(x, y)]
+                            .set_symbol(self.border_set.horizontal_bottom)
+                            .set_style(self.border_style);
+                    }
+                }
+                Some(merge_style) => {
+                    for x in area.left() + 1..area.right() - 1 {
+                        buf[(x, y)]
+                            .merge_symbol(self.border_set.horizontal_bottom, merge_style)
+                            .set_style(self.border_style);
+                    }
+                }
             }
         }
     }
 
     fn render_bottom_right_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
-            buf[(area.right() - 1, area.bottom() - 1)]
-                .merge_symbol(self.border_set.bottom_right)
-                .set_style(self.border_style);
+            match &self.merge_style {
+                None => {
+                    buf[(area.right() - 1, area.bottom() - 1)]
+                        .set_symbol(self.border_set.bottom_right)
+                        .set_style(self.border_style);
+                }
+                Some(merge_style) => {
+                    buf[(area.right() - 1, area.bottom() - 1)]
+                        .merge_symbol(self.border_set.bottom_right, merge_style)
+                        .set_style(self.border_style);
+                }
+            }
         }
     }
 
     fn render_top_right_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::RIGHT | Borders::TOP) {
-            buf[(area.right() - 1, area.top())]
-                .merge_symbol(self.border_set.top_right)
-                .set_style(self.border_style);
+            match &self.merge_style {
+                None => buf[(area.right() - 1, area.top())]
+                    .set_symbol(self.border_set.top_right)
+                    .set_style(self.border_style),
+                Some(merge_style) => buf[(area.right() - 1, area.top())]
+                    .merge_symbol(self.border_set.top_right, merge_style)
+                    .set_style(self.border_style),
+            };
         }
     }
 
     fn render_bottom_left_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
-            buf[(area.left(), area.bottom() - 1)]
-                .merge_symbol(self.border_set.bottom_left)
-                .set_style(self.border_style);
+            match &self.merge_style {
+                None => {
+                    buf[(area.left(), area.bottom() - 1)]
+                        .set_symbol(self.border_set.bottom_left)
+                        .set_style(self.border_style);
+                }
+                Some(merge_style) => {
+                    buf[(area.left(), area.bottom() - 1)]
+                        .merge_symbol(self.border_set.bottom_left, merge_style)
+                        .set_style(self.border_style);
+                }
+            }
         }
     }
 
     fn render_top_left_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::LEFT | Borders::TOP) {
-            buf[(area.left(), area.top())]
-                .merge_symbol(self.border_set.top_left)
-                .set_style(self.border_style);
+            match &self.merge_style {
+                None => {
+                    buf[(area.left(), area.top())]
+                        .set_symbol(self.border_set.top_left)
+                        .set_style(self.border_style);
+                }
+                Some(merge_style) => {
+                    buf[(area.left(), area.top())]
+                        .merge_symbol(self.border_set.top_left, merge_style)
+                        .set_style(self.border_style);
+                }
+            }
         }
     }
 
@@ -1147,6 +1234,7 @@ mod tests {
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
                 padding: Padding::ZERO,
+                merge_style: None,
             }
         );
     }
