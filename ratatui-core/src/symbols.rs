@@ -9,5 +9,6 @@ pub mod braille;
 pub mod half_block;
 pub mod line;
 pub mod marker;
+pub mod merge;
 pub mod scrollbar;
 pub mod shade;

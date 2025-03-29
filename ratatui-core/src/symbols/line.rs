@@ -58,6 +58,212 @@ pub const CROSS: &str = "┼";
 pub const DOUBLE_CROSS: &str = "╬";
 pub const THICK_CROSS: &str = "╋";
 
+pub enum LineStyle {
+    Nothing,
+    Plain,
+    Rounded,
+    Double,
+    Thick,
+    DoubleDash,
+    TripleDash,
+    TripleDashThick,
+    QuadrupleDash,
+    QuadrupleDashThick,
+}
+
+pub struct BorderSymbol {
+    pub right: LineStyle,
+    pub up: LineStyle,
+    pub left: LineStyle,
+    pub down: LineStyle,
+}
+
+macro_rules! define_symbols {
+    (
+        $( $symbol:expr => ($right:ident, $up:ident, $left:ident, $down:ident) ),* $(,)?
+    ) => {
+
+        impl TryFrom<&str> for BorderSymbol {
+            type Error = ();
+            fn try_from(value: &str) -> Result<Self, Self::Error> {
+                use LineStyle::*;
+                match value {
+                    $( $symbol => Ok(Self::new($right, $up, $left, $down)) ),* ,
+                    _ => Err(()),
+                }
+            }
+        }
+
+        impl TryInto<&'static str> for BorderSymbol {
+            type Error = ();
+            fn try_into(self) -> Result<&'static str, Self::Error> {
+                use LineStyle::*;
+                match (self.right, self.up, self.left, self.down) {
+                    $( ($right, $up, $left, $down) => Ok($symbol) ),* ,
+                    _ => Err(()),
+                }
+            }
+        }
+    };
+}
+
+define_symbols!(
+    "─" => (Plain, Nothing, Plain, Nothing),
+    "━" => (Thick, Nothing, Thick, Nothing),
+    "│" => (Nothing, Plain, Nothing, Plain),
+    "┃" => (Nothing, Thick, Nothing, Thick),
+
+    "┄" => (TripleDash, Nothing, TripleDash, Nothing),
+    "┅" => (TripleDashThick, Nothing, TripleDashThick, Nothing),
+    "┆" => (Nothing, TripleDash, Nothing, TripleDash),
+    "┇" => (Nothing, TripleDashThick, Nothing, TripleDashThick),
+    "┈" => (QuadrupleDash, Nothing, QuadrupleDash, Nothing),
+    "┉" => (QuadrupleDashThick, Nothing, QuadrupleDashThick, Nothing),
+    "┊" => (Nothing, QuadrupleDash, Nothing, QuadrupleDash),
+    "┋" => (Nothing, QuadrupleDashThick, Nothing, QuadrupleDashThick),
+
+    "┘" => (Nothing, Plain, Plain, Nothing),
+    "┚" => (Nothing, Thick, Plain, Nothing),
+    "┙" => (Nothing, Plain, Thick, Nothing),
+    "┛" => (Nothing, Thick, Thick, Nothing),
+
+    "┐" => (Nothing, Nothing, Plain, Plain),
+    "┒" => (Nothing, Nothing, Plain, Thick),
+    "┑" => (Nothing, Nothing, Thick, Plain),
+    "┓" => (Nothing, Nothing, Thick, Thick),
+
+    "┌" => (Plain, Nothing, Nothing, Plain),
+    "┍" => (Thick, Nothing, Nothing, Plain),
+    "┎" => (Plain, Nothing, Nothing, Thick),
+    "┏" => (Thick, Nothing, Nothing, Thick),
+
+    "└" => (Plain, Plain, Nothing, Nothing),
+    "┕" => (Thick, Plain, Nothing, Nothing),
+    "┖" => (Plain, Thick, Nothing, Nothing),
+    "┗" => (Thick, Thick, Nothing, Nothing),
+
+    "┴" => (Plain, Plain, Plain, Nothing),
+    "┸" => (Plain, Thick, Plain, Nothing),
+    "┵" => (Plain, Plain, Thick, Nothing),
+    "┶" => (Thick, Plain, Plain, Nothing),
+    "┺" => (Thick, Thick, Plain, Nothing),
+    "┹" => (Plain, Thick, Thick, Nothing),
+    "┷" => (Thick, Plain, Thick, Nothing),
+
+    "┬" => (Plain, Nothing, Plain, Plain),
+    "┮" => (Thick, Nothing, Plain, Plain),
+    "┰" => (Plain, Nothing, Plain, Thick),
+    "┭" => (Plain, Nothing, Thick, Plain),
+    "┱" => (Plain, Nothing, Thick, Thick),
+    "┲" => (Thick, Nothing, Plain, Thick),
+    "┯" => (Thick, Nothing, Thick, Plain),
+    "┳" => (Thick, Nothing, Thick, Thick),
+
+    "┤" => (Nothing, Plain, Plain, Plain),
+    "┦" => (Nothing, Thick, Plain, Plain),
+    "┥" => (Nothing, Plain, Thick, Plain),
+    "┧" => (Nothing, Plain, Plain, Thick),
+    "┨" => (Nothing, Thick, Plain, Thick),
+    "┪" => (Nothing, Plain, Thick, Thick),
+    "┩" => (Nothing, Thick, Thick, Plain),
+    "┫" => (Nothing, Thick, Thick, Thick),
+
+    "├" => (Plain, Plain, Nothing, Plain),
+    "┞" => (Plain, Thick, Nothing, Plain),
+    "┝" => (Thick, Plain, Nothing, Plain),
+    "┟" => (Plain, Plain, Nothing, Thick),
+    "┡" => (Thick, Thick, Nothing, Plain),
+    "┢" => (Thick, Plain, Nothing, Thick),
+    "┠" => (Plain, Thick, Nothing, Thick),
+    "┣" => (Thick, Thick, Nothing, Thick),
+
+    "┽" => (Plain, Plain, Thick, Plain),
+    "┼" => (Plain, Plain, Plain, Plain),
+    "╁" => (Plain, Plain, Plain, Thick),
+    "╅" => (Plain, Plain, Thick, Thick),
+    "╃" => (Plain, Thick, Thick, Plain),
+    "╀" => (Plain, Thick, Plain, Plain),
+    "╂" => (Plain, Thick, Plain, Thick),
+    "┾" => (Thick, Plain, Plain, Plain),
+    "╆" => (Thick, Plain, Plain, Thick),
+    "┿" => (Thick, Plain, Thick, Plain),
+    "╄" => (Thick, Thick, Plain, Plain),
+    "╈" => (Thick, Plain, Thick, Thick),
+    "╊" => (Thick, Thick, Plain, Thick),
+    "╉" => (Plain, Thick, Thick, Thick),
+    "┻" => (Thick, Thick, Thick, Nothing),
+    "╇" => (Thick, Thick, Thick, Plain),
+    "╋" => (Thick, Thick, Thick, Thick),
+
+    "═" => (Double, Nothing, Double, Nothing),
+    "║" => (Nothing, Double, Nothing, Double),
+
+    "╓" => (Plain, Nothing, Nothing, Double),
+    "╒" => (Double, Nothing, Nothing, Plain),
+    "╔" => (Double, Nothing, Nothing, Double),
+
+    "╕" => (Nothing, Nothing, Double, Plain),
+    "╖" => (Nothing, Nothing, Plain, Double),
+    "╗" => (Nothing, Nothing, Double, Double),
+
+    "╘" => (Double, Plain, Nothing, Nothing),
+    "╙" => (Plain, Double, Nothing, Nothing),
+    "╚" => (Double, Double, Nothing, Nothing),
+
+    "╛" => (Nothing, Plain, Double, Nothing),
+    "╜" => (Nothing, Double, Plain, Nothing),
+    "╝" => (Nothing, Double, Double, Nothing),
+
+    "╞" => (Double, Plain, Nothing, Plain),
+    "╟" => (Plain, Double, Nothing, Double),
+    "╠" => (Double, Double, Nothing, Double),
+
+    "╡" => (Nothing, Plain, Double, Plain),
+    "╢" => (Nothing, Double, Plain, Double),
+    "╣" => (Nothing, Double, Double, Double),
+
+    "╤" => (Double, Nothing, Double, Plain),
+    "╥" => (Plain, Nothing, Plain, Double),
+    "╦" => (Double, Nothing, Double, Double),
+
+    "╧" => (Double, Plain, Double, Nothing),
+    "╨" => (Plain, Double, Plain, Nothing),
+    "╩" => (Double, Double, Double, Nothing),
+
+    "╪" => (Double, Plain, Double, Plain),
+    "╫" => (Plain, Double, Plain, Double),
+    "╬" => (Double, Double, Double, Double),
+
+    "╭" => (Rounded, Nothing, Nothing, Rounded),
+    "╮" => (Nothing, Nothing, Rounded, Rounded),
+    "╯" => (Nothing, Rounded, Rounded, Nothing),
+    "╰" => (Rounded, Rounded, Nothing, Nothing),
+
+    "╴" => (Nothing, Nothing, Plain, Nothing),
+    "╵" => (Nothing, Plain, Nothing, Nothing),
+    "╶" => (Plain, Nothing, Nothing, Nothing),
+    "╷" => (Nothing, Nothing, Nothing, Plain),
+    "╸" => (Nothing, Nothing, Thick, Nothing),
+    "╹" => (Nothing, Thick, Nothing, Nothing),
+    "╺" => (Thick, Nothing, Nothing, Nothing),
+    "╻" => (Nothing, Nothing, Nothing, Thick),
+    "╼" => (Thick, Nothing, Plain, Nothing),
+    "╽" => (Nothing, Plain, Nothing, Thick),
+    "╾" => (Plain, Nothing, Thick, Nothing),
+    "╿" => (Nothing, Thick, Nothing, Plain),
+);
+
+impl BorderSymbol {
+    pub const fn new(right: LineStyle, up: LineStyle, left: LineStyle, down: LineStyle) -> Self {
+        Self {
+            right,
+            up,
+            left,
+            down,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Set {
     pub vertical: &'static str,
