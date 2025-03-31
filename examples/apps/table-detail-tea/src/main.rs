@@ -68,7 +68,7 @@ fn main() -> color_eyre::Result<()> {
 
         // Process updates as long as they return a non-None message
         while current_msg.is_some() {
-            current_msg = update(&mut model, &current_msg.unwrap());
+            current_msg = update(&mut model, current_msg.unwrap());
         }
     }
     stdout().execute(DisableMouseCapture)?;
@@ -161,7 +161,7 @@ const fn handle_mouse(mouse: event::MouseEvent) -> Option<Message> {
     }
 }
 
-fn update(model: &mut Model, msg: &Message) -> Option<Message> {
+fn update(model: &mut Model, msg: Message) -> Option<Message> {
     match msg {
         Message::Quit => model.running_state = RunningState::Done,
         Message::SelectNext => {
