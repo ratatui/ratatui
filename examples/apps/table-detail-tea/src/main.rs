@@ -44,7 +44,7 @@ struct Data {
     email: String,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 enum Message {
     SelectNext,
     SelectPrevious,
@@ -54,8 +54,10 @@ enum Message {
 fn main() -> color_eyre::Result<()> {
     tui::install_panic_hook();
     let mut terminal = tui::init_terminal()?;
-    let mut model = Model::default();
-    model.table_items = generate_some_fans();
+    let mut model = Model {
+        table_items: generate_some_fans(),
+        ..Default::default()
+    };
     stdout().execute(EnableMouseCapture)?;
     while model.running_state != RunningState::Done {
         // Render the current view
@@ -66,7 +68,7 @@ fn main() -> color_eyre::Result<()> {
 
         // Process updates as long as they return a non-None message
         while current_msg.is_some() {
-            current_msg = update(&mut model, current_msg.unwrap());
+            current_msg = update(&mut model, &current_msg.unwrap());
         }
     }
     stdout().execute(DisableMouseCapture)?;
@@ -142,7 +144,7 @@ fn handle_event(_: &Model) -> color_eyre::Result<Option<Message>> {
     }
 }
 
-fn handle_key(key: event::KeyEvent) -> Option<Message> {
+const fn handle_key(key: event::KeyEvent) -> Option<Message> {
     match key.code {
         KeyCode::Char('j') | KeyCode::Down => Some(Message::SelectNext),
         KeyCode::Char('k') | KeyCode::Up => Some(Message::SelectPrevious),
@@ -151,7 +153,7 @@ fn handle_key(key: event::KeyEvent) -> Option<Message> {
     }
 }
 
-fn handle_mouse(mouse: event::MouseEvent) -> Option<Message> {
+const fn handle_mouse(mouse: event::MouseEvent) -> Option<Message> {
     match mouse.kind {
         MouseEventKind::ScrollDown => Some(Message::SelectPrevious),
         MouseEventKind::ScrollUp => Some(Message::SelectNext),
@@ -159,7 +161,7 @@ fn handle_mouse(mouse: event::MouseEvent) -> Option<Message> {
     }
 }
 
-fn update(model: &mut Model, msg: Message) -> Option<Message> {
+fn update(model: &mut Model, msg: &Message) -> Option<Message> {
     match msg {
         Message::Quit => model.running_state = RunningState::Done,
         Message::SelectNext => {
