@@ -14,7 +14,7 @@ use crossterm::event::{
 };
 use crossterm::ExecutableCommand;
 use fakeit::{address, contact, name};
-use ratatui::layout::{Constraint, Layout};
+use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Padding, Paragraph, Row, Table, TableState};
 use ratatui::Frame;
@@ -51,11 +51,18 @@ enum Message {
 fn main() -> color_eyre::Result<()> {
     tui::install_panic_hook();
     let mut terminal = tui::init_terminal()?;
+    stdout().execute(EnableMouseCapture)?;
+
     let mut model = AppModel {
         table_items: generate_some_people(),
         ..Default::default()
     };
-    stdout().execute(EnableMouseCapture)?;
+
+    // Select the first row if no row is selected
+    if model.table_state.selected().is_none() {
+        model.table_state.select_first();
+    }
+
     while model.running_state != RunningState::Done {
         // Render the current view
         terminal.draw(|f| view(&mut model, f))?;
@@ -75,8 +82,11 @@ fn main() -> color_eyre::Result<()> {
 
 fn view(model: &mut AppModel, frame: &mut Frame) {
     let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
+    render_table(model, top, frame);
+    render_detail(model, bottom, frame);
+}
 
-    // Table setup
+fn render_table(model: &mut AppModel, area: Rect, frame: &mut Frame) {
     let header = Row::new(vec!["Name", "Address", "Email"])
         .style(Style::default().add_modifier(Modifier::BOLD))
         .height(1);
@@ -102,14 +112,10 @@ fn view(model: &mut AppModel, frame: &mut Frame) {
     .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED | Modifier::ITALIC))
     .block(Block::default().borders(Borders::ALL).title(" People "));
 
-    frame.render_stateful_widget(table, top, &mut model.table_state);
+    frame.render_stateful_widget(table, area, &mut model.table_state);
+}
 
-    // Select the first row if no row is selected
-    if model.table_state.selected().is_none() {
-        model.table_state.select_first();
-    }
-
-    // Detail view
+fn render_detail(model: &mut AppModel, area: Rect, frame: &mut Frame) {
     let selected_item = &model.table_items[model.table_state.selected().unwrap()];
     let detail = Paragraph::new(format!(
         "{}\n\n{}",
@@ -122,7 +128,7 @@ fn view(model: &mut AppModel, frame: &mut Frame) {
             .title_bottom(" (Esc/q) quit | (↑) move up | (↓) move down ")
             .padding(Padding::new(1, 1, 1, 1)),
     );
-    frame.render_widget(detail, bottom);
+    frame.render_widget(detail, area);
 }
 
 fn handle_event(_: &AppModel) -> color_eyre::Result<Option<Message>> {
