@@ -1,5 +1,6 @@
 use std::io::stdout;
-/// A Ratatui example that demonstrates the Elm architecture with a basic list - detail application.
+/// A Ratatui example that demonstrates the Elm architecture with a basic list - detail
+/// application.
 ///
 /// This example runs with the Ratatui library code in the branch that you are currently
 /// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
