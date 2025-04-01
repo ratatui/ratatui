@@ -1,4 +1,5 @@
 use std::io::stdout;
+use std::panic;
 /// A Ratatui example that demonstrates the Elm architecture with a basic list - detail
 /// application.
 ///
@@ -7,7 +8,7 @@ use std::io::stdout;
 /// release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
-use std::time::Duration;
+use std::{fmt, time::Duration};
 
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseEventKind,
@@ -16,29 +17,29 @@ use crossterm::ExecutableCommand;
 use fakeit::{address, contact, name};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style};
-use ratatui::widgets::{Block, Borders, Padding, Paragraph, Row, Table, TableState};
-use ratatui::Frame;
+use ratatui::widgets::{Block, Padding, Paragraph, Row, Table, TableState};
+use ratatui::{DefaultTerminal, Frame};
 
 /// Application data model and state
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct AppModel {
-    table_items: Vec<Person>,
+    people: Vec<Person>,
     table_state: TableState,
-    running_state: RunningState,
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
-enum RunningState {
-    #[default]
-    Running,
-    Done,
-}
-
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Person {
     name: String,
-    address: String,
+    address: Address,
     email: String,
+}
+
+#[derive(Debug)]
+struct Address {
+    street: String,
+    city: String,
+    state: String,
+    zip: String,
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -49,97 +50,105 @@ enum Message {
 }
 
 fn main() -> color_eyre::Result<()> {
-    tui::install_panic_hook();
-    let mut terminal = tui::init_terminal()?;
+    let terminal = ratatui::init();
+    install_panic_hook();
     stdout().execute(EnableMouseCapture)?;
 
-    let mut model = AppModel {
-        table_items: generate_some_people(),
-        ..Default::default()
-    };
+    let model = AppModel::default();
+    let result = model.run(terminal);
 
-    // Select the first row if no row is selected
-    if model.table_state.selected().is_none() {
-        model.table_state.select_first();
-    }
+    stdout().execute(DisableMouseCapture)?;
+    ratatui::restore();
+    result
+}
 
-    while model.running_state != RunningState::Done {
-        // Render the current view
-        terminal.draw(|f| view(&mut model, f))?;
+pub fn install_panic_hook() {
+    let original_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        stdout().execute(DisableMouseCapture).ok();
+        original_hook(panic_info);
+    }));
+}
 
-        // Handle events and map to a Message
-        let mut current_msg = handle_event(&model)?;
-
-        // Process updates as long as they return a non-None message
-        while current_msg.is_some() {
-            current_msg = update(&mut model, current_msg.unwrap());
+impl Default for AppModel {
+    fn default() -> Self {
+        Self {
+            people: (0..50).map(|_| Person::fake()).collect(),
+            table_state: TableState::default().with_selected(0),
         }
     }
-    stdout().execute(DisableMouseCapture)?;
-    tui::restore_terminal()?;
-    Ok(())
 }
 
-fn view(model: &mut AppModel, frame: &mut Frame) {
-    let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
-    render_table(model, top, frame);
-    render_detail(model, bottom, frame);
-}
+impl AppModel {
+    fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
+        loop {
+            terminal.draw(|frame| self.view(frame))?;
 
-fn render_table(model: &mut AppModel, area: Rect, frame: &mut Frame) {
-    let header = Row::new(vec!["Name", "Address", "Email"])
-        .style(Style::default().add_modifier(Modifier::BOLD))
-        .height(1);
+            let mut maybe_message = handle_event()?;
+            while let Some(message) = maybe_message {
+                if message == Message::Quit {
+                    return Ok(());
+                }
+                maybe_message = self.update(message);
+            }
+        }
+    }
 
-    let rows = model.table_items.iter().map(|data| {
-        Row::new(vec![
-            data.name.as_str(),
-            data.address.as_str(),
-            data.email.as_str(),
-        ])
-        .height(2)
-    });
+    fn update(&mut self, msg: Message) -> Option<Message> {
+        match msg {
+            Message::Quit => {}
+            Message::SelectNext => self.table_state.select_next(),
+            Message::SelectPrevious => self.table_state.select_previous(),
+        };
+        None
+    }
 
-    let table = Table::new(
-        rows,
-        [
+    /// Render the current view
+    fn view(&mut self, frame: &mut Frame) {
+        let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
+        self.render_table(frame, top);
+        self.render_detail(frame, bottom);
+    }
+
+    fn render_table(&mut self, frame: &mut Frame, area: Rect) {
+        let header = Row::new(vec!["Name", "Address", "Email"])
+            .style(Modifier::BOLD)
+            .height(1);
+        let rows = self.people.iter().map(Row::from);
+        let widths = [
             Constraint::Length(20),
             Constraint::Min(10),
             Constraint::Fill(1),
-        ],
-    )
-    .header(header)
-    .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED | Modifier::ITALIC))
-    .block(Block::default().borders(Borders::ALL).title(" People "));
+        ];
+        let table = Table::new(rows, widths)
+            .header(header)
+            .row_highlight_style(Style::new().add_modifier(Modifier::REVERSED | Modifier::ITALIC))
+            .block(Block::bordered().title(" People "));
 
-    frame.render_stateful_widget(table, area, &mut model.table_state);
-}
+        frame.render_stateful_widget(table, area, &mut self.table_state);
+    }
 
-fn render_detail(model: &AppModel, area: Rect, frame: &mut Frame) {
-    let selected_item = &model.table_items[model.table_state.selected().unwrap()];
-    let detail = Paragraph::new(format!(
-        "{}\n\n{}",
-        selected_item.email, selected_item.address
-    ))
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
+    fn render_detail(&self, frame: &mut Frame, area: Rect) {
+        let selected_item = &self.people[self.table_state.selected().unwrap()];
+        let block = Block::bordered()
             .title(format!(" {} ", selected_item.name))
             .title_bottom(" (Esc/q) quit | (↑) move up | (↓) move down ")
-            .padding(Padding::new(1, 1, 1, 1)),
-    );
-    frame.render_widget(detail, area);
+            .padding(Padding::new(1, 1, 1, 1));
+        let text = format!("{}\n\n{}", selected_item.email, selected_item.address);
+        let detail = Paragraph::new(text).block(block);
+        frame.render_widget(detail, area);
+    }
 }
 
-fn handle_event(_: &AppModel) -> color_eyre::Result<Option<Message>> {
-    if event::poll(Duration::from_millis(250))? {
-        match event::read()? {
-            Event::Key(key) if key.kind == event::KeyEventKind::Press => Ok(handle_key(key)),
-            Event::Mouse(mouse) => Ok(handle_mouse(mouse)),
-            _ => Ok(None),
-        }
-    } else {
-        Ok(None)
+/// Handle events and map to a Message
+fn handle_event() -> color_eyre::Result<Option<Message>> {
+    if !event::poll(Duration::from_millis(250))? {
+        return Ok(None);
+    }
+    match event::read()? {
+        Event::Key(key) if key.kind == event::KeyEventKind::Press => Ok(handle_key(key)),
+        Event::Mouse(mouse) => Ok(handle_mouse(mouse)),
+        _ => Ok(None),
     }
 }
 
@@ -160,75 +169,44 @@ const fn handle_mouse(mouse: event::MouseEvent) -> Option<Message> {
     }
 }
 
-fn update(model: &mut AppModel, msg: Message) -> Option<Message> {
-    match msg {
-        Message::Quit => model.running_state = RunningState::Done,
-        Message::SelectNext => {
-            let current_index = model.table_state.selected().unwrap_or(0);
-            if current_index < model.table_items.len() - 1 {
-                model.table_state.select(Some(current_index + 1));
-            }
-        }
-        Message::SelectPrevious => {
-            let current_index = model.table_state.selected().unwrap_or(0);
-            if current_index > 0 {
-                model.table_state.select(Some(current_index - 1));
-            }
-        }
-    };
-    None
-}
-
-mod tui {
-    use std::io::stdout;
-    use std::panic;
-
-    use ratatui::backend::{Backend, CrosstermBackend};
-    use ratatui::crossterm::terminal::{
-        disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-    };
-    use ratatui::crossterm::ExecutableCommand;
-    use ratatui::Terminal;
-
-    pub fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
-        enable_raw_mode()?;
-        stdout().execute(EnterAlternateScreen)?;
-        let terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-        Ok(terminal)
-    }
-
-    pub fn restore_terminal() -> color_eyre::Result<()> {
-        stdout().execute(LeaveAlternateScreen)?;
-        disable_raw_mode()?;
-        Ok(())
-    }
-
-    pub fn install_panic_hook() {
-        let original_hook = panic::take_hook();
-        panic::set_hook(Box::new(move |panic_info| {
-            stdout().execute(LeaveAlternateScreen).unwrap();
-            disable_raw_mode().unwrap();
-            original_hook(panic_info);
-        }));
-    }
-}
-
-fn generate_some_people() -> Vec<Person> {
-    (0..50)
-        .map(|_| Person {
+impl Person {
+    fn fake() -> Self {
+        Self {
             name: name::full(),
-            address: generate_fake_address(),
+            address: Address::fake(),
             email: contact::email(),
-        })
-        .collect()
+        }
+    }
 }
 
-fn generate_fake_address() -> String {
-    format!(
-        "{}\n{}, {} {}",
-        address::street(),
-        address::city(),
-        address::state(),
-        address::zip()
-    )
+impl<'a> From<&'a Person> for Row<'a> {
+    fn from(person: &'a Person) -> Self {
+        Row::new(vec![
+            person.name.clone(),
+            person.address.to_string(),
+            person.email.clone(),
+        ])
+        .height(2)
+    }
+}
+
+impl Address {
+    fn fake() -> Self {
+        Self {
+            street: address::street(),
+            city: address::city(),
+            state: address::state(),
+            zip: address::zip(),
+        }
+    }
+}
+
+impl fmt::Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}\n{}, {} {}",
+            self.street, self.city, self.state, self.zip
+        )
+    }
 }
