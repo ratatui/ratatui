@@ -32,7 +32,7 @@ guarantee that the behavior is unchanged.
 ### Code formatting
 
 Run `cargo xtask format` before committing to ensure that code is consistently formatted with
-rustfmt. Configuration is in [`rustfmt.toml`](./rustfmt.toml). Running this command requires [`taplo`](https://taplo.tamasfe.dev/) to be installed.
+rustfmt. Configuration is in [`rustfmt.toml`](./rustfmt.toml).
 
 ### Search `tui-rs` for similar work
 
@@ -46,8 +46,7 @@ requests](https://github.com/fdehau/tui-rs/pulls).
 
 We use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) and check for them as
 a lint build step. To help adhere to the format, we recommend to install
-[Commitizen](https://commitizen-tools.github.io/commitizen/) or a rust
-implementation [rust-commitizen](https://github.com/mars90226/rust-commitizen). By using this tool you automatically
+[Commitizen](https://commitizen-tools.github.io/commitizen/). By using this tool you automatically
 follow the configuration defined in [.cz.toml](.cz.toml). Your commit messages should have enough
 information to help someone reading the [CHANGELOG](./CHANGELOG.md) understand what is new just from
 the title. The summary helps expand on that to provide information that helps provide more context,

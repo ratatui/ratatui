@@ -2,7 +2,7 @@
 # To run this script, install vhs and run `vhs ./examples/vhs/table-detail-tea.tape`
 Output "target/table-detail-tea.gif"
 Set Theme "Aardvark Blue"
-Set Width 1400
+Set Width 1200
 Set Height 768
 Hide
 Type "cargo run -p table-detail-tea"

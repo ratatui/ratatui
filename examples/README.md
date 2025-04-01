@@ -189,6 +189,12 @@ Shows how to create an interactive table. [Source](./apps/table/).
 
 ![Table demo][table.gif]
 
+## Table detail TEA
+
+Shows how to create an interactive table with detail view using the Elm architecture. [Source](./apps/table-detail-tea/).
+
+![Table detail tea demo][table-detail-tea.gif]
+
 ## Todo List
 
 Shows how to create a simple todo list application. [Source](./apps/todo-list/).
@@ -267,6 +273,7 @@ vhs/generate.bash
 [popup.gif]: https://github.com/ratatui/ratatui/blob/images/examples/popup.gif?raw=true
 [scrollbar.gif]: https://github.com/ratatui/ratatui/blob/images/examples/scrollbar.gif?raw=true
 [table.gif]: https://github.com/ratatui/ratatui/blob/images/examples/table.gif?raw=true
+[table-detail-tea.gif]: https://vhs.charm.sh/vhs-6xrqMUcSbFiO9zf5nrNyYn.gif
 [todo-list.gif]: https://github.com/ratatui/ratatui/blob/images/examples/todo-list.gif?raw=true
 [tracing.gif]: https://github.com/ratatui/ratatui/blob/images/examples/tracing.gif?raw=true
 [user-input.gif]: https://github.com/ratatui/ratatui/blob/images/examples/user-input.gif?raw=true

@@ -1,6 +1,5 @@
 use std::io::stdout;
-/// A Ratatui example that demonstrates the Elm architecture with a basic list - detail
-/// application.
+/// A Ratatui example that demonstrates the Elm architecture with a basic list - detail application.
 ///
 /// This example runs with the Ratatui library code in the branch that you are currently
 /// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
@@ -13,18 +12,16 @@ use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseEventKind,
 };
 use crossterm::ExecutableCommand;
+use fakeit::{address, contact, name};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Modifier, Style};
-use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Padding, Paragraph, Row, Table, TableState};
 use ratatui::Frame;
 
-static INFO_TEXT: &str = " (Esc/q) quit | (↑) move up | (↓) move down ";
-
 /// Application data model and state
 #[derive(Debug, Default)]
-struct Model {
-    table_items: Vec<Data>,
+struct AppModel {
+    table_items: Vec<Person>,
     table_state: TableState,
     running_state: RunningState,
 }
@@ -36,9 +33,8 @@ enum RunningState {
     Done,
 }
 
-/// Data model
 #[derive(Debug, Default)]
-struct Data {
+struct Person {
     name: String,
     address: String,
     email: String,
@@ -54,8 +50,8 @@ enum Message {
 fn main() -> color_eyre::Result<()> {
     tui::install_panic_hook();
     let mut terminal = tui::init_terminal()?;
-    let mut model = Model {
-        table_items: generate_some_fans(),
+    let mut model = AppModel {
+        table_items: generate_some_people(),
         ..Default::default()
     };
     stdout().execute(EnableMouseCapture)?;
@@ -76,7 +72,7 @@ fn main() -> color_eyre::Result<()> {
     Ok(())
 }
 
-fn view(model: &mut Model, frame: &mut Frame) {
+fn view(model: &mut AppModel, frame: &mut Frame) {
     let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
 
     // Table setup
@@ -103,11 +99,7 @@ fn view(model: &mut Model, frame: &mut Frame) {
     )
     .header(header)
     .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED | Modifier::ITALIC))
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(" Terminal fans "),
-    );
+    .block(Block::default().borders(Borders::ALL).title(" People "));
 
     frame.render_stateful_widget(table, top, &mut model.table_state);
 
@@ -126,13 +118,13 @@ fn view(model: &mut Model, frame: &mut Frame) {
         Block::default()
             .borders(Borders::ALL)
             .title(format!(" {} ", selected_item.name))
-            .title_bottom(Line::from(INFO_TEXT))
+            .title_bottom(" (Esc/q) quit | (↑) move up | (↓) move down ")
             .padding(Padding::new(1, 1, 1, 1)),
     );
     frame.render_widget(detail, bottom);
 }
 
-fn handle_event(_: &Model) -> color_eyre::Result<Option<Message>> {
+fn handle_event(_: &AppModel) -> color_eyre::Result<Option<Message>> {
     if event::poll(Duration::from_millis(250))? {
         match event::read()? {
             Event::Key(key) if key.kind == event::KeyEventKind::Press => Ok(handle_key(key)),
@@ -161,7 +153,7 @@ const fn handle_mouse(mouse: event::MouseEvent) -> Option<Message> {
     }
 }
 
-fn update(model: &mut Model, msg: Message) -> Option<Message> {
+fn update(model: &mut AppModel, msg: Message) -> Option<Message> {
     match msg {
         Message::Quit => model.running_state = RunningState::Done,
         Message::SelectNext => {
@@ -214,26 +206,22 @@ mod tui {
     }
 }
 
-fn generate_some_fans() -> Vec<Data> {
-    use fakeit::{address, contact, name};
-
+fn generate_some_people() -> Vec<Person> {
     (0..50)
-        .map(|_| {
-            let name = name::full();
-            let address = format!(
-                "{}\n{}, {} {}",
-                address::street(),
-                address::city(),
-                address::state(),
-                address::zip()
-            );
-            let email = contact::email();
-
-            Data {
-                name,
-                address,
-                email,
-            }
+        .map(|_| Person {
+            name: name::full(),
+            address: generate_fake_address(),
+            email: contact::email(),
         })
         .collect()
+}
+
+fn generate_fake_address() -> String {
+    format!(
+        "{}\n{}, {} {}",
+        address::street(),
+        address::city(),
+        address::state(),
+        address::zip()
+    )
 }
