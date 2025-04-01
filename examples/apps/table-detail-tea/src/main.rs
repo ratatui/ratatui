@@ -115,7 +115,7 @@ fn render_table(model: &mut AppModel, area: Rect, frame: &mut Frame) {
     frame.render_stateful_widget(table, area, &mut model.table_state);
 }
 
-fn render_detail(model: &mut AppModel, area: Rect, frame: &mut Frame) {
+fn render_detail(model: &AppModel, area: Rect, frame: &mut Frame) {
     let selected_item = &model.table_items[model.table_state.selected().unwrap()];
     let detail = Paragraph::new(format!(
         "{}\n\n{}",
