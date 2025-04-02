@@ -910,6 +910,11 @@ impl Table<'_> {
     fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
         let last_row = self.rows.len().saturating_sub(1);
         let mut start = state.offset.min(last_row);
+
+        if let Some(selected) = state.selected {
+            start = start.min(selected);
+        }
+
         let mut end = start;
         let mut height = 0;
 
@@ -931,16 +936,6 @@ impl Table<'_> {
                 while height > area.height {
                     height = height.saturating_sub(self.rows[start].height_with_margin());
                     start += 1;
-                }
-            }
-
-            // scroll up until the selected row is visible
-            while selected < start {
-                start -= 1;
-                height = height.saturating_add(self.rows[start].height_with_margin());
-                while height > area.height {
-                    end -= 1;
-                    height = height.saturating_sub(self.rows[end].height_with_margin());
                 }
             }
         }
