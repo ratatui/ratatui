@@ -94,8 +94,8 @@ impl AppModel {
         }
     }
 
-    fn update(&mut self, msg: Message) -> Option<Message> {
-        match msg {
+    fn update(&mut self, message: Message) -> Option<Message> {
+        match message {
             Message::Quit => {}
             Message::SelectNext => self.table_state.select_next(),
             Message::SelectPrevious => self.table_state.select_previous(),
