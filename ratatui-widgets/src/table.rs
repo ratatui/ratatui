@@ -859,7 +859,7 @@ impl Table<'_> {
                 };
                 buf.set_style(selection_area, row.style);
                 (&self.highlight_symbol).render(selection_area, buf);
-            };
+            }
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
                     Rect::new(row_area.x + x, row_area.y, *width, row_area.height),

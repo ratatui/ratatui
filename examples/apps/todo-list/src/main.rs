@@ -105,7 +105,7 @@ impl App {
             terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             if let Event::Key(key) = event::read()? {
                 self.handle_key(key);
-            };
+            }
         }
         Ok(())
     }

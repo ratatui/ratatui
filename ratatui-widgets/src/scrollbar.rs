@@ -585,9 +585,9 @@ impl Scrollbar<'_> {
     fn scrollbar_area(&self, area: Rect) -> Option<Rect> {
         match self.orientation {
             ScrollbarOrientation::VerticalLeft => area.columns().next(),
-            ScrollbarOrientation::VerticalRight => area.columns().last(),
+            ScrollbarOrientation::VerticalRight => area.columns().next_back(),
             ScrollbarOrientation::HorizontalTop => area.rows().next(),
-            ScrollbarOrientation::HorizontalBottom => area.rows().last(),
+            ScrollbarOrientation::HorizontalBottom => area.rows().next_back(),
         }
     }
 
