@@ -723,7 +723,7 @@ impl Line<'_> {
                 Some(Alignment::Left) | None => 0,
             };
             render_spans(&self.spans, area, buf, skip_width);
-        };
+        }
     }
 }
 
