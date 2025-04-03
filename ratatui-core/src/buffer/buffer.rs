@@ -1,5 +1,5 @@
-use core::fmt;
 use core::ops::{Index, IndexMut};
+use core::{cmp, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -497,9 +497,8 @@ impl Buffer {
 
             to_skip = current.symbol().width().saturating_sub(1);
 
-            let affected_width =
-                core::cmp::max(current.symbol().width(), previous.symbol().width());
-            invalidated = core::cmp::max(affected_width, invalidated).saturating_sub(1);
+            let affected_width = cmp::max(current.symbol().width(), previous.symbol().width());
+            invalidated = cmp::max(affected_width, invalidated).saturating_sub(1);
         }
         updates
     }
@@ -591,7 +590,7 @@ impl fmt::Debug for Buffer {
                 } else {
                     overwritten.push((x, c.symbol()));
                 }
-                skip = core::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+                skip = cmp::max(skip, c.symbol().width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
