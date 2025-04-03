@@ -7,8 +7,9 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::io::stdout;
-use std::panic;
-use std::{fmt, time::Duration};
+use std::time::Duration;
+use std::{fmt, panic};
+
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseEventKind,
 };
