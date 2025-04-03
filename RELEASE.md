@@ -36,7 +36,7 @@ actions](.github/workflows/cd.yml) and triggered by pushing a tag.
 ## Alpha Releases
 
 Alpha releases are automatically released every Saturday via [cd.yml](./.github/workflows/cd.yml)
-and can be manually be created when necessary by triggering the [Continuous
+and can be manually created when necessary by triggering the [Continuous
 Deployment](https://github.com/ratatui/ratatui/actions/workflows/cd.yml) workflow.
 
 We automatically release an alpha release with a patch level bump + alpha.num weekly (and when we
