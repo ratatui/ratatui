@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
-use std::cmp::{max, min};
-use std::fmt;
+use core::cmp::{max, min};
+use core::fmt;
 
 use crate::layout::{Margin, Position, Size};
 
