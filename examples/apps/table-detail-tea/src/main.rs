@@ -1,5 +1,3 @@
-use std::io::stdout;
-use std::panic;
 /// A Ratatui example that demonstrates the Elm architecture with a basic list - detail
 /// application.
 ///
@@ -8,8 +6,9 @@ use std::panic;
 /// release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+use std::io::stdout;
+use std::panic;
 use std::{fmt, time::Duration};
-
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseEventKind,
 };
@@ -20,7 +19,6 @@ use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Padding, Paragraph, Row, Table, TableState};
 use ratatui::{DefaultTerminal, Frame};
 
-/// Application data model and state
 #[derive(Debug)]
 struct AppModel {
     people: Vec<Person>,
