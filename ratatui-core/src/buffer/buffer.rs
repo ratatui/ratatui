@@ -102,6 +102,8 @@ impl Buffer {
     }
 
     /// Returns the content of the buffer as a slice
+    // https://github.com/rust-lang/rust/issues/139338
+    #[allow(clippy::missing_const_for_fn)]
     pub fn content(&self) -> &[Cell] {
         &self.content
     }

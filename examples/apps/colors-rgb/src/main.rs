@@ -115,7 +115,7 @@ impl App {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
                     self.state = AppState::Quit;
-                };
+                }
             }
         }
         Ok(())

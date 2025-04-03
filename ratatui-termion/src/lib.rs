@@ -151,7 +151,7 @@ where
             ClearType::BeforeCursor => write!(self.writer, "{}", termion::clear::BeforeCursor)?,
             ClearType::CurrentLine => write!(self.writer, "{}", termion::clear::CurrentLine)?,
             ClearType::UntilNewLine => write!(self.writer, "{}", termion::clear::UntilNewline)?,
-        };
+        }
         self.writer.flush()
     }
 
