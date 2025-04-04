@@ -11,7 +11,7 @@ mod position;
 mod rect;
 mod size;
 
-pub use alignment::Alignment;
+pub use alignment::{Alignment, HorizontalAlignment, VerticalAlignment};
 pub use constraint::Constraint;
 pub use direction::Direction;
 pub use flex::Flex;
