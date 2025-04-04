@@ -107,7 +107,7 @@ fn input_handling(tx: mpsc::Sender<Event>) {
                     event::Event::Key(key) => tx.send(Event::Input(key)).unwrap(),
                     event::Event::Resize(_, _) => tx.send(Event::Resize).unwrap(),
                     _ => {}
-                };
+                }
             }
             if last_tick.elapsed() >= tick_rate {
                 tx.send(Event::Tick).unwrap();
@@ -212,9 +212,9 @@ fn run(
                             break;
                         }
                     }
-                };
+                }
             }
-        };
+        }
     }
     Ok(())
 }

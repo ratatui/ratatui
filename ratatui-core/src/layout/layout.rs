@@ -1,12 +1,12 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::iter;
-use std::num::NonZeroUsize;
-use std::rc::Rc;
+use alloc::rc::Rc;
+use core::cell::RefCell;
+use core::iter;
+use core::num::NonZeroUsize;
 
 use cassowary::strength::REQUIRED;
 use cassowary::WeightedRelation::{EQ, GE, LE};
 use cassowary::{AddConstraintError, Expression, Solver, Variable};
+use hashbrown::HashMap;
 use itertools::Itertools;
 use lru::LruCache;
 
@@ -1404,7 +1404,7 @@ mod tests {
     /// - underflow: constraint is for less than the full space
     /// - overflow: constraint is for more than the full space
     mod split {
-        use std::ops::Range;
+        use core::ops::Range;
 
         use itertools::Itertools;
         use pretty_assertions::assert_eq;

@@ -100,6 +100,7 @@
 //! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
+use core::ops;
 use std::io;
 
 use strum::{Display, EnumString};
@@ -341,8 +342,7 @@ pub trait Backend {
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_up`].
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, line_count: u16)
-        -> io::Result<()>;
+    fn scroll_region_up(&mut self, region: ops::Range<u16>, line_count: u16) -> io::Result<()>;
 
     /// Scroll a region of the screen downwards, where a region is specified by a (half-open) range
     /// of rows.
@@ -363,11 +363,7 @@ pub trait Backend {
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_down`].
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down(
-        &mut self,
-        region: std::ops::Range<u16>,
-        line_count: u16,
-    ) -> io::Result<()>;
+    fn scroll_region_down(&mut self, region: ops::Range<u16>, line_count: u16) -> io::Result<()>;
 }
 
 #[cfg(test)]

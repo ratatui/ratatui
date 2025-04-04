@@ -68,7 +68,7 @@
 //!
 //! [`Span`]: crate::text::Span
 
-use std::fmt;
+use core::fmt;
 
 use bitflags::bitflags;
 pub use color::{Color, ParseColorError};
