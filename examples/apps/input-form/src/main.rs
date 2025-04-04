@@ -236,7 +236,7 @@ impl AgeField {
             KeyCode::Up | KeyCode::Char('k') => self.increment(),
             KeyCode::Down | KeyCode::Char('j') => self.decrement(),
             _ => {}
-        };
+        }
     }
 
     fn increment(&mut self) {

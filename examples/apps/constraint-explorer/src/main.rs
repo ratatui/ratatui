@@ -142,7 +142,7 @@ impl App {
             | Constraint::Fill(v)
             | Constraint::Percentage(v) => *v = v.saturating_add(1),
             Constraint::Ratio(_n, d) => *d = d.saturating_add(1),
-        };
+        }
     }
 
     fn decrement_value(&mut self) {
@@ -156,7 +156,7 @@ impl App {
             | Constraint::Fill(v)
             | Constraint::Percentage(v) => *v = v.saturating_sub(1),
             Constraint::Ratio(_n, d) => *d = d.saturating_sub(1),
-        };
+        }
     }
 
     /// select the next block with wrap around
@@ -466,7 +466,7 @@ impl ConstraintBlock {
             } else {
                 main_color
             };
-            if let Some(last_row) = area.rows().last() {
+            if let Some(last_row) = area.rows().next_back() {
                 buf.set_style(last_row, border_color);
             }
         }
