@@ -1662,31 +1662,31 @@ mod tests {
         assert_eq!(buffer, expected);
     }
 
-    fn render_merging_block_helper(buffer: &mut Buffer, merge_style: &Option<MergeStyle>) {
+    fn render_merging_block_helper(buffer: &mut Buffer, merge_style: Option<&MergeStyle>) {
         Block::bordered()
-            .merge_style(merge_style.clone())
+            .merge_style(merge_style.cloned())
             .render(Rect::new(0, 0, 3, 3), buffer);
         Block::bordered()
             .border_type(BorderType::Thick)
-            .merge_style(merge_style.clone())
+            .merge_style(merge_style.cloned())
             .render(Rect::new(1, 1, 3, 4), buffer);
         Block::bordered()
             .border_type(BorderType::Double)
-            .merge_style(merge_style.clone())
+            .merge_style(merge_style.cloned())
             .render(Rect::new(2, 3, 3, 3), buffer);
         Block::bordered()
             .border_type(BorderType::Rounded)
-            .merge_style(merge_style.clone())
+            .merge_style(merge_style.cloned())
             .render(Rect::new(3, 0, 3, 2), buffer);
         Block::bordered()
-            .merge_style(merge_style.clone())
+            .merge_style(merge_style.cloned())
             .render(buffer.area, buffer);
     }
 
     #[test]
     fn render_non_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        render_merging_block_helper(&mut buffer, &None);
+        render_merging_block_helper(&mut buffer, None.as_ref());
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1703,7 +1703,7 @@ mod tests {
     #[test]
     fn render_exact_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        render_merging_block_helper(&mut buffer, &Some(MergeStyle::Exact));
+        render_merging_block_helper(&mut buffer, Some(MergeStyle::Exact).as_ref());
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1720,7 +1720,7 @@ mod tests {
     #[test]
     fn render_best_fit_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        render_merging_block_helper(&mut buffer, &Some(MergeStyle::BestFit));
+        render_merging_block_helper(&mut buffer, Some(MergeStyle::BestFit).as_ref());
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
