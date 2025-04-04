@@ -178,11 +178,7 @@ impl<'a> List<'a> {
     /// ```
     ///
     /// [`Text`]: ratatui_core::text::Text
-    pub fn new<T>(items: T) -> Self
-    where
-        T: IntoIterator,
-        T::Item: Into<ListItem<'a>>,
-    {
+    pub fn new<T: IntoIterator<Item: Into<ListItem<'a>>>>(items: T) -> Self {
         Self {
             block: None,
             style: Style::default(),
@@ -209,11 +205,7 @@ impl<'a> List<'a> {
     ///
     /// [`Text`]: ratatui_core::text::Text
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn items<T>(mut self, items: T) -> Self
-    where
-        T: IntoIterator,
-        T::Item: Into<ListItem<'a>>,
-    {
+    pub fn items<T: IntoIterator<Item: Into<ListItem<'a>>>>(mut self, items: T) -> Self {
         self.items = items.into_iter().map(Into::into).collect();
         self
     }
@@ -448,10 +440,7 @@ impl Styled for ListItem<'_> {
     }
 }
 
-impl<'a, Item> FromIterator<Item> for List<'a>
-where
-    Item: Into<ListItem<'a>>,
-{
+impl<'a, Item: Into<ListItem<'a>>> FromIterator<Item> for List<'a> {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
         Self::new(iter)
     }

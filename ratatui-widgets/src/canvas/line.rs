@@ -282,11 +282,13 @@ mod tests {
         "    •     ",
         "     •    ",
     ])]
-    fn tests<'expected_line, ExpectedLines>(#[case] line: &Line, #[case] expected: ExpectedLines)
-    where
-        ExpectedLines: IntoIterator,
-        ExpectedLines::Item: Into<ratatui_core::text::Line<'expected_line>>,
-    {
+    fn tests<
+        'expected_line,
+        ExpectedLines: IntoIterator<Item: Into<ratatui_core::text::Line<'expected_line>>>,
+    >(
+        #[case] line: &Line,
+        #[case] expected: ExpectedLines,
+    ) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
         let canvas = Canvas::default()
             .marker(Marker::Dot)

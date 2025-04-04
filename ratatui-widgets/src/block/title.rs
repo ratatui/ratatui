@@ -103,10 +103,7 @@ pub enum Position {
 impl<'a> Title<'a> {
     /// Set the title content.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn content<T>(mut self, content: T) -> Self
-    where
-        T: Into<Line<'a>>,
-    {
+    pub fn content<T: Into<Line<'a>>>(mut self, content: T) -> Self {
         self.content = content.into();
         self
     }
@@ -126,10 +123,7 @@ impl<'a> Title<'a> {
     }
 }
 
-impl<'a, T> From<T> for Title<'a>
-where
-    T: Into<Line<'a>>,
-{
+impl<'a, T: Into<Line<'a>>> From<T> for Title<'a> {
     fn from(value: T) -> Self {
         let content = value.into();
         let alignment = content.alignment;
