@@ -58,6 +58,7 @@ pub const CROSS: &str = "┼";
 pub const DOUBLE_CROSS: &str = "╬";
 pub const THICK_CROSS: &str = "╋";
 
+#[derive(PartialEq, Clone)]
 pub enum LineStyle {
     Nothing,
     Plain,
@@ -71,11 +72,67 @@ pub enum LineStyle {
     QuadrupleDashThick,
 }
 
+impl LineStyle {
+    fn replace(self, from: &Self, to: &Self) -> Self {
+        if self == *from {
+            to.clone()
+        } else {
+            self
+        }
+    }
+}
+
 pub struct BorderSymbol {
     pub right: LineStyle,
     pub up: LineStyle,
     pub left: LineStyle,
     pub down: LineStyle,
+}
+
+impl BorderSymbol {
+    /// Find the best representation of the `BorderSymbol`
+    /// that will be able to be transform into a character
+    #[must_use]
+    pub fn best_fit(mut self) -> Self {
+        use LineStyle::{Double, Plain, Rounded, Thick};
+        // Check if we got a character that can be displayed after change
+        if TryInto::<&str>::try_into(&self).is_ok() {
+            return self;
+        }
+        // There is no character that combines double and thick
+        // There is more characters for thick borders.
+        if self.contains(&Double) && self.contains(&Thick) {
+            self = self.replace(&Double, &Thick);
+        }
+        if TryInto::<&str>::try_into(&self).is_ok() {
+            return self;
+        }
+        if self.contains(&Double) {
+            self = self.replace(&Double, &Plain);
+        }
+        if TryInto::<&str>::try_into(&self).is_ok() {
+            return self;
+        }
+        // Rouned border character are only available for corners.
+        if self.contains(&Rounded) {
+            self = self.replace(&Rounded, &Plain);
+        }
+
+        self
+    }
+
+    pub fn contains(&self, style: &LineStyle) -> bool {
+        self.up == *style || self.right == *style || self.down == *style || self.left == *style
+    }
+
+    #[must_use]
+    pub fn replace(mut self, from: &LineStyle, to: &LineStyle) -> Self {
+        self.up = self.up.replace(from, to);
+        self.right = self.right.replace(from, to);
+        self.down = self.down.replace(from, to);
+        self.left = self.left.replace(from, to);
+        self
+    }
 }
 
 macro_rules! define_symbols {
@@ -94,11 +151,11 @@ macro_rules! define_symbols {
             }
         }
 
-        impl TryInto<&'static str> for BorderSymbol {
+        impl TryInto<&'static str> for &BorderSymbol {
             type Error = ();
             fn try_into(self) -> Result<&'static str, Self::Error> {
                 use LineStyle::*;
-                match (self.right, self.up, self.left, self.down) {
+                match (&self.right, &self.up, &self.left, &self.down) {
                     $( ($right, $up, $left, $down) => Ok($symbol) ),* ,
                     _ => Err(()),
                 }
@@ -254,6 +311,7 @@ define_symbols!(
 );
 
 impl BorderSymbol {
+    #[must_use]
     pub const fn new(right: LineStyle, up: LineStyle, left: LineStyle, down: LineStyle) -> Self {
         Self {
             right,
