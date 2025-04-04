@@ -1,4 +1,4 @@
-use std::fmt;
+use core::fmt;
 
 use crate::style::{Color, Modifier, Style};
 use crate::text::Span;

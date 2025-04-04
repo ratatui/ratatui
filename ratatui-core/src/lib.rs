@@ -38,6 +38,8 @@
 //!
 //! This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
 
+extern crate alloc;
+
 pub mod backend;
 pub mod buffer;
 pub mod layout;

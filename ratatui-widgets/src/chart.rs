@@ -211,7 +211,7 @@ impl LegendPosition {
         }
         if height_margin < 0 {
             return None;
-        };
+        }
 
         let (x, y) = match self {
             Self::TopRight => {

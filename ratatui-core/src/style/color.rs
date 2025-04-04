@@ -1,7 +1,7 @@
 #![allow(clippy::unreadable_literal)]
 
-use std::fmt;
-use std::str::FromStr;
+use core::fmt;
+use core::str::FromStr;
 
 use crate::style::stylize::{ColorDebug, ColorDebugKind};
 
@@ -249,7 +249,7 @@ impl fmt::Display for ParseColorError {
     }
 }
 
-impl std::error::Error for ParseColorError {}
+impl core::error::Error for ParseColorError {}
 
 /// Converts a string representation to a `Color` instance.
 ///
@@ -505,7 +505,7 @@ impl From<(u8, u8, u8, u8)> for Color {
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
+    use core::error::Error;
 
     #[cfg(feature = "palette")]
     use palette::{Hsl, Hsluv};

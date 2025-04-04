@@ -1,13 +1,12 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::iter;
-use std::num::NonZeroUsize;
-use std::rc::Rc;
+use alloc::rc::Rc;
+use core::cell::RefCell;
+use core::iter;
+use core::num::NonZeroUsize;
 
-use cassowary::strength::REQUIRED;
-use cassowary::WeightedRelation::{EQ, GE, LE};
-use cassowary::{AddConstraintError, Expression, Solver, Variable};
+use hashbrown::HashMap;
 use itertools::Itertools;
+use kasuari::WeightedRelation::{EQ, GE, LE};
+use kasuari::{AddConstraintError, Expression, Solver, Strength, Variable};
 use lru::LruCache;
 
 use self::strengths::{
@@ -769,8 +768,8 @@ fn configure_area(
     area_start: f64,
     area_end: f64,
 ) -> Result<(), AddConstraintError> {
-    solver.add_constraint(area.start | EQ(REQUIRED) | area_start)?;
-    solver.add_constraint(area.end | EQ(REQUIRED) | area_end)?;
+    solver.add_constraint(area.start | EQ(Strength::REQUIRED) | area_start)?;
+    solver.add_constraint(area.end | EQ(Strength::REQUIRED) | area_end)?;
     Ok(())
 }
 
@@ -781,8 +780,8 @@ fn configure_variable_in_area_constraints(
 ) -> Result<(), AddConstraintError> {
     // all variables are in the range [area.start, area.end]
     for &variable in variables {
-        solver.add_constraint(variable | GE(REQUIRED) | area.start)?;
-        solver.add_constraint(variable | LE(REQUIRED) | area.end)?;
+        solver.add_constraint(variable | GE(Strength::REQUIRED) | area.start)?;
+        solver.add_constraint(variable | LE(Strength::REQUIRED) | area.end)?;
     }
 
     Ok(())
@@ -802,7 +801,7 @@ fn configure_variable_constraints(
     // └v0  └v1                 └v2  └v3                 └v4  └v5                 └v6  └v7
 
     for (&left, &right) in variables.iter().skip(1).tuples() {
-        solver.add_constraint(left | LE(REQUIRED) | right)?;
+        solver.add_constraint(left | LE(Strength::REQUIRED) | right)?;
     }
     Ok(())
 }
@@ -1048,24 +1047,24 @@ impl Element {
         self.end - self.start
     }
 
-    fn has_max_size(&self, size: u16, strength: f64) -> cassowary::Constraint {
+    fn has_max_size(&self, size: u16, strength: Strength) -> kasuari::Constraint {
         self.size() | LE(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
     }
 
-    fn has_min_size(&self, size: i16, strength: f64) -> cassowary::Constraint {
+    fn has_min_size(&self, size: i16, strength: Strength) -> kasuari::Constraint {
         self.size() | GE(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
     }
 
-    fn has_int_size(&self, size: u16, strength: f64) -> cassowary::Constraint {
+    fn has_int_size(&self, size: u16, strength: Strength) -> kasuari::Constraint {
         self.size() | EQ(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
     }
 
-    fn has_size<E: Into<Expression>>(&self, size: E, strength: f64) -> cassowary::Constraint {
+    fn has_size<E: Into<Expression>>(&self, size: E, strength: Strength) -> kasuari::Constraint {
         self.size() | EQ(strength) | size.into()
     }
 
-    fn is_empty(&self) -> cassowary::Constraint {
-        self.size() | EQ(REQUIRED - 1.0) | 0.0
+    fn is_empty(&self) -> kasuari::Constraint {
+        self.size() | EQ(Strength::REQUIRED - Strength::WEAK) | 0.0
     }
 }
 
@@ -1084,91 +1083,91 @@ impl From<&Element> for Expression {
 }
 
 mod strengths {
-    use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
+    use kasuari::Strength;
 
     /// The strength to apply to Spacers to ensure that their sizes are equal.
     ///
     /// ┌     ┐┌───┐┌     ┐┌───┐┌     ┐
     ///   ==x  │   │  ==x  │   │  ==x
     /// └     ┘└───┘└     ┘└───┘└     ┘
-    pub const SPACER_SIZE_EQ: f64 = REQUIRED / 10.0;
+    pub const SPACER_SIZE_EQ: Strength = Strength::REQUIRED.div_f64(10.0);
 
     /// The strength to apply to Min inequality constraints.
     ///
     /// ┌────────┐
     /// │Min(>=x)│
     /// └────────┘
-    pub const MIN_SIZE_GE: f64 = STRONG * 100.0;
+    pub const MIN_SIZE_GE: Strength = Strength::STRONG.mul_f64(100.0);
 
     /// The strength to apply to Max inequality constraints.
     ///
     /// ┌────────┐
     /// │Max(<=x)│
     /// └────────┘
-    pub const MAX_SIZE_LE: f64 = STRONG * 100.0;
+    pub const MAX_SIZE_LE: Strength = Strength::STRONG.mul_f64(100.0);
 
     /// The strength to apply to Length constraints.
     ///
     /// ┌───────────┐
     /// │Length(==x)│
     /// └───────────┘
-    pub const LENGTH_SIZE_EQ: f64 = STRONG * 10.0;
+    pub const LENGTH_SIZE_EQ: Strength = Strength::STRONG.mul_f64(10.0);
 
     /// The strength to apply to Percentage constraints.
     ///
     /// ┌───────────────┐
     /// │Percentage(==x)│
     /// └───────────────┘
-    pub const PERCENTAGE_SIZE_EQ: f64 = STRONG;
+    pub const PERCENTAGE_SIZE_EQ: Strength = Strength::STRONG;
 
     /// The strength to apply to Ratio constraints.
     ///
     /// ┌────────────┐
     /// │Ratio(==x,y)│
     /// └────────────┘
-    pub const RATIO_SIZE_EQ: f64 = STRONG / 10.0;
+    pub const RATIO_SIZE_EQ: Strength = Strength::STRONG.div_f64(10.0);
 
     /// The strength to apply to Min equality constraints.
     ///
     /// ┌────────┐
     /// │Min(==x)│
     /// └────────┘
-    pub const MIN_SIZE_EQ: f64 = MEDIUM * 10.0;
+    pub const MIN_SIZE_EQ: Strength = Strength::MEDIUM.mul_f64(10.0);
 
     /// The strength to apply to Max equality constraints.
     ///
     /// ┌────────┐
     /// │Max(==x)│
     /// └────────┘
-    pub const MAX_SIZE_EQ: f64 = MEDIUM * 10.0;
+    pub const MAX_SIZE_EQ: Strength = Strength::MEDIUM.mul_f64(10.0);
 
     /// The strength to apply to Fill growing constraints.
     ///
     /// ┌─────────────────────┐
     /// │<=     Fill(x)     =>│
     /// └─────────────────────┘
-    pub const FILL_GROW: f64 = MEDIUM;
+    pub const FILL_GROW: Strength = Strength::MEDIUM;
 
     /// The strength to apply to growing constraints.
     ///
     /// ┌────────────┐
     /// │<= Min(x) =>│
     /// └────────────┘
-    pub const GROW: f64 = MEDIUM / 10.0;
+    pub const GROW: Strength = Strength::MEDIUM.div_f64(10.0);
 
     /// The strength to apply to Spacer growing constraints.
     ///
     /// ┌       ┐
     ///  <= x =>
     /// └       ┘
-    pub const SPACE_GROW: f64 = WEAK * 10.0;
+    pub const SPACE_GROW: Strength = Strength::WEAK.mul_f64(10.0);
 
     /// The strength to apply to growing the size of all segments equally.
     ///
     /// ┌───────┐
     /// │<= x =>│
     /// └───────┘
-    pub const ALL_SEGMENT_GROW: f64 = WEAK;
+    pub const ALL_SEGMENT_GROW: Strength = Strength::WEAK;
 }
 
 #[cfg(test)]
@@ -1404,7 +1403,7 @@ mod tests {
     /// - underflow: constraint is for less than the full space
     /// - overflow: constraint is for more than the full space
     mod split {
-        use std::ops::Range;
+        use core::ops::Range;
 
         use itertools::Itertools;
         use pretty_assertions::assert_eq;
@@ -2674,42 +2673,5 @@ mod tests {
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(result, expected);
         }
-    }
-
-    #[test]
-    fn test_solver() {
-        use super::*;
-
-        let mut solver = Solver::new();
-        let x = Variable::new();
-        let y = Variable::new();
-
-        solver.add_constraint((x + y) | EQ(4.0) | 5.0).unwrap();
-        solver.add_constraint(x | EQ(1.0) | 2.0).unwrap();
-        for _ in 0..5 {
-            solver.add_constraint(y | EQ(1.0) | 2.0).unwrap();
-        }
-
-        let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
-        let x = changes.get(&x).unwrap_or(&0.0).round() as u16;
-        let y = changes.get(&y).unwrap_or(&0.0).round() as u16;
-        assert_eq!(x, 3);
-        assert_eq!(y, 2);
-
-        let mut solver = Solver::new();
-        let x = Variable::new();
-        let y = Variable::new();
-
-        solver.add_constraint((x + y) | EQ(4.0) | 5.0).unwrap();
-        solver.add_constraint(y | EQ(1.0) | 2.0).unwrap();
-        for _ in 0..5 {
-            solver.add_constraint(x | EQ(1.0) | 2.0).unwrap();
-        }
-
-        let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
-        let x = changes.get(&x).unwrap_or(&0.0).round() as u16;
-        let y = changes.get(&y).unwrap_or(&0.0).round() as u16;
-        assert_eq!(x, 2);
-        assert_eq!(y, 3);
     }
 }

@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
-use std::borrow::Cow;
-use std::fmt;
+use alloc::borrow::Cow;
+use core::fmt;
 
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
@@ -504,12 +504,12 @@ impl<'a> Text<'a> {
     }
 
     /// Returns an iterator over the lines of the text.
-    pub fn iter(&self) -> std::slice::Iter<Line<'a>> {
+    pub fn iter(&self) -> core::slice::Iter<Line<'a>> {
         self.lines.iter()
     }
 
     /// Returns an iterator that allows modifying each line.
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<Line<'a>> {
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<Line<'a>> {
         self.lines.iter_mut()
     }
 
@@ -558,7 +558,7 @@ impl<'a> Text<'a> {
 
 impl<'a> IntoIterator for Text<'a> {
     type Item = Line<'a>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type IntoIter = alloc::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.lines.into_iter()
@@ -567,7 +567,7 @@ impl<'a> IntoIterator for Text<'a> {
 
 impl<'a> IntoIterator for &'a Text<'a> {
     type Item = &'a Line<'a>;
-    type IntoIter = std::slice::Iter<'a, Line<'a>>;
+    type IntoIter = core::slice::Iter<'a, Line<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -576,7 +576,7 @@ impl<'a> IntoIterator for &'a Text<'a> {
 
 impl<'a> IntoIterator for &'a mut Text<'a> {
     type Item = &'a mut Line<'a>;
-    type IntoIter = std::slice::IterMut<'a, Line<'a>>;
+    type IntoIter = core::slice::IterMut<'a, Line<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
@@ -641,7 +641,7 @@ where
     }
 }
 
-impl<'a> std::ops::Add<Line<'a>> for Text<'a> {
+impl<'a> core::ops::Add<Line<'a>> for Text<'a> {
     type Output = Self;
 
     fn add(mut self, line: Line<'a>) -> Self::Output {
@@ -653,7 +653,7 @@ impl<'a> std::ops::Add<Line<'a>> for Text<'a> {
 /// Adds two `Text` together.
 ///
 /// This ignores the style and alignment of the second `Text`.
-impl std::ops::Add<Self> for Text<'_> {
+impl core::ops::Add<Self> for Text<'_> {
     type Output = Self;
 
     fn add(mut self, text: Self) -> Self::Output {
@@ -662,7 +662,7 @@ impl std::ops::Add<Self> for Text<'_> {
     }
 }
 
-impl<'a> std::ops::AddAssign<Line<'a>> for Text<'a> {
+impl<'a> core::ops::AddAssign<Line<'a>> for Text<'a> {
     fn add_assign(&mut self, line: Line<'a>) {
         self.push_line(line);
     }
@@ -743,7 +743,7 @@ impl Styled for Text<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
+    use core::iter;
 
     use rstest::{fixture, rstest};
 

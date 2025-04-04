@@ -80,14 +80,20 @@ impl Data {
         [&self.name, &self.address, &self.email]
     }
 
+    // https://github.com/rust-lang/rust/issues/139338
+    #[allow(clippy::missing_const_for_fn)]
     fn name(&self) -> &str {
         &self.name
     }
 
+    // https://github.com/rust-lang/rust/issues/139338
+    #[allow(clippy::missing_const_for_fn)]
     fn address(&self) -> &str {
         &self.address
     }
 
+    // https://github.com/rust-lang/rust/issues/139338
+    #[allow(clippy::missing_const_for_fn)]
     fn email(&self) -> &str {
         &self.email
     }
