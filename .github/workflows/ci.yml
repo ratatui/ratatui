@@ -64,13 +64,24 @@ jobs:
       - uses: bnjbvr/cargo-machete@v0.8.0
 
   # Run cargo clippy.
+  #
+  # We check for clippy warnings on beta, but these are not hard failures. They should often be
+  # fixed to prevent clippy failing on the next stable release, but don't block PRs on them unless
+  # they are introduced by the PR.
   lint-clippy:
     name: Check Clippy
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: ["stable", "beta"]
+    continue-on-error: ${{ matrix.toolchain == 'beta' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with: { components: clippy }
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask clippy
 
