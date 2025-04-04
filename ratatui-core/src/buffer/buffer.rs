@@ -1,5 +1,5 @@
-use std::fmt;
-use std::ops::{Index, IndexMut};
+use core::ops::{Index, IndexMut};
+use core::{cmp, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -499,8 +499,8 @@ impl Buffer {
 
             to_skip = current.symbol().width().saturating_sub(1);
 
-            let affected_width = std::cmp::max(current.symbol().width(), previous.symbol().width());
-            invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
+            let affected_width = cmp::max(current.symbol().width(), previous.symbol().width());
+            invalidated = cmp::max(affected_width, invalidated).saturating_sub(1);
         }
         updates
     }
@@ -592,7 +592,7 @@ impl fmt::Debug for Buffer {
                 } else {
                     overwritten.push((x, c.symbol()));
                 }
-                skip = std::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+                skip = cmp::max(skip, c.symbol().width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
@@ -638,7 +638,7 @@ impl fmt::Debug for Buffer {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
+    use core::iter;
 
     use itertools::Itertools;
     use rstest::{fixture, rstest};

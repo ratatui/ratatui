@@ -2551,6 +2551,7 @@ dependencies = [
  "cassowary",
  "compact_str",
  "document-features",
+ "hashbrown",
  "indoc",
  "itertools 0.13.0",
  "lru",

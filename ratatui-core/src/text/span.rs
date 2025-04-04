@@ -1,5 +1,5 @@
-use std::borrow::Cow;
-use std::fmt;
+use alloc::borrow::Cow;
+use core::fmt;
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -384,7 +384,7 @@ where
     }
 }
 
-impl<'a> std::ops::Add<Self> for Span<'a> {
+impl<'a> core::ops::Add<Self> for Span<'a> {
     type Output = Line<'a>;
 
     fn add(self, rhs: Self) -> Self::Output {

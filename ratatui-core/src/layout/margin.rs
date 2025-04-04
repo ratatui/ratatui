@@ -1,4 +1,4 @@
-use std::fmt;
+use core::fmt;
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

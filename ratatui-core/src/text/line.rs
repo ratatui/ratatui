@@ -1,7 +1,7 @@
 #![deny(missing_docs)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::arithmetic_side_effects)]
-use std::borrow::Cow;
-use std::fmt;
+use alloc::borrow::Cow;
+use core::fmt;
 
 use unicode_truncate::UnicodeTruncateStr;
 
@@ -531,12 +531,12 @@ impl<'a> Line<'a> {
     }
 
     /// Returns an iterator over the spans of this line.
-    pub fn iter(&self) -> std::slice::Iter<Span<'a>> {
+    pub fn iter(&self) -> core::slice::Iter<Span<'a>> {
         self.spans.iter()
     }
 
     /// Returns a mutable iterator over the spans of this line.
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<Span<'a>> {
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<Span<'a>> {
         self.spans.iter_mut()
     }
 
@@ -561,7 +561,7 @@ impl<'a> Line<'a> {
 
 impl<'a> IntoIterator for Line<'a> {
     type Item = Span<'a>;
-    type IntoIter = std::vec::IntoIter<Span<'a>>;
+    type IntoIter = alloc::vec::IntoIter<Span<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.spans.into_iter()
@@ -570,7 +570,7 @@ impl<'a> IntoIterator for Line<'a> {
 
 impl<'a> IntoIterator for &'a Line<'a> {
     type Item = &'a Span<'a>;
-    type IntoIter = std::slice::Iter<'a, Span<'a>>;
+    type IntoIter = core::slice::Iter<'a, Span<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -579,7 +579,7 @@ impl<'a> IntoIterator for &'a Line<'a> {
 
 impl<'a> IntoIterator for &'a mut Line<'a> {
     type Item = &'a mut Span<'a>;
-    type IntoIter = std::slice::IterMut<'a, Span<'a>>;
+    type IntoIter = core::slice::IterMut<'a, Span<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
@@ -638,7 +638,7 @@ where
 }
 
 /// Adds a `Span` to a `Line`, returning a new `Line` with the `Span` added.
-impl<'a> std::ops::Add<Span<'a>> for Line<'a> {
+impl<'a> core::ops::Add<Span<'a>> for Line<'a> {
     type Output = Self;
 
     fn add(mut self, rhs: Span<'a>) -> Self::Output {
@@ -648,7 +648,7 @@ impl<'a> std::ops::Add<Span<'a>> for Line<'a> {
 }
 
 /// Adds two `Line`s together, returning a new `Text` with the contents of the two `Line`s.
-impl<'a> std::ops::Add<Self> for Line<'a> {
+impl<'a> core::ops::Add<Self> for Line<'a> {
     type Output = Text<'a>;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -656,7 +656,7 @@ impl<'a> std::ops::Add<Self> for Line<'a> {
     }
 }
 
-impl<'a> std::ops::AddAssign<Span<'a>> for Line<'a> {
+impl<'a> core::ops::AddAssign<Span<'a>> for Line<'a> {
     fn add_assign(&mut self, rhs: Span<'a>) {
         self.spans.push(rhs);
     }
@@ -831,7 +831,7 @@ impl Styled for Line<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
+    use core::iter;
 
     use rstest::{fixture, rstest};
 
