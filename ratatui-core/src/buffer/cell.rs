@@ -85,7 +85,7 @@ impl Cell {
             (_, _, _) => {
                 self.set_symbol(next);
             }
-        };
+        }
         self
     }
 
