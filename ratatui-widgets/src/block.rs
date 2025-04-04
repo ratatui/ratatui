@@ -1662,23 +1662,36 @@ mod tests {
         assert_eq!(buffer, expected);
     }
 
+    fn render_mergin_block_helper(buffer: &mut Buffer, merge_style: Option<MergeStyle>) {
+        Block::bordered()
+            .merge_style(merge_style.clone())
+            .render(Rect::new(0, 0, 3, 3), buffer);
+        Block::bordered()
+            .border_type(BorderType::Thick)
+            .merge_style(merge_style.clone())
+            .render(Rect::new(1, 1, 3, 4), buffer);
+        Block::bordered()
+            .border_type(BorderType::Double)
+            .merge_style(merge_style.clone())
+            .render(Rect::new(2, 3, 3, 3), buffer);
+        Block::bordered()
+            .border_type(BorderType::Rounded)
+            .merge_style(merge_style.clone())
+            .render(Rect::new(3, 0, 3, 2), buffer);
+        Block::bordered()
+            .merge_style(merge_style.clone())
+            .render(buffer.area, buffer);
+    }
+
     #[test]
     fn render_non_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        Block::bordered().render(Rect::new(0, 0, 3, 3), &mut buffer);
-        Block::bordered()
-            .border_type(BorderType::Thick)
-            .render(Rect::new(1, 1, 3, 4), &mut buffer);
-        Block::bordered()
-            .border_type(BorderType::Double)
-            .render(Rect::new(2, 3, 3, 3), &mut buffer);
-        Block::bordered().render(Rect::new(3, 0, 3, 2), &mut buffer);
-        Block::bordered().render(buffer.area, &mut buffer);
+        render_mergin_block_helper(&mut buffer, None);
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
             "┌────┐",
-            "│┏━└─│",
+            "│┏━╰─│",
             "│┃┘┃ │",
             "│┃╔═╗│",
             "│┗║┛║│",
@@ -1690,28 +1703,12 @@ mod tests {
     #[test]
     fn render_exact_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        Block::bordered()
-            .merge_style(Some(MergeStyle::Exact))
-            .render(Rect::new(0, 0, 3, 3), &mut buffer);
-        Block::bordered()
-            .border_type(BorderType::Thick)
-            .merge_style(Some(MergeStyle::Exact))
-            .render(Rect::new(1, 1, 3, 4), &mut buffer);
-        Block::bordered()
-            .border_type(BorderType::Double)
-            .merge_style(Some(MergeStyle::Exact))
-            .render(Rect::new(2, 3, 3, 3), &mut buffer);
-        Block::bordered()
-            .merge_style(Some(MergeStyle::Exact))
-            .render(Rect::new(3, 0, 3, 2), &mut buffer);
-        Block::bordered()
-            .merge_style(Some(MergeStyle::Exact))
-            .render(buffer.area, &mut buffer);
+        render_mergin_block_helper(&mut buffer, Some(MergeStyle::Exact));
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
-            "┌─┬┬─┐",
-            "│┏┿╅─┤",
+            "┌─┬──┐",
+            "│┏┿╰─│",
             "├╂┘┃ │",
             "│┃╔═╗│",
             "│┗║┛║│",
@@ -1723,23 +1720,7 @@ mod tests {
     #[test]
     fn render_best_fit_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        Block::bordered()
-            .merge_style(Some(MergeStyle::BestFit))
-            .render(Rect::new(0, 0, 3, 3), &mut buffer);
-        Block::bordered()
-            .border_type(BorderType::Thick)
-            .merge_style(Some(MergeStyle::BestFit))
-            .render(Rect::new(1, 1, 3, 4), &mut buffer);
-        Block::bordered()
-            .border_type(BorderType::Double)
-            .merge_style(Some(MergeStyle::BestFit))
-            .render(Rect::new(2, 3, 3, 3), &mut buffer);
-        Block::bordered()
-            .merge_style(Some(MergeStyle::BestFit))
-            .render(Rect::new(3, 0, 3, 2), &mut buffer);
-        Block::bordered()
-            .merge_style(Some(MergeStyle::BestFit))
-            .render(buffer.area, &mut buffer);
+        render_mergin_block_helper(&mut buffer, Some(MergeStyle::BestFit));
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
