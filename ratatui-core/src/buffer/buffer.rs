@@ -342,10 +342,7 @@ impl Buffer {
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
-            .map(|symbol| {
-                let width = symbol.width() as u16;
-                (symbol, width)
-            })
+            .map(|symbol| (symbol, symbol.width() as u16))
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
                 if width > remaining_width {
