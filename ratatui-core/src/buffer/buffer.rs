@@ -354,7 +354,7 @@ impl Buffer {
                 remaining_width = remaining_width.saturating_sub(width);
                 Some((symbol, width))
             });
-        
+
         let style = style.into();
         for (symbol, width) in graphemes {
             self[(x, y)].set_symbol(symbol).set_style(style);
@@ -663,7 +663,7 @@ mod tests {
         let expected = "Buffer {\n    area: Rect { x: 0, y: 0, width: 0, height: 0 }\n}";
         assert_eq!(result, expected);
     }
-    
+
     #[test]
     fn chinese_characters_rendering() {
         let area = Rect::new(0, 0, 10, 1);
@@ -671,7 +671,7 @@ mod tests {
 
         // Test with a string containing Chinese characters
         buffer.set_string(0, 0, "你好世界", Style::default());
-        
+
         // Chinese characters are each 2 cells wide, so "你好世界" should take 8 cells
         // Check that cells are properly filled (not with extra spaces)
         let contents = buffer.content.iter().map(Cell::symbol).collect::<Vec<_>>();
@@ -686,11 +686,11 @@ mod tests {
         // Cells 8-9 are untouched
         assert_eq!(contents[8], " ");
         assert_eq!(contents[9], " ");
-        
+
         // Reset and test with mixed English and Chinese
         let mut buffer = Buffer::empty(area);
         buffer.set_string(0, 0, "hi你好", Style::default());
-        
+
         let contents = buffer.content.iter().map(Cell::symbol).collect::<Vec<_>>();
         assert_eq!(contents[0], "h");
         assert_eq!(contents[1], "i");
