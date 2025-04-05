@@ -1,6 +1,6 @@
 //! Internal module for reflowing text to fit into a certain width.
-use std::collections::VecDeque;
-use std::mem;
+use alloc::collections::VecDeque;
+use core::mem;
 
 use ratatui_core::layout::Alignment;
 use ratatui_core::text::StyledGrapheme;

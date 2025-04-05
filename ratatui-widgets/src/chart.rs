@@ -1,6 +1,6 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
-use std::cmp::max;
-use std::ops::Not;
+use core::cmp::max;
+use core::ops::Not;
 
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Flex, Layout, Position, Rect};
