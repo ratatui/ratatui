@@ -14,7 +14,7 @@
 //! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use std::iter::zip;
+use core::iter::zip;
 
 use color_eyre::Result;
 use crossterm::event::{self, Event};

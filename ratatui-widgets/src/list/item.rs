@@ -218,7 +218,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
+    use alloc::borrow::Cow;
 
     use pretty_assertions::assert_eq;
     use ratatui_core::style::{Color, Modifier, Stylize};

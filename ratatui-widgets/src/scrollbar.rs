@@ -7,7 +7,7 @@
     clippy::module_name_repetitions
 )]
 
-use std::iter;
+use core::iter;
 
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
@@ -636,7 +636,7 @@ impl ScrollbarOrientation {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
+    use core::str::FromStr;
 
     use ratatui_core::text::Text;
     use ratatui_core::widgets::Widget;

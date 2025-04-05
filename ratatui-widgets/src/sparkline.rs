@@ -1,5 +1,5 @@
 //! The [`Sparkline`] widget is used to display a sparkline over one or more lines.
-use std::cmp::min;
+use core::cmp::min;
 
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;

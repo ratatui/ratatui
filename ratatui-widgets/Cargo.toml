@@ -50,6 +50,7 @@ unstable-rendered-line-info = []
 bitflags.workspace = true
 crossterm.workspace = true
 document-features = { workspace = true, optional = true }
+hashbrown.workspace = true
 indoc.workspace = true
 instability.workspace = true
 itertools.workspace = true

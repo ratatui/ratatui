@@ -2660,6 +2660,7 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "document-features",
+ "hashbrown",
  "indoc",
  "instability",
  "itertools 0.13.0",
