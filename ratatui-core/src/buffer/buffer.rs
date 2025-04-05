@@ -342,22 +342,31 @@ impl Buffer {
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
-            .map(|symbol| (symbol, symbol.width() as u16))
+            .map(|symbol| {
+                let width = symbol.width() as u16;
+                (symbol, width)
+            })
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
-                remaining_width = remaining_width.checked_sub(width)?;
+                if width > remaining_width {
+                    return None;
+                }
+                remaining_width = remaining_width.saturating_sub(width);
                 Some((symbol, width))
             });
+        
         let style = style.into();
         for (symbol, width) in graphemes {
             self[(x, y)].set_symbol(symbol).set_style(style);
-            let next_symbol = x + width;
-            x += 1;
-            // Reset following cells if multi-width (they would be hidden by the grapheme),
-            while x < next_symbol {
-                self[(x, y)].reset();
-                x += 1;
+            // For each grapheme, advance x by exactly its width
+            // This ensures that multi-width characters like Chinese characters
+            // are properly handled without adding extra whitespace
+            for i in 1..width {
+                if x + i < self.area.right() {
+                    self[(x + i, y)].reset();
+                }
             }
+            x += width;
         }
         (x, y)
     }
@@ -653,6 +662,47 @@ mod tests {
         println!("{result}");
         let expected = "Buffer {\n    area: Rect { x: 0, y: 0, width: 0, height: 0 }\n}";
         assert_eq!(result, expected);
+    }
+    
+    #[test]
+    fn chinese_characters_rendering() {
+        let area = Rect::new(0, 0, 10, 1);
+        let mut buffer = Buffer::empty(area);
+
+        // Test with a string containing Chinese characters
+        buffer.set_string(0, 0, "你好世界", Style::default());
+        
+        // Chinese characters are each 2 cells wide, so "你好世界" should take 8 cells
+        // Check that cells are properly filled (not with extra spaces)
+        let contents = buffer.content.iter().map(Cell::symbol).collect::<Vec<_>>();
+        assert_eq!(contents[0], "你");
+        // Cells 1 is cleared by reset()
+        assert_eq!(contents[2], "好");
+        // Cells 3 is cleared by reset()
+        assert_eq!(contents[4], "世");
+        // Cells 5 is cleared by reset()
+        assert_eq!(contents[6], "界");
+        // Cells 7 is cleared by reset()
+        // Cells 8-9 are untouched
+        assert_eq!(contents[8], " ");
+        assert_eq!(contents[9], " ");
+        
+        // Reset and test with mixed English and Chinese
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "hi你好", Style::default());
+        
+        let contents = buffer.content.iter().map(Cell::symbol).collect::<Vec<_>>();
+        assert_eq!(contents[0], "h");
+        assert_eq!(contents[1], "i");
+        assert_eq!(contents[2], "你");
+        // Cell 3 is cleared by reset()
+        assert_eq!(contents[4], "好");
+        // Cell 5 is cleared by reset()
+        // Cells 6-9 are untouched
+        assert_eq!(contents[6], " ");
+        assert_eq!(contents[7], " ");
+        assert_eq!(contents[8], " ");
+        assert_eq!(contents[9], " ");
     }
 
     #[cfg(feature = "underline-color")]
