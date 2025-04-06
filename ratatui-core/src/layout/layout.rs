@@ -115,7 +115,7 @@ impl From<i16> for Spacing {
 /// - a flex option
 /// - a spacing option
 ///
-/// The algorithm used to compute the layout is based on the [`cassowary`] solver. It is a simple
+/// The algorithm used to compute the layout is based on the [`kasuari`] solver. It is a simple
 /// linear solver that can be used to solve linear equations and inequalities. In our case, we
 /// define a set of constraints that are applied to split the provided area into Rects aligned in a
 /// single direction, and the solver computes the values of the position and sizes that satisfy as
@@ -154,7 +154,7 @@ impl From<i16> for Spacing {
 /// use ratatui_core::text::Text;
 /// use ratatui_core::widgets::Widget;
 ///
-/// fn render(area: Rect, buf: &mut ratatui_core::buffer::Buffer) {
+/// fn render(area: Rect, buf: &mut Buffer) {
 ///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
 ///     let [left, right] = layout.areas(area);
 ///     Text::from("foo").render(left, buf);
@@ -168,7 +168,7 @@ impl From<i16> for Spacing {
 /// ![layout
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
 ///
-/// [`cassowary`]: https://crates.io/crates/cassowary
+/// [`kasuari`]: https://crates.io/crates/kasuari
 /// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
