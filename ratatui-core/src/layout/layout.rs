@@ -154,7 +154,7 @@ impl From<i16> for Spacing {
 /// use ratatui_core::text::Text;
 /// use ratatui_core::widgets::Widget;
 ///
-/// fn render(area: Rect, buf: &mut ratatui_core::buffer::Buffer) {
+/// fn render(area: Rect, buf: &mut Buffer) {
 ///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
 ///     let [left, right] = layout.areas(area);
 ///     Text::from("foo").render(left, buf);
