@@ -272,7 +272,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
+    use alloc::vec;
 
     use ratatui_core::style::{Color, Modifier, Stylize};
 

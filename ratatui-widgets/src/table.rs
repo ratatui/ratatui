@@ -1036,7 +1036,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
+    use alloc::vec;
 
     use ratatui_core::layout::Constraint::*;
     use ratatui_core::style::{Color, Modifier, Style, Stylize};

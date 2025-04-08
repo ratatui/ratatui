@@ -1,5 +1,5 @@
 //! Border related types ([`Borders`], [`BorderType`]) and a macro to create borders ([`border`]).
-use std::fmt;
+use core::fmt;
 
 use bitflags::bitflags;
 use ratatui_core::symbols::border;
