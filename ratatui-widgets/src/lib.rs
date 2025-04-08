@@ -84,6 +84,8 @@
 #![warn(clippy::std_instead_of_alloc)]
 #![warn(clippy::alloc_instead_of_core)]
 
+extern crate alloc;
+
 pub mod barchart;
 pub mod block;
 pub mod borders;

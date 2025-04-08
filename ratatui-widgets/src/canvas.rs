@@ -13,8 +13,8 @@
 //!
 //! You can also implement your own custom [`Shape`]s.
 
-use std::fmt;
-use std::iter::zip;
+use core::fmt;
+use core::iter::zip;
 
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
