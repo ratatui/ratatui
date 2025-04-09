@@ -17,7 +17,7 @@
 use core::time::Duration;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
@@ -36,7 +36,16 @@ fn main() -> Result<()> {
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
         terminal.draw(draw)?;
-        if event::poll(Duration::from_millis(16))? && matches!(event::read()?, Event::Key(_)) {
+        if event::poll(Duration::from_millis(16))?
+            && matches!(
+                event::read()?,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('q'),
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+            )
+        {
             break Ok(());
         }
     }
