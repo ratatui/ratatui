@@ -36,7 +36,16 @@ fn main() -> Result<()> {
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
         terminal.draw(draw)?;
-        if event::poll(Duration::from_millis(16))? && matches!(event::read()?, Event::Key(_)) {
+        if event::poll(Duration::from_millis(16))?
+            && matches!(
+                event::read()?,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('q'),
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+            )
+        {
             break Ok(());
         }
     }
