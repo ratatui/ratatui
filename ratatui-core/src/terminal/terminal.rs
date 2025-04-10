@@ -51,10 +51,7 @@ use crate::terminal::{CompletedFrame, Frame, TerminalOptions, Viewport};
 /// [`Backend`]: crate::backend::Backend
 /// [`Buffer`]: crate::buffer::Buffer
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
-pub struct Terminal<B>
-where
-    B: Backend,
-{
+pub struct Terminal<B: Backend> {
     /// The backend used to interface with the terminal
     backend: B,
     /// Holds the results of the current and previous draw calls. The two are compared at the end
@@ -84,10 +81,7 @@ pub struct Options {
     pub viewport: Viewport,
 }
 
-impl<B> Drop for Terminal<B>
-where
-    B: Backend,
-{
+impl<B: Backend> Drop for Terminal<B> {
     fn drop(&mut self) {
         // Attempt to restore the cursor state
         if self.hidden_cursor {
@@ -98,10 +92,7 @@ where
     }
 }
 
-impl<B> Terminal<B>
-where
-    B: Backend,
-{
+impl<B: Backend> Terminal<B> {
     /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
     ///
     /// # Example
@@ -299,10 +290,10 @@ where
     /// }
     /// # std::io::Result::Ok(())
     /// ```
-    pub fn draw<F>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
-    where
-        F: FnOnce(&mut Frame),
-    {
+    pub fn draw<F: FnOnce(&mut Frame)>(
+        &mut self,
+        render_callback: F,
+    ) -> io::Result<CompletedFrame> {
         self.try_draw(|frame| {
             render_callback(frame);
             io::Result::Ok(())
@@ -374,11 +365,10 @@ where
     /// }
     /// # io::Result::Ok(())
     /// ```
-    pub fn try_draw<F, E>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
-    where
-        F: FnOnce(&mut Frame) -> Result<(), E>,
-        E: Into<io::Error>,
-    {
+    pub fn try_draw<F: FnOnce(&mut Frame) -> Result<(), E>, E: Into<io::Error>>(
+        &mut self,
+        render_callback: F,
+    ) -> io::Result<CompletedFrame> {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
@@ -574,10 +564,11 @@ where
     ///     .render(buf.area, buf);
     /// });
     /// ```
-    pub fn insert_before<F>(&mut self, height: u16, draw_fn: F) -> io::Result<()>
-    where
-        F: FnOnce(&mut Buffer),
-    {
+    pub fn insert_before<F: FnOnce(&mut Buffer)>(
+        &mut self,
+        height: u16,
+        draw_fn: F,
+    ) -> io::Result<()> {
         match self.viewport {
             #[cfg(feature = "scrolling-regions")]
             Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),

@@ -112,10 +112,7 @@ impl<'a> ListItem<'a> {
     ///
     /// - [`List::new`](super::List::new) to create a list of items that can be converted to
     ///   [`ListItem`]
-    pub fn new<T>(content: T) -> Self
-    where
-        T: Into<Text<'a>>,
-    {
+    pub fn new<T: Into<Text<'a>>>(content: T) -> Self {
         Self {
             content: content.into(),
             style: Style::default(),
@@ -207,10 +204,7 @@ impl<'a> ListItem<'a> {
     }
 }
 
-impl<'a, T> From<T> for ListItem<'a>
-where
-    T: Into<Text<'a>>,
-{
+impl<'a, T: Into<Text<'a>>> From<T> for ListItem<'a> {
     fn from(value: T) -> Self {
         Self::new(value)
     }

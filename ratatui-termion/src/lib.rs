@@ -71,17 +71,11 @@ use termion::{color as tcolor, style as tstyle};
 /// [`Terminal`]: ratatui_core::terminal::Terminal
 /// [Termion]: https://docs.rs/termion
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
-pub struct TermionBackend<W>
-where
-    W: Write,
-{
+pub struct TermionBackend<W: Write> {
     writer: W,
 }
 
-impl<W> TermionBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> TermionBackend<W> {
     /// Creates a new Termion backend with the given writer.
     ///
     /// Most applications will use either [`stdout`](std::io::stdout) or
@@ -123,10 +117,7 @@ where
     }
 }
 
-impl<W> Write for TermionBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> Write for TermionBackend<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.writer.write(buf)
     }
@@ -136,10 +127,7 @@ where
     }
 }
 
-impl<W> Backend for TermionBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> Backend for TermionBackend<W> {
     fn clear(&mut self) -> io::Result<()> {
         self.clear_region(ClearType::All)
     }
@@ -183,10 +171,7 @@ where
         self.writer.flush()
     }
 
-    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
-    where
-        I: Iterator<Item = (u16, u16, &'a Cell)>,
-    {
+    fn draw<'a, I: Iterator<Item = (u16, u16, &'a Cell)>>(&mut self, content: I) -> io::Result<()> {
         use std::fmt::Write;
 
         let mut string = String::with_capacity(content.size_hint().0 * 3);

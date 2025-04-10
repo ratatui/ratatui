@@ -136,7 +136,7 @@ impl<'a> Sparkline<'a> {
     ///
     /// The default is [`symbols::shade::EMPTY`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn absent_value_symbol(mut self, symbol: impl Into<String>) -> Self {
+    pub fn absent_value_symbol<T: Into<String>>(mut self, symbol: T) -> Self {
         self.absent_value_symbol = AbsentValueSymbol(symbol.into());
         self
     }
@@ -202,11 +202,7 @@ impl<'a> Sparkline<'a> {
     /// # }
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn data<T>(mut self, data: T) -> Self
-    where
-        T: IntoIterator,
-        T::Item: Into<SparklineBar>,
-    {
+    pub fn data<T: IntoIterator<Item: Into<SparklineBar>>>(mut self, data: T) -> Self {
         self.data = data.into_iter().map(Into::into).collect();
         self
     }
