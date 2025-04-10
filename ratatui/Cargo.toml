@@ -121,7 +121,6 @@ color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 crossterm = { version = "0.28.1", features = ["event-stream"] }
 fakeit = "1.1"
-font8x8 = "0.3.1"
 futures = "0.3.30"
 indoc = "2"
 pretty_assertions = "1.4.0"
