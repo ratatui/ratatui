@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use core::ops::{Index, IndexMut};
 use core::{cmp, fmt};
 
@@ -638,7 +640,10 @@ impl fmt::Debug for Buffer {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+    use alloc::string::ToString;
     use core::iter;
+    use std::{dbg, println};
 
     use itertools::Itertools;
     use rstest::{fixture, rstest};

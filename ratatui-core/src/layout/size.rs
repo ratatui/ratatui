@@ -46,6 +46,8 @@ impl fmt::Display for Size {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use super::*;
 
     #[test]
