@@ -36,7 +36,10 @@ fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App,
     tick_rate: Duration,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error>>
+where
+    B::Error: 'static,
+{
     let events = events(tick_rate);
     loop {
         terminal.draw(|frame| ui::draw(frame, &mut app))?;
