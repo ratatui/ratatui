@@ -233,6 +233,7 @@ impl fmt::Display for TestBackend {
 
 impl Backend for TestBackend {
     type Error = io::Error;
+
     fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
