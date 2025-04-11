@@ -165,7 +165,7 @@ fn run<B: Backend>(
     rx: mpsc::Receiver<Event>,
 ) -> Result<()>
 where
-    B::Error: Send + Sync,
+    B::Error: Send + Sync + 'static,
 {
     let mut redraw = true;
     loop {

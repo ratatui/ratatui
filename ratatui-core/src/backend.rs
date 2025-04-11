@@ -148,7 +148,7 @@ pub struct WindowSize {
 /// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 pub trait Backend {
     /// Error type associated with this Backend.
-    type Error: core::error::Error + 'static;
+    type Error: core::error::Error;
 
     /// Draw the given content to the terminal screen.
     ///
