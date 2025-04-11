@@ -1,7 +1,10 @@
+use alloc::format;
 use alloc::rc::Rc;
+use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::iter;
 use core::num::NonZeroUsize;
+use std::{dbg, thread_local};
 
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -1172,6 +1175,10 @@ mod strengths {
 
 #[cfg(test)]
 mod tests {
+    use alloc::borrow::ToOwned;
+    use alloc::vec;
+    use alloc::vec::Vec;
+
     use super::*;
 
     #[test]
@@ -1403,12 +1410,14 @@ mod tests {
     /// - underflow: constraint is for less than the full space
     /// - overflow: constraint is for more than the full space
     mod split {
+        use alloc::string::ToString;
         use core::ops::Range;
 
         use itertools::Itertools;
         use pretty_assertions::assert_eq;
         use rstest::rstest;
 
+        use super::*;
         use crate::buffer::Buffer;
         use crate::layout::Constraint::{self, *};
         use crate::layout::{Direction, Flex, Layout, Rect};

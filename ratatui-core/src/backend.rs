@@ -100,6 +100,7 @@
 //! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
+use alloc::format;
 use core::ops;
 use std::io;
 
@@ -368,6 +369,8 @@ pub trait Backend {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use strum::ParseError;
 
     use super::*;

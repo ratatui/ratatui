@@ -1,4 +1,4 @@
-use std::io;
+use std::{eprintln, io};
 
 use crate::backend::{Backend, ClearType};
 use crate::buffer::{Buffer, Cell};

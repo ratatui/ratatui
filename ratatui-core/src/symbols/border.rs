@@ -365,6 +365,9 @@ pub const EMPTY: Set = Set {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+    use alloc::string::String;
+
     use indoc::{formatdoc, indoc};
 
     use super::*;

@@ -31,6 +31,8 @@ pub enum VerticalAlignment {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use strum::ParseError;
 
     use super::*;

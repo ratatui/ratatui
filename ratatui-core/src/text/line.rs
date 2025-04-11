@@ -1,6 +1,9 @@
 #![deny(missing_docs)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::arithmetic_side_effects)]
 use alloc::borrow::Cow;
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::fmt;
 
 use unicode_truncate::UnicodeTruncateStr;
@@ -831,7 +834,9 @@ impl Styled for Line<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
     use core::iter;
+    use std::dbg;
 
     use rstest::{fixture, rstest};
 
