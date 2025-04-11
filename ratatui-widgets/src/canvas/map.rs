@@ -58,6 +58,8 @@ impl Shape for Map {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use ratatui_core::buffer::Buffer;
     use ratatui_core::layout::Rect;
     use ratatui_core::symbols::Marker;

@@ -1,5 +1,8 @@
 //! The [`BarChart`] widget and its related types (e.g. [`Bar`], [`BarGroup`]).
 
+use alloc::vec;
+use alloc::vec::Vec;
+
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Direction, Rect};
 use ratatui_core::style::{Style, Styled};

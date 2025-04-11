@@ -143,6 +143,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use rstest::rstest;
     use strum::ParseError;
 

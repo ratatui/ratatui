@@ -1,4 +1,7 @@
 //! The [`Sparkline`] widget is used to display a sparkline over one or more lines.
+
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use core::cmp::min;
 
 use ratatui_core::buffer::Buffer;
@@ -434,6 +437,8 @@ impl Sparkline<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
+
     use ratatui_core::buffer::Cell;
     use ratatui_core::style::{Color, Modifier, Stylize};
     use strum::ParseError;

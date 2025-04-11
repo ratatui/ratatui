@@ -13,6 +13,10 @@
 //!
 //! You can also implement your own custom [`Shape`]s.
 
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 use core::fmt;
 use core::iter::zip;
 

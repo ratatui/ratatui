@@ -493,6 +493,8 @@ impl Styled for Paragraph<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
+
     use ratatui_core::buffer::Buffer;
     use ratatui_core::layout::{Alignment, Rect};
     use ratatui_core::style::{Color, Modifier, Style, Stylize};

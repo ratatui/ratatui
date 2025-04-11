@@ -1,4 +1,6 @@
 //! The [`Gauge`] widget is used to display a horizontal progress bar.
+use alloc::format;
+
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Color, Style, Styled};

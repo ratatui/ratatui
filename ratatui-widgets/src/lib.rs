@@ -80,6 +80,8 @@
 //!
 //! This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
 
+#![no_std]
+
 extern crate alloc;
 
 pub mod barchart;
