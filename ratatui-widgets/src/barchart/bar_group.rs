@@ -67,6 +67,7 @@ impl<'a> BarGroup<'a> {
     ///
     /// BarGroup::default().label(Line::from("Line").red());
     /// ```
+    /// [`String`]: alloc::string::String
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label<T: Into<Line<'a>>>(mut self, label: T) -> Self {
         self.label = Some(label.into());

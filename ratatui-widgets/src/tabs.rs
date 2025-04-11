@@ -124,6 +124,7 @@ impl<'a> Tabs<'a> {
     ///
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
+    /// [`String`]: alloc::string::String
     pub fn new<Iter>(titles: Iter) -> Self
     where
         Iter: IntoIterator,
