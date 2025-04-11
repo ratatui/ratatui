@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+
 ## ratatui - [0.30.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.1...ratatui-v0.30.0-alpha.2) - 2025-03-01
 
 ### Features
