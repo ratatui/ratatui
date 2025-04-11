@@ -47,7 +47,7 @@ fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App,
     tick_rate: Duration,
-) -> io::Result<()> {
+) -> Result<(), Box<dyn Error>> {
     let mut last_tick = Instant::now();
     loop {
         terminal.draw(|frame| ui::draw(frame, &mut app))?;

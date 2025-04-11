@@ -101,7 +101,6 @@
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
 use core::ops;
-use std::io;
 
 use strum::{Display, EnumString};
 
@@ -148,19 +147,22 @@ pub struct WindowSize {
 ///
 /// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 pub trait Backend {
+    /// Error type associated with this Backend.
+    type Error: core::error::Error + 'static;
+
     /// Draw the given content to the terminal screen.
     ///
     /// The content is provided as an iterator over `(u16, u16, &Cell)` tuples, where the first two
     /// elements represent the x and y coordinates, and the third element is a reference to the
     /// [`Cell`] to be drawn.
-    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
+    fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>;
 
     /// Insert `n` line breaks to the terminal screen.
     ///
     /// This method is optional and may not be implemented by all backends.
-    fn append_lines(&mut self, _n: u16) -> io::Result<()> {
+    fn append_lines(&mut self, _n: u16) -> Result<(), Self::Error> {
         Ok(())
     }
 
@@ -182,14 +184,14 @@ pub trait Backend {
     /// ```
     ///
     /// [`show_cursor`]: Self::show_cursor
-    fn hide_cursor(&mut self) -> io::Result<()>;
+    fn hide_cursor(&mut self) -> Result<(), Self::Error>;
 
     /// Show the cursor on the terminal screen.
     ///
     /// See [`hide_cursor`] for an example.
     ///
     /// [`hide_cursor`]: Self::hide_cursor
-    fn show_cursor(&mut self) -> io::Result<()>;
+    fn show_cursor(&mut self) -> Result<(), Self::Error>;
 
     /// Get the current cursor position on the terminal screen.
     ///
@@ -199,7 +201,7 @@ pub trait Backend {
     /// See [`set_cursor_position`] for an example.
     ///
     /// [`set_cursor_position`]: Self::set_cursor_position
-    fn get_cursor_position(&mut self) -> io::Result<Position>;
+    fn get_cursor_position(&mut self) -> Result<Position, Self::Error>;
 
     /// Set the cursor position on the terminal screen to the given x and y coordinates.
     ///
@@ -216,14 +218,14 @@ pub trait Backend {
     /// assert_eq!(backend.get_cursor_position()?, Position { x: 10, y: 20 });
     /// # std::io::Result::Ok(())
     /// ```
-    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()>;
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error>;
 
     /// Get the current cursor position on the terminal screen.
     ///
     /// The returned tuple contains the x and y coordinates of the cursor. The origin
     /// (0, 0) is at the top left corner of the screen.
     #[deprecated = "use `get_cursor_position()` instead which returns `Result<Position>`"]
-    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
+    fn get_cursor(&mut self) -> Result<(u16, u16), Self::Error> {
         let Position { x, y } = self.get_cursor_position()?;
         Ok((x, y))
     }
@@ -232,7 +234,7 @@ pub trait Backend {
     ///
     /// The origin (0, 0) is at the top left corner of the screen.
     #[deprecated = "use `set_cursor_position((x, y))` instead which takes `impl Into<Position>`"]
-    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
+    fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), Self::Error> {
         self.set_cursor_position(Position { x, y })
     }
 
@@ -248,7 +250,7 @@ pub trait Backend {
     /// backend.clear()?;
     /// # std::io::Result::Ok(())
     /// ```
-    fn clear(&mut self) -> io::Result<()>;
+    fn clear(&mut self) -> Result<(), Self::Error>;
 
     /// Clears a specific region of the terminal specified by the [`ClearType`] parameter
     ///
@@ -273,18 +275,7 @@ pub trait Backend {
     /// return an error if the `clear_type` is not supported by the backend.
     ///
     /// [`clear`]: Self::clear
-    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
-        match clear_type {
-            ClearType::All => self.clear(),
-            ClearType::AfterCursor
-            | ClearType::BeforeCursor
-            | ClearType::CurrentLine
-            | ClearType::UntilNewLine => Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("clear_type [{clear_type:?}] not supported with this backend"),
-            )),
-        }
-    }
+    fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error>;
 
     /// Get the size of the terminal screen in columns/rows as a [`Size`].
     ///
@@ -298,19 +289,19 @@ pub trait Backend {
     /// use ratatui::{backend::Backend, layout::Size};
     ///
     /// assert_eq!(backend.size()?, Size::new(80, 25));
-    /// # std::io::Result::Ok(())
+    /// # Result::Ok(())
     /// ```
-    fn size(&self) -> io::Result<Size>;
+    fn size(&self) -> Result<Size, Self::Error>;
 
     /// Get the size of the terminal screen in columns/rows and pixels as a [`WindowSize`].
     ///
     /// The reason for this not returning only the pixel size, given the redundancy with the
     /// `size()` method, is that the underlying backends most likely get both values with one
     /// syscall, and the user is also most likely to need columns and rows along with pixel size.
-    fn window_size(&mut self) -> io::Result<WindowSize>;
+    fn window_size(&mut self) -> Result<WindowSize, Self::Error>;
 
     /// Flush any buffered content to the terminal screen.
-    fn flush(&mut self) -> io::Result<()>;
+    fn flush(&mut self) -> Result<(), Self::Error>;
 
     /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range
     /// of rows.
@@ -342,7 +333,11 @@ pub trait Backend {
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_up`].
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up(&mut self, region: ops::Range<u16>, line_count: u16) -> io::Result<()>;
+    fn scroll_region_up(
+        &mut self,
+        region: ops::Range<u16>,
+        line_count: u16,
+    ) -> Result<(), Self::Error>;
 
     /// Scroll a region of the screen downwards, where a region is specified by a (half-open) range
     /// of rows.
@@ -363,7 +358,11 @@ pub trait Backend {
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_down`].
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down(&mut self, region: ops::Range<u16>, line_count: u16) -> io::Result<()>;
+    fn scroll_region_down(
+        &mut self,
+        region: ops::Range<u16>,
+        line_count: u16,
+    ) -> Result<(), Self::Error>;
 }
 
 #[cfg(test)]

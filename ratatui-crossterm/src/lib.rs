@@ -157,7 +157,9 @@ impl<W> Backend for CrosstermBackend<W>
 where
     W: Write,
 {
-    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
+    type Error = io::Error;
+
+    fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
@@ -219,30 +221,30 @@ where
         );
     }
 
-    fn hide_cursor(&mut self) -> io::Result<()> {
+    fn hide_cursor(&mut self) -> Result<(), Self::Error> {
         execute!(self.writer, Hide)
     }
 
-    fn show_cursor(&mut self) -> io::Result<()> {
+    fn show_cursor(&mut self) -> Result<(), Self::Error> {
         execute!(self.writer, Show)
     }
 
-    fn get_cursor_position(&mut self) -> io::Result<Position> {
+    fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
         crossterm::cursor::position()
             .map(|(x, y)| Position { x, y })
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
-    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error> {
         let Position { x, y } = position.into();
         execute!(self.writer, MoveTo(x, y))
     }
 
-    fn clear(&mut self) -> io::Result<()> {
+    fn clear(&mut self) -> Result<(), Self::Error> {
         self.clear_region(ClearType::All)
     }
 
-    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
+    fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
         execute!(
             self.writer,
             Clear(match clear_type {
@@ -255,19 +257,19 @@ where
         )
     }
 
-    fn append_lines(&mut self, n: u16) -> io::Result<()> {
+    fn append_lines(&mut self, n: u16) -> Result<(), Self::Error> {
         for _ in 0..n {
             queue!(self.writer, Print("\n"))?;
         }
         self.writer.flush()
     }
 
-    fn size(&self) -> io::Result<Size> {
+    fn size(&self) -> Result<Size, Self::Error> {
         let (width, height) = terminal::size()?;
         Ok(Size { width, height })
     }
 
-    fn window_size(&mut self) -> io::Result<WindowSize> {
+    fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
         let crossterm::terminal::WindowSize {
             columns,
             rows,
@@ -283,12 +285,16 @@ where
         })
     }
 
-    fn flush(&mut self) -> io::Result<()> {
+    fn flush(&mut self) -> Result<(), Self::Error> {
         self.writer.flush()
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
+    fn scroll_region_up(
+        &mut self,
+        region: std::ops::Range<u16>,
+        amount: u16,
+    ) -> Result<(), Self::Error> {
         queue!(
             self.writer,
             ScrollUpInRegion {
@@ -301,7 +307,11 @@ where
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
+    fn scroll_region_down(
+        &mut self,
+        region: std::ops::Range<u16>,
+        amount: u16,
+    ) -> Result<(), Self::Error> {
         queue!(
             self.writer,
             ScrollDownInRegion {
