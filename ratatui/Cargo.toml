@@ -119,7 +119,7 @@ ratatui-termion = { workspace = true, optional = true }
 argh = "0.1.12"
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
-crossterm = { version = "0.28.1", features = ["event-stream"] }
+crossterm = { version = "0.29.0", features = ["event-stream"] }
 fakeit = "1.1"
 futures = "0.3.30"
 indoc = "2"
