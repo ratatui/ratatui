@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use ratatui_core::style::{Style, Styled};
 
 use super::Cell;

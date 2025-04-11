@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Rect};
 use ratatui_core::style::Style;

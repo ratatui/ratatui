@@ -1,4 +1,6 @@
 //! The [`Tabs`] widget displays a horizontal set of tabs with a single tab selected.
+use alloc::vec::Vec;
+
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
@@ -444,6 +446,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::{format, vec};
+
     use ratatui_core::style::{Color, Stylize};
 
     use super::*;

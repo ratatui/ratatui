@@ -1,4 +1,5 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
+use alloc::vec::Vec;
 use core::cmp::max;
 use core::ops::Not;
 
@@ -1155,6 +1156,9 @@ impl Styled for Chart<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+    use alloc::{format, vec};
+
     use ratatui_core::style::{Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;

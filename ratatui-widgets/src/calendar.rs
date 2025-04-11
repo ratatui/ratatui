@@ -8,6 +8,9 @@
 //! * a style is returned by the [`DateStyler`] for the day
 //!
 //! [`Monthly`] has several controls for what should be displayed
+use alloc::format;
+use alloc::vec::Vec;
+
 use hashbrown::HashMap;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Layout, Rect};
