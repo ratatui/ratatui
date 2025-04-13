@@ -460,7 +460,7 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     fn apply() {
         assert_eq!(Constraint::Percentage(0).apply(100), 0);
         assert_eq!(Constraint::Percentage(50).apply(100), 50);

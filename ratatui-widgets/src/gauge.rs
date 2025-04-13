@@ -36,7 +36,7 @@ use crate::block::{Block, BlockExt};
 /// # See also
 ///
 /// - [`LineGauge`] for a thin progress bar
-#[allow(clippy::struct_field_names)] // gauge_style needs to be differentiated to style
+#[expect(clippy::struct_field_names)] // gauge_style needs to be differentiated to style
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Gauge<'a> {
     block: Option<Block<'a>>,
@@ -528,7 +528,7 @@ mod tests {
         );
     }
 
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     #[test]
     fn line_gauge_can_be_stylized_with_deprecated_gauge_style() {
         let gauge =
@@ -558,7 +558,7 @@ mod tests {
         );
     }
 
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     #[test]
     fn line_gauge_deprecated_line_set() {
         let gauge = LineGauge::default().line_set(symbols::line::DOUBLE);

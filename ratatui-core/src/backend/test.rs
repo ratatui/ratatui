@@ -137,7 +137,7 @@ impl TestBackend {
     ///
     /// When they are not equal, a panic occurs with a detailed error message showing the
     /// differences between the expected and actual buffers.
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     #[track_caller]
     pub fn assert_buffer(&self, expected: &Buffer) {
         // TODO: use assert_eq!()

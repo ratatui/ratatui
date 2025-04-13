@@ -365,7 +365,7 @@ impl<'a> Scrollbar<'a> {
     /// respective setters to change their value.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[allow(clippy::needless_pass_by_value)] // Breaking change
+    #[expect(clippy::needless_pass_by_value)] // Breaking change
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn symbols(mut self, symbols: Set) -> Self {
         self.thumb_symbol = symbols.thumb;

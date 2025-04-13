@@ -38,7 +38,7 @@ macro_rules! assert_buffer_eq {
     };
 }
 
-#[allow(deprecated)]
+#[expect(deprecated)]
 #[cfg(test)]
 mod tests {
     use crate::buffer::Buffer;

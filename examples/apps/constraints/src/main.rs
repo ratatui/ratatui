@@ -192,7 +192,7 @@ impl App {
     ///
     /// This function renders the demo content into a separate buffer and then splices the buffer
     /// into the main buffer. This is done to make it possible to handle scrolling easily.
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(clippy::cast_possible_truncation)]
     fn render_demo(self, area: Rect, buf: &mut Buffer) {
         // render demo content into a separate buffer so all examples fit we add an extra
         // area.height to make sure the last example is fully visible even when the scroll offset is
@@ -247,7 +247,7 @@ impl SelectedTab {
     }
 
     const fn get_example_count(self) -> u16 {
-        #[allow(clippy::match_same_arms)]
+        #[expect(clippy::match_same_arms)]
         match self {
             Self::Length => 4,
             Self::Percentage => 5,

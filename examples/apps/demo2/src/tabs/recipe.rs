@@ -17,7 +17,7 @@ struct Ingredient {
 }
 
 impl Ingredient {
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(clippy::cast_possible_truncation)]
     fn height(&self) -> u16 {
         self.name.lines().count() as u16
     }

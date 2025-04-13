@@ -1006,7 +1006,7 @@ fn changes_to_rects(
 
 /// please leave this here as it's useful for debugging unit tests when we make any changes to
 /// layout code - we should replace this with tracing in the future.
-#[allow(dead_code)]
+#[expect(dead_code)]
 fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
     let variables = format!(
         "{:?}",
@@ -1035,7 +1035,7 @@ impl From<(Variable, Variable)> for Element {
 }
 
 impl Element {
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     fn new() -> Self {
         Self {
             start: Variable::new(),
@@ -1177,7 +1177,6 @@ mod tests {
     #[test]
     // The compiler will optimize out the comparisons, but this ensures that the constants are
     // defined in the correct order of priority.
-    #[allow(clippy::assertions_on_constants)]
     pub fn strength_is_valid() {
         use strengths::*;
         assert!(SPACER_SIZE_EQ > MAX_SIZE_LE);
@@ -1228,7 +1227,7 @@ mod tests {
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
 
         // array_ref
-        #[allow(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
+        #[expect(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
         let layout = Layout::new(Direction::Horizontal, &[Constraint::Min(0)]);
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
@@ -1239,7 +1238,7 @@ mod tests {
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
 
         // vec_ref
-        #[allow(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
+        #[expect(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
         let layout = Layout::new(Direction::Horizontal, &(vec![Constraint::Min(0)]));
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
@@ -1281,11 +1280,6 @@ mod tests {
     /// The purpose of this test is to ensure that layout can be constructed with any type that
     /// implements `IntoIterator<Item = AsRef<Constraint>>`.
     #[test]
-    #[allow(
-        clippy::needless_borrow,
-        clippy::unnecessary_to_owned,
-        clippy::useless_asref
-    )]
     fn constraints() {
         const CONSTRAINTS: [Constraint; 2] = [Constraint::Min(0), Constraint::Max(10)];
         let fixed_size_array = CONSTRAINTS;
