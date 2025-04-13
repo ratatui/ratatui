@@ -638,6 +638,7 @@ mod tests {
 
     #[rstest]
     #[case(Style::new(), "Style::new()")]
+    #[case(Style::default(), "Style::new()")]
     #[case(Style::new().red(), "Style::new().red()")]
     #[case(Style::new().on_blue(), "Style::new().on_blue()")]
     #[case(Style::new().bold(), "Style::new().bold()")]
