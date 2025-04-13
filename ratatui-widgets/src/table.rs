@@ -266,6 +266,10 @@ pub struct Table<'a> {
 
     /// Controls how to distribute extra space among the columns
     flex: Flex,
+
+    /// How many items to try to keep visible before and after the selected item, the List widget
+    /// also supports such functionality, it is 0 by default
+    scroll_padding: usize,
 }
 
 impl Default for Table<'_> {
@@ -284,6 +288,7 @@ impl Default for Table<'_> {
             highlight_symbol: Text::default(),
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
+            scroll_padding: 0,
         }
     }
 }
@@ -717,6 +722,32 @@ impl<'a> Table<'a> {
         self.flex = flex;
         self
     }
+
+    /// Sets the number of items around the currently selected/highligted item that should be kept
+    /// visible
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// A padding value of 1 will keep 1 item above and 1 item below visible if possible
+    ///
+    /// ```rust
+    /// use ratatui::layout::{Constraint, Flex};
+    /// use ratatui::widgets::{Row, Table};
+    ///
+    /// let widths = [
+    ///     Constraint::Min(10),
+    ///     Constraint::Min(10),
+    ///     Constraint::Min(10),
+    /// ];
+    /// let table = Table::new(Vec::<Row>::new(), widths).scroll_padding(1);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn scroll_padding(mut self, padding: usize) -> Self {
+        self.scroll_padding = padding;
+        self
+    }
 }
 
 impl Widget for Table<'_> {
@@ -908,7 +939,9 @@ impl Table<'_> {
     /// - if there is still space to fill then there's a partial row at the end which should be
     ///   included in the view.
     fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
-        let last_row = self.rows.len().saturating_sub(1);
+        let row_len = self.rows.len();
+        let last_row = row_len.saturating_sub(1);
+        let scroll_padding = self.scroll_padding;
         let mut start = state.offset.min(last_row);
 
         if let Some(selected) = state.selected {
@@ -930,12 +963,28 @@ impl Table<'_> {
             let selected = selected.min(last_row);
 
             // scroll down until the selected row is visible
-            while selected >= end {
+            while selected + scroll_padding >= end {
+                if end <= last_row.saturating_sub(1) {
+                    end += 1;
+                } else {
+                    break;
+                }
+
                 height = height.saturating_add(self.rows[end].height_with_margin());
-                end += 1;
+
                 while height > area.height {
                     height = height.saturating_sub(self.rows[start].height_with_margin());
                     start += 1;
+                }
+            }
+
+            // scroll up until the selected row is visible
+            while selected.saturating_sub(scroll_padding) < start {
+                start -= 1;
+                height = height.saturating_add(self.rows[start].height_with_margin());
+                while height > area.height {
+                    end -= 1;
+                    height = height.saturating_sub(self.rows[end].height_with_margin());
                 }
             }
         }
@@ -2270,5 +2319,158 @@ mod tests {
             .footer(footer);
         let column_count = table.column_count();
         assert_eq!(column_count, expected);
+    }
+
+    #[rstest]
+    #[case::no_padding(4, 2, 0, Some(2), Buffer::with_lines(vec![">> 2 ", "   3 ", "   4 ", "   5 "]))]
+    #[case::one_before(
+        4,
+        2, // Offset
+        1, // Padding
+        Some(2), // Selected
+        Buffer::with_lines(vec!["   1 ", ">> 2 ", "   3 ", "   4 "])
+    )]
+    #[case::check_padding_overflow(
+        4,
+        1, // Offset
+        2, // Padding
+        Some(4), // Selected
+        Buffer::with_lines(vec!["   2 ", "   3 ", ">> 4 ", "   5 "])
+    )]
+    #[case::no_padding_offset_behavior(
+        5, // Render Area Height
+        2, // Offset
+        0, // Padding
+        Some(3), // Selected
+        Buffer::with_lines(
+            vec!["   2 ", ">> 3 ", "   4 ", "   5 ", "   6 "]
+            )
+    )]
+    #[case::two_before(
+        5, // Render Area Height
+        2, // Offset
+        2, // Padding
+        Some(3), // Selected
+        Buffer::with_lines(
+            vec!["   1 ", "   2 ", ">> 3 ", "   4 ", "   5 "]
+            )
+    )]
+    #[case::keep_selected_visible(
+        4,
+        0, // Offset
+        4, // Padding
+        Some(1), // Selected
+        Buffer::with_lines(vec!["   0 ", ">> 1 ", "   2 ", "   3 "])
+    )]
+    fn test_padding(
+        #[case] render_height: u16,
+        #[case] offset: usize,
+        #[case] padding: usize,
+        #[case] selected: Option<usize>,
+        #[case] expected: Buffer,
+    ) {
+        let rows = (0..8).map(|i| Row::new([i.to_string()]));
+        let table = Table::new(rows, [Constraint::Length(2)])
+            .scroll_padding(padding)
+            .highlight_symbol(">> ");
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, render_height));
+        let mut state = TableState::new()
+            .with_offset(offset)
+            .with_selected(selected);
+
+        StatefulWidget::render(
+            table.clone(),
+            Rect::new(0, 0, 5, render_height),
+            &mut buf,
+            &mut state,
+        );
+
+        assert_eq!(expected, buf);
+    }
+
+    /// If there isn't enough room for the selected item and the requested padding the table can
+    /// jump up and down every frame if something isn't done about it. This code tests to make
+    /// sure that isn't currently happening
+    #[test]
+    fn padding_flicker() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
+        let mut state = TableState::default();
+
+        *state.offset_mut() = 2;
+        state.select(Some(4));
+
+        let rows = (0..8).map(|i| Row::new([i.to_string()]));
+        let list = Table::new(rows, [Constraint::Length(2)])
+            .scroll_padding(3)
+            .highlight_symbol(">> ");
+
+        StatefulWidget::render(&list, buffer.area, &mut buffer, &mut state);
+
+        let offset_after_render = state.offset();
+
+        StatefulWidget::render(&list, buffer.area, &mut buffer, &mut state);
+
+        // Offset after rendering twice should remain the same as after once
+        assert_eq!(offset_after_render, state.offset());
+    }
+
+    #[test]
+    fn padding_inconsistent_item_sizes() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        let mut state = TableState::default().with_offset(0).with_selected(Some(3));
+
+        let items = [
+            Row::new(["Item 0"]),
+            Row::new(["Item 1"]),
+            Row::new(["Item 2"]),
+            Row::new(["Item 3"]),
+            Row::new(["Item 4\nTest\nTest"]),
+            Row::new(["Item 5"]),
+        ];
+        let list = Table::new(items, [Constraint::Length(7)])
+            .scroll_padding(1)
+            .highlight_symbol(">> ");
+
+        StatefulWidget::render(list, buffer.area, &mut buffer, &mut state);
+
+        #[rustfmt::skip]
+        let expected = [
+            "   Item 2 ",
+            ">> Item 3 ",
+            "   Item 4 ",
+        ];
+        assert_eq!(buffer, Buffer::with_lines(expected));
+    }
+
+    // Tests to make sure when it's pushing back the first visible index value that it doesnt
+    // include an item that's too large
+    #[test]
+    fn padding_offset_pushback_break() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 4));
+        let mut state = TableState::default();
+
+        *state.offset_mut() = 1;
+        state.select(Some(2));
+
+        let items = [
+            Row::new(["Item 0\nTest\nTest"]),
+            Row::new(["Item 1"]),
+            Row::new(["Item 2"]),
+            Row::new(["Item 3"]),
+        ];
+        let table = Table::new(items, [Constraint::Length(10)])
+            .scroll_padding(2)
+            .highlight_symbol(">> ");
+
+        StatefulWidget::render(table, buffer.area, &mut buffer, &mut state);
+        #[rustfmt::skip]
+        assert_eq!(
+            buffer,
+            Buffer::with_lines([
+                "   Item 0 ",
+                "   Item 1 ",
+                ">> Item 2 ",
+                "   Item 3 "])
+        );
     }
 }
