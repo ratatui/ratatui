@@ -534,11 +534,11 @@ impl Scrollbar<'_> {
         // `<`
         iter::once(begin)
             // `<═══`
-            .chain(iter::repeat(track).take(track_start_len))
+            .chain(iter::repeat_n(track, track_start_len))
             // `<═══█████`
-            .chain(iter::repeat(thumb).take(thumb_len))
+            .chain(iter::repeat_n(thumb, thumb_len))
             // `<═══█████═══════`
-            .chain(iter::repeat(track).take(track_end_len))
+            .chain(iter::repeat_n(track, track_end_len))
             // `<═══█████═══════>`
             .chain(iter::once(end))
             .flatten()
@@ -636,6 +636,8 @@ impl ScrollbarOrientation {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+    use alloc::string::ToString;
     use core::str::FromStr;
 
     use ratatui_core::text::Text;

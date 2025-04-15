@@ -1,3 +1,5 @@
+use alloc::string::{String, ToString};
+
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Style, Styled};

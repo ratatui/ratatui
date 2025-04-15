@@ -377,6 +377,10 @@ impl From<(Position, Size)> for Rect {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+    use alloc::vec;
+    use alloc::vec::Vec;
+
     use rstest::rstest;
 
     use super::*;

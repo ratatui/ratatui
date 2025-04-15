@@ -88,6 +88,8 @@ impl<'a> From<Masked<'a>> for Text<'a> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use super::*;
     use crate::text::Line;
 
