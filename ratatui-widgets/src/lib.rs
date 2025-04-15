@@ -81,6 +81,9 @@
 //! This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
 
 #![no_std]
+#![warn(clippy::std_instead_of_core)]
+#![warn(clippy::std_instead_of_alloc)]
+#![warn(clippy::alloc_instead_of_core)]
 
 extern crate alloc;
 
