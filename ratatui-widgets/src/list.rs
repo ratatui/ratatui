@@ -1,6 +1,7 @@
 //! The [`List`] widget is used to display a list of items and allows selecting one or multiple
 //! items.
 
+use alloc::borrow::Cow;
 use alloc::vec::Vec;
 
 use ratatui_core::style::{Style, Styled};
@@ -73,14 +74,16 @@ mod state;
 /// use ratatui::Frame;
 /// use ratatui::layout::Rect;
 /// use ratatui::style::{Style, Stylize};
-/// use ratatui::widgets::{Block, List, ListState};
+/// use ratatui::widgets::{Block, List, ListState, items};
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
+///
 /// // This should be stored outside of the function in your application state.
 /// let mut state = ListState::default();
-/// let items = ["Item 1", "Item 2", "Item 3"];
-/// let list = List::new(items)
+/// let items = items!["Item 1", "Item 2", "Item 3"];
+///
+/// let list = List::from(&items)
 ///     .block(Block::bordered().title("List"))
 ///     .highlight_style(Style::new().reversed())
 ///     .highlight_symbol(">>")
@@ -105,12 +108,12 @@ mod state;
 /// [`Text::alignment`]: ratatui_core::text::Text::alignment
 /// [`StatefulWidget`]: ratatui_core::widgets::StatefulWidget
 /// [`Widget`]: ratatui_core::widgets::Widget
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+#[derive(Debug, Clone, Default, Eq, Hash, PartialEq)]
 pub struct List<'a> {
     /// An optional block to wrap the widget in
     pub(crate) block: Option<Block<'a>>,
     /// The items in the list
-    pub(crate) items: Vec<ListItem<'a>>,
+    pub(crate) items: Cow<'a, [ListItem<'a>]>,
     /// Style used as a base style for the widget
     pub(crate) style: Style,
     /// List display direction
@@ -142,6 +145,41 @@ pub enum ListDirection {
     BottomToTop,
 }
 
+/// Creates a fixed sized array of [`ListItem`]s.
+///
+/// Can be used together with `List::from` to only generate the [`ListItem`]s if
+/// any changed instead of each time the [`List`] is rendered.
+///
+/// # Example
+///
+/// ```rust
+/// use ratatui::Frame;
+/// use ratatui::layout::Rect;
+/// use ratatui::style::{Style, Stylize};
+/// use ratatui::widgets::{Block, List, items};
+///
+/// # fn ui(frame: &mut Frame) {
+/// # let area = Rect::default();
+/// let items = items!["Item 1", "Item 2", "Item 3"];
+/// let list = List::from(&items)
+///     .block(Block::bordered().title("List"))
+///     .highlight_style(Style::new().reversed())
+///     .highlight_symbol(">>")
+///     .repeat_highlight_symbol(true);
+///
+/// frame.render_widget(list, area);
+/// # }
+/// ```
+#[macro_export]
+macro_rules! items {
+    () => (
+        ([] as [$crate::list::ListItem<'_>; 0])
+    );
+    ($($x:expr),+ $(,)?) => (
+        [$(Into::<$crate::list::ListItem<'_>>::into($x)),+]
+    );
+}
+
 impl<'a> List<'a> {
     /// Creates a new list from [`ListItem`]s
     ///
@@ -153,9 +191,9 @@ impl<'a> List<'a> {
     /// From a slice of [`&str`]
     ///
     /// ```
-    /// use ratatui::widgets::List;
+    /// use ratatui::widgets::{List, items};
     ///
-    /// let list = List::new(["Item 1", "Item 2"]);
+    /// let list = List::new(items!["Item 1", "Item 2"]);
     /// ```
     ///
     /// From [`Text`]
@@ -163,9 +201,9 @@ impl<'a> List<'a> {
     /// ```
     /// use ratatui::style::{Style, Stylize};
     /// use ratatui::text::Text;
-    /// use ratatui::widgets::List;
+    /// use ratatui::widgets::{List, items};
     ///
-    /// let list = List::new([
+    /// let list = List::new(items![
     ///     Text::styled("Item 1", Style::new().red()),
     ///     Text::styled("Item 2", Style::new().red()),
     /// ]);
@@ -182,6 +220,7 @@ impl<'a> List<'a> {
     /// ```
     ///
     /// [`Text`]: ratatui_core::text::Text
+    #[must_use]
     pub fn new<T>(items: T) -> Self
     where
         T: IntoIterator,
@@ -418,11 +457,15 @@ impl<'a> List<'a> {
     }
 
     /// Returns the number of [`ListItem`]s in the list
+    #[must_use]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
     /// Returns true if the list contains no elements.
+    #[must_use]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
@@ -457,7 +500,53 @@ where
     Item: Into<ListItem<'a>>,
 {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
-        Self::new(iter)
+        let items = iter.into_iter().map(Into::into).collect();
+        Self::from(Cow::Owned(items))
+    }
+}
+
+impl<'a> From<Cow<'a, [ListItem<'a>]>> for List<'a> {
+    fn from(value: Cow<'a, [ListItem<'a>]>) -> Self {
+        Self {
+            items: value,
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<Vec<ListItem<'a>>> for List<'a> {
+    fn from(value: Vec<ListItem<'a>>) -> Self {
+        Self {
+            items: Cow::Owned(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<&'a Vec<ListItem<'a>>> for List<'a> {
+    fn from(value: &'a Vec<ListItem<'a>>) -> Self {
+        Self {
+            items: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a, const N: usize> From<&'a [ListItem<'a>; N]> for List<'a> {
+    fn from(value: &'a [ListItem<'a>; N]) -> Self {
+        Self {
+            items: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<&'a [ListItem<'a>]> for List<'a> {
+    fn from(value: &'a [ListItem<'a>]) -> Self {
+        Self {
+            items: Cow::Borrowed(value),
+            ..Self::default()
+        }
     }
 }
 
@@ -477,14 +566,52 @@ mod tests {
     #[test]
     fn collect_list_from_iterator() {
         let collected: List = (0..3).map(|i| format!("Item{i}")).collect();
-        let expected = List::new(["Item0", "Item1", "Item2"]);
+        let items = items!["Item0", "Item1", "Item2"];
+        let expected = List::new(items);
+        assert!(matches!(collected.items, Cow::Owned(_)));
+        assert!(matches!(expected.items, Cow::Owned(_)));
+        assert_eq!(collected, expected);
+
+        let collected: List = (0..3).map(|i| format!("Item{i}")).collect();
+        let items = [
+            ListItem::from("Item0"),
+            ListItem::from("Item1"),
+            ListItem::from("Item2"),
+        ];
+        let expected = List::new(items);
+        assert!(matches!(collected.items, Cow::Owned(_)));
+        assert!(matches!(expected.items, Cow::Owned(_)));
+        assert_eq!(collected, expected);
+    }
+
+    #[test]
+    fn fluent_items() {
+        let collected: List = (0..3).map(|i| format!("Item{i}")).collect();
+        let expected = List::default().items(vec![
+            ListItem::from("Item0"),
+            "Item1".into(),
+            "Item2".into(),
+        ]);
+        assert!(matches!(collected.items, Cow::Owned(_)));
+        assert!(matches!(expected.items, Cow::Owned(_)));
+        assert_eq!(collected, expected);
+
+        let collected: List = (0..3).map(|i| format!("Item{i}")).collect();
+        let items = [
+            ListItem::from("Item0"),
+            ListItem::from("Item1"),
+            ListItem::from("Item2"),
+        ];
+        let expected = List::default().items(items);
+        assert!(matches!(collected.items, Cow::Owned(_)));
+        assert!(matches!(expected.items, Cow::Owned(_)));
         assert_eq!(collected, expected);
     }
 
     #[test]
     fn can_be_stylized() {
         assert_eq!(
-            List::new::<Vec<&str>>(vec![])
+            List::new::<Vec<ListItem<'_>>>(vec![])
                 .black()
                 .on_white()
                 .bold()
@@ -528,6 +655,47 @@ mod tests {
     }
 
     #[test]
+    fn macro_items() {
+        let items = items![];
+        let list = List::new(items);
+        assert!(matches!(list.items, Cow::Owned(_)));
+        assert_eq!(*list.items, []);
+
+        let items = items!();
+        let list = List::new(items);
+        assert!(matches!(list.items, Cow::Owned(_)));
+        assert_eq!(*list.items, []);
+
+        let items = items!["Item0"];
+        let list = List::new(items);
+        assert!(matches!(list.items, Cow::Owned(_)));
+        assert_eq!(
+            *list.items,
+            [ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }]
+        );
+
+        let items = items!["Item0", "Item1"];
+        let list = List::new(items);
+        assert!(matches!(list.items, Cow::Owned(_)));
+        assert_eq!(
+            *list.items,
+            [
+                ListItem {
+                    content: Text::from(Line::from("Item0")),
+                    style: Style::new(),
+                },
+                ListItem {
+                    content: Text::from(Line::from("Item1")),
+                    style: Style::new(),
+                }
+            ]
+        );
+    }
+
+    #[test]
     fn styled_list_item() {
         let text = Text::from("Item 1");
         // note this avoids using the `Stylize' methods as that gets then combines the style
@@ -547,6 +715,33 @@ mod tests {
     }
 
     #[test]
+    fn from_cow() {
+        let items = items!["Item0"];
+        let cow: Cow<[ListItem<'_>]> = Cow::Borrowed(&items);
+        let list = List::from(cow);
+        assert!(matches!(list.items, Cow::Borrowed(_)));
+        assert_eq!(
+            *list.items,
+            [ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }]
+        );
+
+        let items: Vec<_> = items!["Item0"].to_vec();
+        let cow: Cow<[ListItem<'_>]> = Cow::Owned(items);
+        let list = List::from(cow);
+        assert!(matches!(list.items, Cow::Owned(_)));
+        assert_eq!(
+            *list.items,
+            [ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }]
+        );
+    }
+
+    #[test]
     fn styled_text_and_list_item() {
         let text = Text::from("Item 1").bold();
         // note this avoids using the `Stylize' methods as that gets then combines the style
@@ -562,6 +757,31 @@ mod tests {
         assert_eq!(
             buffer,
             Buffer::with_lines([Line::from(vec!["  ".italic(), "Item 1  ".bold().italic()])])
+        );
+    }
+
+    #[test]
+    fn from_vec() {
+        let items: Vec<_> = items!["Item0"].to_vec();
+        let list = List::from(items);
+        assert!(matches!(list.items, Cow::Owned(_)));
+        assert_eq!(
+            *list.items,
+            [ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }]
+        );
+
+        let items: Vec<_> = items!["Item0"].to_vec();
+        let list = List::from(&items);
+        assert!(matches!(list.items, Cow::Borrowed(_)));
+        assert_eq!(
+            *list.items,
+            [ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }]
         );
     }
 
@@ -623,6 +843,31 @@ mod tests {
                     "Item 5  ".bold().italic().red().on_blue(),
                 ],
             ])
+        );
+    }
+
+    #[test]
+    fn from_slice() {
+        let items = items!["Item0"];
+        let list = List::from(&items);
+        assert!(matches!(list.items, Cow::Borrowed(_)));
+        assert_eq!(
+            *list.items,
+            [ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }]
+        );
+
+        let items: Vec<_> = items!["Item0"].to_vec();
+        let list = List::from(items.as_slice());
+        assert!(matches!(list.items, Cow::Borrowed(_)));
+        assert_eq!(
+            *list.items,
+            [ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }]
         );
     }
 }

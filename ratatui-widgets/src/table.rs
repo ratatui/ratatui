@@ -1,6 +1,7 @@
 //! The [`Table`] widget is used to display multiple rows and columns in a grid and allows selecting
 //! one or multiple cells.
 
+use alloc::borrow::Cow;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -232,7 +233,7 @@ mod state;
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Table<'a> {
     /// Data to display in each row
-    rows: Vec<Row<'a>>,
+    rows: Cow<'a, [Row<'a>]>,
 
     /// Optional header
     header: Option<Row<'a>>,
@@ -271,10 +272,44 @@ pub struct Table<'a> {
     flex: Flex,
 }
 
+/// Creates a fixed sized array of [`Row`]s.
+///
+/// Can be used together with `Table::from` to only generate the [`Row`]s if
+/// any changed instead of each time the [`Table`] is rendered.
+///
+/// # Example
+///
+/// ```rust
+/// use ratatui::layout::Constraint;
+/// use ratatui::widgets::{Table, rows};
+///
+/// let rows = rows![
+///     ["Cell1", "Value1"],
+///     ["Cell2", "Value2"],
+///     ["Cell3", "Value3"]
+/// ];
+/// let widths = [
+///     Constraint::Length(5),
+///     Constraint::Length(5),
+///     Constraint::Length(10),
+/// ];
+/// let table = Table::from(&rows).widths(widths);
+/// ```
+#[macro_export]
+macro_rules! rows {
+    () => (
+        ([] as [$crate::table::Row<'_>; 0])
+    );
+    ($([$($x:expr),+ $(,)?]),+ $(,)?) => (
+        // TODO: avoid to_vec()
+        [$(Into::<$crate::table::Row<'_>>::into(vec![$(Into::<$crate::table::Cell<'_>>::into($x)),+])),+]
+    );
+}
+
 impl Default for Table<'_> {
     fn default() -> Self {
         Self {
-            rows: Vec::new(),
+            rows: Cow::Borrowed(&[]),
             header: None,
             footer: None,
             widths: Vec::new(),
@@ -1037,6 +1072,51 @@ where
     }
 }
 
+impl<'a> From<Vec<Row<'a>>> for Table<'a> {
+    fn from(value: Vec<Row<'a>>) -> Self {
+        Self {
+            rows: Cow::Owned(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<&'a Vec<Row<'a>>> for Table<'a> {
+    fn from(value: &'a Vec<Row<'a>>) -> Self {
+        Self {
+            rows: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<&'a [Row<'a>]> for Table<'a> {
+    fn from(value: &'a [Row<'a>]) -> Self {
+        Self {
+            rows: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a, const N: usize> From<&'a [Row<'a>; N]> for Table<'a> {
+    fn from(value: &'a [Row<'a>; N]) -> Self {
+        Self {
+            rows: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<Cow<'a, [Row<'a>]>> for Table<'a> {
+    fn from(value: Cow<'a, [Row<'a>]>) -> Self {
+        Self {
+            rows: value,
+            ..Self::default()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;
@@ -1048,6 +1128,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::cells;
     use crate::table::Cell;
 
     #[test]
@@ -1055,7 +1136,8 @@ mod tests {
         let rows = [Row::new(vec![Cell::from("")])];
         let widths = [Constraint::Percentage(100)];
         let table = Table::new(rows.clone(), widths);
-        assert_eq!(table.rows, rows);
+        assert!(matches!(table.rows, Cow::Owned(_)));
+        assert_eq!(*table.rows, rows);
         assert_eq!(table.header, None);
         assert_eq!(table.footer, None);
         assert_eq!(table.widths, widths);
@@ -1071,7 +1153,8 @@ mod tests {
     #[test]
     fn default() {
         let table = Table::default();
-        assert_eq!(table.rows, []);
+        assert!(matches!(table.rows, Cow::Borrowed(_)));
+        assert_eq!(*table.rows, []);
         assert_eq!(table.header, None);
         assert_eq!(table.footer, None);
         assert_eq!(table.widths, []);
@@ -1130,7 +1213,8 @@ mod tests {
     fn rows() {
         let rows = [Row::new(vec![Cell::from("")])];
         let table = Table::default().rows(rows.clone());
-        assert_eq!(table.rows, rows);
+        assert!(matches!(table.rows, Cow::Owned(_)));
+        assert_eq!(*table.rows, rows);
     }
 
     #[test]
@@ -1229,6 +1313,148 @@ mod tests {
         let vec_ref = &vec![Constraint::Percentage(100)];
         let table = Table::new(Vec::<Row>::new(), vec_ref);
         assert_eq!(table.widths, [Constraint::Percentage(100)], "vec ref");
+    }
+
+    #[test]
+    fn macro_rows() {
+        let rows = rows![];
+        let table = Table::new(rows, [] as [Constraint; 0]);
+        assert!(matches!(table.rows, Cow::Owned(_)));
+        assert_eq!(*table.rows, []);
+
+        let rows = rows!();
+        let table = Table::new(rows, [] as [Constraint; 0]);
+        assert!(matches!(table.rows, Cow::Owned(_)));
+        assert_eq!(*table.rows, []);
+
+        let rows = rows![["Item0"]];
+        let array = [Constraint::Percentage(100)];
+        let table = Table::new(rows, array);
+        assert!(matches!(table.rows, Cow::Owned(_)));
+        assert_eq!(
+            *table.rows,
+            [Row {
+                cells: Cow::Owned(vec![Cell::from("Item0")]),
+                ..Default::default()
+            }]
+        );
+
+        let rows = rows![["Item0", "Value0"], ["Item1", "Value1"]];
+        let array = [Constraint::Percentage(100)];
+        let table = Table::new(rows, array);
+        assert!(matches!(table.rows, Cow::Owned(_)));
+        assert_eq!(
+            *table.rows,
+            [
+                Row {
+                    cells: Cow::Owned(vec![Cell::from("Item0"), Cell::from("Value0")]),
+                    ..Default::default()
+                },
+                Row {
+                    cells: Cow::Owned(vec![Cell::from("Item1"), Cell::from("Value1")]),
+                    ..Default::default()
+                }
+            ]
+        );
+
+        // TODO: implements this as rows![]
+        let row_zero = cells!["Item0", "Value0"];
+        let row_one = cells!["Item1", "Value1"];
+        let rows = [Row::from(&row_zero), Row::from(&row_one)];
+
+        let array = [Constraint::Percentage(100)];
+        let table = Table::from(&rows).widths(array);
+        assert!(matches!(table.rows, Cow::Borrowed(_)));
+        assert_eq!(
+            *table.rows,
+            [
+                Row {
+                    cells: Cow::Owned(vec![Cell::from("Item0"), Cell::from("Value0")]),
+                    ..Default::default()
+                },
+                Row {
+                    cells: Cow::Owned(vec![Cell::from("Item1"), Cell::from("Value1")]),
+                    ..Default::default()
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn from_cow() {
+        let rows = rows![["Item0"]];
+        let cow: Cow<[Row<'_>]> = Cow::Borrowed(&rows);
+        let table: Table<'_> = Table::from(cow);
+        assert!(matches!(table.rows, Cow::Borrowed(_)));
+        assert_eq!(
+            *table.rows,
+            [Row {
+                cells: Cow::Owned(vec![Cell::from("Item0")]),
+                ..Default::default()
+            }]
+        );
+
+        let rows: Vec<_> = rows![["Item0"]].to_vec();
+        let cow: Cow<[Row<'_>]> = Cow::Owned(rows);
+        let table: Table<'_> = Table::from(cow);
+        assert!(matches!(table.rows, Cow::Owned(_)));
+        assert_eq!(
+            *table.rows,
+            [Row {
+                cells: Cow::Owned(vec![Cell::from("Item0")]),
+                ..Default::default()
+            }]
+        );
+    }
+
+    #[test]
+    fn from_vec() {
+        let rows: Vec<_> = rows![["Item0"]].to_vec();
+        let table = Table::from(rows);
+        assert!(matches!(table.rows, Cow::Owned(_)));
+        assert_eq!(
+            *table.rows,
+            [Row {
+                cells: Cow::Owned(vec![Cell::from("Item0")]),
+                ..Default::default()
+            }]
+        );
+
+        let rows: Vec<_> = rows![["Item0"]].to_vec();
+        let table = Table::from(&rows);
+        assert!(matches!(table.rows, Cow::Borrowed(_)));
+        assert_eq!(
+            *table.rows,
+            [Row {
+                cells: Cow::Owned(vec![Cell::from("Item0")]),
+                ..Default::default()
+            }]
+        );
+    }
+
+    #[test]
+    fn from_slice() {
+        let rows = rows![["Item0"]];
+        let table = Table::from(&rows);
+        assert!(matches!(table.rows, Cow::Borrowed(_)));
+        assert_eq!(
+            *table.rows,
+            [Row {
+                cells: Cow::Owned(vec![Cell::from("Item0")]),
+                ..Default::default()
+            }]
+        );
+
+        let rows: Vec<_> = rows![["Item0"]].to_vec();
+        let table = Table::from(rows.as_slice());
+        assert!(matches!(table.rows, Cow::Borrowed(_)));
+        assert_eq!(
+            *table.rows,
+            [Row {
+                cells: Cow::Owned(vec![Cell::from("Item0")]),
+                ..Default::default()
+            }]
+        );
     }
 
     #[cfg(test)]
