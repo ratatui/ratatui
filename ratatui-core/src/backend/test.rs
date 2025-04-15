@@ -1,6 +1,8 @@
 //! This module provides the `TestBackend` implementation for the [`Backend`] trait.
 //! It is used in the integration tests to verify the correctness of the library.
 
+use alloc::string::String;
+use alloc::vec;
 use core::fmt::{self, Write};
 use core::iter;
 use std::io;
@@ -456,6 +458,8 @@ fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item =
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use itertools::Itertools as _;
 
     use super::*;

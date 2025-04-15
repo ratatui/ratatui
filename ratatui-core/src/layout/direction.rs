@@ -9,6 +9,8 @@ pub enum Direction {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use strum::ParseError;
 
     use super::*;
