@@ -513,10 +513,7 @@ impl<'a> Context<'a> {
     }
 
     /// Draw the given [`Shape`] in this context
-    pub fn draw<S>(&mut self, shape: &S)
-    where
-        S: Shape,
-    {
+    pub fn draw<S: Shape>(&mut self, shape: &S) {
         self.dirty = true;
         let mut painter = Painter::from(self);
         shape.draw(&mut painter);
@@ -541,10 +538,7 @@ impl<'a> Context<'a> {
     /// layers.
     ///
     /// [`Text`]: ratatui_core::text::Text
-    pub fn print<T>(&mut self, x: f64, y: f64, line: T)
-    where
-        T: Into<TextLine<'a>>,
-    {
+    pub fn print<T: Into<TextLine<'a>>>(&mut self, x: f64, y: f64, line: T) {
         self.labels.push(Label {
             x,
             y,
@@ -622,10 +616,7 @@ impl<'a> Context<'a> {
 ///
 /// [`marker`]: #method.marker
 #[derive(Debug, Clone, PartialEq)]
-pub struct Canvas<'a, F>
-where
-    F: Fn(&mut Context),
-{
+pub struct Canvas<'a, F: Fn(&mut Context)> {
     block: Option<Block<'a>>,
     x_bounds: [f64; 2],
     y_bounds: [f64; 2],
@@ -634,10 +625,7 @@ where
     marker: Marker,
 }
 
-impl<F> Default for Canvas<'_, F>
-where
-    F: Fn(&mut Context),
-{
+impl<F: Fn(&mut Context)> Default for Canvas<'_, F> {
     fn default() -> Self {
         Self {
             block: None,
@@ -650,10 +638,7 @@ where
     }
 }
 
-impl<'a, F> Canvas<'a, F>
-where
-    F: Fn(&mut Context),
-{
+impl<'a, F: Fn(&mut Context)> Canvas<'a, F> {
     /// Wraps the canvas with a custom [`Block`] widget.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
@@ -751,19 +736,13 @@ where
     }
 }
 
-impl<F> Widget for Canvas<'_, F>
-where
-    F: Fn(&mut Context),
-{
+impl<F: Fn(&mut Context)> Widget for Canvas<'_, F> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Widget::render(&self, area, buf);
     }
 }
 
-impl<F> Widget for &Canvas<'_, F>
-where
-    F: Fn(&mut Context),
-{
+impl<F: Fn(&mut Context)> Widget for &Canvas<'_, F> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.block.as_ref().render(area, buf);
         let canvas_area = self.block.inner_if_some(area);
