@@ -534,11 +534,11 @@ impl Scrollbar<'_> {
         // `<`
         iter::once(begin)
             // `<═══`
-            .chain(iter::repeat(track).take(track_start_len))
+            .chain(iter::repeat_n(track, track_start_len))
             // `<═══█████`
-            .chain(iter::repeat(thumb).take(thumb_len))
+            .chain(iter::repeat_n(thumb, thumb_len))
             // `<═══█████═══════`
-            .chain(iter::repeat(track).take(track_end_len))
+            .chain(iter::repeat_n(track, track_end_len))
             // `<═══█████═══════>`
             .chain(iter::once(end))
             .flatten()
