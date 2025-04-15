@@ -4,7 +4,7 @@
 use alloc::string::String;
 use alloc::vec;
 use core::fmt::{self, Write};
-use core::{iter, ops};
+use core::iter;
 use std::io;
 
 use unicode_width::UnicodeWidthStr;
@@ -366,7 +366,11 @@ impl Backend for TestBackend {
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up(&mut self, region: ops::Range<u16>, scroll_by: u16) -> io::Result<()> {
+    fn scroll_region_up(
+        &mut self,
+        region: core::ops::Range<u16>,
+        scroll_by: u16,
+    ) -> io::Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
         let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
@@ -412,7 +416,11 @@ impl Backend for TestBackend {
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down(&mut self, region: ops::Range<u16>, scroll_by: u16) -> io::Result<()> {
+    fn scroll_region_down(
+        &mut self,
+        region: core::ops::Range<u16>,
+        scroll_by: u16,
+    ) -> io::Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
         let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
@@ -1027,7 +1035,7 @@ mod tests {
         #[case([A, B, C, D, E], 2..2, 2, [],                    [A, B, C, D, E])]
         fn scroll_region_up<const L: usize, const M: usize, const N: usize>(
             #[case] initial_screen: [&'static str; L],
-            #[case] range: ops::Range<u16>,
+            #[case] range: core::ops::Range<u16>,
             #[case] scroll_by: u16,
             #[case] expected_scrollback: [&'static str; M],
             #[case] expected_buffer: [&'static str; N],
@@ -1061,7 +1069,7 @@ mod tests {
         #[case([A, B, C, D, E], 2..2, 2, [A, B, C, D, E])]
         fn scroll_region_down<const M: usize, const N: usize>(
             #[case] initial_screen: [&'static str; M],
-            #[case] range: ops::Range<u16>,
+            #[case] range: core::ops::Range<u16>,
             #[case] scroll_by: u16,
             #[case] expected_buffer: [&'static str; N],
         ) {
