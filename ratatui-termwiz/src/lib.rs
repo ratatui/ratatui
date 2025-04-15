@@ -237,7 +237,7 @@ impl Backend for TermwizBackend {
             .buffered_terminal
             .terminal()
             .get_screen_size()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            .map_err(io::Error::other)?;
         Ok(WindowSize {
             columns_rows: Size {
                 width: u16_max(cols),
@@ -251,9 +251,7 @@ impl Backend for TermwizBackend {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.buffered_terminal
-            .flush()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        self.buffered_terminal.flush().map_err(io::Error::other)?;
         Ok(())
     }
 
