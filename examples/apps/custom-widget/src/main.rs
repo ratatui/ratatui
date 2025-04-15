@@ -36,7 +36,7 @@ fn main() -> Result<()> {
 /// A custom widget that renders a button with a label, theme and state.
 #[derive(Debug, Clone)]
 struct Button<'a> {
-    label: Line<'a>,
+    label: Line<'a, 'a>,
     theme: Theme,
     state: State,
 }
@@ -79,7 +79,7 @@ const GREEN: Theme = Theme {
 
 /// A button with a label that can be themed.
 impl<'a> Button<'a> {
-    pub fn new<T: Into<Line<'a>>>(label: T) -> Self {
+    pub fn new<T: Into<Line<'a, 'a>>>(label: T) -> Self {
         Button {
             label: label.into(),
             theme: BLUE,

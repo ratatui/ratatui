@@ -121,7 +121,7 @@ pub struct List<'lend, 'data> {
     /// Style used to render selected item
     pub(crate) highlight_style: Style,
     /// Symbol in front of the selected item (Shift all items to the right)
-    pub(crate) highlight_symbol: Option<Line<'data>>,
+    pub(crate) highlight_symbol: Option<Line<'lend, 'data>>,
     /// Whether to repeat the highlight symbol for each line of the selected item
     pub(crate) repeat_highlight_symbol: bool,
     /// Decides when to allocate spacing for the selection symbol
@@ -179,7 +179,7 @@ macro_rules! items {
     );
 }
 
-impl<'data> List<'_, 'data> {
+impl<'lend, 'data> List<'lend, 'data> {
     /// Creates a new list from [`ListItem`]s
     ///
     /// The `items` parameter accepts any value that can be converted into an iterator of
@@ -336,7 +336,7 @@ impl<'data> List<'_, 'data> {
     /// let list = List::new(items).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_symbol<L: Into<Line<'data>>>(mut self, highlight_symbol: L) -> Self {
+    pub fn highlight_symbol<L: Into<Line<'lend, 'data>>>(mut self, highlight_symbol: L) -> Self {
         self.highlight_symbol = Some(highlight_symbol.into());
         self
     }

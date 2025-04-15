@@ -39,11 +39,11 @@ use crate::canvas::{Canvas, Line as CanvasLine, Points};
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Axis<'a> {
     /// Title displayed next to axis end
-    title: Option<Line<'a>>,
+    title: Option<Line<'a, 'a>>,
     /// Bounds for the axis (all data points outside these limits will not be represented)
     bounds: [f64; 2],
     /// A list of labels to put to the left or below the axis
-    labels: Vec<Line<'a>>,
+    labels: Vec<Line<'a, 'a>>,
     /// The style used to draw the axis itself
     style: Style,
     /// The alignment of the labels of the Axis
@@ -60,7 +60,7 @@ impl<'a> Axis<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title<T>(mut self, title: T) -> Self
     where
-        T: Into<Line<'a>>,
+        T: Into<Line<'a, 'a>>,
     {
         self.title = Some(title.into());
         self
@@ -109,7 +109,7 @@ impl<'a> Axis<'a> {
     pub fn labels<Labels>(mut self, labels: Labels) -> Self
     where
         Labels: IntoIterator,
-        Labels::Item: Into<Line<'a>>,
+        Labels::Item: Into<Line<'a, 'a>>,
     {
         self.labels = labels.into_iter().map(Into::into).collect();
         self
@@ -319,7 +319,7 @@ impl LegendPosition {
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Dataset<'a> {
     /// Name of the dataset (used in the legend if shown)
-    name: Option<Line<'a>>,
+    name: Option<Line<'a, 'a>>,
     /// A reference to the actual data
     data: &'a [(f64, f64)],
     /// Symbol used for each points of this dataset
@@ -344,7 +344,7 @@ impl<'a> Dataset<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn name<S>(mut self, name: S) -> Self
     where
-        S: Into<Line<'a>>,
+        S: Into<Line<'a, 'a>>,
     {
         self.name = Some(name.into());
         self
@@ -1499,7 +1499,7 @@ mod tests {
         #[case] expected: Lines,
     ) where
         Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
+        Lines::Item: Into<Line<'line, 'line>>,
     {
         let name = "Data";
         let area = Rect::new(0, 0, name.len() as u16 + 2 + 3, 3 + 3);

@@ -82,7 +82,7 @@ pub struct Paragraph<'a> {
     /// How to wrap the text
     wrap: Option<Wrap>,
     /// The text to display
-    text: Text<'a>,
+    text: Text<'a, 'a>,
     /// Scroll
     scroll: Position,
     /// Alignment of the text
@@ -149,7 +149,7 @@ impl<'a> Paragraph<'a> {
     /// ```
     pub fn new<T>(text: T) -> Self
     where
-        T: Into<Text<'a>>,
+        T: Into<Text<'a, 'a>>,
     {
         Self {
             block: None,

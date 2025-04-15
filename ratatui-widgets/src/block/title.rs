@@ -60,7 +60,7 @@ use strum::{Display, EnumString};
 #[deprecated = "use `title_top()` or `title_bottom()` instead"]
 pub struct Title<'a> {
     /// Title content
-    pub content: Line<'a>,
+    pub content: Line<'a, 'a>,
     /// Title alignment
     ///
     /// If [`None`], defaults to the alignment defined with
@@ -105,7 +105,7 @@ impl<'a> Title<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn content<T>(mut self, content: T) -> Self
     where
-        T: Into<Line<'a>>,
+        T: Into<Line<'a, 'a>>,
     {
         self.content = content.into();
         self
@@ -128,7 +128,7 @@ impl<'a> Title<'a> {
 
 impl<'a, T> From<T> for Title<'a>
 where
-    T: Into<Line<'a>>,
+    T: Into<Line<'a, 'a>>,
 {
     fn from(value: T) -> Self {
         let content = value.into();

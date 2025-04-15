@@ -325,13 +325,13 @@ impl<'a> Span<'a> {
     /// let line = "Test Content".green().italic().into_left_aligned_line();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn into_left_aligned_line(self) -> Line<'a> {
+    pub fn into_left_aligned_line(self) -> Line<'a, 'a> {
         Line::from(self).left_aligned()
     }
 
     #[expect(clippy::wrong_self_convention)]
     #[deprecated = "use `into_left_aligned_line()` instead"]
-    pub fn to_left_aligned_line(self) -> Line<'a> {
+    pub fn to_left_aligned_line(self) -> Line<'a, 'a> {
         self.into_left_aligned_line()
     }
 
@@ -345,13 +345,13 @@ impl<'a> Span<'a> {
     /// let line = "Test Content".green().italic().into_centered_line();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn into_centered_line(self) -> Line<'a> {
+    pub fn into_centered_line(self) -> Line<'a, 'a> {
         Line::from(self).centered()
     }
 
     #[expect(clippy::wrong_self_convention)]
     #[deprecated = "use `into_centered_line()` instead"]
-    pub fn to_centered_line(self) -> Line<'a> {
+    pub fn to_centered_line(self) -> Line<'a, 'a> {
         self.into_centered_line()
     }
 
@@ -365,13 +365,13 @@ impl<'a> Span<'a> {
     /// let line = "Test Content".green().italic().into_right_aligned_line();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn into_right_aligned_line(self) -> Line<'a> {
+    pub fn into_right_aligned_line(self) -> Line<'a, 'a> {
         Line::from(self).right_aligned()
     }
 
     #[expect(clippy::wrong_self_convention)]
     #[deprecated = "use `into_right_aligned_line()` instead"]
-    pub fn to_right_aligned_line(self) -> Line<'a> {
+    pub fn to_right_aligned_line(self) -> Line<'a, 'a> {
         self.into_right_aligned_line()
     }
 }
@@ -386,7 +386,7 @@ where
 }
 
 impl<'a> core::ops::Add<Self> for Span<'a> {
-    type Output = Line<'a>;
+    type Output = Line<'a, 'a>;
 
     fn add(self, rhs: Self) -> Self::Output {
         Line::from_iter([self, rhs])

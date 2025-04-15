@@ -52,7 +52,7 @@ impl AppState {
 fn assert_buffer<'line, Lines>(state: &mut AppState, expected: Lines)
 where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let backend = TestBackend::new(21, 5);
     let mut terminal = Terminal::new(backend).unwrap();

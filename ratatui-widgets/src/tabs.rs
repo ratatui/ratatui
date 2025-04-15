@@ -51,7 +51,7 @@ pub struct Tabs<'a> {
     /// A block to wrap this widget in if necessary
     block: Option<Block<'a>>,
     /// One title for each tab
-    titles: Vec<Line<'a>>,
+    titles: Vec<Line<'a, 'a>>,
     /// The index of the selected tabs
     selected: Option<usize>,
     /// The style used to draw the text
@@ -61,9 +61,9 @@ pub struct Tabs<'a> {
     /// Tab divider
     divider: Span<'a>,
     /// Tab Left Padding
-    padding_left: Line<'a>,
+    padding_left: Line<'a, 'a>,
     /// Tab Right Padding
-    padding_right: Line<'a>,
+    padding_right: Line<'a, 'a>,
 }
 
 impl Default for Tabs<'_> {
@@ -128,7 +128,7 @@ impl<'a> Tabs<'a> {
     pub fn new<Iter>(titles: Iter) -> Self
     where
         Iter: IntoIterator,
-        Iter::Item: Into<Line<'a>>,
+        Iter::Item: Into<Line<'a, 'a>>,
     {
         let titles = titles.into_iter().map(Into::into).collect_vec();
         let selected = if titles.is_empty() { None } else { Some(0) };
@@ -173,7 +173,7 @@ impl<'a> Tabs<'a> {
     pub fn titles<Iter>(mut self, titles: Iter) -> Self
     where
         Iter: IntoIterator,
-        Iter::Item: Into<Line<'a>>,
+        Iter::Item: Into<Line<'a, 'a>>,
     {
         self.titles = titles.into_iter().map(Into::into).collect_vec();
         self.selected = if self.titles.is_empty() {
@@ -301,8 +301,8 @@ impl<'a> Tabs<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn padding<T, U>(mut self, left: T, right: U) -> Self
     where
-        T: Into<Line<'a>>,
-        U: Into<Line<'a>>,
+        T: Into<Line<'a, 'a>>,
+        U: Into<Line<'a, 'a>>,
     {
         self.padding_left = left.into();
         self.padding_right = right.into();
@@ -324,7 +324,7 @@ impl<'a> Tabs<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn padding_left<T>(mut self, padding: T) -> Self
     where
-        T: Into<Line<'a>>,
+        T: Into<Line<'a, 'a>>,
     {
         self.padding_left = padding.into();
         self
@@ -345,7 +345,7 @@ impl<'a> Tabs<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn padding_right<T>(mut self, padding: T) -> Self
     where
-        T: Into<Line<'a>>,
+        T: Into<Line<'a, 'a>>,
     {
         self.padding_right = padding.into();
         self
@@ -438,7 +438,7 @@ impl Tabs<'_> {
 
 impl<'a, Item> FromIterator<Item> for Tabs<'a>
 where
-    Item: Into<Line<'a>>,
+    Item: Into<Line<'a, 'a>>,
 {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
         Self::new(iter)

@@ -78,7 +78,7 @@ pub fn render_wrapped_paragraph(frame: &mut Frame, area: Rect) {
 }
 
 /// Returns the lines for the paragraph.
-fn create_lines(area: Rect) -> Vec<Line<'static>> {
+fn create_lines(area: Rect) -> Vec<Line<'static, 'static>> {
     let short_line = "Slice, layer, and bake the vegetables. ";
     let long_line = short_line.repeat((area.width as usize) / short_line.len() + 2);
     vec![

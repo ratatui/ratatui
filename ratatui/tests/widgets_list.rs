@@ -347,7 +347,7 @@ fn widgets_list_enable_always_highlight_spacing<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let mut state = ListState::default().with_selected(selected);
     let backend = TestBackend::new(15, 8);

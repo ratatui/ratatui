@@ -65,7 +65,7 @@ impl StatefulWidget for &List<'_, '_> {
             .unwrap_or(&default_highlight_symbol);
         let highlight_symbol_width = highlight_symbol.width() as u16;
         let empty_symbol = " ".repeat(highlight_symbol_width as usize);
-        let empty_symbol = empty_symbol.to_line();
+        let empty_line = empty_symbol.to_line();
 
         let mut current_height = 0;
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
@@ -111,13 +111,13 @@ impl StatefulWidget for &List<'_, '_> {
                     // if the item is selected, we need to display the highlight symbol:
                     // - either for the first line of the item only,
                     // - or for each line of the item if the appropriate option is set
-                    let line = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
-                        highlight_symbol
-                    } else {
-                        &empty_symbol
-                    };
                     let highlight_area = Rect::new(x, y + j as u16, highlight_symbol_width, 1);
-                    line.render(highlight_area, buf);
+                    if is_selected && (j == 0 || self.repeat_highlight_symbol) {
+                        highlight_symbol.render(highlight_area, buf);
+                    } else {
+                        let el = &empty_line;
+                        el.render(highlight_area, buf);
+                    }
                 }
             }
         }
@@ -385,7 +385,7 @@ mod tests {
         fn test_case_render<'line, Lines>(items: &[ListItem], expected: Lines)
         where
             Lines: IntoIterator,
-            Lines::Item: Into<Line<'line>>,
+            Lines::Item: Into<Line<'line, 'line>>,
         {
             let list = List::from(items).highlight_symbol(">>");
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
@@ -400,7 +400,7 @@ mod tests {
             expected: Lines,
         ) where
             Lines: IntoIterator,
-            Lines::Item: Into<Line<'line>>,
+            Lines::Item: Into<Line<'line, 'line>>,
         {
             let list = List::from(items).highlight_symbol(">>");
             let mut state = ListState::default().with_selected(selected);
@@ -851,7 +851,7 @@ mod tests {
     fn list_direction<'line, Lines>(#[case] direction: ListDirection, #[case] expected: Lines)
     where
         Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
+        Lines::Item: Into<Line<'line, 'line>>,
     {
         let items = items!["Item 0", "Item 1", "Item 2"];
         let list = List::from(&items).direction(direction);
@@ -898,7 +898,7 @@ mod tests {
     fn long_lines<'line, Lines>(#[case] selected: Option<usize>, #[case] expected: Lines)
     where
         Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
+        Lines::Item: Into<Line<'line, 'line>>,
     {
         let items = items![
             "Item 0 with a very long line that will be truncated",
@@ -1176,7 +1176,7 @@ mod tests {
         #[case] expected: Lines,
     ) where
         Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
+        Lines::Item: Into<Line<'line, 'line>>,
     {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, render_height));
         let mut state = ListState::default();

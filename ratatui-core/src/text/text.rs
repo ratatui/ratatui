@@ -191,16 +191,16 @@ use crate::widgets::Widget;
 ///
 /// [`Stylize`]: crate::style::Stylize
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
-pub struct Text<'a> {
+pub struct Text<'lend, 'data> {
     /// The alignment of this text.
     pub alignment: Option<Alignment>,
     /// The style of this text.
     pub style: Style,
     /// The lines that make up this piece of text.
-    pub lines: Vec<Line<'a>>,
+    pub lines: Cow<'lend, [Line<'lend, 'data>]>,
 }
 
-impl fmt::Debug for Text<'_> {
+impl fmt::Debug for Text<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.lines.is_empty() {
             f.write_str("Text::default()")?;
@@ -222,7 +222,7 @@ impl fmt::Debug for Text<'_> {
     }
 }
 
-impl<'a> Text<'a> {
+impl<'lend, 'data> Text<'lend, 'data> {
     /// Create some text (potentially multiple lines) with no style.
     ///
     /// # Examples
@@ -235,7 +235,7 @@ impl<'a> Text<'a> {
     /// ```
     pub fn raw<T>(content: T) -> Self
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<Cow<'data, str>>,
     {
         let lines: Vec<_> = match content.into() {
             Cow::Borrowed("") => vec![Line::from("")],
@@ -267,7 +267,7 @@ impl<'a> Text<'a> {
     /// [`Color`]: crate::style::Color
     pub fn styled<T, S>(content: T, style: S) -> Self
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<Cow<'data, str>>,
         S: Into<Style>,
     {
         Self::raw(content).patch_style(style)
@@ -297,6 +297,7 @@ impl<'a> Text<'a> {
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
+    #[allow(clippy::missing_const_for_fn)]
     pub fn height(&self) -> usize {
         self.lines.len()
     }
@@ -507,13 +508,13 @@ impl<'a> Text<'a> {
     }
 
     /// Returns an iterator over the lines of the text.
-    pub fn iter(&self) -> core::slice::Iter<Line<'a>> {
+    pub fn iter(&self) -> core::slice::Iter<Line<'lend, 'data>> {
         self.lines.iter()
     }
 
     /// Returns an iterator that allows modifying each line.
-    pub fn iter_mut(&mut self) -> core::slice::IterMut<Line<'a>> {
-        self.lines.iter_mut()
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<Line<'lend, 'data>> {
+        self.lines.to_mut().iter_mut()
     }
 
     /// Adds a line to the text.
@@ -531,8 +532,8 @@ impl<'a> Text<'a> {
     /// text.push_line(Span::from("How are you?"));
     /// text.push_line("How are you?");
     /// ```
-    pub fn push_line<T: Into<Line<'a>>>(&mut self, line: T) {
-        self.lines.push(line.into());
+    pub fn push_line<T: Into<Line<'lend, 'data>>>(&mut self, line: T) {
+        self.lines.to_mut().push(line.into());
     }
 
     /// Adds a span to the last line of the text.
@@ -549,91 +550,91 @@ impl<'a> Text<'a> {
     /// text.push_span(Span::from("How are you?"));
     /// text.push_span("How are you?");
     /// ```
-    pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
+    pub fn push_span<T: Into<Span<'data>>>(&mut self, span: T) {
         let span = span.into();
-        if let Some(last) = self.lines.last_mut() {
+        if let Some(last) = self.lines.to_mut().last_mut() {
             last.push_span(span);
         } else {
-            self.lines.push(Line::from(span));
+            self.lines.to_mut().push(Line::from(span));
         }
     }
 }
 
-impl<'a> IntoIterator for Text<'a> {
-    type Item = Line<'a>;
+impl<'lend, 'data> IntoIterator for Text<'lend, 'data> {
+    type Item = Line<'lend, 'data>;
     type IntoIter = alloc::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.lines.into_iter()
+        self.lines.into_owned().into_iter()
     }
 }
 
-impl<'a> IntoIterator for &'a Text<'a> {
-    type Item = &'a Line<'a>;
-    type IntoIter = core::slice::Iter<'a, Line<'a>>;
+impl<'lend, 'data, 'a> IntoIterator for &'a Text<'lend, 'data> {
+    type Item = &'a Line<'lend, 'data>;
+    type IntoIter = core::slice::Iter<'a, Line<'lend, 'data>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl<'a> IntoIterator for &'a mut Text<'a> {
-    type Item = &'a mut Line<'a>;
-    type IntoIter = core::slice::IterMut<'a, Line<'a>>;
+impl<'lend, 'data, 'a> IntoIterator for &'a mut Text<'lend, 'data> {
+    type Item = &'a mut Line<'lend, 'data>;
+    type IntoIter = core::slice::IterMut<'a, Line<'lend, 'data>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
 }
 
-impl From<String> for Text<'_> {
+impl From<String> for Text<'_, '_> {
     fn from(s: String) -> Self {
         Self::raw(s)
     }
 }
 
-impl<'a> From<&'a str> for Text<'a> {
-    fn from(s: &'a str) -> Self {
+impl<'data> From<&'data str> for Text<'_, 'data> {
+    fn from(s: &'data str) -> Self {
         Self::raw(s)
     }
 }
 
-impl<'a> From<Cow<'a, str>> for Text<'a> {
-    fn from(s: Cow<'a, str>) -> Self {
+impl<'data> From<Cow<'data, str>> for Text<'_, 'data> {
+    fn from(s: Cow<'data, str>) -> Self {
         Self::raw(s)
     }
 }
 
-impl<'a> From<Span<'a>> for Text<'a> {
-    fn from(span: Span<'a>) -> Self {
+impl<'data> From<Span<'data>> for Text<'_, 'data> {
+    fn from(span: Span<'data>) -> Self {
         Self {
-            lines: vec![Line::from(span)],
+            lines: Cow::Owned(vec![Line::from(span)]),
             ..Default::default()
         }
     }
 }
 
-impl<'a> From<Line<'a>> for Text<'a> {
-    fn from(line: Line<'a>) -> Self {
+impl<'lend, 'data> From<Line<'lend, 'data>> for Text<'lend, 'data> {
+    fn from(line: Line<'lend, 'data>) -> Self {
         Self {
-            lines: vec![line],
+            lines: Cow::Owned(vec![line]),
             ..Default::default()
         }
     }
 }
 
-impl<'a> From<Vec<Line<'a>>> for Text<'a> {
-    fn from(lines: Vec<Line<'a>>) -> Self {
+impl<'lend, 'data> From<Vec<Line<'lend, 'data>>> for Text<'lend, 'data> {
+    fn from(lines: Vec<Line<'lend, 'data>>) -> Self {
         Self {
-            lines,
+            lines: Cow::Owned(lines),
             ..Default::default()
         }
     }
 }
 
-impl<'a, T> FromIterator<T> for Text<'a>
+impl<'lend, 'data, T> FromIterator<T> for Text<'lend, 'data>
 where
-    T: Into<Line<'a>>,
+    T: Into<Line<'lend, 'data>>,
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let lines = iter.into_iter().map(Into::into).collect();
@@ -644,10 +645,10 @@ where
     }
 }
 
-impl<'a> core::ops::Add<Line<'a>> for Text<'a> {
+impl<'lend, 'data> core::ops::Add<Line<'lend, 'data>> for Text<'lend, 'data> {
     type Output = Self;
 
-    fn add(mut self, line: Line<'a>) -> Self::Output {
+    fn add(mut self, line: Line<'lend, 'data>) -> Self::Output {
         self.push_line(line);
         self
     }
@@ -656,28 +657,28 @@ impl<'a> core::ops::Add<Line<'a>> for Text<'a> {
 /// Adds two `Text` together.
 ///
 /// This ignores the style and alignment of the second `Text`.
-impl core::ops::Add<Self> for Text<'_> {
+impl core::ops::Add<Self> for Text<'_, '_> {
     type Output = Self;
 
     fn add(mut self, text: Self) -> Self::Output {
-        self.lines.extend(text.lines);
+        self.lines.to_mut().extend(text.lines.into_owned());
         self
     }
 }
 
-impl<'a> core::ops::AddAssign<Line<'a>> for Text<'a> {
-    fn add_assign(&mut self, line: Line<'a>) {
+impl<'lend, 'data> core::ops::AddAssign<Line<'lend, 'data>> for Text<'lend, 'data> {
+    fn add_assign(&mut self, line: Line<'lend, 'data>) {
         self.push_line(line);
     }
 }
 
-impl<'a, T> Extend<T> for Text<'a>
+impl<'lend, 'data, T> Extend<T> for Text<'lend, 'data>
 where
-    T: Into<Line<'a>>,
+    T: Into<Line<'lend, 'data>>,
 {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let lines = iter.into_iter().map(Into::into);
-        self.lines.extend(lines);
+        self.lines.to_mut().extend(lines);
     }
 }
 
@@ -690,7 +691,7 @@ where
 /// [`Display`]: std::fmt::Display
 pub trait ToText {
     /// Converts the value to a [`Text`].
-    fn to_text(&self) -> Text<'_>;
+    fn to_text<'lend, 'data>(&self) -> Text<'lend, 'data>;
 }
 
 /// # Panics
@@ -699,12 +700,12 @@ pub trait ToText {
 /// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
 /// returns an error itself.
 impl<T: fmt::Display> ToText for T {
-    fn to_text(&self) -> Text {
+    fn to_text<'lend, 'data>(&self) -> Text<'lend, 'data> {
         Text::raw(self.to_string())
     }
 }
 
-impl fmt::Display for Text<'_> {
+impl fmt::Display for Text<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some((last, rest)) = self.lines.split_last() {
             for line in rest {
@@ -716,13 +717,13 @@ impl fmt::Display for Text<'_> {
     }
 }
 
-impl Widget for Text<'_> {
+impl Widget for Text<'_, '_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Widget::render(&self, area, buf);
     }
 }
 
-impl Widget for &Text<'_> {
+impl Widget for &Text<'_, '_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
@@ -732,7 +733,7 @@ impl Widget for &Text<'_> {
     }
 }
 
-impl Styled for Text<'_> {
+impl Styled for Text<'_, '_> {
     type Item = Self;
 
     fn style(&self) -> Style {
@@ -854,7 +855,8 @@ mod tests {
     #[test]
     fn from_line() {
         let text = Text::from(Line::from("The first line"));
-        assert_eq!(text.lines, [Line::from("The first line")]);
+        assert!(matches!(text.lines, Cow::Owned(_)));
+        assert_eq!(*text.lines, [Line::from("The first line")]);
     }
 
     #[rstest]
@@ -871,7 +873,12 @@ mod tests {
         Text::from("first line\nsecond line\nthird line")
     )]
     #[case("trailing newline\n", Text::from("trailing newline\n"))]
-    fn to_text(#[case] value: impl fmt::Display, #[case] expected: Text) {
+    fn to_text<'lend, 'data>(
+        #[case] value: impl fmt::Display + 'data,
+        #[case] expected: Text<'lend, 'data>,
+    ) where
+        'data: 'lend,
+    {
         assert_eq!(value.to_text(), expected);
     }
 
@@ -921,7 +928,7 @@ mod tests {
         assert_eq!(
             Text::raw("Red").red() + Line::raw("Blue").blue(),
             Text {
-                lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
+                lines: Cow::Owned(vec![Line::raw("Red"), Line::raw("Blue").blue()]),
                 style: Style::new().red(),
                 alignment: None,
             }
@@ -933,7 +940,7 @@ mod tests {
         assert_eq!(
             Text::raw("Red").red() + Text::raw("Blue").blue(),
             Text {
-                lines: vec![Line::raw("Red"), Line::raw("Blue")],
+                lines: Cow::Owned(vec![Line::raw("Red"), Line::raw("Blue")]),
                 style: Style::new().red(),
                 alignment: None,
             }
@@ -947,7 +954,7 @@ mod tests {
         assert_eq!(
             text,
             Text {
-                lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
+                lines: Cow::Owned(vec![Line::raw("Red"), Line::raw("Blue").blue()]),
                 style: Style::new().red(),
                 alignment: None,
             }
@@ -1102,7 +1109,8 @@ mod tests {
     fn push_line_empty() {
         let mut text = Text::default();
         text.push_line(Line::from("Hello, world!"));
-        assert_eq!(text.lines, [Line::from("Hello, world!")]);
+        assert!(matches!(text.lines, Cow::Owned(_)));
+        assert_eq!(*text.lines, [Line::from("Hello, world!")]);
     }
 
     #[test]
@@ -1124,7 +1132,8 @@ mod tests {
     fn push_span_empty() {
         let mut text = Text::default();
         text.push_span(Span::raw("Hello, world!"));
-        assert_eq!(text.lines, [Line::from(Span::raw("Hello, world!"))]);
+        assert!(matches!(text.lines, Cow::Owned(_)));
+        assert_eq!(*text.lines, [Line::from(Span::raw("Hello, world!"))]);
     }
 
     mod widget {
@@ -1240,7 +1249,7 @@ mod tests {
 
         /// a fixture used in the tests below to avoid repeating the same setup
         #[fixture]
-        fn hello_world() -> Text<'static> {
+        fn hello_world() -> Text<'static, 'static> {
             Text::from(vec![
                 Line::styled("Hello ", Color::Blue),
                 Line::styled("world!", Color::Green),
@@ -1248,7 +1257,7 @@ mod tests {
         }
 
         #[rstest]
-        fn iter(hello_world: Text<'_>) {
+        fn iter(hello_world: Text<'_, '_>) {
             let mut iter = hello_world.iter();
             assert_eq!(iter.next(), Some(&Line::styled("Hello ", Color::Blue)));
             assert_eq!(iter.next(), Some(&Line::styled("world!", Color::Green)));
@@ -1256,7 +1265,7 @@ mod tests {
         }
 
         #[rstest]
-        fn iter_mut(mut hello_world: Text<'_>) {
+        fn iter_mut(mut hello_world: Text<'_, '_>) {
             let mut iter = hello_world.iter_mut();
             assert_eq!(iter.next(), Some(&mut Line::styled("Hello ", Color::Blue)));
             assert_eq!(iter.next(), Some(&mut Line::styled("world!", Color::Green)));
@@ -1264,7 +1273,7 @@ mod tests {
         }
 
         #[rstest]
-        fn into_iter(hello_world: Text<'_>) {
+        fn into_iter(hello_world: Text<'_, '_>) {
             let mut iter = hello_world.into_iter();
             assert_eq!(iter.next(), Some(Line::styled("Hello ", Color::Blue)));
             assert_eq!(iter.next(), Some(Line::styled("world!", Color::Green)));
@@ -1272,7 +1281,7 @@ mod tests {
         }
 
         #[rstest]
-        fn into_iter_ref(hello_world: Text<'_>) {
+        fn into_iter_ref(hello_world: Text<'_, '_>) {
             let mut iter = (&hello_world).into_iter();
             assert_eq!(iter.next(), Some(&Line::styled("Hello ", Color::Blue)));
             assert_eq!(iter.next(), Some(&Line::styled("world!", Color::Green)));
@@ -1292,7 +1301,7 @@ mod tests {
         }
 
         #[rstest]
-        fn for_loop_ref(hello_world: Text<'_>) {
+        fn for_loop_ref(hello_world: Text<'_, '_>) {
             let mut result = String::new();
             for line in &hello_world {
                 result.push_str(line.to_string().as_ref());
@@ -1314,7 +1323,7 @@ mod tests {
         }
 
         #[rstest]
-        fn for_loop_into(hello_world: Text<'_>) {
+        fn for_loop_into(hello_world: Text<'_, '_>) {
             let mut result = String::new();
             for line in hello_world {
                 result.push_str(line.to_string().as_ref());

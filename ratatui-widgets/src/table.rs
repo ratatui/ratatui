@@ -263,7 +263,7 @@ pub struct Table<'lend, 'data> {
     cell_highlight_style: Style,
 
     /// Symbol in front of the selected row
-    highlight_symbol: Text<'data>,
+    highlight_symbol: Text<'lend, 'data>,
 
     /// Decides when to allocate spacing for the row selection
     highlight_spacing: HighlightSpacing,
@@ -688,7 +688,7 @@ impl<'lend, 'data> Table<'lend, 'data> {
     /// let table = Table::new(rows, widths).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_symbol<T: Into<Text<'data>>>(mut self, highlight_symbol: T) -> Self {
+    pub fn highlight_symbol<T: Into<Text<'lend, 'data>>>(mut self, highlight_symbol: T) -> Self {
         self.highlight_symbol = highlight_symbol.into();
         self
     }
@@ -2097,7 +2097,7 @@ mod tests {
             expected: Lines,
         ) where
             Lines: IntoIterator,
-            Lines::Item: Into<Line<'line>>,
+            Lines::Item: Into<Line<'line, 'line>>,
         {
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])

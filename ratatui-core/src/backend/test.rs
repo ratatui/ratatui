@@ -85,7 +85,7 @@ impl TestBackend {
     pub fn with_lines<'line, Lines>(lines: Lines) -> Self
     where
         Lines: IntoIterator,
-        Lines::Item: Into<crate::text::Line<'line>>,
+        Lines::Item: Into<crate::text::Line<'line, 'line>>,
     {
         let buffer = Buffer::with_lines(lines);
         let scrollback = Buffer::empty(Rect {
@@ -187,7 +187,7 @@ impl TestBackend {
     pub fn assert_buffer_lines<'line, Lines>(&self, expected: Lines)
     where
         Lines: IntoIterator,
-        Lines::Item: Into<crate::text::Line<'line>>,
+        Lines::Item: Into<crate::text::Line<'line, 'line>>,
     {
         self.assert_buffer(&Buffer::with_lines(expected));
     }
@@ -204,7 +204,7 @@ impl TestBackend {
     pub fn assert_scrollback_lines<'line, Lines>(&self, expected: Lines)
     where
         Lines: IntoIterator,
-        Lines::Item: Into<crate::text::Line<'line>>,
+        Lines::Item: Into<crate::text::Line<'line, 'line>>,
     {
         self.assert_scrollback(&Buffer::with_lines(expected));
     }

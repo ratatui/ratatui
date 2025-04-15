@@ -91,7 +91,7 @@ impl Buffer {
     pub fn with_lines<'a, Iter>(lines: Iter) -> Self
     where
         Iter: IntoIterator,
-        Iter::Item: Into<Line<'a>>,
+        Iter::Item: Into<Line<'a, 'a>>,
     {
         let lines = lines.into_iter().map(Into::into).collect::<Vec<_>>();
         let height = lines.len() as u16;
@@ -365,7 +365,7 @@ impl Buffer {
     }
 
     /// Print a line, starting at the position (x, y)
-    pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, max_width: u16) -> (u16, u16) {
+    pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_, '_>, max_width: u16) -> (u16, u16) {
         let mut remaining_width = max_width;
         let mut x = x;
         for span in line {
@@ -1126,7 +1126,7 @@ mod tests {
     fn merge<'line, Lines>(#[case] one: Rect, #[case] two: Rect, #[case] expected: Lines)
     where
         Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
+        Lines::Item: Into<Line<'line, 'line>>,
     {
         let mut one = Buffer::filled(one, Cell::new("1"));
         let two = Buffer::filled(two, Cell::new("2"));

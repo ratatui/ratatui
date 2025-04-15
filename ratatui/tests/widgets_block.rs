@@ -40,7 +40,7 @@ fn widgets_block_titles_overlap() {
     fn test_case<'line, Lines>(block: Block, area: Rect, expected: Lines)
     where
         Lines: IntoIterator,
-        Lines::Item: Into<ratatui::text::Line<'line>>,
+        Lines::Item: Into<ratatui::text::Line<'line, 'line>>,
     {
         let backend = TestBackend::new(area.width, area.height);
         let mut terminal = Terminal::new(backend).unwrap();
@@ -263,7 +263,7 @@ fn widgets_block_title_alignment_top<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<ratatui::text::Line<'line>>,
+    Lines::Item: Into<ratatui::text::Line<'line, 'line>>,
 {
     let backend = TestBackend::new(15, 3);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -369,7 +369,7 @@ fn widgets_block_title_alignment_bottom<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<ratatui::text::Line<'line>>,
+    Lines::Item: Into<ratatui::text::Line<'line, 'line>>,
 {
     let backend = TestBackend::new(15, 3);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -460,13 +460,13 @@ fn widgets_block_title_alignment_bottom<'line, Lines>(
     "               ",
 ])]
 fn widgets_block_multiple_titles<'line, Lines>(
-    #[case] title_a: Line,
-    #[case] title_b: Line,
+    #[case] title_a: Line<'line, 'line>,
+    #[case] title_b: Line<'line, 'line>,
     #[case] borders: Borders,
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<ratatui::text::Line<'line>>,
+    Lines::Item: Into<ratatui::text::Line<'line, 'line>>,
 {
     let backend = TestBackend::new(15, 3);
     let mut terminal = Terminal::new(backend).unwrap();

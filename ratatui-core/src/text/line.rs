@@ -179,7 +179,7 @@ use crate::widgets::Widget;
 ///
 /// [`Stylize`]: crate::style::Stylize
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
-pub struct Line<'a> {
+pub struct Line<'lend, 'data> {
     /// The style of this line of text.
     pub style: Style,
 
@@ -187,10 +187,10 @@ pub struct Line<'a> {
     pub alignment: Option<Alignment>,
 
     /// The spans that make up this line of text.
-    pub spans: Vec<Span<'a>>,
+    pub spans: Cow<'lend, [Span<'data>]>,
 }
 
-impl fmt::Debug for Line<'_> {
+impl fmt::Debug for Line<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.spans.is_empty() {
             f.write_str("Line::default()")?;
@@ -204,7 +204,7 @@ impl fmt::Debug for Line<'_> {
             f.write_str(")")?;
         } else {
             f.write_str("Line::from_iter(")?;
-            f.debug_list().entries(&self.spans).finish()?;
+            f.debug_list().entries(&*self.spans).finish()?;
             f.write_str(")")?;
         }
         self.style.fmt_stylize(f)?;
@@ -217,14 +217,17 @@ impl fmt::Debug for Line<'_> {
     }
 }
 
-fn cow_to_spans<'a>(content: impl Into<Cow<'a, str>>) -> Vec<Span<'a>> {
+fn cow_to_spans<'a, 'b>(content: impl Into<Cow<'a, str>>) -> Vec<Span<'b>>
+where
+    'a: 'b,
+{
     match content.into() {
         Cow::Borrowed(s) => s.lines().map(Span::raw).collect(),
         Cow::Owned(s) => s.lines().map(|v| Span::raw(v.to_string())).collect(),
     }
 }
 
-impl<'a> Line<'a> {
+impl<'lend, 'data> Line<'lend, 'data> {
     /// Create a line with the default style.
     ///
     /// `content` can be any type that is convertible to [`Cow<str>`] (e.g. [`&str`], [`String`],
@@ -248,10 +251,10 @@ impl<'a> Line<'a> {
     /// ```
     pub fn raw<T>(content: T) -> Self
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<Cow<'data, str>>,
     {
         Self {
-            spans: cow_to_spans(content),
+            spans: Cow::Owned(cow_to_spans(content)),
             ..Default::default()
         }
     }
@@ -283,11 +286,11 @@ impl<'a> Line<'a> {
     /// [`Color`]: crate::style::Color
     pub fn styled<T, S>(content: T, style: S) -> Self
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<Cow<'data, str>>,
         S: Into<Style>,
     {
         Self {
-            spans: cow_to_spans(content),
+            spans: Cow::Owned(cow_to_spans(content)),
             style: style.into(),
             ..Default::default()
         }
@@ -311,7 +314,7 @@ impl<'a> Line<'a> {
     pub fn spans<I>(mut self, spans: I) -> Self
     where
         I: IntoIterator,
-        I::Item: Into<Span<'a>>,
+        I::Item: Into<Span<'data>>,
     {
         self.spans = spans.into_iter().map(Into::into).collect();
         self
@@ -471,9 +474,9 @@ impl<'a> Line<'a> {
     ///
     /// [`Color`]: crate::style::Color
     pub fn styled_graphemes<S: Into<Style>>(
-        &'a self,
+        &'lend self,
         base_style: S,
-    ) -> impl Iterator<Item = StyledGrapheme<'a>> {
+    ) -> impl Iterator<Item = StyledGrapheme<'lend>> {
         let style = base_style.into().patch(self.style);
         self.spans
             .iter()
@@ -534,13 +537,13 @@ impl<'a> Line<'a> {
     }
 
     /// Returns an iterator over the spans of this line.
-    pub fn iter(&self) -> core::slice::Iter<Span<'a>> {
+    pub fn iter(&self) -> core::slice::Iter<Span<'data>> {
         self.spans.iter()
     }
 
     /// Returns a mutable iterator over the spans of this line.
-    pub fn iter_mut(&mut self) -> core::slice::IterMut<Span<'a>> {
-        self.spans.iter_mut()
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<Span<'data>> {
+        self.spans.to_mut().iter_mut()
     }
 
     /// Adds a span to the line.
@@ -557,73 +560,73 @@ impl<'a> Line<'a> {
     /// line.push_span(Span::raw("world!"));
     /// line.push_span(" How are you?");
     /// ```
-    pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
-        self.spans.push(span.into());
+    pub fn push_span<T: Into<Span<'data>>>(&mut self, span: T) {
+        self.spans.to_mut().push(span.into());
     }
 }
 
-impl<'a> IntoIterator for Line<'a> {
-    type Item = Span<'a>;
-    type IntoIter = alloc::vec::IntoIter<Span<'a>>;
+impl<'data> IntoIterator for Line<'_, 'data> {
+    type Item = Span<'data>;
+    type IntoIter = alloc::vec::IntoIter<Span<'data>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.spans.into_iter()
+        self.spans.into_owned().into_iter()
     }
 }
 
-impl<'a> IntoIterator for &'a Line<'a> {
-    type Item = &'a Span<'a>;
-    type IntoIter = core::slice::Iter<'a, Span<'a>>;
+impl<'data, 'a> IntoIterator for &'a Line<'_, 'data> {
+    type Item = &'a Span<'data>;
+    type IntoIter = core::slice::Iter<'a, Span<'data>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl<'a> IntoIterator for &'a mut Line<'a> {
-    type Item = &'a mut Span<'a>;
-    type IntoIter = core::slice::IterMut<'a, Span<'a>>;
+impl<'data, 'a> IntoIterator for &'a mut Line<'_, 'data> {
+    type Item = &'a mut Span<'data>;
+    type IntoIter = core::slice::IterMut<'a, Span<'data>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
 }
 
-impl From<String> for Line<'_> {
+impl From<String> for Line<'_, '_> {
     fn from(s: String) -> Self {
         Self::raw(s)
     }
 }
 
-impl<'a> From<&'a str> for Line<'a> {
-    fn from(s: &'a str) -> Self {
+impl<'data> From<&'data str> for Line<'_, 'data> {
+    fn from(s: &'data str) -> Self {
         Self::raw(s)
     }
 }
 
-impl<'a> From<Cow<'a, str>> for Line<'a> {
-    fn from(s: Cow<'a, str>) -> Self {
+impl<'data> From<Cow<'data, str>> for Line<'_, 'data> {
+    fn from(s: Cow<'data, str>) -> Self {
         Self::raw(s)
     }
 }
 
-impl<'a> From<Vec<Span<'a>>> for Line<'a> {
-    fn from(spans: Vec<Span<'a>>) -> Self {
+impl<'data> From<Vec<Span<'data>>> for Line<'_, 'data> {
+    fn from(spans: Vec<Span<'data>>) -> Self {
         Self {
-            spans,
+            spans: Cow::Owned(spans),
             ..Default::default()
         }
     }
 }
 
-impl<'a> From<Span<'a>> for Line<'a> {
-    fn from(span: Span<'a>) -> Self {
+impl<'data> From<Span<'data>> for Line<'_, 'data> {
+    fn from(span: Span<'data>) -> Self {
         Self::from(vec![span])
     }
 }
 
-impl<'a> From<Line<'a>> for String {
-    fn from(line: Line<'a>) -> Self {
+impl<'lend, 'data> From<Line<'lend, 'data>> for String {
+    fn from(line: Line<'lend, 'data>) -> Self {
         line.iter().fold(Self::new(), |mut acc, s| {
             acc.push_str(s.content.as_ref());
             acc
@@ -631,9 +634,9 @@ impl<'a> From<Line<'a>> for String {
     }
 }
 
-impl<'a, T> FromIterator<T> for Line<'a>
+impl<'data, T> FromIterator<T> for Line<'_, 'data>
 where
-    T: Into<Span<'a>>,
+    T: Into<Span<'data>>,
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         Self::from(iter.into_iter().map(Into::into).collect::<Vec<_>>())
@@ -641,49 +644,49 @@ where
 }
 
 /// Adds a `Span` to a `Line`, returning a new `Line` with the `Span` added.
-impl<'a> core::ops::Add<Span<'a>> for Line<'a> {
+impl<'data> core::ops::Add<Span<'data>> for Line<'_, 'data> {
     type Output = Self;
 
-    fn add(mut self, rhs: Span<'a>) -> Self::Output {
-        self.spans.push(rhs);
+    fn add(mut self, rhs: Span<'data>) -> Self::Output {
+        self.spans.to_mut().push(rhs);
         self
     }
 }
 
 /// Adds two `Line`s together, returning a new `Text` with the contents of the two `Line`s.
-impl<'a> core::ops::Add<Self> for Line<'a> {
-    type Output = Text<'a>;
+impl<'lend, 'data> core::ops::Add<Self> for Line<'lend, 'data> {
+    type Output = Text<'lend, 'data>;
 
     fn add(self, rhs: Self) -> Self::Output {
         Text::from(vec![self, rhs])
     }
 }
 
-impl<'a> core::ops::AddAssign<Span<'a>> for Line<'a> {
-    fn add_assign(&mut self, rhs: Span<'a>) {
-        self.spans.push(rhs);
+impl<'data> core::ops::AddAssign<Span<'data>> for Line<'_, 'data> {
+    fn add_assign(&mut self, rhs: Span<'data>) {
+        self.spans.to_mut().push(rhs);
     }
 }
 
-impl<'a> Extend<Span<'a>> for Line<'a> {
-    fn extend<T: IntoIterator<Item = Span<'a>>>(&mut self, iter: T) {
-        self.spans.extend(iter);
+impl<'data> Extend<Span<'data>> for Line<'_, 'data> {
+    fn extend<T: IntoIterator<Item = Span<'data>>>(&mut self, iter: T) {
+        self.spans.to_mut().extend(iter);
     }
 }
 
-impl Widget for Line<'_> {
+impl Widget for Line<'_, '_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Widget::render(&self, area, buf);
     }
 }
 
-impl Widget for &Line<'_> {
+impl Widget for &Line<'_, '_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.render_with_alignment(area, buf, None);
     }
 }
 
-impl Line<'_> {
+impl Line<'_, '_> {
     /// An internal implementation method for `Widget::render` that allows the parent widget to
     /// define a default alignment, to be used if `Line::alignment` is `None`.
     pub(crate) fn render_with_alignment(
@@ -797,7 +800,7 @@ fn spans_after_width<'a>(
 /// [`Display`]: std::fmt::Display
 pub trait ToLine {
     /// Converts the value to a [`Line`].
-    fn to_line(&self) -> Line<'_>;
+    fn to_line(&self) -> Line<'_, '_>;
 }
 
 /// # Panics
@@ -806,21 +809,21 @@ pub trait ToLine {
 /// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
 /// returns an error itself.
 impl<T: fmt::Display> ToLine for T {
-    fn to_line(&self) -> Line<'_> {
+    fn to_line(&self) -> Line<'_, '_> {
         Line::from(self.to_string())
     }
 }
 
-impl fmt::Display for Line<'_> {
+impl fmt::Display for Line<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for span in &self.spans {
+        for span in &*self.spans {
             write!(f, "{span}")?;
         }
         Ok(())
     }
 }
 
-impl Styled for Line<'_> {
+impl Styled for Line<'_, '_> {
     type Item = Self;
 
     fn style(&self) -> Style {
@@ -851,11 +854,13 @@ mod tests {
     #[test]
     fn raw_str() {
         let line = Line::raw("test content");
-        assert_eq!(line.spans, [Span::raw("test content")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::raw("test content")]);
         assert_eq!(line.alignment, None);
 
         let line = Line::raw("a\nb");
-        assert_eq!(line.spans, [Span::raw("a"), Span::raw("b")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::raw("a"), Span::raw("b")]);
         assert_eq!(line.alignment, None);
     }
 
@@ -864,7 +869,8 @@ mod tests {
         let style = Style::new().yellow();
         let content = "Hello, world!";
         let line = Line::styled(content, style);
-        assert_eq!(line.spans, [Span::raw(content)]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -873,7 +879,8 @@ mod tests {
         let style = Style::new().yellow();
         let content = String::from("Hello, world!");
         let line = Line::styled(content.clone(), style);
-        assert_eq!(line.spans, [Span::raw(content)]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -882,7 +889,8 @@ mod tests {
         let style = Style::new().yellow();
         let content = Cow::from("Hello, world!");
         let line = Line::styled(content.clone(), style);
-        assert_eq!(line.spans, [Span::raw(content)]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -971,28 +979,33 @@ mod tests {
     fn from_string() {
         let s = String::from("Hello, world!");
         let line = Line::from(s);
-        assert_eq!(line.spans, [Span::from("Hello, world!")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::from("Hello, world!")]);
 
         let s = String::from("Hello\nworld!");
         let line = Line::from(s);
-        assert_eq!(line.spans, [Span::from("Hello"), Span::from("world!")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
     fn from_str() {
         let s = "Hello, world!";
         let line = Line::from(s);
-        assert_eq!(line.spans, [Span::from("Hello, world!")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::from("Hello, world!")]);
 
         let s = "Hello\nworld!";
         let line = Line::from(s);
-        assert_eq!(line.spans, [Span::from("Hello"), Span::from("world!")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
     fn to_line() {
         let line = 42.to_line();
-        assert_eq!(line.spans, [Span::from("42")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::from("42")]);
     }
 
     #[test]
@@ -1035,7 +1048,8 @@ mod tests {
     fn from_span() {
         let span = Span::styled("Hello, world!", Style::default().fg(Color::Yellow));
         let line = Line::from(span.clone());
-        assert_eq!(line.spans, [span]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [span]);
     }
 
     #[test]
@@ -1043,7 +1057,7 @@ mod tests {
         assert_eq!(
             Line::raw("Red").red() + Span::raw("blue").blue(),
             Line {
-                spans: vec![Span::raw("Red"), Span::raw("blue").blue()],
+                spans: Cow::Owned(vec![Span::raw("Red"), Span::raw("blue").blue()]),
                 style: Style::new().red(),
                 alignment: None,
             },
@@ -1055,7 +1069,7 @@ mod tests {
         assert_eq!(
             Line::raw("Red").red() + Line::raw("Blue").blue(),
             Text {
-                lines: vec![Line::raw("Red").red(), Line::raw("Blue").blue()],
+                lines: Cow::Owned(vec![Line::raw("Red").red(), Line::raw("Blue").blue()]),
                 style: Style::default(),
                 alignment: None,
             }
@@ -1069,7 +1083,7 @@ mod tests {
         assert_eq!(
             line,
             Line {
-                spans: vec![Span::raw("Red"), Span::raw("Blue").blue()],
+                spans: Cow::Owned(vec![Span::raw("Red"), Span::raw("Blue").blue()]),
                 style: Style::new().red(),
                 alignment: None,
             },
@@ -1080,12 +1094,14 @@ mod tests {
     fn extend() {
         let mut line = Line::from("Hello, ");
         line.extend([Span::raw("world!")]);
-        assert_eq!(line.spans, [Span::raw("Hello, "), Span::raw("world!")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
+        assert_eq!(*line.spans, [Span::raw("Hello, "), Span::raw("world!")]);
 
         let mut line = Line::from("Hello, ");
         line.extend([Span::raw("world! "), Span::raw("How are you?")]);
+        assert!(matches!(line.spans, Cow::Owned(_)));
         assert_eq!(
-            line.spans,
+            *line.spans,
             [
                 Span::raw("Hello, "),
                 Span::raw("world! "),
@@ -1197,7 +1213,7 @@ mod tests {
         const ITALIC: Style = Style::new().add_modifier(Modifier::ITALIC);
 
         #[fixture]
-        fn hello_world() -> Line<'static> {
+        fn hello_world() -> Line<'static, 'static> {
             Line::from(vec![
                 Span::styled("Hello ", BLUE),
                 Span::styled("world!", GREEN),
@@ -1217,7 +1233,7 @@ mod tests {
         }
 
         #[rstest]
-        fn render_out_of_bounds(hello_world: Line<'static>, mut small_buf: Buffer) {
+        fn render_out_of_bounds(hello_world: Line<'static, 'static>, mut small_buf: Buffer) {
             let out_of_bounds = Rect::new(20, 20, 10, 1);
             hello_world.render(out_of_bounds, &mut small_buf);
             assert_eq!(small_buf, Buffer::empty(small_buf.area));
@@ -1533,7 +1549,7 @@ mod tests {
 
         /// a fixture used in the tests below to avoid repeating the same setup
         #[fixture]
-        fn hello_world() -> Line<'static> {
+        fn hello_world() -> Line<'static, 'static> {
             Line::from(vec![
                 Span::styled("Hello ", Color::Blue),
                 Span::styled("world!", Color::Green),
@@ -1541,7 +1557,7 @@ mod tests {
         }
 
         #[rstest]
-        fn iter(hello_world: Line<'_>) {
+        fn iter(hello_world: Line<'_, '_>) {
             let mut iter = hello_world.iter();
             assert_eq!(iter.next(), Some(&Span::styled("Hello ", Color::Blue)));
             assert_eq!(iter.next(), Some(&Span::styled("world!", Color::Green)));
@@ -1549,7 +1565,7 @@ mod tests {
         }
 
         #[rstest]
-        fn iter_mut(mut hello_world: Line<'_>) {
+        fn iter_mut(mut hello_world: Line<'_, '_>) {
             let mut iter = hello_world.iter_mut();
             assert_eq!(iter.next(), Some(&mut Span::styled("Hello ", Color::Blue)));
             assert_eq!(iter.next(), Some(&mut Span::styled("world!", Color::Green)));
@@ -1557,7 +1573,7 @@ mod tests {
         }
 
         #[rstest]
-        fn into_iter(hello_world: Line<'_>) {
+        fn into_iter(hello_world: Line<'_, '_>) {
             let mut iter = hello_world.into_iter();
             assert_eq!(iter.next(), Some(Span::styled("Hello ", Color::Blue)));
             assert_eq!(iter.next(), Some(Span::styled("world!", Color::Green)));
@@ -1565,7 +1581,7 @@ mod tests {
         }
 
         #[rstest]
-        fn into_iter_ref(hello_world: Line<'_>) {
+        fn into_iter_ref(hello_world: Line<'_, '_>) {
             let mut iter = (&hello_world).into_iter();
             assert_eq!(iter.next(), Some(&Span::styled("Hello ", Color::Blue)));
             assert_eq!(iter.next(), Some(&Span::styled("world!", Color::Green)));
@@ -1585,7 +1601,7 @@ mod tests {
         }
 
         #[rstest]
-        fn for_loop_ref(hello_world: Line<'_>) {
+        fn for_loop_ref(hello_world: Line<'_, '_>) {
             let mut result = String::new();
             for span in &hello_world {
                 result.push_str(span.content.as_ref());
@@ -1607,9 +1623,9 @@ mod tests {
         }
 
         #[rstest]
-        fn for_loop_into(hello_world: Line<'_>) {
+        fn for_loop_into(hello_world: Line<'_, '_>) {
             let mut result = String::new();
-            for span in hello_world {
+            for span in &hello_world {
                 result.push_str(span.content.as_ref());
             }
             assert_eq!(result, "Hello world!");
