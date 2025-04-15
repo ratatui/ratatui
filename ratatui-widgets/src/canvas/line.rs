@@ -32,7 +32,7 @@ impl Line {
 }
 
 impl Shape for Line {
-    #[allow(clippy::similar_names)]
+    #[expect(clippy::similar_names)]
     fn draw(&self, painter: &mut Painter) {
         let (x_bounds, y_bounds) = painter.bounds();
         let Some((world_x1, world_y1, world_x2, world_y2)) =

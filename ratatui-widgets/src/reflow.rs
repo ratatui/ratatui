@@ -180,7 +180,7 @@ where
         }
         pending_line.append(&mut self.pending_word);
 
-        #[allow(clippy::else_if_without_else)]
+        #[expect(clippy::else_if_without_else)]
         if !pending_line.is_empty() {
             self.wrapped_lines.push_back(pending_line);
         } else if pending_line.capacity() > 0 {
@@ -204,7 +204,6 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
-    #[allow(clippy::too_many_lines)]
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
         if self.max_line_width == 0 {
             return None;
@@ -347,7 +346,7 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
             break;
         }
     }
-    #[allow(clippy::string_slice)] // Is safe as it comes from UnicodeSegmentation
+    #[expect(clippy::string_slice)] // Is safe as it comes from UnicodeSegmentation
     &src[start..]
 }
 

@@ -373,7 +373,7 @@ mod tests {
         assert_eq!(buffer, expected,);
     }
 
-    #[allow(clippy::too_many_lines)]
+    #[expect(clippy::too_many_lines)]
     #[test]
     fn combinations() {
         #[track_caller]

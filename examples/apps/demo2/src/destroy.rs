@@ -32,7 +32,7 @@ pub fn destroy(frame: &mut Frame<'_>) {
 ///
 /// Each pick some random pixels and move them each down one row. This is a very inefficient way to
 /// do this, but it works well enough for this demo.
-#[allow(
+#[expect(
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss
@@ -74,7 +74,7 @@ fn drip(frame_count: usize, area: Rect, buf: &mut Buffer) {
 }
 
 /// draw some text fading in and out from black to red and back
-#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
+#[expect(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 fn text(frame_count: usize, area: Rect, buf: &mut Buffer) {
     let sub_frame = frame_count.saturating_sub(TEXT_DELAY);
     if sub_frame == 0 {
@@ -126,7 +126,7 @@ fn blend(mask_color: Color, cell_color: Color, percentage: f64) -> Color {
     let green = f64::from(mask_green).mul_add(percentage, f64::from(cell_green) * remain);
     let blue = f64::from(mask_blue).mul_add(percentage, f64::from(cell_blue) * remain);
 
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     Color::Rgb(red as u8, green as u8, blue as u8)
 }
 

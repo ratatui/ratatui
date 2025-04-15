@@ -329,7 +329,7 @@ impl<'a> Span<'a> {
         Line::from(self).left_aligned()
     }
 
-    #[allow(clippy::wrong_self_convention)]
+    #[expect(clippy::wrong_self_convention)]
     #[deprecated = "use `into_left_aligned_line()` instead"]
     pub fn to_left_aligned_line(self) -> Line<'a> {
         self.into_left_aligned_line()
@@ -349,7 +349,7 @@ impl<'a> Span<'a> {
         Line::from(self).centered()
     }
 
-    #[allow(clippy::wrong_self_convention)]
+    #[expect(clippy::wrong_self_convention)]
     #[deprecated = "use `into_centered_line()` instead"]
     pub fn to_centered_line(self) -> Line<'a> {
         self.into_centered_line()
@@ -369,7 +369,7 @@ impl<'a> Span<'a> {
         Line::from(self).right_aligned()
     }
 
-    #[allow(clippy::wrong_self_convention)]
+    #[expect(clippy::wrong_self_convention)]
     #[deprecated = "use `into_right_aligned_line()` instead"]
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()

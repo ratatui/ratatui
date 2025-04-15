@@ -277,7 +277,7 @@ impl App {
     }
 
     fn swap_legend() -> impl Widget {
-        #[allow(unstable_name_collisions)]
+        #[expect(unstable_name_collisions)]
         Paragraph::new(
             Line::from(
                 [

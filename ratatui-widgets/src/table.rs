@@ -1109,7 +1109,7 @@ mod tests {
 
         // ensure that code that uses &[] continues to work as there is a large amount of code that
         // uses this pattern
-        #[allow(clippy::needless_borrows_for_generic_args)]
+        #[expect(clippy::needless_borrows_for_generic_args)]
         let table = Table::default().widths(&[Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
 
@@ -1118,7 +1118,7 @@ mod tests {
 
         // ensure that code that uses &some_vec continues to work as there is a large amount of code
         // that uses this pattern
-        #[allow(clippy::needless_borrows_for_generic_args)]
+        #[expect(clippy::needless_borrows_for_generic_args)]
         let table = Table::default().widths(&vec![Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
 
@@ -1161,7 +1161,7 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     fn highlight_style() {
         let style = Style::default().red().italic();
         let table = Table::default().highlight_style(style);
@@ -1810,8 +1810,6 @@ mod tests {
             );
         }
 
-        /// NOTE: `segment_size` is deprecated use flex instead!
-        #[allow(deprecated)]
         #[test]
         fn underconstrained_segment_size() {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
@@ -1984,7 +1982,7 @@ mod tests {
             );
         }
 
-        #[allow(clippy::too_many_lines)]
+        #[expect(clippy::too_many_lines)]
         #[test]
         fn insufficient_area_highlight_symbol_and_column_spacing_allocation() {
             // column spacing is prioritized over every other constraint
