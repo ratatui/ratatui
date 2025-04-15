@@ -219,6 +219,8 @@ where
 #[cfg(test)]
 mod tests {
     use alloc::borrow::Cow;
+    use alloc::string::{String, ToString};
+    use alloc::vec;
 
     use pretty_assertions::assert_eq;
     use ratatui_core::style::{Color, Modifier, Stylize};
