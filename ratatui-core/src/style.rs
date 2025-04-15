@@ -632,6 +632,8 @@ impl From<(Color, Color, Modifier, Modifier)> for Style {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use rstest::rstest;
 
     use super::*;

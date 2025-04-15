@@ -1,5 +1,5 @@
 //! Border related types ([`Borders`], [`BorderType`]) and a macro to create borders ([`border`]).
-use core::fmt;
+use alloc::fmt;
 
 use bitflags::bitflags;
 use ratatui_core::symbols::border;
@@ -254,6 +254,8 @@ macro_rules! border {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use super::*;
 
     #[test]

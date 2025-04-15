@@ -19,9 +19,9 @@ macro_rules! assert_buffer_eq {
                     .enumerate()
                     .map(|(i, (x, y, cell))| {
                         let expected_cell = &expected[(x, y)];
-                        format!("{i}: at ({x}, {y})\n  expected: {expected_cell:?}\n  actual:   {cell:?}")
+                        ::alloc::format!("{i}: at ({x}, {y})\n  expected: {expected_cell:?}\n  actual:   {cell:?}")
                     })
-                    .collect::<Vec<String>>()
+                    .collect::<::alloc::vec::Vec<::alloc::string::String>>()
                     .join("\n");
                 assert!(
                     nice_diff.is_empty(),
