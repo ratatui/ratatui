@@ -956,9 +956,11 @@ mod tests {
 
         // set_line only sets the style for non-empty cells (unlike Line::render which sets the
         // style for all cells)
-        let expected_styles = iter::repeat(color)
-            .take(content.len().min(5))
-            .chain(iter::repeat(Color::default()).take(5_usize.saturating_sub(content.len())))
+        let expected_styles = iter::repeat_n(color, content.len().min(5))
+            .chain(iter::repeat_n(
+                Color::default(),
+                5_usize.saturating_sub(content.len()),
+            ))
             .collect_vec();
         assert_eq!(actual_contents, expected);
         assert_eq!(actual_styles, expected_styles);
