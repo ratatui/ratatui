@@ -9,21 +9,23 @@ use crate::layout::Rect;
 /// respectively.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Size {
+pub struct Size<T = u16> {
     /// The width in columns
-    pub width: u16,
+    pub width: T,
     /// The height in rows
-    pub height: u16,
+    pub height: T,
 }
 
-impl Size {
-    /// A zero sized Size
-    pub const ZERO: Self = Self::new(0, 0);
-
+impl<T> Size<T> {
     /// Create a new `Size` struct
-    pub const fn new(width: u16, height: u16) -> Self {
+    pub const fn new(width: T, height: T) -> Self {
         Self { width, height }
     }
+}
+
+impl Size<u16> {
+    /// A zero sized Size
+    pub const ZERO: Self = Self::new(0, 0);
 }
 
 impl From<(u16, u16)> for Size {
