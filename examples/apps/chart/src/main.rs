@@ -11,7 +11,7 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::symbols::{self, Marker};
@@ -82,19 +82,19 @@ impl App {
         let tick_rate = Duration::from_millis(250);
         let mut last_tick = Instant::now();
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
 
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-            if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
-                    if key.code == KeyCode::Char('q') {
-                        return Ok(());
-                    }
-                }
-            }
-            if last_tick.elapsed() >= tick_rate {
+            if !event::poll(timeout)? {
                 self.on_tick();
                 last_tick = Instant::now();
+                continue;
+            }
+            if event::read()?
+                .as_key_press_event()
+                .is_some_and(|key| key.code == KeyCode::Char('q'))
+            {
+                return Ok(());
             }
         }
     }
@@ -110,7 +110,7 @@ impl App {
         self.window[1] += 1.0;
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
         let [animated_chart, bar_chart] =
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]).areas(top);

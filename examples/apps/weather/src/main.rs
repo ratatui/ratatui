@@ -9,7 +9,7 @@
 //! [`BarChart`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use rand::{rng, Rng};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Style, Stylize};
@@ -42,22 +42,23 @@ impl App {
 
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
             self.handle_events()?;
         }
         Ok(())
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                self.should_exit = true;
-            }
+        if event::read()?
+            .as_key_press_event()
+            .is_some_and(|key| key.code == KeyCode::Char('q'))
+        {
+            self.should_exit = true;
         }
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let [title, main] = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)])
             .spacing(1)
             .areas(frame.area());

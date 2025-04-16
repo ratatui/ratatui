@@ -8,7 +8,7 @@
 use std::time::Duration;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::palette::tailwind;
@@ -79,15 +79,14 @@ impl App {
 
     fn handle_events(&mut self) -> Result<()> {
         let timeout = Duration::from_secs_f32(1.0 / 20.0);
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char(' ') | KeyCode::Enter => self.start(),
-                        KeyCode::Char('q') | KeyCode::Esc => self.quit(),
-                        _ => {}
-                    }
-                }
+        if !event::poll(timeout)? {
+            return Ok(());
+        }
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
+                KeyCode::Char(' ') | KeyCode::Enter => self.start(),
+                KeyCode::Char('q') | KeyCode::Esc => self.quit(),
+                _ => {}
             }
         }
         Ok(())
