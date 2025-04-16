@@ -338,7 +338,7 @@ fn constraint_len_calculator(items: &[Data]) -> (u16, u16, u16) {
         .max()
         .unwrap_or(0);
 
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(clippy::cast_possible_truncation)]
     (name_len as u16, address_len as u16, email_len as u16)
 }
 

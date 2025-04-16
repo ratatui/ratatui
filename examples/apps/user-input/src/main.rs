@@ -204,7 +204,7 @@ impl App {
 
             // Make the cursor visible and ask ratatui to put it at the specified coordinates after
             // rendering
-            #[allow(clippy::cast_possible_truncation)]
+            #[expect(clippy::cast_possible_truncation)]
             InputMode::Editing => frame.set_cursor_position(Position::new(
                 // Draw the cursor at the current position in the input field.
                 // This position can be controlled via the left and right arrow key

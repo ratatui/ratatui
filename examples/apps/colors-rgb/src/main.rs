@@ -174,7 +174,7 @@ impl FpsWidget {
     /// This updates the fps once a second, but only if the widget has rendered at least 2 frames
     /// since the last calculation. This avoids noise in the fps calculation when rendering on slow
     /// machines that can't render at least 2 frames per second.
-    #[allow(clippy::cast_precision_loss)]
+    #[expect(clippy::cast_precision_loss)]
     fn calculate_fps(&mut self) {
         self.frame_count += 1;
         let elapsed = self.last_instant.elapsed();
@@ -216,7 +216,7 @@ impl ColorsWidget {
     ///
     /// This is called once per frame to setup the colors to render. It caches the colors so that
     /// they don't need to be recalculated every frame.
-    #[allow(clippy::cast_precision_loss)]
+    #[expect(clippy::cast_precision_loss)]
     fn setup_colors(&mut self, size: Rect) {
         let Rect { width, height, .. } = size;
         // double the height because each screen row has two rows of half block pixels

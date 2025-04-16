@@ -15,6 +15,7 @@ This is a quick summary of the sections below:
   - `FrameExt` trait for `unstable-widget-ref` feature
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
+  - The MSRV is now 1.81.0
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -78,6 +79,13 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased (0.30.0)
+
+## The MSRV is now 1.81.0 ([#1786])
+
+[#1786]: https://github.com/ratatui/ratatui/pull/1786
+
+The minimum supported Rust version (MSRV) is now 1.81.0. This is due to the use of `#[expect]` in
+the codebase, which is only available in Rust 1.81.0 and later.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 

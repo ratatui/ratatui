@@ -95,7 +95,7 @@ fn draw_gauges(frame: &mut Frame, app: &mut App, area: Rect) {
     frame.render_widget(line_gauge, chunks[2]);
 }
 
-#[allow(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines)]
 fn draw_charts(frame: &mut Frame, app: &mut App, area: Rect) {
     let constraints = if app.show_chart {
         vec![Constraint::Percentage(50), Constraint::Percentage(50)]

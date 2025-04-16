@@ -79,7 +79,7 @@ impl App {
         }
     }
 
-    #[allow(clippy::too_many_lines, clippy::cast_possible_truncation)]
+    #[expect(clippy::too_many_lines, clippy::cast_possible_truncation)]
     fn draw(&mut self, frame: &mut Frame) {
         let area = frame.area();
 

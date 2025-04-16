@@ -117,7 +117,7 @@ fn input_handling(tx: mpsc::Sender<Event>) {
     });
 }
 
-#[allow(clippy::cast_precision_loss, clippy::needless_pass_by_value)]
+#[expect(clippy::cast_precision_loss, clippy::needless_pass_by_value)]
 fn workers(tx: mpsc::Sender<Event>) -> Vec<Worker> {
     (0..4)
         .map(|id| {
@@ -157,7 +157,7 @@ fn downloads() -> Downloads {
     }
 }
 
-#[allow(clippy::needless_pass_by_value)]
+#[expect(clippy::needless_pass_by_value)]
 fn run(
     terminal: &mut Terminal<impl Backend>,
     workers: Vec<Worker>,
@@ -232,7 +232,7 @@ fn draw(frame: &mut Frame, downloads: &Downloads) {
 
     // total progress
     let done = NUM_DOWNLOADS - downloads.pending.len() - downloads.in_progress.len();
-    #[allow(clippy::cast_precision_loss)]
+    #[expect(clippy::cast_precision_loss)]
     let progress = LineGauge::default()
         .filled_style(Style::default().fg(Color::Blue))
         .label(format!("{done}/{NUM_DOWNLOADS}"))
@@ -262,7 +262,7 @@ fn draw(frame: &mut Frame, downloads: &Downloads) {
     let list = List::new(items);
     frame.render_widget(list, list_area);
 
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(clippy::cast_possible_truncation)]
     for (i, (_, download)) in downloads.in_progress.iter().enumerate() {
         let gauge = Gauge::default()
             .gauge_style(Style::default().fg(Color::Yellow))

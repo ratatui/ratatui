@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use core::fmt;
 
 use strum::EnumIs;
@@ -382,6 +383,9 @@ impl fmt::Display for Constraint {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+    use alloc::vec;
+
     use super::*;
 
     #[test]
@@ -460,7 +464,7 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     fn apply() {
         assert_eq!(Constraint::Percentage(0).apply(100), 0);
         assert_eq!(Constraint::Percentage(50).apply(100), 50);

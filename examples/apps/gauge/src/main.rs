@@ -103,7 +103,7 @@ impl App {
 }
 
 impl Widget for &App {
-    #[allow(clippy::similar_names)]
+    #[expect(clippy::similar_names)]
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::{Length, Min, Ratio};
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
