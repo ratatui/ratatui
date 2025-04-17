@@ -498,8 +498,8 @@ impl<'a> Dataset<'a> {
     ///     .graph_type(GraphType::Line)
     ///     .multi_color_line(
     ///         MultiColorLineConfig::default()
-    ///             .add_color_range(0.0..1.0, Color::Green))
-    ///             .add_color_range(0.0..5.0, Color::Red)) //Note: Ranges are searched in order of creation, meaning this range is also equivalent to 1.0..5.0
+    ///             .add_color_range(0.0..1.0, Color::Green)
+    ///             .add_color_range(0.0..5.0, Color::Red) //Note: Ranges are searched in order of creation, meaning this range is also equivalent to 1.0..5.0
     ///     )
     ///     .style(Style::default().cyan())
     ///     .data(&[(0.0, 0.0), (1.0, 10.0)]),
