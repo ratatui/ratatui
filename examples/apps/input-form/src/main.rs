@@ -15,7 +15,7 @@
 //! [`tui-textarea`]: https://crates.io/crates/tui-textarea
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, KeyCode, KeyEvent};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Offset, Rect};
 use ratatui::style::Stylize;
@@ -71,13 +71,12 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        match event::read()? {
-            Event::Key(event) if event.kind == KeyEventKind::Press => match event.code {
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
                 KeyCode::Esc => self.state = AppState::Cancelled,
                 KeyCode::Enter => self.state = AppState::Submitted,
-                _ => self.form.on_key_press(event),
-            },
-            _ => {}
+                _ => self.form.on_key_press(key),
+            }
         }
         Ok(())
     }

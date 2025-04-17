@@ -6,7 +6,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, KeyCode, KeyEvent};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::palette::tailwind::{BLUE, GREEN, SLATE};
@@ -103,7 +103,7 @@ impl App {
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
             terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
-            if let Event::Key(key) = event::read()? {
+            if let Some(key) = event::read()?.as_key_press_event() {
                 self.handle_key(key);
             }
         }
@@ -111,9 +111,6 @@ impl App {
     }
 
     fn handle_key(&mut self, key: KeyEvent) {
-        if key.kind != KeyEventKind::Press {
-            return;
-        }
         match key.code {
             KeyCode::Char('q') | KeyCode::Esc => self.should_exit = true,
             KeyCode::Char('h') | KeyCode::Left => self.select_none(),

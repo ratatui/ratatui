@@ -11,22 +11,18 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 /// [examples]: https://github.com/ratatui/ratatui/blob/main/examples
 /// [hello-world]: https://github.com/ratatui/ratatui/blob/main/examples/apps/hello-world
-use crossterm::event::{self, Event};
+use crossterm::event;
 use ratatui::text::Text;
-use ratatui::Frame;
 
 fn main() {
     let mut terminal = ratatui::init();
     loop {
-        terminal.draw(draw).expect("failed to draw frame");
-        if matches!(event::read().expect("failed to read event"), Event::Key(_)) {
+        terminal
+            .draw(|frame| frame.render_widget(Text::raw("Hello World!"), frame.area()))
+            .expect("failed to draw frame");
+        if event::read().expect("failed to read event").is_key_press() {
             break;
         }
     }
     ratatui::restore();
-}
-
-fn draw(frame: &mut Frame) {
-    let text = Text::raw("Hello World!");
-    frame.render_widget(text, frame.area());
 }

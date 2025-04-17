@@ -8,7 +8,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::Stylize;
 use ratatui::widgets::{Block, Clear, Paragraph, Wrap};
@@ -30,21 +30,19 @@ struct App {
 impl App {
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
 
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') => return Ok(()),
-                        KeyCode::Char('p') => self.show_popup = !self.show_popup,
-                        _ => {}
-                    }
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Char('p') => self.show_popup = !self.show_popup,
+                    _ => {}
                 }
             }
         }
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let area = frame.area();
 
         let vertical = Layout::vertical([Constraint::Percentage(20), Constraint::Percentage(80)]);

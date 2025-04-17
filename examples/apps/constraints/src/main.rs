@@ -6,7 +6,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
 use ratatui::layout::{Layout, Rect};
@@ -90,10 +90,7 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        if let Event::Key(key) = event::read()? {
-            if key.kind != KeyEventKind::Press {
-                return Ok(());
-            }
+        if let Some(key) = event::read()?.as_key_press_event() {
             match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                 KeyCode::Char('l') | KeyCode::Right => self.next(),

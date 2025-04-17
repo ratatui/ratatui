@@ -30,8 +30,8 @@ fn main() -> Result<()> {
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
         terminal.draw(render)?;
-        if matches!(event::read()?, event::Event::Key(_)) {
-            break Ok(());
+        if event::read()?.is_key_press() {
+            return Ok(());
         }
     }
 }

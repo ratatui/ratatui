@@ -2,8 +2,7 @@ use std::time::Duration;
 
 use color_eyre::eyre::Context;
 use color_eyre::Result;
-use crossterm::event;
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use itertools::Itertools;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
@@ -50,7 +49,7 @@ impl App {
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.is_running() {
             terminal
-                .draw(|frame| self.draw(frame))
+                .draw(|frame| self.render(frame))
                 .wrap_err("terminal.draw")?;
             self.handle_events()?;
         }
@@ -61,8 +60,8 @@ impl App {
         self.mode != Mode::Quit
     }
 
-    /// Draw a single frame of the app.
-    fn draw(&self, frame: &mut Frame) {
+    /// Render a single frame of the app.
+    fn render(&self, frame: &mut Frame) {
         frame.render_widget(self, frame.area());
         if self.mode == Mode::Destroy {
             destroy::destroy(frame);
@@ -78,23 +77,18 @@ impl App {
         if !event::poll(timeout)? {
             return Ok(());
         }
-        match event::read()? {
-            Event::Key(key) if key.kind == KeyEventKind::Press => self.handle_key_press(key),
-            _ => {}
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
+                KeyCode::Char('q') | KeyCode::Esc => self.mode = Mode::Quit,
+                KeyCode::Char('h') | KeyCode::Left => self.prev_tab(),
+                KeyCode::Char('l') | KeyCode::Right | KeyCode::Tab => self.next_tab(),
+                KeyCode::Char('k') | KeyCode::Up => self.prev(),
+                KeyCode::Char('j') | KeyCode::Down => self.next(),
+                KeyCode::Char('d') | KeyCode::Delete => self.destroy(),
+                _ => {}
+            };
         }
         Ok(())
-    }
-
-    fn handle_key_press(&mut self, key: KeyEvent) {
-        match key.code {
-            KeyCode::Char('q') | KeyCode::Esc => self.mode = Mode::Quit,
-            KeyCode::Char('h') | KeyCode::Left => self.prev_tab(),
-            KeyCode::Char('l') | KeyCode::Right | KeyCode::Tab => self.next_tab(),
-            KeyCode::Char('k') | KeyCode::Up => self.prev(),
-            KeyCode::Char('j') | KeyCode::Down => self.next(),
-            KeyCode::Char('d') | KeyCode::Delete => self.destroy(),
-            _ => {}
-        };
     }
 
     fn prev(&mut self) {

@@ -15,7 +15,7 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
@@ -32,23 +32,22 @@ fn main() -> Result<()> {
 
 /// Run the application.
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    let mut list_state = ListState::default();
-    list_state.select_first();
+    let mut list_state = ListState::default().with_selected(Some(0));
     loop {
-        terminal.draw(|frame| draw(frame, &mut list_state))?;
-        if let Event::Key(key) = event::read()? {
+        terminal.draw(|frame| render(frame, &mut list_state))?;
+        if let Some(key) = event::read()?.as_key_press_event() {
             match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Down | KeyCode::Char('j') => list_state.select_next(),
-                KeyCode::Up | KeyCode::Char('k') => list_state.select_previous(),
+                KeyCode::Char('j') | KeyCode::Down => list_state.select_next(),
+                KeyCode::Char('k') | KeyCode::Up => list_state.select_previous(),
+                KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
                 _ => {}
             }
         }
     }
 }
 
-/// Draw the UI with various lists.
-fn draw(frame: &mut Frame, list_state: &mut ListState) {
+/// Render the UI with various lists.
+fn render(frame: &mut Frame, list_state: &mut ListState) {
     let vertical = Layout::vertical([
         Constraint::Length(1),
         Constraint::Fill(1),

@@ -9,7 +9,7 @@
 //! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event;
 use itertools::Itertools;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
@@ -27,16 +27,14 @@ fn main() -> Result<()> {
 
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(draw)?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                return Ok(());
-            }
+        terminal.draw(render)?;
+        if event::read()?.is_key_press() {
+            return Ok(());
         }
     }
 }
 
-fn draw(frame: &mut Frame) {
+fn render(frame: &mut Frame) {
     let layout = Layout::vertical([
         Constraint::Length(30),
         Constraint::Length(17),

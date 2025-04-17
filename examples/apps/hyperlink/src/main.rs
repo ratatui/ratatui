@@ -7,7 +7,7 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 /// [OSC 8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use itertools::Itertools;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -38,10 +38,11 @@ impl App {
     fn run(self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
             terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.area()))?;
-            if let Event::Key(key) = event::read()? {
-                if matches!(key.code, KeyCode::Char('q') | KeyCode::Esc) {
-                    break;
-                }
+            if event::read()?
+                .as_key_press_event()
+                .is_some_and(|key| matches!(key.code, KeyCode::Char('q') | KeyCode::Esc))
+            {
+                break;
             }
         }
         Ok(())

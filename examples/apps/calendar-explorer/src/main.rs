@@ -11,7 +11,7 @@
 use std::fmt;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Text};
@@ -34,21 +34,17 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut calendar_style = StyledCalendar::Default;
     loop {
         terminal.draw(|frame| render(frame, calendar_style, selected_date))?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Char('q') => break Ok(()),
-                    KeyCode::Char('s') => calendar_style = calendar_style.next(),
-                    KeyCode::Char('n') | KeyCode::Tab => selected_date = next_month(selected_date),
-                    KeyCode::Char('p') | KeyCode::BackTab => {
-                        selected_date = previous_month(selected_date);
-                    }
-                    KeyCode::Char('h') | KeyCode::Left => selected_date -= 1.days(),
-                    KeyCode::Char('j') | KeyCode::Down => selected_date += 1.weeks(),
-                    KeyCode::Char('k') | KeyCode::Up => selected_date -= 1.weeks(),
-                    KeyCode::Char('l') | KeyCode::Right => selected_date += 1.days(),
-                    _ => {}
-                }
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
+                KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                KeyCode::Char('s') => calendar_style = calendar_style.next(),
+                KeyCode::Char('n') | KeyCode::Tab => selected_date = next_month(selected_date),
+                KeyCode::Char('p') | KeyCode::BackTab => selected_date = prev_month(selected_date),
+                KeyCode::Char('h') | KeyCode::Left => selected_date -= 1.days(),
+                KeyCode::Char('j') | KeyCode::Down => selected_date += 1.weeks(),
+                KeyCode::Char('k') | KeyCode::Up => selected_date -= 1.weeks(),
+                KeyCode::Char('l') | KeyCode::Right => selected_date += 1.days(),
+                _ => {}
             }
         }
     }
@@ -65,7 +61,7 @@ fn next_month(date: Date) -> Date {
     }
 }
 
-fn previous_month(date: Date) -> Date {
+fn prev_month(date: Date) -> Date {
     if date.month() == Month::January {
         date.replace_month(Month::December)
             .unwrap()
@@ -76,7 +72,7 @@ fn previous_month(date: Date) -> Date {
     }
 }
 
-/// Draw the UI with a calendar.
+/// Render the UI with a calendar.
 fn render(frame: &mut Frame, calendar_style: StyledCalendar, selected_date: Date) {
     let header = Text::from_iter([
         Line::from("Calendar Example".bold()),

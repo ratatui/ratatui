@@ -11,7 +11,7 @@
 use std::num::NonZeroUsize;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
 use ratatui::layout::{Alignment, Flex, Layout, Rect};
@@ -168,8 +168,8 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        match event::read()? {
-            Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                 KeyCode::Char('l') | KeyCode::Right => self.next(),
                 KeyCode::Char('h') | KeyCode::Left => self.previous(),
@@ -180,8 +180,7 @@ impl App {
                 KeyCode::Char('+') => self.increment_spacing(),
                 KeyCode::Char('-') => self.decrement_spacing(),
                 _ => (),
-            },
-            _ => {}
+            }
         }
         Ok(())
     }

@@ -21,7 +21,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::layout::{Constraint, Layout, Position};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span, Text};
@@ -129,9 +129,9 @@ impl App {
 
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
 
-            if let Event::Key(key) = event::read()? {
+            if let Some(key) = event::read()?.as_key_press_event() {
                 match self.input_mode {
                     InputMode::Normal => match key.code {
                         KeyCode::Char('e') => {
@@ -157,7 +157,7 @@ impl App {
         }
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let vertical = Layout::vertical([
             Constraint::Length(1),
             Constraint::Length(3),

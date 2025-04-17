@@ -10,8 +10,8 @@ use std::{io::stdout, ops::ControlFlow, time::Duration};
 
 use color_eyre::Result;
 use crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
-    MouseEventKind,
+    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseButton,
+    MouseEvent, MouseEventKind,
 };
 use crossterm::execute;
 use ratatui::buffer::Buffer;
@@ -147,15 +147,12 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut selected_button: usize = 0;
     let mut button_states = [State::Selected, State::Normal, State::Normal];
     loop {
-        terminal.draw(|frame| draw(frame, button_states))?;
+        terminal.draw(|frame| render(frame, button_states))?;
         if !event::poll(Duration::from_millis(100))? {
             continue;
         }
         match event::read()? {
             Event::Key(key) => {
-                if key.kind != event::KeyEventKind::Press {
-                    continue;
-                }
                 if handle_key_event(key, &mut button_states, &mut selected_button).is_break() {
                     break;
                 }
@@ -169,7 +166,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     Ok(())
 }
 
-fn draw(frame: &mut Frame, states: [State; 3]) {
+fn render(frame: &mut Frame, states: [State; 3]) {
     let vertical = Layout::vertical([
         Constraint::Length(1),
         Constraint::Max(3),
@@ -201,10 +198,13 @@ fn render_buttons(frame: &mut Frame<'_>, area: Rect, states: [State; 3]) {
 }
 
 fn handle_key_event(
-    key: event::KeyEvent,
+    key: KeyEvent,
     button_states: &mut [State; 3],
     selected_button: &mut usize,
 ) -> ControlFlow<()> {
+    if !key.is_press() {
+        return ControlFlow::Continue(());
+    }
     match key.code {
         KeyCode::Char('q') => return ControlFlow::Break(()),
         KeyCode::Left | KeyCode::Char('h') => {

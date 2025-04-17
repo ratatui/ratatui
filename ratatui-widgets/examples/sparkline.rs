@@ -17,7 +17,7 @@
 use core::time::Duration;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event};
+use crossterm::event;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
@@ -35,23 +35,26 @@ fn main() -> Result<()> {
 /// Run the application.
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(draw)?;
-        if event::poll(Duration::from_millis(16))? && matches!(event::read()?, Event::Key(_)) {
-            break Ok(());
+        terminal.draw(render)?;
+        // Ensure that the animations renders at 50 FPS (GIF speed)
+        if !event::poll(Duration::from_secs_f64(1.0 / 50.0))? {
+            continue;
+        }
+        if event::read()?.is_key_press() {
+            return Ok(());
         }
     }
 }
 
-/// Draw the UI with various sparklines.
-fn draw(frame: &mut Frame) {
-    let vertical = Layout::vertical([
+/// Render the UI with various sparklines.
+fn render(frame: &mut Frame) {
+    let constraints = [
         Constraint::Length(1),
         Constraint::Max(2),
         Constraint::Fill(1),
         Constraint::Fill(1),
-    ])
-    .spacing(1);
-    let [top, first, second, _] = vertical.areas(frame.area());
+    ];
+    let [top, first, second, _] = Layout::vertical(constraints).spacing(1).areas(frame.area());
 
     let title = Line::from_iter([
         Span::from("Sparkline Widget").bold(),

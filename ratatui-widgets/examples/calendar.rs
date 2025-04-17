@@ -15,7 +15,7 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use crossterm::event::{self, Event};
+use crossterm::event;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
@@ -35,15 +35,15 @@ fn main() -> Result<()> {
 /// Run the application.
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(draw)?;
-        if matches!(event::read()?, Event::Key(_)) {
-            break Ok(());
+        terminal.draw(render)?;
+        if event::read()?.is_key_press() {
+            return Ok(());
         }
     }
 }
 
-/// Draw the UI with 2 monthly calendars side by side.
-fn draw(frame: &mut Frame) {
+/// Render the UI with 2 monthly calendars side by side.
+fn render(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let horizontal = Layout::horizontal([Constraint::Percentage(50); 2]).spacing(1);
     let [top, main] = vertical.areas(frame.area());

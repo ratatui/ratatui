@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use color_eyre::eyre::Context;
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use ratatui::widgets::Paragraph;
 use ratatui::{DefaultTerminal, Frame};
 
@@ -33,7 +33,7 @@ fn main() -> Result<()> {
 /// on events, or you could have a single application state and update it based on events.
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(draw)?;
+        terminal.draw(render)?;
         if should_quit()? {
             break;
         }
@@ -43,7 +43,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 
 /// Render the application. This is where you would draw the application UI. This example draws a
 /// greeting.
-fn draw(frame: &mut Frame) {
+fn render(frame: &mut Frame) {
     let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
     frame.render_widget(greeting, frame.area());
 }
@@ -55,9 +55,11 @@ fn draw(frame: &mut Frame) {
 /// updating the application state, without blocking the event loop for too long.
 fn should_quit() -> Result<bool> {
     if event::poll(Duration::from_millis(250)).context("event poll failed")? {
-        if let Event::Key(key) = event::read().context("event read failed")? {
-            return Ok(KeyCode::Char('q') == key.code);
-        }
+        let q_pressed = event::read()
+            .context("event read failed")?
+            .as_key_press_event()
+            .is_some_and(|key| key.code == KeyCode::Char('q'));
+        return Ok(q_pressed);
     }
     Ok(false)
 }
