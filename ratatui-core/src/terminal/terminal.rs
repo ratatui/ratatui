@@ -1,3 +1,5 @@
+use std::eprintln;
+
 use crate::backend::{Backend, ClearType};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};

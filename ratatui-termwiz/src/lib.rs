@@ -230,10 +230,9 @@ impl Backend for TermwizBackend {
             ClearType::AfterCursor
             | ClearType::BeforeCursor
             | ClearType::CurrentLine
-            | ClearType::UntilNewLine => Err(Self::Error::new(
-                io::ErrorKind::Other,
-                format!("clear_type [{clear_type:?}] not supported with this backend"),
-            )),
+            | ClearType::UntilNewLine => Err(Self::Error::other(format!(
+                "clear_type [{clear_type:?}] not supported with this backend"
+            ))),
         }
     }
 
@@ -252,7 +251,7 @@ impl Backend for TermwizBackend {
             .buffered_terminal
             .terminal()
             .get_screen_size()
-            .map_err(|e| Self::Error::new(io::ErrorKind::Other, e))?;
+            .map_err(Self::Error::other)?;
         Ok(WindowSize {
             columns_rows: Size {
                 width: u16_max(cols),
@@ -266,9 +265,7 @@ impl Backend for TermwizBackend {
     }
 
     fn flush(&mut self) -> Result<(), Self::Error> {
-        self.buffered_terminal
-            .flush()
-            .map_err(|e| Self::Error::new(io::ErrorKind::Other, e))?;
+        self.buffered_terminal.flush().map_err(Self::Error::other)?;
         Ok(())
     }
 

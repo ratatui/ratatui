@@ -232,7 +232,7 @@ where
     fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
         crossterm::cursor::position()
             .map(|(x, y)| Position { x, y })
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+            .map_err(io::Error::other)
     }
 
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error> {

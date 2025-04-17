@@ -1,4 +1,5 @@
 use alloc::borrow::Cow;
+use alloc::string::{String, ToString};
 use core::fmt;
 
 use crate::style::{Color, Modifier, Style};
@@ -369,6 +370,8 @@ styled!(usize);
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use itertools::Itertools;
     use rstest::rstest;
 

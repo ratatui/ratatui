@@ -366,6 +366,8 @@ pub trait Backend {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use strum::ParseError;
 
     use super::*;

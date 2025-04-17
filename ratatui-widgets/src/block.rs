@@ -6,6 +6,8 @@
 //! [title](Block::title) and [padding](Block::padding).
 #![allow(deprecated)] // to avoid having to add `#[deprecated]` to every use of `Title`
 
+use alloc::vec::Vec;
+
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Rect};
@@ -715,7 +717,7 @@ impl Block<'_> {
     /// be cut off if the block is too small to fit all titles. This is not ideal and should be
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
     /// incorrectly. See <https://github.com/ratatui/ratatui/issues/932>
-    #[allow(clippy::similar_names)]
+    #[expect(clippy::similar_names)]
     fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Right);
         let mut titles_area = self.titles_area(area, position);
@@ -750,7 +752,7 @@ impl Block<'_> {
     /// Currently this method aligns the titles to the left inside a centered area. This is not
     /// ideal and should be fixed in the future to align the titles to the center of the block and
     /// truncate both sides of the titles if the block is too small to fit all titles.
-    #[allow(clippy::similar_names)]
+    #[expect(clippy::similar_names)]
     fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self
             .filtered_titles(position, Alignment::Center)
@@ -785,7 +787,7 @@ impl Block<'_> {
     }
 
     /// Render titles aligned to the left of the block
-    #[allow(clippy::similar_names)]
+    #[expect(clippy::similar_names)]
     fn render_left_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Left);
         let mut titles_area = self.titles_area(area, position);
@@ -900,6 +902,8 @@ impl Styled for Block<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::{format, vec};
+
     use ratatui_core::layout::HorizontalAlignment;
     use ratatui_core::style::{Color, Modifier, Stylize};
     use rstest::rstest;
@@ -981,14 +985,14 @@ mod tests {
         assert!(!block.has_title_at_position(Position::Top));
         assert!(block.has_title_at_position(Position::Bottom));
 
-        #[allow(deprecated)] // until Title is removed
+        #[expect(deprecated)] // until Title is removed
         let block = Block::new()
             .title(Title::from("Test").position(Position::Top))
             .title_position(Position::Bottom);
         assert!(block.has_title_at_position(Position::Top));
         assert!(!block.has_title_at_position(Position::Bottom));
 
-        #[allow(deprecated)] // until Title is removed
+        #[expect(deprecated)] // until Title is removed
         let block = Block::new()
             .title(Title::from("Test").position(Position::Bottom))
             .title_position(Position::Top);
@@ -999,7 +1003,7 @@ mod tests {
         assert!(block.has_title_at_position(Position::Top));
         assert!(block.has_title_at_position(Position::Bottom));
 
-        #[allow(deprecated)] // until Title is removed
+        #[expect(deprecated)] // until Title is removed
         let block = Block::new()
             .title(Title::from("Test").position(Position::Top))
             .title(Title::from("Test"))
@@ -1007,7 +1011,7 @@ mod tests {
         assert!(block.has_title_at_position(Position::Top));
         assert!(block.has_title_at_position(Position::Bottom));
 
-        #[allow(deprecated)] // until Title is removed
+        #[expect(deprecated)] // until Title is removed
         let block = Block::new()
             .title(Title::from("Test"))
             .title(Title::from("Test").position(Position::Bottom))
@@ -1226,7 +1230,7 @@ mod tests {
         use HorizontalAlignment::*;
         use Position::*;
         let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
-        #[allow(deprecated)] // until Title is removed
+        #[expect(deprecated)] // until Title is removed
         Block::bordered()
             .title(Title::from("A").position(Top).alignment(Left))
             .title(Title::from("B").position(Top).alignment(Center))
