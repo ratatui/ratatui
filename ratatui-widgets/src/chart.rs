@@ -502,7 +502,7 @@ impl<'a> Dataset<'a> {
     ///             .add_color_range(0.0..5.0, Color::Red) //Note: Ranges are searched in order of creation, meaning this range is also equivalent to 1.0..5.0
     ///     )
     ///     .style(Style::default().cyan())
-    ///     .data(&[(0.0, 0.0), (1.0, 10.0)]),
+    ///     .data(&[(0.0, 0.0), (1.0, 10.0)]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn multi_color_line(mut self, multi_color_line_config: MultiColorLineConfig) -> Self {
