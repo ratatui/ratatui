@@ -4,7 +4,14 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::iter;
 use core::num::NonZeroUsize;
+
+#[cfg(feature = "std")]
 use std::{dbg, thread_local};
+
+#[cfg(not(feature = "std"))]
+use critical_section::Mutex as CsMutex;
+#[cfg(not(feature = "std"))]
+use once_cell::sync::Lazy;
 
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -39,11 +46,18 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
+#[cfg(feature = "std")]
 thread_local! {
     static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
 }
+
+#[cfg(not(feature = "std"))]
+static LAYOUT_CACHE: Lazy<CsMutex<RefCell<Cache>>> = Lazy::new(|| {
+    CsMutex::new(RefCell::new(LruCache::new(NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap())))
+});
+
 
 /// Represents the spacing between segments in a layout.
 ///
@@ -653,10 +667,19 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
+        #[cfg(feature = "std")]
         LAYOUT_CACHE.with_borrow_mut(|c| {
             let key = (area, self.clone());
             c.get_or_insert(key, || self.try_split(area).expect("failed to split"))
                 .clone()
+        })
+
+        #[cfg(not(feature = "std"))]
+        critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow_ref_mut(cs);
+
+            let key = (area, self.clone());
+            cache.get_or_insert(key, || self.try_split(area).expect("failed to split")).clone()
         })
     }
 
