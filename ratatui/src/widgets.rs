@@ -39,7 +39,9 @@ pub use ratatui_widgets::borders::{BorderType, Borders};
 #[cfg(feature = "widget-calendar")]
 pub use ratatui_widgets::calendar;
 pub use ratatui_widgets::canvas;
-pub use ratatui_widgets::chart::{Axis, Chart, Dataset, GraphType, LegendPosition};
+pub use ratatui_widgets::chart::{
+    Axis, Chart, ColorRange, Dataset, GraphType, LegendPosition, MultiColorLineConfig,
+};
 pub use ratatui_widgets::clear::Clear;
 pub use ratatui_widgets::gauge::{Gauge, LineGauge};
 pub use ratatui_widgets::list::{List, ListDirection, ListItem, ListState};

@@ -1,7 +1,7 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
 use alloc::vec::Vec;
 use core::cmp::max;
-use core::ops::Not;
+use core::ops::{Not, Range};
 
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Flex, Layout, Position, Rect};
@@ -170,6 +170,85 @@ pub enum GraphType {
     Bar,
 }
 
+/// Used to specify a range of values that will be drawn in another color.
+/// If the value does not fall inside any range specified the color will fallback to the style
+/// foreground color.
+///
+/// Has no effect in any [`GraphType`] other than [line](GraphType::Line)
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct MultiColorLineConfig {
+    ranges: Vec<ColorRange>,
+}
+
+impl MultiColorLineConfig {
+    /// Add a range of values to be set to a specified Color
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn add_color_range(mut self, range: Range<f64>, color: Color) -> Self {
+        self.ranges.push(ColorRange { range, color });
+        self
+    }
+
+    /// Internal Helper function to be used during Widget render impl
+    fn draw_lines_on_canvas_based_on_values(
+        &self,
+        default: Color,
+        ctx: &mut crate::canvas::Context<'_>,
+        mut x1: f64,
+        mut y1: f64,
+        mut x2: f64,
+        mut y2: f64,
+    ) {
+        if y2 < y1 {
+            //if the line is being draw down, we swap the cords, so we can simplify the logic by
+            // always drawing the line up.
+            core::mem::swap(&mut x1, &mut x2);
+            core::mem::swap(&mut y1, &mut y2);
+        }
+        let default_color_range = ColorRange {
+            range: f64::MIN..f64::MAX,
+            color: default,
+        };
+        for range in self
+            .ranges
+            .iter()
+            .chain(core::iter::once(&default_color_range))
+        {
+            if range.range.contains(&y1) {
+                if range.range.contains(&y2) {
+                    ctx.draw(&CanvasLine {
+                        x1,
+                        y1,
+                        x2,
+                        y2,
+                        color: range.color,
+                    });
+                    break;
+                }
+                let y3 = range.range.end - f64::EPSILON;
+                let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
+                ctx.draw(&CanvasLine {
+                    x1,
+                    y1,
+                    x2: x3,
+                    y2: y3,
+                    color: range.color,
+                });
+                let y4 = range.range.end;
+                let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
+                x1 = x4;
+                y1 = y4;
+            }
+        }
+    }
+}
+
+/// A range of values to be drawn in the specified color
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct ColorRange {
+    range: Range<f64>,
+    color: Color,
+}
+
 /// Allow users to specify the position of a legend in a [`Chart`]
 ///
 /// See [`Chart::legend_position`]
@@ -328,6 +407,8 @@ pub struct Dataset<'a> {
     graph_type: GraphType,
     /// Style used to plot this dataset
     style: Style,
+    /// If using [`GraphType::Line`] you can specify different color ranges by value
+    multi_color_line_config: Option<MultiColorLineConfig>,
 }
 
 impl<'a> Dataset<'a> {
@@ -392,6 +473,40 @@ impl<'a> Dataset<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn graph_type(mut self, graph_type: GraphType) -> Self {
         self.graph_type = graph_type;
+        self
+    }
+
+    /// Sets a list of value ranges that will modify the color of the line
+    ///
+    /// Used to specify a range of values that will be drawn in another color.
+    /// If the value does not fall inside any range specified the color will fallback to the style
+    /// foreground color.
+    ///
+    /// Has no effect in any [`GraphType`] other than [line](GraphType::Line)
+    ///
+    /// Ordering matters, ranges added first take precedence. (see example)
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    /// # Example
+    /// ```rust
+    /// use ratatui::widgets::{Dataset, GraphType, MultiColorLineConfig};
+    /// use ratatui::style::{Color, Style};
+    ///
+    /// let dataset = Dataset::default()
+    ///     .name("data1")
+    ///     .marker(symbols::Marker::Braille)
+    ///     .graph_type(GraphType::Line)
+    ///     .multi_color_line(
+    ///         MultiColorLineConfig::default()
+    ///             .add_color_range(0.0..1.0, Color::Green))
+    ///             .add_color_range(0.0..5.0, Color::Red)) //Note: Ranges are searched in order of creation, meaning this range is also equivalent to 1.0..5.0
+    ///     )
+    ///     .style(Style::default().cyan())
+    ///     .data(&[(0.0, 0.0), (1.0, 10.0)]),
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn multi_color_line(mut self, multi_color_line_config: MultiColorLineConfig) -> Self {
+        self.multi_color_line_config = Some(multi_color_line_config);
         self
     }
 
@@ -1031,13 +1146,26 @@ impl Widget for &Chart<'_> {
                     match dataset.graph_type {
                         GraphType::Line => {
                             for data in dataset.data.windows(2) {
-                                ctx.draw(&CanvasLine {
-                                    x1: data[0].0,
-                                    y1: data[0].1,
-                                    x2: data[1].0,
-                                    y2: data[1].1,
-                                    color: dataset.style.fg.unwrap_or(Color::Reset),
-                                });
+                                if let Some(multi_color_line_config) =
+                                    &dataset.multi_color_line_config
+                                {
+                                    multi_color_line_config.draw_lines_on_canvas_based_on_values(
+                                        dataset.style.fg.unwrap_or(Color::Reset),
+                                        ctx,
+                                        data[0].0,
+                                        data[0].1,
+                                        data[1].0,
+                                        data[1].1,
+                                    );
+                                } else {
+                                    ctx.draw(&CanvasLine {
+                                        x1: data[0].0,
+                                        y1: data[0].1,
+                                        x2: data[1].0,
+                                        y2: data[1].1,
+                                        color: dataset.style.fg.unwrap_or(Color::Reset),
+                                    });
+                                }
                             }
                         }
                         GraphType::Bar => {
