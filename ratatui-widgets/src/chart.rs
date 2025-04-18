@@ -1,4 +1,5 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
+use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::max;
 use core::ops::{Not, Range};
@@ -204,21 +205,28 @@ impl MultiColorLine {
         mut y2: f64,
     ) {
         if y2 < y1 {
-            //if the line is being draw down, we swap the cords, so we can simplify the logic by
+            // if the line is being draw down, we swap the cords, so we can simplify the logic by
             // always drawing the line up.
             core::mem::swap(&mut x1, &mut x2);
             core::mem::swap(&mut y1, &mut y2);
         }
+        let mut lines_pending = vec![(x1, y1, x2, y2)];
         let default_color_range = ColorRange {
             range: f64::MIN..f64::MAX,
             color: default,
         };
+        while let Some(line) = lines_pending.pop() {
+            let mut x1 = line.0;
+            let mut y1 = line.1;
+            let mut x2 = line.2;
+            let mut y2 = line.3;
             for range in self
                 .ranges
                 .iter()
                 .chain(core::iter::once(&default_color_range))
             {
                 if range.range.contains(&y1) {
+                    //line start is inside range
                     if range.range.contains(&y2) {
                         ctx.draw(&CanvasLine {
                             x1,
@@ -242,6 +250,50 @@ impl MultiColorLine {
                     let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
                     x1 = x4;
                     y1 = y4;
+                } else if range.range.contains(&y2) {
+                    //line end is inside range, but not start
+                    let y3 = range.range.start;
+                    let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
+                    ctx.draw(&CanvasLine {
+                        x1: x3,
+                        y1: y3,
+                        x2,
+                        y2,
+                        color: range.color,
+                    });
+                    let y4 = range.range.start - f64::EPSILON;
+                    let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
+                    x2 = x4;
+                    y2 = y4;
+                } else if (y1..y2).contains(&range.range.start)
+                    && (y1..y2).contains(&range.range.end)
+                {
+                    // line contains the entire range. Special case where we have to split the line
+                    // in 3 chunks, render only the section inside the range, and leave the outside
+                    // lines to be rendered later
+                    let y3 = range.range.start;
+                    let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
+                    let y4 = range.range.end - f64::EPSILON;
+                    let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
+                    ctx.draw(&CanvasLine {
+                        x1: x3,
+                        y1: y3,
+                        x2: x4,
+                        y2: y4,
+                        color: range.color,
+                    });
+                    let y5 = range.range.start - (f64::EPSILON * 2.0);
+                    let x5 = ((y5 - y3) * (x4 - x3)) / (y4 - y3) + x3;
+                    let y6 = range.range.end;
+                    let x6 = ((y6 - y3) * (x4 - x3)) / (y4 - y3) + x3;
+                    // continue drawing line starting after range, but push the line section before
+                    // the range to be handled later.
+                    lines_pending.push((x1, y1, x5, y5));
+                    x1 = x6;
+                    y1 = y6;
+                } else {
+                    // line does not intersect or overlap the range
+                }
             }
         }
     }
