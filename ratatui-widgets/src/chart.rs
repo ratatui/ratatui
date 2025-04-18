@@ -490,11 +490,9 @@ impl<'a> Dataset<'a> {
     /// # Example
     /// ```rust
     /// use ratatui::widgets::{Dataset, GraphType, MultiColorLineConfig};
-    /// use ratatui::style::{Color, Style};
+    /// use ratatui::style::{Color, Style, Stylize};
     ///
     /// let dataset = Dataset::default()
-    ///     .name("data1")
-    ///     .marker(symbols::Marker::Braille)
     ///     .graph_type(GraphType::Line)
     ///     .multi_color_line(
     ///         MultiColorLineConfig::default()
