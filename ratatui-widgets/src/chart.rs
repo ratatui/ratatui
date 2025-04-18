@@ -265,8 +265,8 @@ impl MultiColorLine {
                     let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
                     x2 = x4;
                     y2 = y4;
-                } else if (y1..y2).contains(&range.range.start)
-                    && (y1..y2).contains(&range.range.end)
+                } else if (y1..=y2).contains(&range.range.start)
+                    && (y1..=y2).contains(&range.range.end)
                 {
                     // line contains the entire range. Special case where we have to split the line
                     // in 3 chunks, render only the section inside the range, and leave the outside
@@ -282,7 +282,7 @@ impl MultiColorLine {
                         y2: y4,
                         color: range.color,
                     });
-                    let y5 = range.range.start - (f64::EPSILON * 2.0);
+                    let y5 = range.range.start - f64::EPSILON;
                     let x5 = ((y5 - y3) * (x4 - x3)) / (y4 - y3) + x3;
                     let y6 = range.range.end;
                     let x6 = ((y6 - y3) * (x4 - x3)) / (y4 - y3) + x3;
