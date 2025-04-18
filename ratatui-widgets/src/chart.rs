@@ -171,16 +171,17 @@ pub enum GraphType {
 }
 
 /// Used to specify a range of values that will be drawn in another color.
+///
 /// If the value does not fall inside any range specified the color will fallback to the style
 /// foreground color.
 ///
 /// Has no effect in any [`GraphType`] other than [line](GraphType::Line)
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct MultiColorLineConfig {
+pub struct MultiColorLine {
     ranges: Vec<ColorRange>,
 }
 
-impl MultiColorLineConfig {
+impl MultiColorLine {
     /// Add a range of values to be set to a specified Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn add_color_range(mut self, range: Range<f64>, color: Color) -> Self {
@@ -188,7 +189,11 @@ impl MultiColorLineConfig {
         self
     }
 
-    /// Internal Helper function to be used during Widget render impl
+    /// Based on the ranges specified, draws each line on the canvas, while checking if it crosses a
+    /// range boundary. If the range boundary is not crossed it draws the entire line with the
+    /// one color. If the range boundary is crossed, it uses trigonometry to split the line in 2
+    /// at the point that the line intersects the boundary. The line will continue to split
+    /// until it no longer crosses a boundary line.
     fn draw_lines_on_canvas_based_on_values(
         &self,
         default: Color,
@@ -208,35 +213,35 @@ impl MultiColorLineConfig {
             range: f64::MIN..f64::MAX,
             color: default,
         };
-        for range in self
-            .ranges
-            .iter()
-            .chain(core::iter::once(&default_color_range))
-        {
-            if range.range.contains(&y1) {
-                if range.range.contains(&y2) {
+            for range in self
+                .ranges
+                .iter()
+                .chain(core::iter::once(&default_color_range))
+            {
+                if range.range.contains(&y1) {
+                    if range.range.contains(&y2) {
+                        ctx.draw(&CanvasLine {
+                            x1,
+                            y1,
+                            x2,
+                            y2,
+                            color: range.color,
+                        });
+                        break;
+                    }
+                    let y3 = range.range.end - f64::EPSILON;
+                    let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
                     ctx.draw(&CanvasLine {
                         x1,
                         y1,
-                        x2,
-                        y2,
+                        x2: x3,
+                        y2: y3,
                         color: range.color,
                     });
-                    break;
-                }
-                let y3 = range.range.end - f64::EPSILON;
-                let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                ctx.draw(&CanvasLine {
-                    x1,
-                    y1,
-                    x2: x3,
-                    y2: y3,
-                    color: range.color,
-                });
-                let y4 = range.range.end;
-                let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                x1 = x4;
-                y1 = y4;
+                    let y4 = range.range.end;
+                    let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
+                    x1 = x4;
+                    y1 = y4;
             }
         }
     }
@@ -408,7 +413,7 @@ pub struct Dataset<'a> {
     /// Style used to plot this dataset
     style: Style,
     /// If using [`GraphType::Line`] you can specify different color ranges by value
-    multi_color_line_config: Option<MultiColorLineConfig>,
+    multi_color_line_config: Option<MultiColorLine>,
 }
 
 impl<'a> Dataset<'a> {
@@ -484,26 +489,30 @@ impl<'a> Dataset<'a> {
     ///
     /// Has no effect in any [`GraphType`] other than [line](GraphType::Line)
     ///
-    /// Ordering matters, ranges added first take precedence. (see example)
-    ///
     /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
     /// # Example
+    ///
     /// ```rust
-    /// use ratatui::widgets::{Dataset, GraphType, MultiColorLineConfig};
     /// use ratatui::style::{Color, Style, Stylize};
+    /// use ratatui::widgets::{Dataset, GraphType, MultiColorLineConfig};
     ///
     /// let dataset = Dataset::default()
     ///     .graph_type(GraphType::Line)
     ///     .multi_color_line(
     ///         MultiColorLineConfig::default()
     ///             .add_color_range(0.0..1.0, Color::Green)
-    ///             .add_color_range(0.0..5.0, Color::Red) //Note: Ranges are searched in order of creation, meaning this range is also equivalent to 1.0..5.0
+    ///             .add_color_range(0.0..5.0, Color::Red), // equivalent to 1.0..5.0
     ///     )
     ///     .style(Style::default().cyan())
     ///     .data(&[(0.0, 0.0), (1.0, 10.0)]);
     /// ```
+    /// # Note
+    /// Ordering matters, ranges added first take precedence.
+    /// In practice this means that range `0.0..1.0` followed by `0.0..5.0` is equivalent to range
+    /// `0.0..1.0` followed by `1.0..5.0`
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn multi_color_line(mut self, multi_color_line_config: MultiColorLineConfig) -> Self {
+    pub fn multi_color_line(mut self, multi_color_line_config: MultiColorLine) -> Self {
         self.multi_color_line_config = Some(multi_color_line_config);
         self
     }
