@@ -180,6 +180,7 @@ pub enum GraphType {
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct MultiColorLine {
     ranges: Vec<ColorRange>,
+    x_axis: bool,
 }
 
 impl MultiColorLine {
@@ -187,6 +188,20 @@ impl MultiColorLine {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn add_color_range(mut self, range: Range<f64>, color: Color) -> Self {
         self.ranges.push(ColorRange { range, color });
+        self
+    }
+
+    /// Sets ranges to be calculated based on X Axis.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn x_axis(mut self) -> Self {
+        self.x_axis = true;
+        self
+    }
+
+    /// Sets ranges to be calculated based on Y Axis.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn y_axis(mut self) -> Self {
+        self.x_axis = false;
         self
     }
 
@@ -204,12 +219,38 @@ impl MultiColorLine {
         mut x2: f64,
         mut y2: f64,
     ) {
+        if self.x_axis {
+            // swap x and y in both points, all logic stays the same.
+            // we then swap them back in the draw call
+            core::mem::swap(&mut x1, &mut y1);
+            core::mem::swap(&mut x2, &mut y2);
+        }
         if y2 < y1 {
             // if the line is being draw down, we swap the cords, so we can simplify the logic by
             // always drawing the line up.
             core::mem::swap(&mut x1, &mut x2);
             core::mem::swap(&mut y1, &mut y2);
         }
+        let mut draw = |x1: f64, y1: f64, x2: f64, y2: f64, color: Color| {
+            if self.x_axis {
+                ctx.draw(&CanvasLine {
+                    x1: y1,
+                    y1: x1,
+                    x2: y2,
+                    y2: x2,
+                    color,
+                });
+            } else {
+                ctx.draw(&CanvasLine {
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    color,
+                });
+            }
+        };
+
         let mut lines_pending = vec![(x1, y1, x2, y2)];
         let default_color_range = ColorRange {
             range: f64::MIN..f64::MAX,
@@ -228,24 +269,12 @@ impl MultiColorLine {
                 if range.range.contains(&y1) {
                     //line start is inside range
                     if range.range.contains(&y2) {
-                        ctx.draw(&CanvasLine {
-                            x1,
-                            y1,
-                            x2,
-                            y2,
-                            color: range.color,
-                        });
+                        draw(x1, y1, x2, y2, range.color);
                         break;
                     }
                     let y3 = range.range.end - f64::EPSILON;
                     let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    ctx.draw(&CanvasLine {
-                        x1,
-                        y1,
-                        x2: x3,
-                        y2: y3,
-                        color: range.color,
-                    });
+                    draw(x1, y1, x3, y3, range.color);
                     let y4 = range.range.end;
                     let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
                     x1 = x4;
@@ -254,13 +283,7 @@ impl MultiColorLine {
                     //line end is inside range, but not start
                     let y3 = range.range.start;
                     let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    ctx.draw(&CanvasLine {
-                        x1: x3,
-                        y1: y3,
-                        x2,
-                        y2,
-                        color: range.color,
-                    });
+                    draw(x3, y3, x2, y2, range.color);
                     let y4 = range.range.start - f64::EPSILON;
                     let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
                     x2 = x4;
@@ -275,13 +298,7 @@ impl MultiColorLine {
                     let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
                     let y4 = range.range.end - f64::EPSILON;
                     let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    ctx.draw(&CanvasLine {
-                        x1: x3,
-                        y1: y3,
-                        x2: x4,
-                        y2: y4,
-                        color: range.color,
-                    });
+                    draw(x3, y3, x4, y4, range.color);
                     let y5 = range.range.start - f64::EPSILON;
                     let x5 = ((y5 - y3) * (x4 - x3)) / (y4 - y3) + x3;
                     let y6 = range.range.end;
