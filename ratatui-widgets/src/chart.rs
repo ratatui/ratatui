@@ -547,12 +547,12 @@ impl<'a> Dataset<'a> {
     ///
     /// ```rust
     /// use ratatui::style::{Color, Style, Stylize};
-    /// use ratatui::widgets::{Dataset, GraphType, MultiColorLineConfig};
+    /// use ratatui::widgets::{Dataset, GraphType, MultiColorLine};
     ///
     /// let dataset = Dataset::default()
     ///     .graph_type(GraphType::Line)
     ///     .multi_color_line(
-    ///         MultiColorLineConfig::default()
+    ///         MultiColorLine::default()
     ///             .add_color_range(0.0..1.0, Color::Green)
     ///             .add_color_range(0.0..5.0, Color::Red), // equivalent to 1.0..5.0
     ///     )
