@@ -183,6 +183,68 @@ pub struct MultiColorLine {
     x_axis: bool,
 }
 
+/// helper structs and impl to simplify the actual logic of [`MultiColorLine::draw_lines_on_canvas_based_on_values`]
+mod multi_color_line_helpers {
+    #[derive(Debug, Clone)]
+    pub(crate) struct Point {
+        pub(crate) x: f64,
+        pub(crate) y: f64,
+    }
+    #[derive(Debug, Clone)]
+    pub(crate) struct Line {
+        pub(crate) start: Point,
+        pub(crate) end: Point,
+    }
+    impl Line {
+        pub(crate) const fn new(x1: f64, y1: f64, x2: f64, y2: f64) -> Self {
+            Self {
+                start: Point { x: x1, y: y1 },
+                end: Point { x: x2, y: y2 },
+            }
+        }
+        /// At a given y value, split a line into 2 lines.
+        ///
+        /// The first line will start at the original starting point, and end just below
+        /// the y passed in. The second line will start exactly at the y
+        /// passed in, and end at the original ending point
+        pub(crate) fn split_line_into_2_at_y(self, y_new_start: f64) -> (Self, Self) {
+            let x_new_start = ((-1.0 * self.start.x * self.end.y)
+                + (self.start.x * y_new_start)
+                + (self.end.x * self.start.y)
+                - (self.end.x * y_new_start))
+                / (self.start.y - self.end.y);
+            let y_new_end = y_new_start - f64::EPSILON;
+            let x_new_end = ((-1.0 * self.start.x * self.end.y)
+                + (self.start.x * y_new_end)
+                + (self.end.x * self.start.y)
+                - (self.end.x * y_new_end))
+                / (self.start.y - self.end.y);
+            (
+                Self {
+                    start: Point {
+                        x: self.start.x,
+                        y: self.start.y,
+                    },
+                    end: Point {
+                        x: x_new_end,
+                        y: y_new_end,
+                    },
+                },
+                Self {
+                    start: Point {
+                        x: x_new_start,
+                        y: y_new_start,
+                    },
+                    end: Point {
+                        x: self.end.x,
+                        y: self.end.y,
+                    },
+                },
+            )
+        }
+    }
+}
+
 impl MultiColorLine {
     /// Add a range of values to be set to a specified Color
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -214,100 +276,81 @@ impl MultiColorLine {
         &self,
         default: Color,
         ctx: &mut crate::canvas::Context<'_>,
-        mut x1: f64,
-        mut y1: f64,
-        mut x2: f64,
-        mut y2: f64,
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
     ) {
+        let mut line = multi_color_line_helpers::Line::new(x1, y1, x2, y2);
+
         if self.x_axis {
             // swap x and y in both points, all logic stays the same.
             // we then swap them back in the draw call
-            core::mem::swap(&mut x1, &mut y1);
-            core::mem::swap(&mut x2, &mut y2);
+            core::mem::swap(&mut line.start.x, &mut line.start.y);
+            core::mem::swap(&mut line.end.x, &mut line.end.y);
         }
-        if y2 < y1 {
+        if line.end.y < line.start.y {
             // if the line is being draw down, we swap the cords, so we can simplify the logic by
             // always drawing the line up.
-            core::mem::swap(&mut x1, &mut x2);
-            core::mem::swap(&mut y1, &mut y2);
+            core::mem::swap(&mut line.start, &mut line.end);
         }
-        let mut draw = |x1: f64, y1: f64, x2: f64, y2: f64, color: Color| {
+        let mut draw = |line: multi_color_line_helpers::Line, color: Color| {
             if self.x_axis {
                 ctx.draw(&CanvasLine {
-                    x1: y1,
-                    y1: x1,
-                    x2: y2,
-                    y2: x2,
+                    x1: line.start.y,
+                    y1: line.start.x,
+                    x2: line.end.y,
+                    y2: line.end.x,
                     color,
                 });
             } else {
                 ctx.draw(&CanvasLine {
-                    x1,
-                    y1,
-                    x2,
-                    y2,
+                    x1: line.start.x,
+                    y1: line.start.y,
+                    x2: line.end.x,
+                    y2: line.end.y,
                     color,
                 });
             }
         };
 
-        let mut lines_pending = vec![(x1, y1, x2, y2)];
+        let mut lines_pending = vec![line];
         let default_color_range = ColorRange {
             range: f64::MIN..f64::MAX,
             color: default,
         };
         while let Some(line) = lines_pending.pop() {
-            let mut x1 = line.0;
-            let mut y1 = line.1;
-            let mut x2 = line.2;
-            let mut y2 = line.3;
+            let mut line = line;
             for range in self
                 .ranges
                 .iter()
                 .chain(core::iter::once(&default_color_range))
             {
-                if range.range.contains(&y1) {
+                if range.range.contains(&line.start.y) {
                     //line start is inside range
-                    if range.range.contains(&y2) {
-                        draw(x1, y1, x2, y2, range.color);
+                    if range.range.contains(&line.end.y) {
+                        draw(line, range.color);
                         break;
                     }
-                    let y3 = range.range.end - f64::EPSILON;
-                    let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    draw(x1, y1, x3, y3, range.color);
-                    let y4 = range.range.end;
-                    let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    x1 = x4;
-                    y1 = y4;
-                } else if range.range.contains(&y2) {
+                    let (before, after) = line.split_line_into_2_at_y(range.range.end);
+                    draw(before, range.color);
+                    line = after;
+                } else if range.range.contains(&line.end.y) {
                     //line end is inside range, but not start
-                    let y3 = range.range.start;
-                    let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    draw(x3, y3, x2, y2, range.color);
-                    let y4 = range.range.start - f64::EPSILON;
-                    let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    x2 = x4;
-                    y2 = y4;
+                    let (before, after) = line.split_line_into_2_at_y(range.range.start);
+                    draw(after, range.color);
+                    line = before;
                 } else if (y1..=y2).contains(&range.range.start)
                     && (y1..=y2).contains(&range.range.end)
                 {
                     // line contains the entire range. Special case where we have to split the line
                     // in 3 chunks, render only the section inside the range, and leave the outside
                     // lines to be rendered later
-                    let y3 = range.range.start;
-                    let x3 = ((y3 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    let y4 = range.range.end - f64::EPSILON;
-                    let x4 = ((y4 - y1) * (x2 - x1)) / (y2 - y1) + x1;
-                    draw(x3, y3, x4, y4, range.color);
-                    let y5 = range.range.start - f64::EPSILON;
-                    let x5 = ((y5 - y3) * (x4 - x3)) / (y4 - y3) + x3;
-                    let y6 = range.range.end;
-                    let x6 = ((y6 - y3) * (x4 - x3)) / (y4 - y3) + x3;
-                    // continue drawing line starting after range, but push the line section before
-                    // the range to be handled later.
-                    lines_pending.push((x1, y1, x5, y5));
-                    x1 = x6;
-                    y1 = y6;
+                    let (before, middle) = line.split_line_into_2_at_y(range.range.start);
+                    let (middle, after) = middle.split_line_into_2_at_y(range.range.end);
+                    draw(middle, range.color);
+                    line = after;
+                    lines_pending.push(before);
                 } else {
                     // line does not intersect or overlap the range
                 }
