@@ -214,7 +214,7 @@ mod multi_color_line_helpers {
                 + (self.end.x * self.start.y)
                 - (self.end.x * y_new_start))
                 / (self.start.y - self.end.y);
-            let y_new_end = y_new_start.next_down();
+            let y_new_end = y_new_start - f64::EPSILON;
             let x_new_end = ((-1.0 * self.start.x * self.end.y)
                 + (self.start.x * y_new_end)
                 + (self.end.x * self.start.y)
