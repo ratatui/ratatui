@@ -71,7 +71,7 @@ use ratatui_core::text::Text;
 /// [`Line::alignment`]: ratatui_core::text::Line::alignment
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ListItem<'a> {
-    pub(crate) content: Text<'a>,
+    pub(crate) content: Text<'a, 'a>,
     pub(crate) style: Style,
 }
 
@@ -114,7 +114,7 @@ impl<'a> ListItem<'a> {
     ///   [`ListItem`]
     pub fn new<T>(content: T) -> Self
     where
-        T: Into<Text<'a>>,
+        T: Into<Text<'a, 'a>>,
     {
         Self {
             content: content.into(),
@@ -209,7 +209,7 @@ impl<'a> ListItem<'a> {
 
 impl<'a, T> From<T> for ListItem<'a>
 where
-    T: Into<Text<'a>>,
+    T: Into<Text<'a, 'a>>,
 {
     fn from(value: T) -> Self {
         Self::new(value)

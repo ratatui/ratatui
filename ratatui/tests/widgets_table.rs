@@ -63,7 +63,7 @@ fn widgets_table_column_spacing_can_be_changed<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let backend = TestBackend::new(30, 10);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -145,7 +145,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let backend = TestBackend::new(30, 10);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -234,7 +234,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let backend = TestBackend::new(30, 10);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -328,7 +328,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let backend = TestBackend::new(30, 10);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -413,7 +413,7 @@ fn widgets_table_columns_widths_can_use_ratio_constraints<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let backend = TestBackend::new(30, 10);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -495,7 +495,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let mut state = TableState::new().with_selected(selected);
     let backend = TestBackend::new(30, 8);
@@ -593,7 +593,7 @@ fn widgets_table_enable_always_highlight_spacing<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<Line<'line>>,
+    Lines::Item: Into<Line<'line, 'line>>,
 {
     let mut state = TableState::new().with_selected(selected);
     let backend = TestBackend::new(30, 8);
