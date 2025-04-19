@@ -183,7 +183,8 @@ pub struct MultiColorLine {
     x_axis: bool,
 }
 
-/// helper structs and impl to simplify the actual logic of [`MultiColorLine::draw_lines_on_canvas_based_on_values`]
+/// helper structs and impl to simplify the actual logic of
+/// [`MultiColorLine::draw_lines_on_canvas_based_on_values`]
 mod multi_color_line_helpers {
     #[derive(Debug, Clone)]
     pub(crate) struct Point {
