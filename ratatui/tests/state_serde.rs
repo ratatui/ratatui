@@ -40,7 +40,7 @@ impl Default for AppState {
     }
 }
 impl AppState {
-    fn select(&mut self, index: usize) {
+    const fn select(&mut self, index: usize) {
         self.list.select(Some(index));
         self.table.select_cell(Some((index, index)));
         self.scrollbar = self.scrollbar.position(index);

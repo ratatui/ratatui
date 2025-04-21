@@ -83,13 +83,13 @@ impl Cell {
     }
 
     /// Sets the foreground color of the cell.
-    pub fn set_fg(&mut self, color: Color) -> &mut Self {
+    pub const fn set_fg(&mut self, color: Color) -> &mut Self {
         self.fg = color;
         self
     }
 
     /// Sets the background color of the cell.
-    pub fn set_bg(&mut self, color: Color) -> &mut Self {
+    pub const fn set_bg(&mut self, color: Color) -> &mut Self {
         self.bg = color;
         self
     }
@@ -132,7 +132,7 @@ impl Cell {
     ///
     /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
     /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
-    pub fn set_skip(&mut self, skip: bool) -> &mut Self {
+    pub const fn set_skip(&mut self, skip: bool) -> &mut Self {
         self.skip = skip;
         self
     }

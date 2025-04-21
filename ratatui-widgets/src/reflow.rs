@@ -267,7 +267,7 @@ where
     }
 
     /// Set the horizontal offset to skip render.
-    pub fn set_horizontal_offset(&mut self, horizontal_offset: u16) {
+    pub const fn set_horizontal_offset(&mut self, horizontal_offset: u16) {
         self.horizontal_offset = horizontal_offset;
     }
 }
