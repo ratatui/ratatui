@@ -1,4 +1,4 @@
-use line_clipping::{cohen_sutherland, LineSegment, Point, Window};
+use line_clipping::{LineSegment, Point, Window, cohen_sutherland};
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape};

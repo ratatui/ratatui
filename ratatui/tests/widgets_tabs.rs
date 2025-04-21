@@ -3,7 +3,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Style, Stylize};
 use ratatui::widgets::Tabs;
-use ratatui::{symbols, Terminal};
+use ratatui::{Terminal, symbols};
 
 #[test]
 fn widgets_tabs_should_not_panic_on_narrow_areas() {

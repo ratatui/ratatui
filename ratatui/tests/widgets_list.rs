@@ -4,7 +4,7 @@ use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, HighlightSpacing, List, ListItem, ListState};
-use ratatui::{symbols, Terminal};
+use ratatui::{Terminal, symbols};
 use rstest::rstest;
 
 #[test]

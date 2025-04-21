@@ -1,4 +1,4 @@
-use criterion::{criterion_group, Bencher, BenchmarkId, Criterion};
+use criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
 use rand::Rng;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Direction, Rect};

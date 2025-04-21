@@ -6,7 +6,7 @@ use ratatui::widgets::{
     Axis, BarChart, Block, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem, Paragraph, Row,
     Sparkline, Table, Tabs, Wrap,
 };
-use ratatui::{symbols, Frame};
+use ratatui::{Frame, symbols};
 
 use crate::app::App;
 
@@ -235,7 +235,9 @@ fn draw_charts(frame: &mut Frame, app: &mut App, area: Rect) {
 
 fn draw_text(frame: &mut Frame, area: Rect) {
     let text = vec![
-        text::Line::from("This is a paragraph with several lines. You can change style your text the way you want"),
+        text::Line::from(
+            "This is a paragraph with several lines. You can change style your text the way you want",
+        ),
         text::Line::from(""),
         text::Line::from(vec![
             Span::from("For example: "),
@@ -250,16 +252,17 @@ fn draw_text(frame: &mut Frame, area: Rect) {
             Span::raw("Oh and if you didn't "),
             Span::styled("notice", Style::default().add_modifier(Modifier::ITALIC)),
             Span::raw(" you can "),
-            Span::styled("automatically", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "automatically",
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" "),
             Span::styled("wrap", Style::default().add_modifier(Modifier::REVERSED)),
             Span::raw(" your "),
             Span::styled("text", Style::default().add_modifier(Modifier::UNDERLINED)),
-            Span::raw(".")
+            Span::raw("."),
         ]),
-        text::Line::from(
-            "One more thing is that it should display unicode characters: 10€"
-        ),
+        text::Line::from("One more thing is that it should display unicode characters: 10€"),
     ];
     let block = Block::bordered().title(Span::styled(
         "Footer",

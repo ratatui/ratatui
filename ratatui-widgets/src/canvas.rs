@@ -594,8 +594,8 @@ impl<'a> Context<'a> {
 ///
 /// ```
 /// use ratatui::style::Color;
-/// use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
 /// use ratatui::widgets::Block;
+/// use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
 ///
 /// Canvas::default()
 ///     .block(Block::bordered().title("Canvas"))

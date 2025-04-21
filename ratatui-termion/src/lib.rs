@@ -47,10 +47,10 @@ use termion::{color as tcolor, style as tstyle};
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
+/// use ratatui::Terminal;
 /// use ratatui::backend::TermionBackend;
 /// use ratatui::termion::raw::IntoRawMode;
 /// use ratatui::termion::screen::IntoAlternateScreen;
-/// use ratatui::Terminal;
 ///
 /// let writer = stdout().into_raw_mode()?.into_alternate_screen()?;
 /// let mut backend = TermionBackend::new(writer);
@@ -402,13 +402,13 @@ impl FromTermion<tcolor::AnsiValue> for Color {
 
 impl FromTermion<tcolor::Bg<tcolor::AnsiValue>> for Style {
     fn from_termion(value: tcolor::Bg<tcolor::AnsiValue>) -> Self {
-        Self::default().bg(Color::Indexed(value.0 .0))
+        Self::default().bg(Color::Indexed(value.0.0))
     }
 }
 
 impl FromTermion<tcolor::Fg<tcolor::AnsiValue>> for Style {
     fn from_termion(value: tcolor::Fg<tcolor::AnsiValue>) -> Self {
-        Self::default().fg(Color::Indexed(value.0 .0))
+        Self::default().fg(Color::Indexed(value.0.0))
     }
 }
 
@@ -420,13 +420,13 @@ impl FromTermion<tcolor::Rgb> for Color {
 
 impl FromTermion<tcolor::Bg<tcolor::Rgb>> for Style {
     fn from_termion(value: tcolor::Bg<tcolor::Rgb>) -> Self {
-        Self::default().bg(Color::Rgb(value.0 .0, value.0 .1, value.0 .2))
+        Self::default().bg(Color::Rgb(value.0.0, value.0.1, value.0.2))
     }
 }
 
 impl FromTermion<tcolor::Fg<tcolor::Rgb>> for Style {
     fn from_termion(value: tcolor::Fg<tcolor::Rgb>) -> Self {
-        Self::default().fg(Color::Rgb(value.0 .0, value.0 .1, value.0 .2))
+        Self::default().fg(Color::Rgb(value.0.0, value.0.1, value.0.2))
     }
 }
 

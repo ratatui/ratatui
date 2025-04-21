@@ -11,9 +11,9 @@ use ratatui_core::widgets::Widget;
 /// # Examples
 ///
 /// ```
+/// use ratatui::Frame;
 /// use ratatui::layout::Rect;
 /// use ratatui::widgets::{Block, Clear};
-/// use ratatui::Frame;
 ///
 /// fn draw_on_clear(f: &mut Frame, area: Rect) {
 ///     let block = Block::bordered().title("Block");
