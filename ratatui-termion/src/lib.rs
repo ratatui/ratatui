@@ -118,7 +118,7 @@ where
         feature = "backend-writer",
         issue = "https://github.com/ratatui/ratatui/pull/991"
     )]
-    pub fn writer_mut(&mut self) -> &mut W {
+    pub const fn writer_mut(&mut self) -> &mut W {
         &mut self.writer
     }
 }

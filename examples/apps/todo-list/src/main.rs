@@ -128,7 +128,7 @@ impl App {
         }
     }
 
-    fn select_none(&mut self) {
+    const fn select_none(&mut self) {
         self.todo_list.state.select(None);
     }
 
@@ -139,11 +139,11 @@ impl App {
         self.todo_list.state.select_previous();
     }
 
-    fn select_first(&mut self) {
+    const fn select_first(&mut self) {
         self.todo_list.state.select_first();
     }
 
-    fn select_last(&mut self) {
+    const fn select_last(&mut self) {
         self.todo_list.state.select_last();
     }
 

@@ -113,7 +113,7 @@ impl TermwizBackend {
     }
 
     /// Returns a mutable reference to the buffered terminal used by the backend.
-    pub fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
+    pub const fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
         &mut self.buffered_terminal
     }
 }
