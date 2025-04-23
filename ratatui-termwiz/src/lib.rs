@@ -17,7 +17,7 @@
 use std::error::Error;
 use std::io;
 
-use ratatui_core::backend::{Backend, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -119,6 +119,8 @@ impl TermwizBackend {
 }
 
 impl Backend for TermwizBackend {
+    type Error = io::Error;
+
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -220,6 +222,18 @@ impl Backend for TermwizBackend {
         self.buffered_terminal
             .add_change(Change::ClearScreen(termwiz::color::ColorAttribute::Default));
         Ok(())
+    }
+
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
+        match clear_type {
+            ClearType::All => self.clear(),
+            ClearType::AfterCursor
+            | ClearType::BeforeCursor
+            | ClearType::CurrentLine
+            | ClearType::UntilNewLine => Err(io::Error::other(format!(
+                "clear_type [{clear_type:?}] not supported with this backend"
+            ))),
+        }
     }
 
     fn size(&self) -> io::Result<Size> {

@@ -140,6 +140,8 @@ impl<W> Backend for TermionBackend<W>
 where
     W: Write,
 {
+    type Error = io::Error;
+
     fn clear(&mut self) -> io::Result<()> {
         self.clear_region(ClearType::All)
     }

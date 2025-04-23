@@ -16,6 +16,9 @@ This is a quick summary of the sections below:
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
   - The MSRV is now 1.81.0
+  - `Backend` now requires an associated `Error` type and `clear_region` method
+  - `Backend` now uses `Self::Error` for error handling instead of `std::io::Error`
+  - `Terminal<B>` now uses `B::Error` for error handling instead of `std::io::Error`
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
