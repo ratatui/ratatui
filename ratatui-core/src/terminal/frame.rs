@@ -158,7 +158,7 @@ impl Frame<'_> {
     }
 
     /// Gets the buffer that this `Frame` draws into as a mutable reference.
-    pub fn buffer_mut(&mut self) -> &mut Buffer {
+    pub const fn buffer_mut(&mut self) -> &mut Buffer {
         self.buffer
     }
 

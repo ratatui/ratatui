@@ -81,7 +81,7 @@ impl App {
         Ok(())
     }
 
-    fn update_max_scroll_offset(&mut self) {
+    const fn update_max_scroll_offset(&mut self) {
         self.max_scroll_offset = (self.selected_tab.get_example_count() - 1) * EXAMPLE_HEIGHT;
     }
 
@@ -105,7 +105,7 @@ impl App {
         Ok(())
     }
 
-    fn quit(&mut self) {
+    const fn quit(&mut self) {
         self.state = AppState::Quit;
     }
 
@@ -121,7 +121,7 @@ impl App {
         self.scroll_offset = 0;
     }
 
-    fn up(&mut self) {
+    const fn up(&mut self) {
         self.scroll_offset = self.scroll_offset.saturating_sub(1);
     }
 
@@ -132,11 +132,11 @@ impl App {
             .min(self.max_scroll_offset);
     }
 
-    fn top(&mut self) {
+    const fn top(&mut self) {
         self.scroll_offset = 0;
     }
 
-    fn bottom(&mut self) {
+    const fn bottom(&mut self) {
         self.scroll_offset = self.max_scroll_offset;
     }
 }

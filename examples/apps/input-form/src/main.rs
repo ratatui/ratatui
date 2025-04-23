@@ -242,7 +242,7 @@ impl AgeField {
         self.value = self.value.saturating_add(1).min(Self::MAX);
     }
 
-    fn decrement(&mut self) {
+    const fn decrement(&mut self) {
         self.value = self.value.saturating_sub(1);
     }
 
