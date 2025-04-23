@@ -121,7 +121,7 @@ impl TermwizBackend {
 impl Backend for TermwizBackend {
     type Error = io::Error;
 
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
@@ -191,24 +191,24 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+    fn hide_cursor(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::CursorVisibility(CursorVisibility::Hidden));
         Ok(())
     }
 
-    fn show_cursor(&mut self) -> Result<(), Self::Error> {
+    fn show_cursor(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::CursorVisibility(CursorVisibility::Visible));
         Ok(())
     }
 
-    fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+    fn get_cursor_position(&mut self) -> io::Result<Position> {
         let (x, y) = self.buffered_terminal.cursor_position();
         Ok(Position::new(x as u16, y as u16))
     }
 
-    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error> {
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
         let Position { x, y } = position.into();
         self.buffered_terminal.add_change(Change::CursorPosition {
             x: TermwizPosition::Absolute(x as usize),
@@ -218,13 +218,13 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn clear(&mut self) -> Result<(), Self::Error> {
+    fn clear(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::ClearScreen(termwiz::color::ColorAttribute::Default));
         Ok(())
     }
 
-    fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         match clear_type {
             ClearType::All => self.clear(),
             ClearType::AfterCursor
@@ -236,12 +236,12 @@ impl Backend for TermwizBackend {
         }
     }
 
-    fn size(&self) -> Result<Size, Self::Error> {
+    fn size(&self) -> io::Result<Size> {
         let (cols, rows) = self.buffered_terminal.dimensions();
         Ok(Size::new(u16_max(cols), u16_max(rows)))
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         let ScreenSize {
             cols,
             rows,
@@ -264,17 +264,13 @@ impl Backend for TermwizBackend {
         })
     }
 
-    fn flush(&mut self) -> Result<(), Self::Error> {
+    fn flush(&mut self) -> io::Result<()> {
         self.buffered_terminal.flush().map_err(Self::Error::other)?;
         Ok(())
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up(
-        &mut self,
-        region: std::ops::Range<u16>,
-        amount: u16,
-    ) -> Result<(), Self::Error> {
+    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         // termwiz doesn't have a command to just set the scrolling region. Instead, setting the
         // scrolling region and scrolling are combined. However, this has the side-effect of
         // leaving the scrolling region set. To reset the scrolling region, termwiz advises one to
@@ -297,11 +293,7 @@ impl Backend for TermwizBackend {
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down(
-        &mut self,
-        region: std::ops::Range<u16>,
-        amount: u16,
-    ) -> Result<(), Self::Error> {
+    fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         // termwiz doesn't have a command to just set the scrolling region. Instead, setting the
         // scrolling region and scrolling are combined. However, this has the side-effect of
         // leaving the scrolling region set. To reset the scrolling region, termwiz advises one to

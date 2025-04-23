@@ -142,11 +142,11 @@ where
 {
     type Error = io::Error;
 
-    fn clear(&mut self) -> Result<(), Self::Error> {
+    fn clear(&mut self) -> io::Result<()> {
         self.clear_region(ClearType::All)
     }
 
-    fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         match clear_type {
             ClearType::All => write!(self.writer, "{}", termion::clear::All)?,
             ClearType::AfterCursor => write!(self.writer, "{}", termion::clear::AfterCursor)?,
@@ -157,35 +157,35 @@ where
         self.writer.flush()
     }
 
-    fn append_lines(&mut self, n: u16) -> Result<(), Self::Error> {
+    fn append_lines(&mut self, n: u16) -> io::Result<()> {
         for _ in 0..n {
             writeln!(self.writer)?;
         }
         self.writer.flush()
     }
 
-    fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+    fn hide_cursor(&mut self) -> io::Result<()> {
         write!(self.writer, "{}", termion::cursor::Hide)?;
         self.writer.flush()
     }
 
-    fn show_cursor(&mut self) -> Result<(), Self::Error> {
+    fn show_cursor(&mut self) -> io::Result<()> {
         write!(self.writer, "{}", termion::cursor::Show)?;
         self.writer.flush()
     }
 
-    fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+    fn get_cursor_position(&mut self) -> io::Result<Position> {
         termion::cursor::DetectCursorPos::cursor_pos(&mut self.writer)
             .map(|(x, y)| Position { x: x - 1, y: y - 1 })
     }
 
-    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error> {
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
         let Position { x, y } = position.into();
         write!(self.writer, "{}", termion::cursor::Goto(x + 1, y + 1))?;
         self.writer.flush()
     }
 
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
@@ -233,28 +233,24 @@ where
         )
     }
 
-    fn size(&self) -> Result<Size, Self::Error> {
+    fn size(&self) -> io::Result<Size> {
         let terminal = termion::terminal_size()?;
         Ok(Size::new(terminal.0, terminal.1))
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         Ok(WindowSize {
             columns_rows: termion::terminal_size()?.into(),
             pixels: termion::terminal_size_pixels()?.into(),
         })
     }
 
-    fn flush(&mut self) -> Result<(), Self::Error> {
+    fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up(
-        &mut self,
-        region: std::ops::Range<u16>,
-        amount: u16,
-    ) -> Result<(), Self::Error> {
+    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         write!(
             self.writer,
             "{}{}{}",
@@ -266,11 +262,7 @@ where
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down(
-        &mut self,
-        region: std::ops::Range<u16>,
-        amount: u16,
-    ) -> Result<(), Self::Error> {
+    fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         write!(
             self.writer,
             "{}{}{}",

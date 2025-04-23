@@ -236,7 +236,7 @@ impl fmt::Display for TestBackend {
 impl Backend for TestBackend {
     type Error = io::Error;
 
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
@@ -246,31 +246,31 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+    fn hide_cursor(&mut self) -> io::Result<()> {
         self.cursor = false;
         Ok(())
     }
 
-    fn show_cursor(&mut self) -> Result<(), Self::Error> {
+    fn show_cursor(&mut self) -> io::Result<()> {
         self.cursor = true;
         Ok(())
     }
 
-    fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+    fn get_cursor_position(&mut self) -> io::Result<Position> {
         Ok(self.pos.into())
     }
 
-    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error> {
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
         self.pos = position.into().into();
         Ok(())
     }
 
-    fn clear(&mut self) -> Result<(), Self::Error> {
+    fn clear(&mut self) -> io::Result<()> {
         self.buffer.reset();
         Ok(())
     }
 
-    fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         let region = match clear_type {
             ClearType::All => return self.clear(),
             ClearType::AfterCursor => {
@@ -310,7 +310,7 @@ impl Backend for TestBackend {
     /// the cursor y position then that number of empty lines (at most the buffer's height in this
     /// case but this limit is instead replaced with scrolling in most backend implementations) will
     /// be added after the current position and the cursor will be moved to the last row.
-    fn append_lines(&mut self, line_count: u16) -> Result<(), Self::Error> {
+    fn append_lines(&mut self, line_count: u16) -> io::Result<()> {
         let Position { x: cur_x, y: cur_y } = self.get_cursor_position()?;
         let Rect { width, height, .. } = self.buffer.area;
 
@@ -347,11 +347,11 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn size(&self) -> Result<Size, Self::Error> {
+    fn size(&self) -> io::Result<Size> {
         Ok(self.buffer.area.as_size())
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         // Some arbitrary window pixel size, probably doesn't need much testing.
         const WINDOW_PIXEL_SIZE: Size = Size {
             width: 640,
@@ -363,7 +363,7 @@ impl Backend for TestBackend {
         })
     }
 
-    fn flush(&mut self) -> Result<(), Self::Error> {
+    fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }
 
@@ -372,7 +372,7 @@ impl Backend for TestBackend {
         &mut self,
         region: core::ops::Range<u16>,
         scroll_by: u16,
-    ) -> Result<(), Self::Error> {
+    ) -> io::Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
         let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
@@ -422,7 +422,7 @@ impl Backend for TestBackend {
         &mut self,
         region: core::ops::Range<u16>,
         scroll_by: u16,
-    ) -> Result<(), Self::Error> {
+    ) -> io::Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
         let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
