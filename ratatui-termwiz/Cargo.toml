@@ -22,6 +22,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = []
 
+## Enables serde for termwiz dependency
+serde = ["termwiz/use_serde"]
+
 ## Enables the backend code that sets the underline color.
 ## Underline color is not supported on Windows 7.
 underline-color = []

@@ -17,6 +17,9 @@ rust-version.workspace = true
 [features]
 default = ["underline-color"]
 
+## Enables serde for crossterm dependency
+serde = ["crossterm/serde"]
+
 ## enables the backend code that sets the underline color.
 ## Underline color is not supported on Windows 7.
 underline-color = ["ratatui-core/underline-color"]

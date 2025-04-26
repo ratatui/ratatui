@@ -714,6 +714,7 @@ dependencies = [
  "mio",
  "parking_lot",
  "rustix",
+ "serde",
  "signal-hook",
  "signal-hook-mio",
  "winapi",
@@ -3340,6 +3341,7 @@ dependencies = [
  "libredox",
  "numtoa",
  "redox_termios",
+ "serde",
 ]
 
 [[package]]
@@ -3376,6 +3378,7 @@ dependencies = [
  "pest",
  "pest_derive",
  "phf",
+ "serde",
  "sha2",
  "signal-hook",
  "siphasher",
@@ -3868,6 +3871,7 @@ checksum = "458f7a779bf54acc9f347480ac654f68407d3aab21269a6e3c9f922acd9e2da9"
 dependencies = [
  "atomic",
  "getrandom 0.3.2",
+ "serde",
 ]
 
 [[package]]
@@ -4032,6 +4036,7 @@ checksum = "692daff6d93d94e29e4114544ef6d5c942a7ed998b37abdc19b17136ea428eb7"
 dependencies = [
  "getrandom 0.3.2",
  "mac_address",
+ "serde",
  "sha2",
  "thiserror 1.0.69",
  "uuid 1.16.0",
@@ -4046,6 +4051,7 @@ dependencies = [
  "csscolorparser",
  "deltae",
  "lazy_static",
+ "serde",
  "wezterm-dynamic",
 ]
 

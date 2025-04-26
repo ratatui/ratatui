@@ -39,7 +39,14 @@ termwiz = ["dep:ratatui-termwiz"]
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "ratatui-core/serde", "ratatui-widgets/serde"]
+serde = [
+  "dep:serde",
+  "ratatui-core/serde",
+  "ratatui-widgets/serde",
+  "ratatui-crossterm?/serde",
+  "ratatui-termion?/serde",
+  "ratatui-termwiz?/serde",
+]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["ratatui-core/palette", "dep:palette"]

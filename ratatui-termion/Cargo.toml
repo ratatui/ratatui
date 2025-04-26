@@ -21,6 +21,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
+## Enables serde for termion dependency
+serde = ["termion/serde"]
 ## Use terminal scrolling regions to make Terminal::insert_before less prone to flickering.
 scrolling-regions = ["ratatui-core/scrolling-regions"]
 ## Enables all unstable features.
