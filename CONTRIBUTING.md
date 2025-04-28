@@ -32,7 +32,14 @@ guarantee that the behavior is unchanged.
 ### Code formatting
 
 Run `cargo xtask format` before committing to ensure that code is consistently formatted with
-rustfmt. Configuration is in [`rustfmt.toml`](./rustfmt.toml).
+rustfmt. Configuration is in [`rustfmt.toml`](./rustfmt.toml). We use some unstable formatting
+options as they lead to subjectively better formatting. These require a nightly version of Rust
+to be installed when running rustfmt. You can install the nightly version of Rust using
+[`rustup`](https://rustup.rs/):
+
+```shell
+rustup install nightly
+```
 
 ### Search `tui-rs` for similar work
 
