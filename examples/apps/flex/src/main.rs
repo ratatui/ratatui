@@ -194,7 +194,7 @@ impl App {
         self.selected_tab = self.selected_tab.previous();
     }
 
-    fn up(&mut self) {
+    const fn up(&mut self) {
         self.scroll_offset = self.scroll_offset.saturating_sub(1);
     }
 
@@ -205,7 +205,7 @@ impl App {
             .min(max_scroll_offset());
     }
 
-    fn top(&mut self) {
+    const fn top(&mut self) {
         self.scroll_offset = 0;
     }
 
@@ -213,15 +213,15 @@ impl App {
         self.scroll_offset = max_scroll_offset();
     }
 
-    fn increment_spacing(&mut self) {
+    const fn increment_spacing(&mut self) {
         self.spacing = self.spacing.saturating_add(1);
     }
 
-    fn decrement_spacing(&mut self) {
+    const fn decrement_spacing(&mut self) {
         self.spacing = self.spacing.saturating_sub(1);
     }
 
-    fn quit(&mut self) {
+    const fn quit(&mut self) {
         self.state = AppState::Quit;
     }
 }
@@ -293,7 +293,7 @@ impl App {
     /// into the main buffer. This is done to make it possible to handle scrolling easily.
     ///
     /// Returns bool indicating whether scroll was needed
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(clippy::cast_possible_truncation)]
     fn render_demo(self, area: Rect, buf: &mut Buffer) -> bool {
         // render demo content into a separate buffer so all examples fit we add an extra
         // area.height to make sure the last example is fully visible even when the scroll offset is
@@ -510,7 +510,7 @@ const fn color_for_constraint(constraint: Constraint) -> Color {
     }
 }
 
-#[allow(clippy::cast_possible_truncation)]
+#[expect(clippy::cast_possible_truncation)]
 fn get_description_height(s: &str) -> u16 {
     if s.is_empty() {
         0

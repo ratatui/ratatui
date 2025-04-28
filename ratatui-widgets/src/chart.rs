@@ -1,6 +1,7 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
-use std::cmp::max;
-use std::ops::Not;
+use alloc::vec::Vec;
+use core::cmp::max;
+use core::ops::Not;
 
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Flex, Layout, Position, Rect};
@@ -973,7 +974,7 @@ impl Widget for Chart<'_> {
 }
 
 impl Widget for &Chart<'_> {
-    #[allow(clippy::too_many_lines)]
+    #[expect(clippy::too_many_lines)]
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
@@ -1155,6 +1156,9 @@ impl Styled for Chart<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+    use alloc::{format, vec};
+
     use ratatui_core::style::{Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;

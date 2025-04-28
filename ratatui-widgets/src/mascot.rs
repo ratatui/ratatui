@@ -174,6 +174,7 @@ impl Widget for RatatuiMascot {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
 
     use super::*;
 

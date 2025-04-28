@@ -133,7 +133,7 @@ where
         feature = "backend-writer",
         issue = "https://github.com/ratatui/ratatui/pull/991"
     )]
-    pub fn writer_mut(&mut self) -> &mut W {
+    pub const fn writer_mut(&mut self) -> &mut W {
         &mut self.writer
     }
 }
@@ -157,6 +157,8 @@ impl<W> Backend for CrosstermBackend<W>
 where
     W: Write,
 {
+    type Error = io::Error;
+
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -230,7 +232,7 @@ where
     fn get_cursor_position(&mut self) -> io::Result<Position> {
         crossterm::cursor::position()
             .map(|(x, y)| Position { x, y })
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+            .map_err(io::Error::other)
     }
 
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {

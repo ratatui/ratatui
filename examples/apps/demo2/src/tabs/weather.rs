@@ -130,14 +130,14 @@ fn render_horizontal_barchart(area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 }
 
-#[allow(clippy::cast_precision_loss)]
+#[expect(clippy::cast_precision_loss)]
 pub fn render_gauge(progress: usize, area: Rect, buf: &mut Buffer) {
     let percent = (progress * 3).min(100) as f64;
 
     render_line_gauge(percent, area, buf);
 }
 
-#[allow(clippy::cast_possible_truncation)]
+#[expect(clippy::cast_possible_truncation)]
 fn render_line_gauge(percent: f64, area: Rect, buf: &mut Buffer) {
     // cycle color hue based on the percent for a neat effect yellow -> red
     let hue = 90.0 - (percent as f32 * 0.6);

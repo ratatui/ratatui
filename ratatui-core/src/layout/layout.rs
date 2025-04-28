@@ -1,7 +1,10 @@
+use alloc::format;
 use alloc::rc::Rc;
+use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::iter;
 use core::num::NonZeroUsize;
+use std::{dbg, thread_local};
 
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -115,7 +118,7 @@ impl From<i16> for Spacing {
 /// - a flex option
 /// - a spacing option
 ///
-/// The algorithm used to compute the layout is based on the [`cassowary`] solver. It is a simple
+/// The algorithm used to compute the layout is based on the [`kasuari`] solver. It is a simple
 /// linear solver that can be used to solve linear equations and inequalities. In our case, we
 /// define a set of constraints that are applied to split the provided area into Rects aligned in a
 /// single direction, and the solver computes the values of the position and sizes that satisfy as
@@ -154,7 +157,7 @@ impl From<i16> for Spacing {
 /// use ratatui_core::text::Text;
 /// use ratatui_core::widgets::Widget;
 ///
-/// fn render(area: Rect, buf: &mut ratatui_core::buffer::Buffer) {
+/// fn render(area: Rect, buf: &mut Buffer) {
 ///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
 ///     let [left, right] = layout.areas(area);
 ///     Text::from("foo").render(left, buf);
@@ -168,7 +171,7 @@ impl From<i16> for Spacing {
 /// ![layout
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
 ///
-/// [`cassowary`]: https://crates.io/crates/cassowary
+/// [`kasuari`]: https://crates.io/crates/kasuari
 /// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
@@ -1006,7 +1009,7 @@ fn changes_to_rects(
 
 /// please leave this here as it's useful for debugging unit tests when we make any changes to
 /// layout code - we should replace this with tracing in the future.
-#[allow(dead_code)]
+#[expect(dead_code)]
 fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
     let variables = format!(
         "{:?}",
@@ -1035,7 +1038,7 @@ impl From<(Variable, Variable)> for Element {
 }
 
 impl Element {
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     fn new() -> Self {
         Self {
             start: Variable::new(),
@@ -1172,12 +1175,15 @@ mod strengths {
 
 #[cfg(test)]
 mod tests {
+    use alloc::borrow::ToOwned;
+    use alloc::vec;
+    use alloc::vec::Vec;
+
     use super::*;
 
     #[test]
     // The compiler will optimize out the comparisons, but this ensures that the constants are
     // defined in the correct order of priority.
-    #[allow(clippy::assertions_on_constants)]
     pub fn strength_is_valid() {
         use strengths::*;
         assert!(SPACER_SIZE_EQ > MAX_SIZE_LE);
@@ -1228,7 +1234,7 @@ mod tests {
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
 
         // array_ref
-        #[allow(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
+        #[expect(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
         let layout = Layout::new(Direction::Horizontal, &[Constraint::Min(0)]);
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
@@ -1239,7 +1245,7 @@ mod tests {
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
 
         // vec_ref
-        #[allow(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
+        #[expect(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
         let layout = Layout::new(Direction::Horizontal, &(vec![Constraint::Min(0)]));
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
@@ -1281,11 +1287,6 @@ mod tests {
     /// The purpose of this test is to ensure that layout can be constructed with any type that
     /// implements `IntoIterator<Item = AsRef<Constraint>>`.
     #[test]
-    #[allow(
-        clippy::needless_borrow,
-        clippy::unnecessary_to_owned,
-        clippy::useless_asref
-    )]
     fn constraints() {
         const CONSTRAINTS: [Constraint; 2] = [Constraint::Min(0), Constraint::Max(10)];
         let fixed_size_array = CONSTRAINTS;
@@ -1403,12 +1404,14 @@ mod tests {
     /// - underflow: constraint is for less than the full space
     /// - overflow: constraint is for more than the full space
     mod split {
+        use alloc::string::ToString;
         use core::ops::Range;
 
         use itertools::Itertools;
         use pretty_assertions::assert_eq;
         use rstest::rstest;
 
+        use super::*;
         use crate::buffer::Buffer;
         use crate::layout::Constraint::{self, *};
         use crate::layout::{Direction, Flex, Layout, Rect};

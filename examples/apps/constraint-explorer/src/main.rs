@@ -197,15 +197,15 @@ impl App {
         self.selected_index = index;
     }
 
-    fn increment_spacing(&mut self) {
+    const fn increment_spacing(&mut self) {
         self.spacing = self.spacing.saturating_add(1);
     }
 
-    fn decrement_spacing(&mut self) {
+    const fn decrement_spacing(&mut self) {
         self.spacing = self.spacing.saturating_sub(1);
     }
 
-    fn exit(&mut self) {
+    const fn exit(&mut self) {
         self.mode = AppMode::Quit;
     }
 
@@ -277,7 +277,7 @@ impl App {
     }
 
     fn swap_legend() -> impl Widget {
-        #[allow(unstable_name_collisions)]
+        #[expect(unstable_name_collisions)]
         Paragraph::new(
             Line::from(
                 [

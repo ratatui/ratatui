@@ -1,6 +1,8 @@
 //! Internal module for reflowing text to fit into a certain width.
-use std::collections::VecDeque;
-use std::mem;
+use alloc::collections::VecDeque;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::mem;
 
 use ratatui_core::layout::Alignment;
 use ratatui_core::text::StyledGrapheme;
@@ -178,7 +180,7 @@ where
         }
         pending_line.append(&mut self.pending_word);
 
-        #[allow(clippy::else_if_without_else)]
+        #[expect(clippy::else_if_without_else)]
         if !pending_line.is_empty() {
             self.wrapped_lines.push_back(pending_line);
         } else if pending_line.capacity() > 0 {
@@ -202,7 +204,6 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
-    #[allow(clippy::too_many_lines)]
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
         if self.max_line_width == 0 {
             return None;
@@ -266,7 +267,7 @@ where
     }
 
     /// Set the horizontal offset to skip render.
-    pub fn set_horizontal_offset(&mut self, horizontal_offset: u16) {
+    pub const fn set_horizontal_offset(&mut self, horizontal_offset: u16) {
         self.horizontal_offset = horizontal_offset;
     }
 }
@@ -345,12 +346,15 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
             break;
         }
     }
-    #[allow(clippy::string_slice)] // Is safe as it comes from UnicodeSegmentation
+    #[expect(clippy::string_slice)] // Is safe as it comes from UnicodeSegmentation
     &src[start..]
 }
 
 #[cfg(test)]
 mod tests {
+    use alloc::boxed::Box;
+    use alloc::string::String;
+
     use ratatui_core::style::Style;
     use ratatui_core::text::{Line, Text};
 

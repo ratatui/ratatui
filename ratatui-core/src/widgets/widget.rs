@@ -1,3 +1,5 @@
+use alloc::string::String;
+
 use crate::buffer::Buffer;
 use crate::layout::Rect;
 use crate::style::Style;

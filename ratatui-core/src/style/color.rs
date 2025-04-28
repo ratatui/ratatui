@@ -145,6 +145,8 @@ impl serde::Serialize for Color {
     where
         S: serde::Serializer,
     {
+        use alloc::string::ToString;
+
         serializer.serialize_str(&self.to_string())
     }
 }
@@ -206,6 +208,9 @@ impl<'de> serde::Deserialize<'de> for Color {
     where
         D: serde::Deserializer<'de>,
     {
+        use alloc::format;
+        use alloc::string::String;
+
         /// Colors are currently serialized with the `Display` implementation, so
         /// RGB values are serialized via hex, for example "#FFFFFF".
         ///
@@ -505,6 +510,8 @@ impl From<(u8, u8, u8, u8)> for Color {
 
 #[cfg(test)]
 mod tests {
+    use alloc::boxed::Box;
+    use alloc::format;
     use core::error::Error;
 
     #[cfg(feature = "palette")]

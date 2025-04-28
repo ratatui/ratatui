@@ -17,7 +17,7 @@
 use std::error::Error;
 use std::io;
 
-use ratatui_core::backend::{Backend, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -113,12 +113,14 @@ impl TermwizBackend {
     }
 
     /// Returns a mutable reference to the buffered terminal used by the backend.
-    pub fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
+    pub const fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
         &mut self.buffered_terminal
     }
 }
 
 impl Backend for TermwizBackend {
+    type Error = io::Error;
+
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -222,6 +224,18 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
+        match clear_type {
+            ClearType::All => self.clear(),
+            ClearType::AfterCursor
+            | ClearType::BeforeCursor
+            | ClearType::CurrentLine
+            | ClearType::UntilNewLine => Err(io::Error::other(format!(
+                "clear_type [{clear_type:?}] not supported with this backend"
+            ))),
+        }
+    }
+
     fn size(&self) -> io::Result<Size> {
         let (cols, rows) = self.buffered_terminal.dimensions();
         Ok(Size::new(u16_max(cols), u16_max(rows)))
@@ -237,7 +251,7 @@ impl Backend for TermwizBackend {
             .buffered_terminal
             .terminal()
             .get_screen_size()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            .map_err(io::Error::other)?;
         Ok(WindowSize {
             columns_rows: Size {
                 width: u16_max(cols),
@@ -251,9 +265,7 @@ impl Backend for TermwizBackend {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.buffered_terminal
-            .flush()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        self.buffered_terminal.flush().map_err(io::Error::other)?;
         Ok(())
     }
 

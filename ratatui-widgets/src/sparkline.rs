@@ -1,5 +1,8 @@
 //! The [`Sparkline`] widget is used to display a sparkline over one or more lines.
-use std::cmp::min;
+
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use core::cmp::min;
 
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
@@ -434,6 +437,8 @@ impl Sparkline<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
+
     use ratatui_core::buffer::Cell;
     use ratatui_core::style::{Color, Modifier, Stylize};
     use strum::ParseError;
@@ -553,7 +558,6 @@ mod tests {
     #[test]
     fn it_does_not_panic_if_max_is_set_to_zero() {
         // see https://github.com/rust-lang/rust-clippy/issues/13191
-        #[allow(clippy::unnecessary_min_or_max)]
         let widget = Sparkline::default().data([0, 1, 2]).max(0);
         let buffer = render(widget, 6);
         assert_eq!(buffer, Buffer::with_lines(["   xxx"]));

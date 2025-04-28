@@ -12,9 +12,9 @@ termion = ["ratatui/termion", "dep:termion"]
 termwiz = ["ratatui/termwiz", "dep:termwiz"]
 
 [dependencies]
-clap = { version = "4.5.34", features = ["derive"] }
+clap = { version = "4.5.37", features = ["derive"] }
 crossterm = { workspace = true, optional = true }
-rand = "0.9.0"
+rand = "0.9.1"
 ratatui.workspace = true
 termwiz = { workspace = true, optional = true }
 

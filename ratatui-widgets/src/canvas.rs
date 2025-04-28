@@ -13,8 +13,12 @@
 //!
 //! You can also implement your own custom [`Shape`]s.
 
-use std::fmt;
-use std::iter::zip;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::fmt;
+use core::iter::zip;
 
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
@@ -432,7 +436,7 @@ impl Painter<'_, '_> {
     /// let mut painter = Painter::from(&mut ctx);
     /// assert_eq!(painter.bounds(), (&[0.0, 2.0], &[0.0, 2.0]));
     /// ```
-    pub fn bounds(&self) -> (&[f64; 2], &[f64; 2]) {
+    pub const fn bounds(&self) -> (&[f64; 2], &[f64; 2]) {
         (&self.context.x_bounds, &self.context.y_bounds)
     }
 }

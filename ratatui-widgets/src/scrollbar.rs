@@ -7,7 +7,7 @@
     clippy::module_name_repetitions
 )]
 
-use std::iter;
+use core::iter;
 
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
@@ -365,7 +365,7 @@ impl<'a> Scrollbar<'a> {
     /// respective setters to change their value.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[allow(clippy::needless_pass_by_value)] // Breaking change
+    #[expect(clippy::needless_pass_by_value)] // Breaking change
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn symbols(mut self, symbols: Set) -> Self {
         self.thumb_symbol = symbols.thumb;
@@ -456,7 +456,7 @@ impl ScrollbarState {
     }
 
     /// Decrements the scroll position by one, ensuring it doesn't go below zero.
-    pub fn prev(&mut self) {
+    pub const fn prev(&mut self) {
         self.position = self.position.saturating_sub(1);
     }
 
@@ -469,12 +469,12 @@ impl ScrollbarState {
     }
 
     /// Sets the scroll position to the start of the scrollable content.
-    pub fn first(&mut self) {
+    pub const fn first(&mut self) {
         self.position = 0;
     }
 
     /// Sets the scroll position to the end of the scrollable content.
-    pub fn last(&mut self) {
+    pub const fn last(&mut self) {
         self.position = self.content_length.saturating_sub(1);
     }
 
@@ -534,11 +534,11 @@ impl Scrollbar<'_> {
         // `<`
         iter::once(begin)
             // `<═══`
-            .chain(iter::repeat(track).take(track_start_len))
+            .chain(iter::repeat_n(track, track_start_len))
             // `<═══█████`
-            .chain(iter::repeat(thumb).take(thumb_len))
+            .chain(iter::repeat_n(thumb, thumb_len))
             // `<═══█████═══════`
-            .chain(iter::repeat(track).take(track_end_len))
+            .chain(iter::repeat_n(track, track_end_len))
             // `<═══█████═══════>`
             .chain(iter::once(end))
             .flatten()
@@ -636,7 +636,9 @@ impl ScrollbarOrientation {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
+    use alloc::format;
+    use alloc::string::ToString;
+    use core::str::FromStr;
 
     use ratatui_core::text::Text;
     use ratatui_core::widgets::Widget;

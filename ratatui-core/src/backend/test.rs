@@ -1,8 +1,10 @@
 //! This module provides the `TestBackend` implementation for the [`Backend`] trait.
 //! It is used in the integration tests to verify the correctness of the library.
 
+use alloc::string::String;
+use alloc::vec;
 use core::fmt::{self, Write};
-use core::{iter, ops};
+use core::iter;
 use std::io;
 
 use unicode_width::UnicodeWidthStr;
@@ -137,7 +139,7 @@ impl TestBackend {
     ///
     /// When they are not equal, a panic occurs with a detailed error message showing the
     /// differences between the expected and actual buffers.
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     #[track_caller]
     pub fn assert_buffer(&self, expected: &Buffer) {
         // TODO: use assert_eq!()
@@ -232,6 +234,8 @@ impl fmt::Display for TestBackend {
 }
 
 impl Backend for TestBackend {
+    type Error = io::Error;
+
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -364,7 +368,11 @@ impl Backend for TestBackend {
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up(&mut self, region: ops::Range<u16>, scroll_by: u16) -> io::Result<()> {
+    fn scroll_region_up(
+        &mut self,
+        region: core::ops::Range<u16>,
+        scroll_by: u16,
+    ) -> io::Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
         let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
@@ -410,7 +418,11 @@ impl Backend for TestBackend {
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down(&mut self, region: ops::Range<u16>, scroll_by: u16) -> io::Result<()> {
+    fn scroll_region_down(
+        &mut self,
+        region: core::ops::Range<u16>,
+        scroll_by: u16,
+    ) -> io::Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
         let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
@@ -448,6 +460,8 @@ fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item =
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use itertools::Itertools as _;
 
     use super::*;
@@ -1023,7 +1037,7 @@ mod tests {
         #[case([A, B, C, D, E], 2..2, 2, [],                    [A, B, C, D, E])]
         fn scroll_region_up<const L: usize, const M: usize, const N: usize>(
             #[case] initial_screen: [&'static str; L],
-            #[case] range: ops::Range<u16>,
+            #[case] range: core::ops::Range<u16>,
             #[case] scroll_by: u16,
             #[case] expected_scrollback: [&'static str; M],
             #[case] expected_buffer: [&'static str; N],
@@ -1057,7 +1071,7 @@ mod tests {
         #[case([A, B, C, D, E], 2..2, 2, [A, B, C, D, E])]
         fn scroll_region_down<const M: usize, const N: usize>(
             #[case] initial_screen: [&'static str; M],
-            #[case] range: ops::Range<u16>,
+            #[case] range: core::ops::Range<u16>,
             #[case] scroll_by: u16,
             #[case] expected_buffer: [&'static str; N],
         ) {

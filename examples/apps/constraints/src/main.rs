@@ -81,7 +81,7 @@ impl App {
         Ok(())
     }
 
-    fn update_max_scroll_offset(&mut self) {
+    const fn update_max_scroll_offset(&mut self) {
         self.max_scroll_offset = (self.selected_tab.get_example_count() - 1) * EXAMPLE_HEIGHT;
     }
 
@@ -108,7 +108,7 @@ impl App {
         Ok(())
     }
 
-    fn quit(&mut self) {
+    const fn quit(&mut self) {
         self.state = AppState::Quit;
     }
 
@@ -124,7 +124,7 @@ impl App {
         self.scroll_offset = 0;
     }
 
-    fn up(&mut self) {
+    const fn up(&mut self) {
         self.scroll_offset = self.scroll_offset.saturating_sub(1);
     }
 
@@ -135,11 +135,11 @@ impl App {
             .min(self.max_scroll_offset);
     }
 
-    fn top(&mut self) {
+    const fn top(&mut self) {
         self.scroll_offset = 0;
     }
 
-    fn bottom(&mut self) {
+    const fn bottom(&mut self) {
         self.scroll_offset = self.max_scroll_offset;
     }
 }
@@ -192,7 +192,7 @@ impl App {
     ///
     /// This function renders the demo content into a separate buffer and then splices the buffer
     /// into the main buffer. This is done to make it possible to handle scrolling easily.
-    #[allow(clippy::cast_possible_truncation)]
+    #[expect(clippy::cast_possible_truncation)]
     fn render_demo(self, area: Rect, buf: &mut Buffer) {
         // render demo content into a separate buffer so all examples fit we add an extra
         // area.height to make sure the last example is fully visible even when the scroll offset is
@@ -247,7 +247,7 @@ impl SelectedTab {
     }
 
     const fn get_example_count(self) -> u16 {
-        #[allow(clippy::match_same_arms)]
+        #[expect(clippy::match_same_arms)]
         match self {
             Self::Length => 4,
             Self::Percentage => 5,

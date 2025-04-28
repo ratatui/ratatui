@@ -14,7 +14,7 @@
 //! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use std::time::Duration;
+use core::time::Duration;
 
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
@@ -92,7 +92,7 @@ impl App {
         Ok(())
     }
 
-    fn reset(&mut self) {
+    const fn reset(&mut self) {
         self.progress = 0.0;
         self.progress_columns = 0;
         self.state = AppState::Stop;
