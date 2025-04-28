@@ -354,10 +354,13 @@ impl Rect {
     }
 
     /// Returns a new Rect, centered horizontally based on the provided constraint.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ratatui_core::layout::Constraint;
     /// use ratatui_core::terminal::Frame;
+    ///
     /// fn render(frame: &mut Frame) {
     ///     let area = frame.area().centered_horizontally(Constraint::Ratio(1, 2));
     /// }
@@ -371,10 +374,13 @@ impl Rect {
     }
 
     /// Returns a new Rect, centered vertically based on the provided constraint.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ratatui_core::layout::Constraint;
     /// use ratatui_core::terminal::Frame;
+    ///
     /// fn render(frame: &mut Frame) {
     ///     let area = frame.area().centered_vertically(Constraint::Ratio(1, 2));
     /// }
@@ -387,11 +393,14 @@ impl Rect {
         area
     }
 
-    /// Returns a new Rect, centered based on the provided constraint.
+    /// Returns a new Rect, centered horizontally and vertically based on the provided constraints.
+    ///
     /// # Examples
+    ///
     /// ```
     /// use ratatui_core::layout::Constraint;
     /// use ratatui_core::terminal::Frame;
+    ///
     /// fn render(frame: &mut Frame) {
     ///     let area = frame
     ///         .area()
