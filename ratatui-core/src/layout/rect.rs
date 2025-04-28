@@ -393,7 +393,9 @@ impl Rect {
     /// use ratatui_core::layout::Constraint;
     /// use ratatui_core::terminal::Frame;
     /// fn render(frame: &mut Frame) {
-    ///     let area = frame.area().centered(Constraint::Ratio(1, 2), Constraint::Ratio(1, 3));
+    ///     let area = frame
+    ///         .area()
+    ///         .centered(Constraint::Ratio(1, 2), Constraint::Ratio(1, 3));
     /// }
     /// ```
     #[must_use]
