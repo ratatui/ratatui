@@ -7,6 +7,8 @@ use crate::layout::{Margin, Position, Size};
 mod iter;
 pub use iter::*;
 
+use super::{Constraint, Flex, Layout};
+
 /// A Rectangular area.
 ///
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
@@ -351,6 +353,59 @@ impl Rect {
         }
     }
 
+    /// Returns a new Rect, centered horizontally based on the provided constraint.
+    /// # Examples
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().centered_horizontally(Constraint::Ratio(1, 2));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn centered_horizontally(self, constraint: Constraint) -> Self {
+        let [area] = Layout::horizontal([constraint])
+            .flex(Flex::Center)
+            .areas(self);
+        area
+    }
+
+    /// Returns a new Rect, centered vertically based on the provided constraint.
+    /// # Examples
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().centered_vertically(Constraint::Ratio(1, 2));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn centered_vertically(self, constraint: Constraint) -> Self {
+        let [area] = Layout::vertical([constraint])
+            .flex(Flex::Center)
+            .areas(self);
+        area
+    }
+
+    /// Returns a new Rect, centered based on the provided constraint.
+    /// # Examples
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().centered(Constraint::Ratio(1, 2), Constraint::Ratio(1, 3));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn centered(
+        self,
+        horizontal_constraint: Constraint,
+        vertical_constraint: Constraint,
+    ) -> Self {
+        self.centered_horizontally(horizontal_constraint)
+            .centered_vertically(vertical_constraint)
+    }
+
     /// indents the x value of the `Rect` by a given `offset`
     ///
     /// This is pub(crate) for now as we need to stabilize the naming / design of this API.
@@ -381,6 +436,7 @@ mod tests {
     use alloc::vec;
     use alloc::vec::Vec;
 
+    use pretty_assertions::assert_eq;
     use rstest::rstest;
 
     use super::*;
@@ -660,6 +716,33 @@ mod tests {
                 width: 3,
                 height: 4
             }
+        );
+    }
+
+    #[test]
+    fn centered_horizontally() {
+        let rect = Rect::new(0, 0, 5, 5);
+        assert_eq!(
+            rect.centered_horizontally(Constraint::Length(3)),
+            Rect::new(1, 0, 3, 5)
+        );
+    }
+
+    #[test]
+    fn centered_vertically() {
+        let rect = Rect::new(0, 0, 5, 5);
+        assert_eq!(
+            rect.centered_vertically(Constraint::Length(1)),
+            Rect::new(0, 2, 5, 1)
+        );
+    }
+
+    #[test]
+    fn centered() {
+        let rect = Rect::new(0, 0, 5, 5);
+        assert_eq!(
+            rect.centered(Constraint::Length(3), Constraint::Length(1)),
+            Rect::new(1, 2, 3, 1)
         );
     }
 }
