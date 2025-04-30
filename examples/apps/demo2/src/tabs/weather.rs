@@ -8,7 +8,7 @@ use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
 use ratatui::widgets::{Bar, BarChart, BarGroup, Block, Clear, LineGauge, Padding, Widget};
 use time::OffsetDateTime;
 
-use crate::{color_from_oklab, RgbSwatch, THEME};
+use crate::{RgbSwatch, THEME, color_from_oklab};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct WeatherTab {

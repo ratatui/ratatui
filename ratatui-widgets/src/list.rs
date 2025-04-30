@@ -47,10 +47,10 @@ mod state;
 /// # Examples
 ///
 /// ```
+/// use ratatui::Frame;
 /// use ratatui::layout::Rect;
 /// use ratatui::style::{Style, Stylize};
 /// use ratatui::widgets::{Block, List, ListDirection, ListItem};
-/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
@@ -70,10 +70,10 @@ mod state;
 /// # Stateful example
 ///
 /// ```rust
+/// use ratatui::Frame;
 /// use ratatui::layout::Rect;
 /// use ratatui::style::{Style, Stylize};
 /// use ratatui::widgets::{Block, List, ListState};
-/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();

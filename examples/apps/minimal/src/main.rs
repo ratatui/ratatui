@@ -12,8 +12,8 @@
 /// [examples]: https://github.com/ratatui/ratatui/blob/main/examples
 /// [hello-world]: https://github.com/ratatui/ratatui/blob/main/examples/apps/hello-world
 use crossterm::event::{self, Event};
-use ratatui::text::Text;
 use ratatui::Frame;
+use ratatui::text::Text;
 
 fn main() {
     let mut terminal = ratatui::init();

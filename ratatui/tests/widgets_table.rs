@@ -1,12 +1,12 @@
 #![allow(deprecated)]
 
+use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Cell, HighlightSpacing, Row, Table, TableState};
-use ratatui::Terminal;
 use rstest::rstest;
 
 #[rstest]

@@ -1,4 +1,4 @@
-use criterion::{criterion_group, BatchSize, Bencher, Criterion};
+use criterion::{BatchSize, Bencher, Criterion, criterion_group};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Rect};
 use ratatui::text::Line;

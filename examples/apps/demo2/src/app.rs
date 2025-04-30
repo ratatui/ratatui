@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use color_eyre::eyre::Context;
 use color_eyre::Result;
+use color_eyre::eyre::Context;
 use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use itertools::Itertools;
@@ -14,7 +14,7 @@ use ratatui::{DefaultTerminal, Frame};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 use crate::tabs::{AboutTab, EmailTab, RecipeTab, TracerouteTab, WeatherTab};
-use crate::{destroy, THEME};
+use crate::{THEME, destroy};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct App {

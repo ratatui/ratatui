@@ -5,7 +5,7 @@ use ratatui::style::{Color, Style};
 use ratatui::text::{self, Span};
 use ratatui::widgets::GraphType::Line;
 use ratatui::widgets::{Axis, Block, Chart, Dataset};
-use ratatui::{symbols, Terminal};
+use ratatui::{Terminal, symbols};
 use rstest::rstest;
 
 fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
@@ -45,10 +45,12 @@ fn widgets_chart_can_render_on_small_areas(#[case] width: u16, #[case] height: u
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let datasets = vec![Dataset::default()
-                .marker(symbols::Marker::Braille)
-                .style(Style::default().fg(Color::Magenta))
-                .data(&[(0.0, 0.0)])];
+            let datasets = vec![
+                Dataset::default()
+                    .marker(symbols::Marker::Braille)
+                    .style(Style::default().fg(Color::Magenta))
+                    .data(&[(0.0, 0.0)]),
+            ];
             let chart = Chart::new(datasets)
                 .block(Block::bordered().title("Plot"))
                 .x_axis(
@@ -261,10 +263,12 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
 
     terminal
         .draw(|f| {
-            let datasets = vec![Dataset::default()
-                .marker(symbols::Marker::Braille)
-                .style(Style::default().fg(Color::Magenta))
-                .data(&[(0.0, 0.0)])];
+            let datasets = vec![
+                Dataset::default()
+                    .marker(symbols::Marker::Braille)
+                    .style(Style::default().fg(Color::Magenta))
+                    .data(&[(0.0, 0.0)]),
+            ];
             let chart = Chart::new(datasets)
                 .block(Block::bordered().title("Plot"))
                 .x_axis(
@@ -297,14 +301,16 @@ fn widgets_chart_handles_overflows() {
 
     terminal
         .draw(|f| {
-            let datasets = vec![Dataset::default()
-                .marker(symbols::Marker::Braille)
-                .style(Style::default().fg(Color::Magenta))
-                .data(&[
-                    (1_588_298_471.0, 1.0),
-                    (1_588_298_473.0, 0.0),
-                    (1_588_298_496.0, 1.0),
-                ])];
+            let datasets = vec![
+                Dataset::default()
+                    .marker(symbols::Marker::Braille)
+                    .style(Style::default().fg(Color::Magenta))
+                    .data(&[
+                        (1_588_298_471.0, 1.0),
+                        (1_588_298_473.0, 0.0),
+                        (1_588_298_496.0, 1.0),
+                    ]),
+            ];
             let chart = Chart::new(datasets)
                 .block(Block::bordered().title("Plot"))
                 .x_axis(
@@ -374,10 +380,12 @@ fn widgets_chart_top_line_styling_is_correct() {
     terminal
         .draw(|f| {
             let data: [(f64, f64); 2] = [(0.0, 1.0), (1.0, 1.0)];
-            let widget = Chart::new(vec![Dataset::default()
-                .data(&data)
-                .graph_type(ratatui::widgets::GraphType::Line)
-                .style(data_style)])
+            let widget = Chart::new(vec![
+                Dataset::default()
+                    .data(&data)
+                    .graph_type(ratatui::widgets::GraphType::Line)
+                    .style(data_style),
+            ])
             .y_axis(
                 Axis::default()
                     .title(Span::styled("abc", title_style))

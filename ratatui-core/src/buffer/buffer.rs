@@ -1255,19 +1255,23 @@ mod tests {
 
         dbg!(input);
         dbg!(input.len());
-        dbg!(input
-            .graphemes(true)
-            .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
-            .collect::<Vec<_>>());
-        dbg!(input
-            .chars()
-            .map(|char| (
-                char,
-                char.escape_unicode().to_string(),
-                char.width(),
-                char.is_control()
-            ))
-            .collect::<Vec<_>>());
+        dbg!(
+            input
+                .graphemes(true)
+                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
+                .collect::<Vec<_>>()
+        );
+        dbg!(
+            input
+                .chars()
+                .map(|char| (
+                    char,
+                    char.escape_unicode().to_string(),
+                    char.width(),
+                    char.is_control()
+                ))
+                .collect::<Vec<_>>()
+        );
 
         let mut buffer = Buffer::filled(Rect::new(0, 0, 7, 1), Cell::new("x"));
         buffer.set_string(0, 0, input, Style::new());

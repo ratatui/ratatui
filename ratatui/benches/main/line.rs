@@ -1,6 +1,6 @@
 use std::hint::black_box;
 
-use criterion::{criterion_group, Criterion};
+use criterion::{Criterion, criterion_group};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Rect};
 use ratatui::style::Stylize;

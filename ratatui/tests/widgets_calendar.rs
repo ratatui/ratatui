@@ -1,10 +1,10 @@
 #![cfg(feature = "widget-calendar")]
+use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::buffer::Buffer;
 use ratatui::style::Style;
-use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
 use ratatui::widgets::Widget;
-use ratatui::Terminal;
+use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
 use time::{Date, Month};
 
 #[track_caller]

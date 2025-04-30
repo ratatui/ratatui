@@ -20,7 +20,7 @@ use ratatui::layout::{Alignment, Constraint, Layout, Offset, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph, Tabs};
-use ratatui::{symbols, DefaultTerminal, Frame};
+use ratatui::{DefaultTerminal, Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

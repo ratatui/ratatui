@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
+use criterion::{BatchSize, Bencher, BenchmarkId, Criterion, black_box, criterion_group};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::{Paragraph, Widget, Wrap};

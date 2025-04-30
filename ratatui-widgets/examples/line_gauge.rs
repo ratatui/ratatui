@@ -18,13 +18,13 @@ use core::time::Duration;
 
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{Length, Min};
 use ratatui::layout::{Layout, Rect};
 use ratatui::style::palette::tailwind;
 use ratatui::style::{Style, Stylize};
 use ratatui::widgets::{LineGauge, Paragraph, Widget};
-use ratatui::DefaultTerminal;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

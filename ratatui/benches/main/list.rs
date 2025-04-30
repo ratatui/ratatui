@@ -1,4 +1,4 @@
-use criterion::{criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
+use criterion::{BatchSize, Bencher, BenchmarkId, Criterion, criterion_group};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::{List, ListItem, ListState, StatefulWidget, Widget};

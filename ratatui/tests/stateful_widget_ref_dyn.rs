@@ -1,6 +1,6 @@
 #![cfg(feature = "unstable-widget-ref")]
 
-use std::any::{type_name, Any};
+use std::any::{Any, type_name};
 use std::cell::RefCell;
 
 use pretty_assertions::assert_eq;

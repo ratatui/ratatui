@@ -34,7 +34,7 @@ use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::layout::Rect;
 use ratatui::{TerminalOptions, Viewport};
 
-pub use self::colors::{color_from_oklab, RgbSwatch};
+pub use self::colors::{RgbSwatch, color_from_oklab};
 pub use self::theme::THEME;
 
 fn main() -> Result<()> {

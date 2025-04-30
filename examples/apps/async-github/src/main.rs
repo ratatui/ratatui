@@ -32,9 +32,9 @@ use std::time::Duration;
 
 use color_eyre::Result;
 use crossterm::event::{Event, EventStream, KeyCode, KeyEventKind};
-use octocrab::params::pulls::Sort;
-use octocrab::params::Direction;
 use octocrab::Page;
+use octocrab::params::Direction;
+use octocrab::params::pulls::Sort;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Style, Stylize};

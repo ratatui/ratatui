@@ -208,12 +208,14 @@ fn render_barchart(frame: &mut Frame, bar_chart: Rect) {
 }
 
 fn render_line_chart(frame: &mut Frame, area: Rect) {
-    let datasets = vec![Dataset::default()
-        .name("Line from only 2 points".italic())
-        .marker(symbols::Marker::Braille)
-        .style(Style::default().fg(Color::Yellow))
-        .graph_type(GraphType::Line)
-        .data(&[(1., 1.), (4., 4.)])];
+    let datasets = vec![
+        Dataset::default()
+            .name("Line from only 2 points".italic())
+            .marker(symbols::Marker::Braille)
+            .style(Style::default().fg(Color::Yellow))
+            .graph_type(GraphType::Line)
+            .data(&[(1., 1.), (4., 4.)]),
+    ];
 
     let chart = Chart::new(datasets)
         .block(Block::bordered().title(Line::from("Line chart").cyan().bold().centered()))

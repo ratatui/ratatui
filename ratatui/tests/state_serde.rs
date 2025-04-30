@@ -14,6 +14,7 @@
 // not too happy about the redundancy in these tests,
 // but if that helps readability then it's ok i guess /shrug
 
+use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::text::Line;
@@ -21,7 +22,6 @@ use ratatui::widgets::{
     Block, Borders, List, ListState, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table,
     TableState,
 };
-use ratatui::Terminal;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 struct AppState {

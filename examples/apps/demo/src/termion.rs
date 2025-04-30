@@ -4,8 +4,8 @@ use std::sync::mpsc;
 use std::time::Duration;
 use std::{io, thread};
 
-use ratatui::backend::{Backend, TermionBackend};
 use ratatui::Terminal;
+use ratatui::backend::{Backend, TermionBackend};
 use termion::event::Key;
 use termion::input::{MouseTerminal, TermRead};
 use termion::raw::IntoRawMode;
@@ -78,12 +78,14 @@ fn events(tick_rate: Duration) -> mpsc::Receiver<Event> {
             }
         }
     });
-    thread::spawn(move || loop {
-        if let Err(err) = tx.send(Event::Tick) {
-            eprintln!("{err}");
-            break;
+    thread::spawn(move || {
+        loop {
+            if let Err(err) = tx.send(Event::Tick) {
+                eprintln!("{err}");
+                break;
+            }
+            thread::sleep(tick_rate);
         }
-        thread::sleep(tick_rate);
     });
     rx
 }

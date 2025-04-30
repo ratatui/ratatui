@@ -720,7 +720,10 @@ mod tests {
     #[case(Modifier::HIDDEN, "HIDDEN")]
     #[case(Modifier::CROSSED_OUT, "CROSSED_OUT")]
     #[case(Modifier::BOLD | Modifier::DIM, "BOLD | DIM")]
-    #[case(Modifier::all(), "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT")]
+    #[case(
+        Modifier::all(),
+        "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT"
+    )]
     fn modifier_debug(#[case] modifier: Modifier, #[case] expected: &str) {
         assert_eq!(format!("{modifier:?}"), expected);
     }

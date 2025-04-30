@@ -1521,10 +1521,12 @@ mod tests {
             (8.0, 9.0),
             (10.0, 10.0),
         ];
-        let chart = Chart::new(vec![Dataset::default()
-            .data(&data)
-            .marker(symbols::Marker::Dot)
-            .graph_type(GraphType::Bar)])
+        let chart = Chart::new(vec![
+            Dataset::default()
+                .data(&data)
+                .marker(symbols::Marker::Dot)
+                .graph_type(GraphType::Bar),
+        ])
         .x_axis(Axis::default().bounds([0.0, 10.0]))
         .y_axis(Axis::default().bounds([0.0, 10.0]));
         let area = Rect::new(0, 0, 11, 11);
