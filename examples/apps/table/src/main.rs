@@ -158,16 +158,16 @@ impl App {
         self.state.select_previous_column();
     }
 
-    pub fn next_color(&mut self) {
+    pub const fn next_color(&mut self) {
         self.color_index = (self.color_index + 1) % PALETTES.len();
     }
 
-    pub fn previous_color(&mut self) {
+    pub const fn previous_color(&mut self) {
         let count = PALETTES.len();
         self.color_index = (self.color_index + count - 1) % count;
     }
 
-    pub fn set_colors(&mut self) {
+    pub const fn set_colors(&mut self) {
         self.colors = TableColors::new(&PALETTES[self.color_index]);
     }
 
