@@ -77,7 +77,7 @@ pub fn init() -> DefaultTerminal {
 /// let terminal = ratatui::try_init()?;
 /// # Ok::<(), std::io::Error>(())
 /// ```
-pub fn try_init() -> io::Result<DefaultTerminal> {
+pub fn try_init() -> crate::result::Result<DefaultTerminal> {
     set_panic_hook();
     enable_raw_mode()?;
     execute!(stdout(), EnterAlternateScreen)?;
@@ -166,7 +166,9 @@ pub fn init_with_options(options: TerminalOptions) -> DefaultTerminal {
 /// let terminal = ratatui::try_init_with_options(options)?;
 /// # Ok::<(), std::io::Error>(())
 /// ```
-pub fn try_init_with_options(options: TerminalOptions) -> io::Result<DefaultTerminal> {
+pub fn try_init_with_options(
+    options: TerminalOptions,
+) -> Result<DefaultTerminal, ratatui_core::error::Error> {
     set_panic_hook();
     enable_raw_mode()?;
     let backend = CrosstermBackend::new(stdout());

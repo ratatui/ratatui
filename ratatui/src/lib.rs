@@ -357,7 +357,7 @@ pub mod backend {
 }
 
 pub mod prelude;
-pub use ratatui_core::{style, symbols, text};
+pub use ratatui_core::{error, result, style, symbols, text};
 pub mod widgets;
 pub use ratatui_widgets::border;
 #[cfg(feature = "crossterm")]
