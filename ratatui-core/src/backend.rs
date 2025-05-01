@@ -145,9 +145,13 @@ pub struct WindowSize {
 /// [`Terminal`] struct provides a higher level interface for interacting with the terminal.
 ///
 /// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
-pub trait Backend {
+pub trait Backend
+where
+    Self::Error: core::error::Error,
+    crate::error::Error: From<Self::Error>,
+{
     /// Error type associated with this Backend.
-    type Error: core::error::Error;
+    type Error;
 
     /// Draw the given content to the terminal screen.
     ///

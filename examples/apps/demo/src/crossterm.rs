@@ -43,14 +43,11 @@ pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn E
     Ok(())
 }
 
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
+fn run_app<W: io::Write>(
+    terminal: &mut Terminal<CrosstermBackend<W>>,
     mut app: App,
     tick_rate: Duration,
-) -> Result<(), Box<dyn Error>>
-where
-    B::Error: 'static,
-{
+) -> Result<(), Box<dyn Error>> {
     let mut last_tick = Instant::now();
     loop {
         terminal.draw(|frame| ui::draw(frame, &mut app))?;

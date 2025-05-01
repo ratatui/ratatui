@@ -49,7 +49,9 @@ extern crate alloc;
 
 pub mod backend;
 pub mod buffer;
+pub mod error;
 pub mod layout;
+pub mod result;
 pub mod style;
 pub mod symbols;
 pub mod terminal;
