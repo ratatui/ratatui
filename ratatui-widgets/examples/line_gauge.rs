@@ -92,7 +92,7 @@ impl App {
         Ok(())
     }
 
-    fn reset(&mut self) {
+    const fn reset(&mut self) {
         self.progress = 0.0;
         self.progress_columns = 0;
         self.state = AppState::Stop;

@@ -118,7 +118,7 @@ where
         feature = "backend-writer",
         issue = "https://github.com/ratatui/ratatui/pull/991"
     )]
-    pub fn writer_mut(&mut self) -> &mut W {
+    pub const fn writer_mut(&mut self) -> &mut W {
         &mut self.writer
     }
 }
@@ -140,6 +140,8 @@ impl<W> Backend for TermionBackend<W>
 where
     W: Write,
 {
+    type Error = io::Error;
+
     fn clear(&mut self) -> io::Result<()> {
         self.clear_region(ClearType::All)
     }

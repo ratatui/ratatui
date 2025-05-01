@@ -456,7 +456,7 @@ impl ScrollbarState {
     }
 
     /// Decrements the scroll position by one, ensuring it doesn't go below zero.
-    pub fn prev(&mut self) {
+    pub const fn prev(&mut self) {
         self.position = self.position.saturating_sub(1);
     }
 
@@ -469,12 +469,12 @@ impl ScrollbarState {
     }
 
     /// Sets the scroll position to the start of the scrollable content.
-    pub fn first(&mut self) {
+    pub const fn first(&mut self) {
         self.position = 0;
     }
 
     /// Sets the scroll position to the end of the scrollable content.
-    pub fn last(&mut self) {
+    pub const fn last(&mut self) {
         self.position = self.content_length.saturating_sub(1);
     }
 

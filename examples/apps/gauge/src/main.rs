@@ -93,11 +93,11 @@ impl App {
         Ok(())
     }
 
-    fn start(&mut self) {
+    const fn start(&mut self) {
         self.state = AppState::Started;
     }
 
-    fn quit(&mut self) {
+    const fn quit(&mut self) {
         self.state = AppState::Quitting;
     }
 }
