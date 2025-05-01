@@ -22,7 +22,13 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = []
+default = ["tls-layout-cache"]
+
+## enables std support
+std = []
+
+## enables layout cache based on thread-local storage
+tls-layout-cache = ["std"]
 
 ## enables conversions to / from colors, modifiers, and styles in the ['anstyle'] crate
 anstyle = ["dep:anstyle"]
@@ -46,12 +52,14 @@ serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 anstyle = { version = "1", optional = true }
 bitflags = "2.3"
 compact_str = "0.9.0"
+critical-section = "1.2.0"
 document-features = { workspace = true, optional = true }
 hashbrown = "0.15.2"
 indoc.workspace = true
 itertools.workspace = true
 kasuari = "0.4.0"
 lru = "0.12.0"
+once_cell = "1.21.3"
 palette = { version = "0.7.6", optional = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
@@ -59,13 +67,12 @@ thiserror = "2"
 unicode-segmentation.workspace = true
 unicode-truncate = "2"
 unicode-width.workspace = true
-once_cell = "1.21.3"
-critical-section = "1.2.0"
 
 [dev-dependencies]
 pretty_assertions.workspace = true
 rstest.workspace = true
 serde_json.workspace = true
+critical-section = {version = "1.2.0", features = ["std"]}
 
 [lints]
 workspace = true

@@ -1,23 +1,20 @@
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::iter;
 use core::num::NonZeroUsize;
+use std::dbg;
 
-#[cfg(feature = "std")]
-use std::{dbg, thread_local};
-
-#[cfg(not(feature = "std"))]
+#[cfg(not(feature = "tls-layout-cache"))]
 use critical_section::Mutex as CsMutex;
-#[cfg(not(feature = "std"))]
-use once_cell::sync::Lazy;
-
 use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};
 use kasuari::{AddConstraintError, Expression, Solver, Strength, Variable};
 use lru::LruCache;
+#[cfg(not(feature = "tls-layout-cache"))]
+use once_cell::sync::Lazy;
 
 use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
@@ -25,7 +22,7 @@ use self::strengths::{
 };
 use crate::layout::{Constraint, Direction, Flex, Margin, Rect};
 
-type Rects = Rc<[Rect]>;
+type Rects = Arc<[Rect]>;
 type Segments = Rects;
 type Spacers = Rects;
 // The solution to a Layout solve contains two `Rects`, where `Rects` is effectively a `[Rect]`.
@@ -46,18 +43,38 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
-#[cfg(feature = "std")]
-thread_local! {
+#[cfg(feature = "tls-layout-cache")]
+std::thread_local! {
     static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(not(feature = "tls-layout-cache"))]
 static LAYOUT_CACHE: Lazy<CsMutex<RefCell<Cache>>> = Lazy::new(|| {
-    CsMutex::new(RefCell::new(LruCache::new(NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap())))
+    CsMutex::new(RefCell::new(LruCache::new(
+        NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
+    )))
 });
 
+fn with_layout_cache<F, R>(f: F) -> R
+where
+    F: FnOnce(&mut Cache) -> R,
+{
+    #[cfg(feature = "tls-layout-cache")]
+    {
+        LAYOUT_CACHE.with_borrow_mut(f)
+    }
+
+    #[cfg(not(feature = "tls-layout-cache"))]
+    {
+        use core::ops::DerefMut;
+        critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow_ref_mut(cs);
+            f(cache.deref_mut())
+        })
+    }
+}
 
 /// Represents the spacing between segments in a layout.
 ///
@@ -295,7 +312,7 @@ impl Layout {
     ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
     pub fn init_cache(cache_size: NonZeroUsize) {
-        LAYOUT_CACHE.with_borrow_mut(|c| c.resize(cache_size));
+        with_layout_cache(|c| c.resize(cache_size));
     }
 
     /// Set the direction of the layout.
@@ -667,19 +684,10 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
-        #[cfg(feature = "std")]
-        LAYOUT_CACHE.with_borrow_mut(|c| {
+        with_layout_cache(|c| {
             let key = (area, self.clone());
             c.get_or_insert(key, || self.try_split(area).expect("failed to split"))
                 .clone()
-        })
-
-        #[cfg(not(feature = "std"))]
-        critical_section::with(|cs| {
-            let mut cache = LAYOUT_CACHE.borrow_ref_mut(cs);
-
-            let key = (area, self.clone());
-            cache.get_or_insert(key, || self.try_split(area).expect("failed to split")).clone()
         })
     }
 
@@ -1224,12 +1232,13 @@ mod tests {
 
     #[test]
     fn cache_size() {
-        LAYOUT_CACHE.with_borrow(|c| {
+        with_layout_cache(|c| {
             assert_eq!(c.cap().get(), Layout::DEFAULT_CACHE_SIZE);
         });
 
         Layout::init_cache(NonZeroUsize::new(10).unwrap());
-        LAYOUT_CACHE.with_borrow(|c| {
+
+        with_layout_cache(|c| {
             assert_eq!(c.cap().get(), 10);
         });
     }
