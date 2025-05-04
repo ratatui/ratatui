@@ -80,68 +80,42 @@ use ratatui_core::style::{Color, Modifier, Style};
 #[derive(Debug, Clone)]
 pub struct ConsoleBackend {
     term: console::Term,
-    stdout: bool,
 }
-
-// impl<W> ConsoleBackend<W>
-// where
-//     W: Write,
-// {
-//     /// Creates a new `ConsoleBackend` with the given writer.
-//     ///
-//     /// Most applications will use either [`stdout`](std::io::stdout) or
-//     /// [`stderr`](std::io::stderr) as writer. See the [FAQ] to determine which one to use.
-//     ///
-//     /// [FAQ]: https://ratatui.rs/faq/#should-i-use-stdout-or-stderr
-//     ///
-//     /// # Example
-//     ///
-//     /// ```rust,no_run
-//     /// use std::io::stdout;
-//     ///
-//     /// use ratatui::backend::ConsoleBackend;
-//     ///
-//     /// let backend = ConsoleBackend::new(stdout());
-//     /// ```
-//     pub const fn new(writer: W) -> Self {
-//         Self { writer }
-//     }
-
-//     /// Gets the writer.
-//     #[instability::unstable(
-//         feature = "backend-writer",
-//         issue = "https://github.com/ratatui/ratatui/pull/991"
-//     )]
-//     pub const fn writer(&self) -> &W {
-//         &self.writer
-//     }
-
-//     /// Gets the writer as a mutable reference.
-//     ///
-//     /// Note: writing to the writer may cause incorrect output after the write. This is due to the
-//     /// way that the Terminal implements diffing Buffers.
-//     #[instability::unstable(
-//         feature = "backend-writer",
-//         issue = "https://github.com/ratatui/ratatui/pull/991"
-//     )]
-//     pub const fn writer_mut(&mut self) -> &mut W {
-//         &mut self.writer
-//     }
-// }
-// impl<W> Write for ConsoleBackend<W>
-// where
-//     W: Write,
-// {
-//     /// Writes a buffer of bytes to the underlying buffer.
-//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-//         self.writer.write(buf)
-//     }
-
-//     /// Flushes the underlying buffer.
-//     fn flush(&mut self) -> io::Result<()> {
-//         self.writer.flush()
-//     }
-// }
+impl Default for ConsoleBackend {
+    fn default() -> Self {
+        Self::new(true, false)
+    }
+}
+impl ConsoleBackend {
+    /// create a new [`ConsoleBackend`] with `term` [`console::Term`]
+    pub fn with_term(term: console::Term) -> Self {
+        Self { term }
+    }
+    /// if not `stdout`, then `stderr`, if not `buffered`, then `unbuffered`
+    pub fn new(stdout: bool, buffered: bool) -> Self {
+        if stdout {
+            if buffered {
+                Self::with_term(console::Term::buffered_stdout())
+            } else {
+                Self::with_term(console::Term::stdout())
+            }
+        } else {
+            if buffered {
+                Self::with_term(console::Term::buffered_stderr())
+            } else {
+                Self::with_term(console::Term::stderr())
+            }
+        }
+    }
+    /// get the underlying [`console::Term`]
+    pub fn get_term(&self) -> &console::Term {
+        &self.term
+    }
+    /// get the underlying [`console::Term`]
+    pub fn get_term_mut(&mut self) -> &mut console::Term {
+        &mut self.term
+    }
+}
 
 impl Backend for ConsoleBackend {
     type Error = io::Error;
@@ -154,11 +128,15 @@ impl Backend for ConsoleBackend {
         match clear_type {
             ClearType::All => self.term.clear_screen(),
             ClearType::AfterCursor => self.term.clear_to_end_of_screen(),
-            ClearType::BeforeCursor => todo!(),
+            ClearType::BeforeCursor => {
+                unimplemented!("console doesn't support clearing BeforeCursor")
+            }
             ClearType::CurrentLine => self.term.clear_line(),
-            ClearType::UntilNewLine => todo!(),
-        }?;
-        self.term.flush()
+            ClearType::UntilNewLine => {
+                unimplemented!("console doesn't support clearing until newline")
+            }
+        }
+        // self.term.flush()
     }
 
     // fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
@@ -175,27 +153,19 @@ impl Backend for ConsoleBackend {
 
     // fn append_lines(&mut self, n: u16) -> io::Result<()> {
     //     for _ in 0..n {
-    //         writeln!(self.writer)?;
+    //         self.term.write_line("")?;
     //     }
-    //     self.writer.flush()
+    //     self.term.flush()
     // }
 
-    // fn hide_cursor(&mut self) -> io::Result<()> {
-    //     write!(self.writer, "{}", termion::cursor::Hide)?;
-    //     self.writer.flush()
-    // }
     fn hide_cursor(&mut self) -> Result<(), Self::Error> {
-        self.term.hide_cursor()?;
-        self.term.flush()
+        self.term.hide_cursor()
+        // self.term.flush()
     }
 
-    // fn show_cursor(&mut self) -> io::Result<()> {
-    //     write!(self.writer, "{}", termion::cursor::Show)?;
-    //     self.writer.flush()
-    // }
     fn show_cursor(&mut self) -> Result<(), Self::Error> {
-        self.term.show_cursor()?;
-        self.term.flush()
+        self.term.show_cursor()
+        // self.term.flush()
     }
 
     // fn get_cursor_position(&mut self) -> io::Result<Position> {
@@ -203,18 +173,14 @@ impl Backend for ConsoleBackend {
     //         .map(|(x, y)| Position { x: x - 1, y: y - 1 })
     // }
     fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
-        todo!()
+        unimplemented!("console doesn't support getting cursor position")
     }
 
-    // fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
-    //     let Position { x, y } = position.into();
-    //     write!(self.writer, "{}", termion::cursor::Goto(x + 1, y + 1))?;
-    //     self.writer.flush()
-    // }
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error> {
         let Position { x, y } = position.into();
-        self.term.move_cursor_to(usize::from(x), usize::from(y))?;
-        self.term.flush()
+        // TODO: do we need `x + 1`, `y + 1`?
+        self.term.move_cursor_to(usize::from(x), usize::from(y))
+        // self.term.flush()
     }
 
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
@@ -240,7 +206,7 @@ impl Backend for ConsoleBackend {
                     from: modifier,
                     to: cell.modifier,
                 };
-                write!(buf, "{mod_diff}",).unwrap();
+                write!(buf, "{mod_diff}").unwrap();
                 modifier = cell.modifier;
             }
             if cell.fg != fg {
@@ -253,8 +219,9 @@ impl Backend for ConsoleBackend {
             }
             buf.push_str(cell.symbol());
         }
-        write!(self.term, "{buf}")?;
-        self.term.flush()
+        // write!(self.term, "{buf}")?;
+        self.term.write_line(&buf)
+        // self.term.flush()
     }
     // fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
     // where
@@ -263,10 +230,6 @@ impl Backend for ConsoleBackend {
     //     todo!()
     // }
 
-    // fn size(&self) -> io::Result<Size> {
-    //     let terminal = termion::terminal_size()?;
-    //     Ok(Size::new(terminal.0, terminal.1))
-    // }
     fn size(&self) -> Result<Size, Self::Error> {
         let console_size = self
             .term
@@ -282,7 +245,7 @@ impl Backend for ConsoleBackend {
     //     })
     // }
     fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
-        todo!()
+        unimplemented!("console doesn't support querying window size in pixels")
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -335,26 +298,19 @@ pub trait FromConsole<C> {
 impl IntoConsole<ConsoleColor> for Color {
     fn into_console(self) -> ConsoleColor {
         match self {
-            // Self::Reset => ConsoleColor::Reset,
+            Self::Reset => ConsoleColor::Black,
             Self::Black => ConsoleColor::Black,
-            // Self::Red => ConsoleColor::DarkRed,
-            // Self::Green => ConsoleColor::DarkGreen,
-            // Self::Yellow => ConsoleColor::DarkYellow,
-            // Self::Blue => ConsoleColor::DarkBlue,
-            // Self::Magenta => ConsoleColor::DarkMagenta,
-            // Self::Cyan => ConsoleColor::DarkCyan,
-            // Self::Gray => ConsoleColor::Grey,
-            // Self::DarkGray => ConsoleColor::DarkGrey,
-            Self::LightRed => ConsoleColor::Red,
-            Self::LightGreen => ConsoleColor::Green,
-            Self::LightBlue => ConsoleColor::Blue,
-            Self::LightYellow => ConsoleColor::Yellow,
-            Self::LightMagenta => ConsoleColor::Magenta,
-            Self::LightCyan => ConsoleColor::Cyan,
+            Self::Gray | Self::DarkGray => ConsoleColor::Black,
+            Self::Red | Self::LightRed => ConsoleColor::Red,
+            Self::Green | Self::LightGreen => ConsoleColor::Green,
+            Self::Blue | Self::LightBlue => ConsoleColor::Blue,
+            Self::Yellow | Self::LightYellow => ConsoleColor::Yellow,
+            Self::Magenta | Self::LightMagenta => ConsoleColor::Magenta,
+            Self::Cyan | Self::LightCyan => ConsoleColor::Cyan,
             Self::White => ConsoleColor::White,
             Self::Indexed(i) => ConsoleColor::Color256(i),
             // Self::Rgb(r, g, b) => ConsoleColor::Rgb { r, g, b },
-            _ => todo!(),
+            col => unimplemented!("console doesn't support other colors such as: {col}"),
         }
     }
 }
@@ -381,7 +337,7 @@ impl FromConsole<ConsoleColor> for Color {
             ConsoleColor::White => Self::White,
             // ConsoleColor::Rgb { r, g, b } => Self::Rgb(r, g, b),
             ConsoleColor::Color256(v) => Self::Indexed(v),
-            _ => todo!(),
+            _ => unimplemented!("console doesn't support more colors"),
         }
     }
 }

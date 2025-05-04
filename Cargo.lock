@@ -823,6 +823,7 @@ name = "demo"
 version = "0.0.0"
 dependencies = [
  "clap",
+ "console",
  "crossterm",
  "rand 0.9.1",
  "ratatui",
@@ -2614,6 +2615,7 @@ dependencies = [
  "pretty_assertions",
  "rand 0.9.1",
  "rand_chacha 0.9.0",
+ "ratatui-console",
  "ratatui-core",
  "ratatui-crossterm",
  "ratatui-macros",
