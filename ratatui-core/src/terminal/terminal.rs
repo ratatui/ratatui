@@ -1,5 +1,3 @@
-use std::eprintln;
-
 use crate::backend::{Backend, ClearType};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
@@ -91,8 +89,10 @@ where
     fn drop(&mut self) {
         // Attempt to restore the cursor state
         if self.hidden_cursor {
+            #[allow(unused_variables)]
             if let Err(err) = self.show_cursor() {
-                eprintln!("Failed to show the cursor: {err}");
+                #[cfg(feature = "std")]
+                std::eprintln!("Failed to show the cursor: {err}");
             }
         }
     }

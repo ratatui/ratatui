@@ -81,6 +81,11 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::borrow::ToOwned;
+    use alloc::boxed::Box;
+    use alloc::format;
+    use alloc::string::{String, ToString};
+
     use rstest::{fixture, rstest};
 
     use super::*;
