@@ -198,7 +198,6 @@ pub fn try_init_with_options(options: TerminalOptions) -> io::Result<DefaultTerm
 pub fn restore() {
     if let Err(err) = try_restore() {
         // There's not much we can do if restoring the terminal fails, so we just print the error
-
         std::eprintln!("Failed to restore terminal: {err}");
     }
 }
