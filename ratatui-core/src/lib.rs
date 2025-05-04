@@ -1,3 +1,4 @@
+#![no_std]
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
@@ -41,7 +42,7 @@
 #![warn(clippy::std_instead_of_core)]
 #![warn(clippy::std_instead_of_alloc)]
 #![warn(clippy::alloc_instead_of_core)]
-#![no_std]
+
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;

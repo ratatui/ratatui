@@ -134,7 +134,7 @@ mod tests {
         impl StatefulWidgetRef for Bytes {
             type State = [u8];
             fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-                let slice = std::str::from_utf8(state).unwrap();
+                let slice = core::str::from_utf8(state).unwrap();
                 Line::from(format!("Bytes: {slice}")).render(area, buf);
             }
         }
@@ -150,7 +150,7 @@ mod tests {
         impl StatefulWidget for &Bytes {
             type State = [u8];
             fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-                let slice = std::str::from_utf8(state).unwrap();
+                let slice = core::str::from_utf8(state).unwrap();
                 Line::from(format!("Bytes: {slice}")).render(area, buf);
             }
         }
