@@ -1,20 +1,15 @@
 use alloc::format;
-use alloc::sync::Arc;
+use alloc::rc::Rc;
 use alloc::vec::Vec;
-use core::cell::RefCell;
 use core::iter;
 use core::num::NonZeroUsize;
 use std::dbg;
 
-#[cfg(not(feature = "tls-layout-cache"))]
-use critical_section::Mutex as CsMutex;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};
 use kasuari::{AddConstraintError, Expression, Solver, Strength, Variable};
 use lru::LruCache;
-#[cfg(not(feature = "tls-layout-cache"))]
-use once_cell::sync::Lazy;
 
 use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
@@ -22,7 +17,7 @@ use self::strengths::{
 };
 use crate::layout::{Constraint, Direction, Flex, Margin, Rect};
 
-type Rects = Arc<[Rect]>;
+type Rects = Rc<[Rect]>;
 type Segments = Rects;
 type Spacers = Rects;
 // The solution to a Layout solve contains two `Rects`, where `Rects` is effectively a `[Rect]`.
@@ -43,37 +38,21 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
-#[cfg(feature = "tls-layout-cache")]
+#[cfg(feature = "thread-local-cache")]
 std::thread_local! {
-    static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(Cache::new(
+    static LAYOUT_CACHE: core::cell::RefCell<Cache> = core::cell::RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
 }
 
-#[cfg(not(feature = "tls-layout-cache"))]
-static LAYOUT_CACHE: Lazy<CsMutex<RefCell<Cache>>> = Lazy::new(|| {
-    CsMutex::new(RefCell::new(LruCache::new(
-        NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
-    )))
-});
-
+// This function should be copied with appropriate feature
+// for any future layout cache implementations.
+#[cfg(feature = "thread-local-cache")]
 fn with_layout_cache<F, R>(f: F) -> R
 where
     F: FnOnce(&mut Cache) -> R,
 {
-    #[cfg(feature = "tls-layout-cache")]
-    {
-        LAYOUT_CACHE.with_borrow_mut(f)
-    }
-
-    #[cfg(not(feature = "tls-layout-cache"))]
-    {
-        use core::ops::DerefMut;
-        critical_section::with(|cs| {
-            let mut cache = LAYOUT_CACHE.borrow_ref_mut(cs);
-            f(cache.deref_mut())
-        })
-    }
+    LAYOUT_CACHE.with_borrow_mut(f)
 }
 
 /// Represents the spacing between segments in a layout.
@@ -219,6 +198,7 @@ impl Layout {
     /// bit more to make it a round number. This gives enough entries to store a layout for every
     /// row and every column, twice over, which should be enough for most apps. For those that need
     /// more, the cache size can be set with [`Layout::init_cache()`].
+    /// This const is unused if layout cache is disabled.
     pub const DEFAULT_CACHE_SIZE: usize = 500;
 
     /// Creates a new layout with default values.
@@ -310,8 +290,12 @@ impl Layout {
     /// that subsequent calls with the same parameters are faster. The cache is a `LruCache`, and
     /// grows until `cache_size` is reached.
     ///
+    /// If no cache feature flag is enabled, method takes no effect.
+    /// Currently, the only available cache is `thread-local-cache`, which requires `std`.
+    ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
-    pub fn init_cache(cache_size: NonZeroUsize) {
+    pub fn init_cache(#[allow(unused_variables)] cache_size: NonZeroUsize) {
+        #[cfg(feature = "thread-local-cache")]
         with_layout_cache(|c| c.resize(cache_size));
     }
 
@@ -684,11 +668,18 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
-        with_layout_cache(|c| {
-            let key = (area, self.clone());
-            c.get_or_insert(key, || self.try_split(area).expect("failed to split"))
-                .clone()
-        })
+        let split = || self.try_split(area).expect("failed to split");
+
+        #[cfg(feature = "thread-local-cache")]
+        {
+            with_layout_cache(|c| {
+                let key = (area, self.clone());
+                c.get_or_insert(key, split).clone()
+            })
+        }
+
+        #[cfg(not(feature = "thread-local-cache"))]
+        split()
     }
 
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
@@ -1231,6 +1222,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "thread-local-cache")]
     fn cache_size() {
         with_layout_cache(|c| {
             assert_eq!(c.cap().get(), Layout::DEFAULT_CACHE_SIZE);
