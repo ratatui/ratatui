@@ -4,6 +4,7 @@ members = ["ratatui", "ratatui-*", "xtask", "examples/apps/*"]
 default-members = [
   "ratatui",
   "ratatui-core",
+  "ratatui-console",
   "ratatui-crossterm",
   # this is not included as it doesn't compile on windows
   # "ratatui-termion",
@@ -29,6 +30,7 @@ rust-version = "1.81.0"
 [workspace.dependencies]
 bitflags = "2.9.0"
 color-eyre = "0.6.3"
+console = "0.15.11"
 crossterm = "0.29.0"
 document-features = "0.2.11"
 hashbrown = "0.15.2"
@@ -38,6 +40,7 @@ itertools = "0.13.0"
 pretty_assertions = "1.4.1"
 ratatui = { path = "ratatui", version = "0.30.0-alpha.2" }
 ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.3" }
+ratatui-console = { path = "ratatui-console", version = "0.1.0-alpha.1" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.2" }
 ratatui-macros = { path = "ratatui-macros", version = "0.7.0-alpha.1" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.2" }
