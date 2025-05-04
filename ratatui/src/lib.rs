@@ -347,6 +347,8 @@ pub use crate::init::{
 
 /// Re-exports for the backend implementations.
 pub mod backend {
+    #[cfg(feature = "console")]
+    pub use ratatui_console::{ConsoleBackend, FromConsole, IntoConsole};
     pub use ratatui_core::backend::{Backend, ClearType, TestBackend, WindowSize};
     #[cfg(feature = "crossterm")]
     pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};

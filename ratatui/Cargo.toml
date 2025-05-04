@@ -28,6 +28,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 ## which allows you to set the underline color of text and the `macros` feature which provides
 ## some useful macros.
 default = ["crossterm", "underline-color", "all-widgets", "macros"]
+## enables the [`ConsoleBackend`](backend::ConsoleBackend) backend and adds a dependency on [`console`].
+console = ["dep:ratatui-console"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["dep:ratatui-crossterm"]
@@ -112,6 +114,7 @@ document-features = { workspace = true, optional = true }
 instability.workspace = true
 palette = { version = "0.7.6", optional = true }
 ratatui-core = { workspace = true }
+ratatui-console = { workspace = true, optional = true }
 ratatui-crossterm = { workspace = true, optional = true }
 ratatui-macros = { workspace = true, optional = true }
 ratatui-termwiz = { workspace = true, optional = true }
