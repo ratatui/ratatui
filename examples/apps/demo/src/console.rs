@@ -45,12 +45,12 @@ fn run_app(
                 Key::ArrowUp | Key::Char('k') => app.on_up(),
                 Key::ArrowRight | Key::Char('l') => app.on_right(),
                 Key::Char(ch) => app.on_key(ch),
-                _ => {} // InputEvent::Resized { cols, rows } => {
-                        //     terminal
-                        //         .backend_mut()
-                        //         .buffered_terminal_mut()
-                        //         .resize(cols, rows);
-                        // }
+                _ => {} /* InputEvent::Resized { cols, rows } => {
+                         *     terminal
+                         *         .backend_mut()
+                         *         .buffered_terminal_mut()
+                         *         .resize(cols, rows);
+                         * } */
             }
         }
 

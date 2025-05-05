@@ -18,8 +18,7 @@ use std::fmt;
 use std::io::{self, Write};
 
 pub use console;
-use console::Style as ConsoleStyle;
-use console::{Attribute, Color as ConsoleColor};
+use console::{Attribute, Color as ConsoleColor, Style as ConsoleStyle};
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
@@ -265,8 +264,8 @@ impl Backend for ConsoleBackend {
     // }
 
     // #[cfg(feature = "scrolling-regions")]
-    // fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
-    //     write!(
+    // fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()>
+    // {     write!(
     //         self.writer,
     //         "{}{}{}",
     //         SetRegion(region.start.saturating_add(1), region.end),
