@@ -357,7 +357,7 @@ impl fmt::Display for ModifierDiff {
 
         let add = self.to - self.from;
         if add.contains(Modifier::REVERSED) {
-            // write!(f, "{}", console::style("").attr(Attribute::) termion::style::Invert)?;
+            write!(f, "{}", console::style("").attr(Attribute::Reverse))?;
         }
         if add.contains(Modifier::BOLD) {
             write!(f, "{}", console::style("").attr(Attribute::Bold))?;
