@@ -19,6 +19,8 @@ use std::time::Duration;
 use clap::Parser;
 
 mod app;
+#[cfg(feature = "console")]
+mod console;
 #[cfg(feature = "crossterm")]
 mod crossterm;
 #[cfg(all(not(windows), feature = "termion"))]
@@ -44,14 +46,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
     let tick_rate = Duration::from_millis(cli.tick_rate);
     #[cfg(feature = "crossterm")]
-    crate::crossterm::run(tick_rate, cli.unicode)?;
-    #[cfg(all(not(windows), feature = "termion", not(feature = "crossterm")))]
-    crate::termion::run(tick_rate, cli.unicode)?;
-    #[cfg(all(
-        feature = "termwiz",
-        not(feature = "crossterm"),
-        not(feature = "termion")
-    ))]
-    crate::termwiz::run(tick_rate, cli.unicode)?;
+    return crate::crossterm::run(tick_rate, cli.unicode);
+    #[cfg(feature = "termion")]
+    return crate::termion::run(tick_rate, cli.unicode);
+    #[cfg(feature = "console")]
+    return crate::console::run(tick_rate, cli.unicode);
+    #[cfg(feature = "termwiz")]
+    return crate::termwiz::run(tick_rate, cli.unicode);
     Ok(())
 }
