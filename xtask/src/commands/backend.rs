@@ -61,7 +61,9 @@ impl Run for TestBackend {
             "--all-targets",
             "--no-default-features",
             "--features",
-            [backend, "ratatui-core/thread-local-cache"].join(",").as_str(),
+            [backend, "ratatui-core/thread-local-cache"]
+                .join(",")
+                .as_str(),
         ])?;
         run_cargo(vec![
             "test",
