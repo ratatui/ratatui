@@ -67,25 +67,17 @@ impl Cell {
     pub fn merge_symbol(&mut self, symbol: &'static str, style: Option<&MergeStyle>) -> &mut Self {
         let previous = self.symbol.as_str();
         let next = symbol;
-        match (
+        if let (Ok(s1), Ok(s2), Some(style)) = (
             BorderSymbol::try_from(previous),
             BorderSymbol::try_from(next),
             style,
         ) {
-            (Ok(s1), Ok(s2), Some(style)) => {
-                match TryInto::<&str>::try_into(&merge_border(&s1, &s2, style)) {
-                    Ok(merged) => {
-                        self.set_symbol(merged);
-                    }
-                    _ => {
-                        self.set_symbol(next);
-                    }
-                }
-            }
-            (_, _, _) => {
-                self.set_symbol(next);
+            if let Ok(merged) = TryInto::<&str>::try_into(&merge_border(&s1, &s2, style)) {
+                self.set_symbol(merged);
+                return self;
             }
         }
+        self.set_symbol(next);
         self
     }
 
