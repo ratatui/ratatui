@@ -19,6 +19,7 @@ This is a quick summary of the sections below:
   - `Backend` now requires an associated `Error` type and `clear_region` method
   - `Backend` now uses `Self::Error` for error handling instead of `std::io::Error`
   - `Terminal<B>` now uses `B::Error` for error handling instead of `std::io::Error`
+  - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
