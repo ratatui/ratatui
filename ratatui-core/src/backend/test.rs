@@ -5,7 +5,6 @@ use alloc::string::String;
 use alloc::vec;
 use core::fmt::{self, Write};
 use core::iter;
-use std::io;
 
 use unicode_width::UnicodeWidthStr;
 
@@ -28,7 +27,7 @@ use crate::layout::{Position, Rect, Size};
 /// let mut backend = TestBackend::new(10, 2);
 /// backend.clear()?;
 /// backend.assert_buffer_lines(["          "; 2]);
-/// # std::io::Result::Ok(())
+/// # Result::Ok(())
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -233,10 +232,12 @@ impl fmt::Display for TestBackend {
     }
 }
 
-impl Backend for TestBackend {
-    type Error = io::Error;
+type Result<T, E = core::convert::Infallible> = core::result::Result<T, E>;
 
-    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
+impl Backend for TestBackend {
+    type Error = core::convert::Infallible;
+
+    fn draw<'a, I>(&mut self, content: I) -> Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
@@ -246,31 +247,31 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn hide_cursor(&mut self) -> io::Result<()> {
+    fn hide_cursor(&mut self) -> Result<()> {
         self.cursor = false;
         Ok(())
     }
 
-    fn show_cursor(&mut self) -> io::Result<()> {
+    fn show_cursor(&mut self) -> Result<()> {
         self.cursor = true;
         Ok(())
     }
 
-    fn get_cursor_position(&mut self) -> io::Result<Position> {
+    fn get_cursor_position(&mut self) -> Result<Position> {
         Ok(self.pos.into())
     }
 
-    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<()> {
         self.pos = position.into().into();
         Ok(())
     }
 
-    fn clear(&mut self) -> io::Result<()> {
+    fn clear(&mut self) -> Result<()> {
         self.buffer.reset();
         Ok(())
     }
 
-    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
+    fn clear_region(&mut self, clear_type: ClearType) -> Result<()> {
         let region = match clear_type {
             ClearType::All => return self.clear(),
             ClearType::AfterCursor => {
@@ -310,7 +311,7 @@ impl Backend for TestBackend {
     /// the cursor y position then that number of empty lines (at most the buffer's height in this
     /// case but this limit is instead replaced with scrolling in most backend implementations) will
     /// be added after the current position and the cursor will be moved to the last row.
-    fn append_lines(&mut self, line_count: u16) -> io::Result<()> {
+    fn append_lines(&mut self, line_count: u16) -> Result<()> {
         let Position { x: cur_x, y: cur_y } = self.get_cursor_position()?;
         let Rect { width, height, .. } = self.buffer.area;
 
@@ -347,11 +348,11 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn size(&self) -> io::Result<Size> {
+    fn size(&self) -> Result<Size> {
         Ok(self.buffer.area.as_size())
     }
 
-    fn window_size(&mut self) -> io::Result<WindowSize> {
+    fn window_size(&mut self) -> Result<WindowSize> {
         // Some arbitrary window pixel size, probably doesn't need much testing.
         const WINDOW_PIXEL_SIZE: Size = Size {
             width: 640,
@@ -363,16 +364,12 @@ impl Backend for TestBackend {
         })
     }
 
-    fn flush(&mut self) -> io::Result<()> {
+    fn flush(&mut self) -> Result<()> {
         Ok(())
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up(
-        &mut self,
-        region: core::ops::Range<u16>,
-        scroll_by: u16,
-    ) -> io::Result<()> {
+    fn scroll_region_up(&mut self, region: core::ops::Range<u16>, scroll_by: u16) -> Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
         let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
@@ -418,11 +415,7 @@ impl Backend for TestBackend {
     }
 
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down(
-        &mut self,
-        region: core::ops::Range<u16>,
-        scroll_by: u16,
-    ) -> io::Result<()> {
+    fn scroll_region_down(&mut self, region: core::ops::Range<u16>, scroll_by: u16) -> Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
         let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
@@ -923,7 +916,7 @@ mod tests {
     }
 
     #[test]
-    fn append_lines_truncates_beyond_u16_max() -> io::Result<()> {
+    fn append_lines_truncates_beyond_u16_max() -> Result<()> {
         let mut backend = TestBackend::new(10, 5);
 
         // Fill the scrollback with 65535 + 10 lines.
