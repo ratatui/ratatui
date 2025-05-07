@@ -22,6 +22,7 @@ This is a quick summary of the sections below:
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
   - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled
+  - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping `Terminal`
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -85,6 +86,13 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased (0.30.0)
+
+### Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping `Terminal` ([#1794])
+
+[#1794]: https://github.com/ratatui/ratatui/pull/1794
+
+Since disabling `default-features` disables `std`, printing to stderr is not possible. It is
+recommended to re-enable `std` when not using Ratatui in `no_std` environment.
 
 ### `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled ([#1795])
 
