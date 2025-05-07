@@ -88,10 +88,9 @@ This is a quick summary of the sections below:
 
 [#1795]: https://github.com/ratatui/ratatui/pull/1795
 
-Layout cache is now opt-in in `ratatui-core` and enabled by default in `ratatui`.
-If app doesn't make use of `no_std`-compatibility, and disables `default-feature`,
-it is recommended to explicitly re-enable layout cache.
-Not doing so may impact performance.
+Layout cache is now opt-in in `ratatui-core` and enabled by default in `ratatui`. If app doesn't
+make use of `no_std`-compatibility, and disables `default-feature`, it is recommended to explicitly
+re-enable layout cache. Not doing so may impact performance.
 
 ```diff
 - ratatui = { version = "0.29.0", default-features = false }
