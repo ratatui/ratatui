@@ -1,3 +1,5 @@
+use alloc::string::String;
+
 use super::Widget;
 use crate::buffer::Buffer;
 use crate::layout::Rect;
@@ -166,6 +168,10 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::boxed::Box;
+    use alloc::vec;
+    use alloc::vec::Vec;
+
     use rstest::{fixture, rstest};
 
     use super::*;

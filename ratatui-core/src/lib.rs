@@ -43,9 +43,9 @@
 #![warn(clippy::std_instead_of_alloc)]
 #![warn(clippy::alloc_instead_of_core)]
 
-extern crate std;
-
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod backend;
 pub mod buffer;

@@ -31,11 +31,14 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = ["crossterm", "underline-color", "all-widgets", "macros", "layout-cache"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
-crossterm = ["dep:ratatui-crossterm"]
+crossterm = ["std", "dep:ratatui-crossterm"]
 ## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
-termion = ["dep:ratatui-termion"]
+termion = ["std", "dep:ratatui-termion"]
 ## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
-termwiz = ["dep:ratatui-termwiz"]
+termwiz = ["std", "dep:ratatui-termwiz"]
+
+## enables std
+std = ["ratatui-core/std"]
 
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
@@ -50,7 +53,7 @@ serde = [
 ]
 
 ## enables layout cache
-layout-cache = ["ratatui-core/layout-cache"]
+layout-cache = ["std", "ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["ratatui-core/palette", "dep:palette"]

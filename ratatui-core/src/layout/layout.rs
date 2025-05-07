@@ -1,9 +1,7 @@
-use alloc::format;
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use core::iter;
 use core::num::NonZeroUsize;
-use std::dbg;
 
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -1020,8 +1018,9 @@ fn changes_to_rects(
 /// please leave this here as it's useful for debugging unit tests when we make any changes to
 /// layout code - we should replace this with tracing in the future.
 #[expect(dead_code)]
+#[cfg(feature = "std")]
 fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
-    let variables = format!(
+    let variables = alloc::format!(
         "{:?}",
         elements
             .iter()
@@ -1031,7 +1030,7 @@ fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
             ))
             .collect::<Vec<(f64, f64)>>()
     );
-    dbg!(variables);
+    std::dbg!(variables);
 }
 
 /// A container used by the solver inside split
