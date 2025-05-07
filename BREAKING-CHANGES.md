@@ -84,6 +84,20 @@ This is a quick summary of the sections below:
 
 ## Unreleased (0.30.0)
 
+## Disabling `default-features` will now disable layout cache, which can have a negative impact on performance ([#1795])
+
+[#1795]: https://github.com/ratatui/ratatui/pull/1795
+
+Layout cache is now opt-in in `ratatui-core` and enabled by default in `ratatui`.
+If app doesn't make use of `no_std`-compatibility, and disables `default-feature`,
+it is recommended to explicitly re-enable layout cache.
+Not doing so may impact performance.
+
+```diff
+- ratatui = { version = "0.29.0", default-features = false }
++ ratatui = { version = "0.30.0", default-features = false, features = ["ratatui-core/thread-local-cache"] }
+```
+
 ## The MSRV is now 1.81.0 ([#1786])
 
 [#1786]: https://github.com/ratatui/ratatui/pull/1786
