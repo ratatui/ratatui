@@ -19,6 +19,7 @@ This is a quick summary of the sections below:
   - `Backend` now requires an associated `Error` type and `clear_region` method
   - `Backend` now uses `Self::Error` for error handling instead of `std::io::Error`
   - `Terminal<B>` now uses `B::Error` for error handling instead of `std::io::Error`
+  - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -82,6 +83,13 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased (0.30.0)
+
+### `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error` ([#1823])
+
+[#1823]: https://github.com/ratatui/ratatui/pull/1823
+
+Since `TestBackend` never fails, it now uses `Infallible` as associated `Error`. This may require
+changes in test cases that use `TestBackend`.
 
 ### The MSRV is now 1.81.0 ([#1786])
 
