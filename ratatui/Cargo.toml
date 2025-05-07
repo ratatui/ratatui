@@ -53,7 +53,7 @@ serde = [
 ]
 
 ## enables layout cache
-layout-cache = ["ratatui-core/layout-cache"]
+layout-cache = ["std", "ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["ratatui-core/palette", "dep:palette"]
