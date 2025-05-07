@@ -83,7 +83,7 @@ This is a quick summary of the sections below:
 
 ## Unreleased (0.30.0)
 
-## The MSRV is now 1.81.0 ([#1786])
+### The MSRV is now 1.81.0 ([#1786])
 
 [#1786]: https://github.com/ratatui/ratatui/pull/1786
 
