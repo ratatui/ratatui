@@ -24,6 +24,12 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = []
 
+## enables std
+std = []
+
+## enables layout cache
+layout-cache = ["std"]
+
 ## enables conversions to / from colors, modifiers, and styles in the ['anstyle'] crate
 anstyle = ["dep:anstyle"]
 

@@ -54,6 +54,15 @@ impl Run for TestBackend {
             Backend::Termion => "termion",
             Backend::Termwiz => "termwiz",
         };
+        // This is a temporary hack to run tests both with and without layout cache.
+        // https://github.com/ratatui/ratatui/issues/1820
+        run_cargo(vec![
+            "test",
+            "--all-targets",
+            "--no-default-features",
+            "--features",
+            format!("{backend},layout-cache").as_str(),
+        ])?;
         run_cargo(vec![
             "test",
             "--all-targets",
