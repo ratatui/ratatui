@@ -283,7 +283,7 @@ impl Layout {
     ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
     #[cfg(feature = "layout-cache")]
-    pub fn init_cache(#[allow(unused_variables)] cache_size: NonZeroUsize) {
+    pub fn init_cache(cache_size: NonZeroUsize) {
         LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
     }
 
