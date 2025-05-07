@@ -21,6 +21,7 @@ This is a quick summary of the sections below:
   - `Terminal<B>` now uses `B::Error` for error handling instead of `std::io::Error`
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
+  - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -85,6 +86,13 @@ This is a quick summary of the sections below:
 
 ## Unreleased (0.30.0)
 
+### `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled ([#1795])
+
+[#1795]: https://github.com/ratatui/ratatui/pull/1795
+
+Previously, `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` were available independently of
+enabled feature flags.
+
 ### Disabling `default-features` will now disable layout cache, which can have a negative impact on performance ([#1795])
 
 [#1795]: https://github.com/ratatui/ratatui/pull/1795
@@ -95,7 +103,7 @@ re-enable layout cache. Not doing so may impact performance.
 
 ```diff
 - ratatui = { version = "0.29.0", default-features = false }
-+ ratatui = { version = "0.30.0", default-features = false, features = ["ratatui-core/layout-cache"] }
++ ratatui = { version = "0.30.0", default-features = false, features = ["layout-cache"] }
 ```
 
 ### `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error` ([#1823])

@@ -45,16 +45,6 @@ std::thread_local! {
     ));
 }
 
-// This function should be copied with appropriate feature
-// for any future layout cache implementations.
-#[cfg(feature = "layout-cache")]
-fn with_layout_cache<F, R>(f: F) -> R
-where
-    F: FnOnce(&mut Cache) -> R,
-{
-    LAYOUT_CACHE.with_borrow_mut(f)
-}
-
 /// Represents the spacing between segments in a layout.
 ///
 /// The `Spacing` enum is used to define the spacing between segments in a layout. It can represent
@@ -199,6 +189,7 @@ impl Layout {
     /// row and every column, twice over, which should be enough for most apps. For those that need
     /// more, the cache size can be set with [`Layout::init_cache()`].
     /// This const is unused if layout cache is disabled.
+    #[cfg(feature = "layout-cache")]
     pub const DEFAULT_CACHE_SIZE: usize = 500;
 
     /// Creates a new layout with default values.
@@ -290,13 +281,10 @@ impl Layout {
     /// that subsequent calls with the same parameters are faster. The cache is a `LruCache`, and
     /// grows until `cache_size` is reached.
     ///
-    /// If no cache feature flag is enabled, method takes no effect.
-    /// Currently, the only available cache is `layout-cache`, which requires `std`.
-    ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
+    #[cfg(feature = "layout-cache")]
     pub fn init_cache(#[allow(unused_variables)] cache_size: NonZeroUsize) {
-        #[cfg(feature = "layout-cache")]
-        with_layout_cache(|cache| cache.resize(cache_size));
+        LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
     }
 
     /// Set the direction of the layout.
@@ -672,7 +660,7 @@ impl Layout {
 
         #[cfg(feature = "layout-cache")]
         {
-            with_layout_cache(|cache| {
+            LAYOUT_CACHE.with_borrow_mut(|cache| {
                 let key = (area, self.clone());
                 cache.get_or_insert(key, split).clone()
             })
@@ -1224,13 +1212,12 @@ mod tests {
     #[test]
     #[cfg(feature = "layout-cache")]
     fn cache_size() {
-        with_layout_cache(|cache| {
+        LAYOUT_CACHE.with_borrow(|cache| {
             assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
         });
 
         Layout::init_cache(NonZeroUsize::new(10).unwrap());
-
-        with_layout_cache(|cache| {
+        LAYOUT_CACHE.with_borrow(|cache| {
             assert_eq!(cache.cap().get(), 10);
         });
     }
