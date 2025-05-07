@@ -95,7 +95,7 @@ Not doing so may impact performance.
 
 ```diff
 - ratatui = { version = "0.29.0", default-features = false }
-+ ratatui = { version = "0.30.0", default-features = false, features = ["ratatui-core/thread-local-cache"] }
++ ratatui = { version = "0.30.0", default-features = false, features = ["ratatui-core/layout-cache"] }
 ```
 
 ## The MSRV is now 1.81.0 ([#1786])

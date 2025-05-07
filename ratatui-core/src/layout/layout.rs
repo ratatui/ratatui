@@ -38,7 +38,7 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
-#[cfg(feature = "thread-local-cache")]
+#[cfg(feature = "layout-cache")]
 std::thread_local! {
     static LAYOUT_CACHE: core::cell::RefCell<Cache> = core::cell::RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
@@ -47,7 +47,7 @@ std::thread_local! {
 
 // This function should be copied with appropriate feature
 // for any future layout cache implementations.
-#[cfg(feature = "thread-local-cache")]
+#[cfg(feature = "layout-cache")]
 fn with_layout_cache<F, R>(f: F) -> R
 where
     F: FnOnce(&mut Cache) -> R,
@@ -291,11 +291,11 @@ impl Layout {
     /// grows until `cache_size` is reached.
     ///
     /// If no cache feature flag is enabled, method takes no effect.
-    /// Currently, the only available cache is `thread-local-cache`, which requires `std`.
+    /// Currently, the only available cache is `layout-cache`, which requires `std`.
     ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
     pub fn init_cache(#[allow(unused_variables)] cache_size: NonZeroUsize) {
-        #[cfg(feature = "thread-local-cache")]
+        #[cfg(feature = "layout-cache")]
         with_layout_cache(|cache| cache.resize(cache_size));
     }
 
@@ -670,7 +670,7 @@ impl Layout {
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
         let split = || self.try_split(area).expect("failed to split");
 
-        #[cfg(feature = "thread-local-cache")]
+        #[cfg(feature = "layout-cache")]
         {
             with_layout_cache(|cache| {
                 let key = (area, self.clone());
@@ -678,7 +678,7 @@ impl Layout {
             })
         }
 
-        #[cfg(not(feature = "thread-local-cache"))]
+        #[cfg(not(feature = "layout-cache"))]
         split()
     }
 
@@ -1222,7 +1222,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "thread-local-cache")]
+    #[cfg(feature = "layout-cache")]
     fn cache_size() {
         with_layout_cache(|cache| {
             assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
