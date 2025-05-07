@@ -296,7 +296,7 @@ impl Layout {
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
     pub fn init_cache(#[allow(unused_variables)] cache_size: NonZeroUsize) {
         #[cfg(feature = "thread-local-cache")]
-        with_layout_cache(|c| c.resize(cache_size));
+        with_layout_cache(|cache| cache.resize(cache_size));
     }
 
     /// Set the direction of the layout.
@@ -672,9 +672,9 @@ impl Layout {
 
         #[cfg(feature = "thread-local-cache")]
         {
-            with_layout_cache(|c| {
+            with_layout_cache(|cache| {
                 let key = (area, self.clone());
-                c.get_or_insert(key, split).clone()
+                cache.get_or_insert(key, split).clone()
             })
         }
 
@@ -1224,14 +1224,14 @@ mod tests {
     #[test]
     #[cfg(feature = "thread-local-cache")]
     fn cache_size() {
-        with_layout_cache(|c| {
-            assert_eq!(c.cap().get(), Layout::DEFAULT_CACHE_SIZE);
+        with_layout_cache(|cache| {
+            assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
         });
 
         Layout::init_cache(NonZeroUsize::new(10).unwrap());
 
-        with_layout_cache(|c| {
-            assert_eq!(c.cap().get(), 10);
+        with_layout_cache(|cache| {
+            assert_eq!(cache.cap().get(), 10);
         });
     }
 
