@@ -98,7 +98,7 @@ Not doing so may impact performance.
 + ratatui = { version = "0.30.0", default-features = false, features = ["ratatui-core/layout-cache"] }
 ```
 
-## The MSRV is now 1.81.0 ([#1786])
+### The MSRV is now 1.81.0 ([#1786])
 
 [#1786]: https://github.com/ratatui/ratatui/pull/1786
 
