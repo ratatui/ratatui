@@ -84,7 +84,7 @@ This is a quick summary of the sections below:
 
 ## Unreleased (0.30.0)
 
-## Disabling `default-features` will now disable layout cache, which can have a negative impact on performance ([#1795])
+### Disabling `default-features` will now disable layout cache, which can have a negative impact on performance ([#1795])
 
 [#1795]: https://github.com/ratatui/ratatui/pull/1795
 
