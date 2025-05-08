@@ -58,7 +58,7 @@ pub trait Shape {
 pub struct Label<'a> {
     x: f64,
     y: f64,
-    line: TextLine<'a>,
+    line: TextLine<'a, 'a>,
 }
 
 /// A single layer of the canvas.
@@ -547,7 +547,7 @@ impl<'a> Context<'a> {
     /// [`Text`]: ratatui_core::text::Text
     pub fn print<T>(&mut self, x: f64, y: f64, line: T)
     where
-        T: Into<TextLine<'a>>,
+        T: Into<TextLine<'a, 'a>>,
     {
         self.labels.push(Label {
             x,

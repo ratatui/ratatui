@@ -20,7 +20,7 @@ use crate::barchart::Bar;
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct BarGroup<'a> {
     /// label of the group. It will be printed centered under this group of bars
-    pub(super) label: Option<Line<'a>>,
+    pub(super) label: Option<Line<'a, 'a>>,
     /// list of bars to be shown
     pub(super) bars: Vec<Bar<'a>>,
 }
@@ -69,7 +69,7 @@ impl<'a> BarGroup<'a> {
     /// ```
     /// [`String`]: alloc::string::String
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label<T: Into<Line<'a>>>(mut self, label: T) -> Self {
+    pub fn label<T: Into<Line<'a, 'a>>>(mut self, label: T) -> Self {
         self.label = Some(label.into());
         self
     }

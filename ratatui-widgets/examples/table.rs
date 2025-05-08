@@ -80,7 +80,8 @@ pub fn render_table(frame: &mut Frame, area: Rect, table_state: &mut TableState)
         Constraint::Percentage(50),
     ];
 
-    let table = Table::new(rows, widths)
+    let table = Table::from(&rows)
+        .widths(widths)
         .header(
             Row::new(["Ingredient", "Quantity", "Macros"])
                 .style(Style::new().bold())

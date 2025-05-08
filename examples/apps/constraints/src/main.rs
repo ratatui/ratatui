@@ -258,7 +258,7 @@ impl SelectedTab {
         }
     }
 
-    fn to_tab_title(value: Self) -> Line<'static> {
+    fn to_tab_title(value: Self) -> Line<'static, 'static> {
         let text = format!("  {value}  ");
         let color = match value {
             Self::Length => LENGTH_COLOR,

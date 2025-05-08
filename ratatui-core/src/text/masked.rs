@@ -74,14 +74,14 @@ impl<'a> From<Masked<'a>> for Cow<'a, str> {
     }
 }
 
-impl<'a> From<&'a Masked<'_>> for Text<'a> {
-    fn from(masked: &'a Masked) -> Self {
+impl<'data> From<&'data Masked<'data>> for Text<'_, 'data> {
+    fn from(masked: &'data Masked) -> Self {
         Text::raw(masked.value())
     }
 }
 
-impl<'a> From<Masked<'a>> for Text<'a> {
-    fn from(masked: Masked<'a>) -> Self {
+impl<'data> From<Masked<'data>> for Text<'_, 'data> {
+    fn from(masked: Masked<'data>) -> Self {
         Text::raw(masked.value())
     }
 }
@@ -131,10 +131,12 @@ mod tests {
         let masked = Masked::new("12345", 'x');
 
         let text: Text = (&masked).into();
-        assert_eq!(text.lines, [Line::from("xxxxx")]);
+        assert!(matches!(text.lines, Cow::Owned(_)));
+        assert_eq!(*text.lines, [Line::from("xxxxx")]);
 
         let text: Text = masked.into();
-        assert_eq!(text.lines, [Line::from("xxxxx")]);
+        assert!(matches!(text.lines, Cow::Owned(_)));
+        assert_eq!(*text.lines, [Line::from("xxxxx")]);
     }
 
     #[test]

@@ -23,7 +23,7 @@ impl Ingredient {
     }
 }
 
-impl From<Ingredient> for Row<'_> {
+impl From<Ingredient> for Row<'_, '_> {
     fn from(i: Ingredient) -> Self {
         Row::new(vec![i.quantity, i.name]).height(i.height())
     }

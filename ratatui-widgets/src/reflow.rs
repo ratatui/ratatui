@@ -368,7 +368,7 @@ mod tests {
 
     fn run_composer<'a>(
         which: Composer,
-        text: impl Into<Text<'a>>,
+        text: impl Into<Text<'a, 'a>>,
         text_area_width: u16,
     ) -> (Vec<String>, Vec<u16>, Vec<Alignment>) {
         let text = text.into();
