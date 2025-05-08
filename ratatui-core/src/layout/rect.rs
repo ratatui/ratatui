@@ -417,6 +417,80 @@ impl Rect {
             .centered_vertically(vertical_constraint)
     }
 
+    /// Returns a new Rect, flexed to the top based on the provided constraint.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    ///
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().flexed_top(Constraint::Ratio(1, 2));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn flexed_top(self, constraint: Constraint) -> Self {
+        let [area] = Layout::vertical([constraint]).flex(Flex::Start).areas(self);
+        area
+    }
+
+    /// Returns a new Rect, flexed to the bottom based on the provided constraint.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    ///
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().flexed_bottom(Constraint::Ratio(1, 2));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn flexed_bottom(self, constraint: Constraint) -> Self {
+        let [area] = Layout::vertical([constraint]).flex(Flex::End).areas(self);
+        area
+    }
+
+    /// Returns a new Rect, flexed to the left based on the provided constraint.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    ///
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().flexed_left(Constraint::Ratio(1, 2));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn flexed_left(self, constraint: Constraint) -> Self {
+        let [area] = Layout::horizontal([constraint])
+            .flex(Flex::Start)
+            .areas(self);
+        area
+    }
+
+    /// Returns a new Rect, flexed to the right based on the provided constraint.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    ///
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().flexed_right(Constraint::Ratio(1, 2));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn flexed_right(self, constraint: Constraint) -> Self {
+        let [area] = Layout::horizontal([constraint]).flex(Flex::End).areas(self);
+        area
+    }
+
     /// indents the x value of the `Rect` by a given `offset`
     ///
     /// This is pub(crate) for now as we need to stabilize the naming / design of this API.
@@ -755,5 +829,15 @@ mod tests {
             rect.centered(Constraint::Length(3), Constraint::Length(1)),
             Rect::new(1, 2, 3, 1)
         );
+    }
+
+    #[test]
+    fn flex() {
+        let rect = Rect::new(4, 4, 4, 4);
+        let constraint = Constraint::Length(2);
+        assert_eq!(rect.flexed_top(constraint), Rect::new(4, 4, 4, 2));
+        assert_eq!(rect.flexed_bottom(constraint), Rect::new(4, 6, 4, 2));
+        assert_eq!(rect.flexed_left(constraint), Rect::new(4, 4, 2, 4));
+        assert_eq!(rect.flexed_right(constraint), Rect::new(6, 4, 2, 4));
     }
 }
