@@ -76,7 +76,7 @@ all-widgets = ["widget-calendar"]
 
 #! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
 #! dependencies. The available features are:
-## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
+## enables the [`calendar`](widgets::calendar) widget module.
 widget-calendar = ["ratatui-widgets/calendar"]
 
 #! The following optional features are only available for some backends:
