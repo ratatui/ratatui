@@ -60,7 +60,7 @@ hashbrown.workspace = true
 indoc.workspace = true
 instability.workspace = true
 itertools.workspace = true
-line-clipping = { path = "../../line-clipping" }
+line-clipping = { git = "https://github.com/joshka/line-clipping.git" }
 ratatui-core = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
