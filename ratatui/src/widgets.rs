@@ -38,18 +38,14 @@ pub use ratatui_widgets::block::{Block, Padding};
 pub use ratatui_widgets::borders::{BorderType, Borders};
 #[cfg(feature = "widget-calendar")]
 pub use ratatui_widgets::calendar;
-#[cfg(feature = "widget-canvas")]
 pub use ratatui_widgets::canvas;
-#[cfg(feature = "widget-chart")]
 pub use ratatui_widgets::chart::{Axis, Chart, Dataset, GraphType, LegendPosition};
 pub use ratatui_widgets::clear::Clear;
-#[cfg(feature = "widget-gauge")]
 pub use ratatui_widgets::gauge::{Gauge, LineGauge};
 pub use ratatui_widgets::list::{List, ListDirection, ListItem, ListState};
 pub use ratatui_widgets::logo::{RatatuiLogo, Size as RatatuiLogoSize};
 pub use ratatui_widgets::mascot::{MascotEyeColor, RatatuiMascot};
 pub use ratatui_widgets::paragraph::{Paragraph, Wrap};
-#[cfg(feature = "widget-scrollbar")]
 pub use ratatui_widgets::scrollbar::{
     ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState,
 };

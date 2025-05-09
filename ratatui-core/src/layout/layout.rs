@@ -4,6 +4,9 @@ use core::iter;
 #[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
 
+#[cfg(feature = "std-polyfills")]
+#[allow(unused_imports)]
+use float_polyfills::F64Polyfill;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};
@@ -996,15 +999,8 @@ fn changes_to_rects(
             let start = changes.get(&element.start).unwrap_or(&0.0);
             let end = changes.get(&element.end).unwrap_or(&0.0);
 
-            #[cfg(feature = "std")]
             let start = (start.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
-            #[cfg(feature = "std")]
             let end = (end.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
-
-            #[cfg(not(feature = "std"))]
-            let start = libm::round(libm::round(*start) / FLOAT_PRECISION_MULTIPLIER) as u16;
-            #[cfg(not(feature = "std"))]
-            let end = libm::round(libm::round(*end) / FLOAT_PRECISION_MULTIPLIER) as u16;
 
             let size = end.saturating_sub(start);
             match direction {
