@@ -25,7 +25,14 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = []
 
 ## enables std
-std = []
+std = [
+  "itertools/use_std",
+  "thiserror/std",
+  "kasuari/std",
+  "compact_str/std",
+  "unicode-truncate/std",
+  "strum/std",
+]
 
 ## enables layout cache
 layout-cache = ["std"]
@@ -51,19 +58,20 @@ serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 [dependencies]
 anstyle = { version = "1", optional = true }
 bitflags = "2.3"
-compact_str = "0.9.0"
+compact_str = { version = "0.9.0", default-features = false }
 document-features = { workspace = true, optional = true }
 hashbrown = "0.15.2"
 indoc.workspace = true
 itertools.workspace = true
-kasuari = "0.4.0"
+kasuari = { path = "../../kasuari", default-features = false }
+libm.workspace = true
 lru = "0.12.0"
 palette = { version = "0.7.6", optional = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
-thiserror = "2"
+thiserror = { version = "2", default-features = false }
 unicode-segmentation.workspace = true
-unicode-truncate = "2"
+unicode-truncate = { version = "2", default-features = false }
 unicode-width.workspace = true
 
 [dev-dependencies]

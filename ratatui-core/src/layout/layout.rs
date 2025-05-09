@@ -1,13 +1,13 @@
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use core::iter;
+#[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
 
 use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};
 use kasuari::{AddConstraintError, Expression, Solver, Strength, Variable};
-use lru::LruCache;
 
 use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
@@ -29,7 +29,8 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
-type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
+#[cfg(feature = "layout-cache")]
+type Cache = lru::LruCache<(Rect, Layout), (Segments, Spacers)>;
 
 // Multiplier that decides floating point precision when rounding.
 // The number of zeros in this number is the precision for the rounding of f64 to u16 in layout
@@ -994,8 +995,17 @@ fn changes_to_rects(
         .map(|element| {
             let start = changes.get(&element.start).unwrap_or(&0.0);
             let end = changes.get(&element.end).unwrap_or(&0.0);
+
+            #[cfg(feature = "std")]
             let start = (start.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
+            #[cfg(feature = "std")]
             let end = (end.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
+
+            #[cfg(not(feature = "std"))]
+            let start = libm::round(libm::round(*start) / FLOAT_PRECISION_MULTIPLIER) as u16;
+            #[cfg(not(feature = "std"))]
+            let end = libm::round(libm::round(*end) / FLOAT_PRECISION_MULTIPLIER) as u16;
+
             let size = end.saturating_sub(start);
             match direction {
                 Direction::Horizontal => Rect {

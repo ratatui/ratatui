@@ -72,12 +72,24 @@ scrolling-regions = [
 macros = ["dep:ratatui-macros"]
 
 ## enables all widgets.
-all-widgets = ["widget-calendar"]
+all-widgets = ["ratatui-widgets/all-widgets"]
 
 #! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
 #! dependencies. The available features are:
 ## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
-widget-calendar = ["ratatui-widgets/calendar", "dep:time"]
+widget-calendar = ["std", "ratatui-widgets/calendar"]
+
+## enables the [`canvas`](canvas) widget module
+widget-canvas = ["std", "ratatui-widgets/canvas"]
+
+## enables the [`gauge`](gauge) widget module
+widget-gauge = ["std", "ratatui-widgets/gauge"]
+
+## enables the [`scrollbar`](scrollbar) widget module
+widget-scrollbar = ["std", "ratatui-widgets/scrollbar"]
+
+## enables the [`chart`](chart) widget module
+widget-chart = ["std", "ratatui-widgets/chart"]
 
 #! The following optional features are only available for some backends:
 
@@ -124,7 +136,6 @@ ratatui-macros = { workspace = true, optional = true }
 ratatui-termwiz = { workspace = true, optional = true }
 ratatui-widgets = { workspace = true }
 serde = { workspace = true, optional = true }
-time = { version = "0.3.39", optional = true, features = ["local-offset"] }
 
 [target.'cfg(not(windows))'.dependencies]
 ratatui-termion = { workspace = true, optional = true }
@@ -142,6 +153,7 @@ rand = "0.9.1"
 rand_chacha = "0.9.0"
 rstest = "0.25.0"
 serde_json.workspace = true
+time = { version = "0.3.39", features = ["local-offset"] }
 tokio = { version = "1.44.2", features = ["rt", "macros", "time", "rt-multi-thread"] }
 tracing = "0.1.40"
 tracing-appender = "0.2.3"

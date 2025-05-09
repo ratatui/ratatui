@@ -22,7 +22,10 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["all-widgets"]
+default = []
+
+## enables std
+std = []
 
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
@@ -32,10 +35,22 @@ serde = ["dep:serde", "ratatui-core/serde"]
 #! dependencies. The available features are:
 
 ## enables all widgets.
-all-widgets = ["calendar"]
+all-widgets = ["calendar", "canvas", "gauge", "scrollbar", "chart"]
 
 ## enables the [`calendar`](calendar) widget module and adds a dependency on [`time`].
-calendar = ["dep:time"]
+calendar = ["std", "dep:time"]
+
+## enables the [`canvas`](canvas) widget module
+canvas = ["std"]
+
+## enables the [`gauge`](gauge) widget module
+gauge = ["std"]
+
+## enables the [`scrollbar`](scrollbar) widget module
+scrollbar = ["std"]
+
+## enables the [`chart`](chart) widget module
+chart = ["canvas"]
 
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info"]
@@ -48,13 +63,12 @@ unstable-rendered-line-info = []
 
 [dependencies]
 bitflags.workspace = true
-crossterm.workspace = true
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
 indoc.workspace = true
 instability.workspace = true
 itertools.workspace = true
-line-clipping = "0.2.1"
+line-clipping = { path = "../../line-clipping" }
 ratatui-core = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
@@ -64,6 +78,7 @@ unicode-width.workspace = true
 
 [dev-dependencies]
 color-eyre.workspace = true
+crossterm.workspace = true
 pretty_assertions.workspace = true
 ratatui = { path = "../ratatui" }
 rstest.workspace = true
