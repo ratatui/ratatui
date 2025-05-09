@@ -48,7 +48,6 @@ unstable-rendered-line-info = []
 
 [dependencies]
 bitflags.workspace = true
-crossterm.workspace = true
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
 indoc.workspace = true
@@ -64,6 +63,7 @@ unicode-width.workspace = true
 
 [dev-dependencies]
 color-eyre.workspace = true
+crossterm.workspace = true
 pretty_assertions.workspace = true
 ratatui = { path = "../ratatui" }
 rstest.workspace = true
