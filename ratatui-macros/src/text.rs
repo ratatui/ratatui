@@ -38,13 +38,13 @@
 #[macro_export]
 macro_rules! text {
     () => {
-        ratatui_core::text::Text::default()
+        $crate::ratatui_core::text::Text::default()
     };
     ($line:expr; $n:expr) => {
-        ratatui_core::text::Text::from(vec![$line.into(); $n])
+        $crate::ratatui_core::text::Text::from(vec![$line.into(); $n])
     };
     ($($line:expr),+ $(,)?) => {{
-        ratatui_core::text::Text::from(vec![
+        $crate::ratatui_core::text::Text::from(vec![
         $(
             $line.into(),
         )+
