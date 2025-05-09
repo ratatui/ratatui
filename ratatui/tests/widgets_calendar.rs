@@ -1,4 +1,4 @@
-#![cfg(feature = "widget-calendar")]
+#![cfg(test)]
 use ratatui::backend::TestBackend;
 use ratatui::buffer::Buffer;
 use ratatui::style::Style;
