@@ -40,6 +40,9 @@ termwiz = ["std", "dep:ratatui-termwiz"]
 ## enables std
 std = ["ratatui-core/std"]
 
+## enables std polyfills for no_std environments
+std-polyfills = ["ratatui-core/std-polyfills", "ratatui-widgets/std-polyfills"]
+
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
@@ -72,24 +75,12 @@ scrolling-regions = [
 macros = ["dep:ratatui-macros"]
 
 ## enables all widgets.
-all-widgets = ["ratatui-widgets/all-widgets"]
+all-widgets = ["widget-calendar"]
 
 #! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
 #! dependencies. The available features are:
 ## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
 widget-calendar = ["std", "ratatui-widgets/calendar"]
-
-## enables the [`canvas`](canvas) widget module
-widget-canvas = ["std", "ratatui-widgets/canvas"]
-
-## enables the [`gauge`](gauge) widget module
-widget-gauge = ["std", "ratatui-widgets/gauge"]
-
-## enables the [`scrollbar`](scrollbar) widget module
-widget-scrollbar = ["std", "ratatui-widgets/scrollbar"]
-
-## enables the [`chart`](chart) widget module
-widget-chart = ["std", "ratatui-widgets/chart"]
 
 #! The following optional features are only available for some backends:
 

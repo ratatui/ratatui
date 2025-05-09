@@ -34,6 +34,9 @@ std = [
   "strum/std",
 ]
 
+## enables std polyfills for no_std environments
+std-polyfills = ["dep:float-polyfills"]
+
 ## enables layout cache
 layout-cache = ["std"]
 
@@ -60,6 +63,7 @@ anstyle = { version = "1", optional = true }
 bitflags = "2.3"
 compact_str = { version = "0.9.0", default-features = false }
 document-features = { workspace = true, optional = true }
+float-polyfills = { workspace = true, optional = true }
 hashbrown = "0.15.2"
 indoc.workspace = true
 itertools.workspace = true
