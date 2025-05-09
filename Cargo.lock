@@ -1734,6 +1734,7 @@ dependencies = [
 [[package]]
 name = "line-clipping"
 version = "0.2.1"
+source = "git+https://github.com/joshka/line-clipping.git#9b936c2020c481093f921c3957e8e8a21d3c1de7"
 dependencies = [
  "bitflags 2.9.0",
 ]
