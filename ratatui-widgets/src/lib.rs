@@ -86,18 +86,24 @@
 #![warn(clippy::alloc_instead_of_core)]
 
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod barchart;
 pub mod block;
 pub mod borders;
+#[cfg(feature = "canvas")]
 pub mod canvas;
+#[cfg(feature = "chart")]
 pub mod chart;
 pub mod clear;
+#[cfg(feature = "gauge")]
 pub mod gauge;
 pub mod list;
 pub mod logo;
 pub mod mascot;
 pub mod paragraph;
+#[cfg(feature = "scrollbar")]
 pub mod scrollbar;
 pub mod sparkline;
 pub mod table;
