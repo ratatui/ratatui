@@ -68,7 +68,6 @@ hashbrown = "0.15.2"
 indoc.workspace = true
 itertools.workspace = true
 kasuari = { path = "../../kasuari", default-features = false }
-libm.workspace = true
 lru = "0.12.0"
 palette = { version = "0.7.6", optional = true }
 serde = { workspace = true, optional = true }

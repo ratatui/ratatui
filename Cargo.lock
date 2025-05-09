@@ -2591,7 +2591,6 @@ dependencies = [
  "indoc",
  "itertools 0.13.0",
  "kasuari",
- "libm",
  "lru",
  "palette",
  "pretty_assertions",
