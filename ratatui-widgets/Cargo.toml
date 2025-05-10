@@ -49,6 +49,7 @@ unstable-rendered-line-info = []
 [dependencies]
 bitflags.workspace = true
 document-features = { workspace = true, optional = true }
+float-polyfills.workspace = true
 hashbrown.workspace = true
 indoc.workspace = true
 instability.workspace = true
