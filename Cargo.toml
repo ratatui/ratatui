@@ -36,13 +36,13 @@ indoc = "2.0.6"
 instability = "0.3.7"
 itertools = "0.13.0"
 pretty_assertions = "1.4.1"
-ratatui = { path = "ratatui", version = "0.30.0-alpha.2" }
-ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.3" }
-ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.2" }
-ratatui-macros = { path = "ratatui-macros", version = "0.7.0-alpha.1" }
-ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.2" }
-ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-alpha.2" }
-ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-alpha.2" }
+ratatui = { path = "ratatui", version = "0.30.0-alpha.3" }
+ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.4" }
+ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.3" }
+ratatui-macros = { path = "ratatui-macros", version = "0.7.0-alpha.2" }
+ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.3" }
+ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-alpha.3" }
+ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-alpha.3" }
 rstest = "0.25.0"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
