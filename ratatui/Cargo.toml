@@ -38,10 +38,14 @@ termion = ["std", "dep:ratatui-termion"]
 termwiz = ["std", "dep:ratatui-termwiz"]
 
 ## enables std
-std = ["ratatui-core/std", "ratatui-widgets/std"]
+std = ["ratatui-core/std", "ratatui-widgets/std", "ratatui-macros?/std"]
 
 ## enables std polyfills for no_std environments
-std-polyfills = ["ratatui-core/std-polyfills", "ratatui-widgets/std-polyfills"]
+std-polyfills = [
+  "ratatui-core/std-polyfills",
+  "ratatui-widgets/std-polyfills",
+  "ratatui-macros?/std-polyfills",
+]
 
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
