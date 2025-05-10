@@ -34,7 +34,7 @@ document-features = "0.2.11"
 hashbrown = "0.15.2"
 indoc = "2.0.6"
 instability = "0.3.7"
-itertools = "0.13.0"
+itertools = { version = "0.13.0", default-features = false, features = ["use_alloc"] }
 pretty_assertions = "1.4.1"
 ratatui = { path = "ratatui", version = "0.30.0-alpha.2" }
 ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.3" }
@@ -46,7 +46,7 @@ ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-alpha.2" }
 rstest = "0.25.0"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
-strum = { version = "0.26.3", features = ["derive"] }
+strum = { version = "0.26.3", default-features = false, features = ["derive"] }
 termion = "4.0.5"
 termwiz = { version = "0.23.3" }
 unicode-segmentation = "1.12.0"
