@@ -347,7 +347,7 @@ impl<'a> Tabs<'a> {
     where
         T: Into<Line<'a>>,
     {
-        self.padding_left = padding.into();
+        self.padding_right = padding.into();
         self
     }
 }
