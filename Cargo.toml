@@ -28,7 +28,7 @@ rust-version = "1.81.0"
 
 [workspace.dependencies]
 bitflags = "2.9.0"
-color-eyre = "0.6.3"
+color-eyre = "0.6.4"
 crossterm = "0.29.0"
 document-features = "0.2.11"
 hashbrown = "0.15.2"
