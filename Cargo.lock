@@ -22,7 +22,7 @@ name = "advanced-widget-impl"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -170,7 +170,7 @@ name = "async-github"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "octocrab",
  "ratatui",
  "tokio",
@@ -301,7 +301,7 @@ name = "calendar-explorer"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
  "time",
 ]
@@ -320,7 +320,7 @@ name = "canvas"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "itertools 0.13.0",
  "ratatui",
 ]
@@ -389,7 +389,7 @@ name = "chart"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -512,7 +512,7 @@ name = "color-explorer"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "itertools 0.13.0",
  "ratatui",
 ]
@@ -555,7 +555,7 @@ name = "colors-rgb"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "palette",
  "ratatui",
 ]
@@ -580,7 +580,7 @@ name = "constraint-explorer"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "itertools 0.13.0",
  "ratatui",
  "strum",
@@ -591,7 +591,7 @@ name = "constraints"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
  "strum",
 ]
@@ -702,6 +702,23 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crossterm"
+version = "0.28.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "829d955a0bb380ef178a640b91779e3987da38c9aea133b20614cfed8cdea9c6"
+dependencies = [
+ "bitflags 2.9.0",
+ "crossterm_winapi",
+ "mio",
+ "parking_lot",
+ "rustix 0.38.44",
+ "serde",
+ "signal-hook",
+ "signal-hook-mio",
+ "winapi",
+]
+
+[[package]]
+name = "crossterm"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8b9f2e4c67f833b660cdb0a3523065869fb35570177239812ed4c905aeff87b"
@@ -713,7 +730,7 @@ dependencies = [
  "futures-core",
  "mio",
  "parking_lot",
- "rustix",
+ "rustix 1.0.5",
  "serde",
  "signal-hook",
  "signal-hook-mio",
@@ -760,7 +777,7 @@ name = "custom-widget"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -810,7 +827,7 @@ name = "demo"
 version = "0.0.0"
 dependencies = [
  "clap",
- "crossterm",
+ "crossterm 0.29.0",
  "rand 0.9.1",
  "ratatui",
  "termion",
@@ -822,7 +839,7 @@ name = "demo2"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "indoc",
  "itertools 0.13.0",
  "palette",
@@ -1025,7 +1042,7 @@ name = "flex"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
  "strum",
 ]
@@ -1157,7 +1174,7 @@ name = "gauge"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -1240,7 +1257,7 @@ name = "hello-world"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -1372,7 +1389,7 @@ name = "hyperlink"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "itertools 0.13.0",
  "ratatui",
 ]
@@ -1573,7 +1590,7 @@ name = "inline"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "rand 0.9.1",
  "ratatui",
 ]
@@ -1583,7 +1600,7 @@ name = "input-form"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
  "serde",
  "serde_json",
@@ -1755,6 +1772,12 @@ dependencies = [
 
 [[package]]
 name = "linux-raw-sys"
+version = "0.4.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
+
+[[package]]
+name = "linux-raw-sys"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cd945864f07fe9f5371a27ad7b52a172b4b499999f1d97574c9fa68373937e12"
@@ -1840,7 +1863,7 @@ dependencies = [
 name = "minimal"
 version = "0.0.0"
 dependencies = [
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -1876,7 +1899,7 @@ name = "modifiers"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "itertools 0.13.0",
  "ratatui",
 ]
@@ -1886,7 +1909,7 @@ name = "mouse-drawing"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "line_drawing",
  "rand 0.9.1",
  "ratatui",
@@ -2113,7 +2136,7 @@ name = "panic"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -2318,7 +2341,7 @@ name = "popup"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -2585,7 +2608,7 @@ dependencies = [
  "argh",
  "color-eyre",
  "criterion",
- "crossterm",
+ "crossterm 0.29.0",
  "document-features",
  "fakeit",
  "futures",
@@ -2640,7 +2663,8 @@ dependencies = [
 name = "ratatui-crossterm"
 version = "0.1.0-alpha.2"
 dependencies = [
- "crossterm",
+ "crossterm 0.28.1",
+ "crossterm 0.29.0",
  "document-features",
  "instability",
  "ratatui",
@@ -2685,7 +2709,7 @@ version = "0.3.0-alpha.2"
 dependencies = [
  "bitflags 2.9.0",
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "document-features",
  "hashbrown",
  "indoc",
@@ -2864,6 +2888,19 @@ dependencies = [
 
 [[package]]
 name = "rustix"
+version = "0.38.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdb5bc1ae2baa591800df16c9ca78619bf65c0488b41b96ccec5d11220d8c154"
+dependencies = [
+ "bitflags 2.9.0",
+ "errno",
+ "libc",
+ "linux-raw-sys 0.4.15",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "rustix"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d97817398dd4bb2e6da002002db259209759911da105da92bec29ccb12cf58bf"
@@ -2871,7 +2908,7 @@ dependencies = [
  "bitflags 2.9.0",
  "errno",
  "libc",
- "linux-raw-sys",
+ "linux-raw-sys 0.9.4",
  "windows-sys 0.59.0",
 ]
 
@@ -2960,7 +2997,7 @@ name = "scrollbar"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -3297,7 +3334,7 @@ name = "table"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "fakeit",
  "itertools 0.13.0",
  "ratatui",
@@ -3504,7 +3541,7 @@ name = "todo-list"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -3655,7 +3692,7 @@ name = "tracing"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
  "tracing 0.1.41",
  "tracing-appender",
@@ -3832,7 +3869,7 @@ name = "user-input"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 
@@ -3992,7 +4029,7 @@ name = "weather"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "rand 0.9.1",
  "ratatui",
 ]
@@ -4097,7 +4134,7 @@ name = "widget-ref-container"
 version = "0.0.0"
 dependencies = [
  "color-eyre",
- "crossterm",
+ "crossterm 0.29.0",
  "ratatui",
 ]
 

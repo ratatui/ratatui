@@ -8,6 +8,7 @@ use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};
 use kasuari::{AddConstraintError, Expression, Solver, Strength, Variable};
+#[cfg(feature = "layout-cache")]
 use lru::LruCache;
 
 use self::strengths::{
@@ -30,6 +31,7 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
+#[cfg(feature = "layout-cache")]
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 
 // Multiplier that decides floating point precision when rounding.
