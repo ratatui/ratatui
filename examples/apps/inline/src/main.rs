@@ -170,7 +170,7 @@ where
     let mut redraw = true;
     loop {
         if redraw {
-            terminal.draw(|frame| draw(frame, &downloads))?;
+            terminal.draw(|frame| render(frame, &downloads))?;
         }
         redraw = true;
 
@@ -222,7 +222,7 @@ where
     Ok(())
 }
 
-fn draw(frame: &mut Frame, downloads: &Downloads) {
+fn render(frame: &mut Frame, downloads: &Downloads) {
     let area = frame.area();
 
     let block = Block::new().title(Line::from("Progress").centered());

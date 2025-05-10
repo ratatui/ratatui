@@ -15,7 +15,7 @@ use std::{
 
 use color_eyre::Result;
 use crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, MouseEventKind,
+    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEventKind,
 };
 use crossterm::ExecutableCommand;
 use itertools::Itertools;
@@ -75,43 +75,33 @@ impl App {
         let tick_rate = Duration::from_millis(16);
         let mut last_tick = Instant::now();
         while !self.exit {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-            if event::poll(timeout)? {
-                match event::read()? {
-                    Event::Key(key) => self.handle_key_press(key),
-                    Event::Mouse(event) => self.handle_mouse_event(event),
-                    _ => (),
-                }
-            }
-
-            if last_tick.elapsed() >= tick_rate {
+            if !event::poll(timeout)? {
                 self.on_tick();
                 last_tick = Instant::now();
+                continue;
+            }
+            match event::read()? {
+                Event::Key(key) => self.handle_key_event(key),
+                Event::Mouse(event) => self.handle_mouse_event(event),
+                _ => (),
             }
         }
         Ok(())
     }
 
-    fn handle_key_press(&mut self, key: event::KeyEvent) {
-        if key.kind != KeyEventKind::Press {
+    fn handle_key_event(&mut self, key: KeyEvent) {
+        if !key.is_press() {
             return;
         }
         match key.code {
-            KeyCode::Char('q') => self.exit = true,
-            KeyCode::Down | KeyCode::Char('j') => self.y += 1.0,
-            KeyCode::Up | KeyCode::Char('k') => self.y -= 1.0,
-            KeyCode::Right | KeyCode::Char('l') => self.x += 1.0,
-            KeyCode::Left | KeyCode::Char('h') => self.x -= 1.0,
-            KeyCode::Enter => {
-                self.marker = match self.marker {
-                    Marker::Dot => Marker::Braille,
-                    Marker::Braille => Marker::Block,
-                    Marker::Block => Marker::HalfBlock,
-                    Marker::HalfBlock => Marker::Bar,
-                    Marker::Bar => Marker::Dot,
-                };
-            }
+            KeyCode::Char('q') | KeyCode::Esc => self.exit = true,
+            KeyCode::Char('j') | KeyCode::Down => self.y += 1.0,
+            KeyCode::Char('k') | KeyCode::Up => self.y -= 1.0,
+            KeyCode::Char('l') | KeyCode::Right => self.x += 1.0,
+            KeyCode::Char('h') | KeyCode::Left => self.x -= 1.0,
+            KeyCode::Enter => self.cycle_marker(),
             _ => {}
         }
     }
@@ -125,6 +115,16 @@ impl App {
             }
             _ => {}
         }
+    }
+
+    fn cycle_marker(&mut self) {
+        self.marker = match self.marker {
+            Marker::Dot => Marker::Braille,
+            Marker::Braille => Marker::Block,
+            Marker::Block => Marker::HalfBlock,
+            Marker::HalfBlock => Marker::Bar,
+            Marker::Bar => Marker::Dot,
+        };
     }
 
     fn on_tick(&mut self) {
@@ -145,7 +145,7 @@ impl App {
         self.ball.y += self.vy;
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let header = Text::from_iter([
             "Canvas Example".bold(),
             "<q> Quit | <enter> Change Marker | <hjkl> Move".into(),
