@@ -1,6 +1,7 @@
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use core::iter;
+#[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
 
 #[allow(unused_imports)]
