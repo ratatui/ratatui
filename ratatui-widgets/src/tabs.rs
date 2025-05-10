@@ -554,6 +554,24 @@ mod tests {
     }
 
     #[test]
+    fn render_left_padding() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding_left("---");
+        let mut expected = Buffer::with_lines(["---Tab1 │---Tab2 │---Tab3 │---Tab4      "]);
+        // first tab selected
+        expected.set_style(Rect::new(3, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        test_case(tabs, Rect::new(0, 0, 40, 1), &expected);
+    }
+
+    #[test]
+    fn render_right_padding() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding_right("++");
+        let mut expected = Buffer::with_lines([" Tab1++│ Tab2++│ Tab3++│ Tab4++         "]);
+        // first tab selected
+        expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        test_case(tabs, Rect::new(0, 0, 40, 1), &expected);
+    }
+
+    #[test]
     fn render_more_padding() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("---", "++");
         let mut expected = Buffer::with_lines(["---Tab1++│---Tab2++│---Tab3++│"]);
