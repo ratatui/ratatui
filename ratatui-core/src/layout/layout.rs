@@ -3,6 +3,8 @@ use alloc::vec::Vec;
 use core::iter;
 use core::num::NonZeroUsize;
 
+#[allow(unused_imports)]
+use float_polyfills::F64Polyfill;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};

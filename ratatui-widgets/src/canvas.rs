@@ -20,6 +20,8 @@ use alloc::vec::Vec;
 use core::fmt;
 use core::iter::zip;
 
+#[allow(unused_imports)]
+use float_polyfills::F64Polyfill;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
