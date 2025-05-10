@@ -126,6 +126,9 @@ changes in test cases that use `TestBackend`.
 Custom `Backend` implementations must now define an associated `Error` type for method `Result`s
 and implement the `clear_region` method, which no longer has a default implementation.
 
+This change was made to provide greater flexibility for custom backends, particularly to remove the
+explicit dependency on `std::io` for backends that want to support `no_std` targets.
+
 ### The MSRV is now 1.81.0 ([#1786])
 
 [#1786]: https://github.com/ratatui/ratatui/pull/1786
