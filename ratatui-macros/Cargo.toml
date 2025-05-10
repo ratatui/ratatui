@@ -10,6 +10,13 @@ documentation = "https://docs.rs/ratatui-macros"
 keywords = ["ratatui", "macros", "tui", "ui"]
 categories = ["command-line-interface"]
 
+[features]
+## enables std
+std = ["ratatui-core/std", "ratatui-widgets/std"]
+
+## enables std polyfills for no_std environments
+std-polyfills = ["ratatui-core/std-polyfills", "ratatui-widgets/std-polyfills"]
+
 [dependencies]
 ratatui-core.workspace = true
 ratatui-widgets.workspace = true

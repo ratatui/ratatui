@@ -4,11 +4,13 @@ use core::iter;
 #[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
 
+#[cfg(feature = "std-polyfills")]
+#[allow(unused_imports)]
+use float_polyfills::F64Polyfill;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};
 use kasuari::{AddConstraintError, Expression, Solver, Strength, Variable};
-use lru::LruCache;
 
 use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
@@ -30,7 +32,8 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
-type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
+#[cfg(feature = "layout-cache")]
+type Cache = lru::LruCache<(Rect, Layout), (Segments, Spacers)>;
 
 // Multiplier that decides floating point precision when rounding.
 // The number of zeros in this number is the precision for the rounding of f64 to u16 in layout

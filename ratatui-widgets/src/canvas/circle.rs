@@ -1,3 +1,6 @@
+#[cfg(feature = "std-polyfills")]
+#[allow(unused_imports)]
+use float_polyfills::F64Polyfill;
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape};
