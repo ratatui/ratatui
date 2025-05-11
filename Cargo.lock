@@ -2628,7 +2628,6 @@ dependencies = [
  "bitflags 2.9.0",
  "compact_str",
  "document-features",
- "float-polyfills",
  "hashbrown",
  "indoc",
  "itertools 0.13.0",
