@@ -1,4 +1,3 @@
-
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape};
