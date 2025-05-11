@@ -56,7 +56,7 @@ document-features = { workspace = true, optional = true }
 hashbrown = "0.15.2"
 indoc.workspace = true
 itertools.workspace = true
-kasuari = "0.4.0"
+kasuari = "0.4.6"
 lru = "0.12.0"
 palette = { version = "0.7.6", optional = true }
 serde = { workspace = true, optional = true }
