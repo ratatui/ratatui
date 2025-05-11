@@ -5,7 +5,7 @@
 //! Implementations based on [`micromath`](https://github.com/tarcieri/micromath) crate.
 //!
 //! Related Rust tracking issues:
-//! 
+//!
 //! - <https://github.com/rust-lang/rust/issues/50145>
 //! - <https://github.com/rust-lang/rust/issues/137578>
 use core::f64::consts::{FRAC_1_PI, PI};
