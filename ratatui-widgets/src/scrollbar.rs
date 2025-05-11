@@ -9,8 +9,6 @@
 
 use core::iter;
 
-#[allow(unused_imports)]
-use float_polyfills::F64Polyfill;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::Style;
@@ -18,6 +16,9 @@ use ratatui_core::symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL};
 use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
+
+#[allow(unused_imports)]
+use crate::polyfills::F64Polyfills;
 
 /// A widget to display a scrollbar
 ///

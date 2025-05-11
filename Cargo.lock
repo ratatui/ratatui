@@ -1031,15 +1031,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "float-polyfills"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5132d75b8814e3f36a6926f243fafed8d6a3de78a45506dddb4a9c986ac917f0"
-dependencies = [
- "libm",
-]
-
-[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2696,7 +2687,6 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "document-features",
- "float-polyfills",
  "hashbrown",
  "indoc",
  "instability",
