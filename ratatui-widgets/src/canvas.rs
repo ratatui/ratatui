@@ -20,9 +20,6 @@ use alloc::vec::Vec;
 use core::fmt;
 use core::iter::zip;
 
-#[cfg(feature = "std-polyfills")]
-#[allow(unused_imports)]
-use float_polyfills::F64Polyfill;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
@@ -37,6 +34,8 @@ pub use self::map::{Map, MapResolution};
 pub use self::points::Points;
 pub use self::rectangle::Rectangle;
 use crate::block::{Block, BlockExt};
+#[allow(unused_imports)]
+use crate::polyfills::F64Polyfills;
 
 mod circle;
 mod line;

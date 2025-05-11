@@ -12,7 +12,7 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Position, Rect, Size};
 use ratatui::style::{Color, Style};
@@ -55,11 +55,8 @@ impl App {
         if !event::poll(timeout)? {
             return Ok(());
         }
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
-                _ => {}
-            }
+        if event::read()?.is_key_press() {
+            self.should_quit = true;
         }
         Ok(())
     }

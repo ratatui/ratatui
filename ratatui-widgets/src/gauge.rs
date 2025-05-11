@@ -1,9 +1,6 @@
 //! The [`Gauge`] widget is used to display a horizontal progress bar.
 use alloc::format;
 
-#[cfg(feature = "std-polyfills")]
-#[allow(unused_imports)]
-use float_polyfills::F64Polyfill;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Color, Style, Styled};
@@ -12,6 +9,8 @@ use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
 
 use crate::block::{Block, BlockExt};
+#[allow(unused_imports)]
+use crate::polyfills::F64Polyfills;
 
 /// A widget to display a progress bar.
 ///

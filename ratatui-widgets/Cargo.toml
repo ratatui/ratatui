@@ -27,9 +27,6 @@ default = []
 ## enables std
 std = []
 
-## enables std polyfills for no_std environments
-std-polyfills = ["dep:float-polyfills"]
-
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "ratatui-core/serde"]
@@ -55,7 +52,6 @@ unstable-rendered-line-info = []
 [dependencies]
 bitflags.workspace = true
 document-features = { workspace = true, optional = true }
-float-polyfills = { workspace = true, optional = true }
 hashbrown.workspace = true
 indoc.workspace = true
 instability.workspace = true

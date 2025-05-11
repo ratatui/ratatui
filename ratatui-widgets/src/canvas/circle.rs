@@ -1,9 +1,9 @@
-#[cfg(feature = "std-polyfills")]
-#[allow(unused_imports)]
-use float_polyfills::F64Polyfill;
+
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape};
+#[allow(unused_imports)]
+use crate::polyfills::F64Polyfills;
 
 /// A circle with a given center and radius and with a given color
 #[derive(Debug, Default, Clone, PartialEq)]

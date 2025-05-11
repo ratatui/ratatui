@@ -4,9 +4,6 @@ use core::iter;
 #[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
 
-#[cfg(feature = "std-polyfills")]
-#[allow(unused_imports)]
-use float_polyfills::F64Polyfill;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};
