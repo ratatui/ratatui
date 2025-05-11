@@ -53,7 +53,7 @@ hashbrown.workspace = true
 indoc.workspace = true
 instability.workspace = true
 itertools.workspace = true
-line-clipping = "0.2.2"
+line-clipping = "0.3.0"
 ratatui-core = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
