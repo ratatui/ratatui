@@ -994,7 +994,7 @@ fn round(value: f64) -> f64 {
 #[cfg(not(feature = "std"))]
 #[inline]
 fn round(value: f64) -> f64 {
-    (value + (0.5).copysign(value)) as i64 as f64
+    (value + 0.5f64.copysign(value)) as i64 as f64
 }
 
 fn changes_to_rects(
@@ -1009,9 +1009,7 @@ fn changes_to_rects(
         .map(|element| {
             let start = changes.get(&element.start).unwrap_or(&0.0);
             let end = changes.get(&element.end).unwrap_or(&0.0);
-            #[cfg(feature = "std")]
             let start = round(round(*start) / FLOAT_PRECISION_MULTIPLIER) as u16;
-            #[cfg(feature = "std")]
             let end = round(round(*end) / FLOAT_PRECISION_MULTIPLIER) as u16;
             let size = end.saturating_sub(start);
             match direction {
