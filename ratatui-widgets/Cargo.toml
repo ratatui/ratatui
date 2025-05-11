@@ -22,7 +22,10 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["all-widgets"]
+default = []
+
+## enables std
+std = []
 
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
@@ -35,7 +38,7 @@ serde = ["dep:serde", "ratatui-core/serde"]
 all-widgets = ["calendar"]
 
 ## enables the [`calendar`](calendar) widget module and adds a dependency on [`time`].
-calendar = ["dep:time"]
+calendar = ["std", "dep:time"]
 
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info"]
@@ -53,7 +56,7 @@ hashbrown.workspace = true
 indoc.workspace = true
 instability.workspace = true
 itertools.workspace = true
-line-clipping = "0.2.1"
+line-clipping = { git = "https://github.com/joshka/line-clipping.git" }
 ratatui-core = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
