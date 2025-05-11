@@ -2,12 +2,12 @@
 //! compatibility. These implementations may not be as accurate as their built-in counterparts.
 //! This must be taken into account when using floating point math in this crate.
 //!
-//! Implementations based on `micromath` crate:
-//! <https://github.com/tarcieri/micromath>
+//! Implementations based on [`micromath`](https://github.com/tarcieri/micromath) crate.
 //!
-//! Related rust tracking issues:
-//! <https://github.com/rust-lang/rust/issues/50145>
-//! <https://github.com/rust-lang/rust/issues/137578>
+//! Related Rust tracking issues:
+//! 
+//! - <https://github.com/rust-lang/rust/issues/50145>
+//! - <https://github.com/rust-lang/rust/issues/137578>
 use core::f64::consts::{FRAC_1_PI, PI};
 
 #[inline]
