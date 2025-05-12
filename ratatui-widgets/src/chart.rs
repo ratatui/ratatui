@@ -3,7 +3,8 @@ use alloc::vec::Vec;
 use core::cmp::max;
 use core::ops::{Not, Range};
 
-use line_clipping::{cohen_sutherland::clip_line, LineSegment, Point, Window};
+use line_clipping::cohen_sutherland::clip_line;
+use line_clipping::{LineSegment, Point, Window};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Flex, Layout, Position, Rect};
 use ratatui_core::style::{Color, Style, Styled};
