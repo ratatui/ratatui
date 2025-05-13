@@ -1,11 +1,15 @@
 use crate::symbols::line::{BorderSymbol, LineStyle};
 
+/// Defines the merge strategy of overlaping characters.
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub enum MergeStyle {
+    /// Merges symbols only if an exact composite unicode character exists.
+    /// Example: `┐` and `┗` will be merged into `╄`
     #[default]
     Exact,
-    // Merge symbols in a visual pleasing way.
-    // An example is that " " and " " will be merged to : ""
+    /// Merges symbols even if an exact composite unicode character doesn't exist,
+    /// using the closest match.
+    /// Example: `╮` and `└` will be merged into `┼`
     BestFit,
 }
 
