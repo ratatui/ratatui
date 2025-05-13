@@ -4,6 +4,1647 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+## ratatui - [0.30.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.2...ratatui-v0.30.0-alpha.3) - 2025-05-13
+
+### Features
+
+- [3e1c72f](https://github.com/ratatui/ratatui/commit/3e1c72fb27cae132bc8b5f24a4ae875921dfb00d) *(no_std)* Make ratatui compatible with `#![no_std]` by @j-g00da in [#1794](https://github.com/ratatui/ratatui/pull/1794) [**breaking**]
+  >
+  > Resolves #1781
+  >
+  > This PR makes it possible to compile ratatui with `#![no_std]`.
+  > Also makes me answer "We Are So Embedded" to "Are We Embedded Yet?"
+
+- [ab48c06](https://github.com/ratatui/ratatui/commit/ab48c06171724ae58d98687d90e999b76890c2e7) *(no_std)* Option to disable layout cache for `no_std` compatibility by @j-g00da in [#1795](https://github.com/ratatui/ratatui/pull/1795) [**breaking**]
+  >
+  > Resolves #1780
+  >
+  > BREAKING CHANGE:Disabling `default-features` will now disable layout
+  > cache, which can have a negative impact on performance.
+  >
+  > `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only
+  > available if `layout-cache` feature is enabled.
+
+- [09173d1](https://github.com/ratatui/ratatui/commit/09173d182912ab92e67b8aa7a4cb51862b05cb25) *(no_std)* Make `TestBackend::Error` `Infallible` by @j-g00da in [#1823](https://github.com/ratatui/ratatui/pull/1823) [**breaking**]
+  >
+  > BREAKING CHANGE:`TestBackend` now uses `core::convert::Infallible` for
+  > error handling instead of `std::io::Error`
+
+- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) *(uncategorized)* Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
+
+  > This PR propagates the serde feature from the main ratatui crate to the
+  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
+
+- [fcb47d6](https://github.com/ratatui/ratatui/commit/fcb47d60f3df205c18f5fa9459e9ba2c8d0c9649) *(uncategorized)* Rename Alignment to HorizontalAlignment and add VerticalAlignment by @joshka in [#1735](https://github.com/ratatui/ratatui/pull/1735) [**breaking**]
+
+  > We don't anticipate removing or deprecating the type alias in the near
+  > future, but it is recommended to update your imports to use the new
+  > name.
+  >
+  > Added a VerticalAlignment enum to make the API more consistent. We don't
+  > have a specific use case for it yet, but it's better to add it now and
+  > be able to use it in the future.
+  >
+  > BREAKING-CHANGE:The `Alignment` enum has been renamed to
+  > `HorizontalAlignment` to better reflect its purpose. A type alias has
+  > been added to maintain backwards compatibility, however there are some
+  > cases where type aliases are not enough to maintain backwards
+  > compatibility. E.g. when using glob imports to import all the enum
+  > variants. This should not affect most users, but it is recommended to
+  > update your imports to use the new name.
+  >
+  > ```diff
+  > - use ratatui::layout::Alignment;
+  > + use ratatui::layout::HorizontalAlignment;
+  >
+  > - use Alignment::*;
+  > + use HorizontalAlignment::*;
+  > ```
+
+### Bug Fixes
+
+- [00da8c6](https://github.com/ratatui/ratatui/commit/00da8c620345397c6815267e6d8e19c1eacfe1c2) *(no_std)* Provide `f64` polyfills for `no_std` compatibility by @j-g00da in [#1840](https://github.com/ratatui/ratatui/pull/1840)
+  >
+  > Related:https://github.com/rust-lang/rust/issues/137578
+
+### Styling
+
+- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
+
+  > I was swayed by the arguments about this made by the compiler team In
+  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
+  > look at how this organization affects ratatui. I found this reduces the
+  > number of lines across the codebase by about 350 and makes the imports
+  > more readable and definitely more greppable as you usually only have
+  > to read a single line. I've found in the past that maintaining imports
+  > regularly leads to merge conflicts which have to be resolved by hand
+  > and this change should reduce the likelihood of that happening.
+  >
+  > Main change is in rustfmt.toml, and the rest is just the result of
+  > running `cargo xtask format`.
+  >
+  > While implementing this, cargo machete brings up that the various
+  > backend crates are unused by the example crates.
+  >
+  > The re-export of each backend crate under ratatui is to make it possible
+  > for libs that rely on a specific version of ratatui to use the same
+  > version of the backend crate. Apps in general should use the backend
+  > crate directly rather than through ratatui as this is less confusing.
+  >
+  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
+  >   examples.
+  > - Adds the backend crate to the dependencies of the examples that use
+  >   the backend crate directly.
+
+### Miscellaneous Tasks
+
+- [1874b9d](https://github.com/ratatui/ratatui/commit/1874b9dd55284952931d58646904f0437e48ce76) *(uncategorized)* Move time to dev-dependencies by @j-g00da in [#1835](https://github.com/ratatui/ratatui/pull/1835)
+
+- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
+
+  > The Clippy check for this (missing_const_for_fn) is already enabled, but
+  > catches more cases in upcoming toolchain versions.
+  >
+  > This is part of the work to unblock #1727
+
+- [0f80c5e](https://github.com/ratatui/ratatui/commit/0f80c5e87eb4e47c818a6bd8b0002971920c65a0) *(uncategorized)* Use expect() instead of allow() for lint overrides by @cgzones in [#1786](https://github.com/ratatui/ratatui/pull/1786) [**breaking**]
+  >
+  > BREAKING CHANGE:MSRV is now 1.81
+
+### Security
+
+- [3745a67](https://github.com/ratatui/ratatui/commit/3745a67ba071d5a52e378af34f8409cd90912eb0) *(deps)* Bump rand from 0.9.0 to 0.9.1 by @dependabot[bot] in [#1804](https://github.com/ratatui/ratatui/pull/1804)
+
+  > Bumps [rand](https://github.com/rust-random/rand) from 0.9.0 to 0.9.1.
+  > <details>
+  > <summary>Changelog</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/rust-random/rand/blob/master/CHANGELOG.md">rand's
+  > changelog</a>.</em></p>
+  > <blockquote>
+  > <h2>[0.9.1] - 2025-04-17</h2>
+  > <h3>Security and unsafe</h3>
+  > <ul>
+  > <li>Revise &quot;not a crypto library&quot; policy again (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1565">#1565</a>)</li>
+  > <li>Remove <code>zerocopy</code> dependency from <code>rand</code> (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1579">#1579</a>)</li>
+  > </ul>
+  > <h3>Fixes</h3>
+  > <ul>
+  > <li>Fix feature <code>simd_support</code> for recent nightly rust (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1586">#1586</a>)</li>
+  > </ul>
+  > <h3>Changes</h3>
+  > <ul>
+  > <li>Allow <code>fn rand::seq::index::sample_weighted</code> and <code>fn
+  > IndexedRandom::choose_multiple_weighted</code> to return fewer than
+  > <code>amount</code> results (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1623">#1623</a>),
+  > reverting an undocumented change (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1382">#1382</a>)
+  > to the previous release.</li>
+  > </ul>
+  > <h3>Additions</h3>
+  > <ul>
+  > <li>Add <code>rand::distr::Alphabetic</code> distribution. (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1587">#1587</a>)</li>
+  > <li>Re-export <code>rand_core</code> (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1604">#1604</a>)</li>
+  > </ul>
+  > </blockquote>
+  > </details>
+  > <details>
+  > <summary>Commits</summary>
+  > <ul>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/ec6d5c06a5384c14563a2164bb4a038100a5bb78"><code>ec6d5c0</code></a>
+  > Prepare rand_core v0.9.1 (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1591">#1591</a>)</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/6a06056e8a892bfa181ec24a8ea16aa9f2fe97d3"><code>6a06056</code></a>
+  > rand_core: introduce an UnwrapMut wrapper (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1589">#1589</a>)</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/8929123b4d5abb7cae349c5f8213bf2fa8583821"><code>8929123</code></a>
+  > Add <code>Alphabetic</code> distribution (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1587">#1587</a>)</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/06b16426bd1431e164247c8bdf109cedb67213f7"><code>06b1642</code></a>
+  > Remove unnecessary underscore from `impl&lt;T, const N: usize&gt;
+  > Distribution&lt;[T; ...</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/49d76cd7b4a318114cff22494997c73a56ffd95c"><code>49d76cd</code></a>
+  > rename extract to extract_lane (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1586">#1586</a>)</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/e0a70fd8be09196bcaf4a86e732bce501b42ef86"><code>e0a70fd</code></a>
+  > Change to use <code>array::from_fn</code> in <code>Distribution\&lt;[T;
+  > N]&gt; for StandardUniform</code> ...</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/0bc3f652c4500406b343a517e058caedd1f095a9"><code>0bc3f65</code></a>
+  > Move rand distr (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1577">#1577</a>)</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/2677c49960e3a3fc2f1a8df90c1d7104089903f2"><code>2677c49</code></a>
+  > Revise &quot;not a crypto library&quot; policy and SECURITY.md (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1565">#1565</a>)</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/bfd1826c36c441236f218af478edd794bca7f23a"><code>bfd1826</code></a>
+  > SeedableRng docs: add note on (lack of) reproducibility (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1572">#1572</a>)</li>
+  > <li><a
+  > href="https://github.com/rust-random/rand/commit/c01aee7a138ff77657782069771bb11f120318d7"><code>c01aee7</code></a>
+  > Fix some links (<a
+  > href="https://redirect.github.com/rust-random/rand/issues/1571">#1571</a>)</li>
+  > <li>Additional commits viewable in <a
+  > href="https://github.com/rust-random/rand/compare/0.9.0...rand_core-0.9.1">compare
+  > view</a></li>
+  > </ul>
+  > </details>
+  > <br />
+  >
+  >
+  > [![Dependabot compatibility
+  > score](https://dependabot-badges.githubapp.com/badges/compatibility_score?dependency-name=rand&package-manager=cargo&previous-version=0.9.0&new-version=0.9.1)](https://docs.github.com/en/github/managing-security-vulnerabilities/about-dependabot-security-updates#about-compatibility-scores)
+  >
+  > Dependabot will resolve any conflicts with this PR as long as you don't
+  > alter it yourself. You can also trigger a rebase manually by commenting
+  > `@dependabot rebase`.
+  >
+  > [//]:# (dependabot-automerge-start)
+  >
+  > [//]:# (dependabot-automerge-end)
+  >
+  > ---
+  >
+  > <details>
+  > <summary>Dependabot commands and options</summary>
+  > <br />
+  >
+  > You can trigger Dependabot actions by commenting on this PR:
+  > - `@dependabot rebase` will rebase this PR
+  > - `@dependabot recreate` will recreate this PR, overwriting any edits
+  > that have been made to it
+  > - `@dependabot merge` will merge this PR after your CI passes on it
+  > - `@dependabot squash and merge` will squash and merge this PR after
+  > your CI passes on it
+  > - `@dependabot cancel merge` will cancel a previously requested merge
+  > and block automerging
+  > - `@dependabot reopen` will reopen this PR if it is closed
+  > - `@dependabot close` will close this PR and stop Dependabot recreating
+  > it. You can achieve the same result by closing it manually
+  > - `@dependabot show <dependency name> ignore conditions` will show all
+  > of the ignore conditions of the specified dependency
+  > - `@dependabot ignore this major version` will close this PR and stop
+  > Dependabot creating any more for this major version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this minor version` will close this PR and stop
+  > Dependabot creating any more for this minor version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this dependency` will close this PR and stop
+  > Dependabot creating any more for this dependency (unless you reopen the
+  > PR or upgrade to it yourself)
+  >
+  >
+  > </details>
+
+- [a03ba0d](https://github.com/ratatui/ratatui/commit/a03ba0de5c02a51726285b359a512e6de8b84622) *(deps)* Bump crossterm from 0.28.1 to 0.29.0 by @dependabot[bot] in [#1771](https://github.com/ratatui/ratatui/pull/1771)
+
+  > Bumps [crossterm](https://github.com/crossterm-rs/crossterm) from 0.28.1
+  > to 0.29.0.
+  > <details>
+  > <summary>Release notes</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/crossterm-rs/crossterm/releases">crossterm's
+  > releases</a>.</em></p>
+  > <blockquote>
+  > <h2>0.29</h2>
+  > <h1>Version 0.29</h1>
+  > <h2>Added ⭐</h2>
+  > <ul>
+  > <li>Copy to clipboard using OSC52 (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/974">#974</a>)</li>
+  > <li>Derive standard traits for &quot;SetCursorStyle&quot; (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/909">#909</a>)</li>
+  > <li>Add query_keyboard_enhancement_flags to read enabled flags (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/958">#958</a>)</li>
+  > <li>Add is_* and as_* methods to the event enums (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/949">#949</a>)</li>
+  > <li>Add a feature flag for derive_more impls (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/970">#970</a>)</li>
+  > <li>Update rustix to 1.0 (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/982">#982</a>)</li>
+  > <li>Upgrade various dependencies</li>
+  > </ul>
+  > <h2>Breaking ⚠️</h2>
+  > <ul>
+  > <li>Correctly fix KeyModifiers Display impl Properly adding + in between
+  > modifiers (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/979">#979</a>)</li>
+  > </ul>
+  > <p><a href="https://github.com/joshka"><code>@​joshka</code></a> <a
+  > href="https://github.com/linrongbin16"><code>@​linrongbin16</code></a>
+  > <a href="https://github.com/kmicklas"><code>@​kmicklas</code></a> <a
+  > href="https://github.com/maciek50322"><code>@​maciek50322</code></a> <a
+  > href="https://github.com/rosew0od"><code>@​rosew0od</code></a> <a
+  > href="https://github.com/sxyazi"><code>@​sxyazi</code></a> <a
+  > href="https://github.com/the-mikedavis"><code>@​the-mikedavis</code></a>
+  > <a href="https://github.com/hthuz"><code>@​hthuz</code></a> <a
+  > href="https://github.com/aschey"><code>@​aschey</code></a> <a
+  > href="https://github.com/naseschwarz"><code>@​naseschwarz</code></a> <a
+  > href="https://github.com/Flokkq"><code>@​Flokkq</code></a> <a
+  > href="https://github.com/gaesa"><code>@​gaesa</code></a> <a
+  > href="https://github.com/WindSoilder"><code>@​WindSoilder</code></a></p>
+  > </blockquote>
+  > </details>
+  > <details>
+  > <summary>Changelog</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/crossterm-rs/crossterm/blob/master/CHANGELOG.md">crossterm's
+  > changelog</a>.</em></p>
+  > <blockquote>
+  > <h1>Unreleased</h1>
+  > <h1>Version 0.29</h1>
+  > <h2>Added ⭐</h2>
+  > <ul>
+  > <li>Copy to clipboard using OSC52 (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/974">#974</a>)</li>
+  > <li>Derive standard traits for &quot;SetCursorStyle&quot; (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/909">#909</a>)</li>
+  > <li>Add query_keyboard_enhancement_flags to read enabled flags (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/958">#958</a>)</li>
+  > <li>Add is_* and as_* methods to the event enums (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/949">#949</a>)</li>
+  > <li>Add a feature flag for derive_more impls (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/970">#970</a>)</li>
+  > <li>Update rustix to 1.0 (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/982">#982</a>)</li>
+  > </ul>
+  > <h2>Breaking ⚠️</h2>
+  > <ul>
+  > <li>Correctly fix KeyModifiers Display impl Properly adding + in between
+  > modifiers (<a
+  > href="https://redirect.github.com/crossterm-rs/crossterm/issues/979">#979</a>)</li>
+  > </ul>
+  > </blockquote>
+  > </details>
+  > <details>
+  > <summary>Commits</summary>
+  > <ul>
+  > <li>See full diff in <a
+  > href="https://github.com/crossterm-rs/crossterm/commits/0.29">compare
+  > view</a></li>
+  > </ul>
+  > </details>
+  > <br />
+  >
+  >
+  > [![Dependabot compatibility
+  > score](https://dependabot-badges.githubapp.com/badges/compatibility_score?dependency-name=crossterm&package-manager=cargo&previous-version=0.28.1&new-version=0.29.0)](https://docs.github.com/en/github/managing-security-vulnerabilities/about-dependabot-security-updates#about-compatibility-scores)
+  >
+  > Dependabot will resolve any conflicts with this PR as long as you don't
+  > alter it yourself. You can also trigger a rebase manually by commenting
+  > `@dependabot rebase`.
+  >
+  > [//]:# (dependabot-automerge-start)
+  >
+  > [//]:# (dependabot-automerge-end)
+  >
+  > ---
+  >
+  > <details>
+  > <summary>Dependabot commands and options</summary>
+  > <br />
+  >
+  > You can trigger Dependabot actions by commenting on this PR:
+  > - `@dependabot rebase` will rebase this PR
+  > - `@dependabot recreate` will recreate this PR, overwriting any edits
+  > that have been made to it
+  > - `@dependabot merge` will merge this PR after your CI passes on it
+  > - `@dependabot squash and merge` will squash and merge this PR after
+  > your CI passes on it
+  > - `@dependabot cancel merge` will cancel a previously requested merge
+  > and block automerging
+  > - `@dependabot reopen` will reopen this PR if it is closed
+  > - `@dependabot close` will close this PR and stop Dependabot recreating
+  > it. You can achieve the same result by closing it manually
+  > - `@dependabot show <dependency name> ignore conditions` will show all
+  > of the ignore conditions of the specified dependency
+  > - `@dependabot ignore this major version` will close this PR and stop
+  > Dependabot creating any more for this major version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this minor version` will close this PR and stop
+  > Dependabot creating any more for this minor version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this dependency` will close this PR and stop
+  > Dependabot creating any more for this dependency (unless you reopen the
+  > PR or upgrade to it yourself)
+  >
+  >
+  > </details>
+
+- [fdc1746](https://github.com/ratatui/ratatui/commit/fdc1746effadf28392f055345be10074f4117e3e) *(deps)* Bump tokio from 1.44.1 to 1.44.2 by @dependabot[bot] in [#1769](https://github.com/ratatui/ratatui/pull/1769)
+
+  > Bumps [tokio](https://github.com/tokio-rs/tokio) from 1.44.1 to 1.44.2.
+  > <details>
+  > <summary>Release notes</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/tokio-rs/tokio/releases">tokio's
+  > releases</a>.</em></p>
+  > <blockquote>
+  > <h2>Tokio v1.44.2</h2>
+  > <p>This release fixes a soundness issue in the broadcast channel. The
+  > channel
+  > accepts values that are <code>Send</code> but <code>!Sync</code>.
+  > Previously, the channel called
+  > <code>clone()</code> on these values without synchronizing. This release
+  > fixes the channel
+  > by synchronizing calls to <code>.clone()</code> (Thanks Austin Bonander
+  > for finding and
+  > reporting the issue).</p>
+  > <h3>Fixed</h3>
+  > <ul>
+  > <li>sync: synchronize <code>clone()</code> call in broadcast channel (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7232">#7232</a>)</li>
+  > </ul>
+  > <p><a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7232">#7232</a>:
+  > <a
+  > href="https://redirect.github.com/tokio-rs/tokio/pull/7232">tokio-rs/tokio#7232</a></p>
+  > </blockquote>
+  > </details>
+  > <details>
+  > <summary>Commits</summary>
+  > <ul>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/ec4b1d7215a3e1e91797ad3fb6ba0f7c7f3d2566"><code>ec4b1d7</code></a>
+  > chore: forward port 1.43.x</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/e3c3a56718d201fb7bb430567f05fbb64b2ef082"><code>e3c3a56</code></a>
+  > Merge branch 'tokio-1.43.x' into forward-port-1.43.x</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/a7b658c35bd40f6811e557aeb97cbb361b612c56"><code>a7b658c</code></a>
+  > chore: prepare Tokio v1.43.1 release</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/c1c8d1033d637d7027fdc137ec8008c5801cbc0d"><code>c1c8d10</code></a>
+  > Merge remote-tracking branch 'origin/tokio-1.38.x' into
+  > forward-port-1.38.x</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/aa303bc2051f7c21b48bb7bfcafe8fd4f39afd21"><code>aa303bc</code></a>
+  > chore: prepare Tokio v1.38.2 release</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/7b6ccb515ff067151ed62db835f735e5653f8784"><code>7b6ccb5</code></a>
+  > chore: backport CI fixes</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/4b174ce2c95fe1d1a217917db93fcc935e17e0da"><code>4b174ce</code></a>
+  > sync: fix cloning value when receiving from broadcast channel</li>
+  > <li>See full diff in <a
+  > href="https://github.com/tokio-rs/tokio/compare/tokio-1.44.1...tokio-1.44.2">compare
+  > view</a></li>
+  > </ul>
+  > </details>
+  > <br />
+  >
+  >
+  > [![Dependabot compatibility
+  > score](https://dependabot-badges.githubapp.com/badges/compatibility_score?dependency-name=tokio&package-manager=cargo&previous-version=1.44.1&new-version=1.44.2)](https://docs.github.com/en/github/managing-security-vulnerabilities/about-dependabot-security-updates#about-compatibility-scores)
+  >
+  > Dependabot will resolve any conflicts with this PR as long as you don't
+  > alter it yourself. You can also trigger a rebase manually by commenting
+  > `@dependabot rebase`.
+  >
+  > [//]:# (dependabot-automerge-start)
+  >
+  > [//]:# (dependabot-automerge-end)
+  >
+  > ---
+  >
+  > <details>
+  > <summary>Dependabot commands and options</summary>
+  > <br />
+  >
+  > You can trigger Dependabot actions by commenting on this PR:
+  > - `@dependabot rebase` will rebase this PR
+  > - `@dependabot recreate` will recreate this PR, overwriting any edits
+  > that have been made to it
+  > - `@dependabot merge` will merge this PR after your CI passes on it
+  > - `@dependabot squash and merge` will squash and merge this PR after
+  > your CI passes on it
+  > - `@dependabot cancel merge` will cancel a previously requested merge
+  > and block automerging
+  > - `@dependabot reopen` will reopen this PR if it is closed
+  > - `@dependabot close` will close this PR and stop Dependabot recreating
+  > it. You can achieve the same result by closing it manually
+  > - `@dependabot show <dependency name> ignore conditions` will show all
+  > of the ignore conditions of the specified dependency
+  > - `@dependabot ignore this major version` will close this PR and stop
+  > Dependabot creating any more for this major version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this minor version` will close this PR and stop
+  > Dependabot creating any more for this minor version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this dependency` will close this PR and stop
+  > Dependabot creating any more for this dependency (unless you reopen the
+  > PR or upgrade to it yourself)
+  >
+  >
+  > </details>
+
+- [352021b](https://github.com/ratatui/ratatui/commit/352021bc6f802762a7b82fcfbdfd9d248b412e1b) *(deps)* Bump tokio from 1.43.0 to 1.44.1 by @dependabot[bot] in [#1723](https://github.com/ratatui/ratatui/pull/1723)
+
+  > Bumps [tokio](https://github.com/tokio-rs/tokio) from 1.43.0 to 1.44.1.
+  > <details>
+  > <summary>Release notes</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/tokio-rs/tokio/releases">tokio's
+  > releases</a>.</em></p>
+  > <blockquote>
+  > <h2>Tokio v1.44.1</h2>
+  > <h1>1.44.1 (March 13th, 2025)</h1>
+  > <h3>Fixed</h3>
+  > <ul>
+  > <li>rt: skip defer queue in <code>block_in_place</code> context (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7216">#7216</a>)</li>
+  > </ul>
+  > <p><a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7216">#7216</a>:
+  > <a
+  > href="https://redirect.github.com/tokio-rs/tokio/pull/7216">tokio-rs/tokio#7216</a></p>
+  > <h2>Tokio v1.44.0</h2>
+  > <h1>1.44.0 (March 7th, 2025)</h1>
+  > <p>This release changes the <code>from_std</code> method on sockets to
+  > panic if a blocking socket is provided. We determined this change is not
+  > a breaking change as Tokio is not intended to operate using blocking
+  > sockets. Doing so results in runtime hangs and should be considered a
+  > bug. Accidentally passing a blocking socket to Tokio is one of the most
+  > common user mistakes. If this change causes an issue for you, please
+  > comment on <a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7172">#7172</a>.</p>
+  > <h3>Added</h3>
+  > <ul>
+  > <li>coop: add <code>task::coop</code> module (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7116">#7116</a>)</li>
+  > <li>process: add <code>Command::get_kill_on_drop()</code> (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7086">#7086</a>)</li>
+  > <li>sync: add <code>broadcast::Sender::closed</code> (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/6685">#6685</a>,
+  > <a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7090">#7090</a>)</li>
+  > <li>sync: add <code>broadcast::WeakSender</code> (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7100">#7100</a>)</li>
+  > <li>sync: add <code>oneshot::Receiver::is_empty()</code> (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7153">#7153</a>)</li>
+  > <li>sync: add <code>oneshot::Receiver::is_terminated()</code> (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7152">#7152</a>)</li>
+  > </ul>
+  > <h3>Fixed</h3>
+  > <ul>
+  > <li>fs: empty reads on <code>File</code> should not start a background
+  > read (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7139">#7139</a>)</li>
+  > <li>process: calling <code>start_kill</code> on exited child should not
+  > fail (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7160">#7160</a>)</li>
+  > <li>signal: fix <code>CTRL_CLOSE</code>, <code>CTRL_LOGOFF</code>,
+  > <code>CTRL_SHUTDOWN</code> on windows (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7122">#7122</a>)</li>
+  > <li>sync: properly handle panic during mpsc drop (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7094">#7094</a>)</li>
+  > </ul>
+  > <h3>Changes</h3>
+  > <ul>
+  > <li>runtime: clean up magic number in registration set (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7112">#7112</a>)</li>
+  > <li>coop: make coop yield using waker defer strategy (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7185">#7185</a>)</li>
+  > <li>macros: make <code>select!</code> budget-aware (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7164">#7164</a>)</li>
+  > <li>net: panic when passing a blocking socket to <code>from_std</code>
+  > (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7166">#7166</a>)</li>
+  > <li>io: clean up buffer casts (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7142">#7142</a>)</li>
+  > </ul>
+  > <h3>Changes to unstable APIs</h3>
+  > <ul>
+  > <li>rt: add before and after task poll callbacks (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7120">#7120</a>)</li>
+  > <li>tracing: make the task tracing API unstable public (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/6972">#6972</a>)</li>
+  > </ul>
+  > <h3>Documented</h3>
+  > <ul>
+  > <li>docs: fix nesting of sections in top-level docs (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7159">#7159</a>)</li>
+  > <li>fs: rename symlink and hardlink parameter names (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7143">#7143</a>)</li>
+  > <li>io: swap reader/writer in simplex doc test (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7176">#7176</a>)</li>
+  > <li>macros: docs about <code>select!</code> alternatives (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7110">#7110</a>)</li>
+  > <li>net: rename the argument for <code>send_to</code> (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7146">#7146</a>)</li>
+  > </ul>
+  > <!-- raw HTML omitted -->
+  > </blockquote>
+  > <p>... (truncated)</p>
+  > </details>
+  > <details>
+  > <summary>Commits</summary>
+  > <ul>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/d413c9c02af8f2b4fea14b769b86484b12f46595"><code>d413c9c</code></a>
+  > chore: prepare Tokio v1.44.1 (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7217">#7217</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/addbfb9204be25a8621feb3f20b44a7c1f00edbd"><code>addbfb9</code></a>
+  > rt: skip defer queue in <code>block_in_place</code> context (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7216">#7216</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/8182ecf2628d5e80dac52b8ed1ea466dbb0925b9"><code>8182ecf</code></a>
+  > chore: prepare Tokio v1.44.0 (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7202">#7202</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/a258bff7018940b438e5de3fb846588454df4e4d"><code>a258bff</code></a>
+  > ci: enable printing in multi thread loom tests (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7200">#7200</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/e076d21f679a35ae2697165d46d111285d09e3b4"><code>e076d21</code></a>
+  > process: clarify <code>Child::kill</code> behavior (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7162">#7162</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/042433cdccdf0dd33408c1751a80ddd50a077872"><code>042433c</code></a>
+  > net: debug_assert on creating a tokio socket from a blocking one (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7166">#7166</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/0284d1b5c8ea5aff5b30c254200fb0a46c21d67c"><code>0284d1b</code></a>
+  > macros: make <code>select!</code> budget-aware (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7164">#7164</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/710bc8071ea030f0ad98817414997beab2420ad2"><code>710bc80</code></a>
+  > rt: coop should yield using waker defer strategy (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7185">#7185</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/a2b12bd5799f06e912b32ac05a5ffb5cf1fe31cd"><code>a2b12bd</code></a>
+  > readme: adjust release schedule to once per month (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7191">#7191</a>)</li>
+  > <li><a
+  > href="https://github.com/tokio-rs/tokio/commit/e7b593cbee9541500cef047f3a0ee70be1c55c6f"><code>e7b593c</code></a>
+  > process: fix grammar of the <code>ChildStdin</code> struct doc comment
+  > (<a
+  > href="https://redirect.github.com/tokio-rs/tokio/issues/7192">#7192</a>)</li>
+  > <li>Additional commits viewable in <a
+  > href="https://github.com/tokio-rs/tokio/compare/tokio-1.43.0...tokio-1.44.1">compare
+  > view</a></li>
+  > </ul>
+  > </details>
+  > <br />
+  >
+  >
+  > [![Dependabot compatibility
+  > score](https://dependabot-badges.githubapp.com/badges/compatibility_score?dependency-name=tokio&package-manager=cargo&previous-version=1.43.0&new-version=1.44.1)](https://docs.github.com/en/github/managing-security-vulnerabilities/about-dependabot-security-updates#about-compatibility-scores)
+  >
+  > Dependabot will resolve any conflicts with this PR as long as you don't
+  > alter it yourself. You can also trigger a rebase manually by commenting
+  > `@dependabot rebase`.
+  >
+  > [//]:# (dependabot-automerge-start)
+  >
+  > [//]:# (dependabot-automerge-end)
+  >
+  > ---
+  >
+  > <details>
+  > <summary>Dependabot commands and options</summary>
+  > <br />
+  >
+  > You can trigger Dependabot actions by commenting on this PR:
+  > - `@dependabot rebase` will rebase this PR
+  > - `@dependabot recreate` will recreate this PR, overwriting any edits
+  > that have been made to it
+  > - `@dependabot merge` will merge this PR after your CI passes on it
+  > - `@dependabot squash and merge` will squash and merge this PR after
+  > your CI passes on it
+  > - `@dependabot cancel merge` will cancel a previously requested merge
+  > and block automerging
+  > - `@dependabot reopen` will reopen this PR if it is closed
+  > - `@dependabot close` will close this PR and stop Dependabot recreating
+  > it. You can achieve the same result by closing it manually
+  > - `@dependabot show <dependency name> ignore conditions` will show all
+  > of the ignore conditions of the specified dependency
+  > - `@dependabot ignore this major version` will close this PR and stop
+  > Dependabot creating any more for this major version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this minor version` will close this PR and stop
+  > Dependabot creating any more for this minor version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this dependency` will close this PR and stop
+  > Dependabot creating any more for this dependency (unless you reopen the
+  > PR or upgrade to it yourself)
+  >
+  >
+  > </details>
+
+- [83774ee](https://github.com/ratatui/ratatui/commit/83774eecf008e95d8e1c86c92ef6c46090bd6c6e) *(deps)* Bump time from 0.3.37 to 0.3.39 by @dependabot[bot] in [#1708](https://github.com/ratatui/ratatui/pull/1708)
+
+  > Bumps [time](https://github.com/time-rs/time) from 0.3.37 to 0.3.39.
+  > <details>
+  > <summary>Release notes</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/time-rs/time/releases">time's
+  > releases</a>.</em></p>
+  > <blockquote>
+  > <h2>v0.3.39</h2>
+  > <p>See the <a
+  > href="https://github.com/time-rs/time/blob/main/CHANGELOG.md">changelog</a>
+  > for details.</p>
+  > <h2>v0.3.38</h2>
+  > <p>See the <a
+  > href="https://github.com/time-rs/time/blob/main/CHANGELOG.md">changelog</a>
+  > for details.</p>
+  > </blockquote>
+  > </details>
+  > <details>
+  > <summary>Changelog</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/time-rs/time/blob/main/CHANGELOG.md">time's
+  > changelog</a>.</em></p>
+  > <blockquote>
+  > <h2>0.3.39 [2025-03-06]</h2>
+  > <h3>Fixed</h3>
+  > <ul>
+  > <li>Doc tests run successfully with the default feature set.</li>
+  > <li>wasm builds work again.</li>
+  > </ul>
+  > <p>Both of these were regressions in v0.3.38 and are now checked in
+  > CI.</p>
+  > <h2>0.3.38 [2025-03-05]</h2>
+  > <h3>Added</h3>
+  > <ul>
+  > <li>
+  > <p>The <code>[year]</code> component (in format descriptions) now
+  > supports a <code>range</code> modifier, which can be
+  > either <code>standard</code> or <code>extended</code>. The default is
+  > <code>extended</code> for backwards compatibility. This is
+  > intended as a manner to opt <em>out</em> of the extended range when the
+  > <code>large-dates</code> feature is enabled.
+  > When the <code>large-dates</code> feature is not enabled, the modifier
+  > has no effect.</p>
+  > </li>
+  > <li>
+  > <p><code>UtcDateTime</code>, which is semantically equivalent to an
+  > <code>OffsetDateTime</code> with UTC as its offset. The
+  > advantage is that it is the same size as a
+  > <code>PrimitiveDateTime</code> and has improved operability with
+  > well-known formats.</p>
+  > <p>As part of this, there were some other additions:</p>
+  > <ul>
+  > <li><code>utc_datetime!</code> macro, which is similar to the
+  > <code>datetime!</code> macro but constructs a
+  > <code>UtcDateTime</code>.</li>
+  > <li><code>PrimitiveDateTime::as_utc</code></li>
+  > <li><code>OffsetDateTime::to_utc</code></li>
+  > <li><code>OffsetDateTime::checked_to_utc</code></li>
+  > </ul>
+  > </li>
+  > <li>
+  > <p><code>time::serde::timestamp::milliseconds_i64</code>, which is a
+  > module to serialize/deserialize timestamps
+  > as the Unix timestamp. The pre-existing module does this as an
+  > <code>i128</code> where an <code>i64</code> would
+  > suffice. This new module should be preferred.</p>
+  > </li>
+  > </ul>
+  > <h3>Changed</h3>
+  > <ul>
+  > <li><code>error::Format</code> has had its <code>source()</code>
+  > implementation changed to no longer return a boxed value
+  > from the <code>ComponentRange</code> variant. If you were explicitly
+  > expecting this, you will need to update
+  > your code. The method API remains unchanged.</li>
+  > <li><code>[year repr:century]</code> supports single-digit values.</li>
+  > <li>All <code>format_into</code> methods accept <code>?Sized</code>
+  > references.</li>
+  > </ul>
+  > <h3>Miscellaneous</h3>
+  > <ul>
+  > <li>Some non-exhaustive enum variants that are no longer used have been
+  > modified to be statically
+  > proven as uninhabited. The relevant fields are doc-hidden and not
+  > semver-guaranteed to remain as
+  > such, though it is unlikely to change.</li>
+  > <li>An unnecessary check when parsing RFC 2822 has been removed.</li>
+  > <li>Various methods have had their implementations changed, resulting in
+  > significant performance
+  > gains. Among the methods changed are
+  > <ul>
+  > <li><code>util::is_leap_year</code></li>
+  > <li><code>util::weeks_in_year</code></li>
+  > <li><code>Month::length</code></li>
+  > <li><code>Date::to_calendar_date</code></li>
+  > </ul>
+  > </li>
+  > </ul>
+  > <!-- raw HTML omitted -->
+  > </blockquote>
+  > <p>... (truncated)</p>
+  > </details>
+  > <details>
+  > <summary>Commits</summary>
+  > <ul>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/7949d2c2e8ee441d39d4acf4b9653739727b6b8b"><code>7949d2c</code></a>
+  > v0.3.39 release</li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/f51623b653f31579e230998b23f2e659b6fef46e"><code>f51623b</code></a>
+  > Fix breakage from v0.3.38</li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/1a31c0595b232df9f397f4e5e6768c7eb4220c27"><code>1a31c05</code></a>
+  > v0.3.38 release</li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/addf231ef500789dae31e715795d8a33cb658bbf"><code>addf231</code></a>
+  > Permit unsized writers for <code>format_into</code></li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/338f84f54522441ff3e7d0f5c5877314f0725608"><code>338f84f</code></a>
+  > Allow clippy::ref_option lint for serde::format_description.</li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/f8ecd81e8f14e14f5456eef49e7184f365b56949"><code>f8ecd81</code></a>
+  > feat: timestamp::milliseconds_i64 serializer</li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/ce03bcab8fc0aaaa6e9a27ad335abf8fab7eeec1"><code>ce03bca</code></a>
+  > Update Unicode license for cargo-audit</li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/3d0b981381de87d2be924129af3fdb9626bfe049"><code>3d0b981</code></a>
+  > Add parentheses for clarity</li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/3096301eb3fb5f5104d4182d35184551ce064d5a"><code>3096301</code></a>
+  > Remove specific year from license</li>
+  > <li><a
+  > href="https://github.com/time-rs/time/commit/ec327a26dbe8f3e3db612e8c82b9e35a39361f1c"><code>ec327a2</code></a>
+  > Optimize Julian day calculations</li>
+  > <li>Additional commits viewable in <a
+  > href="https://github.com/time-rs/time/compare/v0.3.37...v0.3.39">compare
+  > view</a></li>
+  > </ul>
+  > </details>
+  > <br />
+  >
+  >
+  > [![Dependabot compatibility
+  > score](https://dependabot-badges.githubapp.com/badges/compatibility_score?dependency-name=time&package-manager=cargo&previous-version=0.3.37&new-version=0.3.39)](https://docs.github.com/en/github/managing-security-vulnerabilities/about-dependabot-security-updates#about-compatibility-scores)
+  >
+  > Dependabot will resolve any conflicts with this PR as long as you don't
+  > alter it yourself. You can also trigger a rebase manually by commenting
+  > `@dependabot rebase`.
+  >
+  > [//]:# (dependabot-automerge-start)
+  >
+  > [//]:# (dependabot-automerge-end)
+  >
+  > ---
+  >
+  > <details>
+  > <summary>Dependabot commands and options</summary>
+  > <br />
+  >
+  > You can trigger Dependabot actions by commenting on this PR:
+  > - `@dependabot rebase` will rebase this PR
+  > - `@dependabot recreate` will recreate this PR, overwriting any edits
+  > that have been made to it
+  > - `@dependabot merge` will merge this PR after your CI passes on it
+  > - `@dependabot squash and merge` will squash and merge this PR after
+  > your CI passes on it
+  > - `@dependabot cancel merge` will cancel a previously requested merge
+  > and block automerging
+  > - `@dependabot reopen` will reopen this PR if it is closed
+  > - `@dependabot close` will close this PR and stop Dependabot recreating
+  > it. You can achieve the same result by closing it manually
+  > - `@dependabot show <dependency name> ignore conditions` will show all
+  > of the ignore conditions of the specified dependency
+  > - `@dependabot ignore this major version` will close this PR and stop
+  > Dependabot creating any more for this major version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this minor version` will close this PR and stop
+  > Dependabot creating any more for this minor version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this dependency` will close this PR and stop
+  > Dependabot creating any more for this dependency (unless you reopen the
+  > PR or upgrade to it yourself)
+  >
+  >
+  > </details>
+
+- [5710b7a](https://github.com/ratatui/ratatui/commit/5710b7a8d9630eb36fe3d87b748bf5cf2c7b1ec3) *(deps)* Bump rstest from 0.24.0 to 0.25.0 by @dependabot[bot] in [#1695](https://github.com/ratatui/ratatui/pull/1695)
+
+  > Bumps [rstest](https://github.com/la10736/rstest) from 0.24.0 to 0.25.0.
+  > <details>
+  > <summary>Release notes</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/la10736/rstest/releases">rstest's
+  > releases</a>.</em></p>
+  > <blockquote>
+  > <h2>0.25.0</h2>
+  > <h2>What's Changed</h2>
+  > <ul>
+  > <li>Append generated test macro so next test macros are aware of it by
+  > <a href="https://github.com/kezhuw"><code>@​kezhuw</code></a> in <a
+  > href="https://redirect.github.com/la10736/rstest/pull/291">la10736/rstest#291</a></li>
+  > <li>feat: add <code>include_str</code> and <code>include_bytes</code>
+  > file input behaviour by <a
+  > href="https://github.com/lucascool12"><code>@​lucascool12</code></a> in
+  > <a
+  > href="https://redirect.github.com/la10736/rstest/pull/297">la10736/rstest#297</a></li>
+  > </ul>
+  > <h2>New Contributors</h2>
+  > <ul>
+  > <li><a href="https://github.com/kezhuw"><code>@​kezhuw</code></a> made
+  > their first contribution in <a
+  > href="https://redirect.github.com/la10736/rstest/pull/291">la10736/rstest#291</a></li>
+  > <li><a
+  > href="https://github.com/lucascool12"><code>@​lucascool12</code></a>
+  > made their first contribution in <a
+  > href="https://redirect.github.com/la10736/rstest/pull/297">la10736/rstest#297</a></li>
+  > </ul>
+  > <p><strong>Full Changelog</strong>: <a
+  > href="https://github.com/la10736/rstest/compare/v0.24.0...v0.25.0">https://github.com/la10736/rstest/compare/v0.24.0...v0.25.0</a></p>
+  > </blockquote>
+  > </details>
+  > <details>
+  > <summary>Changelog</summary>
+  > <p><em>Sourced from <a
+  > href="https://github.com/la10736/rstest/blob/master/CHANGELOG.md">rstest's
+  > changelog</a>.</em></p>
+  > <blockquote>
+  > <h2>[0.25.0] 2025/3/2</h2>
+  > <h3>Changed</h3>
+  > <ul>
+  > <li>Append generated test macro so next test macros are aware of it
+  > (see <a
+  > href="https://redirect.github.com/la10736/rstest/pull/291">#291</a>
+  > thanks to <a
+  > href="https://github.com/kezhuw"><code>@​kezhuw</code></a>).</li>
+  > </ul>
+  > <h3>Add</h3>
+  > <ul>
+  > <li>Added a <code>#[mode = ...]</code> attribute to be used with the
+  > <code>#[files(...)]</code> attribute to change the way
+  > the files get passed to the test.
+  > (see <a
+  > href="https://redirect.github.com/la10736/rstest/issues/295">#295</a>
+  > thanks to <a
+  > href="https://github.com/lucascool12"><code>@​lucascool12</code></a>)</li>
+  > </ul>
+  > </blockquote>
+  > </details>
+  > <details>
+  > <summary>Commits</summary>
+  > <ul>
+  > <li><a
+  > href="https://github.com/la10736/rstest/commit/8d80cea3896753c8674ad138ab620e8b17b923d4"><code>8d80cea</code></a>
+  > Prepare release</li>
+  > <li><a
+  > href="https://github.com/la10736/rstest/commit/eb1f228eacde50d589d95509417a2ccb4f8d0c28"><code>eb1f228</code></a>
+  > Make clippy happy</li>
+  > <li><a
+  > href="https://github.com/la10736/rstest/commit/f570b0605b192990f6723a6fc3300585a86b45d1"><code>f570b06</code></a>
+  > Avoid concurrent manifest changes in integration tests</li>
+  > <li><a
+  > href="https://github.com/la10736/rstest/commit/8551eb8e29870d466b0b95a7a64fc676e476aba4"><code>8551eb8</code></a>
+  > feat: add <code>include_str</code> and <code>include_bytes</code> file
+  > input behaviour</li>
+  > <li><a
+  > href="https://github.com/la10736/rstest/commit/e0b735e9c2ee96b55cd3e1c1073235169698ca0b"><code>e0b735e</code></a>
+  > Append generated test macro so next test macros are aware of it</li>
+  > <li><a
+  > href="https://github.com/la10736/rstest/commit/154d0b0d3f4766cf4107441ce26936711559fc75"><code>154d0b0</code></a>
+  > Prepare develop</li>
+  > <li>See full diff in <a
+  > href="https://github.com/la10736/rstest/compare/v0.24.0...v0.25.0">compare
+  > view</a></li>
+  > </ul>
+  > </details>
+  > <br />
+  >
+  >
+  > [![Dependabot compatibility
+  > score](https://dependabot-badges.githubapp.com/badges/compatibility_score?dependency-name=rstest&package-manager=cargo&previous-version=0.24.0&new-version=0.25.0)](https://docs.github.com/en/github/managing-security-vulnerabilities/about-dependabot-security-updates#about-compatibility-scores)
+  >
+  > Dependabot will resolve any conflicts with this PR as long as you don't
+  > alter it yourself. You can also trigger a rebase manually by commenting
+  > `@dependabot rebase`.
+  >
+  > [//]:# (dependabot-automerge-start)
+  >
+  > [//]:# (dependabot-automerge-end)
+  >
+  > ---
+  >
+  > <details>
+  > <summary>Dependabot commands and options</summary>
+  > <br />
+  >
+  > You can trigger Dependabot actions by commenting on this PR:
+  > - `@dependabot rebase` will rebase this PR
+  > - `@dependabot recreate` will recreate this PR, overwriting any edits
+  > that have been made to it
+  > - `@dependabot merge` will merge this PR after your CI passes on it
+  > - `@dependabot squash and merge` will squash and merge this PR after
+  > your CI passes on it
+  > - `@dependabot cancel merge` will cancel a previously requested merge
+  > and block automerging
+  > - `@dependabot reopen` will reopen this PR if it is closed
+  > - `@dependabot close` will close this PR and stop Dependabot recreating
+  > it. You can achieve the same result by closing it manually
+  > - `@dependabot show <dependency name> ignore conditions` will show all
+  > of the ignore conditions of the specified dependency
+  > - `@dependabot ignore this major version` will close this PR and stop
+  > Dependabot creating any more for this major version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this minor version` will close this PR and stop
+  > Dependabot creating any more for this minor version (unless you reopen
+  > the PR or upgrade to it yourself)
+  > - `@dependabot ignore this dependency` will close this PR and stop
+  > Dependabot creating any more for this dependency (unless you reopen the
+  > PR or upgrade to it yourself)
+  >
+  >
+  > </details>
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.2...ratatui-v0.30.0-alpha.3
+
+
+
+## ratatui-termion - [0.1.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.2...ratatui-termion-v0.1.0-alpha.3) - 2025-05-13
+
+### Features
+
+- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) *(no_std)* Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
+  >
+  > Resolves #1775
+  >
+  > BREAKING CHANGE:Custom backends now have to implement `Backend::Error`
+  > and `Backend::clear_region`. Additionally some generic `Backend` usage
+  > will have to explicitly set trait bounds for `Backend::Error`.
+
+- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) *(uncategorized)* Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
+
+  > This PR propagates the serde feature from the main ratatui crate to the
+  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
+
+### Bug Fixes
+
+- [416ebdf](https://github.com/ratatui/ratatui/commit/416ebdf8c86d1a7a98385908f7c8c560e86770ac) *(uncategorized)* Correct clippy errors introduced by rust 1.86.0 update by @j-g00da in [#1755](https://github.com/ratatui/ratatui/pull/1755)
+
+  > New version of rust (1.86.0) caused CI to fail.
+
+### Styling
+
+- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
+
+  > I was swayed by the arguments about this made by the compiler team In
+  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
+  > look at how this organization affects ratatui. I found this reduces the
+  > number of lines across the codebase by about 350 and makes the imports
+  > more readable and definitely more greppable as you usually only have
+  > to read a single line. I've found in the past that maintaining imports
+  > regularly leads to merge conflicts which have to be resolved by hand
+  > and this change should reduce the likelihood of that happening.
+  >
+  > Main change is in rustfmt.toml, and the rest is just the result of
+  > running `cargo xtask format`.
+  >
+  > While implementing this, cargo machete brings up that the various
+  > backend crates are unused by the example crates.
+  >
+  > The re-export of each backend crate under ratatui is to make it possible
+  > for libs that rely on a specific version of ratatui to use the same
+  > version of the backend crate. Apps in general should use the backend
+  > crate directly rather than through ratatui as this is less confusing.
+  >
+  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
+  >   examples.
+  > - Adds the backend crate to the dependencies of the examples that use
+  >   the backend crate directly.
+
+### Miscellaneous Tasks
+
+- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
+
+  > The Clippy check for this (missing_const_for_fn) is already enabled, but
+  > catches more cases in upcoming toolchain versions.
+  >
+  > This is part of the work to unblock #1727
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.2...ratatui-termion-v0.1.0-alpha.3
+
+
+
+## ratatui-termwiz - [0.1.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.2...ratatui-termwiz-v0.1.0-alpha.3) - 2025-05-13
+
+### Features
+
+- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) *(no_std)* Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
+  >
+  > Resolves #1775
+  >
+  > BREAKING CHANGE:Custom backends now have to implement `Backend::Error`
+  > and `Backend::clear_region`. Additionally some generic `Backend` usage
+  > will have to explicitly set trait bounds for `Backend::Error`.
+
+- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) *(uncategorized)* Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
+
+  > This PR propagates the serde feature from the main ratatui crate to the
+  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
+
+### Styling
+
+- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
+
+  > I was swayed by the arguments about this made by the compiler team In
+  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
+  > look at how this organization affects ratatui. I found this reduces the
+  > number of lines across the codebase by about 350 and makes the imports
+  > more readable and definitely more greppable as you usually only have
+  > to read a single line. I've found in the past that maintaining imports
+  > regularly leads to merge conflicts which have to be resolved by hand
+  > and this change should reduce the likelihood of that happening.
+  >
+  > Main change is in rustfmt.toml, and the rest is just the result of
+  > running `cargo xtask format`.
+  >
+  > While implementing this, cargo machete brings up that the various
+  > backend crates are unused by the example crates.
+  >
+  > The re-export of each backend crate under ratatui is to make it possible
+  > for libs that rely on a specific version of ratatui to use the same
+  > version of the backend crate. Apps in general should use the backend
+  > crate directly rather than through ratatui as this is less confusing.
+  >
+  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
+  >   examples.
+  > - Adds the backend crate to the dependencies of the examples that use
+  >   the backend crate directly.
+
+### Miscellaneous Tasks
+
+- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
+
+  > The Clippy check for this (missing_const_for_fn) is already enabled, but
+  > catches more cases in upcoming toolchain versions.
+  >
+  > This is part of the work to unblock #1727
+
+- [bb06889](https://github.com/ratatui/ratatui/commit/bb068892c93713befbc8dab04577cbc2a59cedec) *(uncategorized)* Fix io_other_error clippy lints by @joshka in [#1756](https://github.com/ratatui/ratatui/pull/1756)
+
+  > Pre-emptive fix for new lint to be added in 1.87 (currently in beta).
+  >
+  > https://rust-lang.github.io/rust-clippy/master/index.html\#io_other_error
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.2...ratatui-termwiz-v0.1.0-alpha.3
+
+
+
+## ratatui-macros - [0.7.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.1...ratatui-macros-v0.7.0-alpha.2) - 2025-05-13
+
+### Bug Fixes
+
+- [2e54d5e](https://github.com/ratatui/ratatui/commit/2e54d5e22c80b7ecbe7227b1d2df232374820e38) *(macros)* Use $crate re-export in text macro by @airblast-dev in [#1832](https://github.com/ratatui/ratatui/pull/1832)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.1...ratatui-macros-v0.7.0-alpha.2
+
+
+
+## ratatui-widgets - [0.3.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.2...ratatui-widgets-v0.3.0-alpha.3) - 2025-05-13
+
+### Features
+
+- [92a19cb](https://github.com/ratatui/ratatui/commit/92a19cb6040dfced50ba384891ab0063a22b445d) *(list)* Highlight symbol styling by @airblast-dev in [#1595](https://github.com/ratatui/ratatui/pull/1595) [**breaking**]
+
+  > Allow styling for `List`'s highlight symbol
+  >
+  > This change makes it so anything that implements `Into<Line>` can be
+  > used as a highlight symbol.
+  >
+  > BREAKING CHANGE:`List::highlight_symbol` can no longer be used in const
+  > context
+  >
+  > BREAKING CHANGE:`List::highlight_symbol` accepted `&str`. Conversion
+  > methods that rely on type inference will need to be rewritten as the
+  > compiler cannot infer the type.
+  >
+  > closes:https://github.com/ratatui/ratatui/issues/1443
+  >
+  > ---------
+
+- [3e1c72f](https://github.com/ratatui/ratatui/commit/3e1c72fb27cae132bc8b5f24a4ae875921dfb00d) *(no_std)* Make ratatui compatible with `#![no_std]` by @j-g00da in [#1794](https://github.com/ratatui/ratatui/pull/1794) [**breaking**]
+  >
+  > Resolves #1781
+  >
+  > This PR makes it possible to compile ratatui with `#![no_std]`.
+  > Also makes me answer "We Are So Embedded" to "Are We Embedded Yet?"
+
+- [a42a17e](https://github.com/ratatui/ratatui/commit/a42a17e1847c350c4909295d98f3c37af97e1e31) *(no_std)* Make `ratatui-widgets` `no_std` by @j-g00da in [#1779](https://github.com/ratatui/ratatui/pull/1779)
+  >
+  > Resolves #1776
+
+- [5a232a3](https://github.com/ratatui/ratatui/commit/5a232a31153b147dbde85ba13a11c11b62994a86) *(no_std)* Remove redundant `std` usages in `ratatui-widgets` by @j-g00da in [#1762](https://github.com/ratatui/ratatui/pull/1762)
+
+- [4fcd238](https://github.com/ratatui/ratatui/commit/4fcd238e1e981fb48a7c4cb9845a72c8960f19d5) *(uncategorized)* Support no-std for calendar widget by @joshka in [#1852](https://github.com/ratatui/ratatui/pull/1852)
+
+  > Removes the CalendarEventStore::today() function in no-std environments
+
+- [fcb47d6](https://github.com/ratatui/ratatui/commit/fcb47d60f3df205c18f5fa9459e9ba2c8d0c9649) *(uncategorized)* Rename Alignment to HorizontalAlignment and add VerticalAlignment by @joshka in [#1735](https://github.com/ratatui/ratatui/pull/1735) [**breaking**]
+
+  > We don't anticipate removing or deprecating the type alias in the near
+  > future, but it is recommended to update your imports to use the new
+  > name.
+  >
+  > Added a VerticalAlignment enum to make the API more consistent. We don't
+  > have a specific use case for it yet, but it's better to add it now and
+  > be able to use it in the future.
+  >
+  > BREAKING-CHANGE:The `Alignment` enum has been renamed to
+  > `HorizontalAlignment` to better reflect its purpose. A type alias has
+  > been added to maintain backwards compatibility, however there are some
+  > cases where type aliases are not enough to maintain backwards
+  > compatibility. E.g. when using glob imports to import all the enum
+  > variants. This should not affect most users, but it is recommended to
+  > update your imports to use the new name.
+  >
+  > ```diff
+  > - use ratatui::layout::Alignment;
+  > + use ratatui::layout::HorizontalAlignment;
+  >
+  > - use Alignment::*;
+  > + use HorizontalAlignment::*;
+  > ```
+
+### Bug Fixes
+
+- [00da8c6](https://github.com/ratatui/ratatui/commit/00da8c620345397c6815267e6d8e19c1eacfe1c2) *(no_std)* Provide `f64` polyfills for `no_std` compatibility by @j-g00da in [#1840](https://github.com/ratatui/ratatui/pull/1840)
+  >
+  > Related:https://github.com/rust-lang/rust/issues/137578
+
+- [c238aca](https://github.com/ratatui/ratatui/commit/c238aca83a1b171d2ba7b38942fd5352f5a7e554) *(uncategorized)* `padding_right()` should set right padding instead of left by @sxyazi in [#1837](https://github.com/ratatui/ratatui/pull/1837)
+
+  > Fixes https://github.com/ratatui/ratatui/issues/1836
+
+- [416ebdf](https://github.com/ratatui/ratatui/commit/416ebdf8c86d1a7a98385908f7c8c560e86770ac) *(uncategorized)* Correct clippy errors introduced by rust 1.86.0 update by @j-g00da in [#1755](https://github.com/ratatui/ratatui/pull/1755)
+
+  > New version of rust (1.86.0) caused CI to fail.
+
+- [4eac5b2](https://github.com/ratatui/ratatui/commit/4eac5b2849f7807c59e8164786e467137e17df86) *(uncategorized)* Make deprecation notes more helpful by @joshka in [#1702](https://github.com/ratatui/ratatui/pull/1702)
+
+  > AI coding assistants use the deprecation notes to automatically suggest
+  > fixes. This commit updates the deprecation notes to push those tools to
+  > suggest the correct replacement methods and types.
+  >
+  > Specifically, AI tools often suggest using `Buffer::get(x, y)`, because
+  > of their training data where this was prevalent. When fixing these
+  > deprecations, they often incorrectly suggest using `Buffer::get(x, y)`
+  > instead of `Buffer[(x, y)]`.
+
+### Refactor
+
+- [8d60e96](https://github.com/ratatui/ratatui/commit/8d60e96b2bfcdc0a7f9b6d17d79dbf36f61182b6) *(examples)* Use crossterm event methods by @joshka in [#1792](https://github.com/ratatui/ratatui/pull/1792)
+
+  > Crossterm 0.29 introduced methods to easily check / extract the event
+  > type. E.g. as_key_press_event() and is_key_press(). This commit
+  > updates the examples to use these methods instead of matching on
+  > the event type. This makes the code cleaner and easier to read.
+  >
+  > Also does a general cleanup of the event handling code in the examples.
+
+- [02e53de](https://github.com/ratatui/ratatui/commit/02e53de0f82bc2364f2ba4345cc5a635347e3eb4) *(uncategorized)* Make use of iter::repeat_n() by @cgzones in [#1788](https://github.com/ratatui/ratatui/pull/1788)
+
+  > Applied via clippy --fix.
+  > Available since 1.82.0.
+
+### Performance
+
+- [ba9eed7](https://github.com/ratatui/ratatui/commit/ba9eed774230d160016605048762cd73944c36e6) *(table)* Replace while loop with simple min operation by @EdJoPaTo in [#1747](https://github.com/ratatui/ratatui/pull/1747)
+
+### Styling
+
+- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
+
+  > I was swayed by the arguments about this made by the compiler team In
+  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
+  > look at how this organization affects ratatui. I found this reduces the
+  > number of lines across the codebase by about 350 and makes the imports
+  > more readable and definitely more greppable as you usually only have
+  > to read a single line. I've found in the past that maintaining imports
+  > regularly leads to merge conflicts which have to be resolved by hand
+  > and this change should reduce the likelihood of that happening.
+  >
+  > Main change is in rustfmt.toml, and the rest is just the result of
+  > running `cargo xtask format`.
+  >
+  > While implementing this, cargo machete brings up that the various
+  > backend crates are unused by the example crates.
+  >
+  > The re-export of each backend crate under ratatui is to make it possible
+  > for libs that rely on a specific version of ratatui to use the same
+  > version of the backend crate. Apps in general should use the backend
+  > crate directly rather than through ratatui as this is less confusing.
+  >
+  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
+  >   examples.
+  > - Adds the backend crate to the dependencies of the examples that use
+  >   the backend crate directly.
+
+### Miscellaneous Tasks
+
+- [b4a71e5](https://github.com/ratatui/ratatui/commit/b4a71e5fd5c5a77efff4a48920e29171face1e79) *(lint)* Add `std` instead of `core`/`alloc` lints to `ratatui-widgets` by @j-g00da in [#1763](https://github.com/ratatui/ratatui/pull/1763)
+  >
+  > Resolves #1761
+
+- [60a8191](https://github.com/ratatui/ratatui/commit/60a81913ede6ebc23b53b3e4e3a54ee0171d9447) *(widgets)* Move crossterm to dev-dependencies by @j-g00da in [#1834](https://github.com/ratatui/ratatui/pull/1834)
+
+  > Crossterm in widgets is used only in tests.
+
+- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
+
+  > The Clippy check for this (missing_const_for_fn) is already enabled, but
+  > catches more cases in upcoming toolchain versions.
+  >
+  > This is part of the work to unblock #1727
+
+- [0f80c5e](https://github.com/ratatui/ratatui/commit/0f80c5e87eb4e47c818a6bd8b0002971920c65a0) *(uncategorized)* Use expect() instead of allow() for lint overrides by @cgzones in [#1786](https://github.com/ratatui/ratatui/pull/1786) [**breaking**]
+  >
+  > BREAKING CHANGE:MSRV is now 1.81
+
+### Build
+
+- [daeba85](https://github.com/ratatui/ratatui/commit/daeba85f144ead00803c7540fa39ff6d623321c7) *(deps)* Bump `kasuari` and `line-clipping` by @j-g00da in [#1844](https://github.com/ratatui/ratatui/pull/1844)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.2...ratatui-widgets-v0.3.0-alpha.3
+
+
+
+## ratatui-crossterm - [0.1.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.2...ratatui-crossterm-v0.1.0-alpha.3) - 2025-05-13
+
+### Features
+
+- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) *(no_std)* Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
+  >
+  > Resolves #1775
+  >
+  > BREAKING CHANGE:Custom backends now have to implement `Backend::Error`
+  > and `Backend::clear_region`. Additionally some generic `Backend` usage
+  > will have to explicitly set trait bounds for `Backend::Error`.
+
+- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) *(uncategorized)* Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
+
+  > This PR propagates the serde feature from the main ratatui crate to the
+  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
+
+### Styling
+
+- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
+
+  > I was swayed by the arguments about this made by the compiler team In
+  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
+  > look at how this organization affects ratatui. I found this reduces the
+  > number of lines across the codebase by about 350 and makes the imports
+  > more readable and definitely more greppable as you usually only have
+  > to read a single line. I've found in the past that maintaining imports
+  > regularly leads to merge conflicts which have to be resolved by hand
+  > and this change should reduce the likelihood of that happening.
+  >
+  > Main change is in rustfmt.toml, and the rest is just the result of
+  > running `cargo xtask format`.
+  >
+  > While implementing this, cargo machete brings up that the various
+  > backend crates are unused by the example crates.
+  >
+  > The re-export of each backend crate under ratatui is to make it possible
+  > for libs that rely on a specific version of ratatui to use the same
+  > version of the backend crate. Apps in general should use the backend
+  > crate directly rather than through ratatui as this is less confusing.
+  >
+  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
+  >   examples.
+  > - Adds the backend crate to the dependencies of the examples that use
+  >   the backend crate directly.
+
+### Miscellaneous Tasks
+
+- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
+
+  > The Clippy check for this (missing_const_for_fn) is already enabled, but
+  > catches more cases in upcoming toolchain versions.
+  >
+  > This is part of the work to unblock #1727
+
+- [bb06889](https://github.com/ratatui/ratatui/commit/bb068892c93713befbc8dab04577cbc2a59cedec) *(uncategorized)* Fix io_other_error clippy lints by @joshka in [#1756](https://github.com/ratatui/ratatui/pull/1756)
+
+  > Pre-emptive fix for new lint to be added in 1.87 (currently in beta).
+  >
+  > https://rust-lang.github.io/rust-clippy/master/index.html\#io_other_error
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.2...ratatui-crossterm-v0.1.0-alpha.3
+
+
+
+## ratatui-core - [0.1.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.3...ratatui-core-v0.1.0-alpha.4) - 2025-05-13
+
+### Features
+
+- [3e1c72f](https://github.com/ratatui/ratatui/commit/3e1c72fb27cae132bc8b5f24a4ae875921dfb00d) *(no_std)* Make ratatui compatible with `#![no_std]` by @j-g00da in [#1794](https://github.com/ratatui/ratatui/pull/1794) [**breaking**]
+  >
+  > Resolves #1781
+  >
+  > This PR makes it possible to compile ratatui with `#![no_std]`.
+  > Also makes me answer "We Are So Embedded" to "Are We Embedded Yet?"
+
+- [ab48c06](https://github.com/ratatui/ratatui/commit/ab48c06171724ae58d98687d90e999b76890c2e7) *(no_std)* Option to disable layout cache for `no_std` compatibility by @j-g00da in [#1795](https://github.com/ratatui/ratatui/pull/1795) [**breaking**]
+  >
+  > Resolves #1780
+  >
+  > BREAKING CHANGE:Disabling `default-features` will now disable layout
+  > cache, which can have a negative impact on performance.
+  >
+  > `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only
+  > available if `layout-cache` feature is enabled.
+
+- [09173d1](https://github.com/ratatui/ratatui/commit/09173d182912ab92e67b8aa7a4cb51862b05cb25) *(no_std)* Make `TestBackend::Error` `Infallible` by @j-g00da in [#1823](https://github.com/ratatui/ratatui/pull/1823) [**breaking**]
+  >
+  > BREAKING CHANGE:`TestBackend` now uses `core::convert::Infallible` for
+  > error handling instead of `std::io::Error`
+
+- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) *(no_std)* Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
+  >
+  > Resolves #1775
+  >
+  > BREAKING CHANGE:Custom backends now have to implement `Backend::Error`
+  > and `Backend::clear_region`. Additionally some generic `Backend` usage
+  > will have to explicitly set trait bounds for `Backend::Error`.
+
+- [ebe10cd](https://github.com/ratatui/ratatui/commit/ebe10cd81fc7392d26e6b93ae8d512175404f7a7) *(no_std)* Remove redundant `std` usages in `ratatui-core` by @j-g00da in [#1753](https://github.com/ratatui/ratatui/pull/1753)
+
+  > Resolves https://github.com/ratatui/ratatui/issues/1751
+
+- [08b08cc](https://github.com/ratatui/ratatui/commit/08b08cc45b60274a48824d488127a014e083d95a) *(rect)* Centering by @TadoTheMiner in [#1814](https://github.com/ratatui/ratatui/pull/1814)
+  >
+  > Resolves #617
+
+- [6836a69](https://github.com/ratatui/ratatui/commit/6836a6903e7832d0c9f39d57fc9c30a80fa7f4e9) *(uncategorized)* Implement styled for other primitives by @aschey in [#1684](https://github.com/ratatui/ratatui/pull/1684)
+
+- [fcb47d6](https://github.com/ratatui/ratatui/commit/fcb47d60f3df205c18f5fa9459e9ba2c8d0c9649) *(uncategorized)* Rename Alignment to HorizontalAlignment and add VerticalAlignment by @joshka in [#1735](https://github.com/ratatui/ratatui/pull/1735) [**breaking**]
+
+  > We don't anticipate removing or deprecating the type alias in the near
+  > future, but it is recommended to update your imports to use the new
+  > name.
+  >
+  > Added a VerticalAlignment enum to make the API more consistent. We don't
+  > have a specific use case for it yet, but it's better to add it now and
+  > be able to use it in the future.
+  >
+  > BREAKING-CHANGE:The `Alignment` enum has been renamed to
+  > `HorizontalAlignment` to better reflect its purpose. A type alias has
+  > been added to maintain backwards compatibility, however there are some
+  > cases where type aliases are not enough to maintain backwards
+  > compatibility. E.g. when using glob imports to import all the enum
+  > variants. This should not affect most users, but it is recommended to
+  > update your imports to use the new name.
+  >
+  > ```diff
+  > - use ratatui::layout::Alignment;
+  > + use ratatui::layout::HorizontalAlignment;
+  >
+  > - use Alignment::*;
+  > + use HorizontalAlignment::*;
+  > ```
+
+- [2714d6b](https://github.com/ratatui/ratatui/commit/2714d6b9c3d2dab1537c9ced6cdb4571429bd1a5) *(uncategorized)* Add array and tuple RGB color conversion methods by @joshka in [#1703](https://github.com/ratatui/ratatui/pull/1703)
+
+  > Other crates (e.g. colorgrad) that deal with colors can convert colors
+  > to a tuple of 3 or 4 u8 values. This commit adds conversion methods from
+  > these types to a `Color::Rgb` instance. Any alpha value is ignored.
+  >
+  > ```rust
+  > Color::from([255, 0, 0]);
+  > Color::from((255, 0, 0));
+  > Color::from([255, 0, 0, 255]);
+  > Color::from((255, 0, 0, 255));
+  > ```
+
+### Bug Fixes
+
+- [9314312](https://github.com/ratatui/ratatui/commit/93143126b3dc70f437a6f05f17bba5d71e13083e) *(layout)* Feature flag cache related types by @joshka in [#1842](https://github.com/ratatui/ratatui/pull/1842)
+
+- [2dd1977](https://github.com/ratatui/ratatui/commit/2dd1977c594a5f276493ca63ecb82e5a4a5f0dc2) *(layout-cache)* Import `NonZeroUsize` only when `layout-cache` is enabled by @j-g00da in [#1839](https://github.com/ratatui/ratatui/pull/1839)
+
+  > This silences unused import warning, when `layout-cache` is disabled.
+
+- [79d5165](https://github.com/ratatui/ratatui/commit/79d5165caed81db292073c18337fa69e83a20cf1) *(no_std)* Propagate `std` feature flag to dependencies by @j-g00da in [#1838](https://github.com/ratatui/ratatui/pull/1838)
+
+  > Disables `std` feature flags in dependencies and only enables them with
+  > `ratatui` and `ratatui-core`'s `std` feature flag. This partially fixes the
+  > issue of still depending on `std`, when `std` feature flag is disabled.
+
+- [00da8c6](https://github.com/ratatui/ratatui/commit/00da8c620345397c6815267e6d8e19c1eacfe1c2) *(no_std)* Provide `f64` polyfills for `no_std` compatibility by @j-g00da in [#1840](https://github.com/ratatui/ratatui/pull/1840)
+  >
+  > Related:https://github.com/rust-lang/rust/issues/137578
+
+- [c90ba97](https://github.com/ratatui/ratatui/commit/c90ba9781e5f4b6d061cafcb44ee7b4138f0b991) *(uncategorized)* Avoid unnecessary imports in minimal build by @cgzones in [#1787](https://github.com/ratatui/ratatui/pull/1787)
+  >
+  > core::ops::Range is only used with the feature `scrolling-regions`.
+  > Ensure a minimal `cargo check` reports no warnings.
+
+- [416ebdf](https://github.com/ratatui/ratatui/commit/416ebdf8c86d1a7a98385908f7c8c560e86770ac) *(uncategorized)* Correct clippy errors introduced by rust 1.86.0 update by @j-g00da in [#1755](https://github.com/ratatui/ratatui/pull/1755)
+
+  > New version of rust (1.86.0) caused CI to fail.
+
+- [4eac5b2](https://github.com/ratatui/ratatui/commit/4eac5b2849f7807c59e8164786e467137e17df86) *(uncategorized)* Make deprecation notes more helpful by @joshka in [#1702](https://github.com/ratatui/ratatui/pull/1702)
+
+  > AI coding assistants use the deprecation notes to automatically suggest
+  > fixes. This commit updates the deprecation notes to push those tools to
+  > suggest the correct replacement methods and types.
+  >
+  > Specifically, AI tools often suggest using `Buffer::get(x, y)`, because
+  > of their training data where this was prevalent. When fixing these
+  > deprecations, they often incorrectly suggest using `Buffer::get(x, y)`
+  > instead of `Buffer[(x, y)]`.
+
+### Refactor
+
+- [07bec55](https://github.com/ratatui/ratatui/commit/07bec55b7d55fab338f9ab8571a80277d4890753) *(no_std)* Make usages of std explicit in ratatui-core. by @ed-2100 in [#1782](https://github.com/ratatui/ratatui/pull/1782)
+
+  > ### This commit does the following:
+  >
+  > - Adds `#[no_std]` to `lib.rs`.
+  > - Adds `extern crate std;` to `lib.rs`.
+  > - Updates `ratatui-core` to explicitly `use` items from std and alloc.
+  > - Prefers `use`-ing alloc over std when possible.
+  >
+  > ### Explanation:
+  >
+  > This allows usages of `std` in `ratatui-core` to be clearly pointed out
+  > and dealt with individually.
+  >
+  > Eventually, when `std` is to be feature gated, the associated commit
+  > will be much cleaner.
+
+- [02e53de](https://github.com/ratatui/ratatui/commit/02e53de0f82bc2364f2ba4345cc5a635347e3eb4) *(uncategorized)* Make use of iter::repeat_n() by @cgzones in [#1788](https://github.com/ratatui/ratatui/pull/1788)
+
+  > Applied via clippy --fix.
+  > Available since 1.82.0.
+
+### Documentation
+
+- [2be9ccb](https://github.com/ratatui/ratatui/commit/2be9ccb120d80cf2f98e434bb7b9da5613dfe180) *(layout)* Remove unnecessary path prefix by @j-g00da in [#1766](https://github.com/ratatui/ratatui/pull/1766)
+
+- [b669ceb](https://github.com/ratatui/ratatui/commit/b669cebcaf51cdf8585c48aec0f7282bf492df6c) *(layout)* Change `cassowary` to `kasuari` crate reference by @j-g00da in [#1765](https://github.com/ratatui/ratatui/pull/1765)
+
+### Styling
+
+- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
+
+  > I was swayed by the arguments about this made by the compiler team In
+  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
+  > look at how this organization affects ratatui. I found this reduces the
+  > number of lines across the codebase by about 350 and makes the imports
+  > more readable and definitely more greppable as you usually only have
+  > to read a single line. I've found in the past that maintaining imports
+  > regularly leads to merge conflicts which have to be resolved by hand
+  > and this change should reduce the likelihood of that happening.
+  >
+  > Main change is in rustfmt.toml, and the rest is just the result of
+  > running `cargo xtask format`.
+  >
+  > While implementing this, cargo machete brings up that the various
+  > backend crates are unused by the example crates.
+  >
+  > The re-export of each backend crate under ratatui is to make it possible
+  > for libs that rely on a specific version of ratatui to use the same
+  > version of the backend crate. Apps in general should use the backend
+  > crate directly rather than through ratatui as this is less confusing.
+  >
+  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
+  >   examples.
+  > - Adds the backend crate to the dependencies of the examples that use
+  >   the backend crate directly.
+
+### Testing
+
+- [deb1b8e](https://github.com/ratatui/ratatui/commit/deb1b8ec43d8c9e5b1a5469dc4fa4c7e86d86d9b) *(uncategorized)* Ensure Style::new() and Style::default() are equivalent by @cgzones in [#1789](https://github.com/ratatui/ratatui/pull/1789)
+
+### Miscellaneous Tasks
+
+- [cef617c](https://github.com/ratatui/ratatui/commit/cef617cc35b9ddba97bb435a8f70f6b8d71ab810) *(lint)* Add `std` instead of `core`/`alloc` lints to `ratatui-core` by @j-g00da in [#1759](https://github.com/ratatui/ratatui/pull/1759)
+  >
+  > Resolves #1752
+
+- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
+
+  > The Clippy check for this (missing_const_for_fn) is already enabled, but
+  > catches more cases in upcoming toolchain versions.
+  >
+  > This is part of the work to unblock #1727
+
+- [bb06889](https://github.com/ratatui/ratatui/commit/bb068892c93713befbc8dab04577cbc2a59cedec) *(uncategorized)* Fix io_other_error clippy lints by @joshka in [#1756](https://github.com/ratatui/ratatui/pull/1756)
+
+  > Pre-emptive fix for new lint to be added in 1.87 (currently in beta).
+  >
+  > https://rust-lang.github.io/rust-clippy/master/index.html\#io_other_error
+
+- [0f80c5e](https://github.com/ratatui/ratatui/commit/0f80c5e87eb4e47c818a6bd8b0002971920c65a0) *(uncategorized)* Use expect() instead of allow() for lint overrides by @cgzones in [#1786](https://github.com/ratatui/ratatui/pull/1786) [**breaking**]
+  >
+  > BREAKING CHANGE:MSRV is now 1.81
+
+- [fe8577c](https://github.com/ratatui/ratatui/commit/fe8577c0704495c0a98705bc1b036b1a60123f02) *(uncategorized)* Remove paste dependency by @joshka in [#1713](https://github.com/ratatui/ratatui/pull/1713)
+
+  > The paste crate is no longer maintained. Replaces the usages of this in
+  > the Stylize declarative macros with hard coded values. These macros are
+  > internal implementation deatil to ratatui and so the changes should have
+  > no impact on users.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1712
+
+### Build
+
+- [daeba85](https://github.com/ratatui/ratatui/commit/daeba85f144ead00803c7540fa39ff6d623321c7) *(deps)* Bump `kasuari` and `line-clipping` by @j-g00da in [#1844](https://github.com/ratatui/ratatui/pull/1844)
+
+- [fc4b996](https://github.com/ratatui/ratatui/commit/fc4b996c596aec8316427bc71677fbfcce68caed) *(deps)* Update compact_str requirement from 0.8.1 to 0.9.0 by @musicinmybrain in [#1783](https://github.com/ratatui/ratatui/pull/1783)
+
+  > Looking at
+  > https://github.com/ParkMyCar/compact_str/blob/v0.9.0/CHANGELOG.md#090,
+  > there are a few API changes, but it doesn’t seem like anything there
+  > should be a problem given that `cargo test` still passes in
+  > `ratatui-core/`.
+
+- [3d5b250](https://github.com/ratatui/ratatui/commit/3d5b250e74fc83fb580f50b617472be7cfb4fd4b) *(deps)* Use kasuari instead of cassowary by @joshka in [#1758](https://github.com/ratatui/ratatui/pull/1758)
+
+  > [Kasuari](https://github.com/ratatui/kasuari) is a maintained fork of Cassowary.
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.3...ratatui-core-v0.1.0-alpha.4
+
+
+
 ## ratatui - [0.30.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.1...ratatui-v0.30.0-alpha.2) - 2025-03-01
 
 ### Features
