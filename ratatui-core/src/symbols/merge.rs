@@ -1,6 +1,6 @@
 use crate::symbols::line::{BorderSymbol, LineStyle};
 
-/// Defines the merge strategy of overlaping characters.
+/// Defines the merge strategy of overlapping characters.
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub enum MergeStyle {
     /// Merges symbols only if an exact composite unicode character exists.
