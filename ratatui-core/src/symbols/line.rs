@@ -131,7 +131,7 @@ impl BorderSymbol {
 
         self
     }
-
+    /// Checks if any of the line components making the `BorderSymbol` matches the `style`.
     pub fn contains(&self, style: &LineStyle) -> bool {
         self.up == *style || self.right == *style || self.down == *style || self.left == *style
     }
