@@ -38,7 +38,7 @@ termion = ["std", "dep:ratatui-termion"]
 termwiz = ["std", "dep:ratatui-termwiz"]
 
 ## enables std
-std = ["ratatui-core/std"]
+std = ["ratatui-core/std", "ratatui-widgets/std"]
 
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.

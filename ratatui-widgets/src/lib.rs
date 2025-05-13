@@ -86,6 +86,8 @@
 #![warn(clippy::alloc_instead_of_core)]
 
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod barchart;
 pub mod block;
@@ -103,6 +105,8 @@ pub mod sparkline;
 pub mod table;
 pub mod tabs;
 
+#[cfg(not(feature = "std"))]
+mod polyfills;
 mod reflow;
 
 #[cfg(feature = "calendar")]
