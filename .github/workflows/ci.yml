@@ -142,6 +142,8 @@ jobs:
         with:
           targets: x86_64-unknown-none
       - uses: Swatinem/rust-cache@v2
+      # This makes it easier to debug the exact versions of the dependencies
+      - run: cargo tree --target x86_64-unknown-none
       - run: cargo build --target x86_64-unknown-none
 
   # Check if README.md is up-to-date with the crate's documentation.
