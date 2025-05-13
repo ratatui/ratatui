@@ -91,6 +91,16 @@ pub struct BorderSymbol {
 }
 
 impl BorderSymbol {
+    /// Creates a new `BorderSymbol`, based on individual line styles.
+    #[must_use]
+    pub const fn new(right: LineStyle, up: LineStyle, left: LineStyle, down: LineStyle) -> Self {
+        Self {
+            right,
+            up,
+            left,
+            down,
+        }
+    }
     /// Find the best representation of the `BorderSymbol`
     /// that will be able to be transform into a character
     #[must_use]
