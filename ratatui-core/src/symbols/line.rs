@@ -101,8 +101,8 @@ impl BorderSymbol {
             down,
         }
     }
-    /// Find the best representation of the `BorderSymbol`
-    /// that will be able to be transform into a character
+    /// Finds the closest representation of the `BorderSymbol`, that has a corresponding unicode
+    /// character.
     #[must_use]
     pub fn best_fit(mut self) -> Self {
         use LineStyle::{Double, Plain, Rounded, Thick};
