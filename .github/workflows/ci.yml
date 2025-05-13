@@ -135,7 +135,6 @@ jobs:
   build-no-std:
     name: Build No-Std
     runs-on: ubuntu-latest
-    continue-on-error: true # remove once no_std is fully supported
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
