@@ -534,8 +534,8 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// TODO documentation
-    /// TODO small example with two block merging / not merging
+    /// Sets the block's [`MergeStyle`] for overlapping characters. Setting it to `None`
+    /// never merges characters.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn merge_style(mut self, merge_style: Option<MergeStyle>) -> Self {
         self.merge_style = merge_style;
