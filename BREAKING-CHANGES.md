@@ -17,8 +17,10 @@ This is a quick summary of the sections below:
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
   - The MSRV is now 1.81.0
   - `Backend` now requires an associated `Error` type and `clear_region` method
-  - `Backend` now uses `Self::Error` for error handling instead of `std::io::Error`
-  - `Terminal<B>` now uses `B::Error` for error handling instead of `std::io::Error`
+  - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
+  - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
+  - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled
+  - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping `Terminal`
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
   - Removed public fields from `Rect` iterators
@@ -83,7 +85,51 @@ This is a quick summary of the sections below:
 
 ## Unreleased (0.30.0)
 
-## The MSRV is now 1.81.0 ([#1786])
+### Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping `Terminal` ([#1794])
+
+[#1794]: https://github.com/ratatui/ratatui/pull/1794
+
+Since disabling `default-features` disables `std`, printing to stderr is not possible. It is
+recommended to re-enable `std` when not using Ratatui in `no_std` environment.
+
+### `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled ([#1795])
+
+[#1795]: https://github.com/ratatui/ratatui/pull/1795
+
+Previously, `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` were available independently of
+enabled feature flags.
+
+### Disabling `default-features` will now disable layout cache, which can have a negative impact on performance ([#1795])
+
+[#1795]: https://github.com/ratatui/ratatui/pull/1795
+
+Layout cache is now opt-in in `ratatui-core` and enabled by default in `ratatui`. If app doesn't
+make use of `no_std`-compatibility, and disables `default-feature`, it is recommended to explicitly
+re-enable layout cache. Not doing so may impact performance.
+
+```diff
+- ratatui = { version = "0.29.0", default-features = false }
++ ratatui = { version = "0.30.0", default-features = false, features = ["layout-cache"] }
+```
+
+### `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error` ([#1823])
+
+[#1823]: https://github.com/ratatui/ratatui/pull/1823
+
+Since `TestBackend` never fails, it now uses `Infallible` as associated `Error`. This may require
+changes in test cases that use `TestBackend`.
+
+### `Backend` now requires an associated `Error` type and `clear_region` method ([#1778])
+
+[#1778]: https://github.com/ratatui/ratatui/pull/1778
+
+Custom `Backend` implementations must now define an associated `Error` type for method `Result`s
+and implement the `clear_region` method, which no longer has a default implementation.
+
+This change was made to provide greater flexibility for custom backends, particularly to remove the
+explicit dependency on `std::io` for backends that want to support `no_std` targets.
+
+### The MSRV is now 1.81.0 ([#1786])
 
 [#1786]: https://github.com/ratatui/ratatui/pull/1786
 

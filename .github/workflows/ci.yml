@@ -132,6 +132,23 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask check --all-features
 
+  build-no-std:
+    name: Build No-Std
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-none
+      - uses: Swatinem/rust-cache@v2
+      # This makes it easier to debug the exact versions of the dependencies
+      - run: cargo tree --target x86_64-unknown-none -p ratatui-core
+      - run: cargo tree --target x86_64-unknown-none -p ratatui-widgets
+      - run: cargo tree --target x86_64-unknown-none -p ratatui --no-default-features
+      - run: cargo build --target x86_64-unknown-none -p ratatui-core
+      - run: cargo build --target x86_64-unknown-none -p ratatui-widgets
+      - run: cargo build --target x86_64-unknown-none -p ratatui --no-default-features
+
   # Check if README.md is up-to-date with the crate's documentation.
   check-readme:
     name: Check README

@@ -4,7 +4,7 @@ description = """
     Core types and traits for the Ratatui Terminal UI library.
     Widget libraries should use this crate. Applications should use the main Ratatui crate.
 """
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 readme = "README.md"
 authors.workspace = true
 documentation.workspace = true
@@ -23,6 +23,19 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
+
+## enables std
+std = [
+  "itertools/use_std",
+  "thiserror/std",
+  "kasuari/std",
+  "compact_str/std",
+  "unicode-truncate/std",
+  "strum/std",
+]
+
+## enables layout cache
+layout-cache = ["std"]
 
 ## enables conversions to / from colors, modifiers, and styles in the ['anstyle'] crate
 anstyle = ["dep:anstyle"]
@@ -45,19 +58,19 @@ serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 [dependencies]
 anstyle = { version = "1", optional = true }
 bitflags = "2.3"
-compact_str = "0.9.0"
+compact_str = { version = "0.9.0", default-features = false }
 document-features = { workspace = true, optional = true }
 hashbrown = "0.15.2"
 indoc.workspace = true
 itertools.workspace = true
-kasuari = "0.4.0"
+kasuari = { version = "0.4.6", default-features = false }
 lru = "0.12.0"
 palette = { version = "0.7.6", optional = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
-thiserror = "2"
+thiserror = { version = "2", default-features = false }
 unicode-segmentation.workspace = true
-unicode-truncate = "2"
+unicode-truncate = { version = "2", default-features = false }
 unicode-width.workspace = true
 
 [dev-dependencies]

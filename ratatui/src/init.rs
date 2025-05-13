@@ -198,7 +198,7 @@ pub fn try_init_with_options(options: TerminalOptions) -> io::Result<DefaultTerm
 pub fn restore() {
     if let Err(err) = try_restore() {
         // There's not much we can do if restoring the terminal fails, so we just print the error
-        eprintln!("Failed to restore terminal: {err}");
+        std::eprintln!("Failed to restore terminal: {err}");
     }
 }
 
@@ -236,7 +236,7 @@ pub fn try_restore() -> io::Result<()> {
 /// original panic hook. This ensures that the terminal is left in a good state when a panic occurs.
 fn set_panic_hook() {
     let hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |info| {
+    std::panic::set_hook(alloc::boxed::Box::new(move |info| {
         restore();
         hook(info);
     }));

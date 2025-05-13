@@ -10,7 +10,7 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::{error::Error, iter::once, result};
 
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event;
 use itertools::Itertools;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Modifier, Style, Stylize};
@@ -30,16 +30,14 @@ fn main() -> Result<()> {
 
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(draw)?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                return Ok(());
-            }
+        terminal.draw(render)?;
+        if event::read()?.is_key_press() {
+            return Ok(());
         }
     }
 }
 
-fn draw(frame: &mut Frame) {
+fn render(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     let [text_area, main_area] = vertical.areas(frame.area());
     frame.render_widget(

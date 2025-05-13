@@ -17,6 +17,9 @@ use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
+#[cfg(not(feature = "std"))]
+use crate::polyfills::F64Polyfills;
+
 /// A widget to display a scrollbar
 ///
 /// The following components of the scrollbar are customizable in symbol and style. Note the

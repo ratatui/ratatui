@@ -1,3 +1,4 @@
+#![no_std]
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
@@ -80,12 +81,13 @@
 //!
 //! This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
 
-#![no_std]
 #![warn(clippy::std_instead_of_core)]
 #![warn(clippy::std_instead_of_alloc)]
 #![warn(clippy::alloc_instead_of_core)]
 
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod barchart;
 pub mod block;
@@ -103,6 +105,8 @@ pub mod sparkline;
 pub mod table;
 pub mod tabs;
 
+#[cfg(not(feature = "std"))]
+mod polyfills;
 mod reflow;
 
 #[cfg(feature = "calendar")]

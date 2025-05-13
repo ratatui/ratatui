@@ -1,15 +1,14 @@
-use alloc::format;
 use alloc::rc::Rc;
 use alloc::vec::Vec;
-use core::cell::RefCell;
 use core::iter;
+#[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
-use std::{dbg, thread_local};
 
 use hashbrown::HashMap;
 use itertools::Itertools;
 use kasuari::WeightedRelation::{EQ, GE, LE};
 use kasuari::{AddConstraintError, Expression, Solver, Strength, Variable};
+#[cfg(feature = "layout-cache")]
 use lru::LruCache;
 
 use self::strengths::{
@@ -32,6 +31,7 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
+#[cfg(feature = "layout-cache")]
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 
 // Multiplier that decides floating point precision when rounding.
@@ -39,8 +39,9 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
-thread_local! {
-    static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(Cache::new(
+#[cfg(feature = "layout-cache")]
+std::thread_local! {
+    static LAYOUT_CACHE: core::cell::RefCell<Cache> = core::cell::RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
 }
@@ -188,6 +189,8 @@ impl Layout {
     /// bit more to make it a round number. This gives enough entries to store a layout for every
     /// row and every column, twice over, which should be enough for most apps. For those that need
     /// more, the cache size can be set with [`Layout::init_cache()`].
+    /// This const is unused if layout cache is disabled.
+    #[cfg(feature = "layout-cache")]
     pub const DEFAULT_CACHE_SIZE: usize = 500;
 
     /// Creates a new layout with default values.
@@ -280,8 +283,9 @@ impl Layout {
     /// grows until `cache_size` is reached.
     ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
+    #[cfg(feature = "layout-cache")]
     pub fn init_cache(cache_size: NonZeroUsize) {
-        LAYOUT_CACHE.with_borrow_mut(|c| c.resize(cache_size));
+        LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
     }
 
     /// Set the direction of the layout.
@@ -653,11 +657,18 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
-        LAYOUT_CACHE.with_borrow_mut(|c| {
-            let key = (area, self.clone());
-            c.get_or_insert(key, || self.try_split(area).expect("failed to split"))
-                .clone()
-        })
+        let split = || self.try_split(area).expect("failed to split");
+
+        #[cfg(feature = "layout-cache")]
+        {
+            LAYOUT_CACHE.with_borrow_mut(|cache| {
+                let key = (area, self.clone());
+                cache.get_or_insert(key, split).clone()
+            })
+        }
+
+        #[cfg(not(feature = "layout-cache"))]
+        split()
     }
 
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
@@ -974,6 +985,20 @@ fn configure_fill_constraints(
     Ok(())
 }
 
+// Used instead of `f64::round` directly, to provide fallback for `no_std`.
+#[cfg(feature = "std")]
+#[inline]
+fn round(value: f64) -> f64 {
+    value.round()
+}
+
+// A rounding fallback for `no_std` in pure rust.
+#[cfg(not(feature = "std"))]
+#[inline]
+fn round(value: f64) -> f64 {
+    (value + 0.5f64.copysign(value)) as i64 as f64
+}
+
 fn changes_to_rects(
     changes: &HashMap<Variable, f64>,
     elements: &[Element],
@@ -986,8 +1011,8 @@ fn changes_to_rects(
         .map(|element| {
             let start = changes.get(&element.start).unwrap_or(&0.0);
             let end = changes.get(&element.end).unwrap_or(&0.0);
-            let start = (start.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
-            let end = (end.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
+            let start = round(round(*start) / FLOAT_PRECISION_MULTIPLIER) as u16;
+            let end = round(round(*end) / FLOAT_PRECISION_MULTIPLIER) as u16;
             let size = end.saturating_sub(start);
             match direction {
                 Direction::Horizontal => Rect {
@@ -1010,8 +1035,9 @@ fn changes_to_rects(
 /// please leave this here as it's useful for debugging unit tests when we make any changes to
 /// layout code - we should replace this with tracing in the future.
 #[expect(dead_code)]
+#[cfg(feature = "std")]
 fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
-    let variables = format!(
+    let variables = alloc::format!(
         "{:?}",
         elements
             .iter()
@@ -1021,7 +1047,7 @@ fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
             ))
             .collect::<Vec<(f64, f64)>>()
     );
-    dbg!(variables);
+    std::dbg!(variables);
 }
 
 /// A container used by the solver inside split
@@ -1200,14 +1226,15 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "layout-cache")]
     fn cache_size() {
-        LAYOUT_CACHE.with_borrow(|c| {
-            assert_eq!(c.cap().get(), Layout::DEFAULT_CACHE_SIZE);
+        LAYOUT_CACHE.with_borrow(|cache| {
+            assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
         });
 
         Layout::init_cache(NonZeroUsize::new(10).unwrap());
-        LAYOUT_CACHE.with_borrow(|c| {
-            assert_eq!(c.cap().get(), 10);
+        LAYOUT_CACHE.with_borrow(|cache| {
+            assert_eq!(cache.cap().get(), 10);
         });
     }
 

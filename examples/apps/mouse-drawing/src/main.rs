@@ -60,8 +60,11 @@ impl MouseDrawingApp {
     }
 
     /// Quit the app if the user presses 'q' or 'Esc'
-    fn on_key_event(&mut self, event: KeyEvent) {
-        match event.code {
+    fn on_key_event(&mut self, key: KeyEvent) {
+        if !key.is_press() {
+            return;
+        }
+        match key.code {
             KeyCode::Char(' ') => {
                 self.current_color = Color::Rgb(rand::random(), rand::random(), rand::random());
             }
