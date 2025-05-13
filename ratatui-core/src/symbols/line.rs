@@ -146,6 +146,7 @@ impl BorderSymbol {
     }
 }
 
+// Defines a translation between `BorderSymbol` and the corresponding character.
 macro_rules! define_symbols {
     (
         $( $symbol:expr => ($right:ident, $up:ident, $left:ident, $down:ident) ),* $(,)?
