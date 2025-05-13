@@ -82,6 +82,7 @@ impl LineStyle {
     }
 }
 
+/// Represents a composite border symbol using individual line components.
 pub struct BorderSymbol {
     pub right: LineStyle,
     pub up: LineStyle,
