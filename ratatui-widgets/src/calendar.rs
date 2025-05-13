@@ -17,7 +17,7 @@ use ratatui_core::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui_core::style::Style;
 use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
-use time::{Date, Duration, OffsetDateTime};
+use time::{Date, Duration};
 
 use crate::block::{Block, BlockExt};
 
@@ -218,7 +218,9 @@ impl CalendarEventStore {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// [`Color`]: ratatui_core::style::Color
+    #[cfg(feature = "std")]
     pub fn today<S: Into<Style>>(style: S) -> Self {
+        use time::OffsetDateTime;
         let mut res = Self::default();
         res.add(
             OffsetDateTime::now_local()

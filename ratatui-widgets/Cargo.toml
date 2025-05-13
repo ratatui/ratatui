@@ -25,7 +25,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = ["all-widgets"]
 
 ## enables std
-std = []
+std = ["time/local-offset"]
 
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
@@ -60,7 +60,7 @@ line-clipping = "0.3.0"
 ratatui-core = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
-time = { version = "0.3.11", optional = true, features = ["local-offset"] }
+time = { version = "0.3.11", optional = true, default-features = false }
 unicode-segmentation.workspace = true
 unicode-width.workspace = true
 
