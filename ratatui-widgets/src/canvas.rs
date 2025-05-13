@@ -34,6 +34,8 @@ pub use self::map::{Map, MapResolution};
 pub use self::points::Points;
 pub use self::rectangle::Rectangle;
 use crate::block::{Block, BlockExt};
+#[cfg(not(feature = "std"))]
+use crate::polyfills::F64Polyfills;
 
 mod circle;
 mod line;

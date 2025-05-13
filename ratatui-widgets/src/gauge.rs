@@ -9,6 +9,8 @@ use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
 
 use crate::block::{Block, BlockExt};
+#[cfg(not(feature = "std"))]
+use crate::polyfills::F64Polyfills;
 
 /// A widget to display a progress bar.
 ///

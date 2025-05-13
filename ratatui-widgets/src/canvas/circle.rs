@@ -1,6 +1,8 @@
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape};
+#[cfg(not(feature = "std"))]
+use crate::polyfills::F64Polyfills;
 
 /// A circle with a given center and radius and with a given color
 #[derive(Debug, Default, Clone, PartialEq)]
