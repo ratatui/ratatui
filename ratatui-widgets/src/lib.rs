@@ -103,6 +103,7 @@ pub mod sparkline;
 pub mod table;
 pub mod tabs;
 
+#[cfg(not(feature = "std"))]
 mod polyfills;
 mod reflow;
 

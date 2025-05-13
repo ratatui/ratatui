@@ -44,9 +44,6 @@ fn cos(val: f64) -> f64 {
     x
 }
 
-// Methods of this trait are shadowed by `std`.
-// Due to a linter quirk, it's reported as never used, even in `no_std`.
-#[allow(dead_code)]
 pub(crate) trait F64Polyfills {
     /// Computes `(self * a) + b`.
     fn mul_add(self, a: f64, b: f64) -> f64;

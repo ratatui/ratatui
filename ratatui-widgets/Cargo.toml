@@ -24,6 +24,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = ["all-widgets"]
 
+## enables std
+std = []
+
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "ratatui-core/serde"]
