@@ -103,8 +103,8 @@ pub mod sparkline;
 pub mod table;
 pub mod tabs;
 
+mod polyfills;
 mod reflow;
 
 #[cfg(feature = "calendar")]
 pub mod calendar;
-mod polyfills;
