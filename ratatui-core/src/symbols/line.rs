@@ -321,18 +321,6 @@ define_symbols!(
     "╿" => (Nothing, Thick, Nothing, Plain),
 );
 
-impl BorderSymbol {
-    #[must_use]
-    pub const fn new(right: LineStyle, up: LineStyle, left: LineStyle, down: LineStyle) -> Self {
-        Self {
-            right,
-            up,
-            left,
-            down,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Set {
     pub vertical: &'static str,
