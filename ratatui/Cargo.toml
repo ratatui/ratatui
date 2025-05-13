@@ -130,7 +130,7 @@ ratatui-termion = { workspace = true, optional = true }
 
 [dev-dependencies]
 argh = "0.1.12"
-color-eyre = "0.6.2"
+color-eyre = "0.6.4"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 crossterm = { version = "0.29.0", features = ["event-stream"] }
 fakeit = "1.1"

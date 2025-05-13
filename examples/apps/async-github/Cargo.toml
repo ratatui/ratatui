@@ -14,7 +14,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-color-eyre = "0.6.3"
+color-eyre = "0.6.4"
 crossterm = { workspace = true, features = ["event-stream"] }
 octocrab = "0.44.0"
 ratatui.workspace = true
