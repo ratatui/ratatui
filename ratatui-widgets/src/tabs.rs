@@ -4,14 +4,14 @@ use alloc::vec::Vec;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
-use ratatui_core::style::{Modifier, Style, Styled};
+use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols;
 use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
 
 use crate::block::{Block, BlockExt};
 
-const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVERSED);
+const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().reversed();
 
 /// A widget that displays a horizontal set of Tabs with a single tab selected.
 ///
@@ -125,6 +125,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
     /// [`String`]: alloc::string::String
+    /// [`Modifier::REVERSED`]: ratatui_core::style::Modifier
     pub fn new<Iter>(titles: Iter) -> Self
     where
         Iter: IntoIterator,
@@ -672,11 +673,7 @@ mod tests {
                 .bold()
                 .not_italic()
                 .style,
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::White)
-                .add_modifier(Modifier::BOLD)
-                .remove_modifier(Modifier::ITALIC)
+            Style::default().black().on_white().bold().not_italic()
         );
     }
 }

@@ -126,16 +126,16 @@ macro_rules! color {
         }
     };
 
-    ( const $variant:ident, $fg:ident(), $bg:ident() -> $ty:ty ) => {
+    (pub const $variant:expr, $color:ident(), $on_color:ident() -> $ty:ty ) => {
         #[doc = concat!("Sets the foreground color to [`", stringify!($color), "`](", stringify!($variant), ").")]
         #[must_use = concat!("`", stringify!($color), "` returns the modified style without modifying the original")]
-        const fn $color(self) -> $ty {
+        pub const fn $color(self) -> $ty {
             self.fg($variant)
         }
 
         #[doc = concat!("Sets the background color to [`", stringify!($color), "`](", stringify!($variant), ").")]
         #[must_use = concat!("`", stringify!($on_color), "` returns the modified style without modifying the original")]
-        const fn $on_color(self) -> $ty {
+        pub const fn $on_color(self) -> $ty {
             self.bg($variant)
         }
     };
@@ -176,16 +176,16 @@ macro_rules! modifier {
         }
     };
 
-    ( const $variant:expr, $modifier:ident(), $not_modifier:ident() -> $ty:ty ) => {
+    (pub const $variant:expr, $modifier:ident(), $not_modifier:ident() -> $ty:ty ) => {
         #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
         #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
-        const fn $modifier>(self) -> $ty {
+        pub const fn $modifier(self) -> $ty {
             self.add_modifier($variant)
         }
 
         #[doc = concat!("Removes the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
         #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
-        const fn $not_modifier(self) -> $ty {
+        pub const fn $not_modifier(self) -> $ty {
             self.remove_modifier($variant)
         }
     };

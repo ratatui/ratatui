@@ -541,8 +541,6 @@ impl fmt::Display for ResetRegion {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::style::Stylize;
-
     use super::*;
 
     #[test]
