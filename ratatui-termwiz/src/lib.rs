@@ -780,8 +780,6 @@ mod tests {
 
     #[test]
     fn from_cell_attribute_for_style() {
-        use ratatui_core::style::Stylize;
-
         #[cfg(feature = "underline-color")]
         const STYLE: Style = Style::new()
             .underline_color(Color::Reset)
