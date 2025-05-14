@@ -43,6 +43,26 @@ impl<'a> BarGroup<'a> {
         }
     }
 
+    /// Creates a new `BarGroup` with the given bars and label.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::style::{Style, Stylize};
+    /// use ratatui::widgets::{Bar, BarGroup};
+    ///
+    /// let group = BarGroup::with_label(
+    ///     "Group1",
+    ///     vec![Bar::with_label("A", 10), Bar::with_label("B", 20)],
+    /// );
+    /// ```
+    pub fn with_label<T: Into<Line<'a>>, B: Into<Vec<Bar<'a>>>>(label: T, bars: B) -> Self {
+        Self {
+            label: Some(label.into()),
+            bars: bars.into(),
+        }
+    }
+
     /// Set the group label
     ///
     /// `label` can be a [`&str`], [`String`] or anything that can be converted into [`Line`].
