@@ -1617,7 +1617,7 @@ All notable changes to this project will be documented in this file.
 
   > The paste crate is no longer maintained. Replaces the usages of this in
   > the Stylize declarative macros with hard coded values. These macros are
-  > internal implementation deatil to ratatui and so the changes should have
+  > internal implementation detail to ratatui and so the changes should have
   > no impact on users.
   >
   > Fixes:https://github.com/ratatui/ratatui/issues/1712
