@@ -117,7 +117,7 @@ unstable-backend-writer = [
 [dependencies]
 document-features = { workspace = true, optional = true }
 instability.workspace = true
-palette = { version = "0.7.6", optional = true }
+palette = { workspace = true, optional = true }
 ratatui-core = { workspace = true }
 ratatui-crossterm = { workspace = true, optional = true }
 ratatui-macros = { workspace = true, optional = true }
@@ -129,23 +129,22 @@ serde = { workspace = true, optional = true }
 ratatui-termion = { workspace = true, optional = true }
 
 [dev-dependencies]
-argh = "0.1.12"
-color-eyre = "0.6.2"
-criterion = { version = "0.5.1", features = ["html_reports"] }
-crossterm = { version = "0.29.0", features = ["event-stream"] }
-fakeit = "1.1"
-futures = "0.3.30"
-indoc = "2"
-pretty_assertions = "1.4.0"
-rand = "0.9.1"
-rand_chacha = "0.9.0"
-rstest = "0.25.0"
+color-eyre.workspace = true
+criterion.workspace = true
+crossterm = { workspace = true, features = ["event-stream"] }
+fakeit.workspace = true
+futures.workspace = true
+indoc.workspace = true
+pretty_assertions.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+rstest.workspace = true
 serde_json.workspace = true
-time = { version = "0.3.39", features = ["local-offset"] }
-tokio = { version = "1.44.2", features = ["rt", "macros", "time", "rt-multi-thread"] }
-tracing = "0.1.40"
-tracing-appender = "0.2.3"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+time = { workspace = true, features = ["local-offset"] }
+tokio = { workspace = true, features = ["rt", "macros", "time", "rt-multi-thread"] }
+tracing.workspace = true
+tracing-appender.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [lints]
 workspace = true

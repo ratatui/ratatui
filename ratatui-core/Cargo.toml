@@ -56,21 +56,21 @@ scrolling-regions = []
 serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
 [dependencies]
-anstyle = { version = "1", optional = true }
-bitflags = "2.3"
-compact_str = { version = "0.9.0", default-features = false }
+anstyle = { workspace = true, optional = true }
+bitflags.workspace = true
+compact_str.workspace = true
 document-features = { workspace = true, optional = true }
-hashbrown = "0.15.2"
+hashbrown.workspace = true
 indoc.workspace = true
 itertools.workspace = true
-kasuari = { version = "0.4.6", default-features = false }
-lru = "0.12.0"
-palette = { version = "0.7.6", optional = true }
+kasuari = { workspace = true, default-features = false }
+lru.workspace = true
+palette = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
-thiserror = { version = "2", default-features = false }
+thiserror = { workspace = true, default-features = false }
 unicode-segmentation.workspace = true
-unicode-truncate = { version = "2", default-features = false }
+unicode-truncate = { workspace = true, default-features = false }
 unicode-width.workspace = true
 
 [dev-dependencies]
