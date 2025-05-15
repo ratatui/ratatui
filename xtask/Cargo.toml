@@ -10,7 +10,7 @@ clap = { version = "4.5.37", features = ["derive"] }
 clap-cargo = { version = "0.15.1", features = ["cargo_metadata"] }
 clap-verbosity-flag = { version = "3.0.2", default-features = false, features = ["tracing"] }
 color-eyre = "0.6.3"
-duct = "0.13.7"
+duct = "1.0.0"
 itertools.workspace = true
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18" }
