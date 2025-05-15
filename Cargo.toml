@@ -27,15 +27,26 @@ edition = "2021"
 rust-version = "1.81.0"
 
 [workspace.dependencies]
-bitflags = "2.9.0"
-color-eyre = "0.6.3"
-crossterm = "0.29.0"
-document-features = "0.2.11"
-hashbrown = "0.15.3"
-indoc = "2.0.6"
-instability = "0.3.7"
-itertools = { version = "0.13.0", default-features = false, features = ["use_alloc"] }
-pretty_assertions = "1.4.1"
+anstyle = "1"
+bitflags = "2.9"
+color-eyre = "0.6"
+compact_str = { version = "0.9", default-features = false }
+criterion = { version = "0.5", features = ["html_reports"] }
+crossterm = "0.29"
+document-features = "0.2"
+fakeit = "1"
+futures = "0.3"
+hashbrown = "0.15"
+indoc = "2"
+instability = "0.3"
+itertools = { version = "0.14", default-features = false, features = ["use_alloc"] }
+kasuari = { version = "0.4", default-features = false }
+line-clipping = "0.3"
+lru = "0.14"
+palette = "0.7"
+pretty_assertions = "1"
+rand = "0.9"
+rand_chacha = "0.9"
 ratatui = { path = "ratatui", version = "0.30.0-alpha.3" }
 ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.4" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.3" }
@@ -43,13 +54,21 @@ ratatui-macros = { path = "ratatui-macros", version = "0.7.0-alpha.2" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.3" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-alpha.3" }
 ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-alpha.3" }
-rstest = "0.25.0"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-strum = { version = "0.26.3", default-features = false, features = ["derive"] }
-termion = "4.0.5"
-termwiz = { version = "0.23.3" }
-unicode-segmentation = "1.12.0"
+rstest = "0.25"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+strum = { version = "0.27", default-features = false, features = ["derive"] }
+termion = "4"
+termwiz = "0.23"
+thiserror = { version = "2", default-features = false }
+time = { version = "0.3", default-features = false }
+tokio = "1"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = "0.3"
+trybuild = "1"
+unicode-segmentation = "1"
+unicode-truncate = { version = "2", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width = "=0.2.0"
 
