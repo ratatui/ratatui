@@ -65,7 +65,7 @@ time = { version = "0.3", default-features = false }
 tokio = "1"
 tracing = "0.1"
 tracing-appender = "0.2"
-tracing-subscriber = { version = "0.3" }
+tracing-subscriber = "0.3"
 trybuild = "1"
 unicode-segmentation = "1"
 unicode-truncate = { version = "2", default-features = false }
