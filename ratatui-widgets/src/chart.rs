@@ -1,4 +1,5 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
+use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::max;
 use core::ops::{Not, Range};
@@ -205,6 +206,84 @@ impl MultiColorLine {
         self.x_axis = false;
         self
     }
+    /// Helper function to create points slightly before the boundary.
+    /// The direction we need to move the point depends on the direction of the previous point.
+    /// This is needed to ensure we don't end up stuck in a never ending loop as it continuously
+    /// splits the same line over and over. TODO: All the bit shifting here can be
+    /// removed once MSRV is raised to 1.86.0 by replacing this manual bit shifting with
+    /// the `f64::next_up` and `f64::next_down` functions respectively.
+    fn create_point_that_ends_before_boundary(previous: Point, next: Point) -> Option<Point> {
+        const F64_SIGN_MASK: u64 = 0x8000_0000_0000_0000;
+        const F64_TINY_BITS: u64 = 0x1;
+        const F64_NEG_TINY_BITS: u64 = F64_TINY_BITS | F64_SIGN_MASK;
+        let new_x = match next.x.partial_cmp(&previous.x) {
+            Some(cmp) => match cmp {
+                core::cmp::Ordering::Greater => {
+                    let bits = next.x.to_bits();
+                    let abs = bits & !F64_SIGN_MASK;
+                    let next_bits = if abs == 0 {
+                        F64_NEG_TINY_BITS
+                    } else if bits == abs {
+                        bits - 1
+                    } else {
+                        bits + 1
+                    };
+                    Some(f64::from_bits(next_bits))
+                }
+                core::cmp::Ordering::Equal => None,
+                core::cmp::Ordering::Less => {
+                    let bits = next.x.to_bits();
+                    let abs = bits & !F64_SIGN_MASK;
+                    let next_bits = if abs == 0 {
+                        F64_TINY_BITS
+                    } else if bits == abs {
+                        bits + 1
+                    } else {
+                        bits - 1
+                    };
+                    Some(f64::from_bits(next_bits))
+                }
+            },
+            _ => None,
+        };
+
+        let new_y = match next.y.partial_cmp(&previous.y) {
+            Some(cmp) => match cmp {
+                core::cmp::Ordering::Greater => {
+                    let bits = next.y.to_bits();
+                    let abs = bits & !F64_SIGN_MASK;
+                    let next_bits = if abs == 0 {
+                        F64_NEG_TINY_BITS
+                    } else if bits == abs {
+                        bits - 1
+                    } else {
+                        bits + 1
+                    };
+                    Some(f64::from_bits(next_bits))
+                }
+                core::cmp::Ordering::Equal => None,
+                core::cmp::Ordering::Less => {
+                    let bits = next.y.to_bits();
+                    let abs = bits & !F64_SIGN_MASK;
+                    let next_bits = if abs == 0 {
+                        F64_TINY_BITS
+                    } else if bits == abs {
+                        bits + 1
+                    } else {
+                        bits - 1
+                    };
+                    Some(f64::from_bits(next_bits))
+                }
+            },
+            _ => None,
+        };
+
+        if let (Some(new_x), Some(new_y)) = (new_x, new_y) {
+            Some(Point::new(new_x, new_y))
+        } else {
+            None
+        }
+    }
 
     /// Based on the ranges specified, draws each line on the canvas in its respective color
     fn draw_lines_on_canvas_based_on_values(
@@ -217,31 +296,61 @@ impl MultiColorLine {
         y2: f64,
     ) {
         let line = LineSegment::new(Point::new(x1, y1), Point::new(x2, y2));
-        // draw the line in the default color.
-        if let Some(default) = default {
-            ctx.draw(&CanvasLine {
-                x1: line.p1.x,
-                y1: line.p1.y,
-                x2: line.p2.x,
-                y2: line.p2.y,
+
+        let default_range = if let Some(default) = default {
+            vec![ColorRange {
+                range: f64::MIN..f64::MAX,
                 color: default,
-            });
-        }
-        // draw the rest of the color ranges on top
-        for range in &self.ranges {
-            let window = if self.x_axis {
-                Window::new(range.range.start, range.range.end, f64::MIN, f64::MAX)
-            } else {
-                Window::new(f64::MIN, f64::MAX, range.range.start, range.range.end)
-            };
-            if let Some(line_within_window) = clip_line(line, window) {
-                ctx.draw(&CanvasLine {
-                    x1: line_within_window.p1.x,
-                    y1: line_within_window.p1.y,
-                    x2: line_within_window.p2.x,
-                    y2: line_within_window.p2.y,
-                    color: range.color,
-                });
+            }]
+        } else {
+            vec![]
+        };
+
+        let mut lines_to_draw = vec![line];
+        while let Some(line) = lines_to_draw.pop() {
+            for range in self.ranges.iter().chain(default_range.iter()) {
+                let window = if self.x_axis {
+                    Window::new(range.range.start, range.range.end, f64::MIN, f64::MAX)
+                } else {
+                    Window::new(f64::MIN, f64::MAX, range.range.start, range.range.end)
+                };
+                #[allow(clippy::float_cmp)]
+                // we actually are fine doing direct comparisons because we want to check if the
+                // value changed during clipping, otherwise the value would be exact
+                if let Some(line_within_window) = clip_line(line, window) {
+                    // line was chopped off at p1
+                    if line_within_window.p1.x != line.p1.x || line_within_window.p1.y != line.p1.y
+                    {
+                        if let Some(new_p2) = Self::create_point_that_ends_before_boundary(
+                            line.p1,
+                            line_within_window.p1,
+                        ) {
+                            let new_start_line = LineSegment::new(line.p1, new_p2);
+                            lines_to_draw.push(new_start_line);
+                        }
+                    }
+
+                    // line was chopped off a p2
+                    if line_within_window.p2.x != line.p2.x || line_within_window.p2.y != line.p2.y
+                    {
+                        if let Some(new_p1) = Self::create_point_that_ends_before_boundary(
+                            line.p2,
+                            line_within_window.p2,
+                        ) {
+                            let new_end_line = LineSegment::new(new_p1, line.p2);
+                            lines_to_draw.push(new_end_line);
+                        }
+                    }
+
+                    ctx.draw(&CanvasLine {
+                        x1: line_within_window.p1.x,
+                        y1: line_within_window.p1.y,
+                        x2: line_within_window.p2.x,
+                        y2: line_within_window.p2.y,
+                        color: range.color,
+                    });
+                    break;
+                }
             }
         }
     }
