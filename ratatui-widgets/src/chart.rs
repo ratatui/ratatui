@@ -413,7 +413,7 @@ pub struct Dataset<'a> {
     /// Style used to plot this dataset
     style: Style,
     /// If using [`GraphType::Line`] you can specify different color ranges by value
-    multi_color_line_config: Option<MultiColorLine>,
+    multi_color_line: Option<MultiColorLine>,
 }
 
 impl<'a> Dataset<'a> {
@@ -507,13 +507,15 @@ impl<'a> Dataset<'a> {
     ///     .style(Style::default().cyan())
     ///     .data(&[(0.0, 0.0), (1.0, 10.0)]);
     /// ```
+    ///
     /// # Note
+    ///
     /// Ordering matters, ranges added first take precedence.
     /// In practice this means that range `0.0..1.0` followed by `0.0..5.0` is equivalent to range
     /// `0.0..1.0` followed by `1.0..5.0`
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn multi_color_line(mut self, multi_color_line_config: MultiColorLine) -> Self {
-        self.multi_color_line_config = Some(multi_color_line_config);
+    pub fn multi_color_line(mut self, multi_color_line: MultiColorLine) -> Self {
+        self.multi_color_line = Some(multi_color_line);
         self
     }
 
@@ -1153,10 +1155,8 @@ impl Widget for &Chart<'_> {
                     match dataset.graph_type {
                         GraphType::Line => {
                             for data in dataset.data.windows(2) {
-                                if let Some(multi_color_line_config) =
-                                    &dataset.multi_color_line_config
-                                {
-                                    multi_color_line_config.draw_lines_on_canvas_based_on_values(
+                                if let Some(multi_color_line) = &dataset.multi_color_line {
+                                    multi_color_line.draw_lines_on_canvas_based_on_values(
                                         dataset.style.fg,
                                         ctx,
                                         data[0].0,
