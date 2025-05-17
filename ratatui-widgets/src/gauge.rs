@@ -269,7 +269,7 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 pub struct LineGauge<'a> {
     block: Option<Block<'a>>,
     ratio: f64,
-    label: Option<Line<'a>>,
+    label: Option<Line<'a, 'a>>,
     style: Style,
     filled_symbol: &'a str,
     unfilled_symbol: &'a str,
@@ -357,7 +357,7 @@ impl<'a> LineGauge<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label<T>(mut self, label: T) -> Self
     where
-        T: Into<Line<'a>>,
+        T: Into<Line<'a, 'a>>,
     {
         self.label = Some(label.into());
         self

@@ -49,7 +49,7 @@ use ratatui_core::widgets::Widget;
 /// [`Stylize`]: ratatui_core::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Cell<'a> {
-    content: Text<'a>,
+    content: Text<'a, 'a>,
     style: Style,
 }
 
@@ -75,7 +75,7 @@ impl<'a> Cell<'a> {
     /// ```
     pub fn new<T>(content: T) -> Self
     where
-        T: Into<Text<'a>>,
+        T: Into<Text<'a, 'a>>,
     {
         Self {
             content: content.into(),
@@ -107,7 +107,7 @@ impl<'a> Cell<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn content<T>(mut self, content: T) -> Self
     where
-        T: Into<Text<'a>>,
+        T: Into<Text<'a, 'a>>,
     {
         self.content = content.into();
         self
@@ -161,7 +161,7 @@ impl Cell<'_> {
 
 impl<'a, T> From<T> for Cell<'a>
 where
-    T: Into<Text<'a>>,
+    T: Into<Text<'a, 'a>>,
 {
     fn from(content: T) -> Self {
         Self {

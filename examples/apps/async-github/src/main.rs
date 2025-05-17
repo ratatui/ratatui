@@ -228,7 +228,7 @@ impl Widget for &PullRequestListWidget {
     }
 }
 
-impl From<&PullRequest> for Row<'_> {
+impl From<&PullRequest> for Row<'_, '_> {
     fn from(pr: &PullRequest) -> Self {
         let pr = pr.clone();
         Row::new(vec![pr.id, pr.title, pr.url])

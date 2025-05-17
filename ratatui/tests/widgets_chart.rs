@@ -16,12 +16,12 @@ fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
 fn axis_test_case<'line, Lines>(
     width: u16,
     height: u16,
-    x_axis: Axis,
-    y_axis: Axis,
+    x_axis: Axis<'line>,
+    y_axis: Axis<'line>,
     expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<text::Line<'line>>,
+    Lines::Item: Into<text::Line<'line, 'line>>,
 {
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -152,13 +152,13 @@ fn widgets_chart_can_render_on_small_areas(#[case] width: u16, #[case] height: u
     ],
 )]
 fn widgets_chart_handles_long_labels<'line, Lines>(
-    #[case] x_labels: Option<(&str, &str)>,
-    #[case] y_labels: Option<(&str, &str)>,
+    #[case] x_labels: Option<(&'line str, &'line str)>,
+    #[case] y_labels: Option<(&'line str, &'line str)>,
     #[case] x_alignment: Alignment,
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<text::Line<'line>>,
+    Lines::Item: Into<text::Line<'line, 'line>>,
 {
     let mut x_axis = Axis::default().bounds([0.0, 1.0]);
     if let Some((left_label, right_label)) = x_labels {
@@ -209,7 +209,7 @@ fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<text::Line<'line>>,
+    Lines::Item: Into<text::Line<'line, 'line>>,
 {
     let x_axis = Axis::default()
         .labels(["AAAA", "B", "C"])
@@ -245,7 +245,7 @@ fn widgets_chart_handles_y_axis_labels_alignments<'line, Lines>(
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
-    Lines::Item: Into<text::Line<'line>>,
+    Lines::Item: Into<text::Line<'line, 'line>>,
 {
     let x_axis = Axis::default().labels(create_labels(&["AAAAA", "B"]));
     let y_axis = Axis::default()

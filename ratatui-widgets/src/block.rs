@@ -108,7 +108,7 @@ pub mod title;
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
     /// List of titles
-    titles: Vec<(Option<Position>, Line<'a>)>,
+    titles: Vec<(Option<Position>, Line<'a, 'a>)>,
     /// The style to be patched to all titles of the block
     titles_style: Style,
     /// The default alignment of the titles that don't have one
@@ -260,7 +260,7 @@ impl<'a> Block<'a> {
     /// // └──────────────────────────────────┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title_top<T: Into<Line<'a>>>(mut self, title: T) -> Self {
+    pub fn title_top<T: Into<Line<'a, 'a>>>(mut self, title: T) -> Self {
         let line = title.into();
         self.titles.push((Some(Position::Top), line));
         self
@@ -289,7 +289,7 @@ impl<'a> Block<'a> {
     /// // └Left1─Left2───Center─────────Right┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
+    pub fn title_bottom<T: Into<Line<'a, 'a>>>(mut self, title: T) -> Self {
         let line = title.into();
         self.titles.push((Some(Position::Bottom), line));
         self
@@ -612,7 +612,7 @@ impl Widget for &Block<'_> {
     }
 }
 
-impl Block<'_> {
+impl<'a> Block<'a> {
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
         self.render_left_side(area, buf);
         self.render_top_side(area, buf);
@@ -814,7 +814,7 @@ impl Block<'_> {
         &self,
         position: Position,
         alignment: Alignment,
-    ) -> impl DoubleEndedIterator<Item = &Line> {
+    ) -> impl DoubleEndedIterator<Item = &Line<'_, 'a>> {
         self.titles
             .iter()
             .filter(move |(pos, _)| pos.unwrap_or(self.titles_position) == position)

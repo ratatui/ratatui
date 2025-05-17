@@ -352,7 +352,7 @@ impl SelectedTab {
     }
 
     /// Convert a `SelectedTab` into a `Line` to display it by the `Tabs` widget.
-    fn to_tab_title(value: Self) -> Line<'static> {
+    fn to_tab_title(value: Self) -> Line<'static, 'static> {
         use tailwind::{INDIGO, ORANGE, SKY};
         let text = value.to_string();
         let color = match value {

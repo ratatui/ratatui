@@ -38,7 +38,6 @@ pub use ratatui_widgets::block::{Block, Padding};
 pub use ratatui_widgets::borders::{BorderType, Borders};
 #[cfg(feature = "widget-calendar")]
 pub use ratatui_widgets::calendar;
-pub use ratatui_widgets::canvas;
 pub use ratatui_widgets::chart::{Axis, Chart, Dataset, GraphType, LegendPosition};
 pub use ratatui_widgets::clear::Clear;
 pub use ratatui_widgets::gauge::{Gauge, LineGauge};
@@ -52,6 +51,7 @@ pub use ratatui_widgets::scrollbar::{
 pub use ratatui_widgets::sparkline::{RenderDirection, Sparkline, SparklineBar};
 pub use ratatui_widgets::table::{Cell, HighlightSpacing, Row, Table, TableState};
 pub use ratatui_widgets::tabs::Tabs;
+pub use ratatui_widgets::{canvas, cells, items, rows};
 #[instability::unstable(feature = "widget-ref")]
 pub use {stateful_widget_ref::StatefulWidgetRef, widget_ref::WidgetRef};
 

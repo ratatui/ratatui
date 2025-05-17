@@ -35,7 +35,7 @@ pub struct Bar<'a> {
     /// Value to display on the bar (computed when the data is passed to the widget)
     pub(super) value: u64,
     /// optional label to be printed under the bar
-    pub(super) label: Option<Line<'a>>,
+    pub(super) label: Option<Line<'a, 'a>>,
     /// style for the bar
     pub(super) style: Style,
     /// style of the value printed at the bottom of the bar.
@@ -75,7 +75,7 @@ impl<'a> Bar<'a> {
     ///
     /// let bar = Bar::with_label("Label", 42);
     /// ```
-    pub fn with_label<T: Into<Line<'a>>>(label: T, value: u64) -> Self {
+    pub fn with_label<T: Into<Line<'a, 'a>>>(label: T, value: u64) -> Self {
         Self {
             value,
             label: Some(label.into()),
@@ -130,7 +130,7 @@ impl<'a> Bar<'a> {
     /// display the label **in** the bar.
     /// See [`BarChart::direction`](crate::barchart::BarChart::direction) to set the direction.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label<T: Into<Line<'a>>>(mut self, label: T) -> Self {
+    pub fn label<T: Into<Line<'a, 'a>>>(mut self, label: T) -> Self {
         self.label = Some(label.into());
         self
     }
