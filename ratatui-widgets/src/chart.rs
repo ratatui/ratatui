@@ -230,7 +230,7 @@ impl MultiColorLine {
                     };
                     Some(f64::from_bits(next_bits))
                 }
-                core::cmp::Ordering::Equal => None,
+                core::cmp::Ordering::Equal => Some(next.x),
                 core::cmp::Ordering::Less => {
                     let bits = next.x.to_bits();
                     let abs = bits & !F64_SIGN_MASK;
@@ -261,7 +261,7 @@ impl MultiColorLine {
                     };
                     Some(f64::from_bits(next_bits))
                 }
-                core::cmp::Ordering::Equal => None,
+                core::cmp::Ordering::Equal => Some(next.y),
                 core::cmp::Ordering::Less => {
                     let bits = next.y.to_bits();
                     let abs = bits & !F64_SIGN_MASK;
@@ -279,7 +279,12 @@ impl MultiColorLine {
         };
 
         if let (Some(new_x), Some(new_y)) = (new_x, new_y) {
-            Some(Point::new(new_x, new_y))
+            let new_point = Point::new(new_x, new_y);
+            if next == new_point {
+                None
+            } else {
+                Some(new_point)
+            }
         } else {
             None
         }
