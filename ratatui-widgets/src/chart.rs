@@ -335,7 +335,7 @@ impl MultiColorLine {
                         }
                     }
 
-                    // line was chopped off a p2
+                    // line was chopped off at p2
                     if line_within_window.p2.x != line.p2.x || line_within_window.p2.y != line.p2.y
                     {
                         if let Some(new_p1) = Self::create_point_that_ends_before_boundary(
