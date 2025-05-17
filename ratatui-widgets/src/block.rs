@@ -127,7 +127,7 @@ pub struct Block<'a> {
     style: Style,
     /// Block padding
     padding: Padding,
-    /// Merging Style
+    /// Merging style
     merge_style: Option<MergeStyle>,
 }
 
