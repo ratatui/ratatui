@@ -197,6 +197,7 @@
 //! [CI Status]: https://github.com/ratatui/ratatui/actions
 //! [Ratatui]: https://github.com/ratatui/ratatui
 //! [Layout concepts]: https://ratatui.rs/concepts/layout
+#![no_std]
 mod layout;
 mod line;
 mod row;
