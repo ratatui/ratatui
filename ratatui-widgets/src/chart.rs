@@ -1,8 +1,11 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
+use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::max;
-use core::ops::Not;
+use core::ops::{Not, Range};
 
+use line_clipping::cohen_sutherland::clip_line;
+use line_clipping::{LineSegment, Point, Window};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Flex, Layout, Position, Rect};
 use ratatui_core::style::{Color, Style, Styled};
@@ -170,6 +173,192 @@ pub enum GraphType {
     Bar,
 }
 
+/// Used to specify a range of values that will be drawn in another color.
+///
+/// If the value does not fall inside any range specified the color will fallback to the style
+/// foreground color.
+///
+/// Has no effect in any [`GraphType`] other than [line](GraphType::Line)
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct MultiColorLine {
+    ranges: Vec<ColorRange>,
+    x_axis: bool,
+}
+
+impl MultiColorLine {
+    /// Add a range of values to be set to a specified Color
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn add_color_range(mut self, range: Range<f64>, color: Color) -> Self {
+        self.ranges.push(ColorRange { range, color });
+        self
+    }
+
+    /// Sets ranges to be calculated based on X Axis.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn x_axis(mut self) -> Self {
+        self.x_axis = true;
+        self
+    }
+
+    /// Sets ranges to be calculated based on Y Axis.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn y_axis(mut self) -> Self {
+        self.x_axis = false;
+        self
+    }
+    /// Helper function to create points slightly before the boundary.
+    /// The direction we need to move the point depends on the direction of the previous point.
+    /// This is needed to ensure we don't end up stuck in a never ending loop as it continuously
+    /// splits the same line over and over. TODO: All the bit shifting here can be
+    /// removed once MSRV is raised to 1.86.0 by replacing this manual bit shifting with
+    /// the `f64::next_up` and `f64::next_down` functions respectively.
+    fn create_point_that_ends_before_boundary(previous: Point, next: Point) -> Option<Point> {
+        const F64_SIGN_MASK: u64 = 0x8000_0000_0000_0000;
+        const F64_TINY_BITS: u64 = 0x1;
+        const F64_NEG_TINY_BITS: u64 = F64_TINY_BITS | F64_SIGN_MASK;
+        let new_x = match next.x.partial_cmp(&previous.x) {
+            Some(cmp) => match cmp {
+                core::cmp::Ordering::Greater => {
+                    let bits = next.x.to_bits();
+                    let abs = bits & !F64_SIGN_MASK;
+                    let next_bits = if abs == 0 {
+                        F64_NEG_TINY_BITS
+                    } else if bits == abs {
+                        bits - 1
+                    } else {
+                        bits + 1
+                    };
+                    Some(f64::from_bits(next_bits))
+                }
+                core::cmp::Ordering::Equal => Some(next.x),
+                core::cmp::Ordering::Less => {
+                    let bits = next.x.to_bits();
+                    let abs = bits & !F64_SIGN_MASK;
+                    let next_bits = if abs == 0 {
+                        F64_TINY_BITS
+                    } else if bits == abs {
+                        bits + 1
+                    } else {
+                        bits - 1
+                    };
+                    Some(f64::from_bits(next_bits))
+                }
+            },
+            _ => None,
+        };
+
+        let new_y = match next.y.partial_cmp(&previous.y) {
+            Some(cmp) => match cmp {
+                core::cmp::Ordering::Greater => {
+                    let bits = next.y.to_bits();
+                    let abs = bits & !F64_SIGN_MASK;
+                    let next_bits = if abs == 0 {
+                        F64_NEG_TINY_BITS
+                    } else if bits == abs {
+                        bits - 1
+                    } else {
+                        bits + 1
+                    };
+                    Some(f64::from_bits(next_bits))
+                }
+                core::cmp::Ordering::Equal => Some(next.y),
+                core::cmp::Ordering::Less => {
+                    let bits = next.y.to_bits();
+                    let abs = bits & !F64_SIGN_MASK;
+                    let next_bits = if abs == 0 {
+                        F64_TINY_BITS
+                    } else if bits == abs {
+                        bits + 1
+                    } else {
+                        bits - 1
+                    };
+                    Some(f64::from_bits(next_bits))
+                }
+            },
+            _ => None,
+        };
+
+        if let (Some(new_x), Some(new_y)) = (new_x, new_y) {
+            let new_point = Point::new(new_x, new_y);
+            if next == new_point {
+                None
+            } else {
+                Some(new_point)
+            }
+        } else {
+            None
+        }
+    }
+
+    /// Based on the ranges specified, draws each line on the canvas in its respective color
+    fn draw_lines_on_canvas_based_on_values(
+        &self,
+        default: Color,
+        ctx: &mut crate::canvas::Context<'_>,
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+    ) {
+        let line = LineSegment::new(Point::new(x1, y1), Point::new(x2, y2));
+
+        let default_range = ColorRange {
+            range: f64::MIN..f64::MAX,
+            color: default,
+        };
+
+        let mut lines_to_draw = vec![line];
+        while let Some(line) = lines_to_draw.pop() {
+            for range in self.ranges.iter().chain(core::iter::once(&default_range)) {
+                let window = if self.x_axis {
+                    Window::new(range.range.start, range.range.end, f64::MIN, f64::MAX)
+                } else {
+                    Window::new(f64::MIN, f64::MAX, range.range.start, range.range.end)
+                };
+                if let Some(line_within_window) = clip_line(line, window) {
+                    // if starting point changed, line must cross window boundary
+                    if line_within_window.p1 != line.p1 {
+                        if let Some(new_p2) = Self::create_point_that_ends_before_boundary(
+                            line.p1,
+                            line_within_window.p1,
+                        ) {
+                            let new_start_line = LineSegment::new(line.p1, new_p2);
+                            lines_to_draw.push(new_start_line);
+                        }
+                    }
+
+                    // if ending point changed, line must cross window boundary
+                    if line_within_window.p2 != line.p2 {
+                        if let Some(new_p1) = Self::create_point_that_ends_before_boundary(
+                            line.p2,
+                            line_within_window.p2,
+                        ) {
+                            let new_end_line = LineSegment::new(new_p1, line.p2);
+                            lines_to_draw.push(new_end_line);
+                        }
+                    }
+
+                    ctx.draw(&CanvasLine {
+                        x1: line_within_window.p1.x,
+                        y1: line_within_window.p1.y,
+                        x2: line_within_window.p2.x,
+                        y2: line_within_window.p2.y,
+                        color: range.color,
+                    });
+                    break;
+                }
+            }
+        }
+    }
+}
+
+/// A range of values to be drawn in the specified color
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct ColorRange {
+    range: Range<f64>,
+    color: Color,
+}
+
 /// Allow users to specify the position of a legend in a [`Chart`]
 ///
 /// See [`Chart::legend_position`]
@@ -328,6 +517,8 @@ pub struct Dataset<'a> {
     graph_type: GraphType,
     /// Style used to plot this dataset
     style: Style,
+    /// If using [`GraphType::Line`] you can specify different color ranges by value
+    multi_color_line: Option<MultiColorLine>,
 }
 
 impl<'a> Dataset<'a> {
@@ -392,6 +583,44 @@ impl<'a> Dataset<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn graph_type(mut self, graph_type: GraphType) -> Self {
         self.graph_type = graph_type;
+        self
+    }
+
+    /// Sets a list of value ranges that will modify the color of the line
+    ///
+    /// Used to specify a range of values that will be drawn in another color.
+    /// If the value does not fall inside any range specified the color will fallback to the style
+    /// foreground color.
+    ///
+    /// Has no effect in any [`GraphType`] other than [line](GraphType::Line)
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui::style::{Color, Style, Stylize};
+    /// use ratatui::widgets::{Dataset, GraphType, MultiColorLine};
+    ///
+    /// let dataset = Dataset::default()
+    ///     .graph_type(GraphType::Line)
+    ///     .multi_color_line(
+    ///         MultiColorLine::default()
+    ///             .add_color_range(0.0..1.0, Color::Green)
+    ///             .add_color_range(0.0..5.0, Color::Red), // equivalent to 1.0..5.0
+    ///     )
+    ///     .style(Style::default().cyan())
+    ///     .data(&[(0.0, 0.0), (1.0, 10.0)]);
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// Ordering matters, ranges added first take precedence.
+    /// In practice this means that range `0.0..1.0` followed by `0.0..5.0` is equivalent to range
+    /// `0.0..1.0` followed by `1.0..5.0`
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn multi_color_line(mut self, multi_color_line: MultiColorLine) -> Self {
+        self.multi_color_line = Some(multi_color_line);
         self
     }
 
@@ -1031,13 +1260,24 @@ impl Widget for &Chart<'_> {
                     match dataset.graph_type {
                         GraphType::Line => {
                             for data in dataset.data.windows(2) {
-                                ctx.draw(&CanvasLine {
-                                    x1: data[0].0,
-                                    y1: data[0].1,
-                                    x2: data[1].0,
-                                    y2: data[1].1,
-                                    color: dataset.style.fg.unwrap_or(Color::Reset),
-                                });
+                                if let Some(multi_color_line) = &dataset.multi_color_line {
+                                    multi_color_line.draw_lines_on_canvas_based_on_values(
+                                        dataset.style.fg.unwrap_or(Color::Reset),
+                                        ctx,
+                                        data[0].0,
+                                        data[0].1,
+                                        data[1].0,
+                                        data[1].1,
+                                    );
+                                } else {
+                                    ctx.draw(&CanvasLine {
+                                        x1: data[0].0,
+                                        y1: data[0].1,
+                                        x2: data[1].0,
+                                        y2: data[1].1,
+                                        color: dataset.style.fg.unwrap_or(Color::Reset),
+                                    });
+                                }
                             }
                         }
                         GraphType::Bar => {
