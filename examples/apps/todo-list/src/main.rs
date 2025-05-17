@@ -71,6 +71,8 @@ impl Default for App {
                 (Status::Completed, "Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui."),
                 (Status::Todo, "Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!"),
                 (Status::Todo, "Walk with your dog", "Max is bored, go walk with him!"),
+                (Status::Todo, "散步和思考", "边散步边听音乐边思考!"),
+                (Status::Todo, "为 Ratatui 做贡献", "Ratatui 需要很多人的贡献！"),
                 (Status::Completed, "Pay the bills", "Pay the train subscription!!!"),
                 (Status::Completed, "Refactor list example", "If you see this info that means I completed this task!"),
             ]),
