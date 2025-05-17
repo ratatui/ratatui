@@ -293,7 +293,7 @@ impl MultiColorLine {
     /// Based on the ranges specified, draws each line on the canvas in its respective color
     fn draw_lines_on_canvas_based_on_values(
         &self,
-        default: Option<Color>,
+        default: Color,
         ctx: &mut crate::canvas::Context<'_>,
         x1: f64,
         y1: f64,
@@ -302,18 +302,14 @@ impl MultiColorLine {
     ) {
         let line = LineSegment::new(Point::new(x1, y1), Point::new(x2, y2));
 
-        let default_range = if let Some(default) = default {
-            vec![ColorRange {
-                range: f64::MIN..f64::MAX,
-                color: default,
-            }]
-        } else {
-            vec![]
+        let default_range = ColorRange {
+            range: f64::MIN..f64::MAX,
+            color: default,
         };
 
         let mut lines_to_draw = vec![line];
         while let Some(line) = lines_to_draw.pop() {
-            for range in self.ranges.iter().chain(default_range.iter()) {
+            for range in self.ranges.iter().chain(core::iter::once(&default_range)) {
                 let window = if self.x_axis {
                     Window::new(range.range.start, range.range.end, f64::MIN, f64::MAX)
                 } else {
@@ -1266,7 +1262,7 @@ impl Widget for &Chart<'_> {
                             for data in dataset.data.windows(2) {
                                 if let Some(multi_color_line) = &dataset.multi_color_line {
                                     multi_color_line.draw_lines_on_canvas_based_on_values(
-                                        dataset.style.fg,
+                                        dataset.style.fg.unwrap_or(Color::Reset),
                                         ctx,
                                         data[0].0,
                                         data[0].1,
