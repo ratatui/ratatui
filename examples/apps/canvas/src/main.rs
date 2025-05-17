@@ -117,7 +117,7 @@ impl App {
         }
     }
 
-    fn cycle_marker(&mut self) {
+    const fn cycle_marker(&mut self) {
         self.marker = match self.marker {
             Marker::Dot => Marker::Braille,
             Marker::Braille => Marker::Block,
