@@ -24,7 +24,7 @@ readme = "README.md"
 license = "MIT"
 exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
 edition = "2021"
-rust-version = "1.81.0"
+rust-version = "1.85.0"
 
 [workspace.dependencies]
 anstyle = "1"
