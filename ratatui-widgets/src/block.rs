@@ -13,6 +13,7 @@ use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols::border;
+use ratatui_core::symbols::merge::MergeStyle;
 use ratatui_core::text::Line;
 use ratatui_core::widgets::Widget;
 
@@ -126,6 +127,8 @@ pub struct Block<'a> {
     style: Style,
     /// Block padding
     padding: Padding,
+    /// Merging style
+    merge_style: Option<MergeStyle>,
 }
 
 impl<'a> Block<'a> {
@@ -141,6 +144,7 @@ impl<'a> Block<'a> {
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
             padding: Padding::ZERO,
+            merge_style: None,
         }
     }
 
@@ -530,6 +534,14 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// Sets the block's [`MergeStyle`] for overlapping characters. Setting it to `None`
+    /// never merges characters.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn merge_style(mut self, merge_style: Option<MergeStyle>) -> Self {
+        self.merge_style = merge_style;
+        self
+    }
+
     /// Compute the inner area of a block based on its border visibility rules.
     ///
     /// # Examples
@@ -639,9 +651,12 @@ impl Block<'_> {
 
     fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::LEFT) {
-            for y in area.top()..area.bottom() {
+            let offset = u16::from(self.merge_style.is_some());
+            // First and last element of the line are not drawn
+            // to avoid wrong merging with the corner.
+            for y in area.top() + offset..area.bottom() - offset {
                 buf[(area.left(), y)]
-                    .set_symbol(self.border_set.vertical_left)
+                    .merge_symbol(self.border_set.vertical_left, self.merge_style.as_ref())
                     .set_style(self.border_style);
             }
         }
@@ -649,9 +664,10 @@ impl Block<'_> {
 
     fn render_top_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::TOP) {
-            for x in area.left()..area.right() {
+            let offset = u16::from(self.merge_style.is_some());
+            for x in area.left() + offset..area.right() - offset {
                 buf[(x, area.top())]
-                    .set_symbol(self.border_set.horizontal_top)
+                    .merge_symbol(self.border_set.horizontal_top, self.merge_style.as_ref())
                     .set_style(self.border_style);
             }
         }
@@ -660,9 +676,10 @@ impl Block<'_> {
     fn render_right_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::RIGHT) {
             let x = area.right() - 1;
-            for y in area.top()..area.bottom() {
+            let offset = u16::from(self.merge_style.is_some());
+            for y in area.top() + offset..area.bottom() - offset {
                 buf[(x, y)]
-                    .set_symbol(self.border_set.vertical_right)
+                    .merge_symbol(self.border_set.vertical_right, self.merge_style.as_ref())
                     .set_style(self.border_style);
             }
         }
@@ -671,9 +688,10 @@ impl Block<'_> {
     fn render_bottom_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::BOTTOM) {
             let y = area.bottom() - 1;
-            for x in area.left()..area.right() {
+            let offset = u16::from(self.merge_style.is_some());
+            for x in area.left() + offset..area.right() - offset {
                 buf[(x, y)]
-                    .set_symbol(self.border_set.horizontal_bottom)
+                    .merge_symbol(self.border_set.horizontal_bottom, self.merge_style.as_ref())
                     .set_style(self.border_style);
             }
         }
@@ -682,7 +700,7 @@ impl Block<'_> {
     fn render_bottom_right_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
             buf[(area.right() - 1, area.bottom() - 1)]
-                .set_symbol(self.border_set.bottom_right)
+                .merge_symbol(self.border_set.bottom_right, self.merge_style.as_ref())
                 .set_style(self.border_style);
         }
     }
@@ -690,7 +708,7 @@ impl Block<'_> {
     fn render_top_right_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::RIGHT | Borders::TOP) {
             buf[(area.right() - 1, area.top())]
-                .set_symbol(self.border_set.top_right)
+                .merge_symbol(self.border_set.top_right, self.merge_style.as_ref())
                 .set_style(self.border_style);
         }
     }
@@ -698,7 +716,7 @@ impl Block<'_> {
     fn render_bottom_left_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
             buf[(area.left(), area.bottom() - 1)]
-                .set_symbol(self.border_set.bottom_left)
+                .merge_symbol(self.border_set.bottom_left, self.merge_style.as_ref())
                 .set_style(self.border_style);
         }
     }
@@ -706,7 +724,7 @@ impl Block<'_> {
     fn render_top_left_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::LEFT | Borders::TOP) {
             buf[(area.left(), area.top())]
-                .set_symbol(self.border_set.top_left)
+                .merge_symbol(self.border_set.top_left, self.merge_style.as_ref())
                 .set_style(self.border_style);
         }
     }
@@ -1150,6 +1168,7 @@ mod tests {
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
                 padding: Padding::ZERO,
+                merge_style: None,
             }
         );
     }
@@ -1644,6 +1663,78 @@ mod tests {
             "1TTTTTTTT2",
             "L        R",
             "3BBBBBBBB4",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    fn render_merging_block_helper(buffer: &mut Buffer, merge_style: Option<&MergeStyle>) {
+        Block::bordered()
+            .merge_style(merge_style.cloned())
+            .render(Rect::new(0, 0, 3, 3), buffer);
+        Block::bordered()
+            .border_type(BorderType::Thick)
+            .merge_style(merge_style.cloned())
+            .render(Rect::new(1, 1, 3, 4), buffer);
+        Block::bordered()
+            .border_type(BorderType::Double)
+            .merge_style(merge_style.cloned())
+            .render(Rect::new(2, 3, 3, 3), buffer);
+        Block::bordered()
+            .border_type(BorderType::Rounded)
+            .merge_style(merge_style.cloned())
+            .render(Rect::new(3, 0, 3, 2), buffer);
+        Block::bordered()
+            .merge_style(merge_style.cloned())
+            .render(buffer.area, buffer);
+    }
+
+    #[test]
+    fn render_non_merging_blocks() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
+        render_merging_block_helper(&mut buffer, None.as_ref());
+
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌────┐",
+            "│┏━╰─│",
+            "│┃┘┃ │",
+            "│┃╔═╗│",
+            "│┗║┛║│",
+            "└────┘",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_exact_merging_blocks() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
+        render_merging_block_helper(&mut buffer, Some(MergeStyle::Exact).as_ref());
+
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌─┬──┐",
+            "│┏┿╰─│",
+            "├╂┘┃ │",
+            "│┃╔═╗│",
+            "│┗║┛║│",
+            "└─╨─╨┘",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_best_fit_merging_blocks() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
+        render_merging_block_helper(&mut buffer, Some(MergeStyle::BestFit).as_ref());
+
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌─┬┬─┐",
+            "│┏┿╅─┤",
+            "├╂┘┃ │",
+            "│┃╔╋╗│",
+            "│┗╋┛║│",
+            "└─╨─╨┘",
         ]);
         assert_eq!(buffer, expected);
     }
