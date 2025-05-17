@@ -319,13 +319,9 @@ impl MultiColorLine {
                 } else {
                     Window::new(f64::MIN, f64::MAX, range.range.start, range.range.end)
                 };
-                #[allow(clippy::float_cmp)]
-                // we actually are fine doing direct comparisons because we want to check if the
-                // value changed during clipping, otherwise the value would be exact
                 if let Some(line_within_window) = clip_line(line, window) {
-                    // line was chopped off at p1
-                    if line_within_window.p1.x != line.p1.x || line_within_window.p1.y != line.p1.y
-                    {
+                    // if starting point changed, line must cross window boundary
+                    if line_within_window.p1 != line.p1 {
                         if let Some(new_p2) = Self::create_point_that_ends_before_boundary(
                             line.p1,
                             line_within_window.p1,
@@ -335,9 +331,8 @@ impl MultiColorLine {
                         }
                     }
 
-                    // line was chopped off at p2
-                    if line_within_window.p2.x != line.p2.x || line_within_window.p2.y != line.p2.y
-                    {
+                    // if ending point changed, line must cross window boundary
+                    if line_within_window.p2 != line.p2 {
                         if let Some(new_p1) = Self::create_point_that_ends_before_boundary(
                             line.p2,
                             line_within_window.p2,
