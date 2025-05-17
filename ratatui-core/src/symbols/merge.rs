@@ -13,6 +13,7 @@ pub enum MergeStyle {
     BestFit,
 }
 
+/// Merges two border symbols into one.
 pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle) -> BorderSymbol {
     let exact_result = BorderSymbol::new(
         merge_line_style(&prev.right, &next.right),
