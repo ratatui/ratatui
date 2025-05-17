@@ -128,7 +128,7 @@ impl App {
                 format!("{}", self.window[0]),
                 Style::default().add_modifier(Modifier::BOLD),
             ),
-            Span::raw(format!("{}", (self.window[0] + self.window[1]) / 2.0)),
+            Span::raw(format!("{}", f64::midpoint(self.window[0], self.window[1]))),
             Span::styled(
                 format!("{}", self.window[1]),
                 Style::default().add_modifier(Modifier::BOLD),
