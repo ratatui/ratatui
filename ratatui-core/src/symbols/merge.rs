@@ -26,6 +26,7 @@ pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle
     }
 }
 
+/// Merges two line styles into one.
 pub fn merge_line_style(prev: &LineStyle, next: &LineStyle) -> LineStyle {
     use LineStyle::{
         DoubleDash, Nothing, Plain, QuadrupleDash, QuadrupleDashThick, TripleDash, TripleDashThick,
