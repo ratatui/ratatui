@@ -40,7 +40,7 @@ fn main() -> Result<()> {
     let mut events = vec![]; // a buffer to store the recent events to display in the UI
     while !should_exit(&events) {
         handle_events(&mut events)?;
-        terminal.draw(|frame| draw(frame, &events))?;
+        terminal.draw(|frame| render(frame, &events))?;
     }
     ratatui::restore();
 
@@ -69,7 +69,7 @@ fn handle_events(events: &mut Vec<Event>) -> Result<()> {
 }
 
 #[instrument(skip_all)]
-fn draw(frame: &mut Frame, events: &[Event]) {
+fn render(frame: &mut Frame, events: &[Event]) {
     // To view this event, run the example with `RUST_LOG=tracing=debug cargo run --example tracing`
     trace!(frame_count = frame.count(), event_count = events.len());
     let events = events.iter().map(|e| format!("{e:?}")).collect::<Vec<_>>();

@@ -4,14 +4,14 @@ use alloc::vec::Vec;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
-use ratatui_core::style::{Modifier, Style, Styled};
+use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols;
 use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
 
 use crate::block::{Block, BlockExt};
 
-const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVERSED);
+const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().reversed();
 
 /// A widget that displays a horizontal set of Tabs with a single tab selected.
 ///
@@ -125,6 +125,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
     /// [`String`]: alloc::string::String
+    /// [`Modifier::REVERSED`]: ratatui_core::style::Modifier
     pub fn new<Iter>(titles: Iter) -> Self
     where
         Iter: IntoIterator,
@@ -347,7 +348,7 @@ impl<'a> Tabs<'a> {
     where
         T: Into<Line<'a>>,
     {
-        self.padding_left = padding.into();
+        self.padding_right = padding.into();
         self
     }
 }
@@ -554,6 +555,24 @@ mod tests {
     }
 
     #[test]
+    fn render_left_padding() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding_left("---");
+        let mut expected = Buffer::with_lines(["---Tab1 │---Tab2 │---Tab3 │---Tab4      "]);
+        // first tab selected
+        expected.set_style(Rect::new(3, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        test_case(tabs, Rect::new(0, 0, 40, 1), &expected);
+    }
+
+    #[test]
+    fn render_right_padding() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding_right("++");
+        let mut expected = Buffer::with_lines([" Tab1++│ Tab2++│ Tab3++│ Tab4++         "]);
+        // first tab selected
+        expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        test_case(tabs, Rect::new(0, 0, 40, 1), &expected);
+    }
+
+    #[test]
     fn render_more_padding() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("---", "++");
         let mut expected = Buffer::with_lines(["---Tab1++│---Tab2++│---Tab3++│"]);
@@ -654,11 +673,7 @@ mod tests {
                 .bold()
                 .not_italic()
                 .style,
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::White)
-                .add_modifier(Modifier::BOLD)
-                .remove_modifier(Modifier::ITALIC)
+            Style::default().black().on_white().bold().not_italic()
         );
     }
 }

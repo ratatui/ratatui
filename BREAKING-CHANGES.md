@@ -10,15 +10,13 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [Unreleased](#unreleased)
+- [v0.30.0 Unreleased](#v0300-unreleased)
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
   - The MSRV is now 1.81.0
   - `Backend` now requires an associated `Error` type and `clear_region` method
-  - `Backend` now uses `Self::Error` for error handling instead of `std::io::Error`
-  - `Terminal<B>` now uses `B::Error` for error handling instead of `std::io::Error`
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
   - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled
@@ -85,7 +83,28 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## Unreleased (0.30.0)
+## v0.30.0 Unreleased
+
+### `Style` no longer implements `Styled` ([#1572])
+
+[#1572]: https://github.com/ratatui/ratatui/pull/1572
+
+Any calls to methods implemented by the blanket implementation of `Stylize` are now defined directly
+on `Style`. Remove the `Stylize` import if it is no longer used by your code.
+
+```diff
+- use ratatui::style::Stylize;
+
+let style = Style::new().red();
+```
+
+The `reset()` method does not have a direct replacement, as it clashes with the existing `reset()`
+method. Use the `Style::reset()` method instead.
+
+```diff
+- some_style.reset();
++ Style::reset();
+```
 
 ### Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping `Terminal` ([#1794])
 
@@ -103,8 +122,6 @@ enabled feature flags.
 
 ### Disabling `default-features` will now disable layout cache, which can have a negative impact on performance ([#1795])
 
-[#1795]: https://github.com/ratatui/ratatui/pull/1795
-
 Layout cache is now opt-in in `ratatui-core` and enabled by default in `ratatui`. If app doesn't
 make use of `no_std`-compatibility, and disables `default-feature`, it is recommended to explicitly
 re-enable layout cache. Not doing so may impact performance.
@@ -120,6 +137,16 @@ re-enable layout cache. Not doing so may impact performance.
 
 Since `TestBackend` never fails, it now uses `Infallible` as associated `Error`. This may require
 changes in test cases that use `TestBackend`.
+
+### `Backend` now requires an associated `Error` type and `clear_region` method ([#1778])
+
+[#1778]: https://github.com/ratatui/ratatui/pull/1778
+
+Custom `Backend` implementations must now define an associated `Error` type for method `Result`s
+and implement the `clear_region` method, which no longer has a default implementation.
+
+This change was made to provide greater flexibility for custom backends, particularly to remove the
+explicit dependency on `std::io` for backends that want to support `no_std` targets.
 
 ### The MSRV is now 1.81.0 ([#1786])
 

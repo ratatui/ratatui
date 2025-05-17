@@ -1,7 +1,7 @@
 use ratatui::backend::TestBackend;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 use ratatui::widgets::Tabs;
 use ratatui::{symbols, Terminal};
 

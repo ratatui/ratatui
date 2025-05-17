@@ -30,7 +30,7 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 /// [Color Eyre recipe]: https://ratatui.rs/recipes/apps/color-eyre
 use color_eyre::{eyre::bail, Result};
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::{DefaultTerminal, Frame};
@@ -53,9 +53,9 @@ impl App {
 
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
 
-            if let Event::Key(key) = event::read()? {
+            if let Some(key) = event::read()?.as_key_press_event() {
                 match key.code {
                     KeyCode::Char('p') => panic!("intentional demo panic"),
                     KeyCode::Char('e') => bail!("intentional demo error"),
@@ -70,7 +70,7 @@ impl App {
         }
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame) {
         let text = vec![
             if self.hook_enabled {
                 Line::from("HOOK IS CURRENTLY **ENABLED**")

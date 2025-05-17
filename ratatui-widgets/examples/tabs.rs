@@ -15,7 +15,7 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Alignment, Constraint, Layout, Offset, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
@@ -34,22 +34,22 @@ fn main() -> Result<()> {
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut selected_tab = 0;
     loop {
-        terminal.draw(|frame| draw(frame, selected_tab))?;
-        if let Event::Key(key) = event::read()? {
+        terminal.draw(|frame| render(frame, selected_tab))?;
+        if let Some(key) = event::read()?.as_key_press_event() {
             match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Right | KeyCode::Char('l') | KeyCode::Tab => {
+                KeyCode::Char('l') | KeyCode::Right | KeyCode::Tab => {
                     selected_tab = (selected_tab + 1) % 3;
                 }
-                KeyCode::Left | KeyCode::Char('h') => selected_tab = (selected_tab + 2) % 3,
+                KeyCode::Char('h') | KeyCode::Left => selected_tab = (selected_tab + 2) % 3,
+                KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
                 _ => {}
             }
         }
     }
 }
 
-/// Draw the UI with tabs.
-fn draw(frame: &mut Frame, selected_tab: usize) {
+/// Render the UI with tabs.
+fn render(frame: &mut Frame, selected_tab: usize) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let [top, main] = vertical.areas(frame.area());
 

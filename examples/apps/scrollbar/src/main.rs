@@ -11,7 +11,7 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Alignment, Constraint, Layout, Margin};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::symbols::scrollbar;
@@ -40,47 +40,52 @@ impl App {
         let tick_rate = Duration::from_millis(250);
         let mut last_tick = Instant::now();
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
 
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-            if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
-                    match key.code {
-                        KeyCode::Char('q') => return Ok(()),
-                        KeyCode::Char('j') | KeyCode::Down => {
-                            self.vertical_scroll = self.vertical_scroll.saturating_add(1);
-                            self.vertical_scroll_state =
-                                self.vertical_scroll_state.position(self.vertical_scroll);
-                        }
-                        KeyCode::Char('k') | KeyCode::Up => {
-                            self.vertical_scroll = self.vertical_scroll.saturating_sub(1);
-                            self.vertical_scroll_state =
-                                self.vertical_scroll_state.position(self.vertical_scroll);
-                        }
-                        KeyCode::Char('h') | KeyCode::Left => {
-                            self.horizontal_scroll = self.horizontal_scroll.saturating_sub(1);
-                            self.horizontal_scroll_state = self
-                                .horizontal_scroll_state
-                                .position(self.horizontal_scroll);
-                        }
-                        KeyCode::Char('l') | KeyCode::Right => {
-                            self.horizontal_scroll = self.horizontal_scroll.saturating_add(1);
-                            self.horizontal_scroll_state = self
-                                .horizontal_scroll_state
-                                .position(self.horizontal_scroll);
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            if last_tick.elapsed() >= tick_rate {
+            if !event::poll(timeout)? {
                 last_tick = Instant::now();
+                continue;
+            }
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Char('j') | KeyCode::Down => self.scroll_down(),
+                    KeyCode::Char('k') | KeyCode::Up => self.scroll_up(),
+                    KeyCode::Char('h') | KeyCode::Left => self.scroll_left(),
+                    KeyCode::Char('l') | KeyCode::Right => self.scroll_right(),
+                    _ => {}
+                }
             }
         }
     }
 
+    fn scroll_down(&mut self) {
+        self.vertical_scroll = self.vertical_scroll.saturating_add(1);
+        self.vertical_scroll_state = self.vertical_scroll_state.position(self.vertical_scroll);
+    }
+
+    fn scroll_up(&mut self) {
+        self.vertical_scroll = self.vertical_scroll.saturating_sub(1);
+        self.vertical_scroll_state = self.vertical_scroll_state.position(self.vertical_scroll);
+    }
+
+    fn scroll_left(&mut self) {
+        self.horizontal_scroll = self.horizontal_scroll.saturating_sub(1);
+        self.horizontal_scroll_state = self
+            .horizontal_scroll_state
+            .position(self.horizontal_scroll);
+    }
+
+    fn scroll_right(&mut self) {
+        self.horizontal_scroll = self.horizontal_scroll.saturating_add(1);
+        self.horizontal_scroll_state = self
+            .horizontal_scroll_state
+            .position(self.horizontal_scroll);
+    }
+
     #[expect(clippy::too_many_lines, clippy::cast_possible_truncation)]
-    fn draw(&mut self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
         // Words made "loooong" to demonstrate line breaking.

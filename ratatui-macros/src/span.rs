@@ -119,7 +119,7 @@ macro_rules! span {
 #[cfg(test)]
 mod tests {
     use ratatui_core::{
-        style::{Color, Modifier, Style, Stylize},
+        style::{Color, Modifier, Style},
         text::Span,
     };
 

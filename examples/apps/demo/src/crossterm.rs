@@ -2,9 +2,7 @@ use std::error::Error;
 use std::io;
 use std::time::{Duration, Instant};
 
-use crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind,
-};
+use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode};
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -56,23 +54,20 @@ where
         terminal.draw(|frame| ui::draw(frame, &mut app))?;
 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Left | KeyCode::Char('h') => app.on_left(),
-                        KeyCode::Up | KeyCode::Char('k') => app.on_up(),
-                        KeyCode::Right | KeyCode::Char('l') => app.on_right(),
-                        KeyCode::Down | KeyCode::Char('j') => app.on_down(),
-                        KeyCode::Char(c) => app.on_key(c),
-                        _ => {}
-                    }
-                }
-            }
-        }
-        if last_tick.elapsed() >= tick_rate {
+        if !event::poll(timeout)? {
             app.on_tick();
             last_tick = Instant::now();
+            continue;
+        }
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
+                KeyCode::Char('h') | KeyCode::Left => app.on_left(),
+                KeyCode::Char('j') | KeyCode::Down => app.on_down(),
+                KeyCode::Char('k') | KeyCode::Up => app.on_up(),
+                KeyCode::Char('l') | KeyCode::Right => app.on_right(),
+                KeyCode::Char(c) => app.on_key(c),
+                _ => {}
+            }
         }
         if app.should_quit {
             return Ok(());

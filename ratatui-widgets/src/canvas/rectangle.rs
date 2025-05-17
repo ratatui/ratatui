@@ -79,7 +79,7 @@ impl Shape for Rectangle {
 mod tests {
     use ratatui_core::buffer::Buffer;
     use ratatui_core::layout::{Margin, Rect};
-    use ratatui_core::style::{Style, Stylize};
+    use ratatui_core::style::Style;
     use ratatui_core::symbols::Marker;
     use ratatui_core::widgets::Widget;
 
