@@ -112,20 +112,6 @@ impl fmt::Debug for ColorDebug {
 /// }
 /// ```
 macro_rules! color {
-    ( $variant:expr, $color:ident(), $on_color:ident() -> $ty:ty ) => {
-        #[doc = concat!("Sets the foreground color to [`", stringify!($color), "`](", stringify!($variant), ").")]
-        #[must_use = concat!("`", stringify!($color), "` returns the modified style without modifying the original")]
-        fn $color(self) -> $ty {
-            self.fg($variant)
-        }
-
-        #[doc = concat!("Sets the background color to [`", stringify!($color), "`](", stringify!($variant), ").")]
-        #[must_use = concat!("`", stringify!($on_color), "` returns the modified style without modifying the original")]
-        fn $on_color(self) -> $ty {
-            self.bg($variant)
-        }
-    };
-
     (pub const $variant:expr, $color:ident(), $on_color:ident() -> $ty:ty ) => {
         #[doc = concat!("Sets the foreground color to [`", stringify!($color), "`](", stringify!($variant), ").")]
         #[must_use = concat!("`", stringify!($color), "` returns the modified style without modifying the original")]
@@ -136,6 +122,20 @@ macro_rules! color {
         #[doc = concat!("Sets the background color to [`", stringify!($color), "`](", stringify!($variant), ").")]
         #[must_use = concat!("`", stringify!($on_color), "` returns the modified style without modifying the original")]
         pub const fn $on_color(self) -> $ty {
+            self.bg($variant)
+        }
+    };
+
+    ( $variant:expr, $color:ident(), $on_color:ident() -> $ty:ty ) => {
+        #[doc = concat!("Sets the foreground color to [`", stringify!($color), "`](", stringify!($variant), ").")]
+        #[must_use = concat!("`", stringify!($color), "` returns the modified style without modifying the original")]
+        fn $color(self) -> $ty {
+            self.fg($variant)
+        }
+
+        #[doc = concat!("Sets the background color to [`", stringify!($color), "`](", stringify!($variant), ").")]
+        #[must_use = concat!("`", stringify!($on_color), "` returns the modified style without modifying the original")]
+        fn $on_color(self) -> $ty {
             self.bg($variant)
         }
     };
@@ -162,20 +162,6 @@ macro_rules! color {
 /// }
 /// ```
 macro_rules! modifier {
-    ( $variant:expr, $modifier:ident(), $not_modifier:ident() -> $ty:ty ) => {
-        #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
-        #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
-        fn $modifier(self) -> $ty {
-            self.add_modifier($variant)
-        }
-
-        #[doc = concat!("Removes the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
-        #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
-        fn $not_modifier(self) -> $ty {
-            self.remove_modifier($variant)
-        }
-    };
-
     (pub const $variant:expr, $modifier:ident(), $not_modifier:ident() -> $ty:ty ) => {
         #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
         #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
@@ -186,6 +172,20 @@ macro_rules! modifier {
         #[doc = concat!("Removes the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
         #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
         pub const fn $not_modifier(self) -> $ty {
+            self.remove_modifier($variant)
+        }
+    };
+
+    ( $variant:expr, $modifier:ident(), $not_modifier:ident() -> $ty:ty ) => {
+        #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
+        fn $modifier(self) -> $ty {
+            self.add_modifier($variant)
+        }
+
+        #[doc = concat!("Removes the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
+        fn $not_modifier(self) -> $ty {
             self.remove_modifier($variant)
         }
     };
