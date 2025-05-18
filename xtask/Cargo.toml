@@ -1,6 +1,6 @@
 [package]
 name = "xtask"
-edition = "2021"
+edition.workspace = true
 publish = false
 license.workspace = true
 
