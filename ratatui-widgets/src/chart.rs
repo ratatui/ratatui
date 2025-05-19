@@ -173,7 +173,7 @@ pub enum GraphType {
     Bar,
 }
 
-/// Used in MultiColorChart to specify which axis the ColorRange's are supposed to apply to
+/// Used in `MultiColorChart` to specify which axis the `ColorRange`'s are supposed to apply to
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 enum MultiColorAxis {
     X,
@@ -359,7 +359,7 @@ impl MultiColorChart {
         }
     }
 
-    /// Based on the ColorRange's specified by self.ranges, draws the line segment in the color
+    /// Based on the `ColorRange`'s specified by self.ranges, draws the line segment in the color
     /// specified by each range, falling back to the default color if the line is not inside any
     /// range or if no ranges are specified. If a line segment crosses the boundary of a range, the
     /// line will be split into multiple parts to ensure each section of the line is drawn in the
@@ -378,10 +378,11 @@ impl MultiColorChart {
     ) {
         let line = LineSegment::new(Point::new(x1, y1), Point::new(x2, y2));
 
-        // After looping through all ColorRange's, if we don't break this must mean the line is not
-        // inside any user provided range. In this case we then draw the entire line segment in the
-        // default color. In the case no ranges were set, this then becomes the only range that is
-        // ever called, which means it will always draw then entire line on the first pass.
+        // After looping through all `ColorRange`'s, if we don't break this must mean the line is
+        // not inside any user provided range. In this case we then draw the entire line
+        // segment in the default color. In the case no ranges were set, this then becomes
+        // the only range that is ever called, which means it will always draw then entire
+        // line on the first pass.
         let default_range = ColorRange {
             range: f64::MIN..f64::MAX,
             color: default,
@@ -454,7 +455,7 @@ impl MultiColorChart {
         }
     }
 
-    /// Based on the ColorRange's specified by self.ranges, draws the list of points in the color
+    /// Based on the `ColorRange`'s specified by self.ranges, draws the list of points in the color
     /// specified by each range, falling back to the default color if the point is not inside any
     /// range or if no ranges are specified.
     ///
