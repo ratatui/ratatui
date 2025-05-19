@@ -1,6 +1,6 @@
 use color_eyre::Result;
 
-use crate::{run_cargo, workspace_libs, Run};
+use crate::{Run, run_cargo, workspace_libs};
 
 /// Check if README.md is up-to-date (using cargo-rdme)
 #[derive(Clone, Debug, clap::Args)]

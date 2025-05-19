@@ -20,9 +20,9 @@
 /// # Example
 ///
 /// ```rust
+/// use ratatui::Frame;
 /// use ratatui::layout::Rect;
 /// use ratatui::widgets::{List, ListState};
-/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();

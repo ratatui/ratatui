@@ -11,6 +11,7 @@
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
 use itertools::Itertools;
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
 use ratatui::layout::{Flex, Layout, Rect};
@@ -19,7 +20,6 @@ use ratatui::style::{Color, Style, Stylize};
 use ratatui::symbols::{self, line};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Block, Paragraph, Widget, Wrap};
-use ratatui::DefaultTerminal;
 use strum::{Display, EnumIter, FromRepr};
 
 fn main() -> Result<()> {
@@ -239,15 +239,20 @@ impl From<Constraint> for ConstraintName {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [header_area, instructions_area, swap_legend_area, _, blocks_area] =
-            Layout::vertical([
-                Length(2), // header
-                Length(2), // instructions
-                Length(1), // swap key legend
-                Length(1), // gap
-                Fill(1),   // blocks
-            ])
-            .areas(area);
+        let [
+            header_area,
+            instructions_area,
+            swap_legend_area,
+            _,
+            blocks_area,
+        ] = Layout::vertical([
+            Length(2), // header
+            Length(2), // instructions
+            Length(1), // swap key legend
+            Length(1), // gap
+            Fill(1),   // blocks
+        ])
+        .areas(area);
 
         App::header().render(header_area, buf);
         App::instructions().render(instructions_area, buf);

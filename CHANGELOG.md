@@ -4,6 +4,371 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+## ratatui - [0.30.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.3...ratatui-v0.30.0-alpha.4) - 2025-05-19
+
+### Features
+
+- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
+
+  > This makes it possible to create constants using the shorthand methods.
+  >
+  > ```rust
+  > const MY_STYLE: Style = Style::new().blue().on_black();
+  > ```
+  >
+  > Rather than implementing Styled for Style and then adding extension
+  > methods that implement the Stylize shorthands, this implements the
+  > methods as const functions directly on Style.
+  >
+  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
+  > methods implemented by the blanket implementation of Stylize are now
+  > defined directly on Style. Remove the Stylize import if it is no longer
+  > used by your code.
+  >
+  > The `reset()` method does not have a direct replacement, as it clashes
+  > with the existing `reset()` method. Use `Style::reset()` rather than
+  > `some_style.reset()`
+  >
+  > Fixes:#1158
+
+### Miscellaneous Tasks
+
+- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+  >
+  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  >
+  > Fixes #1727
+
+- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) *(uncategorized)* Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
+
+  > Move all dependency management to the workspace level. This makes it
+  > easier to manage dependencies across multiple crates in the workspace.
+  >
+  > This also changes the versions of each dependency to track based on the
+  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
+  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
+  > files and to communicate that Ratatui will still generally work with
+  > versions of the dependencies that are not the fully latest version. The
+  > exact version of the dependencies is still tracked in the Cargo.lock
+  > file.
+  >
+  > Several dependencies that are fairly stable are changed to track a less
+  > specific version (e.g. serde 1 instead of 1.0.x).
+  >
+  > The following dependencies are updated to their latest versions:
+  > - bitflags (2.3 -> 2.9)
+  > - strum (0.26 -> 0.27)
+  > - strum_macros (0.26 -> 0.27)
+  > - all other semver compatible updates
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.3...ratatui-v0.30.0-alpha.4
+
+
+
+## ratatui-termion - [0.1.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.3...ratatui-termion-v0.1.0-alpha.4) - 2025-05-19
+
+### Features
+
+- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
+
+  > This makes it possible to create constants using the shorthand methods.
+  >
+  > ```rust
+  > const MY_STYLE: Style = Style::new().blue().on_black();
+  > ```
+  >
+  > Rather than implementing Styled for Style and then adding extension
+  > methods that implement the Stylize shorthands, this implements the
+  > methods as const functions directly on Style.
+  >
+  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
+  > methods implemented by the blanket implementation of Stylize are now
+  > defined directly on Style. Remove the Stylize import if it is no longer
+  > used by your code.
+  >
+  > The `reset()` method does not have a direct replacement, as it clashes
+  > with the existing `reset()` method. Use `Style::reset()` rather than
+  > `some_style.reset()`
+  >
+  > Fixes:#1158
+
+### Miscellaneous Tasks
+
+- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+  >
+  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  >
+  > Fixes #1727
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.3...ratatui-termion-v0.1.0-alpha.4
+
+
+
+## ratatui-termwiz - [0.1.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.3...ratatui-termwiz-v0.1.0-alpha.4) - 2025-05-19
+
+### Features
+
+- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
+
+  > This makes it possible to create constants using the shorthand methods.
+  >
+  > ```rust
+  > const MY_STYLE: Style = Style::new().blue().on_black();
+  > ```
+  >
+  > Rather than implementing Styled for Style and then adding extension
+  > methods that implement the Stylize shorthands, this implements the
+  > methods as const functions directly on Style.
+  >
+  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
+  > methods implemented by the blanket implementation of Stylize are now
+  > defined directly on Style. Remove the Stylize import if it is no longer
+  > used by your code.
+  >
+  > The `reset()` method does not have a direct replacement, as it clashes
+  > with the existing `reset()` method. Use `Style::reset()` rather than
+  > `some_style.reset()`
+  >
+  > Fixes:#1158
+
+### Miscellaneous Tasks
+
+- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+  >
+  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  >
+  > Fixes #1727
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.3...ratatui-termwiz-v0.1.0-alpha.4
+
+
+
+## ratatui-macros - [0.7.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.2...ratatui-macros-v0.7.0-alpha.3) - 2025-05-19
+
+### Features
+
+- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
+
+  > This makes it possible to create constants using the shorthand methods.
+  >
+  > ```rust
+  > const MY_STYLE: Style = Style::new().blue().on_black();
+  > ```
+  >
+  > Rather than implementing Styled for Style and then adding extension
+  > methods that implement the Stylize shorthands, this implements the
+  > methods as const functions directly on Style.
+  >
+  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
+  > methods implemented by the blanket implementation of Stylize are now
+  > defined directly on Style. Remove the Stylize import if it is no longer
+  > used by your code.
+  >
+  > The `reset()` method does not have a direct replacement, as it clashes
+  > with the existing `reset()` method. Use `Style::reset()` rather than
+  > `some_style.reset()`
+  >
+  > Fixes:#1158
+
+### Miscellaneous Tasks
+
+- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+  >
+  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  >
+  > Fixes #1727
+
+- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) *(uncategorized)* Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
+
+  > Move all dependency management to the workspace level. This makes it
+  > easier to manage dependencies across multiple crates in the workspace.
+  >
+  > This also changes the versions of each dependency to track based on the
+  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
+  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
+  > files and to communicate that Ratatui will still generally work with
+  > versions of the dependencies that are not the fully latest version. The
+  > exact version of the dependencies is still tracked in the Cargo.lock
+  > file.
+  >
+  > Several dependencies that are fairly stable are changed to track a less
+  > specific version (e.g. serde 1 instead of 1.0.x).
+  >
+  > The following dependencies are updated to their latest versions:
+  > - bitflags (2.3 -> 2.9)
+  > - strum (0.26 -> 0.27)
+  > - strum_macros (0.26 -> 0.27)
+  > - all other semver compatible updates
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.2...ratatui-macros-v0.7.0-alpha.3
+
+
+
+## ratatui-widgets - [0.3.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.3...ratatui-widgets-v0.3.0-alpha.4) - 2025-05-19
+
+### Features
+
+- [e15fefa](https://github.com/ratatui/ratatui/commit/e15fefa922f9519fa789ffecea8e55d887701acf) *(barchar)* Add BarChart::grouped constructor by @joshka in [#1513](https://github.com/ratatui/ratatui/pull/1513)
+
+  > Add a new constructor to the `BarChart` widget that allows creating a
+  > grouped barchart with multiple groups of bars.
+  >
+  > Also add a new constructor to the `BarGroup` widget that allows creating
+  > a group of bars with a label.
+
+- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
+
+  > This makes it possible to create constants using the shorthand methods.
+  >
+  > ```rust
+  > const MY_STYLE: Style = Style::new().blue().on_black();
+  > ```
+  >
+  > Rather than implementing Styled for Style and then adding extension
+  > methods that implement the Stylize shorthands, this implements the
+  > methods as const functions directly on Style.
+  >
+  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
+  > methods implemented by the blanket implementation of Stylize are now
+  > defined directly on Style. Remove the Stylize import if it is no longer
+  > used by your code.
+  >
+  > The `reset()` method does not have a direct replacement, as it clashes
+  > with the existing `reset()` method. Use `Style::reset()` rather than
+  > `some_style.reset()`
+  >
+  > Fixes:#1158
+
+### Miscellaneous Tasks
+
+- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+  >
+  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  >
+  > Fixes #1727
+
+- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) *(uncategorized)* Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
+
+  > Move all dependency management to the workspace level. This makes it
+  > easier to manage dependencies across multiple crates in the workspace.
+  >
+  > This also changes the versions of each dependency to track based on the
+  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
+  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
+  > files and to communicate that Ratatui will still generally work with
+  > versions of the dependencies that are not the fully latest version. The
+  > exact version of the dependencies is still tracked in the Cargo.lock
+  > file.
+  >
+  > Several dependencies that are fairly stable are changed to track a less
+  > specific version (e.g. serde 1 instead of 1.0.x).
+  >
+  > The following dependencies are updated to their latest versions:
+  > - bitflags (2.3 -> 2.9)
+  > - strum (0.26 -> 0.27)
+  > - strum_macros (0.26 -> 0.27)
+  > - all other semver compatible updates
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.3...ratatui-widgets-v0.3.0-alpha.4
+
+
+
+## ratatui-crossterm - [0.1.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.3...ratatui-crossterm-v0.1.0-alpha.4) - 2025-05-19
+
+### Miscellaneous Tasks
+
+- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+  >
+  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  >
+  > Fixes #1727
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.3...ratatui-crossterm-v0.1.0-alpha.4
+
+
+
+## ratatui-core - [0.1.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.4...ratatui-core-v0.1.0-alpha.5) - 2025-05-19
+
+### Features
+
+- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
+
+  > This makes it possible to create constants using the shorthand methods.
+  >
+  > ```rust
+  > const MY_STYLE: Style = Style::new().blue().on_black();
+  > ```
+  >
+  > Rather than implementing Styled for Style and then adding extension
+  > methods that implement the Stylize shorthands, this implements the
+  > methods as const functions directly on Style.
+  >
+  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
+  > methods implemented by the blanket implementation of Stylize are now
+  > defined directly on Style. Remove the Stylize import if it is no longer
+  > used by your code.
+  >
+  > The `reset()` method does not have a direct replacement, as it clashes
+  > with the existing `reset()` method. Use `Style::reset()` rather than
+  > `some_style.reset()`
+  >
+  > Fixes:#1158
+
+### Miscellaneous Tasks
+
+- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+  >
+  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  >
+  > Fixes #1727
+
+- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) *(uncategorized)* Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
+
+  > Move all dependency management to the workspace level. This makes it
+  > easier to manage dependencies across multiple crates in the workspace.
+  >
+  > This also changes the versions of each dependency to track based on the
+  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
+  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
+  > files and to communicate that Ratatui will still generally work with
+  > versions of the dependencies that are not the fully latest version. The
+  > exact version of the dependencies is still tracked in the Cargo.lock
+  > file.
+  >
+  > Several dependencies that are fairly stable are changed to track a less
+  > specific version (e.g. serde 1 instead of 1.0.x).
+  >
+  > The following dependencies are updated to their latest versions:
+  > - bitflags (2.3 -> 2.9)
+  > - strum (0.26 -> 0.27)
+  > - strum_macros (0.26 -> 0.27)
+  > - all other semver compatible updates
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.4...ratatui-core-v0.1.0-alpha.5
+
+
+
 ## ratatui - [0.30.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.2...ratatui-v0.30.0-alpha.3) - 2025-05-13
 
 ### Features
@@ -1617,7 +1982,7 @@ All notable changes to this project will be documented in this file.
 
   > The paste crate is no longer maintained. Replaces the usages of this in
   > the Stylize declarative macros with hard coded values. These macros are
-  > internal implementation deatil to ratatui and so the changes should have
+  > internal implementation detail to ratatui and so the changes should have
   > no impact on users.
   >
   > Fixes:https://github.com/ratatui/ratatui/issues/1712

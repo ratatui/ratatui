@@ -166,9 +166,9 @@ impl<'a> Sparkline<'a> {
     /// Create a `Sparkline` from a slice of `u64`:
     ///
     /// ```
+    /// use ratatui::Frame;
     /// use ratatui::layout::Rect;
     /// use ratatui::widgets::Sparkline;
-    /// use ratatui::Frame;
     ///
     /// # fn ui(frame: &mut Frame) {
     /// # let area = Rect::default();

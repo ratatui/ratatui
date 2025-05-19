@@ -92,6 +92,10 @@ commit_preprocessors = [
   { pattern = '(Clarify README.md)', replace = "docs(readme): ${1}" },
   { pattern = '(Update README.md)', replace = "docs(readme): ${1}" },
   { pattern = '(fix typos|Fix typos)', replace = "fix: ${1}" },
+  # a small typo that squeaked through and which would otherwise trigger the typos linter.
+  # Regex obsfucation is to avoid triggering the linter in this file until there's a per file config
+  # See https://github.com/crate-ci/typos/issues/724
+  { pattern = '\<[d]eatil\>', replace = "detail" },
 ]
 # regex for parsing and grouping commits
 commit_parsers = [

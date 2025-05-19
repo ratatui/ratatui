@@ -12,7 +12,7 @@ use core::iter;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::Style;
-use ratatui_core::symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL};
+use ratatui_core::symbols::scrollbar::{DOUBLE_HORIZONTAL, DOUBLE_VERTICAL, Set};
 use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
@@ -43,12 +43,12 @@ use crate::polyfills::F64Polyfills;
 /// # Examples
 ///
 /// ```rust
+/// use ratatui::Frame;
 /// use ratatui::layout::{Margin, Rect};
 /// use ratatui::text::Line;
 /// use ratatui::widgets::{
 ///     Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
 /// };
-/// use ratatui::Frame;
 ///
 /// # fn render_paragraph_with_scrollbar(frame: &mut Frame, area: Rect) {
 /// let vertical_scroll = 0; // from app state

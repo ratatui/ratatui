@@ -14,10 +14,10 @@ use std::{
 };
 
 use color_eyre::Result;
+use crossterm::ExecutableCommand;
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEventKind,
 };
-use crossterm::ExecutableCommand;
 use itertools::Itertools;
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::style::{Color, Stylize};
@@ -117,7 +117,7 @@ impl App {
         }
     }
 
-    fn cycle_marker(&mut self) {
+    const fn cycle_marker(&mut self) {
         self.marker = match self.marker {
             Marker::Dot => Marker::Braille,
             Marker::Braille => Marker::Block,
