@@ -9,12 +9,12 @@
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
 use itertools::Itertools;
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
 use ratatui::text::{Line, Text};
 use ratatui::widgets::Widget;
-use ratatui::DefaultTerminal;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

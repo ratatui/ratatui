@@ -52,12 +52,12 @@ use ratatui_core::style::{Color, Modifier, Style};
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
-/// use crossterm::terminal::{
-///     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-/// };
 /// use crossterm::ExecutableCommand;
-/// use ratatui::backend::CrosstermBackend;
+/// use crossterm::terminal::{
+///     EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
+/// };
 /// use ratatui::Terminal;
+/// use ratatui::backend::CrosstermBackend;
 ///
 /// let mut backend = CrosstermBackend::new(stdout());
 /// // or

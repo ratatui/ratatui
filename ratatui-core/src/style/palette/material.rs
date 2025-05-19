@@ -403,8 +403,8 @@
 //! # Example
 //!
 //! ```rust
-//! use ratatui_core::style::palette::material::{BLUE, RED};
 //! use ratatui_core::style::Color;
+//! use ratatui_core::style::palette::material::{BLUE, RED};
 //!
 //! assert_eq!(RED.c500, Color::Rgb(244, 67, 54));
 //! assert_eq!(BLUE.c500, Color::Rgb(33, 150, 243));

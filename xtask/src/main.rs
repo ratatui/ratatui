@@ -10,8 +10,8 @@ use std::process::Output;
 use cargo_metadata::{MetadataCommand, TargetKind};
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
-use color_eyre::eyre::Context;
 use color_eyre::Result;
+use color_eyre::eyre::Context;
 use commands::Command;
 use duct::cmd;
 

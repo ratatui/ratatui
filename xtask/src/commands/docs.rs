@@ -1,7 +1,7 @@
 use color_eyre::Result;
 use itertools::{Itertools, Position};
 
-use crate::{run_cargo_nightly, workspace_libs, Run};
+use crate::{Run, run_cargo_nightly, workspace_libs};
 
 /// Check documentation for errors and warnings
 #[derive(Clone, Debug, clap::Args)]

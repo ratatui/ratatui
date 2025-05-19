@@ -12,6 +12,7 @@ use std::num::NonZeroUsize;
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
 use ratatui::layout::{Alignment, Flex, Layout, Rect};
@@ -22,7 +23,6 @@ use ratatui::text::{Line, Text};
 use ratatui::widgets::{
     Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Tabs, Widget,
 };
-use ratatui::DefaultTerminal;
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 fn main() -> Result<()> {
@@ -36,7 +36,7 @@ fn main() -> Result<()> {
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     (
         "Min(u16) takes any excess space always",
-        &[Length(10), Min(10), Max(10), Percentage(10), Ratio(1,10)],
+        &[Length(10), Min(10), Max(10), Percentage(10), Ratio(1, 10)],
     ),
     (
         "Fill(u16) takes any excess space always",
@@ -44,20 +44,18 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     ),
     (
         "Here's all constraints in one line",
-        &[Length(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Fill(1)],
+        &[
+            Length(10),
+            Min(10),
+            Max(10),
+            Percentage(10),
+            Ratio(1, 10),
+            Fill(1),
+        ],
     ),
-    (
-        "",
-        &[Max(50), Min(50)],
-    ),
-    (
-        "",
-        &[Max(20), Length(10)],
-    ),
-    (
-        "",
-        &[Max(20), Length(10)],
-    ),
+    ("", &[Max(50), Min(50)]),
+    ("", &[Max(20), Length(10)]),
+    ("", &[Max(20), Length(10)]),
     (
         "Min grows always but also allows Fill to grow",
         &[Percentage(50), Fill(1), Fill(2), Min(50)],
@@ -67,44 +65,58 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
         &[Length(20), Length(20), Percentage(20)],
     ),
     ("", &[Length(20), Percentage(20), Length(20)]),
-    ("A lowest priority constraint will be broken before a high priority constraint", &[Ratio(1,4), Percentage(20)]),
-    ("`Length` is higher priority than `Percentage`", &[Percentage(20), Length(10)]),
-    ("`Min/Max` is higher priority than `Length`", &[Length(10), Max(20)]),
+    (
+        "A lowest priority constraint will be broken before a high priority constraint",
+        &[Ratio(1, 4), Percentage(20)],
+    ),
+    (
+        "`Length` is higher priority than `Percentage`",
+        &[Percentage(20), Length(10)],
+    ),
+    (
+        "`Min/Max` is higher priority than `Length`",
+        &[Length(10), Max(20)],
+    ),
     ("", &[Length(100), Min(20)]),
-    ("`Length` is higher priority than `Min/Max`", &[Max(20), Length(10)]),
+    (
+        "`Length` is higher priority than `Min/Max`",
+        &[Max(20), Length(10)],
+    ),
     ("", &[Min(20), Length(90)]),
-    ("Fill is the lowest priority and will fill any excess space", &[Fill(1), Ratio(1, 4)]),
-    ("Fill can be used to scale proportionally with other Fill blocks", &[Fill(1), Percentage(20), Fill(2)]),
+    (
+        "Fill is the lowest priority and will fill any excess space",
+        &[Fill(1), Ratio(1, 4)],
+    ),
+    (
+        "Fill can be used to scale proportionally with other Fill blocks",
+        &[Fill(1), Percentage(20), Fill(2)],
+    ),
     ("", &[Ratio(1, 3), Percentage(20), Ratio(2, 3)]),
-    ("Legacy will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints", &[Length(20), Length(15)]),
+    (
+        "Legacy will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints",
+        &[Length(20), Length(15)],
+    ),
     ("", &[Percentage(20), Length(15)]),
-    ("`Fill(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Fill will only have widths in Flex::Stretch and Flex::Legacy", &[Fill(1), Fill(1)]),
+    (
+        "`Fill(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Fill will only have widths in Flex::Stretch and Flex::Legacy",
+        &[Fill(1), Fill(1)],
+    ),
     ("", &[Length(20), Length(20)]),
     (
         "When not using `Flex::Stretch` or `Flex::Legacy`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
         &[Min(20), Max(20)],
     ),
-    (
-        "",
-        &[Max(20)],
-    ),
+    ("", &[Max(20)]),
     ("", &[Min(20), Max(20), Length(20), Length(20)]),
     ("", &[Fill(0), Fill(0)]),
     (
         "`Fill(1)` can be to scale with respect to other `Fill(2)`",
         &[Fill(1), Fill(2)],
     ),
-    (
-        "",
-        &[Fill(1), Min(10), Max(10), Fill(2)],
-    ),
+    ("", &[Fill(1), Min(10), Max(10), Fill(2)]),
     (
         "`Fill(0)` collapses if there are other non-zero `Fill(_)`\nconstraints. e.g. `[Fill(0), Fill(0), Fill(1)]`:",
-        &[
-            Fill(0),
-            Fill(0),
-            Fill(1),
-        ],
+        &[Fill(0), Fill(0), Fill(1)],
     ),
 ];
 

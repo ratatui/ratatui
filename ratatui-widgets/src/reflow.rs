@@ -462,8 +462,7 @@ mod tests {
         let width = 20;
         let text =
             "abcd efghij klmnopabcd efgh ijklmnopabcdefg hijkl mnopab c d e f g h i j k l m n o";
-        let text_multi_space =
-            "abcd efghij    klmnopabcd efgh     ijklmnopabcdefg hijkl mnopab c d e f g h i j k l \
+        let text_multi_space = "abcd efghij    klmnopabcd efgh     ijklmnopabcdefg hijkl mnopab c d e f g h i j k l \
              m n o";
         let (word_wrapper_single_space, _, _) =
             run_composer(Composer::WordWrapper { trim: true }, text, width as u16);
@@ -516,8 +515,7 @@ mod tests {
     #[test]
     fn line_composer_max_line_width_of_1_double_width_characters() {
         let width = 1;
-        let text =
-            "コンピュータ上で文字を扱う場合、典型的には文字\naaa\naによる通信を行う場合にその\
+        let text = "コンピュータ上で文字を扱う場合、典型的には文字\naaa\naによる通信を行う場合にその\
                     両端点では、";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, text, width);
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, text, width);

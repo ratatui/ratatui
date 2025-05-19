@@ -49,8 +49,8 @@ use strum::{Display, EnumString};
 /// Complete example
 /// ```
 /// use ratatui::layout::Alignment;
-/// use ratatui::widgets::block::{Position, Title};
 /// use ratatui::widgets::Block;
+/// use ratatui::widgets::block::{Position, Title};
 ///
 /// Title::from("Title")
 ///     .position(Position::Top)
@@ -84,8 +84,8 @@ pub struct Title<'a> {
 /// # Example
 ///
 /// ```
-/// use ratatui::widgets::block::{Position, Title};
 /// use ratatui::widgets::Block;
+/// use ratatui::widgets::block::{Position, Title};
 ///
 /// Block::new().title(Title::from("title").position(Position::Bottom));
 /// ```

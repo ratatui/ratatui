@@ -13,7 +13,7 @@ use self::clippy::Clippy;
 use self::docs::Docs;
 use self::format::Format;
 use self::typos::Typos;
-use crate::{run_cargo, ExpressionExt, Run};
+use crate::{ExpressionExt, Run, run_cargo};
 
 mod backend;
 mod check;
