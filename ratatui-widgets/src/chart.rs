@@ -235,7 +235,7 @@ impl MultiColorChart {
 
     /// A direct clone of `f64::next_down` from core
     /// Available in rust MSRV 1.86.0, using our own internal copy until MSRV is bumped.
-    fn internal_f64_next_down(value: f64) -> f64 {
+    const fn internal_f64_next_down(value: f64) -> f64 {
         // The only part of our functions that differ is the need to assign these consts as the ones
         // used by the original function are private to the f64 module
         const F64_SIGN_MASK: u64 = 0x8000_0000_0000_0000;
@@ -262,7 +262,7 @@ impl MultiColorChart {
 
     /// A direct clone of `f64::next_up` from core
     /// Available in rust MSRV 1.86.0, using our own internal copy until MSRV is bumped.
-    fn internal_f64_next_up(value: f64) -> f64 {
+    const fn internal_f64_next_up(value: f64) -> f64 {
         // The only part of our functions that differ is the need to assign these consts as the ones
         // used by the original function are private to the f64 module
         const F64_SIGN_MASK: u64 = 0x8000_0000_0000_0000;
