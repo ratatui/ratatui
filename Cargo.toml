@@ -23,7 +23,7 @@ categories = ["command-line-interface"]
 readme = "README.md"
 license = "MIT"
 exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
-edition = "2021"
+edition = "2024"
 rust-version = "1.85.0"
 
 [workspace.dependencies]
