@@ -14,10 +14,10 @@ use std::{
 };
 
 use color_eyre::Result;
+use crossterm::ExecutableCommand;
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, MouseEventKind,
 };
-use crossterm::ExecutableCommand;
 use itertools::Itertools;
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::style::{Color, Stylize};

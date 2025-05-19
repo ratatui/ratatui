@@ -22,12 +22,12 @@ use color_eyre::Result;
 use crossterm::event;
 use palette::convert::FromColorUnclamped;
 use palette::{Okhsv, Srgb};
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::style::Color;
 use ratatui::text::Text;
 use ratatui::widgets::Widget;
-use ratatui::DefaultTerminal;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

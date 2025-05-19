@@ -1,7 +1,7 @@
 use color_eyre::Result;
 use duct::cmd;
 
-use crate::{run_cargo_nightly, ExpressionExt, Run};
+use crate::{ExpressionExt, Run, run_cargo_nightly};
 
 /// Check for formatting issues in the project
 #[derive(Clone, Debug, clap::Args)]

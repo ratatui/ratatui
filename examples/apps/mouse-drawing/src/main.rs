@@ -17,7 +17,7 @@ use crossterm::execute;
 use ratatui::layout::{Position, Rect, Size};
 use ratatui::style::{Color, Stylize};
 use ratatui::text::Line;
-use ratatui::{symbols, DefaultTerminal, Frame};
+use ratatui::{DefaultTerminal, Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

@@ -4,7 +4,7 @@ use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::Span;
 use ratatui::widgets::{Block, Gauge, LineGauge};
-use ratatui::{symbols, Terminal};
+use ratatui::{Terminal, symbols};
 
 #[test]
 fn widgets_gauge_renders() {

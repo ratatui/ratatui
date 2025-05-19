@@ -7,8 +7,8 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::time::Duration;
 
-use color_eyre::eyre::Context;
 use color_eyre::Result;
+use color_eyre::eyre::Context;
 use crossterm::event::{self, KeyCode};
 use ratatui::widgets::Paragraph;
 use ratatui::{DefaultTerminal, Frame};

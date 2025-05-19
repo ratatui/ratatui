@@ -1,6 +1,6 @@
 use color_eyre::Result;
 
-use crate::{run_cargo, Run};
+use crate::{Run, run_cargo};
 
 /// Generate code coverage report
 #[derive(Clone, Debug, clap::Args)]

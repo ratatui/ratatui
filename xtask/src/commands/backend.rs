@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 use color_eyre::Result;
 
-use crate::{run_cargo, Run};
+use crate::{Run, run_cargo};
 
 /// Check backend
 #[derive(Clone, Debug, clap::Args)]

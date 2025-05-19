@@ -1308,13 +1308,16 @@ mod tests {
         #[test]
         fn regression_1032() {
             let line = Line::from(
-                "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得する"
+                "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得する",
             );
             let mut buf = Buffer::empty(Rect::new(0, 0, 83, 1));
             line.render(buf.area, &mut buf);
-            assert_eq!(buf, Buffer::with_lines([
-                "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得 "
-            ]));
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得 "
+                ])
+            );
         }
 
         /// Documentary test to highlight the crab emoji width / length discrepancy

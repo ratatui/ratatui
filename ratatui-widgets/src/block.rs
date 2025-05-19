@@ -87,8 +87,8 @@ pub mod title;
 ///
 /// You may also use multiple titles like in the following:
 /// ```
-/// use ratatui::widgets::block::{Position, Title};
 /// use ratatui::widgets::Block;
+/// use ratatui::widgets::block::{Position, Title};
 ///
 /// Block::new()
 ///     .title("Title 1")
@@ -348,8 +348,8 @@ impl<'a> Block<'a> {
     /// This example positions all titles on the bottom except the "top" title which explicitly sets
     /// [`Position::Top`].
     /// ```
-    /// use ratatui::widgets::block::Position;
     /// use ratatui::widgets::Block;
+    /// use ratatui::widgets::block::Position;
     ///
     /// Block::new()
     ///     .title_position(Position::Bottom)
@@ -536,8 +536,8 @@ impl<'a> Block<'a> {
     ///
     /// Draw a block nested within another block
     /// ```
-    /// use ratatui::widgets::Block;
     /// use ratatui::Frame;
+    /// use ratatui::widgets::Block;
     ///
     /// # fn render_nested_block(frame: &mut Frame) {
     /// let outer_block = Block::bordered().title("Outer");
