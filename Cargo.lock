@@ -2496,7 +2496,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui"
-version = "0.30.0-alpha.3"
+version = "0.30.0-alpha.4"
 dependencies = [
  "color-eyre",
  "criterion",
@@ -2528,7 +2528,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-core"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "anstyle",
  "bitflags 2.9.1",
@@ -2553,7 +2553,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-crossterm"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 dependencies = [
  "crossterm",
  "document-features",
@@ -2565,7 +2565,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-macros"
-version = "0.7.0-alpha.2"
+version = "0.7.0-alpha.3"
 dependencies = [
  "ratatui-core",
  "ratatui-widgets",
@@ -2574,7 +2574,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-termion"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 dependencies = [
  "document-features",
  "instability",
@@ -2585,7 +2585,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-termwiz"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 dependencies = [
  "document-features",
  "ratatui",
@@ -2596,7 +2596,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-widgets"
-version = "0.3.0-alpha.3"
+version = "0.3.0-alpha.4"
 dependencies = [
  "bitflags 2.9.1",
  "color-eyre",
