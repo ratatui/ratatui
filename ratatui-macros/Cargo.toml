@@ -1,6 +1,6 @@
 [package]
 name = "ratatui-macros"
-version = "0.7.0-alpha.2"
+version = "0.7.0-alpha.3"
 edition.workspace = true
 authors = ["The Ratatui Developers"]
 description = "Macros for Ratatui"
