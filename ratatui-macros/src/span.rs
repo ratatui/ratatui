@@ -11,7 +11,6 @@
 /// # Examples
 ///
 /// ```rust
-/// # extern crate alloc;
 /// # use ratatui_core::style::{Color, Modifier, Style, Stylize};
 /// use ratatui_macros::span;
 ///
@@ -69,7 +68,6 @@
 /// But this will work:
 ///
 /// ```rust
-/// # extern crate alloc;
 /// # use ratatui_core::style::{Modifier};
 /// # use ratatui_macros::span;
 /// let span = span!(Modifier::BOLD; "hello world");
@@ -86,7 +84,6 @@
 /// But this will work:
 ///
 /// ```rust
-/// # extern crate alloc;
 /// # use ratatui_macros::span;
 /// let span = span!("hello {}", "world");
 /// ```
@@ -98,25 +95,25 @@
 #[macro_export]
 macro_rules! span {
     ($string:literal) => {
-        $crate::ratatui_core::text::Span::raw(alloc::format!($string))
+        $crate::ratatui_core::text::Span::raw($crate::format!($string))
     };
     ($string:literal, $($arg:tt)*) => {
-        $crate::ratatui_core::text::Span::raw(alloc::format!($string, $($arg)*))
+        $crate::ratatui_core::text::Span::raw($crate::format!($string, $($arg)*))
     };
     ($expr:expr) => {
-        $crate::ratatui_core::text::Span::raw(alloc::format!("{}", $expr))
+        $crate::ratatui_core::text::Span::raw($crate::format!("{}", $expr))
     };
     ($style:expr, $($arg:tt)*) => {
         compile_error!("first parameter must be a formatting specifier followed by a comma OR a `Style` followed by a semicolon")
     };
     ($style:expr; $string:literal) => {
-        $crate::ratatui_core::text::Span::styled(alloc::format!($string), $style)
+        $crate::ratatui_core::text::Span::styled($crate::format!($string), $style)
     };
     ($style:expr; $string:literal, $($arg:tt)*) => {
-        $crate::ratatui_core::text::Span::styled(alloc::format!($string, $($arg)*), $style)
+        $crate::ratatui_core::text::Span::styled($crate::format!($string, $($arg)*), $style)
     };
     ($style:expr; $expr:expr) => {
-        $crate::ratatui_core::text::Span::styled(alloc::format!("{}", $expr), $style)
+        $crate::ratatui_core::text::Span::styled($crate::format!("{}", $expr), $style)
     };
 }
 

@@ -207,6 +207,9 @@
 
 extern crate alloc;
 
+#[doc(hidden)]
+pub use alloc::{format, vec};
+
 mod layout;
 mod line;
 mod row;

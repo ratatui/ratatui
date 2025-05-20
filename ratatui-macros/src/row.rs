@@ -7,7 +7,6 @@
 /// * Create a [`Row`] containing a vector of [`Cell`]s:
 ///
 /// ```rust
-/// # extern crate alloc;
 /// # use ratatui_core::style::Stylize;
 /// use ratatui_macros::row;
 ///
@@ -18,7 +17,6 @@
 /// * Create an empty [`Row`]:
 ///
 /// ```rust
-/// # extern crate alloc;
 /// # use ratatui_macros::row;
 /// let empty_row = row![];
 /// ```
@@ -26,7 +24,6 @@
 /// * Create a [`Row`] from a given [`Cell`] repeated some amount of times:
 ///
 /// ```rust
-/// # extern crate alloc;
 /// # use ratatui_macros::row;
 /// let row = row!["hello"; 2];
 /// ```
@@ -34,7 +31,6 @@
 /// * Use [`text!`], [`line!`] or [`span!`] macro inside [`row!`] macro.
 ///
 /// ```rust
-/// # extern crate alloc;
 /// # use ratatui_core::style::{Modifier};
 /// use ratatui_macros::{row, line, text, span};
 ///
@@ -57,10 +53,10 @@ macro_rules! row {
         ::ratatui_widgets::table::Row::default()
     };
     ($cell:expr; $n:expr) => {
-        ::ratatui_widgets::table::Row::new(alloc::vec![::ratatui_widgets::table::Cell::from($cell); $n])
+        ::ratatui_widgets::table::Row::new($crate::vec![::ratatui_widgets::table::Cell::from($cell); $n])
     };
     ($($cell:expr),+ $(,)?) => {{
-        ::ratatui_widgets::table::Row::new(alloc::vec![
+        ::ratatui_widgets::table::Row::new($crate::vec![
         $(
             ::ratatui_widgets::table::Cell::from($cell),
         )+
