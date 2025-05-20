@@ -113,6 +113,7 @@
 //! a `;` followed by the format string and arguments.
 //!
 //! ```rust
+//! # extern crate alloc;
 //! # use ratatui_core::style::{Color, Modifier, Style, Stylize};
 //! use ratatui_macros::span;
 //!
@@ -129,6 +130,7 @@
 //! `vec!` macro.
 //!
 //! ```rust
+//! # extern crate alloc;
 //! use ratatui_macros::line;
 //!
 //! let name = "world!";
@@ -142,6 +144,7 @@
 //! `vec!` macro.
 //!
 //! ```rust
+//! # extern crate alloc;
 //! use ratatui_macros::{span, line, text};
 //!
 //! let name = "world!";
@@ -152,6 +155,7 @@
 //! It is even possible to use `span!` and `line!` in the `text!` macro:
 //!
 //! ```rust
+//! # extern crate alloc;
 //! # use ratatui_core::style::{Modifier, Stylize};
 //! use ratatui_macros::{span, line, text};
 //! let name = "Bye!!!";
@@ -164,6 +168,7 @@
 //! macro. A `Row` represents a sequence of `Cell`s in a single row of a table.
 //!
 //! ```rust
+//! # extern crate alloc;
 //! use ratatui_macros::row;
 //!
 //! let rows = [
@@ -175,6 +180,7 @@
 //! It is even possible to use `span!`, `line!` and `text!` in the `row!` macro:
 //!
 //! ```rust
+//! # extern crate alloc;
 //! # use ratatui_core::style::{Modifier, Stylize};
 //! use ratatui_macros::{span, line, text, row};
 //! let name = "Bye!!!";

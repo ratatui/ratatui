@@ -7,6 +7,7 @@
 /// * Create a [`Text`] containing a vector of [`Line`]s:
 ///
 /// ```rust
+/// # extern crate alloc;
 /// # use ratatui_core::style::Stylize;
 /// use ratatui_macros::text;
 ///
@@ -17,6 +18,7 @@
 /// * Create a [`text`] from a given [`Line`] repeated some amount of times:
 ///
 /// ```rust
+/// # extern crate alloc;
 /// # use ratatui_macros::text;
 /// let text = text!["hello"; 2];
 /// ```
@@ -24,6 +26,7 @@
 /// * Use [`line!`] or [`span!`] macro inside [`text!`] macro.
 ///
 /// ```rust
+/// # extern crate alloc;
 /// # use ratatui_core::style::{Modifier};
 /// use ratatui_macros::{line, text, span};
 ///
@@ -35,6 +38,7 @@
 /// [`Text`]: ratatui_core::text::Text
 /// [`Line`]: ratatui_core::text::Line
 /// [`Span`]: ratatui_core::text::Span
+/// [`vec!`]: alloc::vec
 #[macro_export]
 macro_rules! text {
     () => {

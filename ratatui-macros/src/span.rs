@@ -11,6 +11,7 @@
 /// # Examples
 ///
 /// ```rust
+/// # extern crate alloc;
 /// # use ratatui_core::style::{Color, Modifier, Style, Stylize};
 /// use ratatui_macros::span;
 ///
@@ -68,6 +69,7 @@
 /// But this will work:
 ///
 /// ```rust
+/// # extern crate alloc;
 /// # use ratatui_core::style::{Modifier};
 /// # use ratatui_macros::span;
 /// let span = span!(Modifier::BOLD; "hello world");
@@ -84,6 +86,7 @@
 /// But this will work:
 ///
 /// ```rust
+/// # extern crate alloc;
 /// # use ratatui_macros::span;
 /// let span = span!("hello {}", "world");
 /// ```
@@ -91,6 +94,7 @@
 /// [`Color`]: ratatui_core::style::Color
 /// [`Span`]: ratatui_core::text::Span
 /// [`Style`]: ratatui_core::style::Style
+/// [`format!`]: alloc::format
 #[macro_export]
 macro_rules! span {
     ($string:literal) => {
