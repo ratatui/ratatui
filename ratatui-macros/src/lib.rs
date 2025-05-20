@@ -1,3 +1,4 @@
+#![no_std]
 //! `ratatui-macros` is a Rust crate that provides easy-to-use macros for simplifying boilerplate
 //! associated with creating UI using [Ratatui].
 //!
@@ -197,6 +198,12 @@
 //! [CI Status]: https://github.com/ratatui/ratatui/actions
 //! [Ratatui]: https://github.com/ratatui/ratatui
 //! [Layout concepts]: https://ratatui.rs/concepts/layout
+
+extern crate alloc;
+
+#[doc(hidden)]
+pub use alloc::{format, vec};
+
 mod layout;
 mod line;
 mod row;
