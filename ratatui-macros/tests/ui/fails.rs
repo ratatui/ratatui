@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use ratatui_core::layout::Constraint;
 use ratatui_macros::{constraints, span};
 
