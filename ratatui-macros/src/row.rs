@@ -50,7 +50,7 @@
 /// [`row!`]: crate::row
 /// [`Row`]: ratatui_widgets::table::Row
 /// [`Cell`]: ratatui_widgets::table::Cell
-/// [`vec!`]: alloc::vec
+/// [`vec!`]: alloc::vec!
 #[macro_export]
 macro_rules! row {
     () => {

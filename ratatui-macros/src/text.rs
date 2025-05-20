@@ -38,7 +38,7 @@
 /// [`Text`]: ratatui_core::text::Text
 /// [`Line`]: ratatui_core::text::Line
 /// [`Span`]: ratatui_core::text::Span
-/// [`vec!`]: alloc::vec
+/// [`vec!`]: alloc::vec!
 #[macro_export]
 macro_rules! text {
     () => {

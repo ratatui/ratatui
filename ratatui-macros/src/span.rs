@@ -94,7 +94,7 @@
 /// [`Color`]: ratatui_core::style::Color
 /// [`Span`]: ratatui_core::text::Span
 /// [`Style`]: ratatui_core::style::Style
-/// [`format!`]: alloc::format
+/// [`format!`]: alloc::format!
 #[macro_export]
 macro_rules! span {
     ($string:literal) => {
