@@ -2496,7 +2496,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui"
-version = "0.30.0-alpha.4"
+version = "0.30.0-alpha.5"
 dependencies = [
  "color-eyre",
  "criterion",
@@ -2565,7 +2565,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-macros"
-version = "0.7.0-alpha.3"
+version = "0.7.0-alpha.4"
 dependencies = [
  "ratatui-core",
  "ratatui-widgets",
