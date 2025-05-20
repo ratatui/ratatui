@@ -52,10 +52,10 @@ macro_rules! row {
         ::ratatui_widgets::table::Row::default()
     };
     ($cell:expr; $n:expr) => {
-        ::ratatui_widgets::table::Row::new(vec![::ratatui_widgets::table::Cell::from($cell); $n])
+        ::ratatui_widgets::table::Row::new(alloc::vec![::ratatui_widgets::table::Cell::from($cell); $n])
     };
     ($($cell:expr),+ $(,)?) => {{
-        ::ratatui_widgets::table::Row::new(vec![
+        ::ratatui_widgets::table::Row::new(alloc::vec![
         $(
             ::ratatui_widgets::table::Cell::from($cell),
         )+
@@ -65,7 +65,7 @@ macro_rules! row {
 
 #[cfg(test)]
 mod tests {
-
+    use alloc::vec;
     use ratatui_core::text::Text;
     use ratatui_widgets::table::{Cell, Row};
 

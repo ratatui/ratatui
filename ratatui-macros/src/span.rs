@@ -94,25 +94,25 @@
 #[macro_export]
 macro_rules! span {
     ($string:literal) => {
-        $crate::ratatui_core::text::Span::raw(format!($string))
+        $crate::ratatui_core::text::Span::raw(alloc::format!($string))
     };
     ($string:literal, $($arg:tt)*) => {
-        $crate::ratatui_core::text::Span::raw(format!($string, $($arg)*))
+        $crate::ratatui_core::text::Span::raw(alloc::format!($string, $($arg)*))
     };
     ($expr:expr) => {
-        $crate::ratatui_core::text::Span::raw(format!("{}", $expr))
+        $crate::ratatui_core::text::Span::raw(alloc::format!("{}", $expr))
     };
     ($style:expr, $($arg:tt)*) => {
         compile_error!("first parameter must be a formatting specifier followed by a comma OR a `Style` followed by a semicolon")
     };
     ($style:expr; $string:literal) => {
-        $crate::ratatui_core::text::Span::styled(format!($string), $style)
+        $crate::ratatui_core::text::Span::styled(alloc::format!($string), $style)
     };
     ($style:expr; $string:literal, $($arg:tt)*) => {
-        $crate::ratatui_core::text::Span::styled(format!($string, $($arg)*), $style)
+        $crate::ratatui_core::text::Span::styled(alloc::format!($string, $($arg)*), $style)
     };
     ($style:expr; $expr:expr) => {
-        $crate::ratatui_core::text::Span::styled(format!("{}", $expr), $style)
+        $crate::ratatui_core::text::Span::styled(alloc::format!("{}", $expr), $style)
     };
 }
 

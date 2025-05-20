@@ -41,10 +41,10 @@ macro_rules! text {
         $crate::ratatui_core::text::Text::default()
     };
     ($line:expr; $n:expr) => {
-        $crate::ratatui_core::text::Text::from(vec![$line.into(); $n])
+        $crate::ratatui_core::text::Text::from(alloc::vec![$line.into(); $n])
     };
     ($($line:expr),+ $(,)?) => {{
-        $crate::ratatui_core::text::Text::from(vec![
+        $crate::ratatui_core::text::Text::from(alloc::vec![
         $(
             $line.into(),
         )+
@@ -54,6 +54,7 @@ macro_rules! text {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use ratatui_core::text::Text;
 
     #[test]
