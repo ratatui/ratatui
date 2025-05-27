@@ -184,11 +184,11 @@ macro_rules! define_symbols {
             }
         }
 
-        impl TryInto<&'static str> for &BorderSymbol {
+        impl TryFrom<&BorderSymbol> for &'static str {
             type Error = ();
-            fn try_into(self) -> Result<&'static str, Self::Error> {
+            fn try_from(value: &BorderSymbol) -> Result<Self, Self::Error> {
                 use LineStyle::*;
-                match (&self.right, &self.up, &self.left, &self.down) {
+                match (value.right, value.up, value.left, value.down) {
                     $( ($right, $up, $left, $down) => Ok($symbol) ),* ,
                     _ => Err(()),
                 }
