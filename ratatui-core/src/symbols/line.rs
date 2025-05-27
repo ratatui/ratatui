@@ -94,11 +94,7 @@ pub enum LineStyle {
 
 impl LineStyle {
     fn replace(self, from: &Self, to: &Self) -> Self {
-        if self == *from {
-            to.clone()
-        } else {
-            self
-        }
+        if self == *from { to.clone() } else { self }
     }
 }
 

@@ -2,7 +2,7 @@ use compact_str::CompactString;
 
 use crate::style::{Color, Modifier, Style};
 use crate::symbols::line::BorderSymbol;
-use crate::symbols::merge::{merge_border, MergeStyle};
+use crate::symbols::merge::{MergeStyle, merge_border};
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
