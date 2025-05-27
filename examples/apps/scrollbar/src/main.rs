@@ -60,24 +60,24 @@ impl App {
         }
     }
 
-    fn scroll_down(&mut self) {
+    const fn scroll_down(&mut self) {
         self.vertical_scroll = self.vertical_scroll.saturating_add(1);
         self.vertical_scroll_state = self.vertical_scroll_state.position(self.vertical_scroll);
     }
 
-    fn scroll_up(&mut self) {
+    const fn scroll_up(&mut self) {
         self.vertical_scroll = self.vertical_scroll.saturating_sub(1);
         self.vertical_scroll_state = self.vertical_scroll_state.position(self.vertical_scroll);
     }
 
-    fn scroll_left(&mut self) {
+    const fn scroll_left(&mut self) {
         self.horizontal_scroll = self.horizontal_scroll.saturating_sub(1);
         self.horizontal_scroll_state = self
             .horizontal_scroll_state
             .position(self.horizontal_scroll);
     }
 
-    fn scroll_right(&mut self) {
+    const fn scroll_right(&mut self) {
         self.horizontal_scroll = self.horizontal_scroll.saturating_add(1);
         self.horizontal_scroll_state = self
             .horizontal_scroll_state

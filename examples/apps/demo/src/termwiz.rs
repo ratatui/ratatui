@@ -2,8 +2,8 @@
 use std::error::Error;
 use std::time::{Duration, Instant};
 
-use ratatui::backend::TermwizBackend;
 use ratatui::Terminal;
+use ratatui::backend::TermwizBackend;
 use termwiz::input::{InputEvent, KeyCode};
 use termwiz::terminal::Terminal as TermwizTerminal;
 

@@ -16,7 +16,7 @@ use ratatui::widgets::{
     Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
     StatefulWidget, Widget, Wrap,
 };
-use ratatui::{symbols, DefaultTerminal};
+use ratatui::{DefaultTerminal, symbols};
 
 const TODO_HEADER_STYLE: Style = Style::new().fg(SLATE.c100).bg(BLUE.c800);
 const NORMAL_ROW_BG: Color = SLATE.c950;
@@ -67,12 +67,36 @@ impl Default for App {
         Self {
             should_exit: false,
             todo_list: TodoList::from_iter([
-                (Status::Todo, "Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust"),
-                (Status::Completed, "Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui."),
-                (Status::Todo, "Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!"),
-                (Status::Todo, "Walk with your dog", "Max is bored, go walk with him!"),
-                (Status::Completed, "Pay the bills", "Pay the train subscription!!!"),
-                (Status::Completed, "Refactor list example", "If you see this info that means I completed this task!"),
+                (
+                    Status::Todo,
+                    "Rewrite everything with Rust!",
+                    "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust",
+                ),
+                (
+                    Status::Completed,
+                    "Rewrite all of your tui apps with Ratatui",
+                    "Yes, you heard that right. Go and replace your tui with Ratatui.",
+                ),
+                (
+                    Status::Todo,
+                    "Pet your cat",
+                    "Minnak loves to be pet by you! Don't forget to pet and give some treats!",
+                ),
+                (
+                    Status::Todo,
+                    "Walk with your dog",
+                    "Max is bored, go walk with him!",
+                ),
+                (
+                    Status::Completed,
+                    "Pay the bills",
+                    "Pay the train subscription!!!",
+                ),
+                (
+                    Status::Completed,
+                    "Refactor list example",
+                    "If you see this info that means I completed this task!",
+                ),
             ]),
         }
     }

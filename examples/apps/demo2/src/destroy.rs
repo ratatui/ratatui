@@ -1,11 +1,11 @@
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Flex, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::Text;
 use ratatui::widgets::Widget;
-use ratatui::Frame;
 
 /// delay the start of the animation so it doesn't start immediately
 const DELAY: usize = 120;

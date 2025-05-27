@@ -46,8 +46,8 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// # Example
 ///
 /// ```rust,no_run
-/// use ratatui::backend::TermwizBackend;
 /// use ratatui::Terminal;
+/// use ratatui::backend::TermwizBackend;
 ///
 /// let backend = TermwizBackend::new()?;
 /// let mut terminal = Terminal::new(backend)?;

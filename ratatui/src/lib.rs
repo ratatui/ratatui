@@ -39,8 +39,8 @@
 //!
 //! ```rust,no_run
 //! use crossterm::event::{self, Event};
-//! use ratatui::text::Text;
 //! use ratatui::Frame;
+//! use ratatui::text::Text;
 //!
 //! fn main() {
 //!     let mut terminal = ratatui::init();
@@ -136,8 +136,8 @@
 //! The closure passed to the [`Terminal::draw`] method should handle the rendering of a full frame.
 //!
 //! ```rust,no_run
-//! use ratatui::widgets::Paragraph;
 //! use ratatui::Frame;
+//! use ratatui::widgets::Paragraph;
 //!
 //! fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> {
 //!     loop {
@@ -187,9 +187,9 @@
 //! section of the [Ratatui Website] for more info.
 //!
 //! ```rust,no_run
+//! use ratatui::Frame;
 //! use ratatui::layout::{Constraint, Layout};
 //! use ratatui::widgets::Block;
-//! use ratatui::Frame;
 //!
 //! fn draw(frame: &mut Frame) {
 //!     use Constraint::{Fill, Length, Min};
@@ -229,11 +229,11 @@
 //! [Ratatui Website] for more info.
 //!
 //! ```rust,no_run
+//! use ratatui::Frame;
 //! use ratatui::layout::{Constraint, Layout};
 //! use ratatui::style::{Color, Modifier, Style, Stylize};
 //! use ratatui::text::{Line, Span};
 //! use ratatui::widgets::{Block, Paragraph};
-//! use ratatui::Frame;
 //!
 //! fn draw(frame: &mut Frame) {
 //!     let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.area());
@@ -351,7 +351,7 @@ pub use ratatui_termwiz::termwiz;
 
 #[cfg(feature = "crossterm")]
 pub use crate::init::{
-    init, init_with_options, restore, try_init, try_init_with_options, try_restore, DefaultTerminal,
+    DefaultTerminal, init, init_with_options, restore, try_init, try_init_with_options, try_restore,
 };
 
 /// Re-exports for the backend implementations.

@@ -199,10 +199,10 @@ mod state;
 /// user to scroll through the rows and select one of them.
 ///
 /// ```rust
+/// use ratatui::Frame;
 /// use ratatui::layout::{Constraint, Rect};
 /// use ratatui::style::{Style, Stylize};
 /// use ratatui::widgets::{Block, Row, Table, TableState};
-/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();

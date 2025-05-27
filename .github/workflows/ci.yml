@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DavidAnson/markdownlint-cli2-action@v19
+      - uses: DavidAnson/markdownlint-cli2-action@v20
         with:
           globs: |
             '**/*.md'
@@ -122,7 +122,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        toolchain: ["1.74.0", "stable"]
+        toolchain: ["1.85.0", "stable"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -144,9 +144,11 @@ jobs:
       # This makes it easier to debug the exact versions of the dependencies
       - run: cargo tree --target x86_64-unknown-none -p ratatui-core
       - run: cargo tree --target x86_64-unknown-none -p ratatui-widgets
+      - run: cargo tree --target x86_64-unknown-none -p ratatui-macros
       - run: cargo tree --target x86_64-unknown-none -p ratatui --no-default-features
       - run: cargo build --target x86_64-unknown-none -p ratatui-core
       - run: cargo build --target x86_64-unknown-none -p ratatui-widgets
+      - run: cargo build --target x86_64-unknown-none -p ratatui-macros
       - run: cargo build --target x86_64-unknown-none -p ratatui --no-default-features
 
   # Check if README.md is up-to-date with the crate's documentation.
@@ -191,7 +193,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolchain: ["1.74.0", "stable"]
+        toolchain: ["1.85.0", "stable"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
