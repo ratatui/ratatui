@@ -16,10 +16,10 @@ pub enum MergeStyle {
 /// Merges two border symbols into one.
 pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle) -> BorderSymbol {
     let exact_result = BorderSymbol::new(
-        merge_line_style(&prev.right, &next.right),
-        merge_line_style(&prev.up, &next.up),
-        merge_line_style(&prev.left, &next.left),
-        merge_line_style(&prev.down, &next.down),
+        merge_line_style(prev.right, next.right),
+        merge_line_style(prev.up, next.up),
+        merge_line_style(prev.left, next.left),
+        merge_line_style(prev.down, next.down),
     );
     match style {
         MergeStyle::BestFit => exact_result.best_fit(),
@@ -28,7 +28,7 @@ pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle
 }
 
 /// Merges two line styles into one.
-pub fn merge_line_style(prev: LineStyle, next: LineStyle) -> LineStyle {
+pub const fn merge_line_style(prev: LineStyle, next: LineStyle) -> LineStyle {
     use LineStyle::{
         DoubleDash, Nothing, Plain, QuadrupleDash, QuadrupleDashThick, TripleDash, TripleDashThick,
     };

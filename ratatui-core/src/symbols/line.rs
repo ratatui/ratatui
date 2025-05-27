@@ -92,12 +92,6 @@ pub enum LineStyle {
     QuadrupleDashThick,
 }
 
-impl LineStyle {
-    fn replace(self, from: Self, to: Self) -> Self {
-        if self == from { to } else { self }
-    }
-}
-
 /// Represents a composite border symbol using individual line components.
 pub struct BorderSymbol {
     pub right: LineStyle,
@@ -152,12 +146,13 @@ impl BorderSymbol {
         self.up == style || self.right == style || self.down == style || self.left == style
     }
 
+    /// Replaces all line styles matching `from` by `to`.
     #[must_use]
     pub fn replace(mut self, from: LineStyle, to: LineStyle) -> Self {
-        self.up = self.up.replace(from, to);
-        self.right = self.right.replace(from, to);
-        self.down = self.down.replace(from, to);
-        self.left = self.left.replace(from, to);
+        self.up = if self.up == from { to } else { from };
+        self.right = if self.right == from { to } else { from };
+        self.down = if self.down == from { to } else { from };
+        self.left = if self.left == from { to } else { from };
         self
     }
 }
