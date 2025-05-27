@@ -63,33 +63,43 @@ pub const THICK_CROSS: &str = "╋";
 #[derive(PartialEq, Clone, Copy)]
 pub enum LineStyle {
     /// Represents the absence of a line.
+    /// 
     /// Example: (No visible line)
     Nothing,
     /// A single line.
+    /// 
     /// Example: ─ │
     Plain,
     /// A rounded line style, only applicable in corner symbols.
+    /// 
     /// Example: ╭ ╮ ╰ ╯
     Rounded,
     /// A double line.
+    /// 
     /// Example: ═ ║
     Double,
     /// A thickened line.
+    /// 
     /// Example: ━ ┃
     Thick,
     /// A dashed line with a double dash pattern.
+    /// 
     /// Example: ╌ ╎
     DoubleDash,
     /// A dashed line with a triple dash pattern.
+    /// 
     /// Example: ┄ ┆
     TripleDash,
     /// A thicker variant of the triple dash.
+    /// 
     /// Example: ┅ ┇
     TripleDashThick,
     /// A dashed line with four dashes.
+    /// 
     /// Example: ┈ ┊
     QuadrupleDash,
     /// A thicker variant of the quadruple dash.
+    /// 
     /// Example: ┉ ┋
     QuadrupleDashThick,
 }
