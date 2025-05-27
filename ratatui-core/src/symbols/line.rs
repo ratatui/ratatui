@@ -58,7 +58,7 @@ pub const CROSS: &str = "┼";
 pub const DOUBLE_CROSS: &str = "╬";
 pub const THICK_CROSS: &str = "╋";
 /// A visual style defining the appearance of a single line making up a block border.
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum LineStyle {
     /// Represents the absence of a line.
     /// Example: (No visible line)
@@ -93,8 +93,8 @@ pub enum LineStyle {
 }
 
 impl LineStyle {
-    fn replace(self, from: &Self, to: &Self) -> Self {
-        if self == *from { to.clone() } else { self }
+    fn replace(self, from: Self, to: Self) -> Self {
+        if self == from { to } else { self }
     }
 }
 
@@ -128,32 +128,32 @@ impl BorderSymbol {
         }
         // There is no character that combines double and thick
         // There is more characters for thick borders.
-        if self.contains(&Double) && self.contains(&Thick) {
-            self = self.replace(&Double, &Thick);
+        if self.contains(Double) && self.contains(Thick) {
+            self = self.replace(Double, Thick);
         }
         if TryInto::<&str>::try_into(&self).is_ok() {
             return self;
         }
-        if self.contains(&Double) {
-            self = self.replace(&Double, &Plain);
+        if self.contains(Double) {
+            self = self.replace(Double, Plain);
         }
         if TryInto::<&str>::try_into(&self).is_ok() {
             return self;
         }
         // Rouned border character are only available for corners.
-        if self.contains(&Rounded) {
-            self = self.replace(&Rounded, &Plain);
+        if self.contains(Rounded) {
+            self = self.replace(Rounded, Plain);
         }
 
         self
     }
     /// Checks if any of the line components making the `BorderSymbol` matches the `style`.
-    pub fn contains(&self, style: &LineStyle) -> bool {
-        self.up == *style || self.right == *style || self.down == *style || self.left == *style
+    pub fn contains(&self, style: LineStyle) -> bool {
+        self.up == style || self.right == style || self.down == style || self.left == style
     }
 
     #[must_use]
-    pub fn replace(mut self, from: &LineStyle, to: &LineStyle) -> Self {
+    pub fn replace(mut self, from: LineStyle, to: LineStyle) -> Self {
         self.up = self.up.replace(from, to);
         self.right = self.right.replace(from, to);
         self.down = self.down.replace(from, to);
