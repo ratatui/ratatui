@@ -1,3 +1,5 @@
+use core::str::FromStr;
+
 pub const VERTICAL: &str = "│";
 pub const DOUBLE_VERTICAL: &str = "║";
 pub const THICK_VERTICAL: &str = "┃";
@@ -154,6 +156,14 @@ impl BorderSymbol {
         self.down = if self.down == from { to } else { self.down };
         self.left = if self.left == from { to } else { self.left };
         self
+    }
+}
+
+impl FromStr for BorderSymbol {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.try_into()
     }
 }
 
