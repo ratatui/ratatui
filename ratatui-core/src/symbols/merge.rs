@@ -4,13 +4,13 @@ use crate::symbols::line::{BorderSymbol, LineStyle};
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub enum MergeStyle {
     /// Merges symbols only if an exact composite unicode character exists.
-    /// 
+    ///
     /// Example: `┐` and `┗` will be merged into `╄`
     #[default]
     Exact,
     /// Merges symbols even if an exact composite unicode character doesn't exist,
     /// using the closest match.
-    /// 
+    ///
     /// Example: `╮` and `└` will be merged into `┼`
     BestFit,
 }
