@@ -31,9 +31,8 @@ pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle
 
 /// Merges two line styles into one.
 pub const fn merge_line_style(prev: LineStyle, next: LineStyle) -> LineStyle {
-    use LineStyle::{
-        DoubleDash, Nothing, Plain, QuadrupleDash, QuadrupleDashThick, TripleDash, TripleDashThick,
-    };
+    #[allow(clippy::enum_glob_use)]
+    use LineStyle::*;
     match (prev, next) {
         (Nothing, Nothing) => Nothing,
         (s, Nothing) | (Nothing, s) => s,
