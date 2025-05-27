@@ -149,10 +149,10 @@ impl BorderSymbol {
     /// Replaces all line styles matching `from` by `to`.
     #[must_use]
     pub fn replace(mut self, from: LineStyle, to: LineStyle) -> Self {
-        self.up = if self.up == from { to } else { from };
-        self.right = if self.right == from { to } else { from };
-        self.down = if self.down == from { to } else { from };
-        self.left = if self.left == from { to } else { from };
+        self.up = if self.up == from { to } else { self.up };
+        self.right = if self.right == from { to } else { self.right };
+        self.down = if self.down == from { to } else { self.down };
+        self.left = if self.left == from { to } else { self.left };
         self
     }
 }
