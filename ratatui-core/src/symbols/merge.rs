@@ -28,13 +28,13 @@ pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle
 }
 
 /// Merges two line styles into one.
-pub fn merge_line_style(prev: &LineStyle, next: &LineStyle) -> LineStyle {
+pub fn merge_line_style(prev: LineStyle, next: LineStyle) -> LineStyle {
     use LineStyle::{
         DoubleDash, Nothing, Plain, QuadrupleDash, QuadrupleDashThick, TripleDash, TripleDashThick,
     };
     match (prev, next) {
         (Nothing, Nothing) => Nothing,
-        (s, Nothing) | (Nothing, s) => s.clone(),
+        (s, Nothing) | (Nothing, s) => s,
         // (Thick, Plain | Thick) | (Plain, Thick) => Thick,
         // (Double, Plain | Double) | (Plain, Double) => Double,
         (Plain, Plain) => Plain,
@@ -43,6 +43,6 @@ pub fn merge_line_style(prev: &LineStyle, next: &LineStyle) -> LineStyle {
         (TripleDashThick, TripleDashThick) => TripleDashThick,
         (QuadrupleDash, QuadrupleDash) => QuadrupleDash,
         (QuadrupleDashThick, QuadrupleDashThick) => QuadrupleDashThick,
-        (_, next) => next.clone(),
+        (_, next) => next,
     }
 }
