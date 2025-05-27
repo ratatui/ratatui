@@ -1,4 +1,4 @@
-use crate::symbols::line::{BorderSymbol, LineStyle};
+use crate::symbols::line::BorderSymbol;
 
 /// Defines the merge strategy of overlapping characters.
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
@@ -18,32 +18,13 @@ pub enum MergeStyle {
 /// Merges two border symbols into one.
 pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle) -> BorderSymbol {
     let exact_result = BorderSymbol::new(
-        merge_line_style(prev.right, next.right),
-        merge_line_style(prev.up, next.up),
-        merge_line_style(prev.left, next.left),
-        merge_line_style(prev.down, next.down),
+        prev.right.merge(next.right),
+        prev.up.merge(next.up),
+        prev.left.merge(next.left),
+        prev.down.merge(next.down),
     );
     match style {
         MergeStyle::BestFit => exact_result.best_fit(),
         MergeStyle::Exact => exact_result,
-    }
-}
-
-/// Merges two line styles into one.
-pub const fn merge_line_style(prev: LineStyle, next: LineStyle) -> LineStyle {
-    #[allow(clippy::enum_glob_use)]
-    use LineStyle::*;
-    match (prev, next) {
-        (Nothing, Nothing) => Nothing,
-        (s, Nothing) | (Nothing, s) => s,
-        // (Thick, Plain | Thick) | (Plain, Thick) => Thick,
-        // (Double, Plain | Double) | (Plain, Double) => Double,
-        (Plain, Plain) => Plain,
-        (DoubleDash, DoubleDash) => DoubleDash,
-        (TripleDash, TripleDash) => TripleDash,
-        (TripleDashThick, TripleDashThick) => TripleDashThick,
-        (QuadrupleDash, QuadrupleDash) => QuadrupleDash,
-        (QuadrupleDashThick, QuadrupleDashThick) => QuadrupleDashThick,
-        (_, next) => next,
     }
 }
