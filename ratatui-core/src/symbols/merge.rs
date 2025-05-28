@@ -8,11 +8,12 @@ pub enum MergeStrategy {
     /// Example: `┐` and `┗` will be merged into `╄`
     #[default]
     Exact,
+
     /// Merges symbols even if an exact composite unicode character doesn't exist,
     /// using the closest match.
     ///
     /// Example: `╮` and `└` will be merged into `┼`
-    BestFit,
+    Fuzzy,
 }
 
 /// Merges two border symbols into one.
@@ -28,7 +29,7 @@ pub fn merge_border(
         prev.down.merge(next.down),
     );
     match style {
-        MergeStrategy::BestFit => exact_result.best_fit(),
+        MergeStrategy::Fuzzy => exact_result.best_fit(),
         MergeStrategy::Exact => exact_result,
     }
 }

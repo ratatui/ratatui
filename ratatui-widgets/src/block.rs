@@ -1749,7 +1749,7 @@ mod tests {
     #[test]
     fn render_best_fit_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        render_merging_block_helper(&mut buffer, Some(MergeStrategy::BestFit).as_ref());
+        render_merging_block_helper(&mut buffer, Some(MergeStrategy::Fuzzy).as_ref());
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
