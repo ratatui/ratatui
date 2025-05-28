@@ -63,7 +63,7 @@ pub const THICK_CROSS: &str = "╋";
 /// A visual style defining the appearance of a single line making up a block border.
 #[derive(PartialEq, Clone, Copy)]
 pub enum LineStyle {
-    /// Represents the absence of a line (e.g. no visible line).
+    /// Represents the absence of a line.
     Nothing,
 
     /// A single line (e.g. `─`, `│`).
