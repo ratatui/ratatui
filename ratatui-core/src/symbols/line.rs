@@ -142,7 +142,7 @@ impl BorderSymbol {
     pub fn best_fit(mut self) -> Self {
         use LineStyle::{Double, Plain, Rounded, Thick};
         // Check if we got a character that can be displayed after change
-        if TryInto::<&str>::try_into(&self).is_ok() {
+        if TryInto::<&str>::try_into(self).is_ok() {
             return self;
         }
         // There is no character that combines double and thick
@@ -150,13 +150,13 @@ impl BorderSymbol {
         if self.contains(Double) && self.contains(Thick) {
             self = self.replace(Double, Thick);
         }
-        if TryInto::<&str>::try_into(&self).is_ok() {
+        if TryInto::<&str>::try_into(self).is_ok() {
             return self;
         }
         if self.contains(Double) {
             self = self.replace(Double, Plain);
         }
-        if TryInto::<&str>::try_into(&self).is_ok() {
+        if TryInto::<&str>::try_into(self).is_ok() {
             return self;
         }
         // Rouned border character are only available for corners.
@@ -208,9 +208,9 @@ macro_rules! define_symbols {
             }
         }
 
-        impl TryFrom<&BorderSymbol> for &'static str {
+        impl TryFrom<BorderSymbol> for &'static str {
             type Error = ();
-            fn try_from(value: &BorderSymbol) -> Result<Self, Self::Error> {
+            fn try_from(value: BorderSymbol) -> Result<Self, Self::Error> {
                 use LineStyle::*;
                 match (value.right, value.up, value.left, value.down) {
                     $( ($right, $up, $left, $down) => Ok($symbol) ),* ,

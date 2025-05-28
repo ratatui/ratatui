@@ -76,7 +76,7 @@ impl Cell {
             BorderSymbol::try_from(next),
             merge_strategy,
         ) {
-            if let Ok(merged) = TryInto::<&str>::try_into(&merge_border(s1, s2, merge_strategy)) {
+            if let Ok(merged) = TryInto::<&str>::try_into(merge_border(s1, s2, merge_strategy)) {
                 self.set_symbol(merged);
                 return self;
             }
