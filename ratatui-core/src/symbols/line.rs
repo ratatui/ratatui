@@ -63,54 +63,34 @@ pub const THICK_CROSS: &str = "╋";
 /// A visual style defining the appearance of a single line making up a block border.
 #[derive(PartialEq, Clone, Copy)]
 pub enum LineStyle {
-    /// Represents the absence of a line.
-    ///
-    /// Example: (No visible line)
+    /// Represents the absence of a line (e.g. no visible line).
     Nothing,
 
-    /// A single line.
-    ///
-    /// Example: ─ │
+    /// A single line (e.g. `─`, `│`).
     Plain,
 
-    /// A rounded line style, only applicable in corner symbols.
-    ///
-    /// Example: ╭ ╮ ╰ ╯
+    /// A rounded line style, only applicable in corner symbols (e.g. `╭`, `╯`).
     Rounded,
 
-    /// A double line.
-    ///
-    /// Example: ═ ║
+    /// A double line (e.g. `═`, `║`).
     Double,
 
-    /// A thickened line.
-    ///
-    /// Example: ━ ┃
+    /// A thickened line (e.g. `━`, `┃`).
     Thick,
 
-    /// A dashed line with a double dash pattern.
-    ///
-    /// Example: ╌ ╎
+    /// A dashed line with a double dash pattern (e.g. `╌`, `╎`).
     DoubleDash,
 
-    /// A dashed line with a triple dash pattern.
-    ///
-    /// Example: ┄ ┆
+    /// A dashed line with a triple dash pattern (e.g. `┄`, `┆`).
     TripleDash,
 
-    /// A thicker variant of the triple dash.
-    ///
-    /// Example: ┅ ┇
+    /// A thicker variant of the triple dash (e.g. `┅`, `┇`).
     TripleDashThick,
 
-    /// A dashed line with four dashes.
-    ///
-    /// Example: ┈ ┊
+    /// A dashed line with four dashes (e.g. `┈`, `┊`).
     QuadrupleDash,
 
-    /// A thicker variant of the quadruple dash.
-    ///
-    /// Example: ┉ ┋
+    /// A thicker variant of the quadruple dash (e.g. `┉`, `┋`).
     QuadrupleDashThick,
 }
 
