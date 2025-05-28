@@ -17,7 +17,7 @@ pub enum MergeStrategy {
 }
 
 /// Merges two border symbols into one.
-pub fn merge_border(
+pub(crate) fn merge_border(
     prev: &BorderSymbol,
     next: &BorderSymbol,
     style: &MergeStrategy,
