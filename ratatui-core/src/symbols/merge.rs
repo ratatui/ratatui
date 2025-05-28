@@ -2,7 +2,7 @@ use crate::symbols::line::BorderSymbol;
 
 /// Defines the merge strategy of overlapping characters.
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
-pub enum MergeStyle {
+pub enum MergeStrategy {
     /// Merges symbols only if an exact composite unicode character exists.
     ///
     /// Example: `┐` and `┗` will be merged into `╄`
@@ -16,7 +16,11 @@ pub enum MergeStyle {
 }
 
 /// Merges two border symbols into one.
-pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle) -> BorderSymbol {
+pub fn merge_border(
+    prev: &BorderSymbol,
+    next: &BorderSymbol,
+    style: &MergeStrategy,
+) -> BorderSymbol {
     let exact_result = BorderSymbol::new(
         prev.right.merge(next.right),
         prev.up.merge(next.up),
@@ -24,7 +28,7 @@ pub fn merge_border(prev: &BorderSymbol, next: &BorderSymbol, style: &MergeStyle
         prev.down.merge(next.down),
     );
     match style {
-        MergeStyle::BestFit => exact_result.best_fit(),
-        MergeStyle::Exact => exact_result,
+        MergeStrategy::BestFit => exact_result.best_fit(),
+        MergeStrategy::Exact => exact_result,
     }
 }
