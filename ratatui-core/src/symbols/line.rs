@@ -61,7 +61,7 @@ pub const DOUBLE_CROSS: &str = "╬";
 pub const THICK_CROSS: &str = "╋";
 
 /// A visual style defining the appearance of a single line making up a block border.
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum LineStyle {
     /// Represents the absence of a line.
     Nothing,
@@ -117,6 +117,7 @@ impl LineStyle {
 }
 
 /// Represents a composite border symbol using individual line components.
+#[derive(Debug, Copy, Clone)]
 pub struct BorderSymbol {
     pub right: LineStyle,
     pub up: LineStyle,
@@ -167,7 +168,7 @@ impl BorderSymbol {
     }
 
     /// Checks if any of the line components making the `BorderSymbol` matches the `style`.
-    pub fn contains(&self, style: LineStyle) -> bool {
+    pub fn contains(self, style: LineStyle) -> bool {
         self.up == style || self.right == style || self.down == style || self.left == style
     }
 

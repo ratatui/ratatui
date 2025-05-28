@@ -18,8 +18,8 @@ pub enum MergeStrategy {
 
 /// Merges two border symbols into one.
 pub(crate) fn merge_border(
-    prev: &BorderSymbol,
-    next: &BorderSymbol,
+    prev: BorderSymbol,
+    next: BorderSymbol,
     style: &MergeStrategy,
 ) -> BorderSymbol {
     let exact_result = BorderSymbol::new(
