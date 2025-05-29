@@ -62,10 +62,11 @@ impl BorderSymbol {
             down,
         }
     }
+
     /// Finds the closest representation of the `BorderSymbol`, that has a corresponding unicode
     /// character.
     #[must_use]
-    pub fn best_fit(mut self) -> Self {
+    pub fn fuzzy(mut self) -> Self {
         use LineStyle::{Double, Plain, Rounded, Thick};
         // Check if we got a character that can be displayed after change
         if TryInto::<&str>::try_into(self).is_ok() {
@@ -328,7 +329,7 @@ pub(crate) fn merge_border(
     );
     match style {
         MergeStrategy::Replace => next,
-        MergeStrategy::Fuzzy => exact_result.best_fit(),
+        MergeStrategy::Fuzzy => exact_result.fuzzy(),
         MergeStrategy::Exact => exact_result,
     }
 }

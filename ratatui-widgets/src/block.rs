@@ -1726,7 +1726,7 @@ mod tests {
     }
 
     #[test]
-    fn render_best_fit_merging_blocks() {
+    fn render_fuzzy_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
         render_merging_block_helper(&mut buffer, MergeStrategy::Fuzzy);
 
