@@ -128,7 +128,7 @@ pub struct Block<'a> {
     /// Block padding
     padding: Padding,
     /// Border merging strategy
-    border_merge_strategy: Option<MergeStrategy>,
+    border_merge_strategy: MergeStrategy,
 }
 
 impl<'a> Block<'a> {
@@ -144,7 +144,7 @@ impl<'a> Block<'a> {
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
             padding: Padding::ZERO,
-            border_merge_strategy: None,
+            border_merge_strategy: MergeStrategy::Replace,
         }
     }
 
@@ -537,7 +537,7 @@ impl<'a> Block<'a> {
     /// Sets the block's [`MergeStrategy`] for overlapping characters. Setting it to `None`
     /// never merges characters.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_merge_strategy(mut self, merge_strategy: Option<MergeStrategy>) -> Self {
+    pub const fn border_merge_strategy(mut self, merge_strategy: MergeStrategy) -> Self {
         self.border_merge_strategy = merge_strategy;
         self
     }
@@ -651,15 +651,12 @@ impl Block<'_> {
 
     fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::LEFT) {
-            let offset = u16::from(self.border_merge_strategy.is_some());
+            let offset = u16::from(self.border_merge_strategy != MergeStrategy::Replace);
             // First and last element of the line are not drawn
             // to avoid wrong merging with the corner.
             for y in area.top() + offset..area.bottom() - offset {
                 buf[(area.left(), y)]
-                    .merge_symbol(
-                        self.border_set.vertical_left,
-                        self.border_merge_strategy.as_ref(),
-                    )
+                    .merge_symbol(self.border_set.vertical_left, self.border_merge_strategy)
                     .set_style(self.border_style);
             }
         }
@@ -667,13 +664,10 @@ impl Block<'_> {
 
     fn render_top_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::TOP) {
-            let offset = u16::from(self.border_merge_strategy.is_some());
+            let offset = u16::from(self.border_merge_strategy != MergeStrategy::Replace);
             for x in area.left() + offset..area.right() - offset {
                 buf[(x, area.top())]
-                    .merge_symbol(
-                        self.border_set.horizontal_top,
-                        self.border_merge_strategy.as_ref(),
-                    )
+                    .merge_symbol(self.border_set.horizontal_top, self.border_merge_strategy)
                     .set_style(self.border_style);
             }
         }
@@ -682,13 +676,10 @@ impl Block<'_> {
     fn render_right_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::RIGHT) {
             let x = area.right() - 1;
-            let offset = u16::from(self.border_merge_strategy.is_some());
+            let offset = u16::from(self.border_merge_strategy != MergeStrategy::Replace);
             for y in area.top() + offset..area.bottom() - offset {
                 buf[(x, y)]
-                    .merge_symbol(
-                        self.border_set.vertical_right,
-                        self.border_merge_strategy.as_ref(),
-                    )
+                    .merge_symbol(self.border_set.vertical_right, self.border_merge_strategy)
                     .set_style(self.border_style);
             }
         }
@@ -697,12 +688,12 @@ impl Block<'_> {
     fn render_bottom_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::BOTTOM) {
             let y = area.bottom() - 1;
-            let offset = u16::from(self.border_merge_strategy.is_some());
+            let offset = u16::from(self.border_merge_strategy != MergeStrategy::Replace);
             for x in area.left() + offset..area.right() - offset {
                 buf[(x, y)]
                     .merge_symbol(
                         self.border_set.horizontal_bottom,
-                        self.border_merge_strategy.as_ref(),
+                        self.border_merge_strategy,
                     )
                     .set_style(self.border_style);
             }
@@ -712,10 +703,7 @@ impl Block<'_> {
     fn render_bottom_right_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
             buf[(area.right() - 1, area.bottom() - 1)]
-                .merge_symbol(
-                    self.border_set.bottom_right,
-                    self.border_merge_strategy.as_ref(),
-                )
+                .merge_symbol(self.border_set.bottom_right, self.border_merge_strategy)
                 .set_style(self.border_style);
         }
     }
@@ -723,10 +711,7 @@ impl Block<'_> {
     fn render_top_right_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::RIGHT | Borders::TOP) {
             buf[(area.right() - 1, area.top())]
-                .merge_symbol(
-                    self.border_set.top_right,
-                    self.border_merge_strategy.as_ref(),
-                )
+                .merge_symbol(self.border_set.top_right, self.border_merge_strategy)
                 .set_style(self.border_style);
         }
     }
@@ -734,10 +719,7 @@ impl Block<'_> {
     fn render_bottom_left_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
             buf[(area.left(), area.bottom() - 1)]
-                .merge_symbol(
-                    self.border_set.bottom_left,
-                    self.border_merge_strategy.as_ref(),
-                )
+                .merge_symbol(self.border_set.bottom_left, self.border_merge_strategy)
                 .set_style(self.border_style);
         }
     }
@@ -745,10 +727,7 @@ impl Block<'_> {
     fn render_top_left_corner(&self, buf: &mut Buffer, area: Rect) {
         if self.borders.contains(Borders::LEFT | Borders::TOP) {
             buf[(area.left(), area.top())]
-                .merge_symbol(
-                    self.border_set.top_left,
-                    self.border_merge_strategy.as_ref(),
-                )
+                .merge_symbol(self.border_set.top_left, self.border_merge_strategy)
                 .set_style(self.border_style);
         }
     }
@@ -1192,7 +1171,7 @@ mod tests {
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
                 padding: Padding::ZERO,
-                border_merge_strategy: None,
+                border_merge_strategy: MergeStrategy::Replace,
             }
         );
     }
@@ -1691,31 +1670,31 @@ mod tests {
         assert_eq!(buffer, expected);
     }
 
-    fn render_merging_block_helper(buffer: &mut Buffer, merge_strategy: Option<&MergeStrategy>) {
+    fn render_merging_block_helper(buffer: &mut Buffer, merge_strategy: MergeStrategy) {
         Block::bordered()
-            .border_merge_strategy(merge_strategy.cloned())
+            .border_merge_strategy(merge_strategy)
             .render(Rect::new(0, 0, 3, 3), buffer);
         Block::bordered()
             .border_type(BorderType::Thick)
-            .border_merge_strategy(merge_strategy.cloned())
+            .border_merge_strategy(merge_strategy)
             .render(Rect::new(1, 1, 3, 4), buffer);
         Block::bordered()
             .border_type(BorderType::Double)
-            .border_merge_strategy(merge_strategy.cloned())
+            .border_merge_strategy(merge_strategy)
             .render(Rect::new(2, 3, 3, 3), buffer);
         Block::bordered()
             .border_type(BorderType::Rounded)
-            .border_merge_strategy(merge_strategy.cloned())
+            .border_merge_strategy(merge_strategy)
             .render(Rect::new(3, 0, 3, 2), buffer);
         Block::bordered()
-            .border_merge_strategy(merge_strategy.cloned())
+            .border_merge_strategy(merge_strategy)
             .render(buffer.area, buffer);
     }
 
     #[test]
     fn render_non_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        render_merging_block_helper(&mut buffer, None.as_ref());
+        render_merging_block_helper(&mut buffer, MergeStrategy::Replace);
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1732,7 +1711,7 @@ mod tests {
     #[test]
     fn render_exact_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        render_merging_block_helper(&mut buffer, Some(MergeStrategy::Exact).as_ref());
+        render_merging_block_helper(&mut buffer, MergeStrategy::Exact);
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1749,7 +1728,7 @@ mod tests {
     #[test]
     fn render_best_fit_merging_blocks() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 6));
-        render_merging_block_helper(&mut buffer, Some(MergeStrategy::Fuzzy).as_ref());
+        render_merging_block_helper(&mut buffer, MergeStrategy::Fuzzy);
 
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
