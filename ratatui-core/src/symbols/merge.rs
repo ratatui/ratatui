@@ -153,6 +153,8 @@ define_symbols!(
     "│" => (Nothing, Plain, Nothing, Plain),
     "┃" => (Nothing, Thick, Nothing, Thick),
 
+    "╌" => (DoubleDash, Nothing, DoubleDash, Nothing),
+    "╎" => (Nothing, DoubleDash, Nothing, DoubleDash),
     "┄" => (TripleDash, Nothing, TripleDash, Nothing),
     "┅" => (TripleDashThick, Nothing, TripleDashThick, Nothing),
     "┆" => (Nothing, TripleDash, Nothing, TripleDash),
