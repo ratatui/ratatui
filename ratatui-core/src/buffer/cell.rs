@@ -1,8 +1,7 @@
 use compact_str::CompactString;
 
 use crate::style::{Color, Modifier, Style};
-use crate::symbols::line::BorderSymbol;
-use crate::symbols::merge::{MergeStrategy, merge_border};
+use crate::symbols::merge::{BorderSymbol, MergeStrategy, merge_border};
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
