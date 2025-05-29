@@ -21,9 +21,6 @@ pub enum MergeStrategy {
 
 impl MergeStrategy {
     pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
-        if self == Self::Replace {
-            return next;
-        }
         let (Ok(prev_symbol), Ok(next_symbol)) =
             (BorderSymbol::try_from(prev), BorderSymbol::try_from(next))
         else {
