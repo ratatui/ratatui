@@ -38,7 +38,7 @@ impl MergeStrategy {
 
 /// Represents a composite border symbol using individual line components.
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct BorderSymbol {
+struct BorderSymbol {
     pub right: LineStyle,
     pub up: LineStyle,
     pub left: LineStyle,
@@ -129,7 +129,7 @@ impl FromStr for BorderSymbol {
 
 /// A visual style defining the appearance of a single line making up a block border.
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub(crate) enum LineStyle {
+enum LineStyle {
     /// Represents the absence of a line.
     Nothing,
 
