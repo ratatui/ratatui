@@ -97,22 +97,8 @@ pub enum LineStyle {
 impl LineStyle {
     /// Merges line styles.
     #[must_use]
-    pub const fn merge(self, other: Self) -> Self {
-        #[allow(clippy::enum_glob_use)]
-        use LineStyle::*;
-        match (self, other) {
-            (Nothing, Nothing) => Nothing,
-            (s, Nothing) | (Nothing, s) => s,
-            // (Thick, Plain | Thick) | (Plain, Thick) => Thick,
-            // (Double, Plain | Double) | (Plain, Double) => Double,
-            (Plain, Plain) => Plain,
-            (DoubleDash, DoubleDash) => DoubleDash,
-            (TripleDash, TripleDash) => TripleDash,
-            (TripleDashThick, TripleDashThick) => TripleDashThick,
-            (QuadrupleDash, QuadrupleDash) => QuadrupleDash,
-            (QuadrupleDashThick, QuadrupleDashThick) => QuadrupleDashThick,
-            (_, other) => other,
-        }
+    pub fn merge(self, other: Self) -> Self {
+        if other == Self::Nothing { self } else { other }
     }
 }
 
