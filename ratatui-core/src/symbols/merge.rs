@@ -145,6 +145,9 @@ enum LineStyle {
     /// A dashed line with a double dash pattern (e.g. `╌`, `╎`).
     DoubleDash,
 
+    /// A thicker variant of the double dash (e.g. `╍`, `╏`)
+    DoubleDashThick,
+
     /// A dashed line with a triple dash pattern (e.g. `┄`, `┆`).
     TripleDash,
 
@@ -274,7 +277,9 @@ define_symbols!(
     "╊" => (Thick, Thick, Plain, Thick),
     "╋" => (Thick, Thick, Thick, Thick),
     "╌" => (DoubleDash, Nothing, DoubleDash, Nothing),
+    "╍" => (DoubleDashThick, Nothing, DoubleDashThick, Nothing),
     "╎" => (Nothing, DoubleDash, Nothing, DoubleDash),
+    "╏" => (Nothing, DoubleDashThick, Nothing, DoubleDashThick),
     "═" => (Double, Nothing, Double, Nothing),
     "║" => (Nothing, Double, Nothing, Double),
     "╒" => (Double, Nothing, Nothing, Plain),
