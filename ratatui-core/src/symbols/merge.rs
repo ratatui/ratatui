@@ -1,44 +1,38 @@
 use core::str::FromStr;
 
-/// A visual style defining the appearance of a single line making up a block border.
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub(crate) enum LineStyle {
-    /// Represents the absence of a line.
-    Nothing,
+/// Defines the merge strategy of overlapping characters.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
+pub enum MergeStrategy {
+    /// Replaces the previous symbol with the next one.
+    #[default]
+    Replace,
 
-    /// A single line (e.g. `─`, `│`).
-    Plain,
+    /// Merges symbols only if an exact composite unicode character exists.
+    ///
+    /// Example: `┐` and `┗` will be merged into `╄`
+    Exact,
 
-    /// A rounded line style, only applicable in corner symbols (e.g. `╭`, `╯`).
-    Rounded,
-
-    /// A double line (e.g. `═`, `║`).
-    Double,
-
-    /// A thickened line (e.g. `━`, `┃`).
-    Thick,
-
-    /// A dashed line with a double dash pattern (e.g. `╌`, `╎`).
-    DoubleDash,
-
-    /// A dashed line with a triple dash pattern (e.g. `┄`, `┆`).
-    TripleDash,
-
-    /// A thicker variant of the triple dash (e.g. `┅`, `┇`).
-    TripleDashThick,
-
-    /// A dashed line with four dashes (e.g. `┈`, `┊`).
-    QuadrupleDash,
-
-    /// A thicker variant of the quadruple dash (e.g. `┉`, `┋`).
-    QuadrupleDashThick,
+    /// Merges symbols even if an exact composite unicode character doesn't exist,
+    /// using the closest match.
+    ///
+    /// Example: `╮` and `└` will be merged into `┼`
+    Fuzzy,
 }
 
-impl LineStyle {
-    /// Merges line styles.
-    #[must_use]
-    pub fn merge(self, other: Self) -> Self {
-        if other == Self::Nothing { self } else { other }
+impl MergeStrategy {
+    pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
+        if self == Self::Replace {
+            return next;
+        }
+        let (Ok(prev_symbol), Ok(next_symbol)) =
+            (BorderSymbol::try_from(prev), BorderSymbol::try_from(next))
+        else {
+            return next;
+        };
+        if let Ok(merged) = prev_symbol.merge(next_symbol, self).try_into() {
+            return merged;
+        }
+        next
     }
 }
 
@@ -130,6 +124,48 @@ impl FromStr for BorderSymbol {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         s.try_into()
+    }
+}
+
+/// A visual style defining the appearance of a single line making up a block border.
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub(crate) enum LineStyle {
+    /// Represents the absence of a line.
+    Nothing,
+
+    /// A single line (e.g. `─`, `│`).
+    Plain,
+
+    /// A rounded line style, only applicable in corner symbols (e.g. `╭`, `╯`).
+    Rounded,
+
+    /// A double line (e.g. `═`, `║`).
+    Double,
+
+    /// A thickened line (e.g. `━`, `┃`).
+    Thick,
+
+    /// A dashed line with a double dash pattern (e.g. `╌`, `╎`).
+    DoubleDash,
+
+    /// A dashed line with a triple dash pattern (e.g. `┄`, `┆`).
+    TripleDash,
+
+    /// A thicker variant of the triple dash (e.g. `┅`, `┇`).
+    TripleDashThick,
+
+    /// A dashed line with four dashes (e.g. `┈`, `┊`).
+    QuadrupleDash,
+
+    /// A thicker variant of the quadruple dash (e.g. `┉`, `┋`).
+    QuadrupleDashThick,
+}
+
+impl LineStyle {
+    /// Merges line styles.
+    #[must_use]
+    pub fn merge(self, other: Self) -> Self {
+        if other == Self::Nothing { self } else { other }
     }
 }
 
@@ -310,39 +346,3 @@ define_symbols!(
     "╾" => (Plain, Nothing, Thick, Nothing),
     "╿" => (Nothing, Thick, Nothing, Plain),
 );
-
-/// Defines the merge strategy of overlapping characters.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
-pub enum MergeStrategy {
-    /// Replaces the previous symbol with the next one.
-    #[default]
-    Replace,
-
-    /// Merges symbols only if an exact composite unicode character exists.
-    ///
-    /// Example: `┐` and `┗` will be merged into `╄`
-    Exact,
-
-    /// Merges symbols even if an exact composite unicode character doesn't exist,
-    /// using the closest match.
-    ///
-    /// Example: `╮` and `└` will be merged into `┼`
-    Fuzzy,
-}
-
-impl MergeStrategy {
-    pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
-        if self == Self::Replace {
-            return next;
-        }
-        let (Ok(prev_symbol), Ok(next_symbol)) =
-            (BorderSymbol::try_from(prev), BorderSymbol::try_from(next))
-        else {
-            return next;
-        };
-        if let Ok(merged) = prev_symbol.merge(next_symbol, self).try_into() {
-            return merged;
-        }
-        next
-    }
-}
