@@ -108,6 +108,21 @@ impl BorderSymbol {
         self.left = if self.left == from { to } else { self.left };
         self
     }
+
+    /// Merges two border symbols into one.
+    pub fn merge(self, other: Self, strategy: MergeStrategy) -> Self {
+        let exact_result = Self::new(
+            self.right.merge(other.right),
+            self.up.merge(other.up),
+            self.left.merge(other.left),
+            self.down.merge(other.down),
+        );
+        match strategy {
+            MergeStrategy::Replace => other,
+            MergeStrategy::Fuzzy => exact_result.fuzzy(),
+            MergeStrategy::Exact => exact_result,
+        }
+    }
 }
 
 impl FromStr for BorderSymbol {
@@ -315,21 +330,19 @@ pub enum MergeStrategy {
     Fuzzy,
 }
 
-/// Merges two border symbols into one.
-pub(crate) fn merge_border(
-    prev: BorderSymbol,
-    next: BorderSymbol,
-    style: MergeStrategy,
-) -> BorderSymbol {
-    let exact_result = BorderSymbol::new(
-        prev.right.merge(next.right),
-        prev.up.merge(next.up),
-        prev.left.merge(next.left),
-        prev.down.merge(next.down),
-    );
-    match style {
-        MergeStrategy::Replace => next,
-        MergeStrategy::Fuzzy => exact_result.fuzzy(),
-        MergeStrategy::Exact => exact_result,
+impl MergeStrategy {
+    pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
+        if self == Self::Replace {
+            return next;
+        }
+        let (Ok(prev_symbol), Ok(next_symbol)) =
+            (BorderSymbol::try_from(prev), BorderSymbol::try_from(next))
+        else {
+            return next;
+        };
+        if let Ok(merged) = prev_symbol.merge(next_symbol, self).try_into() {
+            return merged;
+        }
+        next
     }
 }

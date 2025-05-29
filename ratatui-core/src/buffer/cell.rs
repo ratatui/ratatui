@@ -1,7 +1,7 @@
 use compact_str::CompactString;
 
 use crate::style::{Color, Modifier, Style};
-use crate::symbols::merge::{BorderSymbol, MergeStrategy, merge_border};
+use crate::symbols::merge::MergeStrategy;
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -63,23 +63,9 @@ impl Cell {
     }
 
     /// Merge the symbol of the cell with the one already on the cell.
-    pub fn merge_symbol(
-        &mut self,
-        symbol: &'static str,
-        merge_strategy: MergeStrategy,
-    ) -> &mut Self {
-        let previous = self.symbol.as_str();
-        let next = symbol;
-        if let (Ok(s1), Ok(s2)) = (
-            BorderSymbol::try_from(previous),
-            BorderSymbol::try_from(next),
-        ) {
-            if let Ok(merged) = TryInto::<&str>::try_into(merge_border(s1, s2, merge_strategy)) {
-                self.set_symbol(merged);
-                return self;
-            }
-        }
-        self.set_symbol(next);
+    pub fn merge_symbol(&mut self, symbol: &str, strategy: MergeStrategy) -> &mut Self {
+        let next = strategy.merge(self.symbol(), symbol);
+        self.symbol = CompactString::new(next);
         self
     }
 
