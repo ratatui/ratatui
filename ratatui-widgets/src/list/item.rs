@@ -225,21 +225,21 @@ mod tests {
     #[test]
     fn new_from_str() {
         let item = ListItem::new("Test item");
-        assert_eq!(item.content, Text::from("Test item"));
+        assert_eq!(item.0, Text::from("Test item"));
         assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
     fn new_from_string() {
         let item = ListItem::new("Test item".to_string());
-        assert_eq!(item.content, Text::from("Test item"));
+        assert_eq!(item.0, Text::from("Test item"));
         assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
     fn new_from_cow_str() {
         let item = ListItem::new(Cow::Borrowed("Test item"));
-        assert_eq!(item.content, Text::from("Test item"));
+        assert_eq!(item.0, Text::from("Test item"));
         assert_eq!(item.0.style, Style::default());
     }
 
@@ -247,7 +247,7 @@ mod tests {
     fn new_from_span() {
         let span = Span::styled("Test item", Style::default().fg(Color::Blue));
         let item = ListItem::new(span.clone());
-        assert_eq!(item.content, Text::from(span));
+        assert_eq!(item.0, Text::from(span));
         assert_eq!(item.0.style, Style::default());
     }
 
@@ -258,7 +258,7 @@ mod tests {
             Span::styled("item", Style::default().fg(Color::Red)),
         ]);
         let item = ListItem::new(spans.clone());
-        assert_eq!(item.content, Text::from(spans));
+        assert_eq!(item.0, Text::from(spans));
         assert_eq!(item.0.style, Style::default());
     }
 
@@ -275,7 +275,7 @@ mod tests {
             ]),
         ];
         let item = ListItem::new(lines.clone());
-        assert_eq!(item.content, Text::from(lines));
+        assert_eq!(item.0, Text::from(lines));
         assert_eq!(item.0.style, Style::default());
     }
 
@@ -283,7 +283,7 @@ mod tests {
     fn str_into_list_item() {
         let s = "Test item";
         let item: ListItem = s.into();
-        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.0, Text::from(s));
         assert_eq!(item.0.style, Style::default());
     }
 
@@ -291,7 +291,7 @@ mod tests {
     fn string_into_list_item() {
         let s = String::from("Test item");
         let item: ListItem = s.clone().into();
-        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.0, Text::from(s));
         assert_eq!(item.0.style, Style::default());
     }
 
@@ -299,7 +299,7 @@ mod tests {
     fn span_into_list_item() {
         let s = Span::from("Test item");
         let item: ListItem = s.clone().into();
-        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.0, Text::from(s));
         assert_eq!(item.0.style, Style::default());
     }
 
@@ -307,14 +307,14 @@ mod tests {
     fn vec_lines_into_list_item() {
         let lines = vec![Line::raw("l1"), Line::raw("l2")];
         let item: ListItem = lines.clone().into();
-        assert_eq!(item.content, Text::from(lines));
+        assert_eq!(item.0, Text::from(lines));
         assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
     fn style() {
         let item = ListItem::new("Test item").style(Style::default().bg(Color::Red));
-        assert_eq!(item.content, Text::from("Test item"));
+        assert_eq!(item.0, Text::from("Test item").bg(Color::Red));
         assert_eq!(item.0.style, Style::default().bg(Color::Red));
     }
 
