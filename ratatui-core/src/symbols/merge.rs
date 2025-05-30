@@ -58,34 +58,57 @@ impl BorderSymbol {
     /// character.
     #[must_use]
     pub fn fuzzy(mut self) -> Self {
-        use LineStyle::{Double, Plain, Rounded, Thick};
-        // Check if we got a character that can be displayed after change
-        if TryInto::<&str>::try_into(self).is_ok() {
-            return self;
+        #[allow(clippy::enum_glob_use)]
+        use LineStyle::*;
+
+        // Dashes only include vertical and horizontal lines.
+        if !self.is_straight() {
+            self = self
+                .replace(DoubleDash, Plain)
+                .replace(TripleDash, Plain)
+                .replace(QuadrupleDash, Plain)
+                .replace(DoubleDashThick, Thick)
+                .replace(TripleDashThick, Thick)
+                .replace(QuadrupleDashThick, Thick);
         }
-        // There is no character that combines double and thick
-        // There is more characters for thick borders.
-        if self.contains(Double) && self.contains(Thick) {
-            self = self.replace(Double, Thick);
-        }
-        if TryInto::<&str>::try_into(self).is_ok() {
-            return self;
-        }
-        if self.contains(Double) {
-            self = self.replace(Double, Plain);
-        }
-        if TryInto::<&str>::try_into(self).is_ok() {
-            return self;
-        }
-        // Rouned border character are only available for corners.
-        if self.contains(Rounded) {
+
+        // Rounded has only corner variants.
+        if !self.is_corner() {
             self = self.replace(Rounded, Plain);
         }
 
+        // There are no Double + Thick variants.
+        // Additionally, some Plain + Double variants don't exist.
+        // TODO: check if this is good enough after adding tests
+        if TryInto::<&str>::try_into(self).is_err() {
+            self = self.replace(Double, Thick);
+        }
         self
     }
 
+    /// Return true only if the symbol is a line and both parts have the same [`LineStyle`].
+    fn is_straight(self) -> bool {
+        use LineStyle::Nothing;
+        (self.up == self.down && self.left == self.right)
+            && (self.up == Nothing || self.left == Nothing)
+    }
+
+    /// Return true only if the symbol is a corner and both parts have the same [`LineStyle`].
+    fn is_corner(self) -> bool {
+        use LineStyle::Nothing;
+        // TODO: maybe this can be simplified?
+        match (self.up, self.right, self.down, self.left) {
+            (up, right, Nothing, Nothing) => up == right,
+            (Nothing, right, down, Nothing) => right == down,
+            (Nothing, Nothing, down, left) => down == left,
+            (up, Nothing, Nothing, left) => up == left,
+            _ => false,
+        }
+    }
+
+    // TODO: not removing this yet as fuzzy strategy implementation may change
     /// Checks if any of the line components making the `BorderSymbol` matches the `style`.
+    #[allow(dead_code)]
     pub fn contains(self, style: LineStyle) -> bool {
         self.up == style || self.right == style || self.down == style || self.left == style
     }
