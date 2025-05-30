@@ -70,10 +70,7 @@ use ratatui_core::text::Text;
 /// [`Line`]: ratatui_core::text::Line
 /// [`Line::alignment`]: ratatui_core::text::Line::alignment
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct ListItem<'a> {
-    pub(crate) content: Text<'a>,
-    pub(crate) style: Style,
-}
+pub struct ListItem<'a>(pub(crate) Text<'a>);
 
 impl<'a> ListItem<'a> {
     /// Creates a new [`ListItem`]
@@ -116,10 +113,7 @@ impl<'a> ListItem<'a> {
     where
         T: Into<Text<'a>>,
     {
-        Self {
-            content: content.into(),
-            style: Style::default(),
-        }
+        Self(content.into())
     }
 
     /// Sets the item style
@@ -156,7 +150,7 @@ impl<'a> ListItem<'a> {
     /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
-        self.style = style.into();
+        self.0.style = style.into();
         self
     }
 
@@ -182,7 +176,7 @@ impl<'a> ListItem<'a> {
     /// assert_eq!(item.height(), 2);
     /// ```
     pub fn height(&self) -> usize {
-        self.content.height()
+        self.0.height()
     }
 
     /// Returns the max width of all the lines
@@ -203,7 +197,7 @@ impl<'a> ListItem<'a> {
     /// assert_eq!(item.width(), 7);
     /// ```
     pub fn width(&self) -> usize {
-        self.content.width()
+        self.0.width()
     }
 }
 
@@ -232,21 +226,21 @@ mod tests {
     fn new_from_str() {
         let item = ListItem::new("Test item");
         assert_eq!(item.content, Text::from("Test item"));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
     fn new_from_string() {
         let item = ListItem::new("Test item".to_string());
         assert_eq!(item.content, Text::from("Test item"));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
     fn new_from_cow_str() {
         let item = ListItem::new(Cow::Borrowed("Test item"));
         assert_eq!(item.content, Text::from("Test item"));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
@@ -254,7 +248,7 @@ mod tests {
         let span = Span::styled("Test item", Style::default().fg(Color::Blue));
         let item = ListItem::new(span.clone());
         assert_eq!(item.content, Text::from(span));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
@@ -265,7 +259,7 @@ mod tests {
         ]);
         let item = ListItem::new(spans.clone());
         assert_eq!(item.content, Text::from(spans));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
@@ -282,7 +276,7 @@ mod tests {
         ];
         let item = ListItem::new(lines.clone());
         assert_eq!(item.content, Text::from(lines));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
@@ -290,7 +284,7 @@ mod tests {
         let s = "Test item";
         let item: ListItem = s.into();
         assert_eq!(item.content, Text::from(s));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
@@ -298,7 +292,7 @@ mod tests {
         let s = String::from("Test item");
         let item: ListItem = s.clone().into();
         assert_eq!(item.content, Text::from(s));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
@@ -306,7 +300,7 @@ mod tests {
         let s = Span::from("Test item");
         let item: ListItem = s.clone().into();
         assert_eq!(item.content, Text::from(s));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
@@ -314,14 +308,14 @@ mod tests {
         let lines = vec![Line::raw("l1"), Line::raw("l2")];
         let item: ListItem = lines.clone().into();
         assert_eq!(item.content, Text::from(lines));
-        assert_eq!(item.style, Style::default());
+        assert_eq!(item.0.style, Style::default());
     }
 
     #[test]
     fn style() {
         let item = ListItem::new("Test item").style(Style::default().bg(Color::Red));
         assert_eq!(item.content, Text::from("Test item"));
-        assert_eq!(item.style, Style::default().bg(Color::Red));
+        assert_eq!(item.0.style, Style::default().bg(Color::Red));
     }
 
     #[test]
@@ -342,7 +336,13 @@ mod tests {
     #[test]
     fn can_be_stylized() {
         assert_eq!(
-            ListItem::new("").black().on_white().bold().not_dim().style,
+            ListItem::new("")
+                .black()
+                .on_white()
+                .bold()
+                .not_dim()
+                .0
+                .style,
             Style::default()
                 .fg(Color::Black)
                 .bg(Color::White)

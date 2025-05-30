@@ -443,7 +443,7 @@ impl Styled for ListItem<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {
-        self.style
+        self.0.style
     }
 
     fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
