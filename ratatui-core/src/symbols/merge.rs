@@ -43,7 +43,7 @@ struct BorderSymbol {
 }
 
 impl BorderSymbol {
-    /// Creates a new `BorderSymbol`, based on individual line styles.
+    /// Creates a new [`BorderSymbol`], based on individual line styles.
     #[must_use]
     pub const fn new(right: LineStyle, up: LineStyle, left: LineStyle, down: LineStyle) -> Self {
         Self {
@@ -54,7 +54,7 @@ impl BorderSymbol {
         }
     }
 
-    /// Finds the closest representation of the `BorderSymbol`, that has a corresponding unicode
+    /// Finds the closest representation of the [`BorderSymbol`], that has a corresponding unicode
     /// character.
     #[must_use]
     pub fn fuzzy(mut self) -> Self {
@@ -107,7 +107,7 @@ impl BorderSymbol {
     }
 
     // TODO: not removing this yet as fuzzy strategy implementation may change
-    /// Checks if any of the line components making the `BorderSymbol` matches the `style`.
+    /// Checks if any of the line components making the [`BorderSymbol`] matches the `style`.
     #[allow(dead_code)]
     pub fn contains(self, style: LineStyle) -> bool {
         self.up == style || self.right == style || self.down == style || self.left == style
