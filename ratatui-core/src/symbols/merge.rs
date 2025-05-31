@@ -20,6 +20,7 @@ pub enum MergeStrategy {
 }
 
 impl MergeStrategy {
+    /// Merges two symbols using this merge strategy.
     pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
         let (Ok(prev_symbol), Ok(next_symbol)) =
             (BorderSymbol::from_str(prev), BorderSymbol::from_str(next))
