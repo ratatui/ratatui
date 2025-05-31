@@ -106,6 +106,7 @@ pub struct Scrollbar<'a> {
 ///          HorizontalBottom
 /// ```
 #[derive(Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ScrollbarOrientation {
     /// Positions the scrollbar on the right, scrolling vertically
     #[default]
@@ -162,6 +163,7 @@ pub struct ScrollbarState {
 ///
 /// It is useful for example when you want to store in which direction to scroll.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ScrollDirection {
     /// Forward scroll direction, usually corresponds to scrolling downwards or rightwards.
     #[default]

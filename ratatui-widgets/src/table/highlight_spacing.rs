@@ -2,6 +2,7 @@ use strum::{Display, EnumString};
 
 /// This option allows the user to configure the "highlight symbol" column width spacing
 #[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum HighlightSpacing {
     /// Always add spacing for the selection symbol column
     ///
