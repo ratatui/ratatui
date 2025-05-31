@@ -536,7 +536,7 @@ impl<'a> Block<'a> {
 
     /// Sets the block's [`MergeStrategy`] for overlapping characters.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn merge_strategy(mut self, strategy: MergeStrategy) -> Self {
+    pub const fn merge_borders(mut self, strategy: MergeStrategy) -> Self {
         self.merge_strategy = strategy;
         self
     }
@@ -1668,22 +1668,22 @@ mod tests {
 
     fn render_merging_block_helper(buffer: &mut Buffer, strategy: MergeStrategy) {
         Block::bordered()
-            .merge_strategy(strategy)
+            .merge_borders(strategy)
             .render(Rect::new(0, 0, 3, 3), buffer);
         Block::bordered()
             .border_type(BorderType::Thick)
-            .merge_strategy(strategy)
+            .merge_borders(strategy)
             .render(Rect::new(1, 1, 3, 4), buffer);
         Block::bordered()
             .border_type(BorderType::Double)
-            .merge_strategy(strategy)
+            .merge_borders(strategy)
             .render(Rect::new(2, 3, 3, 3), buffer);
         Block::bordered()
             .border_type(BorderType::Rounded)
-            .merge_strategy(strategy)
+            .merge_borders(strategy)
             .render(Rect::new(3, 0, 3, 2), buffer);
         Block::bordered()
-            .merge_strategy(strategy)
+            .merge_borders(strategy)
             .render(buffer.area, buffer);
     }
 
