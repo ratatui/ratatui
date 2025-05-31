@@ -419,6 +419,7 @@ use crate::style::Color;
 /// This is a collection of colors that are used in Material design. They consist of a set of
 /// colors from 50 to 900, and a set of accent colors from 100 to 700.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AccentedPalette {
     pub c50: Color,
     pub c100: Color,
@@ -441,6 +442,7 @@ pub struct AccentedPalette {
 /// This is a collection of colors that are used in Material design. They consist of a set of
 /// colors from 50 to 900.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NonAccentedPalette {
     pub c50: Color,
     pub c100: Color,
