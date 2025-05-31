@@ -22,7 +22,7 @@ pub enum MergeStrategy {
 impl MergeStrategy {
     pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
         let (Ok(prev_symbol), Ok(next_symbol)) =
-            (BorderSymbol::try_from(prev), BorderSymbol::try_from(next))
+            (BorderSymbol::from_str(prev), BorderSymbol::from_str(next))
         else {
             return next;
         };
@@ -139,14 +139,6 @@ impl BorderSymbol {
     }
 }
 
-impl FromStr for BorderSymbol {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.try_into()
-    }
-}
-
 /// A visual style defining the appearance of a single line making up a block border.
 #[derive(PartialEq, Debug, Clone, Copy)]
 enum LineStyle {
@@ -198,11 +190,11 @@ macro_rules! define_symbols {
         $( $symbol:expr => ($right:ident, $up:ident, $left:ident, $down:ident) ),* $(,)?
     ) => {
 
-        impl TryFrom<&str> for BorderSymbol {
-            type Error = ();
-            fn try_from(value: &str) -> Result<Self, Self::Error> {
+        impl FromStr for BorderSymbol {
+            type Err = ();
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
                 use LineStyle::*;
-                match value {
+                match s {
                     $( $symbol => Ok(Self::new($right, $up, $left, $down)) ),* ,
                     _ => Err(()),
                 }
