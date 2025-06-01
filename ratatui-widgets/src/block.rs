@@ -625,15 +625,8 @@ impl Widget for &Block<'_> {
 
 impl Block<'_> {
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
-        self.render_left_side(area, buf);
-        self.render_top_side(area, buf);
-        self.render_right_side(area, buf);
-        self.render_bottom_side(area, buf);
-
-        self.render_bottom_right_corner(buf, area);
-        self.render_top_right_corner(buf, area);
-        self.render_bottom_left_corner(buf, area);
-        self.render_top_left_corner(buf, area);
+        self.render_sides(area, buf);
+        self.render_corners(area, buf);
     }
 
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
@@ -648,83 +641,94 @@ impl Block<'_> {
         self.render_left_titles(position, area, buf);
     }
 
-    fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::LEFT) {
-            let offset = u16::from(self.merge_strategy != MergeStrategy::Replace);
-            // First and last element of the line are not drawn
-            // to avoid wrong merging with the corner.
-            for y in area.top() + offset..area.bottom() - offset {
-                buf[(area.left(), y)]
-                    .merge_symbol(self.border_set.vertical_left, self.merge_strategy)
-                    .set_style(self.border_style);
+    fn render_sides(&self, area: Rect, buf: &mut Buffer) {
+        // First and last element of the line are not drawn
+        // to avoid wrong merging with the corner.
+        let offset = u16::from(self.merge_strategy != MergeStrategy::Replace);
+
+        let left = area.left();
+        let left_offset = area.left() + offset;
+        let top = area.top();
+        let top_offset = area.top() + offset;
+        let right = area.right() - 1;
+        let right_offset = area.right() - offset;
+        let bottom = area.bottom() - 1;
+        let bottom_offset = area.bottom() - offset;
+
+        #[allow(clippy::range_plus_one)]
+        let sides = [
+            (
+                Borders::LEFT,
+                left..left + 1,
+                top_offset..bottom_offset,
+                self.border_set.vertical_left,
+            ),
+            (
+                Borders::TOP,
+                left_offset..right_offset,
+                top..top + 1,
+                self.border_set.horizontal_top,
+            ),
+            (
+                Borders::RIGHT,
+                right..right + 1,
+                top_offset..bottom_offset,
+                self.border_set.vertical_right,
+            ),
+            (
+                Borders::BOTTOM,
+                left_offset..right_offset,
+                bottom..bottom + 1,
+                self.border_set.horizontal_bottom,
+            ),
+        ];
+        for (border, x_range, y_range, symbol) in sides {
+            if self.borders.contains(border) {
+                for x in x_range {
+                    for y in y_range.clone() {
+                        buf[(x, y)]
+                            .merge_symbol(symbol, self.merge_strategy)
+                            .set_style(self.border_style);
+                    }
+                }
             }
         }
     }
 
-    fn render_top_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::TOP) {
-            let offset = u16::from(self.merge_strategy != MergeStrategy::Replace);
-            for x in area.left() + offset..area.right() - offset {
-                buf[(x, area.top())]
-                    .merge_symbol(self.border_set.horizontal_top, self.merge_strategy)
-                    .set_style(self.border_style);
-            }
-        }
-    }
+    fn render_corners(&self, area: Rect, buf: &mut Buffer) {
+        let corners = [
+            (
+                Borders::RIGHT | Borders::BOTTOM,
+                area.right() - 1,
+                area.bottom() - 1,
+                self.border_set.bottom_right,
+            ),
+            (
+                Borders::RIGHT | Borders::TOP,
+                area.right() - 1,
+                area.top(),
+                self.border_set.top_right,
+            ),
+            (
+                Borders::LEFT | Borders::BOTTOM,
+                area.left(),
+                area.bottom() - 1,
+                self.border_set.bottom_left,
+            ),
+            (
+                Borders::LEFT | Borders::TOP,
+                area.left(),
+                area.top(),
+                self.border_set.top_left,
+            ),
+        ];
 
-    fn render_right_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::RIGHT) {
-            let x = area.right() - 1;
-            let offset = u16::from(self.merge_strategy != MergeStrategy::Replace);
-            for y in area.top() + offset..area.bottom() - offset {
+        for (border, x, y, symbol) in corners {
+            if self.borders.contains(border) {
                 buf[(x, y)]
-                    .merge_symbol(self.border_set.vertical_right, self.merge_strategy)
+                    .merge_symbol(symbol, self.merge_strategy)
                     .set_style(self.border_style);
             }
-        }
-    }
-
-    fn render_bottom_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::BOTTOM) {
-            let y = area.bottom() - 1;
-            let offset = u16::from(self.merge_strategy != MergeStrategy::Replace);
-            for x in area.left() + offset..area.right() - offset {
-                buf[(x, y)]
-                    .merge_symbol(self.border_set.horizontal_bottom, self.merge_strategy)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_bottom_right_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
-            buf[(area.right() - 1, area.bottom() - 1)]
-                .merge_symbol(self.border_set.bottom_right, self.merge_strategy)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_top_right_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::RIGHT | Borders::TOP) {
-            buf[(area.right() - 1, area.top())]
-                .merge_symbol(self.border_set.top_right, self.merge_strategy)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_bottom_left_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
-            buf[(area.left(), area.bottom() - 1)]
-                .merge_symbol(self.border_set.bottom_left, self.merge_strategy)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_top_left_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::LEFT | Borders::TOP) {
-            buf[(area.left(), area.top())]
-                .merge_symbol(self.border_set.top_left, self.merge_strategy)
-                .set_style(self.border_style);
         }
     }
 
