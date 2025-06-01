@@ -97,7 +97,6 @@ impl BorderSymbol {
     /// Return true only if the symbol is a corner and both parts have the same [`LineStyle`].
     fn is_corner(self) -> bool {
         use LineStyle::Nothing;
-        // TODO: maybe this can be simplified?
         match (self.up, self.right, self.down, self.left) {
             (up, right, Nothing, Nothing) => up == right,
             (Nothing, right, down, Nothing) => right == down,
