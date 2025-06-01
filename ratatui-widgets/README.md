@@ -19,7 +19,7 @@ internally uses these widgets, or if you prefer finer grained dependencies, you 
 depend on this crate rather than transitively through the `ratatui` crate.
 
 Previously, a crate named `ratatui-widgets` was published with some formative ideas about an
-eventual Ratatui framework. That crate is now move to [tui-framework-experiment], pending a new
+eventual Ratatui framework. That crate has now moved to [tui-framework-experiment], pending a new
 name.
 
 [tui-framework-experiment]: https://crates.io/crates/tui-framework-experiment
