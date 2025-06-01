@@ -75,6 +75,7 @@ std::thread_local! {
 ///
 /// See the [`Layout::spacing`] method for details on how to use this enum.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Spacing {
     Space(u16),
     Overlap(u16),
@@ -175,6 +176,7 @@ impl From<i16> for Spacing {
 /// [`kasuari`]: https://crates.io/crates/kasuari
 /// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Layout {
     direction: Direction,
     constraints: Vec<Constraint>,

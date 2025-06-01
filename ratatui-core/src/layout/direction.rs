@@ -1,6 +1,7 @@
 use strum::{Display, EnumString};
 
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Direction {
     Horizontal,
     #[default]

@@ -277,6 +277,7 @@
 
 use crate::style::Color;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Palette {
     pub c50: Color,
     pub c100: Color,

@@ -133,6 +133,7 @@ pub struct List<'a> {
 ///
 /// See [`List::direction`].
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ListDirection {
     /// The first value is on the top, going to the bottom
     #[default]
