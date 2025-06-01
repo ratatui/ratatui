@@ -35,7 +35,7 @@ impl MergeStrategy {
 }
 
 /// Represents a composite border symbol using individual line components.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 struct BorderSymbol {
     pub right: LineStyle,
     pub up: LineStyle,
@@ -139,8 +139,16 @@ impl BorderSymbol {
     }
 }
 
+#[derive(thiserror::Error, Debug, PartialEq, Eq)]
+enum BorderSymbolError {
+    #[error("cannot parse &str `{0}` to BorderSymbol")]
+    CannotParse(alloc::string::String),
+    #[error("cannot convert BorderSymbol `{0:#?}` to &str: no such symbol exists")]
+    Unrepresentable(BorderSymbol),
+}
+
 /// A visual style defining the appearance of a single line making up a block border.
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum LineStyle {
     /// Represents the absence of a line.
     Nothing,
@@ -191,23 +199,24 @@ macro_rules! define_symbols {
     ) => {
 
         impl FromStr for BorderSymbol {
-            type Err = ();
+            type Err = BorderSymbolError;
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 use LineStyle::*;
+                use alloc::string::ToString;
                 match s {
                     $( $symbol => Ok(Self::new($right, $up, $left, $down)) ),* ,
-                    _ => Err(()),
+                    _ => Err(BorderSymbolError::CannotParse(s.to_string())),
                 }
             }
         }
 
         impl TryFrom<BorderSymbol> for &'static str {
-            type Error = ();
+            type Error = BorderSymbolError;
             fn try_from(value: BorderSymbol) -> Result<Self, Self::Error> {
                 use LineStyle::*;
                 match (value.right, value.up, value.left, value.down) {
                     $( ($right, $up, $left, $down) => Ok($symbol) ),* ,
-                    _ => Err(()),
+                    _ => Err(BorderSymbolError::Unrepresentable(value)),
                 }
             }
         }
