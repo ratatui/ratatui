@@ -64,8 +64,8 @@ impl Cell {
 
     /// Merge the symbol of the cell with the one already on the cell.
     pub fn merge_symbol(&mut self, symbol: &str, strategy: MergeStrategy) -> &mut Self {
-        let next = strategy.merge(self.symbol(), symbol);
-        self.symbol = CompactString::new(next);
+        let merged = strategy.merge(self.symbol(), symbol);
+        self.symbol = CompactString::new(merged);
         self
     }
 
