@@ -560,7 +560,7 @@ mod tests {
 
         assert_eq!(
             buffer,
-            Buffer::with_lines([Line::from(vec!["  ".italic(), "Item 1  ".bold().italic(),])])
+            Buffer::with_lines([Line::from(vec!["  ".italic(), "Item 1  ".bold().italic()])])
         );
     }
 
