@@ -46,6 +46,7 @@ use strum::EnumIs;
 /// let constraints = Constraint::from_fills([1, 2, 1]);
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Constraint {
     /// Applies a minimum size constraint to the element
     ///

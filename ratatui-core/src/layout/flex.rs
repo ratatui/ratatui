@@ -15,6 +15,7 @@ use crate::layout::Constraint;
 /// - `SpaceBetween`: Adds excess space between each element.
 /// - `SpaceAround`: Adds excess space around each element.
 #[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash, EnumIs)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Flex {
     /// Fills the available space within the container, putting excess space into the last
     /// constraint of the lowest priority. This matches the default behavior of ratatui and tui
