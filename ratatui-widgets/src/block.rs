@@ -1741,4 +1741,66 @@ mod tests {
         ]);
         assert_eq!(buffer, expected);
     }
+
+    #[test]
+    fn render_merged_double_over_plain() {
+        // TODO use this test to generate simpler test inputs that hard code the inputs and outputs
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 27, 6));
+        let first = BorderType::Plain;
+        let second = BorderType::Double;
+        let merge = MergeStrategy::Fuzzy;
+        let first_blocks = [
+            Rect::new(1, 1, 4, 4),
+            Rect::new(8, 1, 4, 4),
+            Rect::new(15, 1, 4, 4),
+            Rect::new(22, 1, 4, 4),
+        ];
+        for rect in first_blocks {
+            Block::bordered()
+                .border_type(first)
+                .render(rect, &mut buffer);
+        }
+        let blocks = [
+            // corners
+            Rect::new(0, 0, 2, 2),
+            Rect::new(4, 0, 2, 2),
+            Rect::new(0, 4, 2, 2),
+            Rect::new(4, 4, 2, 2),
+            // horizontal sides
+            Rect::new(7, 0, 3, 2),
+            Rect::new(10, 0, 3, 2),
+            Rect::new(7, 4, 3, 2),
+            Rect::new(10, 4, 3, 2),
+            // vertical sides
+            Rect::new(14, 0, 2, 3),
+            Rect::new(18, 0, 2, 3),
+            Rect::new(14, 3, 2, 3),
+            Rect::new(18, 3, 2, 3),
+            // intersection
+            Rect::new(21, 0, 3, 3),
+            Rect::new(24, 0, 3, 3),
+            Rect::new(21, 3, 3, 3),
+            Rect::new(24, 3, 3, 3),
+        ];
+        for rect in blocks {
+            Block::bordered()
+                .border_type(second)
+                .merge_borders(merge)
+                .render(rect, &mut buffer);
+        }
+
+        assert_eq!(
+            buffer,
+            // This is wrong right now see
+            // <https://github.com/ratatui/ratatui/pull/1874#discussion_r2121973570>
+            Buffer::with_lines([
+                "╔╗  ╔╗ ╔═╗╔═╗ ╔╗  ╔╗ ╔═╗╔═╗",
+                "╚╃──╄╝ ╚╤┹┺╤╝ ║╟──╢║ ║┌╫╫┐║",
+                " │  │   │  │  ╚┩  ┡╝ ╚╪╝╚╪╝",
+                " │  │   │  │  ╔┪  ┢╗ ╔╪╗╔╪╗",
+                "╔╅──╆╗ ╔╧┱┲╧╗ ║╟──╢║ ║└╫╫┘║",
+                "╚╝  ╚╝ ╚═╝╚═╝ ╚╝  ╚╝ ╚═╝╚═╝",
+            ])
+        );
+    }
 }
