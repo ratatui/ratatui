@@ -58,7 +58,7 @@ impl BorderSymbol {
     /// Finds the closest representation of the [`BorderSymbol`], that has a corresponding unicode
     /// character.
     #[must_use]
-    pub fn fuzzy(mut self) -> Self {
+    pub fn fuzzy(mut self, other: Self) -> Self {
         #[allow(clippy::enum_glob_use)]
         use LineStyle::*;
 
@@ -79,10 +79,23 @@ impl BorderSymbol {
         }
 
         // There are no Double + Thick variants.
-        // Additionally, some Plain + Double variants don't exist.
-        // TODO: check if this is good enough after adding tests
-        if TryInto::<&str>::try_into(self).is_err() {
-            self = self.replace(Double, Thick);
+        if self.contains(Double) && self.contains(Thick) {
+            // Decide whether to use Double or Thick, based on the last merged-in symbol.
+            if other.contains(Double) {
+                self = self.replace(Thick, Double);
+            } else {
+                self = self.replace(Double, Thick);
+            }
+        }
+
+        // Some Plain + Double variants don't exist.
+        if <&str>::try_from(self).is_err() {
+            // Decide whether to use Double or Plain, based on the last merged-in symbol.
+            if other.contains(Double) {
+                self = self.replace(Plain, Double);
+            } else {
+                self = self.replace(Double, Plain);
+            }
         }
         self
     }
@@ -133,7 +146,7 @@ impl BorderSymbol {
         );
         match strategy {
             MergeStrategy::Replace => other,
-            MergeStrategy::Fuzzy => exact_result.fuzzy(),
+            MergeStrategy::Fuzzy => exact_result.fuzzy(other),
             MergeStrategy::Exact => exact_result,
         }
     }
@@ -425,10 +438,10 @@ mod tests {
         assert_eq!(strategy.merge("┆", "─"), "┼");
         assert_eq!(strategy.merge("┘", "┌"), "┼");
         assert_eq!(strategy.merge("┘", "╭"), "┼");
-        assert_eq!(strategy.merge("┵", "╞"), "┿");
         assert_eq!(strategy.merge("╎", "┉"), "┿");
         assert_eq!(strategy.merge(" ", "╠"), "╠");
         assert_eq!(strategy.merge("╠", " "), "╠");
+        assert_eq!(strategy.merge("┵", "╞"), "╪");
         assert_eq!(strategy.merge("╛", "╒"), "╪");
         assert_eq!(strategy.merge("│", "═"), "╪");
         assert_eq!(strategy.merge("╤", "╧"), "╪");
