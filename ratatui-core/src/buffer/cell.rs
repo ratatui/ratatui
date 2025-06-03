@@ -80,13 +80,17 @@ impl Cell {
     /// use ratatui_core::symbols::merge::MergeStrategy;
     ///
     /// assert_eq!(
-    ///     Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact);
-    ///     Cell::new("╆"),
+    ///     Cell::new("┘")
+    ///         .merge_symbol("┏", MergeStrategy::Exact)
+    ///         .symbol(),
+    ///     "╆",
     /// );
     ///
     /// assert_eq!(
-    ///     Cell::new("╭").merge_symbol("┘", MergeStrategy::Fuzzy),
-    ///     Cell::new("┼")
+    ///     Cell::new("╭")
+    ///         .merge_symbol("┘", MergeStrategy::Fuzzy)
+    ///         .symbol(),
+    ///     "┼",
     /// );
     /// ```
     ///
