@@ -62,7 +62,17 @@ impl Cell {
         self.symbol.as_str()
     }
 
-    /// Merge the symbol of the cell with the one already on the cell.
+    /// Merges the symbol of the cell with the one already on the cell, using the provided
+    /// [`MergeStrategy`].
+    ///
+    /// This is useful for border collapsing.
+    /// ```
+    /// # use ratatui_core::buffer::Cell;
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact)
+    /// // Produces "╆"
+    /// ```
+    /// See <https://ratatui.rs/recipes/layout/collapse-borders/> for more information.
     pub fn merge_symbol(&mut self, symbol: &str, strategy: MergeStrategy) -> &mut Self {
         let merged = strategy.merge(self.symbol(), symbol);
         self.symbol = CompactString::new(merged);
