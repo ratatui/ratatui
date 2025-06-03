@@ -4,7 +4,7 @@ use core::str::FromStr;
 /// ```
 /// # use ratatui_core::symbols::merge::MergeStrategy;
 /// let strategy = MergeStrategy::Exact;
-/// strategy.merge("│", "─")
+/// strategy.merge("│", "─");
 /// // Returns "┼"
 /// ```
 /// This is useful for block borders merging. See
@@ -15,7 +15,7 @@ pub enum MergeStrategy {
     /// ```
     /// # use ratatui_core::symbols::merge::MergeStrategy;
     /// let strategy = MergeStrategy::Replace;
-    /// strategy.merge("│", "━")
+    /// strategy.merge("│", "━");
     /// // Returns "━"
     /// ```
     /// ```text
@@ -36,7 +36,7 @@ pub enum MergeStrategy {
     /// ```
     /// # use ratatui_core::symbols::merge::MergeStrategy;
     /// let strategy = MergeStrategy::Exact;
-    /// strategy.merge("│", "━")
+    /// strategy.merge("│", "━");
     /// // Returns "┿"
     /// ```
     /// ```text
