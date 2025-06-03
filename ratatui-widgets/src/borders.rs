@@ -8,6 +8,7 @@ use strum::{Display, EnumString};
 bitflags! {
     /// Bitflags that can be composed to set the visible borders essentially on the block widget.
     #[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
     pub struct Borders: u8 {
         /// Show no border (default)
         const NONE   = 0b0000;
@@ -28,6 +29,7 @@ bitflags! {
 ///
 /// See the [`borders`](crate::block::Block::borders) method of `Block` to configure its borders.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum BorderType {
     /// A plain, simple border.
     ///

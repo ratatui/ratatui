@@ -87,6 +87,7 @@ pub struct Sparkline<'a> {
 ///
 /// See [`Sparkline::direction`].
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum RenderDirection {
     /// The first value is on the left, going to the right
     #[default]
