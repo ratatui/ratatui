@@ -23,5 +23,5 @@ Some more ideas for handling focus can be found in:
 - [`focusable`](https://crates.io/crates/focusable) (see also [Ratatui forum
   post](https://forum.ratatui.rs/t/focusable-crate-manage-focus-state-for-your-widgets/73))
 - [`rat-focus`](https://crates.io/crates/rat-focus)
-- A useful [`Bevy` discssion](https://github.com/bevyengine/bevy/discussions/15374) about focus
+- A useful [`Bevy` discussion](https://github.com/bevyengine/bevy/discussions/15374) about focus
   more generally.
