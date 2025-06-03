@@ -1714,31 +1714,48 @@ mod tests {
         assert_eq!(buffer, expected);
     }
 
-    fn render_merging_borders(strategy: MergeStrategy) -> Buffer {
-        use BorderType::*;
+    /// Renders a series of blocks with all the possible border types and merges them according to
+    /// the specified strategy. The resulting buffer is compared against the expected output for
+    /// each merge strategy.
+    ///
+    /// At some point, it might be convenient to replace the manual `include_str!` calls with
+    /// [insta](https://crates.io/crates/insta)
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, include_str!("../tests/block/merge_replace.txt"))]
+    #[case::exact(MergeStrategy::Exact, include_str!("../tests/block/merge_exact.txt"))]
+    #[case::fuzzy(MergeStrategy::Fuzzy, include_str!("../tests/block/merge_fuzzy.txt"))]
+    fn render_merged_borders(#[case] strategy: MergeStrategy, #[case] expected: &'static str) {
         let border_types = [
-            Plain,
-            Rounded,
-            Thick,
-            Double,
-            LightDoubleDashed,
-            HeavyDoubleDashed,
-            LightTripleDashed,
-            HeavyTripleDashed,
-            LightQuadrupleDashed,
-            HeavyQuadrupleDashed,
+            BorderType::Plain,
+            BorderType::Rounded,
+            BorderType::Thick,
+            BorderType::Double,
+            BorderType::LightDoubleDashed,
+            BorderType::HeavyDoubleDashed,
+            BorderType::LightTripleDashed,
+            BorderType::HeavyTripleDashed,
+            BorderType::LightQuadrupleDashed,
+            BorderType::HeavyQuadrupleDashed,
         ];
         let rects = [
+            // touching at corners
             (Rect::new(0, 0, 5, 5), Rect::new(4, 4, 5, 5)),
-            (Rect::new(9, 0, 5, 5), Rect::new(11, 2, 5, 5)),
-            (Rect::new(16, 0, 5, 5), Rect::new(20, 0, 5, 5)),
-            (Rect::new(25, 0, 5, 5), Rect::new(25, 4, 5, 5)),
+            // overlapping
+            (Rect::new(10, 0, 5, 5), Rect::new(12, 2, 5, 5)),
+            // touching vertical edges
+            (Rect::new(18, 0, 5, 5), Rect::new(22, 0, 5, 5)),
+            // touching horizontal edges
+            (Rect::new(28, 0, 5, 5), Rect::new(28, 4, 5, 5)),
         ];
 
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 30, 900));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 43, 1000));
 
         let mut offset = Offset::ZERO;
         for (border_type_1, border_type_2) in iproduct!(border_types, border_types) {
+            let title = format!("{border_type_1} + {border_type_2}");
+            let title_area = Rect::new(0, 0, 43, 1).offset(offset);
+            title.render(title_area, &mut buffer);
+            offset.y += 1;
             for (rect_1, rect_2) in rects {
                 Block::bordered()
                     .border_type(border_type_1)
@@ -1751,38 +1768,6 @@ mod tests {
             }
             offset.y += 9;
         }
-        buffer
-    }
-
-    #[test]
-    #[allow(clippy::too_many_lines)]
-    fn render_replace_merge() {
-        let buffer = render_merging_borders(MergeStrategy::Replace);
-
-        #[rustfmt::skip]
-        let expected = Buffer::with_lines(include_str!("block/merge/replace.txt").lines());
-
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    #[allow(clippy::too_many_lines)]
-    fn render_exact_merge() {
-        let buffer = render_merging_borders(MergeStrategy::Exact);
-        #[rustfmt::skip]
-        let expected = Buffer::with_lines(include_str!("block/merge/exact.txt").lines());
-
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    #[allow(clippy::too_many_lines)]
-    fn render_fuzzy_merge() {
-        let buffer = render_merging_borders(MergeStrategy::Fuzzy);
-
-        #[rustfmt::skip]
-        let expected = Buffer::with_lines(include_str!("block/merge/fuzzy.txt").lines());
-
-        assert_eq!(buffer, expected);
+        pretty_assertions::assert_eq!(Buffer::with_lines(expected.lines()), buffer);
     }
 }
