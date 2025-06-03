@@ -1,23 +1,50 @@
 use core::str::FromStr;
 
-/// Defines the merge strategy of overlapping characters.
+/// A strategy for merging two symbols into one.
+///
+/// This enum defines how two symbols should be merged together, allowing for different behaviors
+/// when combining symbols, such as replacing the previous symbol, merging them if an exact match
+/// exists, or using a fuzzy match to find the closest representation.
+///
+/// This is useful for [collapsing borders] in layouts, where multiple symbols may need to be
+/// combined to create a single, coherent border representation.
+///
+/// The merging strategies include:
+///
+/// - [`Self::Replace`]: Replaces the previous symbol with the next one.
+/// - [`Self::Exact`]: Merges symbols only if an exact composite unicode character exists, falling
+///   back to [`Self::Replace`] if not.
+/// - [`Self::Fuzzy`]: Merges symbols even if an exact composite unicode character doesn't exist,
+///   using the closest match, and falling back to [`Self::Exact`] if necessary.
+///
+/// See [`Cell::merge_symbol`] for how to use this strategy in practice, and
+/// [`Block::merge_borders`] for a more concrete example of merging borders in a layout.
+///
+/// # Examples
+///
 /// ```
 /// # use ratatui_core::symbols::merge::MergeStrategy;
-/// let strategy = MergeStrategy::Exact;
-/// strategy.merge("│", "─");
-/// // Returns "┼"
+///
+/// assert_eq!(MergeStrategy::Replace.merge("│", "━"), "━");
+/// assert_eq!(MergeStrategy::Exact.merge("│", "─"), "┼");
+/// assert_eq!(MergeStrategy::Fuzzy.merge("┘", "╔"), "╦");
 /// ```
-/// This is useful for block borders merging. See
-/// <https://ratatui.rs/recipes/layout/collapse-borders/> and variant docs for more information.
+///
+/// [collapsing borders]: https://ratatui.rs/recipes/layout/collapse-borders
+/// [`Block::merge_borders`]:
+///     https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html#method.merge_borders
+/// [`Cell::merge_symbol`]: crate::buffer::Cell::merge_symbol
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub enum MergeStrategy {
     /// Replaces the previous symbol with the next one.
-    /// ```
-    /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// let strategy = MergeStrategy::Replace;
-    /// strategy.merge("│", "━");
-    /// // Returns "━"
-    /// ```
+    ///
+    /// This strategy simply replaces the previous symbol with the next one, without attempting to
+    /// merge them. This is useful when you want to ensure that the last rendered symbol takes
+    /// precedence over the previous one, regardless of their compatibility.
+    ///
+    /// The following diagram illustrates how this would apply to several overlapping blocks where
+    /// the thick bordered blocks are rendered last, replacing the previous symbols:
+    ///
     /// ```text
     /// ┌───┐    ┌───┐  ┌───┏━━━┓┌───┐
     /// │   │    │   │  │   ┃   ┃│   │
@@ -29,16 +56,28 @@ pub enum MergeStrategy {
     ///     ┃   ┃                ┃   ┃
     ///     ┗━━━┛                ┗━━━┛
     /// ```
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Replace;
+    /// assert_eq!(strategy.merge("│", "━"), "━");
+    /// ```
     #[default]
     Replace,
 
     /// Merges symbols only if an exact composite unicode character exists.
-    /// ```
-    /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// let strategy = MergeStrategy::Exact;
-    /// strategy.merge("│", "━");
-    /// // Returns "┿"
-    /// ```
+    ///
+    /// This strategy attempts to merge two symbols into a single composite unicode character if the
+    /// exact representation exists. If the required unicode symbol does not exist, it falls back to
+    /// [`MergeStrategy::Replace`], replacing the previous symbol with the next one.
+    ///
+    /// The following diagram illustrates how this would apply to several overlapping blocks where
+    /// the thick bordered blocks are rendered last, merging the previous symbols into a single
+    /// composite character. All combindations of the plain and thick segments exist, so these
+    /// symbols can be merged into a single character:
+    ///
     /// ```text
     /// ┌───┐    ┌───┐  ┌───┲━━━┓┌───┐
     /// │   │    │   │  │   ┃   ┃│   │
@@ -50,15 +89,11 @@ pub enum MergeStrategy {
     ///     ┃   ┃                ┃   ┃
     ///     ┗━━━┛                ┗━━━┛
     /// ```
-    /// Falls back to [`MergeStrategy::Replace`], if required unicode symbol doesn't exist.
-    /// ```
-    /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// let strategy = MergeStrategy::Exact;
-    /// strategy.merge("┘", "╔");
-    /// // Returns "╔"
-    /// strategy.merge("┘", "╭");
-    /// // Returns "╭"
-    /// ```
+    ///
+    /// The following diagram illustrates how this would apply to several overlapping blocks where
+    /// the characters don't have a composite unicode character, so the previous symbols are
+    /// replaced by the next one:
+    ///
     /// ```text
     /// ┌───┐    ┌───┐  ┌───╔═══╗┌───┐
     /// │   │    │   │  │   ║   ║│   │
@@ -79,19 +114,28 @@ pub enum MergeStrategy {
     ///     │   │                │   │
     ///     ╰───╯                ╰───╯
     /// ```
-    Exact,
-
-    /// Merges symbols even if an exact composite unicode character doesn't exist,
-    /// using the closest match.
     ///
-    /// If required unicode symbol exists, acts exactly like [`MergeStrategy::Exact`], if not:
-    /// 1. Replaces dashed segments with plain and thick dashed segments with thick:
+    /// # Example
+    ///
     /// ```
     /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// let strategy = MergeStrategy::Fuzzy;
-    /// strategy.merge("╎", "╍");
-    /// // Returns "┿"
+    /// let strategy = MergeStrategy::Exact;
+    /// assert_eq!(strategy.merge("│", "━"), "┿"); // exact match exists
+    /// assert_eq!(strategy.merge("┘", "╔"), "╔"); // no exact match, falls back to Replace
     /// ```
+    Exact,
+
+    /// Merges symbols even if an exact composite unicode character doesn't exist, using the closest
+    /// match.
+    ///
+    /// If required unicode symbol exists, acts exactly like [`MergeStrategy::Exact`], if not, the
+    /// following rules are applied:
+    ///
+    /// 1. There are no characters that combine dashed with plain / thick segments, so we replace
+    ///   dashed segments with plain and thick dashed segments with thick. The following diagram
+    ///   shows how this would apply to merging a block with thick dashed borders over a block with
+    ///   plain dashed borders:
+    ///
     /// ```text
     /// ┌╌╌╌┐    ┌╌╌╌┐  ┌╌╌╌┲╍╍╍┓┌╌╌╌┐
     /// ╎   ╎    ╎   ╎  ╎   ╏   ╏╎   ╎
@@ -103,13 +147,11 @@ pub enum MergeStrategy {
     ///     ╏   ╏                ╏   ╏
     ///     ┗╍╍╍┛                ┗╍╍╍┛
     /// ```
-    /// 2. Replaces all rounded segments with plain:
-    /// ```
-    /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// let strategy = MergeStrategy::Fuzzy;
-    /// strategy.merge("┘", "╭");
-    /// // Returns "┼"
-    /// ```
+    ///
+    /// 2. There are no characters that combine rounded segments with other segments, so we replace
+    ///   rounded segments with plain. The following diagram shows how this would apply to merging a
+    ///   block with rounded corners over a block with plain corners:
+    ///
     /// ```text
     /// ┌───┐    ┌───┐  ┌───┬───╮┌───┐
     /// │   │    │   │  │   │   ││   │
@@ -121,17 +163,13 @@ pub enum MergeStrategy {
     ///     │   │                │   │
     ///     ╰───╯                ╰───╯
     /// ```
-    /// 3. Since there are no symbols that combine thick and double borders, replaces all double
-    ///    segments with thick or all thick with double, depending on render order (last rendered
-    ///    takes precedence):
-    /// ```
-    /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// let strategy = MergeStrategy::Fuzzy;
-    /// strategy.merge("┃", "═");
-    /// // Returns "╬"
-    /// strategy.merge("═", "┃");
-    /// // Returns "╋"
-    /// ```
+    ///
+    /// 3. There are no symbols that combine thick and double borders, so we replace all double
+    ///   segments with thick or all thick with double. The second symbol parameter takes precedence
+    ///   in choosing whether to use double or thick. The following diagram shows how this would
+    ///   apply to merging a block with double borders over a block with thick borders and then the
+    ///   reverse (merging a block with thick borders over a block with double borders):
+    ///
     /// ```text
     /// ┏━━━┓    ┏━━━┓  ┏━━━╦═══╗┏━━━┓
     /// ┃   ┃    ┃   ┃  ┃   ║   ║┃   ┃
@@ -142,6 +180,7 @@ pub enum MergeStrategy {
     ///     ║   ║  ╚═══╝         ║   ║
     ///     ║   ║                ║   ║
     ///     ╚═══╝                ╚═══╝
+    ///
     /// ╔═══╗    ╔═══╗  ╔═══┳━━━┓╔═══╗
     /// ║   ║    ║   ║  ║   ┃   ┃║   ║
     /// ║   ║    ║ ┏━╋━┓║   ┃   ┃║   ║
@@ -152,17 +191,14 @@ pub enum MergeStrategy {
     ///     ┃   ┃                ┃   ┃
     ///     ┗━━━┛                ┗━━━┛
     /// ```
-    /// 4. Some combinations of double and plain don't exist, if the symbol is still
-    ///    unrepresentable, change all plain segments with double or all double with plain,
-    ///    depending on render order (last rendered takes precedence):
-    /// ```
-    /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// let strategy = MergeStrategy::Fuzzy;
-    /// strategy.merge("┐", "╔");
-    /// // Returns "╦"
-    /// strategy.merge("╔", "┐");
-    /// // Returns "┬"
-    /// ```
+    ///
+    /// 4. Some combinations of double and plain don't exist, so if the symbol is still
+    /// unrepresentable, change all plain segments with double or all double with plain. The second
+    /// symbol parameter takes precedence in choosing whether to use double or plain. The following
+    /// diagram shows how this would apply to merging a block with double borders over a block with
+    /// plain borders and then the reverse (merging a block with plain borders over a block with
+    /// double borders):
+    ///
     /// ```text
     /// ┌───┐    ┌───┐  ┌───╦═══╗┌───┐
     /// │   │    │   │  │   ║   ║│   │
@@ -182,6 +218,30 @@ pub enum MergeStrategy {
     ///     │   │  └───┘         │   │
     ///     │   │                │   │
     ///     └───┘                └───┘
+    /// ```
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Fuzzy;
+    ///
+    /// // exact matches are merged normally
+    /// assert_eq!(strategy.merge("┌", "┐"), "┬");
+    ///
+    /// // dashed segments are replaced with plain
+    /// assert_eq!(strategy.merge("╎", "╍"), "┿");
+    ///
+    /// // rounded segments are replaced with plain
+    /// assert_eq!(strategy.merge("┘", "╭"), "┼");
+    ///
+    /// // double and thick segments are merged based on the second symbol
+    /// assert_eq!(strategy.merge("┃", "═"), "╬");
+    /// assert_eq!(strategy.merge("═", "┃"), "╋");
+    ///
+    /// // combindations of double with plain that don't exist are merged based on the second symbol
+    /// assert_eq!(strategy.merge("┐", "╔"), "╦");
+    /// assert_eq!(strategy.merge("╔", "┐"), "┬");
     /// ```
     Fuzzy,
 }

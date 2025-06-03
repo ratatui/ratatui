@@ -87,6 +87,7 @@ impl Cell {
     /// assert_eq!(
     ///     Cell::new("╭").merge_symbol("┘", MergeStrategy::Fuzzy),
     ///     Cell::new("┼")
+    /// );
     /// ```
     ///
     /// [border collapsing]: https://ratatui.rs/recipes/layout/collapse-borders/
