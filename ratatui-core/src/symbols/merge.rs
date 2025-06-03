@@ -1,21 +1,188 @@
 use core::str::FromStr;
 
 /// Defines the merge strategy of overlapping characters.
+/// ```
+/// # use ratatui_core::symbols::merge::MergeStrategy;
+/// let strategy = MergeStrategy::Exact;
+/// strategy.merge("│", "─")
+/// // Returns "┼"
+/// ```
+/// This is useful for block borders merging. See
+/// <https://ratatui.rs/recipes/layout/collapse-borders/> and variant docs for more information.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub enum MergeStrategy {
     /// Replaces the previous symbol with the next one.
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Replace;
+    /// strategy.merge("│", "━")
+    /// // Returns "━"
+    /// ```
+    /// ```text
+    /// ┌───┐    ┌───┐  ┌───┏━━━┓┌───┐
+    /// │   │    │   │  │   ┃   ┃│   │
+    /// │   │    │ ┏━━━┓│   ┃   ┃│   │
+    /// │   │    │ ┃ │ ┃│   ┃   ┃│   │
+    /// └───┏━━━┓└─┃─┘ ┃└───┗━━━┛┏━━━┓
+    ///     ┃   ┃  ┃   ┃         ┃   ┃
+    ///     ┃   ┃  ┗━━━┛         ┃   ┃
+    ///     ┃   ┃                ┃   ┃
+    ///     ┗━━━┛                ┗━━━┛
+    /// ```
     #[default]
     Replace,
 
     /// Merges symbols only if an exact composite unicode character exists.
-    ///
-    /// Example: `┐` and `┗` will be merged into `╄`
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Exact;
+    /// strategy.merge("│", "━")
+    /// // Returns "┿"
+    /// ```
+    /// ```text
+    /// ┌───┐    ┌───┐  ┌───┲━━━┓┌───┐
+    /// │   │    │   │  │   ┃   ┃│   │
+    /// │   │    │ ┏━┿━┓│   ┃   ┃│   │
+    /// │   │    │ ┃ │ ┃│   ┃   ┃│   │
+    /// └───╆━━━┓└─╂─┘ ┃└───┺━━━┛┢━━━┪
+    ///     ┃   ┃  ┃   ┃         ┃   ┃
+    ///     ┃   ┃  ┗━━━┛         ┃   ┃
+    ///     ┃   ┃                ┃   ┃
+    ///     ┗━━━┛                ┗━━━┛
+    /// ```
+    /// Falls back to [`MergeStrategy::Replace`], if required unicode symbol doesn't exist.
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Exact;
+    /// strategy.merge("┘", "╔");
+    /// // Returns "╔"
+    /// strategy.merge("┘", "╭");
+    /// // Returns "╭"
+    /// ```
+    /// ```text
+    /// ┌───┐    ┌───┐  ┌───╔═══╗┌───┐
+    /// │   │    │   │  │   ║   ║│   │
+    /// │   │    │ ╔═╪═╗│   ║   ║│   │
+    /// │   │    │ ║ │ ║│   ║   ║│   │
+    /// └───╔═══╗└─╫─┘ ║└───╚═══╝╔═══╗
+    ///     ║   ║  ║   ║         ║   ║
+    ///     ║   ║  ╚═══╝         ║   ║
+    ///     ║   ║                ║   ║
+    ///     ╚═══╝                ╚═══╝
+    /// ┌───┐    ┌───┐  ┌───╭───╮┌───┐
+    /// │   │    │   │  │   │   ││   │
+    /// │   │    │ ╭─┼─╮│   │   ││   │
+    /// │   │    │ │ │ ││   │   ││   │
+    /// └───╭───╮└─┼─┘ │└───╰───╯╭───╮
+    ///     │   │  │   │         │   │
+    ///     │   │  ╰───╯         │   │
+    ///     │   │                │   │
+    ///     ╰───╯                ╰───╯
+    /// ```
     Exact,
 
     /// Merges symbols even if an exact composite unicode character doesn't exist,
     /// using the closest match.
     ///
-    /// Example: `╮` and `└` will be merged into `┼`
+    /// If required unicode symbol exists, acts exactly like [`MergeStrategy::Exact`], if not:
+    /// 1. Replaces dashed segments with plain and thick dashed segments with thick:
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Fuzzy;
+    /// strategy.merge("╎", "╍");
+    /// // Returns "┿"
+    /// ```
+    /// ```text
+    /// ┌╌╌╌┐    ┌╌╌╌┐  ┌╌╌╌┲╍╍╍┓┌╌╌╌┐
+    /// ╎   ╎    ╎   ╎  ╎   ╏   ╏╎   ╎
+    /// ╎   ╎    ╎ ┏╍┿╍┓╎   ╏   ╏╎   ╎
+    /// ╎   ╎    ╎ ╏ ╎ ╏╎   ╏   ╏╎   ╎
+    /// └╌╌╌╆╍╍╍┓└╌╂╌┘ ╏└╌╌╌┺╍╍╍┛┢╍╍╍┪
+    ///     ╏   ╏  ╏   ╏         ╏   ╏
+    ///     ╏   ╏  ┗╍╍╍┛         ╏   ╏
+    ///     ╏   ╏                ╏   ╏
+    ///     ┗╍╍╍┛                ┗╍╍╍┛
+    /// ```
+    /// 2. Replaces all rounded segments with plain:
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Fuzzy;
+    /// strategy.merge("┘", "╭");
+    /// // Returns "┼"
+    /// ```
+    /// ```text
+    /// ┌───┐    ┌───┐  ┌───┬───╮┌───┐
+    /// │   │    │   │  │   │   ││   │
+    /// │   │    │ ╭─┼─╮│   │   ││   │
+    /// │   │    │ │ │ ││   │   ││   │
+    /// └───┼───╮└─┼─┘ │└───┴───╯├───┤
+    ///     │   │  │   │         │   │
+    ///     │   │  ╰───╯         │   │
+    ///     │   │                │   │
+    ///     ╰───╯                ╰───╯
+    /// ```
+    /// 3. Since there are no symbols that combine thick and double borders, replaces all double
+    ///    segments with thick or all thick with double, depending on render order (last rendered
+    ///    takes precedence):
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Fuzzy;
+    /// strategy.merge("┃", "═");
+    /// // Returns "╬"
+    /// strategy.merge("═", "┃");
+    /// // Returns "╋"
+    /// ```
+    /// ```text
+    /// ┏━━━┓    ┏━━━┓  ┏━━━╦═══╗┏━━━┓
+    /// ┃   ┃    ┃   ┃  ┃   ║   ║┃   ┃
+    /// ┃   ┃    ┃ ╔═╬═╗┃   ║   ║┃   ┃
+    /// ┃   ┃    ┃ ║ ┃ ║┃   ║   ║┃   ┃
+    /// ┗━━━╬═══╗┗━╬━┛ ║┗━━━╩═══╝╠═══╣
+    ///     ║   ║  ║   ║         ║   ║
+    ///     ║   ║  ╚═══╝         ║   ║
+    ///     ║   ║                ║   ║
+    ///     ╚═══╝                ╚═══╝
+    /// ╔═══╗    ╔═══╗  ╔═══┳━━━┓╔═══╗
+    /// ║   ║    ║   ║  ║   ┃   ┃║   ║
+    /// ║   ║    ║ ┏━╋━┓║   ┃   ┃║   ║
+    /// ║   ║    ║ ┃ ║ ┃║   ┃   ┃║   ║
+    /// ╚═══╋━━━┓╚═╋═╝ ┃╚═══┻━━━┛┣━━━┫
+    ///     ┃   ┃  ┃   ┃         ┃   ┃
+    ///     ┃   ┃  ┗━━━┛         ┃   ┃
+    ///     ┃   ┃                ┃   ┃
+    ///     ┗━━━┛                ┗━━━┛
+    /// ```
+    /// 4. Some combinations of double and plain don't exist, if the symbol is still
+    ///    unrepresentable, change all plain segments with double or all double with plain,
+    ///    depending on render order (last rendered takes precedence):
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    /// let strategy = MergeStrategy::Fuzzy;
+    /// strategy.merge("┐", "╔");
+    /// // Returns "╦"
+    /// strategy.merge("╔", "┐");
+    /// // Returns "┬"
+    /// ```
+    /// ```text
+    /// ┌───┐    ┌───┐  ┌───╦═══╗┌───┐
+    /// │   │    │   │  │   ║   ║│   │
+    /// │   │    │ ╔═╪═╗│   ║   ║│   │
+    /// │   │    │ ║ │ ║│   ║   ║│   │
+    /// └───╬═══╗└─╫─┘ ║└───╩═══╝╠═══╣
+    ///     ║   ║  ║   ║         ║   ║
+    ///     ║   ║  ╚═══╝         ║   ║
+    ///     ║   ║                ║   ║
+    ///     ╚═══╝                ╚═══╝
+    /// ╔═══╗    ╔═══╗  ╔═══┬───┐╔═══╗
+    /// ║   ║    ║   ║  ║   │   │║   ║
+    /// ║   ║    ║ ┌─╫─┐║   │   │║   ║
+    /// ║   ║    ║ │ ║ │║   │   │║   ║
+    /// ╚═══┼───┐╚═╪═╝ │╚═══┴───┘├───┤
+    ///     │   │  │   │         │   │
+    ///     │   │  └───┘         │   │
+    ///     │   │                │   │
+    ///     └───┘                └───┘
+    /// ```
     Fuzzy,
 }
 
