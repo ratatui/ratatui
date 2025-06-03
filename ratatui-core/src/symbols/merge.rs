@@ -132,9 +132,9 @@ pub enum MergeStrategy {
     /// following rules are applied:
     ///
     /// 1. There are no characters that combine dashed with plain / thick segments, so we replace
-    ///   dashed segments with plain and thick dashed segments with thick. The following diagram
-    ///   shows how this would apply to merging a block with thick dashed borders over a block with
-    ///   plain dashed borders:
+    ///    dashed segments with plain and thick dashed segments with thick. The following diagram
+    ///    shows how this would apply to merging a block with thick dashed borders over a block with
+    ///    plain dashed borders:
     ///
     /// ```text
     /// ┌╌╌╌┐    ┌╌╌╌┐  ┌╌╌╌┲╍╍╍┓┌╌╌╌┐
@@ -149,8 +149,8 @@ pub enum MergeStrategy {
     /// ```
     ///
     /// 2. There are no characters that combine rounded segments with other segments, so we replace
-    ///   rounded segments with plain. The following diagram shows how this would apply to merging a
-    ///   block with rounded corners over a block with plain corners:
+    ///    rounded segments with plain. The following diagram shows how this would apply to merging
+    ///    a block with rounded corners over a block with plain corners:
     ///
     /// ```text
     /// ┌───┐    ┌───┐  ┌───┬───╮┌───┐
@@ -165,10 +165,11 @@ pub enum MergeStrategy {
     /// ```
     ///
     /// 3. There are no symbols that combine thick and double borders, so we replace all double
-    ///   segments with thick or all thick with double. The second symbol parameter takes precedence
-    ///   in choosing whether to use double or thick. The following diagram shows how this would
-    ///   apply to merging a block with double borders over a block with thick borders and then the
-    ///   reverse (merging a block with thick borders over a block with double borders):
+    ///    segments with thick or all thick with double. The second symbol parameter takes
+    ///    precedence in choosing whether to use double or thick. The following diagram shows how
+    ///    this would apply to merging a block with double borders over a block with thick borders
+    ///    and then the reverse (merging a block with thick borders over a block with double
+    ///    borders):
     ///
     /// ```text
     /// ┏━━━┓    ┏━━━┓  ┏━━━╦═══╗┏━━━┓
@@ -193,11 +194,11 @@ pub enum MergeStrategy {
     /// ```
     ///
     /// 4. Some combinations of double and plain don't exist, so if the symbol is still
-    /// unrepresentable, change all plain segments with double or all double with plain. The second
-    /// symbol parameter takes precedence in choosing whether to use double or plain. The following
-    /// diagram shows how this would apply to merging a block with double borders over a block with
-    /// plain borders and then the reverse (merging a block with plain borders over a block with
-    /// double borders):
+    ///    unrepresentable, change all plain segments with double or all double with plain. The
+    ///    second symbol parameter takes precedence in choosing whether to use double or plain. The
+    ///    following diagram shows how this would apply to merging a block with double borders over
+    ///    a block with plain borders and then the reverse (merging a block with plain borders over
+    ///    a block with double borders):
     ///
     /// ```text
     /// ┌───┐    ┌───┐  ┌───╦═══╗┌───┐
@@ -248,6 +249,31 @@ pub enum MergeStrategy {
 
 impl MergeStrategy {
     /// Merges two symbols using this merge strategy.
+    ///
+    /// This method takes two string slices representing the previous and next symbols, and
+    /// returns a string slice representing the merged symbol based on the merge strategy.
+    ///
+    /// If either of the symbols are not in the [Box Drawing Unicode block], the `next` symbol is
+    /// returned as is. If both symbols are valid, they are merged according to the rules defined
+    /// in the [`MergeStrategy`].
+    ///
+    /// Most code using this method will use the [`Cell::merge_symbol`] method, which uses this
+    /// method internally to merge the symbols of a cell.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui_core::symbols::merge::MergeStrategy;
+    ///
+    /// let strategy = MergeStrategy::Fuzzy;
+    /// assert_eq!(strategy.merge("┌", "┐"), "┬"); // merges to a single character
+    /// assert_eq!(strategy.merge("┘", "╭"), "┼"); // replaces rounded with plain
+    /// assert_eq!(strategy.merge("╎", "╍"), "┿"); // replaces dashed with plain
+    /// assert_eq!(strategy.merge("┐", "╔"), "╦"); // merges double with plain
+    /// assert_eq!(strategy.merge("╔", "┐"), "┬"); // merges plain with double
+    /// ```
+    ///
+    /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
     pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
         let (Ok(prev_symbol), Ok(next_symbol)) =
             (BorderSymbol::from_str(prev), BorderSymbol::from_str(next))
@@ -262,18 +288,21 @@ impl MergeStrategy {
 }
 
 /// Represents a composite border symbol using individual line components.
+///
+/// This is an internal type for now specifically used to make the merge logic easier to implement.
+/// At some point in the future, we might make a similar type public to represent the
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 struct BorderSymbol {
-    pub right: LineStyle,
-    pub up: LineStyle,
-    pub left: LineStyle,
-    pub down: LineStyle,
+    right: LineStyle,
+    up: LineStyle,
+    left: LineStyle,
+    down: LineStyle,
 }
 
 impl BorderSymbol {
     /// Creates a new [`BorderSymbol`], based on individual line styles.
     #[must_use]
-    pub const fn new(right: LineStyle, up: LineStyle, left: LineStyle, down: LineStyle) -> Self {
+    const fn new(right: LineStyle, up: LineStyle, left: LineStyle, down: LineStyle) -> Self {
         Self {
             right,
             up,
@@ -285,7 +314,7 @@ impl BorderSymbol {
     /// Finds the closest representation of the [`BorderSymbol`], that has a corresponding unicode
     /// character.
     #[must_use]
-    pub fn fuzzy(mut self, other: Self) -> Self {
+    fn fuzzy(mut self, other: Self) -> Self {
         #[allow(clippy::enum_glob_use)]
         use LineStyle::*;
 
@@ -349,13 +378,13 @@ impl BorderSymbol {
     // TODO: not removing this yet as fuzzy strategy implementation may change
     /// Checks if any of the line components making the [`BorderSymbol`] matches the `style`.
     #[allow(dead_code)]
-    pub fn contains(self, style: LineStyle) -> bool {
+    fn contains(self, style: LineStyle) -> bool {
         self.up == style || self.right == style || self.down == style || self.left == style
     }
 
     /// Replaces all line styles matching `from` by `to`.
     #[must_use]
-    pub fn replace(mut self, from: LineStyle, to: LineStyle) -> Self {
+    fn replace(mut self, from: LineStyle, to: LineStyle) -> Self {
         self.up = if self.up == from { to } else { self.up };
         self.right = if self.right == from { to } else { self.right };
         self.down = if self.down == from { to } else { self.down };
@@ -364,7 +393,7 @@ impl BorderSymbol {
     }
 
     /// Merges two border symbols into one.
-    pub fn merge(self, other: Self, strategy: MergeStrategy) -> Self {
+    fn merge(self, other: Self, strategy: MergeStrategy) -> Self {
         let exact_result = Self::new(
             self.right.merge(other.right),
             self.up.merge(other.up),
@@ -388,6 +417,13 @@ enum BorderSymbolError {
 }
 
 /// A visual style defining the appearance of a single line making up a block border.
+///
+/// This is an internal type used to represent the different styles of lines that can be used in
+/// border symbols.
+///
+/// At some point in the future, we might make this type (or a similar one) public to allow users to
+/// work with line styles directly, but for now, it is used internally only to simplify the merge
+/// logic of border symbols.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum LineStyle {
     /// Represents the absence of a line.
