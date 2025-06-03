@@ -65,14 +65,32 @@ impl Cell {
     /// Merges the symbol of the cell with the one already on the cell, using the provided
     /// [`MergeStrategy`].
     ///
-    /// This is useful for border collapsing.
+    /// Merges [Box Drawing Unicode block] characters to create a single character representing
+    /// their combination, useful for [border collapsing]. Currently limited to box drawing
+    /// characters, with potential future support for others.
+    ///
+    /// Merging may not be perfect due to Unicode limitations; some symbol combinations might not
+    /// produce a valid character. [`MergeStrategy`] defines how to handle such cases, e.g.,
+    /// `Exact` for valid merges only, or `Fuzzy` for close matches.
+    ///
+    /// # Example
+    ///
     /// ```
     /// # use ratatui_core::buffer::Cell;
-    /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact);
-    /// // Produces "╆"
+    /// use ratatui_core::symbols::merge::MergeStrategy;
+    ///
+    /// assert_eq!(
+    ///     Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact);
+    ///     Cell::new("╆"),
+    /// );
+    ///
+    /// assert_eq!(
+    ///     Cell::new("╭").merge_symbol("┘", MergeStrategy::Fuzzy),
+    ///     Cell::new("┼")
     /// ```
-    /// See <https://ratatui.rs/recipes/layout/collapse-borders/> for more information.
+    ///
+    /// [border collapsing]: https://ratatui.rs/recipes/layout/collapse-borders/
+    /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
     pub fn merge_symbol(&mut self, symbol: &str, strategy: MergeStrategy) -> &mut Self {
         let merged = strategy.merge(self.symbol(), symbol);
         self.symbol = CompactString::new(merged);
