@@ -69,7 +69,7 @@ impl Cell {
     /// ```
     /// # use ratatui_core::buffer::Cell;
     /// # use ratatui_core::symbols::merge::MergeStrategy;
-    /// Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact)
+    /// Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact);
     /// // Produces "╆"
     /// ```
     /// See <https://ratatui.rs/recipes/layout/collapse-borders/> for more information.
