@@ -50,7 +50,7 @@ use core::str::FromStr;
 ///
 /// assert_eq!(MergeStrategy::Replace.merge("│", "━"), "━");
 /// assert_eq!(MergeStrategy::Exact.merge("│", "─"), "┼");
-/// assert_eq!(MergeStrategy::Fuzzy.merge("┘", "╔"), "╦");
+/// assert_eq!(MergeStrategy::Fuzzy.merge("┘", "╔"), "╬");
 /// ```
 ///
 /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
