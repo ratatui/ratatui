@@ -672,56 +672,46 @@ impl Block<'_> {
         self.render_corners(area, buf);
     }
 
-    fn render_titles(&self, area: Rect, buf: &mut Buffer) {
-        self.render_title_position(Position::Top, area, buf);
-        self.render_title_position(Position::Bottom, area, buf);
-    }
-
-    fn render_title_position(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        // NOTE: the order in which these functions are called defines the overlapping behavior
-        self.render_right_titles(position, area, buf);
-        self.render_center_titles(position, area, buf);
-        self.render_left_titles(position, area, buf);
-    }
-
     fn render_sides(&self, area: Rect, buf: &mut Buffer) {
-        // First and last element of the line are not drawn
-        // to avoid wrong merging with the corner.
-        let offset = u16::from(self.merge_borders != MergeStrategy::Replace);
-
         let left = area.left();
-        let left_offset = area.left() + offset;
         let top = area.top();
-        let top_offset = area.top() + offset;
+        // area.right() and area.bottom() are outside the rect, subtract 1 to get the last row/col
         let right = area.right() - 1;
-        let right_offset = area.right() - offset;
         let bottom = area.bottom() - 1;
-        let bottom_offset = area.bottom() - offset;
 
-        #[allow(clippy::range_plus_one)]
+        // The first and last element of each line are not drawn when there is an adjacent line as
+        // this would cause the corner to initially be merged with a side character and then a
+        // corner character to be drawn on top of it. Some merge strategies would not produce a
+        // correct character in that case.
+        let is_replace = self.merge_borders != MergeStrategy::Replace;
+        let left_inset = left + u16::from(is_replace && self.borders.contains(Borders::LEFT));
+        let top_inset = top + u16::from(is_replace && self.borders.contains(Borders::TOP));
+        let right_inset = right - u16::from(is_replace && self.borders.contains(Borders::RIGHT));
+        let bottom_inset = bottom - u16::from(is_replace && self.borders.contains(Borders::BOTTOM));
+
         let sides = [
             (
                 Borders::LEFT,
-                left..left + 1,
-                top_offset..bottom_offset,
+                left..=left,
+                top_inset..=bottom_inset,
                 self.border_set.vertical_left,
             ),
             (
                 Borders::TOP,
-                left_offset..right_offset,
-                top..top + 1,
+                left_inset..=right_inset,
+                top..=top,
                 self.border_set.horizontal_top,
             ),
             (
                 Borders::RIGHT,
-                right..right + 1,
-                top_offset..bottom_offset,
+                right..=right,
+                top_inset..=bottom_inset,
                 self.border_set.vertical_right,
             ),
             (
                 Borders::BOTTOM,
-                left_offset..right_offset,
-                bottom..bottom + 1,
+                left_inset..=right_inset,
+                bottom..=bottom,
                 self.border_set.horizontal_bottom,
             ),
         ];
@@ -773,6 +763,17 @@ impl Block<'_> {
                     .set_style(self.border_style);
             }
         }
+    }
+    fn render_titles(&self, area: Rect, buf: &mut Buffer) {
+        self.render_title_position(Position::Top, area, buf);
+        self.render_title_position(Position::Bottom, area, buf);
+    }
+
+    fn render_title_position(&self, position: Position, area: Rect, buf: &mut Buffer) {
+        // NOTE: the order in which these functions are called defines the overlapping behavior
+        self.render_right_titles(position, area, buf);
+        self.render_center_titles(position, area, buf);
+        self.render_left_titles(position, area, buf);
     }
 
     /// Render titles aligned to the right of the block
@@ -1710,6 +1711,93 @@ mod tests {
             "1TTTTTTTT2",
             "L        R",
             "3BBBBBBBB4",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_partial_borders() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌────────┐",
+            "│        │",
+            "└────────┘",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::LEFT)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌─────────",
+            "│         ",
+            "│         ",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::RIGHT)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "─────────┐",
+            "         │",
+            "         │",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::BOTTOM | Borders::LEFT)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "│         ",
+            "│         ",
+            "└─────────",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::BOTTOM | Borders::RIGHT)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "         │",
+            "         │",
+            "─────────┘",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::BOTTOM)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "──────────",
+            "          ",
+            "──────────",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::LEFT | Borders::RIGHT)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "│        │",
+            "│        │",
+            "│        │",
         ]);
         assert_eq!(buffer, expected);
     }
