@@ -1750,7 +1750,7 @@ mod tests {
         let buffer = render_merging_borders(MergeStrategy::Replace);
 
         #[rustfmt::skip]
-        let expected = Buffer::with_lines(include_str!("block/merge/replace.txt").split_terminator('\n'));
+        let expected = Buffer::with_lines(include_str!("block/merge/replace.txt").lines());
 
         assert_eq!(buffer, expected);
     }
@@ -1760,7 +1760,7 @@ mod tests {
     fn render_exact_merge() {
         let buffer = render_merging_borders(MergeStrategy::Exact);
         #[rustfmt::skip]
-        let expected = Buffer::with_lines(include_str!("block/merge/exact.txt").split_terminator('\n'));
+        let expected = Buffer::with_lines(include_str!("block/merge/exact.txt").lines());
 
         assert_eq!(buffer, expected);
     }
@@ -1771,7 +1771,7 @@ mod tests {
         let buffer = render_merging_borders(MergeStrategy::Fuzzy);
 
         #[rustfmt::skip]
-        let expected = Buffer::with_lines(include_str!("block/merge/fuzzy.txt").split_terminator('\n'));
+        let expected = Buffer::with_lines(include_str!("block/merge/fuzzy.txt").lines());
 
         assert_eq!(buffer, expected);
     }
