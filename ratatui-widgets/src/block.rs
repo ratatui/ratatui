@@ -17,10 +17,12 @@ use ratatui_core::text::Line;
 use ratatui_core::widgets::Widget;
 
 pub use self::padding::Padding;
+pub use self::shadow::{Shadow, ShadowType};
 pub use self::title::{Position, Title};
 use crate::borders::{BorderType, Borders};
 
 mod padding;
+mod shadow;
 pub mod title;
 
 /// Base widget to be used to display a box border around all other built-in widgets.
