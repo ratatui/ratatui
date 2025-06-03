@@ -1,3 +1,13 @@
+//! This module provides strategies for merging symbols in a layout.
+//!
+//! It defines the [`MergeStrategy`] enum, which allows for different behaviors when combining
+//! symbols, such as replacing the previous symbol, merging them if an exact match exists, or using
+//! a fuzzy match to find the closest representation.
+//!
+//! The merging strategies are useful for [collapsing borders] in layouts, where multiple symbols
+//! may need to be combined to create a single, coherent border representation.
+//!
+//! [collapsing borders]: https://ratatui.rs/recipes/layout/collapse-borders
 use core::str::FromStr;
 
 /// A strategy for merging two symbols into one.
@@ -8,6 +18,19 @@ use core::str::FromStr;
 ///
 /// This is useful for [collapsing borders] in layouts, where multiple symbols may need to be
 /// combined to create a single, coherent border representation.
+///
+/// Not all combinations of box drawing symbols can be represented as a single unicode character, as
+/// many of them are not defined in the [Box Drawing Unicode block]. This means that some merging
+/// strategies will not yield a valid unicode character. The [`MergeStrategy::Replace`] strategy
+/// will be used as a fallback in such cases, replacing the previous symbol with the next one.
+///
+/// Specifically, the following combinations of box drawing symbols are not defined in the [Box
+/// Drawing Unicode block]:
+///
+/// - Combining any dashed segments with any non dashed segments (e.g. `╎` with `─` or `━`).
+/// - Combining any rounded segments with any other segments (e.g. `╯` with `─` or `━`).
+/// - Combining any double segments with any thick segments (e.g. `═` with `┃` or `━`).
+/// - Combining some double segments with some plain segments (e.g. `┐` with `╔`).
 ///
 /// The merging strategies include:
 ///
@@ -30,6 +53,7 @@ use core::str::FromStr;
 /// assert_eq!(MergeStrategy::Fuzzy.merge("┘", "╔"), "╦");
 /// ```
 ///
+/// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
 /// [collapsing borders]: https://ratatui.rs/recipes/layout/collapse-borders
 /// [`Block::merge_borders`]:
 ///     https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html#method.merge_borders
