@@ -150,7 +150,7 @@ impl<'a> Block<'a> {
 
     /// Create a new block with [all borders](Borders::ALL) shown
     ///
-    /// ```
+    /// ```text
     /// use ratatui::widgets::{Block, Borders};
     ///
     /// assert_eq!(Block::bordered(), Block::new().borders(Borders::ALL));
@@ -535,6 +535,37 @@ impl<'a> Block<'a> {
     }
 
     /// Sets the block's [`MergeStrategy`] for overlapping characters.
+    ///
+    /// Changing the strategy to [`Exact`] or [`Fuzzy`] collapses
+    /// border characters that intersect with any previously rendered borders, e.g.:
+    /// ```rust
+    /// use ratatui::symbols::merge::MergeStrategy;
+    /// use ratatui::widgets::{Block, BorderType};
+    ///
+    /// // 1
+    /// Block::bordered();
+    /// // 2
+    /// Block::bordered()
+    ///     .border_type(BorderType::Thick)
+    ///     .merge_borders(MergeStrategy::Exact);
+    /// // Renders
+    /// // ┌───┐
+    /// // │ 1 │
+    /// // │ ┏━┿━┓
+    /// // │ ┃ │ ┃
+    /// // └─╂─┘ ┃
+    /// //   ┃ 2 ┃
+    /// //   ┗━━━┛
+    /// ```
+    /// Defaults to [`Replace`], which completely replaces the previously rendered character.
+    ///
+    /// For more information and examples,
+    /// [see the recipe](https://ratatui.rs/recipes/layout/collapse-borders/) and [`MergeStrategy`]
+    /// docs.
+    ///
+    /// [`Replace`]: MergeStrategy::Replace
+    /// [`Exact`]: MergeStrategy::Exact
+    /// [`Fuzzy`]: MergeStrategy::Fuzzy
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn merge_borders(mut self, strategy: MergeStrategy) -> Self {
         self.merge_strategy = strategy;
