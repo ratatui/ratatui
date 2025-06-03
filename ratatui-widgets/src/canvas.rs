@@ -967,11 +967,11 @@ mod tests {
         let mut b_grid = BrailleGrid::new(u16::MAX, 3);
         let mut c_grid = CharGrid::new(u16::MAX, 3, 'd');
 
-        let max_u16 = u16::MAX as usize;
+        let max = u16::MAX as usize + 10;
 
         // see if we can paint outside bounds
-        b_grid.paint(max_u16 + 10, max_u16 + 10, Color::Red);
-        c_grid.paint(max_u16 + 10, max_u16 + 10, Color::Red);
+        b_grid.paint(max, max, Color::Red);
+        c_grid.paint(max, max, Color::Red);
         // see if we can paint usize max bounds
         b_grid.paint(usize::MAX, usize::MAX, Color::Red);
         c_grid.paint(usize::MAX, usize::MAX, Color::Red);
