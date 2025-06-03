@@ -549,13 +549,15 @@ impl<'a> Block<'a> {
     ///     .border_type(BorderType::Thick)
     ///     .merge_borders(MergeStrategy::Exact);
     /// // Renders
-    /// // ┌───┐
-    /// // │ 1 │
-    /// // │ ┏━┿━┓
-    /// // │ ┃ │ ┃
-    /// // └─╂─┘ ┃
-    /// //   ┃ 2 ┃
-    /// //   ┗━━━┛
+    /// // ┌───┐    ┌───┐  ┌───┲━━━┓┌───┐
+    /// // │   │    │ 1 │  │   ┃   ┃│   │
+    /// // │ 1 │    │ ┏━┿━┓│ 1 ┃ 2 ┃│ 1 │
+    /// // │   │    │ ┃ │ ┃│   ┃   ┃│   │
+    /// // └───╆━━━┓└─╂─┘ ┃└───┺━━━┛┢━━━┪
+    /// //     ┃   ┃  ┃ 2 ┃         ┃   ┃
+    /// //     ┃ 2 ┃  ┗━━━┛         ┃ 2 ┃
+    /// //     ┃   ┃                ┃   ┃
+    /// //     ┗━━━┛                ┗━━━┛
     /// ```
     /// Defaults to [`Replace`], which completely replaces the previously rendered character.
     ///
