@@ -56,6 +56,8 @@ pub mod title;
 /// - [`Block::border_style`] Defines the style of the borders.
 /// - [`Block::border_type`] Sets the symbols used to display the border (e.g. single line, double
 ///   line, thick or rounded borders).
+/// - [`Block::border_set`] Sets the symbols used to display the border as a [`border::Set`].
+/// - [`Block::merge_borders`] Sets the block's [`MergeStrategy`] for overlapping characters.
 /// - [`Block::padding`] Defines the padding inside a [`Block`].
 /// - [`Block::style`] Sets the base style of the widget.
 /// - [`Block::title`] Adds a title to the block.
@@ -128,7 +130,7 @@ pub struct Block<'a> {
     /// Block padding
     padding: Padding,
     /// Border merging strategy
-    merge_strategy: MergeStrategy,
+    merge_borders: MergeStrategy,
 }
 
 impl<'a> Block<'a> {
@@ -144,13 +146,13 @@ impl<'a> Block<'a> {
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
             padding: Padding::ZERO,
-            merge_strategy: MergeStrategy::Replace,
+            merge_borders: MergeStrategy::Replace,
         }
     }
 
     /// Create a new block with [all borders](Borders::ALL) shown
     ///
-    /// ```text
+    /// ```
     /// use ratatui::widgets::{Block, Borders};
     ///
     /// assert_eq!(Block::bordered(), Block::new().borders(Borders::ALL));
@@ -536,41 +538,49 @@ impl<'a> Block<'a> {
 
     /// Sets the block's [`MergeStrategy`] for overlapping characters.
     ///
-    /// Changing the strategy to [`Exact`] or [`Fuzzy`] collapses
-    /// border characters that intersect with any previously rendered borders, e.g.:
+    /// Defaults to [`Replace`], which completely replaces the previously rendered character.
+    /// Changing the strategy to [`Exact`] or [`Fuzzy`] collapses border characters that intersect
+    /// with any previously rendered borders.
+    ///
+    /// For more information and examples, see the [collapse borders recipe] and [`MergeStrategy`]
+    /// docs.
+    ///
+    /// # Example
+    ///
     /// ```
-    /// # use ratatui::symbols::merge::MergeStrategy;
+    /// use ratatui::symbols::merge::MergeStrategy;
     /// # use ratatui::widgets::{Block, BorderType};
     ///
-    /// // 1
+    /// // Given several blocks with plain borders (1)
     /// Block::bordered();
-    /// // 2
+    /// // and other blocks with thick borders (2) which are rendered on top of the first
     /// Block::bordered()
     ///     .border_type(BorderType::Thick)
     ///     .merge_borders(MergeStrategy::Exact);
-    /// // Renders
-    /// // ┌───┐    ┌───┐  ┌───┲━━━┓┌───┐
-    /// // │   │    │ 1 │  │   ┃   ┃│   │
-    /// // │ 1 │    │ ┏━┿━┓│ 1 ┃ 2 ┃│ 1 │
-    /// // │   │    │ ┃ │ ┃│   ┃   ┃│   │
-    /// // └───╆━━━┓└─╂─┘ ┃└───┺━━━┛┢━━━┪
-    /// //     ┃   ┃  ┃ 2 ┃         ┃   ┃
-    /// //     ┃ 2 ┃  ┗━━━┛         ┃ 2 ┃
-    /// //     ┃   ┃                ┃   ┃
-    /// //     ┗━━━┛                ┗━━━┛
     /// ```
-    /// Defaults to [`Replace`], which completely replaces the previously rendered character.
     ///
-    /// For more information and examples,
-    /// [see the recipe](https://ratatui.rs/recipes/layout/collapse-borders/) and [`MergeStrategy`]
-    /// docs.
+    /// Rendering these blocks with `MergeStrategy::Exact` or `MergeStrategy::Fuzzy` will collapse
+    /// the borders, resulting in a clean layout without connected borders.
     ///
+    /// ```plain
+    /// ┌───┐    ┌───┐  ┌───┲━━━┓┌───┐
+    /// │   │    │ 1 │  │   ┃   ┃│   │
+    /// │ 1 │    │ ┏━┿━┓│ 1 ┃ 2 ┃│ 1 │
+    /// │   │    │ ┃ │ ┃│   ┃   ┃│   │
+    /// └───╆━━━┓└─╂─┘ ┃└───┺━━━┛┢━━━┪
+    ///     ┃   ┃  ┃ 2 ┃         ┃   ┃
+    ///     ┃ 2 ┃  ┗━━━┛         ┃ 2 ┃
+    ///     ┃   ┃                ┃   ┃
+    ///     ┗━━━┛                ┗━━━┛
+    /// ```
+    ///
+    /// [collapse borders recipe]: https://ratatui.rs/recipes/layout/collapse-borders/
     /// [`Replace`]: MergeStrategy::Replace
     /// [`Exact`]: MergeStrategy::Exact
     /// [`Fuzzy`]: MergeStrategy::Fuzzy
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn merge_borders(mut self, strategy: MergeStrategy) -> Self {
-        self.merge_strategy = strategy;
+        self.merge_borders = strategy;
         self
     }
 
@@ -677,7 +687,7 @@ impl Block<'_> {
     fn render_sides(&self, area: Rect, buf: &mut Buffer) {
         // First and last element of the line are not drawn
         // to avoid wrong merging with the corner.
-        let offset = u16::from(self.merge_strategy != MergeStrategy::Replace);
+        let offset = u16::from(self.merge_borders != MergeStrategy::Replace);
 
         let left = area.left();
         let left_offset = area.left() + offset;
@@ -720,7 +730,7 @@ impl Block<'_> {
                 for x in x_range {
                     for y in y_range.clone() {
                         buf[(x, y)]
-                            .merge_symbol(symbol, self.merge_strategy)
+                            .merge_symbol(symbol, self.merge_borders)
                             .set_style(self.border_style);
                     }
                 }
@@ -759,7 +769,7 @@ impl Block<'_> {
         for (border, x, y, symbol) in corners {
             if self.borders.contains(border) {
                 buf[(x, y)]
-                    .merge_symbol(symbol, self.merge_strategy)
+                    .merge_symbol(symbol, self.merge_borders)
                     .set_style(self.border_style);
             }
         }
@@ -1205,7 +1215,7 @@ mod tests {
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
                 padding: Padding::ZERO,
-                merge_strategy: MergeStrategy::Replace,
+                merge_borders: MergeStrategy::Replace,
             }
         );
     }

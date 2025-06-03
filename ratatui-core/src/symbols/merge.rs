@@ -298,6 +298,7 @@ impl MergeStrategy {
     /// ```
     ///
     /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
+    /// [`Cell::merge_symbol`]: crate::buffer::Cell::merge_symbol
     pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
         let (Ok(prev_symbol), Ok(next_symbol)) =
             (BorderSymbol::from_str(prev), BorderSymbol::from_str(next))
