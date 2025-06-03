@@ -400,9 +400,7 @@ impl BorderSymbol {
         }
     }
 
-    // TODO: not removing this yet as fuzzy strategy implementation may change
     /// Checks if any of the line components making the [`BorderSymbol`] matches the `style`.
-    #[allow(dead_code)]
     fn contains(self, style: LineStyle) -> bool {
         self.up == style || self.right == style || self.down == style || self.left == style
     }
