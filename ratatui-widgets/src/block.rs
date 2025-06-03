@@ -538,7 +538,7 @@ impl<'a> Block<'a> {
     ///
     /// Changing the strategy to [`Exact`] or [`Fuzzy`] collapses
     /// border characters that intersect with any previously rendered borders, e.g.:
-    /// ```rust
+    /// ```
     /// use ratatui::symbols::merge::MergeStrategy;
     /// use ratatui::widgets::{Block, BorderType};
     ///
