@@ -947,9 +947,14 @@ impl<'a> Chart<'a> {
 
             ticks.push(x);
 
-            // We offset x by minus half the `width_per_tick` to find the left end of the label's
-            // bounding box.
-            let label_area = Rect::new(x - width_per_tick / 2, y, width_per_tick, 1);
+            // We offset x by minus half the minimum of the label's width and `width_per_tick` to
+            // find the left end of the label's bounding box. This way we can guarantee the label
+            // will be visually centered under the tick mark or truncated if too long.
+            let label_width = match u16::try_from(label.width()) {
+                Ok(w) => width_per_tick.min(w),
+                Err(_) => width_per_tick,
+            };
+            let label_area = Rect::new(x - label_width / 2, y, label_width, 1);
 
             Self::render_label(buf, label, label_area, Alignment::Center);
         }
