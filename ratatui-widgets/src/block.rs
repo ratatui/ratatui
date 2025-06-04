@@ -13,6 +13,7 @@ use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols::border;
+use ratatui_core::symbols::merge::MergeStrategy;
 use ratatui_core::text::Line;
 use ratatui_core::widgets::Widget;
 
@@ -55,6 +56,8 @@ pub mod title;
 /// - [`Block::border_style`] Defines the style of the borders.
 /// - [`Block::border_type`] Sets the symbols used to display the border (e.g. single line, double
 ///   line, thick or rounded borders).
+/// - [`Block::border_set`] Sets the symbols used to display the border as a [`border::Set`].
+/// - [`Block::merge_borders`] Sets the block's [`MergeStrategy`] for overlapping characters.
 /// - [`Block::padding`] Defines the padding inside a [`Block`].
 /// - [`Block::style`] Sets the base style of the widget.
 /// - [`Block::title`] Adds a title to the block.
@@ -126,6 +129,8 @@ pub struct Block<'a> {
     style: Style,
     /// Block padding
     padding: Padding,
+    /// Border merging strategy
+    merge_borders: MergeStrategy,
 }
 
 impl<'a> Block<'a> {
@@ -141,6 +146,7 @@ impl<'a> Block<'a> {
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
             padding: Padding::ZERO,
+            merge_borders: MergeStrategy::Replace,
         }
     }
 
@@ -530,6 +536,54 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// Sets the block's [`MergeStrategy`] for overlapping characters.
+    ///
+    /// Defaults to [`Replace`], which completely replaces the previously rendered character.
+    /// Changing the strategy to [`Exact`] or [`Fuzzy`] collapses border characters that intersect
+    /// with any previously rendered borders.
+    ///
+    /// For more information and examples, see the [collapse borders recipe] and [`MergeStrategy`]
+    /// docs.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::symbols::merge::MergeStrategy;
+    /// # use ratatui::widgets::{Block, BorderType};
+    ///
+    /// // Given several blocks with plain borders (1)
+    /// Block::bordered();
+    /// // and other blocks with thick borders (2) which are rendered on top of the first
+    /// Block::bordered()
+    ///     .border_type(BorderType::Thick)
+    ///     .merge_borders(MergeStrategy::Exact);
+    /// ```
+    ///
+    /// Rendering these blocks with `MergeStrategy::Exact` or `MergeStrategy::Fuzzy` will collapse
+    /// the borders, resulting in a clean layout without connected borders.
+    ///
+    /// ```plain
+    /// ┌───┐    ┌───┐  ┌───┲━━━┓┌───┐
+    /// │   │    │ 1 │  │   ┃   ┃│   │
+    /// │ 1 │    │ ┏━┿━┓│ 1 ┃ 2 ┃│ 1 │
+    /// │   │    │ ┃ │ ┃│   ┃   ┃│   │
+    /// └───╆━━━┓└─╂─┘ ┃└───┺━━━┛┢━━━┪
+    ///     ┃   ┃  ┃ 2 ┃         ┃   ┃
+    ///     ┃ 2 ┃  ┗━━━┛         ┃ 2 ┃
+    ///     ┃   ┃                ┃   ┃
+    ///     ┗━━━┛                ┗━━━┛
+    /// ```
+    ///
+    /// [collapse borders recipe]: https://ratatui.rs/recipes/layout/collapse-borders/
+    /// [`Replace`]: MergeStrategy::Replace
+    /// [`Exact`]: MergeStrategy::Exact
+    /// [`Fuzzy`]: MergeStrategy::Fuzzy
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn merge_borders(mut self, strategy: MergeStrategy) -> Self {
+        self.merge_borders = strategy;
+        self
+    }
+
     /// Compute the inner area of a block based on its border visibility rules.
     ///
     /// # Examples
@@ -614,17 +668,102 @@ impl Widget for &Block<'_> {
 
 impl Block<'_> {
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
-        self.render_left_side(area, buf);
-        self.render_top_side(area, buf);
-        self.render_right_side(area, buf);
-        self.render_bottom_side(area, buf);
-
-        self.render_bottom_right_corner(buf, area);
-        self.render_top_right_corner(buf, area);
-        self.render_bottom_left_corner(buf, area);
-        self.render_top_left_corner(buf, area);
+        self.render_sides(area, buf);
+        self.render_corners(area, buf);
     }
 
+    fn render_sides(&self, area: Rect, buf: &mut Buffer) {
+        let left = area.left();
+        let top = area.top();
+        // area.right() and area.bottom() are outside the rect, subtract 1 to get the last row/col
+        let right = area.right() - 1;
+        let bottom = area.bottom() - 1;
+
+        // The first and last element of each line are not drawn when there is an adjacent line as
+        // this would cause the corner to initially be merged with a side character and then a
+        // corner character to be drawn on top of it. Some merge strategies would not produce a
+        // correct character in that case.
+        let is_replace = self.merge_borders != MergeStrategy::Replace;
+        let left_inset = left + u16::from(is_replace && self.borders.contains(Borders::LEFT));
+        let top_inset = top + u16::from(is_replace && self.borders.contains(Borders::TOP));
+        let right_inset = right - u16::from(is_replace && self.borders.contains(Borders::RIGHT));
+        let bottom_inset = bottom - u16::from(is_replace && self.borders.contains(Borders::BOTTOM));
+
+        let sides = [
+            (
+                Borders::LEFT,
+                left..=left,
+                top_inset..=bottom_inset,
+                self.border_set.vertical_left,
+            ),
+            (
+                Borders::TOP,
+                left_inset..=right_inset,
+                top..=top,
+                self.border_set.horizontal_top,
+            ),
+            (
+                Borders::RIGHT,
+                right..=right,
+                top_inset..=bottom_inset,
+                self.border_set.vertical_right,
+            ),
+            (
+                Borders::BOTTOM,
+                left_inset..=right_inset,
+                bottom..=bottom,
+                self.border_set.horizontal_bottom,
+            ),
+        ];
+        for (border, x_range, y_range, symbol) in sides {
+            if self.borders.contains(border) {
+                for x in x_range {
+                    for y in y_range.clone() {
+                        buf[(x, y)]
+                            .merge_symbol(symbol, self.merge_borders)
+                            .set_style(self.border_style);
+                    }
+                }
+            }
+        }
+    }
+
+    fn render_corners(&self, area: Rect, buf: &mut Buffer) {
+        let corners = [
+            (
+                Borders::RIGHT | Borders::BOTTOM,
+                area.right() - 1,
+                area.bottom() - 1,
+                self.border_set.bottom_right,
+            ),
+            (
+                Borders::RIGHT | Borders::TOP,
+                area.right() - 1,
+                area.top(),
+                self.border_set.top_right,
+            ),
+            (
+                Borders::LEFT | Borders::BOTTOM,
+                area.left(),
+                area.bottom() - 1,
+                self.border_set.bottom_left,
+            ),
+            (
+                Borders::LEFT | Borders::TOP,
+                area.left(),
+                area.top(),
+                self.border_set.top_left,
+            ),
+        ];
+
+        for (border, x, y, symbol) in corners {
+            if self.borders.contains(border) {
+                buf[(x, y)]
+                    .merge_symbol(symbol, self.merge_borders)
+                    .set_style(self.border_style);
+            }
+        }
+    }
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
         self.render_title_position(Position::Top, area, buf);
         self.render_title_position(Position::Bottom, area, buf);
@@ -635,80 +774,6 @@ impl Block<'_> {
         self.render_right_titles(position, area, buf);
         self.render_center_titles(position, area, buf);
         self.render_left_titles(position, area, buf);
-    }
-
-    fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::LEFT) {
-            for y in area.top()..area.bottom() {
-                buf[(area.left(), y)]
-                    .set_symbol(self.border_set.vertical_left)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_top_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::TOP) {
-            for x in area.left()..area.right() {
-                buf[(x, area.top())]
-                    .set_symbol(self.border_set.horizontal_top)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_right_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::RIGHT) {
-            let x = area.right() - 1;
-            for y in area.top()..area.bottom() {
-                buf[(x, y)]
-                    .set_symbol(self.border_set.vertical_right)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_bottom_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::BOTTOM) {
-            let y = area.bottom() - 1;
-            for x in area.left()..area.right() {
-                buf[(x, y)]
-                    .set_symbol(self.border_set.horizontal_bottom)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_bottom_right_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
-            buf[(area.right() - 1, area.bottom() - 1)]
-                .set_symbol(self.border_set.bottom_right)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_top_right_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::RIGHT | Borders::TOP) {
-            buf[(area.right() - 1, area.top())]
-                .set_symbol(self.border_set.top_right)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_bottom_left_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
-            buf[(area.left(), area.bottom() - 1)]
-                .set_symbol(self.border_set.bottom_left)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_top_left_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::LEFT | Borders::TOP) {
-            buf[(area.left(), area.top())]
-                .set_symbol(self.border_set.top_left)
-                .set_style(self.border_style);
-        }
     }
 
     /// Render titles aligned to the right of the block
@@ -904,7 +969,8 @@ impl Styled for Block<'_> {
 mod tests {
     use alloc::{format, vec};
 
-    use ratatui_core::layout::HorizontalAlignment;
+    use itertools::iproduct;
+    use ratatui_core::layout::{HorizontalAlignment, Offset};
     use ratatui_core::style::{Color, Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;
@@ -1150,6 +1216,7 @@ mod tests {
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
                 padding: Padding::ZERO,
+                merge_borders: MergeStrategy::Replace,
             }
         );
     }
@@ -1646,5 +1713,159 @@ mod tests {
             "3BBBBBBBB4",
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace)]
+    #[case::exact(MergeStrategy::Exact)]
+    #[case::fuzzy(MergeStrategy::Fuzzy)]
+    fn render_partial_borders(#[case] strategy: MergeStrategy) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌────────┐",
+            "│        │",
+            "└────────┘",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::LEFT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌─────────",
+            "│         ",
+            "│         ",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::RIGHT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "─────────┐",
+            "         │",
+            "         │",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::BOTTOM | Borders::LEFT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "│         ",
+            "│         ",
+            "└─────────",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::BOTTOM | Borders::RIGHT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "         │",
+            "         │",
+            "─────────┘",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::BOTTOM)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "──────────",
+            "          ",
+            "──────────",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::LEFT | Borders::RIGHT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "│        │",
+            "│        │",
+            "│        │",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    /// Renders a series of blocks with all the possible border types and merges them according to
+    /// the specified strategy. The resulting buffer is compared against the expected output for
+    /// each merge strategy.
+    ///
+    /// At some point, it might be convenient to replace the manual `include_str!` calls with
+    /// [insta](https://crates.io/crates/insta)
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, include_str!("../tests/block/merge_replace.txt"))]
+    #[case::exact(MergeStrategy::Exact, include_str!("../tests/block/merge_exact.txt"))]
+    #[case::fuzzy(MergeStrategy::Fuzzy, include_str!("../tests/block/merge_fuzzy.txt"))]
+    fn render_merged_borders(#[case] strategy: MergeStrategy, #[case] expected: &'static str) {
+        let border_types = [
+            BorderType::Plain,
+            BorderType::Rounded,
+            BorderType::Thick,
+            BorderType::Double,
+            BorderType::LightDoubleDashed,
+            BorderType::HeavyDoubleDashed,
+            BorderType::LightTripleDashed,
+            BorderType::HeavyTripleDashed,
+            BorderType::LightQuadrupleDashed,
+            BorderType::HeavyQuadrupleDashed,
+        ];
+        let rects = [
+            // touching at corners
+            (Rect::new(0, 0, 5, 5), Rect::new(4, 4, 5, 5)),
+            // overlapping
+            (Rect::new(10, 0, 5, 5), Rect::new(12, 2, 5, 5)),
+            // touching vertical edges
+            (Rect::new(18, 0, 5, 5), Rect::new(22, 0, 5, 5)),
+            // touching horizontal edges
+            (Rect::new(28, 0, 5, 5), Rect::new(28, 4, 5, 5)),
+        ];
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 43, 1000));
+
+        let mut offset = Offset::ZERO;
+        for (border_type_1, border_type_2) in iproduct!(border_types, border_types) {
+            let title = format!("{border_type_1} + {border_type_2}");
+            let title_area = Rect::new(0, 0, 43, 1).offset(offset);
+            title.render(title_area, &mut buffer);
+            offset.y += 1;
+            for (rect_1, rect_2) in rects {
+                Block::bordered()
+                    .border_type(border_type_1)
+                    .merge_borders(strategy)
+                    .render(rect_1.offset(offset), &mut buffer);
+                Block::bordered()
+                    .border_type(border_type_2)
+                    .merge_borders(strategy)
+                    .render(rect_2.offset(offset), &mut buffer);
+            }
+            offset.y += 9;
+        }
+        pretty_assertions::assert_eq!(Buffer::with_lines(expected.lines()), buffer);
     }
 }
