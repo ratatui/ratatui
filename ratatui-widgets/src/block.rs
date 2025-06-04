@@ -1715,11 +1715,15 @@ mod tests {
         assert_eq!(buffer, expected);
     }
 
-    #[test]
-    fn render_partial_borders() {
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace)]
+    #[case::exact(MergeStrategy::Exact)]
+    #[case::fuzzy(MergeStrategy::Fuzzy)]
+    fn render_partial_borders(#[case] strategy: MergeStrategy) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::new()
             .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+            .merge_borders(strategy)
             .render(buffer.area, &mut buffer);
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1732,6 +1736,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::new()
             .borders(Borders::TOP | Borders::LEFT)
+            .merge_borders(strategy)
             .render(buffer.area, &mut buffer);
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1744,6 +1749,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::new()
             .borders(Borders::TOP | Borders::RIGHT)
+            .merge_borders(strategy)
             .render(buffer.area, &mut buffer);
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1756,6 +1762,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::new()
             .borders(Borders::BOTTOM | Borders::LEFT)
+            .merge_borders(strategy)
             .render(buffer.area, &mut buffer);
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1768,6 +1775,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::new()
             .borders(Borders::BOTTOM | Borders::RIGHT)
+            .merge_borders(strategy)
             .render(buffer.area, &mut buffer);
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1780,6 +1788,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::new()
             .borders(Borders::TOP | Borders::BOTTOM)
+            .merge_borders(strategy)
             .render(buffer.area, &mut buffer);
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
@@ -1792,6 +1801,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::new()
             .borders(Borders::LEFT | Borders::RIGHT)
+            .merge_borders(strategy)
             .render(buffer.area, &mut buffer);
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
