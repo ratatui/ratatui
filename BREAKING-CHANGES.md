@@ -148,12 +148,11 @@ and implement the `clear_region` method, which no longer has a default implement
 This change was made to provide greater flexibility for custom backends, particularly to remove the
 explicit dependency on `std::io` for backends that want to support `no_std` targets.
 
-### The MSRV is now 1.85.0 ([#1786])
+### The MSRV is now 1.85.0 ([#1860])
 
-[#1786]: https://github.com/ratatui/ratatui/pull/1786
+[#1860]: https://github.com/ratatui/ratatui/pull/1860
 
-The minimum supported Rust version (MSRV) is now 1.85.0. This is due to the use of `#[expect]` in
-the codebase, which is only available in Rust 1.81.0 and later.
+The minimum supported Rust version (MSRV) is now 1.85.0.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 
