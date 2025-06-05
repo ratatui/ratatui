@@ -1,8 +1,9 @@
-use ratatui_core::layout::Offset;
+use ratatui_core::buffer::Buffer;
+use ratatui_core::layout::{Offset, Position, Rect};
 use ratatui_core::style::Style;
 
 /// TODO: docs
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Shadow {
     shadow_type: ShadowType,
     style: Style,
@@ -52,6 +53,24 @@ impl Shadow {
         self.offset = offset;
         self
     }
+
+    /// TODO: docs
+    pub fn render(&self, base_area: Rect, buf: &mut Buffer) {
+        let shadow_area = base_area.offset(self.offset).intersection(buf.area);
+        let symbol = self.shadow_type.get_char();
+
+        for y in shadow_area.top()..shadow_area.bottom() {
+            for x in shadow_area.left()..shadow_area.right() {
+                if base_area.contains(Position { x, y }) {
+                    continue;
+                }
+                if symbol != ' ' {
+                    buf[(x, y)].set_char(symbol);
+                }
+                buf[(x, y)].set_style(self.style);
+            }
+        }
+    }
 }
 
 impl Default for Shadow {
@@ -61,15 +80,18 @@ impl Default for Shadow {
 }
 
 /// TODO: docs
-#[derive(Default, Debug, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ShadowType {
+    /// Only apply style on shadow area, don't change existing characters.
+    #[default]
+    Overlay,
+
     /// ```text
     /// ┌Box──┐
     /// │     │█
     /// └─────┘█
     ///  ███████
     /// ```
-    #[default]
     Block,
 
     /// ```text
@@ -95,4 +117,21 @@ pub enum ShadowType {
     ///  ▓▓▓▓▓▓▓
     /// ```
     DarkShade,
+
+    /// TODO: docs
+    Custom(char),
+}
+
+impl ShadowType {
+    /// TODO: docs
+    pub const fn get_char(self) -> char {
+        match self {
+            Self::Overlay => ' ',
+            Self::Block => '█',
+            Self::LightShade => '░',
+            Self::MediumShade => '▒',
+            Self::DarkShade => '▓',
+            Self::Custom(s) => s,
+        }
+    }
 }
