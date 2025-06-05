@@ -87,7 +87,7 @@ impl StatefulWidget for &List<'_> {
 
             let row_area = Rect::new(x, y, list_area.width, item.height() as u16);
 
-            let item_style = self.style.patch(item.style);
+            let item_style = self.style.patch(item.0.style);
             buf.set_style(row_area, item_style);
 
             let is_selected = state.selected == Some(i);
@@ -101,13 +101,13 @@ impl StatefulWidget for &List<'_> {
             } else {
                 row_area
             };
-            Widget::render(&item.content, item_area, buf);
+            Widget::render(&item.0, item_area, buf);
 
             if is_selected {
                 buf.set_style(row_area, self.highlight_style);
             }
             if selection_spacing {
-                for j in 0..item.content.height() {
+                for j in 0..item.0.height() {
                     // if the item is selected, we need to display the highlight symbol:
                     // - either for the first line of the item only,
                     // - or for each line of the item if the appropriate option is set
