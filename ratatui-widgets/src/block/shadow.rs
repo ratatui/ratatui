@@ -1,6 +1,8 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Offset, Position, Rect};
-use ratatui_core::style::Style;
+use ratatui_core::style::{Color, Style};
+use ratatui_core::symbols::shade;
+use ratatui_core::widgets::Widget;
 
 /// TODO: docs
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -22,22 +24,22 @@ impl Shadow {
 
     /// TODO: docs
     pub fn block() -> Self {
-        Self::new(ShadowType::Block)
+        Self::new(ShadowType::Fill(shade::FULL))
     }
 
     /// TODO: docs
     pub fn light_shade() -> Self {
-        Self::new(ShadowType::LightShade)
+        Self::new(ShadowType::Fill(shade::LIGHT))
     }
 
     /// TODO: docs
     pub fn medium_shade() -> Self {
-        Self::new(ShadowType::MediumShade)
+        Self::new(ShadowType::Fill(shade::MEDIUM))
     }
 
     /// TODO: docs
     pub fn dark_shade() -> Self {
-        Self::new(ShadowType::DarkShade)
+        Self::new(ShadowType::Fill(shade::DARK))
     }
 
     /// TODO: docs
@@ -57,17 +59,31 @@ impl Shadow {
     /// TODO: docs
     pub fn render(&self, base_area: Rect, buf: &mut Buffer) {
         let shadow_area = base_area.offset(self.offset).intersection(buf.area);
-        let symbol = self.shadow_type.get_char();
 
+        // Always apply style
         for y in shadow_area.top()..shadow_area.bottom() {
             for x in shadow_area.left()..shadow_area.right() {
                 if base_area.contains(Position { x, y }) {
                     continue;
                 }
-                if symbol != ' ' {
-                    buf[(x, y)].set_char(symbol);
-                }
                 buf[(x, y)].set_style(self.style);
+            }
+        }
+
+        match self.shadow_type {
+            ShadowType::Overlay => {}
+            ShadowType::Fill(symbol) => {
+                for y in shadow_area.top()..shadow_area.bottom() {
+                    for x in shadow_area.left()..shadow_area.right() {
+                        if base_area.contains(Position { x, y }) {
+                            continue;
+                        }
+                        buf[(x, y)].set_symbol(symbol);
+                    }
+                }
+            }
+            ShadowType::Filter(filter) => {
+                filter(shadow_area, base_area, buf);
             }
         }
     }
@@ -79,6 +95,16 @@ impl Default for Shadow {
     }
 }
 
+impl Widget for &Shadow {
+    fn render(self, area: Rect, buf: &mut Buffer)
+    where
+        Self: Sized,
+    {
+        // TODO: just move it here ig
+        self.render(area, buf);
+    }
+}
+
 /// TODO: docs
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ShadowType {
@@ -86,52 +112,34 @@ pub enum ShadowType {
     #[default]
     Overlay,
 
-    /// ```text
-    /// ┌Box──┐
-    /// │     │█
-    /// └─────┘█
-    ///  ███████
-    /// ```
-    Block,
-
-    /// ```text
-    /// ┌Box──┐
-    /// │     │░
-    /// └─────┘░
-    ///  ░░░░░░░
-    /// ```
-    LightShade,
-
+    /// Fills shadowed area with a unicode symbol.
     /// ```text
     /// ┌Box──┐
     /// │     │▒
     /// └─────┘▒
     ///  ▒▒▒▒▒▒▒
     /// ```
-    MediumShade,
-
-    /// ```text
-    /// ┌Box──┐
-    /// │     │▓
-    /// └─────┘▓
-    ///  ▓▓▓▓▓▓▓
-    /// ```
-    DarkShade,
-
     /// TODO: docs
-    Custom(char),
+    Fill(&'static str),
+
+    /// Apply a filter to the shadowed area
+    Filter(fn(Rect, Rect, &mut Buffer)),
 }
 
-impl ShadowType {
-    /// TODO: docs
-    pub const fn get_char(self) -> char {
-        match self {
-            Self::Overlay => ' ',
-            Self::Block => '█',
-            Self::LightShade => '░',
-            Self::MediumShade => '▒',
-            Self::DarkShade => '▓',
-            Self::Custom(s) => s,
+/// Example
+/// TODO: remove? 
+pub fn dimmed(shadow_area: Rect, base_area: Rect, buf: &mut Buffer) {
+    for y in shadow_area.top()..shadow_area.bottom() {
+        for x in shadow_area.left()..shadow_area.right() {
+            if base_area.contains(Position { x, y }) {
+                continue;
+            }
+            if let Color::Rgb(r, g, b) = buf[(x, y)].fg {
+                buf[(x, y)].fg = Color::Rgb(r / 2, g / 2, b / 2);
+            }
+            if let Color::Rgb(r, g, b) = buf[(x, y)].bg {
+                buf[(x, y)].bg = Color::Rgb(r / 2, g / 2, b / 2);
+            }
         }
     }
 }
