@@ -368,6 +368,6 @@ pub mod backend {
 pub mod prelude;
 pub use ratatui_core::{style, symbols, text};
 pub mod widgets;
-pub use ratatui_widgets::border;
+pub use ratatui_widgets::{border, cell_filter};
 #[cfg(feature = "crossterm")]
 mod init;

@@ -18,7 +18,7 @@ use ratatui_core::text::Line;
 use ratatui_core::widgets::Widget;
 
 pub use self::padding::Padding;
-pub use self::shadow::{Shadow, ShadowType, dimmed};
+pub use self::shadow::{Shadow, dimmed};
 pub use self::title::{Position, Title};
 use crate::borders::{BorderType, Borders};
 
@@ -672,10 +672,10 @@ impl Widget for &Block<'_> {
         if area.is_empty() {
             return;
         }
-        self.render_shadow(area, buf);
         buf.set_style(area, self.style);
         self.render_borders(area, buf);
         self.render_titles(area, buf);
+        self.render_shadow(area, buf);
     }
 }
 

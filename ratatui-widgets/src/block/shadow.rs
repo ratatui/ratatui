@@ -1,45 +1,50 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Offset, Position, Rect};
-use ratatui_core::style::{Color, Style};
+use ratatui_core::style::{Color, Modifier, Style};
 use ratatui_core::symbols::shade;
 use ratatui_core::widgets::Widget;
 
 /// TODO: docs
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Shadow {
-    shadow_type: ShadowType,
+    filter: fn(Rect, Rect, &mut Buffer),
     style: Style,
     offset: Offset,
 }
 
 impl Shadow {
     /// TODO: docs
-    pub fn new(shadow_type: ShadowType) -> Self {
+    pub fn new(filter: fn(Rect, Rect, &mut Buffer)) -> Self {
         Self {
-            shadow_type,
+            filter,
             style: Style::default(),
             offset: Offset::new(1, 1),
         }
     }
 
     /// TODO: docs
+    pub fn overlay() -> Self {
+        Self::new(|_, _, _| {})
+    }
+
+    /// TODO: docs
     pub fn block() -> Self {
-        Self::new(ShadowType::Fill(shade::FULL))
+        Self::new(crate::cell_filter!(shade::FULL))
     }
 
     /// TODO: docs
     pub fn light_shade() -> Self {
-        Self::new(ShadowType::Fill(shade::LIGHT))
+        Self::new(crate::cell_filter!(shade::LIGHT))
     }
 
     /// TODO: docs
     pub fn medium_shade() -> Self {
-        Self::new(ShadowType::Fill(shade::MEDIUM))
+        Self::new(crate::cell_filter!(shade::MEDIUM))
     }
 
     /// TODO: docs
     pub fn dark_shade() -> Self {
-        Self::new(ShadowType::Fill(shade::DARK))
+        Self::new(crate::cell_filter!(shade::DARK))
     }
 
     /// TODO: docs
@@ -60,7 +65,7 @@ impl Shadow {
     pub fn render(&self, base_area: Rect, buf: &mut Buffer) {
         let shadow_area = base_area.offset(self.offset).intersection(buf.area);
 
-        // Always apply style
+        // Apply style
         for y in shadow_area.top()..shadow_area.bottom() {
             for x in shadow_area.left()..shadow_area.right() {
                 if base_area.contains(Position { x, y }) {
@@ -70,76 +75,70 @@ impl Shadow {
             }
         }
 
-        match self.shadow_type {
-            ShadowType::Overlay => {}
-            ShadowType::Fill(symbol) => {
-                for y in shadow_area.top()..shadow_area.bottom() {
-                    for x in shadow_area.left()..shadow_area.right() {
-                        if base_area.contains(Position { x, y }) {
-                            continue;
-                        }
-                        buf[(x, y)].set_symbol(symbol);
-                    }
-                }
-            }
-            ShadowType::Filter(filter) => {
-                filter(shadow_area, base_area, buf);
-            }
-        }
+        // Apply filter
+        (self.filter)(shadow_area, base_area, buf);
     }
 }
 
 impl Default for Shadow {
     fn default() -> Self {
-        Self::new(ShadowType::default())
+        Self::overlay()
     }
 }
 
 impl Widget for &Shadow {
-    fn render(self, area: Rect, buf: &mut Buffer)
-    where
-        Self: Sized,
-    {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         // TODO: just move it here ig
         self.render(area, buf);
     }
 }
 
 /// TODO: docs
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ShadowType {
-    /// Only apply style on shadow area, don't change existing characters.
-    #[default]
-    Overlay,
+#[macro_export]
+macro_rules! cell_filter {
+    // base case
+    ($x:ident, $y:ident, $shadow:ident, $base:ident, $buf:ident, $body:block) => {
+        for $y in $shadow.top()..$shadow.bottom() {
+            for $x in $shadow.left()..$shadow.right() {
+                if $base.contains(Position { $x, $y }) {
+                    continue;
+                }
+                $body
+            }
+        }
+    };
 
-    /// Fills shadowed area with a unicode symbol.
-    /// ```text
-    /// ┌Box──┐
-    /// │     │▒
-    /// └─────┘▒
-    ///  ▒▒▒▒▒▒▒
-    /// ```
-    /// TODO: docs
-    Fill(&'static str),
+    // function
+    ($(#[$attr:meta])* $vis:vis fn $name:ident($x:ident: u16, $y:ident: u16, $buf:ident: &mut Buffer) $body:block) => {
+        $(#[$attr])* $vis fn $name (shadow_area: Rect, base_area: Rect, $buf: &mut Buffer) {
+            $crate::cell_filter!($x, $y, shadow_area, base_area, $buf, $body)
+        }
+    };
 
-    /// Apply a filter to the shadowed area
-    Filter(fn(Rect, Rect, &mut Buffer)),
+    // closure
+    (|$x:ident: u16, $y:ident: u16, $buf:ident: &mut Buffer| $body:block) => {
+        |shadow_area: Rect, base_area: Rect, $buf: &mut Buffer| {
+            $crate::cell_filter!($x, $y, shadow_area, base_area, $buf, $body)
+        }
+    };
+    (|$x:ident: u16, $y:ident: u16, $buf:ident: &mut Buffer| $body:expr) => {
+        $crate::cell_filter!(|$x: u16, $y: u16, $buf: &mut Buffer| { $body; })
+    };
+
+    // fill
+    ($s:expr) => {
+        $crate::cell_filter!(|x: u16, y: u16, buf: &mut Buffer| buf[(x, y)].set_symbol($s))
+    };
 }
 
-/// Example
-/// TODO: remove? 
-pub fn dimmed(shadow_area: Rect, base_area: Rect, buf: &mut Buffer) {
-    for y in shadow_area.top()..shadow_area.bottom() {
-        for x in shadow_area.left()..shadow_area.right() {
-            if base_area.contains(Position { x, y }) {
-                continue;
-            }
-            if let Color::Rgb(r, g, b) = buf[(x, y)].fg {
-                buf[(x, y)].fg = Color::Rgb(r / 2, g / 2, b / 2);
-            }
-            if let Color::Rgb(r, g, b) = buf[(x, y)].bg {
-                buf[(x, y)].bg = Color::Rgb(r / 2, g / 2, b / 2);
-            }
+cell_filter! {
+    /// TODO: docs
+    pub fn dimmed(x: u16, y: u16, buf: &mut Buffer) {
+        buf[(x, y)].modifier.insert(Modifier::DIM);
+        if let Color::Rgb(r, g, b) = buf[(x, y)].bg {
+            buf[(x, y)].bg = Color::Rgb(r / 2, g / 2, b / 2);
+        } else {
+            buf[(x, y)].bg = Color::Black;
         }
     }
 }
