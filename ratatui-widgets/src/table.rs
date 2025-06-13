@@ -8,7 +8,7 @@ use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Constraint, Flex, Layout, Rect};
 use ratatui_core::style::{Style, Styled};
-use ratatui_core::text::Text;
+use ratatui_core::text::UnifiedText;
 use ratatui_core::widgets::{StatefulWidget, Widget};
 
 pub use self::cell::Cell;
@@ -262,7 +262,7 @@ pub struct Table<'a> {
     cell_highlight_style: Style,
 
     /// Symbol in front of the selected row
-    highlight_symbol: Text<'a>,
+    highlight_symbol: UnifiedText<'a>,
 
     /// Decides when to allocate spacing for the row selection
     highlight_spacing: HighlightSpacing,
@@ -284,7 +284,7 @@ impl Default for Table<'_> {
             row_highlight_style: Style::new(),
             column_highlight_style: Style::new(),
             cell_highlight_style: Style::new(),
-            highlight_symbol: Text::default(),
+            highlight_symbol: UnifiedText::default(),
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
         }
@@ -653,7 +653,7 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_symbol<T: Into<Text<'a>>>(mut self, highlight_symbol: T) -> Self {
+    pub fn highlight_symbol<T: Into<UnifiedText<'a>>>(mut self, highlight_symbol: T) -> Self {
         self.highlight_symbol = highlight_symbol.into();
         self
     }
@@ -1063,7 +1063,7 @@ mod tests {
         assert_eq!(table.block, None);
         assert_eq!(table.style, Style::default());
         assert_eq!(table.row_highlight_style, Style::default());
-        assert_eq!(table.highlight_symbol, Text::default());
+        assert_eq!(table.highlight_symbol, UnifiedText::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
     }
@@ -1079,7 +1079,7 @@ mod tests {
         assert_eq!(table.block, None);
         assert_eq!(table.style, Style::default());
         assert_eq!(table.row_highlight_style, Style::default());
-        assert_eq!(table.highlight_symbol, Text::default());
+        assert_eq!(table.highlight_symbol, UnifiedText::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
     }
@@ -1192,7 +1192,7 @@ mod tests {
     #[test]
     fn highlight_symbol() {
         let table = Table::default().highlight_symbol(">>");
-        assert_eq!(table.highlight_symbol, Text::from(">>"));
+        assert_eq!(table.highlight_symbol, UnifiedText::from(">>"));
     }
 
     #[test]
@@ -1468,8 +1468,8 @@ mod tests {
             let rows = vec![
                 Row::new(vec!["Cell1", "Cell2"]),
                 Row::new(vec![
-                    Text::raw("Cell3-Line1\nCell3-Line2\nCell3-Line3"),
-                    Text::raw("Cell4-Line1\nCell4-Line2\nCell4-Line3"),
+                    UnifiedText::raw("Cell3-Line1\nCell3-Line2\nCell3-Line3"),
+                    UnifiedText::raw("Cell4-Line1\nCell4-Line2\nCell4-Line3"),
                 ])
                 .height(3),
             ];

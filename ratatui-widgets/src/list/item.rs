@@ -1,5 +1,5 @@
 use ratatui_core::style::Style;
-use ratatui_core::text::Text;
+use ratatui_core::text::UnifiedText;
 
 /// A single item in a [`List`]
 ///
@@ -8,12 +8,12 @@ use ratatui_core::text::Text;
 /// lines.
 ///
 /// You can set the style of an item with [`ListItem::style`] or using the [`Stylize`] trait.
-/// This [`Style`] will be combined with the [`Style`] of the inner [`Text`]. The [`Style`]
+/// This [`Style`] will be combined with the [`Style`] of the inner [`UnifiedText`]. The [`Style`]
 /// of the [`Text`] will be added to the [`Style`] of the [`ListItem`].
 ///
-/// You can also align a `ListItem` by aligning its underlying [`Text`] and [`Line`]s. For that,
-/// see [`Text::alignment`] and [`Line::alignment`]. On a multiline `Text`, one `Line` can override
-/// the alignment by setting it explicitly.
+/// You can also align a `ListItem` by aligning its underlying [`UnifiedText`] and [`Line`]s. For
+/// that, see [`Text::alignment`] and [`Line::alignment`]. On a multiline `UnifiedText`, one `Line`
+/// can override the alignment by setting it explicitly.
 ///
 /// # Examples
 ///
@@ -24,7 +24,7 @@ use ratatui_core::text::Text;
 /// let item = ListItem::new("Item 1");
 /// ```
 ///
-/// Anything that can be converted to [`Text`] can be a [`ListItem`].
+/// Anything that can be converted to [`UnifiedText`] can be a [`ListItem`].
 ///
 /// ```rust
 /// use ratatui::text::Line;
@@ -71,14 +71,14 @@ use ratatui_core::text::Text;
 /// [`Line::alignment`]: ratatui_core::text::Line::alignment
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ListItem<'a> {
-    pub(crate) content: Text<'a>,
+    pub(crate) content: UnifiedText<'a>,
     pub(crate) style: Style,
 }
 
 impl<'a> ListItem<'a> {
     /// Creates a new [`ListItem`]
     ///
-    /// The `content` parameter accepts any value that can be converted into [`Text`].
+    /// The `content` parameter accepts any value that can be converted into [`UnifiedText`].
     ///
     /// # Examples
     ///
@@ -90,7 +90,7 @@ impl<'a> ListItem<'a> {
     /// let item = ListItem::new("Item 1");
     /// ```
     ///
-    /// Anything that can be converted to [`Text`] can be a [`ListItem`].
+    /// Anything that can be converted to [`UnifiedText`] can be a [`ListItem`].
     ///
     /// ```rust
     /// use ratatui::text::Line;
@@ -114,7 +114,7 @@ impl<'a> ListItem<'a> {
     ///   [`ListItem`]
     pub fn new<T>(content: T) -> Self
     where
-        T: Into<Text<'a>>,
+        T: Into<UnifiedText<'a>>,
     {
         Self {
             content: content.into(),
@@ -209,7 +209,7 @@ impl<'a> ListItem<'a> {
 
 impl<'a, T> From<T> for ListItem<'a>
 where
-    T: Into<Text<'a>>,
+    T: Into<UnifiedText<'a>>,
 {
     fn from(value: T) -> Self {
         Self::new(value)
@@ -231,21 +231,21 @@ mod tests {
     #[test]
     fn new_from_str() {
         let item = ListItem::new("Test item");
-        assert_eq!(item.content, Text::from("Test item"));
+        assert_eq!(item.content, UnifiedText::from("Test item"));
         assert_eq!(item.style, Style::default());
     }
 
     #[test]
     fn new_from_string() {
         let item = ListItem::new("Test item".to_string());
-        assert_eq!(item.content, Text::from("Test item"));
+        assert_eq!(item.content, UnifiedText::from("Test item"));
         assert_eq!(item.style, Style::default());
     }
 
     #[test]
     fn new_from_cow_str() {
         let item = ListItem::new(Cow::Borrowed("Test item"));
-        assert_eq!(item.content, Text::from("Test item"));
+        assert_eq!(item.content, UnifiedText::from("Test item"));
         assert_eq!(item.style, Style::default());
     }
 
@@ -253,7 +253,7 @@ mod tests {
     fn new_from_span() {
         let span = Span::styled("Test item", Style::default().fg(Color::Blue));
         let item = ListItem::new(span.clone());
-        assert_eq!(item.content, Text::from(span));
+        assert_eq!(item.content, UnifiedText::from(span));
         assert_eq!(item.style, Style::default());
     }
 
@@ -264,7 +264,7 @@ mod tests {
             Span::styled("item", Style::default().fg(Color::Red)),
         ]);
         let item = ListItem::new(spans.clone());
-        assert_eq!(item.content, Text::from(spans));
+        assert_eq!(item.content, UnifiedText::from(spans));
         assert_eq!(item.style, Style::default());
     }
 
@@ -281,7 +281,7 @@ mod tests {
             ]),
         ];
         let item = ListItem::new(lines.clone());
-        assert_eq!(item.content, Text::from(lines));
+        assert_eq!(item.content, UnifiedText::from(lines));
         assert_eq!(item.style, Style::default());
     }
 
@@ -289,7 +289,7 @@ mod tests {
     fn str_into_list_item() {
         let s = "Test item";
         let item: ListItem = s.into();
-        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.content, UnifiedText::from(s));
         assert_eq!(item.style, Style::default());
     }
 
@@ -297,7 +297,7 @@ mod tests {
     fn string_into_list_item() {
         let s = String::from("Test item");
         let item: ListItem = s.clone().into();
-        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.content, UnifiedText::from(s));
         assert_eq!(item.style, Style::default());
     }
 
@@ -305,7 +305,7 @@ mod tests {
     fn span_into_list_item() {
         let s = Span::from("Test item");
         let item: ListItem = s.clone().into();
-        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.content, UnifiedText::from(s));
         assert_eq!(item.style, Style::default());
     }
 
@@ -313,14 +313,14 @@ mod tests {
     fn vec_lines_into_list_item() {
         let lines = vec![Line::raw("l1"), Line::raw("l2")];
         let item: ListItem = lines.clone().into();
-        assert_eq!(item.content, Text::from(lines));
+        assert_eq!(item.content, UnifiedText::from(lines));
         assert_eq!(item.style, Style::default());
     }
 
     #[test]
     fn style() {
         let item = ListItem::new("Test item").style(Style::default().bg(Color::Red));
-        assert_eq!(item.content, Text::from("Test item"));
+        assert_eq!(item.content, UnifiedText::from("Test item"));
         assert_eq!(item.style, Style::default().bg(Color::Red));
     }
 

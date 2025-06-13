@@ -1,15 +1,15 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Style, Styled};
-use ratatui_core::text::Text;
+use ratatui_core::text::UnifiedText;
 use ratatui_core::widgets::Widget;
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
 ///
 /// You can apply a [`Style`] to the [`Cell`] using [`Cell::style`]. This will set the style for the
-/// entire area of the cell. Any [`Style`] set on the [`Text`] content will be combined with the
-/// [`Style`] of the [`Cell`] by adding the [`Style`] of the [`Text`] content to the [`Style`] of
-/// the [`Cell`]. Styles set on the text content will only affect the content.
+/// entire area of the cell. Any [`Style`] set on the [`UnifiedText`] content will be combined with
+/// the [`Style`] of the [`Cell`] by adding the [`Style`] of the [`UnifiedText`] content to the
+/// [`Style`] of the [`Cell`]. Styles set on the text content will only affect the content.
 ///
 /// You can use [`Text::alignment`] when creating a cell to align its content.
 ///
@@ -48,10 +48,7 @@ use ratatui_core::widgets::Widget;
 /// [`Table`]: super::Table
 /// [`Stylize`]: ratatui_core::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
-pub struct Cell<'a> {
-    content: Text<'a>,
-    style: Style,
-}
+pub struct Cell<'a>(UnifiedText<'a>);
 
 impl<'a> Cell<'a> {
     /// Creates a new [`Cell`]
@@ -75,12 +72,9 @@ impl<'a> Cell<'a> {
     /// ```
     pub fn new<T>(content: T) -> Self
     where
-        T: Into<Text<'a>>,
+        T: Into<UnifiedText<'a>>,
     {
-        Self {
-            content: content.into(),
-            style: Style::default(),
-        }
+        Self(content.into())
     }
 
     /// Set the content of the [`Cell`]
@@ -105,12 +99,12 @@ impl<'a> Cell<'a> {
     /// Cell::default().content(Text::from("a text"));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn content<T>(mut self, content: T) -> Self
+    #[allow(clippy::unused_self)]
+    pub fn content<T>(self, content: T) -> Self
     where
-        T: Into<Text<'a>>,
+        T: Into<UnifiedText<'a>>,
     {
-        self.content = content.into();
-        self
+        Self(content.into())
     }
 
     /// Set the `Style` of this cell
@@ -146,28 +140,23 @@ impl<'a> Cell<'a> {
     /// [`Color`]: ratatui_core::style::Color
     /// [`Stylize`]: ratatui_core::style::Stylize
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
-        self.style = style.into();
-        self
+    pub fn style<S: Into<Style>>(self, style: S) -> Self {
+        self.set_style(style.into())
     }
 }
 
 impl Cell<'_> {
     pub(crate) fn render(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
-        Widget::render(&self.content, area, buf);
+        Widget::render(&self.0, area, buf);
     }
 }
 
 impl<'a, T> From<T> for Cell<'a>
 where
-    T: Into<Text<'a>>,
+    T: Into<UnifiedText<'a>>,
 {
     fn from(content: T) -> Self {
-        Self {
-            content: content.into(),
-            style: Style::default(),
-        }
+        Self(content.into())
     }
 }
 
@@ -175,43 +164,44 @@ impl Styled for Cell<'_> {
     type Item = Self;
 
     fn style(&self) -> Style {
-        self.style
+        self.0.style()
     }
 
     fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
-        self.style(style)
+        Self(self.0.set_style(style))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use ratatui_core::style::{Color, Modifier, Stylize};
+    use ratatui_core::text::Span;
 
     use super::*;
 
     #[test]
     fn new() {
         let cell = Cell::new("");
-        assert_eq!(cell.content, Text::from(""));
+        assert_eq!(cell.0, UnifiedText::Span(Span::from("")));
     }
 
     #[test]
     fn content() {
         let cell = Cell::default().content("");
-        assert_eq!(cell.content, Text::from(""));
+        assert_eq!(cell.0, UnifiedText::Span(Span::from("")));
     }
 
     #[test]
     fn style() {
         let style = Style::default().red().italic();
         let cell = Cell::default().style(style);
-        assert_eq!(cell.style, style);
+        assert_eq!(Styled::style(&cell), style);
     }
 
     #[test]
     fn stylize() {
         assert_eq!(
-            Cell::from("").black().on_white().bold().not_dim().style,
+            Styled::style(&Cell::from("").black().on_white().bold().not_dim()),
             Style::default()
                 .fg(Color::Black)
                 .bg(Color::White)
