@@ -62,3 +62,6 @@ pub use span::{Span, ToSpan};
 
 mod text;
 pub use text::{Text, ToText};
+
+mod unified;
+pub use unified::{ToUnifiedLine, ToUnifiedSpan, ToUnifiedText, UnifiedText};

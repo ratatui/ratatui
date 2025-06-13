@@ -13,7 +13,7 @@ use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
-use ratatui::text::{Line, Text};
+use ratatui::text::{Line, UnifiedText};
 use ratatui::widgets::Widget;
 
 fn main() -> Result<()> {
@@ -53,12 +53,12 @@ impl App {
 ///
 /// [OSC 8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
 struct Hyperlink<'content> {
-    text: Text<'content>,
+    text: UnifiedText<'content>,
     url: String,
 }
 
 impl<'content> Hyperlink<'content> {
-    fn new(text: impl Into<Text<'content>>, url: impl Into<String>) -> Self {
+    fn new(text: impl Into<UnifiedText<'content>>, url: impl Into<String>) -> Self {
         Self {
             text: text.into(),
             url: url.into(),
