@@ -1,5 +1,6 @@
 use alloc::rc::Rc;
 use alloc::vec::Vec;
+use core::array::TryFromSliceError;
 use core::iter;
 #[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
@@ -550,8 +551,43 @@ impl Layout {
     /// let areas = layout.areas::<2>(area);
     /// ```
     pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
-        let (areas, _) = self.split_with_spacers(area);
-        areas.as_ref().try_into().expect("invalid number of rects")
+        let areas = self.split(area);
+        areas.as_ref().try_into().unwrap_or_else(|_| {
+            panic!(
+                "invalid number of rects: expected {N}, found {}",
+                areas.len()
+            )
+        })
+    }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`].
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split`] instead.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the number of constraints is not equal to the length of the returned
+    /// array.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 10);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = layout.try_areas(area)?;
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let areas = layout.try_areas::<2>(area)?;
+    /// # Ok::<(), core::array::TryFromSliceError>(())
+    /// ```
+    pub fn try_areas<const N: usize>(&self, area: Rect) -> Result<[Rect; N], TryFromSliceError> {
+        self.split(area).as_ref().try_into()
     }
 
     /// Split the rect into a number of sub-rects according to the given [`Layout`] and return just
