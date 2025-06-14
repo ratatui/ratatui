@@ -148,6 +148,32 @@ and implement the `clear_region` method, which no longer has a default implement
 This change was made to provide greater flexibility for custom backends, particularly to remove the
 explicit dependency on `std::io` for backends that want to support `no_std` targets.
 
+If your app or library uses the `Backend` trait directly - for example, by providing a generic
+implementation for many backends - you may need to update the referenced error type.
+
+```diff
+- fn run<B: Backend>(mut terminal: Terminal<B>) -> io::Result<()> {
++ fn run<B: Backend>(mut terminal: Terminal<B>) -> Result<(), B::Error> {
+```
+
+Alternatively, you can explicitly require the associated error to be `std::io::Error`. This approach
+may require fewer changes in user code but is generally not recommended, as it limits compatibility
+with third-party backends. Additionally, the error type used by built-in backends may or may not
+change in the future, making this approach less future-proof compared to the previous one.
+
+```diff
+- fn run<B: Backend>(mut terminal: Terminal<B>) -> io::Result<()> {
++ fn run<B: Backend<Error = io::Error>>(mut terminal: Terminal<B>) -> io::Result<()> {
+```
+
+If your application uses a concrete backend implementation, prefer specifying it explicitly
+instead.
+
+```diff
+- fn run<B: Backend>(mut terminal: Terminal<B>) -> io::Result<()> {
++ fn run(mut terminal: DefaultTerminal) -> io::Result<()> {
+```
+
 ### The MSRV is now 1.85.0 ([#1860])
 
 [#1860]: https://github.com/ratatui/ratatui/pull/1860
