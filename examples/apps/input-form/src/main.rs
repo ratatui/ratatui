@@ -115,8 +115,8 @@ impl InputForm {
     ///
     /// The cursor is placed at the end of the focused field.
     fn render(&self, frame: &mut Frame) {
-        let [first_name_area, last_name_area, age_area] =
-            Layout::vertical(Constraint::from_lengths([1, 1, 1])).areas(frame.area());
+        let layout = Layout::vertical(Constraint::from_lengths([1, 1, 1]));
+        let [first_name_area, last_name_area, age_area] = frame.area().layout(&layout);
 
         frame.render_widget(&self.first_name, first_name_area);
         frame.render_widget(&self.last_name, last_name_area);
@@ -185,11 +185,11 @@ impl StringField {
 
 impl Widget for &StringField {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let constraints = [
+        let layout = Layout::horizontal([
             Constraint::Length(self.label.len() as u16 + 2),
             Constraint::Fill(1),
-        ];
-        let [label_area, value_area] = Layout::horizontal(constraints).areas(area);
+        ]);
+        let [label_area, value_area] = area.layout(&layout);
         let label = Line::from_iter([self.label, ": "]).bold();
         label.render(label_area, buf);
         self.value.clone().render(value_area, buf);
@@ -250,11 +250,11 @@ impl AgeField {
 
 impl Widget for &AgeField {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let constraints = [
+        let layout = Layout::horizontal([
             Constraint::Length(self.label.len() as u16 + 2),
             Constraint::Fill(1),
-        ];
-        let [label_area, value_area] = Layout::horizontal(constraints).areas(area);
+        ]);
+        let [label_area, value_area] = area.layout(&layout);
         let label = Line::from_iter([self.label, ": "]).bold();
         let value = self.value.to_string();
         label.render(label_area, buf);

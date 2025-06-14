@@ -242,14 +242,13 @@ impl Widget for &App {
             swap_legend_area,
             _,
             blocks_area,
-        ] = Layout::vertical([
+        ] = area.layout(&Layout::vertical([
             Length(2), // header
             Length(2), // instructions
             Length(1), // swap key legend
             Length(1), // gap
             Fill(1),   // blocks
-        ])
-        .areas(area);
+        ]));
 
         App::header().render(header_area, buf);
         App::instructions().render(instructions_area, buf);
@@ -319,9 +318,8 @@ impl App {
     }
 
     fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
-        let [user_constraints, area] = Layout::vertical([Length(3), Fill(1)])
-            .spacing(1)
-            .areas(area);
+        let main_layout = Layout::vertical([Length(3), Fill(1)]).spacing(1);
+        let [user_constraints, area] = area.layout(&main_layout);
 
         self.render_user_constraints_legend(user_constraints, buf);
 
@@ -332,7 +330,7 @@ impl App {
             space_between,
             space_around,
             space_evenly,
-        ] = Layout::vertical([Length(7); 6]).areas(area);
+        ] = area.layout(&Layout::vertical([Length(7); 6]));
 
         self.render_layout_block(Flex::Start, start, buf);
         self.render_layout_block(Flex::Center, center, buf);
@@ -353,8 +351,8 @@ impl App {
     }
 
     fn render_layout_block(&self, flex: Flex, area: Rect, buf: &mut Buffer) {
-        let [label_area, axis_area, blocks_area] =
-            Layout::vertical([Length(1), Max(1), Length(4)]).areas(area);
+        let layout = Layout::vertical([Length(1), Max(1), Length(4)]);
+        let [label_area, axis_area, blocks_area] = area.layout(&layout);
 
         if label_area.height > 0 {
             format!("Flex::{flex:?}").bold().render(label_area, buf);

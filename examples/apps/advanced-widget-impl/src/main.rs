@@ -68,7 +68,7 @@ impl App {
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let constraints = Constraint::from_lengths([1, 1, 2, 1]);
-        let [greeting, timer, squares, position] = Layout::vertical(constraints).areas(area);
+        let [greeting, timer, squares, position] = area.layout(&Layout::vertical(constraints));
 
         // render an ephemeral greeting widget
         Greeting::new("Ratatui!").render(greeting, buf);
@@ -174,9 +174,9 @@ struct BlueSquare;
 impl Widget for &BoxedSquares {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let constraints = vec![Constraint::Length(4); self.squares.len()];
-        let areas = Layout::horizontal(constraints).split(area);
-        for (widget, area) in self.squares.iter().zip(areas.iter()) {
-            widget.render_ref(*area, buf);
+        let areas = area.layout_vec(&Layout::horizontal(constraints));
+        for (widget, area) in self.squares.iter().zip(areas) {
+            widget.render_ref(area, buf);
         }
     }
 }

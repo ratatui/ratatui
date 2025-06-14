@@ -81,11 +81,10 @@ fn render(frame: &mut Frame, calendar_style: StyledCalendar, selected_date: Date
         )),
     ]);
 
-    let vertical = Layout::vertical([
+    let [text_area, area] = frame.area().layout(&Layout::vertical([
         Constraint::Length(header.height() as u16),
         Constraint::Fill(1),
-    ]);
-    let [text_area, area] = vertical.areas(frame.area());
+    ]));
     frame.render_widget(header.centered(), text_area);
     calendar_style
         .render_year(frame, area, selected_date)
@@ -133,16 +132,13 @@ impl StyledCalendar {
     fn render_year(self, frame: &mut Frame, area: Rect, date: Date) -> Result<()> {
         let events = events(date)?;
 
-        let area = area.inner(Margin {
-            vertical: 1,
-            horizontal: 1,
-        });
-        let rows = Layout::vertical([Constraint::Ratio(1, 3); 3]).split(area);
-        let areas = rows.iter().flat_map(|row| {
-            Layout::horizontal([Constraint::Ratio(1, 4); 4])
-                .split(*row)
-                .to_vec()
-        });
+        let vertical = Layout::vertical([Constraint::Ratio(1, 3); 3]);
+        let horizontal = &Layout::horizontal([Constraint::Ratio(1, 4); 4]);
+        let areas = area
+            .inner(Margin::new(1, 1))
+            .layout_vec(&vertical)
+            .into_iter()
+            .flat_map(|row| row.layout_vec(horizontal));
         for (i, area) in areas.enumerate() {
             let month = date
                 .replace_day(1)

@@ -24,8 +24,8 @@ impl AboutTab {
 impl Widget for AboutTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
-        let horizontal = Layout::horizontal([Constraint::Length(34), Constraint::Min(0)]);
-        let [logo_area, description] = horizontal.areas(area);
+        let layout = Layout::horizontal([Constraint::Length(34), Constraint::Min(0)]);
+        let [logo_area, description] = area.layout(&layout);
         render_crate_description(description, buf);
         let eye_state = if self.row_index % 2 == 0 {
             MascotEyeColor::Default

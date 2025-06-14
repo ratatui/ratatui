@@ -47,8 +47,8 @@ fn main() -> Result<()> {
 
 /// Render the UI with vertical/horizontal scrollbars.
 fn render(frame: &mut Frame, vertical: &mut ScrollbarState, horizontal: &mut ScrollbarState) {
-    let vertical_layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
-    let [top, main] = vertical_layout.areas(frame.area());
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
+    let [top, main] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Scrollbar Widget").bold(),

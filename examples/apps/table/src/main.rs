@@ -186,8 +186,8 @@ impl App {
     }
 
     fn render(&mut self, frame: &mut Frame) {
-        let vertical = &Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
-        let rects = vertical.split(frame.area());
+        let layout = Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
+        let rects = frame.area().layout_vec(&layout);
 
         self.set_colors();
 

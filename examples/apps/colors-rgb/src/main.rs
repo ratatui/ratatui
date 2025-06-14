@@ -124,8 +124,8 @@ impl App {
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::{Length, Min};
-        let [top, colors] = Layout::vertical([Length(1), Min(0)]).areas(area);
-        let [title, fps] = Layout::horizontal([Min(0), Length(8)]).areas(top);
+        let [top, colors] = area.layout(&Layout::vertical([Length(1), Min(0)]));
+        let [title, fps] = top.layout(&Layout::horizontal([Min(0), Length(8)]));
         Text::from("colors_rgb example. Press q to quit")
             .centered()
             .render(title, buf);
