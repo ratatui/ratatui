@@ -39,8 +39,8 @@ impl Widget for TracerouteTab {
         Block::new().style(THEME.content).render(area, buf);
         let horizontal = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]);
         let vertical = Layout::vertical([Constraint::Min(0), Constraint::Length(3)]);
-        let [left, map] = horizontal.areas(area);
-        let [hops, pings] = vertical.areas(left);
+        let [left, map] = area.layout(&horizontal);
+        let [hops, pings] = left.layout(&vertical);
 
         render_hops(self.row_index, hops, buf);
         render_ping(self.row_index, pings, buf);
