@@ -15,7 +15,7 @@ use crossterm::event::{
 };
 use crossterm::execute;
 use ratatui::buffer::Buffer;
-use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::Line;
 use ratatui::widgets::{Paragraph, Widget};
@@ -167,13 +167,13 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 }
 
 fn render(frame: &mut Frame, states: [State; 3]) {
-    let vertical = Layout::vertical([
+    let layout = Layout::vertical([
         Constraint::Length(1),
         Constraint::Max(3),
         Constraint::Length(1),
         Constraint::Min(0), // ignore remaining space
     ]);
-    let [title, buttons, help, _] = vertical.areas(frame.area());
+    let [title, buttons, help, _] = frame.area().layout(&layout);
 
     frame.render_widget(
         Paragraph::new("Custom Widget Example (mouse enabled)"),
@@ -184,13 +184,8 @@ fn render(frame: &mut Frame, states: [State; 3]) {
 }
 
 fn render_buttons(frame: &mut Frame<'_>, area: Rect, states: [State; 3]) {
-    let horizontal = Layout::horizontal([
-        Constraint::Length(15),
-        Constraint::Length(15),
-        Constraint::Length(15),
-        Constraint::Min(0), // ignore remaining space
-    ]);
-    let [red, green, blue, _] = horizontal.areas(area);
+    let layout = Layout::horizontal([Constraint::Length(15); 3]).flex(Flex::Start);
+    let [red, green, blue] = area.layout(&layout);
 
     frame.render_widget(Button::new("Red").theme(RED).state(states[0]), red);
     frame.render_widget(Button::new("Green").theme(GREEN).state(states[1]), green);

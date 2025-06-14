@@ -50,8 +50,8 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 
 /// Render the UI with tabs.
 fn render(frame: &mut Frame, selected_tab: usize) {
-    let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
-    let [top, main] = vertical.areas(frame.area());
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
+    let [top, main] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Tabs Widget").bold(),

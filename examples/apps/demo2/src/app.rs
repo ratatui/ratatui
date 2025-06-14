@@ -129,12 +129,12 @@ impl App {
 /// matter, but for larger apps this can be a significant performance improvement.
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let vertical = Layout::vertical([
+        let layout = Layout::vertical([
             Constraint::Length(1),
             Constraint::Min(0),
             Constraint::Length(1),
         ]);
-        let [title_bar, tab, bottom_bar] = vertical.areas(area);
+        let [title_bar, tab, bottom_bar] = area.layout(&layout);
 
         Block::new().style(THEME.root).render(area, buf);
         self.render_title_bar(title_bar, buf);
@@ -146,7 +146,7 @@ impl Widget for &App {
 impl App {
     fn render_title_bar(&self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::horizontal([Constraint::Min(0), Constraint::Length(43)]);
-        let [title, tabs] = layout.areas(area);
+        let [title, tabs] = area.layout(&layout);
 
         Span::styled("Ratatui", THEME.app_title).render(title, buf);
         let titles = Tab::iter().map(Tab::title);
