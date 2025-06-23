@@ -44,6 +44,7 @@ std = ["ratatui-core/std", "ratatui-widgets/std"]
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = [
+  "std",
   "dep:serde",
   "ratatui-core/serde",
   "ratatui-widgets/serde",
@@ -56,7 +57,7 @@ serde = [
 layout-cache = ["std", "ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
-palette = ["ratatui-core/palette", "dep:palette"]
+palette = ["std", "ratatui-core/palette", "dep:palette"]
 
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).
