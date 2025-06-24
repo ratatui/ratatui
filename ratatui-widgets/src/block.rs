@@ -879,7 +879,7 @@ impl Block<'_> {
         &self,
         position: Position,
         alignment: Alignment,
-    ) -> impl DoubleEndedIterator<Item = &Line> {
+    ) -> impl DoubleEndedIterator<Item = &Line<'_>> {
         self.titles
             .iter()
             .filter(move |(pos, _)| pos.unwrap_or(self.titles_position) == position)

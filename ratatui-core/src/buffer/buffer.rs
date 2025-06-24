@@ -1237,7 +1237,7 @@ mod tests {
     }
 
     /// Emojis normally contain various characters which should stay part of the Emoji.
-    /// This should work fine by utilizing unicode_segmentation but a testcase is probably helpful
+    /// This should work fine by utilizing `unicode_segmentation` but a testcase is probably helpful
     /// due to the nature of never perfect Unicode implementations and all of its quirks.
     #[rstest]
     // Shrug without gender or skintone. Has a width of 2 like all emojis have.
