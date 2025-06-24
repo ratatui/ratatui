@@ -155,6 +155,26 @@ impl Rect {
         }
     }
 
+    /// Returns a new `Rect` outside the current one, with the given margin applied on each side.
+    ///
+    /// If the margin causes the `Rect`'s bounds to be negative or larger than the maximum value of
+    /// `u16`, the `Rect` will be clamped to keep the bounds within `u16`. This will modify the size
+    /// of the `Rect`.
+    ///
+    /// The generated `Rect` may not fit inside the buffer or containing area, so it consider
+    /// constraining the resulting `Rect` with [`Rect::clamp`] before using it.
+    #[must_use = "method returns the modified value"]
+    pub const fn outer(self, margin: Margin) -> Self {
+        Self::new(
+            self.x.saturating_sub(margin.horizontal),
+            self.y.saturating_sub(margin.vertical),
+            self.width
+                .saturating_add(margin.horizontal.saturating_mul(2)),
+            self.height
+                .saturating_add(margin.vertical.saturating_mul(2)),
+        )
+    }
+
     /// Moves the `Rect` without modifying its size.
     ///
     /// Moves the `Rect` according to the given offset without modifying its [`width`](Rect::width)
@@ -508,6 +528,14 @@ mod tests {
         assert_eq!(
             Rect::new(1, 2, 3, 4).inner(Margin::new(1, 2)),
             Rect::new(2, 4, 1, 0)
+        );
+    }
+
+    #[test]
+    fn outer() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).outer(Margin::new(1, 2)),
+            Rect::new(0, 0, 5, 8)
         );
     }
 
