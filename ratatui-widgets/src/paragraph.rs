@@ -502,7 +502,7 @@ mod tests {
     use ratatui_core::widgets::Widget;
 
     use super::*;
-    use crate::block::Position;
+    use crate::block::TitlePosition;
     use crate::borders::Borders;
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
@@ -700,7 +700,7 @@ mod tests {
     fn test_render_paragraph_with_block_with_bottom_title_and_border() {
         let block = Block::new()
             .borders(Borders::BOTTOM)
-            .title_position(Position::Bottom)
+            .title_position(TitlePosition::Bottom)
             .title("Title");
         let paragraph = Paragraph::new("Hello, world!").block(block);
         test_case(

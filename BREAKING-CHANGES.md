@@ -85,6 +85,47 @@ This is a quick summary of the sections below:
 
 ## v0.30.0 Unreleased
 
+### `block::Title` no longer exists ([#1926])
+
+[#1926]: https://github.com/ratatui/ratatui/pull/1926
+
+The title alignment is better expressed in the `Line` as this fits more coherently with the rest of
+the library.
+
+- `widgets::block` is no longer exported
+- `widgets::block::Title` no longer exists
+- `widgets::block::Position` is now `widgets::TitlePosition`
+- `Block::title()` now accepts `Into::<Line>` instead of `Into<Title>`
+- `BlockExt` is now exported at widgets::`BlockExt` instead of `widgets::block::BlockExt`
+
+```diff
+- use ratatui::widgets::{Block, block::{Title, Position}};
++ use ratatui::widgets::{Block, TitlePosition};
+
+let block = Block::default()
+-    .title(Title::from("Hello"))
+-    .title(Title::from("Hello").position(Position::Bottom).alignment(Alignment::Center))
+-    .title_position(Position::Bottom);
++    .title(Line::from("Hello"))
++    .title_bottom(Line::from("Hello").centered());
++    .title_position(TitlePosition::Bottom);
+
+- use ratatui::widgets::block::BlockExt;
++ use ratatui::widgets::BlockExt;
+
+struct MyWidget {
+    block: Option<Block>,
+}
+
+impl Widget for &MyWidget {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.as_ref().render(area, buf);
+        let area = self.block.inner_if_some();
+        // ...
+    }
+}
+```
+
 ### `Style` no longer implements `Styled` ([#1572])
 
 [#1572]: https://github.com/ratatui/ratatui/pull/1572
