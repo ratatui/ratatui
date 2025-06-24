@@ -212,7 +212,7 @@ impl fmt::Debug for Borders {
 ///
 /// ```
 /// use ratatui::border;
-/// use ratatui::widgets::{Block, Borders};
+/// use ratatui::widgets::Block;
 ///
 /// Block::new()
 ///     .title("Construct Borders and use them in place")
@@ -241,15 +241,15 @@ impl fmt::Debug for Borders {
 #[macro_export]
 macro_rules! border {
     () => {
-        Borders::NONE
+        $crate::borders::Borders::NONE
     };
     ($b:ident) => {
-        Borders::$b
+        $crate::borders::Borders::$b
     };
     ($first:ident,$($other:ident),*) => {
-        Borders::$first
+        $crate::borders::Borders::$first
         $(
-            .union(Borders::$other)
+            .union($crate::borders::Borders::$other)
         )*
     };
 }

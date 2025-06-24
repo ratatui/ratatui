@@ -50,7 +50,7 @@
 ///
 /// [`Table`]: super::Table
 /// [`Table::widths`]: crate::table::Table::widths
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TableState {
     pub(crate) offset: usize,

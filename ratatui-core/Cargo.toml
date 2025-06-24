@@ -41,7 +41,7 @@ layout-cache = ["std"]
 anstyle = ["dep:anstyle"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
-palette = ["dep:palette"]
+palette = ["std", "dep:palette"]
 
 ## enables the backend code that sets the underline color. Underline color is only supported by
 ## the Crossterm backend, and is not supported on Windows 7.
@@ -53,7 +53,7 @@ scrolling-regions = []
 
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
+serde = ["std", "dep:serde", "bitflags/serde", "compact_str/serde"]
 
 [dependencies]
 anstyle = { workspace = true, optional = true }

@@ -114,6 +114,14 @@ We rely on GitHub for [bugs][Report a bug] and [feature requests][Request a Feat
 Please make sure you read the [contributing](./CONTRIBUTING.md) guidelines before [creating a pull
 request][Create a Pull Request].
 
+If you'd like to show your support, you can add the Ratatui badge to your project's README:
+
+```md
+[![Built With Ratatui](https://ratatui.rs/built-with-ratatui/badge.svg)](https://ratatui.rs/)
+```
+
+[![Built With Ratatui](https://ratatui.rs/built-with-ratatui/badge.svg)](https://ratatui.rs/)
+
 ## Acknowledgements
 
 Ratatui was forked from the [tui-rs] crate in 2023 in order to continue its development. None of

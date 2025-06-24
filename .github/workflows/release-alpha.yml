@@ -15,6 +15,7 @@ jobs:
   publish-alpha:
     name: Create an alpha release
     runs-on: ubuntu-latest
+    if: github.repository == 'ratatui/ratatui'
     permissions:
       contents: write
     steps:
