@@ -91,9 +91,7 @@ mod padding;
 /// ```
 /// use ratatui::widgets::{Block, TitlePosition};
 ///
-/// Block::new()
-///     .title("Title 1")
-///     .title_bottom("Title 2");
+/// Block::new().title("Title 1").title_bottom("Title 2");
 /// ```
 ///
 /// You can also pass it as parameters of another widget so that the block surrounds them:
