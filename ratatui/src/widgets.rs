@@ -49,7 +49,7 @@
 //! - [`WidgetRef`]: Trait for rendering widgets by reference (unstable)
 //! - [`StatefulWidgetRef`]: Trait for rendering stateful widgets by reference (unstable)
 //!
-//! ## Widget
+//! ## `Widget`
 //!
 //! The [`Widget`] trait is the most basic trait for widgets in Ratatui. It provides the basic
 //! functionality for rendering a widget onto a buffer. Widgets implementing this trait are consumed
