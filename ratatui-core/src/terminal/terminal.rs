@@ -166,7 +166,7 @@ where
     }
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
-    pub const fn get_frame(&mut self) -> Frame {
+    pub const fn get_frame(&mut self) -> Frame<'_> {
         let count = self.frame_count;
         Frame {
             cursor_position: None,
@@ -299,7 +299,7 @@ where
     /// }
     /// # std::io::Result::Ok(())
     /// ```
-    pub fn draw<F>(&mut self, render_callback: F) -> Result<CompletedFrame, B::Error>
+    pub fn draw<F>(&mut self, render_callback: F) -> Result<CompletedFrame<'_>, B::Error>
     where
         F: FnOnce(&mut Frame),
     {
@@ -374,7 +374,7 @@ where
     /// }
     /// # io::Result::Ok(())
     /// ```
-    pub fn try_draw<F, E>(&mut self, render_callback: F) -> Result<CompletedFrame, B::Error>
+    pub fn try_draw<F, E>(&mut self, render_callback: F) -> Result<CompletedFrame<'_>, B::Error>
     where
         F: FnOnce(&mut Frame) -> Result<(), E>,
         E: Into<B::Error>,

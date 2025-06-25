@@ -534,12 +534,12 @@ impl<'a> Line<'a> {
     }
 
     /// Returns an iterator over the spans of this line.
-    pub fn iter(&self) -> core::slice::Iter<Span<'a>> {
+    pub fn iter(&self) -> core::slice::Iter<'_, Span<'a>> {
         self.spans.iter()
     }
 
     /// Returns a mutable iterator over the spans of this line.
-    pub fn iter_mut(&mut self) -> core::slice::IterMut<Span<'a>> {
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<'_, Span<'a>> {
         self.spans.iter_mut()
     }
 
