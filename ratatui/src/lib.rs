@@ -24,8 +24,9 @@
 //! # Ratatui
 //!
 //! [Ratatui][Ratatui Website] is a crate for cooking up terminal user interfaces in Rust. It is a
-//! lightweight library that provides a set of widgets and utilities to build complex Rust TUIs.
-//! Ratatui was forked from the [tui-rs] crate in 2023 in order to continue its development.
+//! lightweight library that provides a set of [widgets](`widgets`) and utilities to build complex
+//! Rust TUIs. Ratatui was forked from the [tui-rs] crate in 2023 in order to continue its
+//! development.
 //!
 //! ## Quickstart
 //!
@@ -81,10 +82,10 @@
 //! ## Introduction
 //!
 //! Ratatui is based on the principle of immediate rendering with intermediate buffers. This means
-//! that for each frame, your app must render all widgets that are supposed to be part of the UI.
-//! This is in contrast to the retained mode style of rendering where widgets are updated and then
-//! automatically redrawn on the next frame. See the [Rendering] section of the [Ratatui Website]
-//! for more info.
+//! that for each frame, your app must render all [`widgets`] that are supposed to be part of the
+//! UI. This is in contrast to the retained mode style of rendering where widgets are updated and
+//! then automatically redrawn on the next frame. See the [Rendering] section of the [Ratatui
+//! Website] for more info.
 //!
 //! Ratatui uses [Crossterm] by default as it works on most platforms. See the [Installation]
 //! section of the [Ratatui Website] for more details on how to use other backends ([Termion] /

@@ -19,6 +19,11 @@ use crate::layout::Rect;
 /// See the documentation for [`WidgetRef`] for more information on boxed widgets. See the
 /// documentation for [`StatefulWidget`] for more information on stateful widgets.
 ///
+/// For comprehensive information about widget implementation patterns, rendering, and usage,
+/// see the [`widgets`] module documentation.
+///
+/// [`widgets`]: crate::widgets
+///
 /// # Examples
 ///
 /// ```rust

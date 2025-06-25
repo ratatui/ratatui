@@ -24,6 +24,11 @@ use crate::style::Style;
 /// provided. This is a convenience approach to make it easier to attach child widgets to parent
 /// widgets. It allows you to render an optional widget by reference.
 ///
+/// For comprehensive information about widget implementation patterns, rendering, and usage,
+/// see the [`widgets`] module documentation.
+///
+/// [`widgets`]: crate::widgets
+///
 /// # Examples
 ///
 /// ```rust
