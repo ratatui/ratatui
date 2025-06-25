@@ -141,8 +141,12 @@ pub struct Block<'a> {
 /// ```
 /// use ratatui::widgets::{Block, TitlePosition};
 ///
-/// Block::new().title_position(TitlePosition::Top).title("Top Title");
-/// Block::new().title_position(TitlePosition::Bottom).title("Bottom Title");
+/// Block::new()
+///     .title_position(TitlePosition::Top)
+///     .title("Top Title");
+/// Block::new()
+///     .title_position(TitlePosition::Bottom)
+///     .title("Bottom Title");
 /// ```
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TitlePosition {
