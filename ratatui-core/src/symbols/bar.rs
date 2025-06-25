@@ -8,19 +8,19 @@ pub const ONE_QUARTER: &str = "▂";
 pub const ONE_EIGHTH: &str = "▁";
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Set {
-    pub full: &'static str,
-    pub seven_eighths: &'static str,
-    pub three_quarters: &'static str,
-    pub five_eighths: &'static str,
-    pub half: &'static str,
-    pub three_eighths: &'static str,
-    pub one_quarter: &'static str,
-    pub one_eighth: &'static str,
-    pub empty: &'static str,
+pub struct Set<'a> {
+    pub full: &'a str,
+    pub seven_eighths: &'a str,
+    pub three_quarters: &'a str,
+    pub five_eighths: &'a str,
+    pub half: &'a str,
+    pub three_eighths: &'a str,
+    pub one_quarter: &'a str,
+    pub one_eighth: &'a str,
+    pub empty: &'a str,
 }
 
-impl Default for Set {
+impl Default for Set<'_> {
     fn default() -> Self {
         NINE_LEVELS
     }

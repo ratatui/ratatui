@@ -195,7 +195,7 @@ impl<'a> Scrollbar<'a> {
 
     /// Creates a new scrollbar with the given orientation and symbol set.
     #[must_use = "creates the Scrollbar"]
-    const fn new_with_symbols(orientation: ScrollbarOrientation, symbols: &Set) -> Self {
+    const fn new_with_symbols(orientation: ScrollbarOrientation, symbols: &Set<'a>) -> Self {
         Self {
             orientation,
             thumb_symbol: symbols.thumb,
@@ -238,7 +238,7 @@ impl<'a> Scrollbar<'a> {
     pub const fn orientation_and_symbol(
         mut self,
         orientation: ScrollbarOrientation,
-        symbols: Set,
+        symbols: Set<'a>,
     ) -> Self {
         self.orientation = orientation;
         self.symbols(symbols)
@@ -372,7 +372,7 @@ impl<'a> Scrollbar<'a> {
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[expect(clippy::needless_pass_by_value)] // Breaking change
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn symbols(mut self, symbols: Set) -> Self {
+    pub const fn symbols(mut self, symbols: Set<'a>) -> Self {
         self.thumb_symbol = symbols.thumb;
         if self.track_symbol.is_some() {
             self.track_symbol = Some(symbols.track);

@@ -149,7 +149,7 @@ pub enum BorderType {
 
 impl BorderType {
     /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn border_symbols(border_type: Self) -> border::Set {
+    pub const fn border_symbols<'a>(border_type: Self) -> border::Set<'a> {
         match border_type {
             Self::Plain => border::PLAIN,
             Self::Rounded => border::ROUNDED,
@@ -167,7 +167,7 @@ impl BorderType {
     }
 
     /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn to_border_set(self) -> border::Set {
+    pub const fn to_border_set<'a>(self) -> border::Set<'a> {
         Self::border_symbols(self)
     }
 }
