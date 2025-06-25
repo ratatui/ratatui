@@ -185,7 +185,7 @@
 //! # use ratatui::widgets::{List, ListItem, ListState};
 //! # let backend = TestBackend::new(10, 3);
 //! # let mut terminal = Terminal::new(backend).unwrap();
-//! # let mut list_state = ListState::default();
+//! let mut list_state = ListState::default();
 //! terminal.draw(|frame| {
 //!     let items = vec![ListItem::new("Item 1"), ListItem::new("Item 2")];
 //!     let list = List::new(items);
