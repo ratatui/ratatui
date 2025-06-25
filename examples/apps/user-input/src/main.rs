@@ -30,10 +30,7 @@ use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::new().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::new().run(terminal))
 }
 
 /// App holds the state of the application
@@ -127,7 +124,7 @@ impl App {
         self.reset_cursor();
     }
 
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         loop {
             terminal.draw(|frame| self.render(frame))?;
 

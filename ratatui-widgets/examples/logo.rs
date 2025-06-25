@@ -43,7 +43,7 @@ fn run(mut terminal: DefaultTerminal, size: RatatuiLogoSize) -> Result<()> {
     loop {
         terminal.draw(|frame| render(frame, size))?;
         if event::read()?.is_key_press() {
-            return Ok(());
+            break Ok(());
         }
     }
 }

@@ -16,40 +16,35 @@
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Row, Table, TableState};
-use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut table_state = TableState::default();
     table_state.select_first();
     table_state.select_first_column();
-    loop {
-        terminal.draw(|frame| render(frame, &mut table_state))?;
-        if let Some(key) = event::read()?.as_key_press_event() {
-            match key.code {
-                KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                KeyCode::Char('j') | KeyCode::Down => table_state.select_next(),
-                KeyCode::Char('k') | KeyCode::Up => table_state.select_previous(),
-                KeyCode::Char('l') | KeyCode::Right => table_state.select_next_column(),
-                KeyCode::Char('h') | KeyCode::Left => table_state.select_previous_column(),
-                KeyCode::Char('g') => table_state.select_first(),
-                KeyCode::Char('G') => table_state.select_last(),
-                _ => {}
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(|frame| render(frame, &mut table_state))?;
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                    KeyCode::Char('j') | KeyCode::Down => table_state.select_next(),
+                    KeyCode::Char('k') | KeyCode::Up => table_state.select_previous(),
+                    KeyCode::Char('l') | KeyCode::Right => table_state.select_next_column(),
+                    KeyCode::Char('h') | KeyCode::Left => table_state.select_previous_column(),
+                    KeyCode::Char('g') => table_state.select_first(),
+                    KeyCode::Char('G') => table_state.select_last(),
+                    _ => {}
+                }
             }
         }
-    }
+    })
 }
 
 /// Render the UI with a table.

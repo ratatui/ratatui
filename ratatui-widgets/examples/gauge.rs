@@ -20,24 +20,18 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Gauge, LineGauge};
-use ratatui::{DefaultTerminal, Frame, symbols};
+use ratatui::{Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
-
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(render)?;
-        if event::read()?.is_key_press() {
-            return Ok(());
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(render)?;
+            if event::read()?.is_key_press() {
+                break Ok(());
+            }
         }
-    }
+    })
 }
 
 /// Render the UI with various progress bars.

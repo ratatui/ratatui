@@ -22,28 +22,19 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{RenderDirection, Sparkline};
-use ratatui::{DefaultTerminal, Frame, symbols};
+use ratatui::{Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
-
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(render)?;
-        // Ensure that the animations renders at 50 FPS (GIF speed)
-        if !event::poll(Duration::from_secs_f64(1.0 / 50.0))? {
-            continue;
+    let frame_timeout = Duration::from_secs_f64(1.0 / 60.0); // run at 60 FPS
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(render)?;
+            if event::poll(frame_timeout)? && event::read()?.is_key_press() {
+                break Ok(());
+            }
         }
-        if event::read()?.is_key_press() {
-            return Ok(());
-        }
-    }
+    })
 }
 
 /// Render the UI with various sparklines.
