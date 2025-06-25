@@ -32,9 +32,7 @@
 
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
 pub use ratatui_widgets::barchart::{Bar, BarChart, BarGroup};
-// TODO remove this module once title etc. are gone
-pub use ratatui_widgets::block;
-pub use ratatui_widgets::block::{Block, Padding};
+pub use ratatui_widgets::block::{Block, BlockExt, Padding, TitlePosition};
 pub use ratatui_widgets::borders::{BorderType, Borders};
 #[cfg(feature = "widget-calendar")]
 pub use ratatui_widgets::calendar;
