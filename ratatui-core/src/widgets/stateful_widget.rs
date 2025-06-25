@@ -4,6 +4,11 @@ use crate::layout::Rect;
 /// A `StatefulWidget` is a widget that can take advantage of some local state to remember things
 /// between two draw calls.
 ///
+/// For a comprehensive guide to widgets, including trait explanations, implementation patterns,
+/// and available widgets, see the [`widgets`] module documentation.
+///
+/// [`widgets`]: ../../ratatui/widgets/index.html
+///
 /// Most widgets can be drawn directly based on the input parameters. However, some features may
 /// require some kind of associated state to be implemented.
 ///
