@@ -89,12 +89,11 @@ mod padding;
 ///
 /// You may also use multiple titles like in the following:
 /// ```
-/// use ratatui::widgets::Block;
-/// use ratatui::widgets::block::{Position, Title};
+/// use ratatui::widgets::{Block, TitlePosition};
 ///
 /// Block::new()
 ///     .title("Title 1")
-///     .title(Title::from("Title 2").position(TitlePosition::Bottom));
+///     .title_bottom("Title 2");
 /// ```
 ///
 /// You can also pass it as parameters of another widget so that the block surrounds them:
@@ -229,10 +228,10 @@ impl<'a> Block<'a> {
     /// use ratatui::widgets::{Block, Borders};
     ///
     /// Block::new()
-    ///     .title("Title", TitlePosition::Top)
-    ///     .title(Line::from("Left").left_aligned(), TitlePosition::Top)
-    ///     .title(Line::from("Right").right_aligned(), TitlePosition::Bottom)
-    ///     .title(Line::from("Center").centered(), TitlePosition::Bottom);
+    ///     .title("Title")
+    ///     .title(Line::from("Left").left_aligned())
+    ///     .title(Line::from("Right").right_aligned())
+    ///     .title(Line::from("Center").centered());
     /// ```
     ///
     /// # See also
@@ -367,12 +366,10 @@ impl<'a> Block<'a> {
     /// This example positions all titles on the bottom except the "top" title which explicitly sets
     /// [`TitlePosition::Top`].
     /// ```
-    /// use ratatui::widgets::Block;
-    /// use ratatui::widgets::block::Position;
+    /// use ratatui::widgets::{Block, TitlePosition};
     ///
     /// Block::new()
-    ///     .title_position(Position::Bottom)
-    ///     // This title won't be aligned in the center
+    ///     .title_position(TitlePosition::Bottom)
     ///     .title_top("top")
     ///     .title("foo")
     ///     .title("bar");
