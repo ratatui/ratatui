@@ -124,7 +124,7 @@ pub struct Block<'a> {
     border_style: Style,
     /// The symbols used to render the border. The default is plain lines but one can choose to
     /// have rounded or doubled lines instead or a custom set of symbols
-    border_set: border::Set,
+    border_set: border::Set<'a>,
     /// Widget style
     style: Style,
     /// Block padding
@@ -497,7 +497,7 @@ impl<'a> Block<'a> {
     /// // ║     ║
     /// // ╚═════╝
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_set(mut self, border_set: border::Set) -> Self {
+    pub const fn border_set(mut self, border_set: border::Set<'a>) -> Self {
         self.border_set = border_set;
         self
     }

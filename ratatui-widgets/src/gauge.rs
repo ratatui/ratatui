@@ -330,7 +330,7 @@ impl<'a> LineGauge<'a> {
         since = "0.30.0",
         note = "use `filled_symbol()` and `unfilled_symbol()` instead"
     )]
-    pub const fn line_set(mut self, set: symbols::line::Set) -> Self {
+    pub const fn line_set(mut self, set: symbols::line::Set<'a>) -> Self {
         self.filled_symbol = set.horizontal;
         self.unfilled_symbol = set.horizontal;
         self

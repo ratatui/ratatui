@@ -90,7 +90,7 @@ pub struct BarChart<'a> {
     /// The gap between each group
     group_gap: u16,
     /// Set of symbols used to display the data
-    bar_set: symbols::bar::Set,
+    bar_set: symbols::bar::Set<'a>,
     /// Style of the bars
     bar_style: Style,
     /// Style of the values printed at the bottom of each bar
@@ -323,7 +323,7 @@ impl<'a> BarChart<'a> {
     ///
     /// If not set, the default is [`bar::NINE_LEVELS`](ratatui_core::symbols::bar::NINE_LEVELS).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> Self {
+    pub const fn bar_set(mut self, bar_set: symbols::bar::Set<'a>) -> Self {
         self.bar_set = bar_set;
         self
     }

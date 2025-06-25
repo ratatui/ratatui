@@ -78,7 +78,7 @@ pub struct Sparkline<'a> {
     /// widget uses the max of the dataset)
     max: Option<u64>,
     /// A set of bar symbols used to represent the give data
-    bar_set: symbols::bar::Set,
+    bar_set: symbols::bar::Set<'a>,
     /// The direction to render the sparkline, either from left to right, or from right to left
     direction: RenderDirection,
 }
@@ -230,7 +230,7 @@ impl<'a> Sparkline<'a> {
     /// Can be [`symbols::bar::THREE_LEVELS`], [`symbols::bar::NINE_LEVELS`] (default) or a custom
     /// [`Set`](symbols::bar::Set).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> Self {
+    pub const fn bar_set(mut self, bar_set: symbols::bar::Set<'a>) -> Self {
         self.bar_set = bar_set;
         self
     }
