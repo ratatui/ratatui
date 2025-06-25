@@ -1441,4 +1441,35 @@ mod tests {
         assert_eq!(updated_chart.data.len(), 2);
         assert_eq!(updated_chart.data[1].bars, [Bar::with_label("Blue", 3)]);
     }
+
+    /// Regression test for issue <https://github.com/ratatui/ratatui/issues/1928>
+    ///
+    /// This test ensures that the `BarChart` doesn't panic when rendering text labels with
+    /// multi-byte characters in the bar labels.
+    #[test]
+    fn regression_1928() {
+        let text_value = "\u{202f}"; // Narrow No-Break Space
+        let bars = [
+            Bar::default().text_value(text_value).value(0),
+            Bar::default().text_value(text_value).value(1),
+            Bar::default().text_value(text_value).value(2),
+            Bar::default().text_value(text_value).value(3),
+            Bar::default().text_value(text_value).value(4),
+        ];
+        let chart = BarChart::default()
+            .data(BarGroup::default().bars(&bars))
+            .bar_gap(0)
+            .direction(Direction::Horizontal);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 5));
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "\u{202f}   ",
+            "\u{202f}   ",
+            "\u{202f}█  ",
+            "\u{202f}██ ",
+            "\u{202f}███",
+        ]);
+        assert_eq!(buffer, expected);
+    }
 }
