@@ -11,6 +11,7 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.30.0 Unreleased](#v0300-unreleased)
+  - `block::Title` no longer exists
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
@@ -19,10 +20,13 @@ This is a quick summary of the sections below:
   - `Backend` now requires an associated `Error` type and `clear_region` method
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
-  - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled
-  - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping `Terminal`
+  - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache`
+    feature is enabled
+  - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
+    `Terminal`
 - [v0.29.0](#v0290)
-  - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
+  - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
+    const
   - Removed public fields from `Rect` iterators
   - `Line` now implements `From<Cow<str>`
   - `Table::highlight_style` is now `Table::row_highlight_style`
