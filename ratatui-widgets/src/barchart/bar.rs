@@ -216,6 +216,13 @@ impl<'a> Bar<'a> {
             buf.set_stringn(area.x, area.y, text, bar_length, style);
             // render the second part with the bar_style
             if text.len() > bar_length {
+                // Find the last character boundary at or before bar_length
+                let bar_length = text
+                    .char_indices()
+                    .take_while(|(i, _)| *i < bar_length)
+                    .last()
+                    .map_or(0, |(i, c)| i + c.len_utf8());
+
                 let (first, second) = text.split_at(bar_length);
 
                 let style = bar_style.patch(self.style);
