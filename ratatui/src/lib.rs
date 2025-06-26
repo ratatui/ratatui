@@ -21,8 +21,6 @@
 //!
 //! </div>
 //!
-//! # Ratatui
-//!
 //! [Ratatui][Ratatui Website] is a crate for cooking up terminal user interfaces in Rust. It is a
 //! lightweight library that provides a set of [widgets](`widgets`) and utilities to build complex
 //! Rust TUIs. Ratatui was forked from the [tui-rs] crate in 2023 in order to continue its
@@ -66,7 +64,7 @@
 //! various [Examples]. There are also several starter templates available in the [templates]
 //! repository.
 //!
-//! ## Other documentation
+//! # Other documentation
 //!
 //! - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
 //! - [Ratatui Forum][Forum] - a place to ask questions and discuss the library
@@ -79,7 +77,27 @@
 //! You can also watch the [FOSDEM 2024 talk] about Ratatui which gives a brief introduction to
 //! terminal user interfaces and showcases the features of Ratatui, along with a hello world demo.
 //!
-//! ## Introduction
+//! # Crate Organization
+//!
+//! Starting with Ratatui 0.30.0, the project was reorganized into a modular workspace to improve
+//! compilation times, API stability, and dependency management. Most applications should continue
+//! using this main `ratatui` crate, which re-exports everything for convenience:
+//!
+//! - **[`ratatui`](crate)**: Main crate with complete functionality (recommended for apps)
+//! - **[`ratatui-core`]**: Core traits and types for widget libraries
+//! - **[`ratatui-widgets`]**: Built-in widget implementations
+//! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termwiz`]
+//! - **[`ratatui-macros`]**: Procedural macros and utilities
+//!
+//! **For application developers**: No changes needed - continue using `ratatui` as before.
+//!
+//! **For widget library authors**: Consider depending on [`ratatui-core`] instead of the full
+//! `ratatui` crate for better API stability and reduced dependencies.
+//!
+//! See [ARCHITECTURE.md] for detailed information about the crate organization and design
+//! decisions.
+//!
+//! # Introduction
 //!
 //! Ratatui is based on the principle of immediate rendering with intermediate buffers. This means
 //! that for each frame, your app must render all [`widgets`] that are supposed to be part of the
@@ -99,7 +117,7 @@
 //!   - Handles input events
 //! - Restore the terminal state
 //!
-//! ### Initialize and restore the terminal
+//! ## Initialize and restore the terminal
 //!
 //! The [`Terminal`] type is the main entry point for any Ratatui application. It is generic over a
 //! a choice of [`Backend`] implementations that each provide functionality to draw frames, clear
@@ -126,7 +144,7 @@
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
 //! the alternate screen and raw mode.
 //!
-//! ### Drawing the UI
+//! ## Drawing the UI
 //!
 //! Drawing the UI is done by calling the [`Terminal::draw`] method on the terminal instance. This
 //! method takes a closure that is called with a [`Frame`] instance. The [`Frame`] provides the size
@@ -156,7 +174,7 @@
 //! # fn handle_events() -> std::io::Result<bool> { Ok(false) }
 //! ```
 //!
-//! ### Handling events
+//! ## Handling events
 //!
 //! Ratatui does not include any input handling. Instead event handling can be implemented by
 //! calling backend library methods directly. See the [Handling Events] section of the [Ratatui
@@ -180,7 +198,7 @@
 //! }
 //! ```
 //!
-//! ## Layout
+//! # Layout
 //!
 //! The library comes with a basic yet useful layout management object called [`Layout`] which
 //! allows you to split the available space into multiple areas and then render widgets in each
@@ -217,7 +235,7 @@
 //! Status Bar──────────────────────────────────
 //! ```
 //!
-//! ## Text and styling
+//! # Text and styling
 //!
 //! The [`Text`], [`Line`] and [`Span`] types are the building blocks of the library and are used in
 //! many places. [`Text`] is a list of [`Line`]s and a [`Line`] is a list of [`Span`]s. A [`Span`]
@@ -307,6 +325,13 @@
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
 //! [tui-rs]: https://crates.io/crates/tui
+//! [`ratatui-core`]: https://crates.io/crates/ratatui-core
+//! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
+//! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
+//! [`ratatui-termwiz`]: https://crates.io/crates/ratatui-termwiz
+//! [`ratatui-macros`]: https://crates.io/crates/ratatui-macros
+//! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 //! [GitHub Sponsors]: https://github.com/sponsors/ratatui
 //! [Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
 //! [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3
@@ -324,6 +349,13 @@
 //! [Forum Badge]: https://img.shields.io/discourse/likes?server=https%3A%2F%2Fforum.ratatui.rs&style=flat-square&logo=discourse&label=forum&color=C43AC3
 //! [Forum]: https://forum.ratatui.rs
 //! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
+//! [`ratatui-core`]: https://crates.io/crates/ratatui-core
+//! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
+//! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
+//! [`ratatui-termwiz`]: https://crates.io/crates/ratatui-termwiz
+//! [`ratatui-macros`]: https://crates.io/crates/ratatui-macros
+//! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 
 #![warn(clippy::std_instead_of_core)]
 #![warn(clippy::std_instead_of_alloc)]

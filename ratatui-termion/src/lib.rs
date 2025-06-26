@@ -11,6 +11,26 @@
 //!
 //! [`Backend`]: ratatui_core::backend::Backend
 //! [Termion]: https://docs.rs/termion
+//!
+//! # Crate Organization
+//!
+//! `ratatui-termion` is part of the Ratatui workspace that was modularized in version 0.30.0.
+//! This crate provides the [Termion] backend implementation for Ratatui.
+//!
+//! **When to use `ratatui-termion`:**
+//! - You need fine-grained control over dependencies
+//! - Building a widget library that needs backend functionality
+//! - You want to use only the Termion backend without other backends
+//! - You prefer Termion's Unix-focused approach
+//!
+//! **When to use the main [`ratatui`] crate:**
+//! - Building applications (recommended - includes termion backend when enabled)
+//! - You want the convenience of having everything available
+//!
+//! For detailed information about the workspace organization, see [ARCHITECTURE.md].
+//!
+//! [`ratatui`]: https://crates.io/crates/ratatui
+//! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
