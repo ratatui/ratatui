@@ -290,9 +290,9 @@
 //! - Nested widget hierarchies (compositions with owned or external state)
 //!
 //! Each pattern has different trade-offs in terms of complexity, performance, and architectural
-//! fit, making them suitable for different use cases and application designs. For most applications,
-//! start with immutable patterns as they are simpler to reason about and less prone to borrowing
-//! issues.
+//! fit, making them suitable for different use cases and application designs. For most
+//! applications, start with immutable patterns as they are simpler to reason about and less prone
+//! to borrowing issues.
 //!
 //! [state examples]: https://github.com/ratatui/ratatui/tree/main/examples/concepts/state
 //!
@@ -571,12 +571,10 @@
 //! To discover third-party widgets:
 //!
 //! - **Search crates.io**: Look for crates with "tui" or "ratatui" in their names or descriptions
-//! - **Awesome Ratatui**: Check the [Awesome
-//!   Ratatui](https://github.com/ratatui-org/awesome-ratatui) repository for a curated list of
-//!   widgets, libraries, and applications
-//! - **Widget Showcase**: Browse the [third-party widgets
-//!   showcase](https://ratatui.rs/showcase/third-party-widgets/) on the Ratatui website to see
-//!   widgets in action
+//! - **Awesome Ratatui**: Check the [Awesome Ratatui](https://github.com/ratatui-org/awesome-ratatui)
+//!   repository for a curated list of widgets, libraries, and applications
+//! - **Widget Showcase**: Browse the [third-party widgets showcase](https://ratatui.rs/showcase/third-party-widgets/)
+//!   on the Ratatui website to see widgets in action
 //!
 //! These third-party widgets cover a wide range of functionality including specialized input
 //! components, data visualization widgets, layout helpers, and domain-specific UI elements.

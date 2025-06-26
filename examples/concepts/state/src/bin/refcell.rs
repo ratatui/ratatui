@@ -47,10 +47,10 @@ use std::cell::RefCell;
 use std::ops::AddAssign;
 use std::rc::Rc;
 
-use ratatui_state_examples::is_exit_key_pressed;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::Widget;
+use ratatui_state_examples::is_exit_key_pressed;
 
 /// Demonstrates the interior mutability pattern for mutable state management.
 ///

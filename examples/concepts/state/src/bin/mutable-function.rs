@@ -37,8 +37,8 @@
 //! State is managed at the application level and passed to render functions as needed.
 //! This approach works well when state is simple and doesn't need complex organization.
 
-use ratatui_state_examples::is_exit_key_pressed;
 use ratatui::Frame;
+use ratatui_state_examples::is_exit_key_pressed;
 
 /// Demonstrates the render function pattern for mutable state management.
 ///

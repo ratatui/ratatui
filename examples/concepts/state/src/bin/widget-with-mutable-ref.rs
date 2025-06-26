@@ -45,10 +45,10 @@
 //! runtime overhead. The widget must be recreated for each render call due to the lifetime
 //! constraints.
 
-use ratatui_state_examples::is_exit_key_pressed;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::Widget;
+use ratatui_state_examples::is_exit_key_pressed;
 
 /// Demonstrates the lifetime-based mutable references pattern for mutable state management.
 ///
