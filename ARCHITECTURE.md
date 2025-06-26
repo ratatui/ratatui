@@ -75,7 +75,7 @@ The Ratatui project is now organized as a Cargo workspace containing the followi
 
 #### `ratatui-macros`
 
-- **Purpose**: Procedural macros and compile-time utilities
+- **Purpose**: Declarative macros for common patterns and boilerplate reduction
 - **Contents**: Macros for common patterns and boilerplate reduction
 - **Target Users**: Applications and libraries wanting macro support
 

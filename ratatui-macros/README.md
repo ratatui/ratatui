@@ -118,7 +118,7 @@ request, or a pull request, all forms of contributions are valued and appreciate
 ## Crate Organization
 
 `ratatui-macros` is part of the Ratatui workspace that was modularized in version 0.30.0.
-This crate provides procedural macros and utilities to reduce boilerplate when working with
+This crate provides declarative macros to reduce boilerplate when working with
 Ratatui.
 
 **When to use `ratatui-macros`:**
