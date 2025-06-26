@@ -4,7 +4,6 @@
 //!
 //! In its simplest form, a `Block` is a [border](Borders) around another widget. It can have a
 //! [title](Block::title) and [padding](Block::padding).
-#![allow(deprecated)] // to avoid having to add `#[deprecated]` to every use of `Title`
 
 use alloc::vec::Vec;
 
@@ -932,7 +931,7 @@ impl Block<'_> {
 
     /// Calculate the top, and bottom space that the [`Block`] will take up.
     ///
-    /// Takes the [`Padding`], [`Title`]'s position, and the [`Borders`] that are selected into
+    /// Takes the [`Padding`], [`TitlePosition`], and the [`Borders`] that are selected into
     /// account when calculating the result.
     pub(crate) fn vertical_space(&self) -> (u16, u16) {
         let has_top =
