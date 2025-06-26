@@ -87,7 +87,7 @@
 //! - **[`ratatui-core`]**: Core traits and types for widget libraries
 //! - **[`ratatui-widgets`]**: Built-in widget implementations
 //! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termwiz`]
-//! - **[`ratatui-macros`]**: Procedural macros and utilities
+//! - **[`ratatui-macros`]**: Macros for simplifying the boilerplate
 //!
 //! **For application developers**: No changes needed - continue using `ratatui` as before.
 //!
