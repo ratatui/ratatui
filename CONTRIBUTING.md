@@ -91,6 +91,14 @@ cd ratatui
 cargo xtask build
 ```
 
+### Architecture
+
+For an understanding of the crate organization and design decisions, see [ARCHITECTURE.md]. This
+document explains the modular workspace structure introduced in version 0.30.0 and provides
+guidance on which crate to use for different use cases.
+
+[ARCHITECTURE.md]: ./ARCHITECTURE.md
+
 ### Tests
 
 The [test coverage](https://app.codecov.io/gh/ratatui/ratatui) of the crate is reasonably

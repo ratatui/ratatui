@@ -70,6 +70,28 @@ cargo add ratatui-widgets
 
 All these widgets are re-exported directly under `ratatui::widgets` in the `ratatui` crate.
 
+## Crate Organization
+
+`ratatui-widgets` is part of the Ratatui workspace that was modularized in version 0.30.0.
+This crate contains all the built-in widget implementations that were previously part of the
+main `ratatui` crate.
+
+**When to use `ratatui-widgets`:**
+
+- Building widget libraries that need to compose with built-in widgets
+- You want finer-grained dependencies and only need specific widgets
+- Creating custom widgets that extend or wrap the built-in ones
+
+**When to use the main [`ratatui`] crate:**
+
+- Building applications (recommended - includes everything you need)
+- You want the convenience of having all widgets available
+
+For detailed information about the workspace organization, see [ARCHITECTURE.md].
+
+[`ratatui`]: https://crates.io/crates/ratatui
+[ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request on GitHub. For more
