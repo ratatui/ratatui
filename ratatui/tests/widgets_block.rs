@@ -70,7 +70,8 @@ fn widgets_block_titles_overlap() {
         ["aaabbbccccc"],
     );
 
-    // Center alignment overwrites multiple left alignment, right alignment overwrites center alignment
+    // Center alignment overwrites multiple left alignment, right alignment overwrites center
+    // alignment
     test_case(
         Block::new()
             .title(Line::from("aaaaa").left_aligned())
