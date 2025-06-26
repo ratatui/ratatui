@@ -780,9 +780,9 @@ impl Block<'_> {
 
     fn render_title_position(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         // NOTE: the order in which these functions are called defines the overlapping behavior
-        self.render_right_titles(position, area, buf);
-        self.render_center_titles(position, area, buf);
         self.render_left_titles(position, area, buf);
+        self.render_center_titles(position, area, buf);
+        self.render_right_titles(position, area, buf);
     }
 
     /// Render titles aligned to the right of the block
@@ -1823,5 +1823,71 @@ mod tests {
             offset.y += 9;
         }
         pretty_assertions::assert_eq!(Buffer::with_lines(expected.lines()), buffer);
+    }
+
+    #[test]
+    fn left_titles_truncated() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L12345")
+            .title("L67890")
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L12345 L67"]));
+    }
+
+    /// Note: this test is probably not what you'd expect, but it is how it works in the current
+    /// implementation. Update this if the behavior changes.
+    ///
+    /// This probably should render the titles centered as a whole and then truncate both titles
+    /// to fit, but instead it renders each title and truncates them individually. This causes the
+    /// left title to be displayed in full, while the right title is truncated.
+    #[test]
+    fn center_titles_truncated() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("C12345").centered())
+            .title(Line::from("C67890").centered())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["C12345 678"]));
+    }
+
+    #[test]
+    fn right_titles_truncated() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("R12345").right_aligned())
+            .title(Line::from("R67890").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["345 R67890"]));
+    }
+
+    #[test]
+    fn center_title_truncates_left_title() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L1234")
+            .title(Line::from("C5678").centered())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L1C5678   "]));
+    }
+
+    #[test]
+    fn right_title_truncates_left_title() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L12345")
+            .title(Line::from("R67890").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L123R67890"]));
+    }
+
+    #[test]
+    fn right_title_truncates_center_title() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("C12345").centered())
+            .title(Line::from("R67890").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["  C1R67890"]));
     }
 }
