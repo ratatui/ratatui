@@ -157,22 +157,30 @@ impl Rect {
 
     /// Returns a new `Rect` outside the current one, with the given margin applied on each side.
     ///
-    /// If the margin causes the `Rect`'s bounds to be negative or larger than the maximum value of
-    /// `u16`, the `Rect` will be clamped to keep the bounds within `u16`. This will modify the size
-    /// of the `Rect`.
+    /// If the margin causes the `Rect`'s bounds to outsdie the range of a `u16`, the `Rect` will
+    /// be truncated to keep the bounds within `u16`. This will cause the size of the `Rect` to
+    /// change.
     ///
     /// The generated `Rect` may not fit inside the buffer or containing area, so it consider
     /// constraining the resulting `Rect` with [`Rect::clamp`] before using it.
     #[must_use = "method returns the modified value"]
     pub const fn outer(self, margin: Margin) -> Self {
-        Self::new(
-            self.x.saturating_sub(margin.horizontal),
-            self.y.saturating_sub(margin.vertical),
-            self.width
-                .saturating_add(margin.horizontal.saturating_mul(2)),
-            self.height
-                .saturating_add(margin.vertical.saturating_mul(2)),
-        )
+        let x = self.x.saturating_sub(margin.horizontal);
+        let y = self.y.saturating_sub(margin.vertical);
+        let width = self
+            .right()
+            .saturating_add(margin.horizontal)
+            .saturating_sub(x);
+        let height = self
+            .bottom()
+            .saturating_add(margin.vertical)
+            .saturating_sub(y);
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 
     /// Moves the `Rect` without modifying its size.
@@ -533,9 +541,22 @@ mod tests {
 
     #[test]
     fn outer() {
+        // enough space to grow on all sides
         assert_eq!(
-            Rect::new(1, 2, 3, 4).outer(Margin::new(1, 2)),
-            Rect::new(0, 0, 5, 8)
+            Rect::new(100, 200, 10, 20).outer(Margin::new(20, 30)),
+            Rect::new(80, 170, 50, 80)
+        );
+
+        // left / top saturation should truncate the size (10 less on left / top)
+        assert_eq!(
+            Rect::new(10, 20, 10, 20).outer(Margin::new(20, 30)),
+            Rect::new(0, 0, 40, 70),
+        );
+
+        // right / bottom saturation should truncate the size (10 less on bottom / right)
+        assert_eq!(
+            Rect::new(u16::MAX - 20, u16::MAX - 40, 10, 20).outer(Margin::new(20, 30)),
+            Rect::new(u16::MAX - 40, u16::MAX - 70, 40, 70),
         );
     }
 
