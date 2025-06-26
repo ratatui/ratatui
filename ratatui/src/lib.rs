@@ -90,7 +90,7 @@
 //! See [ARCHITECTURE.md] for detailed information about the crate organization and design
 //! decisions.
 //!
-//! # Introduction
+//! # Writing Applications
 //!
 //! Ratatui is based on the principle of immediate rendering with intermediate buffers. This means
 //! that for each frame, your app must render all [`widgets`] that are supposed to be part of the
@@ -113,47 +113,58 @@
 //! ## Initialize and restore the terminal
 //!
 //! The simplest way to initialize and run a terminal application is to use the [`run()`] function,
-//! which handles terminal initialization, restoration, and panic hooks automatically. This function
-//! enters the Alternate Screen and Raw mode, sets up a panic hook that restores the terminal in case
-//! of panic, and calls your render function in a loop.
+//! which handles terminal initialization, restoration, and panic hooks automatically:
+//!
+//! ```rust,no_run
+//! fn main() -> std::io::Result<()> {
+//!     ratatui::run(|mut terminal| {
+//!         loop {
+//!             terminal.draw(render)?;
+//!             if should_quit()? {
+//!                 break Ok(());
+//!             }
+//!         }
+//!     })
+//! }
+//!
+//! fn render(frame: &mut ratatui::Frame) {
+//!     // ...
+//! }
+//!
+//! fn should_quit() -> std::io::Result<bool> {
+//!     // ...
+//! #   Ok(false)
+//! }
+//! ```
+//!
+//! For more control over initialization and restoration, you can use [`init()`] and [`restore()`]:
+//!
+//! ```rust,no_run
+//! fn main() -> std::io::Result<()> {
+//!     let mut terminal = ratatui::init();
+//!     let result = run_app(&mut terminal);
+//!     ratatui::restore();
+//!     result
+//! }
+//!
+//! fn run_app(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> {
+//!     loop {
+//!         terminal.draw(render)?;
+//!         if should_quit()? {
+//!             break Ok(());
+//!         }
+//!     }
+//! }
+//! # fn render(_frame: &mut ratatui::Frame) {}
+//! # fn should_quit() -> std::io::Result<bool> { Ok(false) }
+//! ```
+//!
+//! Note that when using [`init()`] and [`restore()`], it's important to use a separate function
+//! for the main loop to ensure that [`restore()`] is always called, even if the `?` operator
+//! causes early return from an error.
 //!
 //! For more detailed information about initialization options and when to use each function, see
 //! the [`init` module] documentation.
-//!
-//! ```rust,no_run
-//! use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-//! use ratatui::{DefaultTerminal, Frame};
-//! use ratatui::text::Text;
-//!
-//! fn main() -> std::io::Result<()> {
-//!     ratatui::run(run)
-//! }
-//!
-//! fn run(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-//!     loop {
-//!         terminal.draw(render)?;
-//!         if handle_events()? {
-//!             break;
-//!         }
-//!     }
-//!     Ok(())
-//! }
-//!
-//! fn render(frame: &mut Frame) {
-//!     let text = Text::raw("Hello World!");
-//!     frame.render_widget(text, frame.area());
-//! }
-//!
-//! fn handle_events() -> std::io::Result<bool> {
-//!     if let Some(key) = event::read()?.as_key_press_event() {
-//!         match key.code {
-//!             KeyCode::Char('q') => return Ok(true),
-//!             _ => {}
-//!         }
-//!     }
-//!     Ok(false)
-//! }
-//! ```
 //!
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
 //! the alternate screen and raw mode.
@@ -212,7 +223,7 @@
 //! }
 //! ```
 //!
-//! # Layout
+//! ## Layout
 //!
 //! The library comes with a basic yet useful layout management object called [`Layout`] which
 //! allows you to split the available space into multiple areas and then render widgets in each
@@ -249,7 +260,7 @@
 //! Status Bar──────────────────────────────────
 //! ```
 //!
-//! # Text and styling
+//! ## Text and styling
 //!
 //! The [`Text`], [`Line`] and [`Span`] types are the building blocks of the library and are used in
 //! many places. [`Text`] is a list of [`Line`]s and a [`Line`] is a list of [`Span`]s. A [`Span`]
