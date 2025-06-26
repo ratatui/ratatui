@@ -58,7 +58,7 @@ fn workspace_libs() -> Result<Vec<String>> {
         .workspace_packages()
         .iter()
         .filter(|v| v.targets.iter().any(|t| t.kind.contains(&TargetKind::Lib)))
-        .map(|v| v.name.clone())
+        .map(|v| v.name.to_string())
         .collect();
     Ok(packages)
 }
