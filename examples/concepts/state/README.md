@@ -1,9 +1,9 @@
-# Ratatui Mutable State Examples
+# Ratatui State Management Examples
 
-This collection demonstrates various patterns for handling mutable state in Ratatui applications.
-Each example solves the same problem - incrementing a counter during rendering - but uses different
-architectural approaches. These patterns represent common solutions to state management challenges
-you'll encounter when building TUI applications.
+This collection demonstrates various patterns for handling both mutable and immutable state in
+Ratatui applications. Each example solves a counter problem - incrementing a counter value - but
+uses different architectural approaches. These patterns represent common solutions to state
+management challenges you'll encounter when building TUI applications.
 
 For more information about widgets in Ratatui, see the [widgets module documentation](https://docs.rs/ratatui/latest/ratatui/widgets/index.html).
 
@@ -29,11 +29,46 @@ Press any key (or resize the terminal) to increment the counter. Press `<Esc>` o
 
 ## Examples
 
-### Beginner-Friendly Patterns
+### Immutable State Patterns
 
-#### [`render-function.rs`] - Function-Based State Management
+These patterns keep widget state immutable during rendering, with state updates happening outside
+the render cycle. They're generally easier to reason about and less prone to borrowing issues.
 
-**Best for**: Simple applications with minimal state
+#### [`immutable-function.rs`] - Function-Based Immutable State
+
+**Best for**: Simple applications with pure rendering functions
+**Pros**: Pure functions, easy to test, clear separation of concerns
+**Cons**: Verbose parameter passing, limited integration with Ratatui ecosystem
+
+Uses standalone functions that take immutable references to state. State updates happen in the
+application loop outside of rendering.
+
+#### [`immutable-shared-ref.rs`] - Shared Reference Pattern (Recommended)
+
+**Best for**: Most modern Ratatui applications
+**Pros**: Reusable widgets, efficient, integrates with Ratatui ecosystem, modern best practice
+**Cons**: Requires external state management for dynamic behavior
+
+Implements [`Widget`](https://docs.rs/ratatui/latest/ratatui/widgets/trait.Widget.html) for
+`&T`, allowing widgets to be rendered multiple times by reference without being consumed.
+
+#### [`immutable-consuming.rs`] - Consuming Widget Pattern
+
+**Best for**: Compatibility with older code, simple widgets created fresh each frame
+**Pros**: Simple implementation, widely compatible, familiar pattern
+**Cons**: Widget consumed on each render, requires reconstruction for reuse
+
+Implements [`Widget`](https://docs.rs/ratatui/latest/ratatui/widgets/trait.Widget.html) directly
+on the owned type, consuming the widget when rendered.
+
+### Mutable State Patterns
+
+These patterns allow widgets to modify their state during rendering, useful for widgets that need
+to update state as part of their rendering behavior.
+
+#### [`mutable-function.rs`] - Function-Based Mutable State
+
+**Best for**: Simple applications with minimal mutable state
 **Pros**: Easy to understand, no traits to implement, direct control
 **Cons**: State gets passed around as function parameters, harder to organize as complexity grows
 
@@ -42,7 +77,7 @@ level and passed down to render functions.
 
 #### [`mutable-widget.rs`] - Mutable Widget Pattern
 
-**Best for**: Self-contained widgets with their own state
+**Best for**: Self-contained widgets with their own mutable state
 **Pros**: Encapsulates state within the widget, familiar OOP-style approach
 **Cons**: Requires `&mut` references, can be challenging with complex borrowing scenarios
 
@@ -107,11 +142,19 @@ Stores mutable references directly in widget structs using explicit lifetimes.
 
 ## Choosing the Right Pattern
 
-1. **Start simple**: Begin with `render-function` or `mutable-widget` for prototypes
-2. **Consider separation**: Use `stateful-widget` when you want to separate widget logic from state
-3. **Go hierarchical**: Use `nested-*` patterns for complex widget relationships
-4. **Handle sharing**: Use `refcell` when multiple widgets need the same state
-5. **Optimize later**: Consider `widget-with-mutable-ref` for performance-critical code
+**For most applications, start with immutable patterns:**
+
+1. **Simple apps**: Use `immutable-function` for basic rendering with external state management
+2. **Modern Ratatui**: Use `immutable-shared-ref` for reusable, efficient widgets (recommended)
+3. **Legacy compatibility**: Use `immutable-consuming` when working with older code patterns
+
+**Use mutable patterns when widgets need to update state during rendering:**
+
+1. **Simple mutable state**: Begin with `mutable-function` or `mutable-widget` for prototypes
+2. **Clean separation**: Use `stateful-widget` when you want to separate widget logic from state
+3. **Hierarchical widgets**: Use `nested-*` patterns for complex widget relationships
+4. **Shared state**: Use `refcell` when multiple widgets need the same state
+5. **Performance critical**: Consider `widget-with-mutable-ref` for advanced lifetime management
 
 ## Common Pitfalls
 
@@ -124,10 +167,13 @@ Stores mutable references directly in widget structs using explicit lifetimes.
   layers unnecessarily.
 
 [`component-trait.rs`]: ./src/bin/component-trait.rs
+[`immutable-consuming.rs`]: ./src/bin/immutable-consuming.rs
+[`immutable-function.rs`]: ./src/bin/immutable-function.rs
+[`immutable-shared-ref.rs`]: ./src/bin/immutable-shared-ref.rs
 [`mutable-widget.rs`]: ./src/bin/mutable-widget.rs
 [`nested-mutable-widget.rs`]: ./src/bin/nested-mutable-widget.rs
 [`nested-stateful-widget.rs`]: ./src/bin/nested-stateful-widget.rs
 [`refcell.rs`]: ./src/bin/refcell.rs
-[`render-function.rs`]: ./src/bin/render-function.rs
+[`mutable-function.rs`]: ./src/bin/mutable-function.rs
 [`stateful-widget.rs`]: ./src/bin/stateful-widget.rs
 [`widget-with-mutable-ref.rs`]: ./src/bin/widget-with-mutable-ref.rs

@@ -1,5 +1,5 @@
 [package]
-name = "mutable-state"
+name = "ratatui-state-examples"
 publish = false
 license.workspace = true
 edition.workspace = true

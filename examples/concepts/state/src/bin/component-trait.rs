@@ -30,9 +30,9 @@
 //! by taking `&mut self` instead of `self`. This is similar to the mutable widget pattern but
 //! with a custom trait interface.
 
-use mutable_state::is_exit_key_pressed;
 use ratatui::Frame;
 use ratatui::layout::Rect;
+use ratatui_state_examples::is_exit_key_pressed;
 
 /// Demonstrates the custom component trait pattern for mutable state management.
 ///

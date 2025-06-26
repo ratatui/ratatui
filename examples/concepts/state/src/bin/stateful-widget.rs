@@ -32,7 +32,7 @@
 //! managed separately. This allows the same widget to be used with different state instances
 //! and makes testing easier.
 
-use mutable_state::is_exit_key_pressed;
+use ratatui_state_examples::is_exit_key_pressed;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::{StatefulWidget, Widget};

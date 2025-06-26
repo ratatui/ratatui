@@ -30,10 +30,10 @@
 //! The widget implements `Widget` for `&mut Self`, allowing it to mutate its internal state
 //! during the render call. Each render increments a counter, demonstrating state mutation.
 
-use mutable_state::is_exit_key_pressed;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::Widget;
+use ratatui_state_examples::is_exit_key_pressed;
 
 /// Demonstrates the mutable widget pattern for mutable state management.
 ///

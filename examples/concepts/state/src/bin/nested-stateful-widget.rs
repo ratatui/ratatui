@@ -32,7 +32,7 @@
 //! functionality to child widgets like `Counter`. Each widget is responsible for its own
 //! state type and rendering logic, making the system highly modular.
 
-use mutable_state::is_exit_key_pressed;
+use ratatui_state_examples::is_exit_key_pressed;
 use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;

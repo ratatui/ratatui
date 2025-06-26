@@ -31,11 +31,11 @@
 //! `&mut Self`, allowing them to mutate their respective states during rendering. The parent
 //! delegates rendering to the child while maintaining its own state structure.
 
-use mutable_state::is_exit_key_pressed;
 use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::Widget;
+use ratatui_state_examples::is_exit_key_pressed;
 
 /// Demonstrates the nested mutable widget pattern for mutable state management.
 ///

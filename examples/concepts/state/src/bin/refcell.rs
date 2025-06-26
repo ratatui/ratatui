@@ -41,7 +41,7 @@ use std::cell::RefCell;
 use std::ops::AddAssign;
 use std::rc::Rc;
 
-use mutable_state::is_exit_key_pressed;
+use ratatui_state_examples::is_exit_key_pressed;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::Widget;
