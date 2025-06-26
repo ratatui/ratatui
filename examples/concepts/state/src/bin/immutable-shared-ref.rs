@@ -4,6 +4,12 @@
 //! with immutable state. This is the recommended pattern for most widgets in modern Ratatui
 //! applications, as it allows widgets to be reused without being consumed.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - You want to reuse widgets across multiple renders

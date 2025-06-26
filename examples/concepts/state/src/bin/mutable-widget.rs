@@ -4,6 +4,12 @@
 //! to allow direct state mutation during rendering. This is one of the simplest approaches for
 //! widgets that need to maintain their own state.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - You have self-contained widgets with their own state

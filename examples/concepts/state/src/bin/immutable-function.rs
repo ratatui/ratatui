@@ -4,6 +4,12 @@
 //! state. This pattern keeps state management completely separate from widget rendering logic,
 //! making it easy to test and reason about.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - You prefer functional programming approaches

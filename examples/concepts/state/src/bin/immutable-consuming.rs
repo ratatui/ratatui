@@ -4,6 +4,12 @@
 //! causing it to be consumed when rendered. This was the original pattern in Ratatui and
 //! is still commonly used, especially for simple widgets that are created fresh each frame.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - You're working with existing code that uses this pattern

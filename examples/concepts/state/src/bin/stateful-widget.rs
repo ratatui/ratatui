@@ -4,6 +4,12 @@
 //! handling mutable state in Ratatui applications. This pattern separates the widget's rendering
 //! logic from its state, making it more flexible and reusable.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - Most Ratatui applications (this is the recommended default)

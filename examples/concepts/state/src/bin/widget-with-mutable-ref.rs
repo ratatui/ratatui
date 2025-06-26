@@ -4,6 +4,12 @@
 //! lifetimes. This is an advanced pattern that provides zero-cost state access but requires
 //! careful lifetime management.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - You need maximum performance with zero runtime overhead

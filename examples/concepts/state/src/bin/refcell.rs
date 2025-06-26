@@ -4,6 +4,12 @@
 //! widgets to share and mutate the same state. This pattern is useful when you need shared
 //! mutable state but can't use mutable references due to borrowing constraints.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - Multiple widgets need to access and modify the same state

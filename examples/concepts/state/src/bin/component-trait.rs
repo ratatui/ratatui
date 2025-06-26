@@ -5,6 +5,12 @@
 //! consistent behavior across multiple widget types without implementing the `Widget` trait for
 //! each one.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - You're building a widget framework or library with custom behavior

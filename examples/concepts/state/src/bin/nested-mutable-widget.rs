@@ -4,6 +4,12 @@
 //! This pattern is useful when you have a parent-child widget relationship where both widgets
 //! need to maintain and mutate their own state during rendering.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - You have hierarchical widget relationships (parent-child)

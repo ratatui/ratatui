@@ -4,6 +4,12 @@
 //! This pattern is ideal for complex applications where you need clean separation of concerns
 //! and want to leverage the benefits of the StatefulWidget pattern at multiple levels.
 //!
+//! This example runs with the Ratatui library code in the branch that you are currently
+//! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
+//! release.
+//!
+//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+//!
 //! ## When to Use This Pattern
 //!
 //! - Complex applications with hierarchical state management needs
