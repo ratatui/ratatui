@@ -10,11 +10,11 @@ use crate::symbols::{block, line};
 /// └─────────── begin
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
-pub struct Set {
-    pub track: &'static str,
-    pub thumb: &'static str,
-    pub begin: &'static str,
-    pub end: &'static str,
+pub struct Set<'a> {
+    pub track: &'a str,
+    pub thumb: &'a str,
+    pub begin: &'a str,
+    pub end: &'a str,
 }
 
 pub const DOUBLE_VERTICAL: Set = Set {

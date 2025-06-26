@@ -6,6 +6,11 @@ use crate::style::Style;
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
 ///
+/// For a comprehensive guide to widgets, including trait explanations, implementation patterns,
+/// and available widgets, see the [`widgets`] module documentation.
+///
+/// [`widgets`]: ../../ratatui/widgets/index.html
+///
 /// Prior to Ratatui 0.26.0, widgets generally were created for each frame as they were consumed
 /// during rendering. This meant that they were not meant to be stored but used as *commands* to
 /// draw common figures in the UI.

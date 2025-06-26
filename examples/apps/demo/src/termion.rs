@@ -42,7 +42,7 @@ where
 {
     let events = events(tick_rate);
     loop {
-        terminal.draw(|frame| ui::draw(frame, &mut app))?;
+        terminal.draw(|frame| ui::render(frame, &mut app))?;
 
         match events.recv()? {
             Event::Input(key) => match key {

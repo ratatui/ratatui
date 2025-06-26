@@ -9,67 +9,39 @@
 //! [`BarChart`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html
 
 use color_eyre::Result;
-use crossterm::event::{self, KeyCode};
+use crossterm::event;
 use rand::{Rng, rng};
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::{Bar, BarChart, BarGroup};
-use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::new().run(terminal);
-    ratatui::restore();
-    app_result
+
+    let temperatures: Vec<u8> = (0..24).map(|_| rng().random_range(50..90)).collect();
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(|frame| render(frame, &temperatures))?;
+            if event::read()?.is_key_press() {
+                break Ok(());
+            }
+        }
+    })
 }
 
-struct App {
-    should_exit: bool,
-    temperatures: Vec<u8>,
-}
+fn render(frame: &mut Frame, temperatures: &[u8]) {
+    let [title, main] = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)])
+        .spacing(1)
+        .areas(frame.area());
 
-impl App {
-    fn new() -> Self {
-        let mut rng = rng();
-        let temperatures = (0..24).map(|_| rng.random_range(50..90)).collect();
-        Self {
-            should_exit: false,
-            temperatures,
-        }
-    }
-
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
-        while !self.should_exit {
-            terminal.draw(|frame| self.render(frame))?;
-            self.handle_events()?;
-        }
-        Ok(())
-    }
-
-    fn handle_events(&mut self) -> Result<()> {
-        if event::read()?
-            .as_key_press_event()
-            .is_some_and(|key| key.code == KeyCode::Char('q'))
-        {
-            self.should_exit = true;
-        }
-        Ok(())
-    }
-
-    fn render(&self, frame: &mut Frame) {
-        let [title, main] = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)])
-            .spacing(1)
-            .areas(frame.area());
-
-        frame.render_widget("Weather demo".bold().into_centered_line(), title);
-        frame.render_widget(vertical_barchart(&self.temperatures), main);
-    }
+    frame.render_widget("Weather demo".bold().into_centered_line(), title);
+    frame.render_widget(vertical_barchart(temperatures), main);
 }
 
 /// Create a vertical bar chart from the temperatures data.
-fn vertical_barchart(temperatures: &[u8]) -> BarChart {
+fn vertical_barchart(temperatures: &[u8]) -> BarChart<'_> {
     let bars: Vec<Bar> = temperatures
         .iter()
         .enumerate()
@@ -80,7 +52,7 @@ fn vertical_barchart(temperatures: &[u8]) -> BarChart {
         .bar_width(5)
 }
 
-fn vertical_bar(hour: usize, temperature: &u8) -> Bar {
+fn vertical_bar(hour: usize, temperature: &u8) -> Bar<'_> {
     Bar::default()
         .value(u64::from(*temperature))
         .label(Line::from(format!("{hour:>02}:00")))

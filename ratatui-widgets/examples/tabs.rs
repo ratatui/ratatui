@@ -20,32 +20,25 @@ use ratatui::layout::{Alignment, Constraint, Layout, Offset, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph, Tabs};
-use ratatui::{DefaultTerminal, Frame, symbols};
+use ratatui::{Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    let mut selected_tab = 0;
-    loop {
-        terminal.draw(|frame| render(frame, selected_tab))?;
-        if let Some(key) = event::read()?.as_key_press_event() {
-            match key.code {
-                KeyCode::Char('l') | KeyCode::Right | KeyCode::Tab => {
-                    selected_tab = (selected_tab + 1) % 3;
+    let mut selection = 0;
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(|frame| render(frame, selection))?;
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => break Ok(()),
+                    KeyCode::Char('l') | KeyCode::Right => selection = (selection + 1) % 3,
+                    KeyCode::Char('h') | KeyCode::Left => selection = (selection + 2) % 3,
+                    _ => {}
                 }
-                KeyCode::Char('h') | KeyCode::Left => selected_tab = (selected_tab + 2) % 3,
-                KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                _ => {}
             }
         }
-    }
+    })
 }
 
 /// Render the UI with tabs.

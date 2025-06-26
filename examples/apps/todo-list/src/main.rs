@@ -27,10 +27,7 @@ const COMPLETED_TEXT_FG_COLOR: Color = GREEN.c500;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 /// This struct holds the current state of the app. In particular, it has the `todo_list` field
@@ -124,7 +121,7 @@ impl TodoItem {
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while !self.should_exit {
             terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             if let Some(key) = event::read()?.as_key_press_event() {
