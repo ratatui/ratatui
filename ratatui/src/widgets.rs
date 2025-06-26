@@ -268,6 +268,34 @@
 //! (`&MyWidget` or `&mut MyWidget`). This provides reusability and automatic [`WidgetRef`] support.
 //! You can optionally implement the consuming version for backward compatibility.
 //!
+//! ## State Management Patterns
+//!
+//! For a comprehensive exploration of different approaches to handling both mutable and immutable
+//! state in widgets, see the [state examples] in the Ratatui repository. These examples demonstrate
+//! various patterns including:
+//!
+//! **Immutable State Patterns** (recommended for most use cases):
+//! - Function-based immutable state (`fn render(frame: &mut Frame, area: Rect, state: &State)`)
+//! - Shared reference widgets (`impl Widget for &MyWidget`)
+//! - Consuming widgets (`impl Widget for MyWidget`)
+//!
+//! **Mutable State Patterns** (for widgets that modify state during rendering):
+//! - Function-based mutable state (`fn render(frame: &mut Frame, area: Rect, state: &mut State)`)
+//! - Mutable widget references (`impl Widget for &mut MyWidget`)
+//! - `StatefulWidget` pattern (`impl StatefulWidget for MyWidget`)
+//! - Custom component traits (`trait MyComponent { fn render(&mut self, frame: &mut Frame, area:
+//!   Rect) }`)
+//! - Interior mutability with `RefCell` (`struct MyWidget { state: Rc<RefCell<State>> }`)
+//! - Lifetime-based mutable references (`struct MyWidget<'a> { state: &'a mut State }`)
+//! - Nested widget hierarchies (compositions with owned or external state)
+//!
+//! Each pattern has different trade-offs in terms of complexity, performance, and architectural
+//! fit, making them suitable for different use cases and application designs. For most
+//! applications, start with immutable patterns as they are simpler to reason about and less prone
+//! to borrowing issues.
+//!
+//! [state examples]: https://github.com/ratatui/ratatui/tree/main/examples/concepts/state
+//!
 //! ## Shared References (`&Widget`)
 //!
 //! The recommended pattern for most new widgets implements [`Widget`] on a shared reference,
