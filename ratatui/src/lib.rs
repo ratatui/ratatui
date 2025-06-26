@@ -37,24 +37,17 @@
 //! Then you can create a simple "Hello World" application:
 //!
 //! ```rust,no_run
-//! use crossterm::event::{self, Event};
-//! use ratatui::Frame;
-//! use ratatui::text::Text;
+//! use crossterm::event;
 //!
-//! fn main() {
-//!     let mut terminal = ratatui::init();
-//!     loop {
-//!         terminal.draw(draw).expect("failed to draw frame");
-//!         if matches!(event::read().expect("failed to read event"), Event::Key(_)) {
-//!             break;
+//! fn main() -> std::io::Result<()> {
+//!     ratatui::run(|mut terminal| {
+//!         loop {
+//!             terminal.draw(|frame| frame.render_widget("Hello World!", frame.area()))?;
+//!             if event::read()?.is_key_press_event() {
+//!                 break Ok(());
+//!             }
 //!         }
-//!     }
-//!     ratatui::restore();
-//! }
-//!
-//! fn draw(frame: &mut Frame) {
-//!     let text = Text::raw("Hello World!");
-//!     frame.render_widget(text, frame.area());
+//!     })
 //! }
 //! ```
 //!
@@ -119,26 +112,47 @@
 //!
 //! ## Initialize and restore the terminal
 //!
-//! The [`Terminal`] type is the main entry point for any Ratatui application. It is generic over a
-//! a choice of [`Backend`] implementations that each provide functionality to draw frames, clear
-//! the screen, hide the cursor, etc. There are backend implementations for [Crossterm], [Termion]
-//! and [Termwiz].
+//! The simplest way to initialize and run a terminal application is to use the [`run()`] function,
+//! which handles terminal initialization, restoration, and panic hooks automatically. This function
+//! enters the Alternate Screen and Raw mode, sets up a panic hook that restores the terminal in case
+//! of panic, and calls your render function in a loop.
 //!
-//! The simplest way to initialize the terminal is to use the [`init`] function which returns a
-//! [`DefaultTerminal`] instance with the default options, enters the Alternate Screen and Raw mode
-//! and sets up a panic hook that restores the terminal in case of panic. This instance can then be
-//! used to draw frames and interact with the terminal state. (The [`DefaultTerminal`] instance is a
-//! type alias for a terminal with the [`crossterm`] backend.) The [`restore`] function restores the
-//! terminal to its original state.
+//! For more detailed information about initialization options and when to use each function, see
+//! the [`init` module] documentation.
 //!
 //! ```rust,no_run
+//! use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+//! use ratatui::{DefaultTerminal, Frame};
+//! use ratatui::text::Text;
+//!
 //! fn main() -> std::io::Result<()> {
-//!     let mut terminal = ratatui::init();
-//!     let result = run(&mut terminal);
-//!     ratatui::restore();
-//!     result
+//!     ratatui::run(run)
 //! }
-//! # fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> { Ok(()) }
+//!
+//! fn run(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+//!     loop {
+//!         terminal.draw(render)?;
+//!         if handle_events()? {
+//!             break;
+//!         }
+//!     }
+//!     Ok(())
+//! }
+//!
+//! fn render(frame: &mut Frame) {
+//!     let text = Text::raw("Hello World!");
+//!     frame.render_widget(text, frame.area());
+//! }
+//!
+//! fn handle_events() -> std::io::Result<bool> {
+//!     if let Some(key) = event::read()?.as_key_press_event() {
+//!         match key.code {
+//!             KeyCode::Char('q') => return Ok(true),
+//!             _ => {}
+//!         }
+//!     }
+//!     Ok(false)
+//! }
 //! ```
 //!
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
@@ -160,14 +174,14 @@
 //!
 //! fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> {
 //!     loop {
-//!         terminal.draw(|frame| draw(frame))?;
+//!         terminal.draw(|frame| render(frame))?;
 //!         if handle_events()? {
 //!             break Ok(());
 //!         }
 //!     }
 //! }
 //!
-//! fn draw(frame: &mut Frame) {
+//! fn render(frame: &mut Frame) {
 //!     let text = Paragraph::new("Hello World!");
 //!     frame.render_widget(text, frame.area());
 //! }
@@ -319,6 +333,7 @@
 //! [`Stylize`]: style::Stylize
 //! [`Backend`]: backend::Backend
 //! [`backend` module]: backend
+//! [`init` module]: mod@init
 //! [`crossterm::event`]: https://docs.rs/crossterm/latest/crossterm/event/index.html
 //! [Crate]: https://crates.io/crates/ratatui
 //! [Crossterm]: https://crates.io/crates/crossterm
@@ -383,6 +398,7 @@ pub use ratatui_termion::termion;
 pub use ratatui_termwiz::termwiz;
 
 #[cfg(feature = "crossterm")]
+#[doc(inline)]
 pub use crate::init::{
     DefaultTerminal, init, init_with_options, restore, run, try_init, try_init_with_options,
     try_restore,
@@ -404,4 +420,4 @@ pub use ratatui_core::{style, symbols, text};
 pub mod widgets;
 pub use ratatui_widgets::border;
 #[cfg(feature = "crossterm")]
-mod init;
+pub mod init;
