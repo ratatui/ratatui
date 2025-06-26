@@ -17,11 +17,13 @@
 //! This crate provides the [Crossterm] backend implementation for Ratatui.
 //!
 //! **When to use `ratatui-crossterm`:**
+//!
 //! - You need fine-grained control over dependencies
 //! - Building a widget library that needs backend functionality
 //! - You want to use only the Crossterm backend without other backends
 //!
 //! **When to use the main [`ratatui`] crate:**
+//!
 //! - Building applications (recommended - includes crossterm backend by default)
 //! - You want the convenience of having everything available
 //!

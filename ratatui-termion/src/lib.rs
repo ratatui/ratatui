@@ -18,12 +18,14 @@
 //! This crate provides the [Termion] backend implementation for Ratatui.
 //!
 //! **When to use `ratatui-termion`:**
+//!
 //! - You need fine-grained control over dependencies
 //! - Building a widget library that needs backend functionality
 //! - You want to use only the Termion backend without other backends
 //! - You prefer Termion's Unix-focused approach
 //!
 //! **When to use the main [`ratatui`] crate:**
+//!
 //! - Building applications (recommended - includes termion backend when enabled)
 //! - You want the convenience of having everything available
 //!

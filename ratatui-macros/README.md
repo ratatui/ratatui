@@ -115,6 +115,28 @@ let table = Table::new(rows, constraints![==20, *=1]);
 Contributions to `ratatui-macros` are welcome! Whether it's submitting a bug report, a feature
 request, or a pull request, all forms of contributions are valued and appreciated.
 
+## Crate Organization
+
+`ratatui-macros` is part of the Ratatui workspace that was modularized in version 0.30.0.
+This crate provides procedural macros and utilities to reduce boilerplate when working with
+Ratatui.
+
+**When to use `ratatui-macros`:**
+
+- You want to reduce boilerplate when creating styled text, layouts, or tables
+- You prefer macro-based syntax for creating UI elements
+- You need compile-time generation of repetitive UI code
+
+**When to use the main [`ratatui`] crate:**
+
+- Building applications (recommended - includes macros when the `macros` feature is enabled)
+- You want the convenience of having everything available
+
+For detailed information about the workspace organization, see [ARCHITECTURE.md].
+
+[`ratatui`]: https://crates.io/crates/ratatui
+[ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
+
 [Crates.io badge]: https://img.shields.io/crates/v/ratatui-macros?logo=rust&style=flat-square
 [License badge]: https://img.shields.io/crates/l/ratatui-macros
 [CI Badge]:

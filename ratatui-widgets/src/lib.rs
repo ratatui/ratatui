@@ -77,11 +77,13 @@
 //! main `ratatui` crate.
 //!
 //! **When to use `ratatui-widgets`:**
+//!
 //! - Building widget libraries that need to compose with built-in widgets
 //! - You want finer-grained dependencies and only need specific widgets
 //! - Creating custom widgets that extend or wrap the built-in ones
 //!
 //! **When to use the main [`ratatui`] crate:**
+//!
 //! - Building applications (recommended - includes everything you need)
 //! - You want the convenience of having all widgets available
 //!

@@ -35,12 +35,14 @@
 //! foundational types and traits that other crates in the workspace depend on.
 //!
 //! **When to use `ratatui-core`:**
+//!
 //! - Building widget libraries that implement [`Widget`] or [`StatefulWidget`]
 //! - Creating lightweight applications that don't need built-in widgets
 //! - You want minimal dependencies and faster compilation times
 //! - You need maximum API stability (core types change less frequently)
 //!
 //! **When to use the main [`ratatui`] crate:**
+//!
 //! - Building applications that use built-in widgets
 //! - You want convenience and don't mind slightly longer compilation times
 //! - You need backend implementations and terminal management utilities

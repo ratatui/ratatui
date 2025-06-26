@@ -128,11 +128,13 @@
 //! Ratatui.
 //!
 //! **When to use `ratatui-macros`:**
+//!
 //! - You want to reduce boilerplate when creating styled text, layouts, or tables
 //! - You prefer macro-based syntax for creating UI elements
 //! - You need compile-time generation of repetitive UI code
 //!
 //! **When to use the main [`ratatui`] crate:**
+//!
 //! - Building applications (recommended - includes macros when the `macros` feature is enabled)
 //! - You want the convenience of having everything available
 //!
