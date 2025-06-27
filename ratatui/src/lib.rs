@@ -37,36 +37,34 @@
 //! Then you can create a simple "Hello World" application:
 //!
 //! ```rust,no_run
-//! use crossterm::event::{self, Event};
-//! use ratatui::Frame;
-//! use ratatui::text::Text;
+//! use crossterm::event;
 //!
-//! fn main() {
-//!     let mut terminal = ratatui::init();
-//!     loop {
-//!         terminal.draw(draw).expect("failed to draw frame");
-//!         if matches!(event::read().expect("failed to read event"), Event::Key(_)) {
-//!             break;
+//! fn main() -> std::io::Result<()> {
+//!     ratatui::run(|mut terminal| {
+//!         loop {
+//!             terminal.draw(|frame| frame.render_widget("Hello World!", frame.area()))?;
+//!             if event::read()?.is_key_press() {
+//!                 break Ok(());
+//!             }
 //!         }
-//!     }
-//!     ratatui::restore();
-//! }
-//!
-//! fn draw(frame: &mut Frame) {
-//!     let text = Text::raw("Hello World!");
-//!     frame.render_widget(text, frame.area());
+//!     })
 //! }
 //! ```
 //!
 //! The full code for this example which contains a little more detail is in the [Examples]
 //! directory. For more guidance on different ways to structure your application see the
-//! [Application Patterns] and [Hello World tutorial] sections in the [Ratatui Website] and the
-//! various [Examples]. There are also several starter templates available in the [templates]
-//! repository.
+//! [Application Patterns] and [Hello Ratatui tutorial] sections in the [Ratatui Website] and the
+//! various [Examples]. There are also several starter [Templates] available to help you get
+//! started quickly with common patterns.
 //!
 //! # Other documentation
 //!
 //! - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
+//! - [Tutorials] - step-by-step guides including [Hello Ratatui tutorial] and [Counter App]
+//! - [Recipes] - practical how-to guides for common tasks and patterns
+//! - [FAQ] - frequently asked questions and answers
+//! - [Templates] - pre-built project templates using [Cargo Generate]
+//! - [Showcase] - a gallery of applications and widgets built with Ratatui
 //! - [Ratatui Forum][Forum] - a place to ask questions and discuss the library
 //! - [API Docs] - the full API documentation for the library on docs.rs.
 //! - [Examples] - a collection of examples that demonstrate how to use the library.
@@ -76,6 +74,12 @@
 //!
 //! You can also watch the [FOSDEM 2024 talk] about Ratatui which gives a brief introduction to
 //! terminal user interfaces and showcases the features of Ratatui, along with a hello world demo.
+//!
+//! ## Getting Help
+//!
+//! If you need help or have questions, check out our [FAQ] for common questions and solutions.
+//! You can also join our community on [Discord][Discord Server], [Matrix], or post on our
+//! [Forum] for assistance and discussions.
 //!
 //! # Crate Organization
 //!
@@ -97,7 +101,7 @@
 //! See [ARCHITECTURE.md] for detailed information about the crate organization and design
 //! decisions.
 //!
-//! # Introduction
+//! # Writing Applications
 //!
 //! Ratatui is based on the principle of immediate rendering with intermediate buffers. This means
 //! that for each frame, your app must render all [`widgets`] that are supposed to be part of the
@@ -111,7 +115,7 @@
 //!
 //! Every application built with `ratatui` needs to implement the following steps:
 //!
-//! - Initialize the terminal
+//! - Initialize the terminal (see the [`init` module] for convenient initialization functions)
 //! - A main loop that:
 //!   - Draws the UI
 //!   - Handles input events
@@ -119,30 +123,70 @@
 //!
 //! ## Initialize and restore the terminal
 //!
-//! The [`Terminal`] type is the main entry point for any Ratatui application. It is generic over a
-//! a choice of [`Backend`] implementations that each provide functionality to draw frames, clear
-//! the screen, hide the cursor, etc. There are backend implementations for [Crossterm], [Termion]
-//! and [Termwiz].
+//! The simplest way to initialize and run a terminal application is to use the [`run()`] function,
+//! which handles terminal initialization, restoration, and panic hooks automatically:
 //!
-//! The simplest way to initialize the terminal is to use the [`init`] function which returns a
-//! [`DefaultTerminal`] instance with the default options, enters the Alternate Screen and Raw mode
-//! and sets up a panic hook that restores the terminal in case of panic. This instance can then be
-//! used to draw frames and interact with the terminal state. (The [`DefaultTerminal`] instance is a
-//! type alias for a terminal with the [`crossterm`] backend.) The [`restore`] function restores the
-//! terminal to its original state.
+//! ```rust,no_run
+//! fn main() -> std::io::Result<()> {
+//!     ratatui::run(|mut terminal| {
+//!         loop {
+//!             terminal.draw(render)?;
+//!             if should_quit()? {
+//!                 break Ok(());
+//!             }
+//!         }
+//!     })
+//! }
+//!
+//! fn render(frame: &mut ratatui::Frame) {
+//!     // ...
+//! }
+//!
+//! fn should_quit() -> std::io::Result<bool> {
+//!     // ...
+//! #   Ok(false)
+//! }
+//! ```
+//!
+//! For more control over initialization and restoration, you can use [`init()`] and [`restore()`]:
 //!
 //! ```rust,no_run
 //! fn main() -> std::io::Result<()> {
 //!     let mut terminal = ratatui::init();
-//!     let result = run(&mut terminal);
+//!     let result = run_app(&mut terminal);
 //!     ratatui::restore();
 //!     result
 //! }
-//! # fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> { Ok(()) }
+//!
+//! fn run_app(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> {
+//!     loop {
+//!         terminal.draw(render)?;
+//!         if should_quit()? {
+//!             break Ok(());
+//!         }
+//!     }
+//! }
+//! # fn render(_frame: &mut ratatui::Frame) {}
+//! # fn should_quit() -> std::io::Result<bool> { Ok(false) }
 //! ```
 //!
+//! Note that when using [`init()`] and [`restore()`], it's important to use a separate function
+//! for the main loop to ensure that [`restore()`] is always called, even if the `?` operator
+//! causes early return from an error.
+//!
+//! For more detailed information about initialization options and when to use each function, see
+//! the [`init` module] documentation.
+//!
+//! ### Manual Terminal and Backend Construction
+//!
+//! Before the convenience functions were introduced in version 0.28.1 ([`init()`]/[`restore()`])
+//! and 0.30.0 ([`run()`]), applications constructed [`Terminal`] and [`Backend`] instances
+//! manually. This approach is still supported for applications that need fine-grained control over
+//! initialization. See the [`Terminal`] and [`backend`] module documentation for details.
+//!
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
-//! the alternate screen and raw mode.
+//! the alternate screen and raw mode. Learn more about different backend options in the [Backend
+//! Comparison] guide.
 //!
 //! ## Drawing the UI
 //!
@@ -150,9 +194,11 @@
 //! method takes a closure that is called with a [`Frame`] instance. The [`Frame`] provides the size
 //! of the area to draw to and allows the app to render any [`Widget`] using the provided
 //! [`render_widget`] method. After this closure returns, a diff is performed and only the changes
-//! are drawn to the terminal. See the [Widgets] section of the [Ratatui Website] for more info.
+//! are drawn to the terminal. See the [Widgets] section of the [Ratatui Website] and the [Widget
+//! Recipes] for more info on creating effective UIs.
 //!
 //! The closure passed to the [`Terminal::draw`] method should handle the rendering of a full frame.
+//! For guidance on setting up the terminal before drawing, see the [`init` module] documentation.
 //!
 //! ```rust,no_run
 //! use ratatui::Frame;
@@ -160,14 +206,14 @@
 //!
 //! fn run(terminal: &mut ratatui::DefaultTerminal) -> std::io::Result<()> {
 //!     loop {
-//!         terminal.draw(|frame| draw(frame))?;
+//!         terminal.draw(|frame| render(frame))?;
 //!         if handle_events()? {
 //!             break Ok(());
 //!         }
 //!     }
 //! }
 //!
-//! fn draw(frame: &mut Frame) {
+//! fn render(frame: &mut Frame) {
 //!     let text = Paragraph::new("Hello World!");
 //!     frame.render_widget(text, frame.area());
 //! }
@@ -178,7 +224,7 @@
 //!
 //! Ratatui does not include any input handling. Instead event handling can be implemented by
 //! calling backend library methods directly. See the [Handling Events] section of the [Ratatui
-//! Website] for more info. For example, if you are using [Crossterm], you can use the
+//! Website] for conceptual information. For example, if you are using [Crossterm], you can use the
 //! [`crossterm::event`] module to handle events.
 //!
 //! ```rust,no_run
@@ -198,12 +244,13 @@
 //! }
 //! ```
 //!
-//! # Layout
+//! ## Layout
 //!
 //! The library comes with a basic yet useful layout management object called [`Layout`] which
 //! allows you to split the available space into multiple areas and then render widgets in each
 //! area. This lets you describe a responsive terminal UI by nesting layouts. See the [Layout]
-//! section of the [Ratatui Website] for more info.
+//! section of the [Ratatui Website] for more info, and check out the [Layout Recipes] for
+//! practical examples.
 //!
 //! ```rust,no_run
 //! use ratatui::Frame;
@@ -235,7 +282,7 @@
 //! Status Bar──────────────────────────────────
 //! ```
 //!
-//! # Text and styling
+//! ## Text and styling
 //!
 //! The [`Text`], [`Line`] and [`Span`] types are the building blocks of the library and are used in
 //! many places. [`Text`] is a list of [`Line`]s and a [`Line`] is a list of [`Span`]s. A [`Span`]
@@ -245,7 +292,7 @@
 //! important one is [`Style`] which represents the foreground and background colors and the text
 //! attributes of a [`Span`]. The [`style` module] also provides a [`Stylize`] trait that allows
 //! short-hand syntax to apply a style to widgets and text. See the [Styling Text] section of the
-//! [Ratatui Website] for more info.
+//! [Ratatui Website] for more info, and explore the [Styling Recipes] for creative examples.
 //!
 //! ```rust,no_run
 //! use ratatui::Frame;
@@ -288,14 +335,26 @@
 //!
 //! [Ratatui Website]: https://ratatui.rs/
 //! [Installation]: https://ratatui.rs/installation/
+//! [Tutorials]: https://ratatui.rs/tutorials/
+//! [Hello Ratatui tutorial]: https://ratatui.rs/tutorials/hello-ratatui/
+//! [Counter App]: https://ratatui.rs/tutorials/counter-app/
+//! [Recipes]: https://ratatui.rs/recipes/
+//! [FAQ]: https://ratatui.rs/faq/
+//! [Templates]: https://ratatui.rs/templates/
+//! [Cargo Generate]: https://cargo-generate.github.io/cargo-generate/
+//! [Showcase]: https://ratatui.rs/showcase/
 //! [Rendering]: https://ratatui.rs/concepts/rendering/
 //! [Application Patterns]: https://ratatui.rs/concepts/application-patterns/
 //! [Hello World tutorial]: https://ratatui.rs/tutorials/hello-world/
 //! [Backends]: https://ratatui.rs/concepts/backends/
-//! [Widgets]: https://ratatui.rs/how-to/widgets/
+//! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
+//! [Widgets]: https://ratatui.rs/recipes/widgets/
+//! [Widget Recipes]: https://ratatui.rs/recipes/widgets/
 //! [Handling Events]: https://ratatui.rs/concepts/event-handling/
-//! [Layout]: https://ratatui.rs/how-to/layout/
-//! [Styling Text]: https://ratatui.rs/how-to/render/style-text/
+//! [Layout]: https://ratatui.rs/recipes/layout/
+//! [Layout Recipes]: https://ratatui.rs/recipes/layout/
+//! [Styling Text]: https://ratatui.rs/recipes/render/style-text/
+//! [Styling Recipes]: https://ratatui.rs/recipes/render/
 //! [templates]: https://github.com/ratatui/templates/
 //! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 //! [Report a bug]: https://github.com/ratatui/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
@@ -318,7 +377,9 @@
 //! [`style` module]: style
 //! [`Stylize`]: style::Stylize
 //! [`Backend`]: backend::Backend
+//! [`Terminal`]: Terminal
 //! [`backend` module]: backend
+//! [`init` module]: mod@init
 //! [`crossterm::event`]: https://docs.rs/crossterm/latest/crossterm/event/index.html
 //! [Crate]: https://crates.io/crates/ratatui
 //! [Crossterm]: https://crates.io/crates/crossterm
@@ -383,6 +444,7 @@ pub use ratatui_termion::termion;
 pub use ratatui_termwiz::termwiz;
 
 #[cfg(feature = "crossterm")]
+#[doc(inline)]
 pub use crate::init::{
     DefaultTerminal, init, init_with_options, restore, run, try_init, try_init_with_options,
     try_restore,
@@ -404,4 +466,4 @@ pub use ratatui_core::{style, symbols, text};
 pub mod widgets;
 pub use ratatui_widgets::border;
 #[cfg(feature = "crossterm")]
-mod init;
+pub mod init;

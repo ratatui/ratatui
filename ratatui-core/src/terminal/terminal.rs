@@ -26,7 +26,31 @@ use crate::terminal::{CompletedFrame, Frame, TerminalOptions, Viewport};
 /// application with the new size. This will automatically resize the internal buffers to match the
 /// new size for inline and fullscreen viewports. Fixed viewports are not resized automatically.
 ///
+/// # Initialization
+///
+/// For most applications, consider using the convenience functions `ratatui::run()`,
+/// `ratatui::init()`, and `ratatui::restore()` (available since version 0.28.1) along with the
+/// `DefaultTerminal` type alias instead of constructing `Terminal` instances manually. These
+/// functions handle the common setup and teardown tasks automatically. Manual construction
+/// using `Terminal::new()` or `Terminal::with_options()` is still supported for applications
+/// that need fine-grained control over initialization.
+///
 /// # Examples
+///
+/// ## Using convenience functions (recommended for most applications)
+///
+/// ```rust,ignore
+/// // Modern approach using convenience functions
+/// ratatui::run(|terminal| {
+///     terminal.draw(|frame| {
+///         let area = frame.area();
+///         frame.render_widget(Paragraph::new("Hello World!"), area);
+///     })?;
+///     Ok(())
+/// })?;
+/// ```
+///
+/// ## Manual construction (for fine-grained control)
 ///
 /// ```rust,ignore
 /// use std::io::stdout;
