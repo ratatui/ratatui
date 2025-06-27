@@ -7,7 +7,12 @@
 //! All functions in this module use the [`CrosstermBackend`] by default, which provides excellent
 //! cross-platform compatibility and is the recommended backend for most applications. The
 //! [`DefaultTerminal`] type alias encapsulates this choice, providing a ready-to-use terminal
-//! configuration that works well across different operating systems.
+//! configuration that works well across different operating systems. For more information about
+//! backend choices and alternatives, see the [`backend`](`crate::backend`) module.
+//!
+//! Once you have initialized a terminal using the functions in this module, you can use it to
+//! [draw the UI](`crate#drawing-the-ui`) and [handle events](`crate#handling-events`). For more
+//! information about building widgets for your application, see the [`widgets`](`crate::widgets`) module.
 //!
 //! # Available Types and Functions
 //!
@@ -22,13 +27,13 @@
 //! The module provides several related functions that handle different initialization scenarios:
 //!
 //! - [`run`] - Initializes a terminal, runs a closure, and automatically restores the terminal
-//!   state. This is the simplest way to run a Ratatui application and handles all setup and
-//!   cleanup automatically.
+//!   state. This is the simplest way to run a Ratatui application and handles all setup and cleanup
+//!   automatically.
 //! - [`init`] - Creates a terminal with reasonable defaults including alternate screen and raw
 //!   mode. Panics on failure.
 //! - [`try_init`] - Same as [`init`] but returns a `Result` instead of panicking.
-//! - [`init_with_options`] - Creates a terminal with custom [`TerminalOptions`], enabling raw
-//!   mode but not alternate screen. Panics on failure.
+//! - [`init_with_options`] - Creates a terminal with custom [`TerminalOptions`], enabling raw mode
+//!   but not alternate screen. Panics on failure.
 //! - [`try_init_with_options`] - Same as [`init_with_options`] but returns a `Result` instead of
 //!   panicking.
 //! - [`restore`] - Restores the terminal to its original state. Prints errors to stderr but does
@@ -96,6 +101,10 @@
 //! For cleanup, use [`restore`] in most cases where you want to attempt restoration but don't need
 //! to handle errors (they are printed to stderr). Use [`try_restore`] when you need to handle
 //! restoration errors, perhaps to retry or provide user feedback.
+//!
+//! Once you have a terminal set up, continue with the main loop to [draw the UI](`crate#drawing-the-ui`)
+//! and [handle events](`crate#handling-events`). See the [main crate documentation](`crate`) for
+//! comprehensive examples of complete applications.
 //!
 //! # Key Differences
 //!
