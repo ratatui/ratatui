@@ -20,6 +20,7 @@ pub struct Circle {
 
 impl Shape for Circle {
     fn draw(&self, painter: &mut Painter<'_, '_>) {
+
         fn swap_sort<T: PartialOrd>(a: &mut T, b: &mut T) {
             if a > b {
                 mem::swap(a, b);
@@ -55,9 +56,8 @@ impl Shape for Circle {
 
                 swap_sort(&mut grid_start, &mut grid_end);
 
-                for grid_x in grid_start..=grid_end {
-                    painter.paint(grid_x, y_step.grid, self.color);
-                }
+                painter.paint(grid_start, y_step.grid, self.color);
+                painter.paint(grid_end, y_step.grid, self.color);
             }
         }
     }
@@ -93,11 +93,87 @@ mod tests {
             .y_bounds([-10.0, 10.0]);
         canvas.render(buffer.area, &mut buffer);
         let expected = Buffer::with_lines(vec![
-            "     ⢀⣠⢤⣀ ",
+            "     ⢀⢠⢤⢀ ",
             "    ⢰⠋  ⠈⡇",
-            "    ⠘⣆⡀ ⣠⠇",
-            "      ⠉⠉⠁ ",
+            "    ⠘⡆⡀ ⣠⠇",
+            "      ⠁⠁⠁ ",
             "          ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    /// Render a larger circle into a 100×50 buffer using Braille markers.
+    ///
+    /// This test is initially blank; fill in `expected` after inspecting the printed output.
+    #[test]
+    #[allow(unused_mut)]
+    fn test_draws_large_circle() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 100, 50));
+        let canvas = Canvas::default()
+            .paint(|ctx| {
+                ctx.draw(&Circle {
+                    x: 0.0,
+                    y: 0.0,
+                    radius: 25.0,
+                    color: Color::Reset,
+                });
+            })
+            .marker(Marker::Braille)
+            .x_bounds([-25.0, 25.0])
+            .y_bounds([-25.0, 25.0]);
+        canvas.render(buffer.area, &mut buffer);
+        // Expected rendering of a circle in a 100×50 buffer using Braille markers.
+        let expected = Buffer::with_lines(vec![
+            "                                   ⢀ ⢠ ⠰  ⠘      ⠈      ⠘  ⠰ ⢠ ⢀                                    ",
+            "                              ⡀⡄⠰ ⠃⠈                           ⠈ ⠃⠰ ⡄⡀                              ",
+            "                          ⡀⡄⠆⠃⠁                                      ⠁⠃⠆⡄⡀                          ",
+            "                      ⢀⡄⠆⠃⠁                                              ⠁⠃⠆⣄                       ",
+            "                   ⢀⢠⠞⠈                                                     ⠈⠘⢦⢀                    ",
+            "                 ⣠⠰⠋                                                           ⠈⠳⢠⡀                 ",
+            "               ⣠⠞⠁                                                                ⠙⢦⡀               ",
+            "             ⣠⠞⠁                                                                    ⠙⢦⡀             ",
+            "           ⣠⠞⠁                                                                        ⠙⢦⡀           ",
+            "         ⢀⡴⠃                                                                            ⠳⣄          ",
+            "        ⣠⠞                                                                               ⠘⢦⡀        ",
+            "       ⡴⠃                                                                                  ⠳⡄       ",
+            "      ⡼⠁                                                                                    ⠹⡄      ",
+            "     ⡼⠁                                                                                      ⠹⡄     ",
+            "    ⡼⠁                                                                                        ⠹⡄    ",
+            "   ⡼⠁                                                                                          ⠹⡄   ",
+            "  ⢰⠃                                                                                            ⢳   ",
+            " ⢀⡏                                                                                             ⠈⣇  ",
+            " ⣸                                                                                               ⢸⡀ ",
+            "⢀⡇                                                                                                ⣇ ",
+            "⢸                                                                                                 ⢸ ",
+            "⡞                                                                                                 ⠘⡆",
+            "⡇                                                                                                  ⡇",
+            "⡇                                                                                                  ⡇",
+            "⡇                                                                                                  ⡇",
+            "⡇                                                                                                  ⡇",
+            "⡇                                                                                                  ⡇",
+            "⡇                                                                                                  ⡇",
+            "⢳                                                                                                 ⢰⠃",
+            "⢸⡀                                                                                                ⣸ ",
+            " ⣇                                                                                               ⢀⡇ ",
+            " ⢸⡀                                                                                              ⣸  ",
+            "  ⢧                                                                                             ⢠⠇  ",
+            "  ⠘⡆                                                                                            ⡞   ",
+            "   ⠹⡄                                                                                          ⡼⠁   ",
+            "    ⠹⡄                                                                                        ⡼⠁    ",
+            "     ⠹⡄                                                                                      ⡼⠁     ",
+            "      ⠹⡄                                                                                    ⡼⠁      ",
+            "       ⠙⣆                                                                                 ⢀⡞⠁       ",
+            "        ⠈⢳⡀                                                                              ⣰⠋         ",
+            "          ⠙⣆                                                                           ⢀⡞⠁          ",
+            "           ⠈⠳⣄                                                                       ⢀⡴⠋            ",
+            "             ⠈⠳⣄                                                                   ⢀⡴⠋              ",
+            "               ⠈⠳⣄                                                               ⢀⡴⠋                ",
+            "                 ⠈⠘⢦⢀                                                         ⢀⢠⠞⠈                  ",
+            "                    ⠈⠳⢠⡀                                                    ⣠⠰⠋                     ",
+            "                       ⠁⠃⠆⡄⡀                                            ⡀⡄⠆⠃⠁                       ",
+            "                           ⠁⠃⠆⡄⡀                                    ⡀⡄⠆⠃⠁                           ",
+            "                               ⠁⠘ ⠆⢠ ⢀                       ⢀ ⢠ ⠆⠘ ⠁                               ",
+            "                                     ⠈ ⠘  ⠰      ⢠      ⠰  ⠘ ⠈                                      ",
         ]);
         assert_eq!(buffer, expected);
     }
