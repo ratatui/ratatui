@@ -3,10 +3,27 @@ use core::fmt;
 
 use crate::layout::Rect;
 
-/// A simple size struct
+/// A simple size struct for representing dimensions in the terminal.
 ///
 /// The width and height are stored as `u16` values and represent the number of columns and rows
-/// respectively.
+/// respectively. This is used throughout the layout system to represent dimensions of rectangular
+/// areas and other layout elements.
+///
+/// Size can be created from tuples, extracted from rectangular areas, or constructed directly.
+/// It's commonly used in conjunction with [`Position`](crate::layout::Position) to define
+/// rectangular areas.
+///
+/// # Examples
+///
+/// ```rust
+/// use ratatui_core::layout::{Rect, Size};
+///
+/// let size = Size::new(80, 24);
+/// let size = Size::from((80, 24));
+/// let size = Size::from(Rect::new(0, 0, 80, 24));
+/// ```
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Size {

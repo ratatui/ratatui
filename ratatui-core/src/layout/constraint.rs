@@ -5,10 +5,9 @@ use strum::EnumIs;
 
 /// A constraint that defines the size of a layout element.
 ///
-/// Constraints can be used to specify a fixed size, a percentage of the available space, a ratio of
-/// the available space, a minimum or maximum size or a fill proportional value for a layout
-/// element.
-///
+/// Constraints are the core mechanism for defining how space should be allocated within a
+/// [`Layout`](crate::layout::Layout). They can specify fixed sizes (length), proportional sizes
+/// (percentage, ratio), size limits (min, max), or proportional fill values for layout elements.
 /// Relative constraints (percentage, ratio) are calculated relative to the entire space being
 /// divided, rather than the space available after applying more fixed constraints (min, max,
 /// length).
@@ -45,6 +44,8 @@ use strum::EnumIs;
 /// // Create a layout with fill proportional sizes for each element
 /// let constraints = Constraint::from_fills([1, 2, 1]);
 /// ```
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Constraint {

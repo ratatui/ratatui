@@ -1,5 +1,14 @@
 use strum::{Display, EnumString};
 
+/// Defines the direction of a layout.
+///
+/// This enumeration is used with [`Layout`](crate::layout::Layout) to specify whether layout
+/// segments should be arranged horizontally or vertically.
+///
+/// - `Horizontal`: Layout segments are arranged side by side (left to right)
+/// - `Vertical`: Layout segments are arranged top to bottom (default)
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Direction {

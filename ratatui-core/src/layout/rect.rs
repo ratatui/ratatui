@@ -9,10 +9,36 @@ pub use iter::*;
 
 use super::{Constraint, Flex, Layout};
 
-/// A Rectangular area.
+/// A rectangular area in the terminal.
 ///
-/// A simple rectangle used in the computation of the layout and to give widgets a hint about the
-/// area they are supposed to render to.
+/// A `Rect` represents a rectangular region in the terminal coordinate system, defined by its
+/// top-left corner position and dimensions. This is the fundamental building block for all layout
+/// operations and widget rendering in Ratatui.
+///
+/// Rectangles are used throughout the layout system to define areas where widgets can be rendered.
+/// They are typically created by [`Layout`] operations that divide terminal space, but can also be
+/// manually constructed for specific positioning needs.
+///
+/// The coordinate system uses the top-left corner as the origin (0, 0), with x increasing to the
+/// right and y increasing downward. All measurements are in character cells.
+///
+/// # Examples
+///
+/// ```rust
+/// use ratatui_core::layout::{Position, Rect, Size};
+///
+/// // Create a rectangle manually
+/// let rect = Rect::new(10, 5, 80, 20);
+/// assert_eq!(rect.x, 10);
+/// assert_eq!(rect.y, 5);
+/// assert_eq!(rect.width, 80);
+/// assert_eq!(rect.height, 20);
+///
+/// // Create from position and size
+/// let rect = Rect::from((Position::new(10, 5), Size::new(80, 20)));
+/// ```
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rect {
