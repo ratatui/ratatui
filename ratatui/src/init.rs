@@ -14,6 +14,10 @@
 //! [draw the UI](`crate#drawing-the-ui`) and [handle events](`crate#handling-events`). For more
 //! information about building widgets for your application, see the [`widgets`](`crate::widgets`) module.
 //!
+//! **Note**: All functions and types in this module are re-exported at the crate root for
+//! convenience, so you can call `ratatui::run()`, `ratatui::init()`, etc. instead of
+//! `ratatui::init::run()`, `ratatui::init::init()`, etc.
+//!
 //! # Available Types and Functions
 //!
 //! ## Types
