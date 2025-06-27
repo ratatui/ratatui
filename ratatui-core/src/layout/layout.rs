@@ -131,26 +131,35 @@ impl From<i16> for Spacing {
 /// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
 /// can be configured using [`Layout::init_cache()`].
 ///
-/// # Constructors
+/// # Construction
 ///
-/// There are four ways to create a new layout:
+/// - [`default`](Default::default) - Create a layout with default values (vertical direction, no
+///   constraints, no margin)
+/// - [`new`](Self::new) - Create a new layout with a given direction and constraints
+/// - [`vertical`](Self::vertical) - Create a new vertical layout with the given constraints
+/// - [`horizontal`](Self::horizontal) - Create a new horizontal layout with the given constraints
 ///
-/// - [`Layout::default`]: create a new layout with default values
-/// - [`Layout::new`]: create a new layout with a given direction and constraints
-/// - [`Layout::vertical`]: create a new vertical layout with the given constraints
-/// - [`Layout::horizontal`]: create a new horizontal layout with the given constraints
+/// # Configuration
 ///
-/// # Setters
+/// - [`direction`](Self::direction) - Set the direction of the layout
+/// - [`constraints`](Self::constraints) - Set the constraints of the layout
+/// - [`margin`](Self::margin) - Set uniform margin on all sides
+/// - [`horizontal_margin`](Self::horizontal_margin) - Set the horizontal margin of the layout
+/// - [`vertical_margin`](Self::vertical_margin) - Set the vertical margin of the layout
+/// - [`flex`](Self::flex) - Set the way space is distributed when constraints are satisfied
+/// - [`spacing`](Self::spacing) - Set the gap between the constraints of the layout
 ///
-/// There are several setters to modify the layout:
+/// # Layout Operations
 ///
-/// - [`Layout::direction`]: set the direction of the layout
-/// - [`Layout::constraints`]: set the constraints of the layout
-/// - [`Layout::margin`]: set the margin of the layout
-/// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
-/// - [`Layout::vertical_margin`]: set the vertical margin of the layout
-/// - [`Layout::flex`]: set the way the space is distributed when the constraints are satisfied
-/// - [`Layout::spacing`]: sets the gap between the constraints of the layout
+/// - [`areas`](Self::areas) - Split area into fixed number of rectangles (compile-time known)
+/// - [`spacers`](Self::spacers) - Get spacer rectangles between layout areas
+/// - [`split`](Self::split) - Split area into rectangles (runtime determined count)
+/// - [`split_with_spacers`](Self::split_with_spacers) - Split area and return both areas and
+///   spacers
+///
+/// # Cache Management
+///
+/// - [`init_cache`](Self::init_cache) - Initialize layout cache with custom size
 ///
 /// # Example
 ///
@@ -162,9 +171,9 @@ impl From<i16> for Spacing {
 ///
 /// fn render(area: Rect, buf: &mut Buffer) {
 ///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Fill(1)]);
-///     let [left, right] = layout.areas(area);
-///     Text::from("foo").render(left, buf);
-///     Text::from("bar").render(right, buf);
+///     let [top, bottom] = layout.areas(area);
+///     Text::from("foo").render(top, buf);
+///     Text::from("bar").render(bottom, buf);
 /// }
 /// ```
 ///
@@ -528,7 +537,7 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::layout::{Layout, Constraint, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let area = Rect::new(0, 0, 10, 10);
     /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);

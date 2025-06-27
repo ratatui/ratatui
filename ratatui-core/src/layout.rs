@@ -89,10 +89,27 @@
 //!
 //! // Divide it vertically into two equal parts using Layout
 //! let layout = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
-//! let areas: [Rect; 2] = layout.areas(area);
+//! let [top, bottom] = layout.areas(area);
 //!
-//! // Now you have two areas: areas[0] and areas[1]
+//! // Now you have two areas: top and bottom
 //! ```
+//!
+//! **Note**: When the number of layout areas is known at compile time, use destructuring
+//! assignment with descriptive variable names for better readability:
+//!
+//! ```rust
+//! use ratatui_core::layout::{Constraint, Layout, Rect};
+//!
+//! let area = Rect::new(0, 0, 80, 24);
+//! let [header, content, footer] = Layout::vertical([
+//!     Constraint::Length(3),
+//!     Constraint::Fill(1),
+//!     Constraint::Length(1),
+//! ])
+//! .areas(area);
+//! ```
+//!
+//! Use [`Layout::split`] when the number of areas is only known at runtime.
 //!
 //! Alternatively, you can create layouts manually using mathematics:
 //!
@@ -104,7 +121,12 @@
 //!
 //! // Manually divide into two equal parts
 //! let top_half = Rect::new(area.x, area.y, area.width, area.height / 2);
-//! let bottom_half = Rect::new(area.x, area.y + area.height / 2, area.width, area.height / 2);
+//! let bottom_half = Rect::new(
+//!     area.x,
+//!     area.y + area.height / 2,
+//!     area.width,
+//!     area.height / 2,
+//! );
 //! ```
 //!
 //! # Layout Examples
@@ -112,24 +134,28 @@
 //! ## Basic Vertical Split
 //!
 //! ```rust
-//! use ratatui_core::layout::{Constraint, Layout};
+//! use ratatui_core::layout::{Constraint, Layout, Rect};
 //!
-//! let layout = Layout::vertical([
+//! let area = Rect::new(0, 0, 80, 24);
+//! let [header, content, footer] = Layout::vertical([
 //!     Constraint::Length(3), // Header: fixed height
 //!     Constraint::Fill(1),   // Content: flexible
 //!     Constraint::Length(1), // Footer: fixed height
-//! ]);
+//! ])
+//! .areas(area);
 //! ```
 //!
 //! ## Horizontal Sidebar Layout
 //!
 //! ```rust
-//! use ratatui_core::layout::{Constraint, Layout};
+//! use ratatui_core::layout::{Constraint, Layout, Rect};
 //!
-//! let layout = Layout::horizontal([
+//! let area = Rect::new(0, 0, 80, 24);
+//! let [sidebar, main] = Layout::horizontal([
 //!     Constraint::Length(20), // Sidebar: fixed width
 //!     Constraint::Fill(1),    // Main content: flexible
-//! ]);
+//! ])
+//! .areas(area);
 //! ```
 //!
 //! ## Complex Nested Layout
@@ -139,7 +165,7 @@
 //!
 //! fn create_complex_layout(area: Rect) -> [Rect; 4] {
 //!     // First, split vertically
-//!     let vertical: [Rect; 3] = Layout::vertical([
+//!     let [header, body, footer] = Layout::vertical([
 //!         Constraint::Length(3), // Header
 //!         Constraint::Fill(1),   // Body
 //!         Constraint::Length(1), // Footer
@@ -147,13 +173,13 @@
 //!     .areas(area);
 //!
 //!     // Then split the body horizontally
-//!     let horizontal: [Rect; 2] = Layout::horizontal([
+//!     let [sidebar, main] = Layout::horizontal([
 //!         Constraint::Length(20), // Sidebar
 //!         Constraint::Fill(1),    // Main
 //!     ])
-//!     .areas(vertical[1]);
+//!     .areas(body);
 //!
-//!     [vertical[0], horizontal[0], horizontal[1], vertical[2]]
+//!     [header, sidebar, main, footer]
 //! }
 //! ```
 //!
@@ -221,42 +247,32 @@
 //!
 //! ## Area Iteration
 //!
-//! Iterate over rows, columns, or all positions within a rectangular area:
+//! Iterate over rows, columns, or all positions within a rectangular area. The `rows()` and
+//! `columns()` iterators return full [`Rect`] regions that can be used to render widgets or
+//! passed to other layout methods for more complex nested layouts. The `positions()` iterator
+//! returns [`Position`] values representing individual cell coordinates:
 //!
 //! ```rust
-//! use ratatui_core::{
-//!     buffer::Buffer,
-//!     layout::Rect,
-//!     style::{Color, Style},
-//!     text::Span,
-//! };
+//! use ratatui_core::buffer::Buffer;
+//! use ratatui_core::layout::{Constraint, Layout, Rect};
+//! use ratatui_core::widgets::Widget;
 //!
-//! let area = Rect::new(0, 0, 10, 5);
+//! let area = Rect::new(0, 0, 20, 10);
 //! let mut buffer = Buffer::empty(area);
 //!
-//! // Mark each row with a different background color
+//! // Renders "Row 0", "Row 1", etc. in each horizontal row
 //! for (i, row) in area.rows().enumerate() {
-//!     let color = match i % 3 {
-//!         0 => Color::Red,
-//!         1 => Color::Green,
-//!         _ => Color::Blue,
-//!     };
-//!     // Apply style to the entire row area
-//!     buffer.set_style(row, Style::default().bg(color));
+//!     format!("Row {i}").render(row, &mut buffer);
 //! }
 //!
-//! // Mark column borders
-//! for col in area.columns() {
-//!     if col.x > 0 {
-//!         buffer.set_string(col.x, col.y, "|", Style::default());
-//!     }
+//! // Renders column indices (0-9 repeating) in each vertical column
+//! for (i, col) in area.columns().enumerate() {
+//!     format!("{}", i % 10).render(col, &mut buffer);
 //! }
 //!
-//! // Set content at specific positions
+//! // Renders position indices (0-9 repeating) at each cell position
 //! for (i, pos) in area.positions().enumerate() {
-//!     if i % 10 == 0 {
-//!         buffer.set_string(pos.x, pos.y, "•", Style::default().fg(Color::Yellow));
-//!     }
+//!     buffer[pos].set_symbol(&format!("{}", i % 10));
 //! }
 //! ```
 //!

@@ -21,6 +21,27 @@ use strum::EnumIs;
 /// 5. [`Constraint::Ratio`]
 /// 6. [`Constraint::Fill`]
 ///
+/// # Size Calculation
+///
+/// - [`apply`](Self::apply) - Apply the constraint to a length and return the resulting size
+///
+/// # Collection Creation
+///
+/// - [`from_lengths`](Self::from_lengths) - Create a collection of length constraints
+/// - [`from_ratios`](Self::from_ratios) - Create a collection of ratio constraints
+/// - [`from_percentages`](Self::from_percentages) - Create a collection of percentage constraints
+/// - [`from_maxes`](Self::from_maxes) - Create a collection of maximum constraints
+/// - [`from_mins`](Self::from_mins) - Create a collection of minimum constraints
+/// - [`from_fills`](Self::from_fills) - Create a collection of fill constraints
+///
+/// # Conversion and Construction
+///
+/// - [`from(u16)`](Self::from) - Create a [`Length`](Self::Length) constraint from `u16`
+/// - [`from(&Constraint)`](Self::from) - Create from `&Constraint` (copy)
+/// - [`as_ref()`](Self::as_ref) - Get a reference to self
+/// - [`default()`](Self::default) - Create default constraint
+///   ([`Percentage(100)`](Self::Percentage))
+///
 /// # Examples
 ///
 /// `Constraint` provides helper methods to create lists of constraints from various input formats.

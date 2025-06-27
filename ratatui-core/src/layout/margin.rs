@@ -11,6 +11,11 @@ use core::fmt;
 /// margin, the space is applied to both the left and right sides. For vertical margin, the space
 /// is applied to both the top and bottom sides.
 ///
+/// # Construction
+///
+/// - [`new`](Self::new) - Create a new margin with horizontal and vertical spacing
+/// - [`default`](Default::default) - Create with zero margin
+///
 /// # Examples
 ///
 /// ```rust

@@ -13,6 +13,17 @@ use crate::layout::Rect;
 /// It's commonly used in conjunction with [`Position`](crate::layout::Position) to define
 /// rectangular areas.
 ///
+/// # Construction
+///
+/// - [`new`](Self::new) - Create a new size from width and height
+/// - [`default`](Default::default) - Create with zero dimensions
+///
+/// # Conversion
+///
+/// - [`from((u16, u16))`](Self::from) - Create from `(u16, u16)` tuple
+/// - [`from(Rect)`](Self::from) - Create from [`Rect`] (uses width and height)
+/// - [`into((u16, u16))`] - Convert to `(u16, u16)` tuple
+///
 /// # Examples
 ///
 /// ```rust

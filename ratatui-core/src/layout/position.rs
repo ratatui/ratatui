@@ -12,6 +12,17 @@ use crate::layout::Rect;
 /// `Position` is used throughout the layout system to represent specific points in the terminal.
 /// It can be created from coordinates, tuples, or extracted from rectangular areas.
 ///
+/// # Construction
+///
+/// - [`new`](Self::new) - Create a new position from x and y coordinates
+/// - [`default`](Default::default) - Create at origin (0, 0)
+///
+/// # Conversion
+///
+/// - [`from((u16, u16))`](Self::from) - Create from `(u16, u16)` tuple
+/// - [`from(Rect)`](Self::from) - Create from [`Rect`] (uses top-left corner)
+/// - [`into((u16, u16))`] - Convert to `(u16, u16)` tuple
+///
 /// # Examples
 ///
 /// ```
