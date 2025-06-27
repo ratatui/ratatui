@@ -179,9 +179,9 @@
 //!
 //! ### Manual Terminal and Backend Construction
 //!
-//! Before the convenience functions were introduced in version 0.28.1 ([`init()`]/[`restore()`]) and 
+//! Before the convenience functions were introduced in version 0.28.1 ([`init()`]/[`restore()`]) and
 //! 0.30.0 ([`run()`]), applications constructed [`Terminal`] and [`Backend`] instances manually.
-//! This approach is still supported for applications that need fine-grained control over 
+//! This approach is still supported for applications that need fine-grained control over
 //! initialization. See the [`Terminal`] and [`backend`] module documentation for details.
 //!
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
