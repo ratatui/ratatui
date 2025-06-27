@@ -49,17 +49,16 @@
 //! For the simplest setup with automatic cleanup, use [`run`]:
 //!
 //! ```rust,no_run
-//! # use crossterm::event;
-//! ratatui::run(|terminal| {
-//!     terminal.draw(|frame| {
-//!         frame.render_widget("Hello, world!", frame.area());
-//!     })?;
-//!     if event::read()?.is_key_press() {
-//!         return Ok(());
-//!     }
-//!     Ok(())
-//! })?;
-//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! fn main() -> std::io::Result<()> {
+//!     ratatui::run(|terminal| {
+//!         loop {
+//!             terminal.draw(|frame| frame.render_widget("Hello, world!", frame.area()))?;
+//!             if crossterm::event::read()?.is_key_press() {
+//!                 break Ok(());
+//!             }
+//!         }
+//!     })
+//! }
 //! ```
 //!
 //! For standard full-screen applications with manual control over initialization and cleanup:
