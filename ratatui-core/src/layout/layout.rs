@@ -109,47 +109,57 @@ impl From<i16> for Spacing {
     }
 }
 
+/// The primary layout engine for dividing terminal space using constraints and direction.
+///
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
-/// ones.
+/// rectangular areas. This is the core building block for creating structured user interfaces in
+/// terminal applications.
 ///
 /// A layout is composed of:
 /// - a direction (horizontal or vertical)
 /// - a set of constraints (length, ratio, percentage, fill, min, max)
 /// - a margin (horizontal and vertical), the space between the edge of the main area and the split
 ///   areas
-/// - a flex option
-/// - a spacing option
+/// - a flex option that controls space distribution
+/// - a spacing option that controls gaps between segments
 ///
-/// The algorithm used to compute the layout is based on the [`kasuari`] solver. It is a simple
-/// linear solver that can be used to solve linear equations and inequalities. In our case, we
-/// define a set of constraints that are applied to split the provided area into Rects aligned in a
-/// single direction, and the solver computes the values of the position and sizes that satisfy as
-/// many of the constraints in order of their priorities.
+/// The algorithm used to compute the layout is based on the [`kasuari`] solver, a linear constraint
+/// solver that computes positions and sizes to satisfy as many constraints as possible in order of
+/// their priorities.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
 /// can be configured using [`Layout::init_cache()`].
 ///
-/// # Constructors
+/// # Construction
 ///
-/// There are four ways to create a new layout:
+/// - [`default`](Default::default) - Create a layout with default values (vertical direction, no
+///   constraints, no margin)
+/// - [`new`](Self::new) - Create a new layout with a given direction and constraints
+/// - [`vertical`](Self::vertical) - Create a new vertical layout with the given constraints
+/// - [`horizontal`](Self::horizontal) - Create a new horizontal layout with the given constraints
 ///
-/// - [`Layout::default`]: create a new layout with default values
-/// - [`Layout::new`]: create a new layout with a given direction and constraints
-/// - [`Layout::vertical`]: create a new vertical layout with the given constraints
-/// - [`Layout::horizontal`]: create a new horizontal layout with the given constraints
+/// # Configuration
 ///
-/// # Setters
+/// - [`direction`](Self::direction) - Set the direction of the layout
+/// - [`constraints`](Self::constraints) - Set the constraints of the layout
+/// - [`margin`](Self::margin) - Set uniform margin on all sides
+/// - [`horizontal_margin`](Self::horizontal_margin) - Set the horizontal margin of the layout
+/// - [`vertical_margin`](Self::vertical_margin) - Set the vertical margin of the layout
+/// - [`flex`](Self::flex) - Set the way space is distributed when constraints are satisfied
+/// - [`spacing`](Self::spacing) - Set the gap between the constraints of the layout
 ///
-/// There are several setters to modify the layout:
+/// # Layout Operations
 ///
-/// - [`Layout::direction`]: set the direction of the layout
-/// - [`Layout::constraints`]: set the constraints of the layout
-/// - [`Layout::margin`]: set the margin of the layout
-/// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
-/// - [`Layout::vertical_margin`]: set the vertical margin of the layout
-/// - [`Layout::flex`]: set the way the space is distributed when the constraints are satisfied
-/// - [`Layout::spacing`]: sets the gap between the constraints of the layout
+/// - [`areas`](Self::areas) - Split area into fixed number of rectangles (compile-time known)
+/// - [`spacers`](Self::spacers) - Get spacer rectangles between layout areas
+/// - [`split`](Self::split) - Split area into rectangles (runtime determined count)
+/// - [`split_with_spacers`](Self::split_with_spacers) - Split area and return both areas and
+///   spacers
+///
+/// # Cache Management
+///
+/// - [`init_cache`](Self::init_cache) - Initialize layout cache with custom size
 ///
 /// # Example
 ///
@@ -160,15 +170,17 @@ impl From<i16> for Spacing {
 /// use ratatui_core::widgets::Widget;
 ///
 /// fn render(area: Rect, buf: &mut Buffer) {
-///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
-///     let [left, right] = layout.areas(area);
-///     Text::from("foo").render(left, buf);
-///     Text::from("bar").render(right, buf);
+///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Fill(1)]);
+///     let [top, bottom] = layout.areas(area);
+///     Text::from("foo").render(top, buf);
+///     Text::from("bar").render(bottom, buf);
 /// }
 /// ```
 ///
 /// See the `layout`, `flex`, and `constraints` examples in the [Examples] folder for more details
 /// about how to use layouts.
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 ///
 /// ![layout
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
@@ -215,7 +227,7 @@ impl Layout {
     ///
     /// Layout::new(
     ///     Direction::Horizontal,
-    ///     [Constraint::Length(5), Constraint::Min(0)],
+    ///     [Constraint::Length(5), Constraint::Fill(1)],
     /// );
     ///
     /// Layout::new(
@@ -247,7 +259,7 @@ impl Layout {
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Layout};
     ///
-    /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
+    /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Fill(1)]);
     /// ```
     pub fn vertical<I>(constraints: I) -> Self
     where
@@ -267,7 +279,7 @@ impl Layout {
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Layout};
     ///
-    /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
+    /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Fill(1)]);
     /// ```
     pub fn horizontal<I>(constraints: I) -> Self
     where
@@ -299,13 +311,13 @@ impl Layout {
     ///
     /// let layout = Layout::default()
     ///     .direction(Direction::Horizontal)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Fill(1)])
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 5, 10), Rect::new(5, 0, 5, 10)]);
     ///
     /// let layout = Layout::default()
     ///     .direction(Direction::Vertical)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Fill(1)])
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 10, 5), Rect::new(0, 5, 10, 5)]);
     /// ```
@@ -352,10 +364,10 @@ impl Layout {
     ///     ]
     /// );
     ///
-    /// Layout::default().constraints([Constraint::Min(0)]);
-    /// Layout::default().constraints(&[Constraint::Min(0)]);
-    /// Layout::default().constraints(vec![Constraint::Min(0)]);
-    /// Layout::default().constraints([Constraint::Min(0)].iter().filter(|_| true));
+    /// Layout::default().constraints([Constraint::Fill(1)]);
+    /// Layout::default().constraints(&[Constraint::Fill(1)]);
+    /// Layout::default().constraints(vec![Constraint::Fill(1)]);
+    /// Layout::default().constraints([Constraint::Fill(1)].iter().filter(|_| true));
     /// Layout::default().constraints([1, 2, 3].iter().map(|&c| Constraint::Length(c)));
     /// Layout::default().constraints([1, 2, 3]);
     /// Layout::default().constraints(vec![1, 2, 3]);
@@ -378,7 +390,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
+    ///     .constraints([Constraint::Fill(1)])
     ///     .margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 2, 6, 6)]);
@@ -400,7 +412,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
+    ///     .constraints([Constraint::Fill(1)])
     ///     .horizontal_margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 0, 6, 10)]);
@@ -419,7 +431,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
+    ///     .constraints([Constraint::Fill(1)])
     ///     .vertical_margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 2, 10, 6)]);
@@ -525,14 +537,15 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::layout::{Layout, Constraint, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let area = Rect::new(0, 0, 10, 10);
-    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
     /// let [top, main] = layout.areas(area);
     ///
     /// // or explicitly specify the number of constraints:
     /// let areas = layout.areas::<2>(area);
+    /// ```
     pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
         let (areas, _) = self.split_with_spacers(area);
         areas.as_ref().try_into().expect("invalid number of rects")
@@ -559,7 +572,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let area = Rect::new(0, 0, 10, 10);
-    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
     /// let [top, main] = layout.areas(area);
     /// let [before, inbetween, after] = layout.spacers(area);
     ///
@@ -598,7 +611,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Direction, Layout, Rect};
     /// let layout = Layout::default()
     ///     .direction(Direction::Vertical)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Fill(1)])
     ///     .split(Rect::new(2, 2, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 2, 10, 5), Rect::new(2, 7, 10, 5)]);
     ///
@@ -631,7 +644,7 @@ impl Layout {
     ///
     /// let (areas, spacers) = Layout::default()
     ///     .direction(Direction::Vertical)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Fill(1)])
     ///     .split_with_spacers(Rect::new(2, 2, 10, 10));
     /// assert_eq!(areas[..], [Rect::new(2, 2, 10, 5), Rect::new(2, 7, 10, 5)]);
     /// assert_eq!(
@@ -950,7 +963,7 @@ fn configure_flex_constraints(
 /// │abcdef││abcdef│
 /// └──────┘└──────┘
 ///
-/// [Min(0), Fill(2)]
+/// [Fill(1), Fill(2)]
 /// ┌──────┐┌────────────┐
 /// │abcdef││abcdefabcdef│
 /// └──────┘└────────────┘

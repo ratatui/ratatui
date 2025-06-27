@@ -9,10 +9,77 @@ pub use iter::*;
 
 use super::{Constraint, Flex, Layout};
 
-/// A Rectangular area.
+/// A rectangular area in the terminal.
 ///
-/// A simple rectangle used in the computation of the layout and to give widgets a hint about the
-/// area they are supposed to render to.
+/// A `Rect` represents a rectangular region in the terminal coordinate system, defined by its
+/// top-left corner position and dimensions. This is the fundamental building block for all layout
+/// operations and widget rendering in Ratatui.
+///
+/// Rectangles are used throughout the layout system to define areas where widgets can be rendered.
+/// They are typically created by [`Layout`] operations that divide terminal space, but can also be
+/// manually constructed for specific positioning needs.
+///
+/// The coordinate system uses the top-left corner as the origin (0, 0), with x increasing to the
+/// right and y increasing downward. All measurements are in character cells.
+///
+/// # Construction and Conversion
+///
+/// - [`new`](Self::new) - Create a new rectangle from coordinates and dimensions
+/// - [`as_position`](Self::as_position) - Convert to a position at the top-left corner
+/// - [`as_size`](Self::as_size) - Convert to a size representing the dimensions
+/// - [`from((Position, Size))`](Self::from) - Create from `(Position, Size)` tuple
+/// - [`from(((u16, u16), (u16, u16)))`](Self::from) - Create from `((u16, u16), (u16, u16))`
+///   coordinate and dimension tuples
+/// - [`into((Position, Size))`] - Convert to `(Position, Size)` tuple
+/// - [`default`](Self::default) - Create a zero-sized rectangle at origin
+///
+/// # Geometry and Properties
+///
+/// - [`area`](Self::area) - Calculate the total area in character cells
+/// - [`is_empty`](Self::is_empty) - Check if the rectangle has zero area
+/// - [`left`](Self::left), [`right`](Self::right), [`top`](Self::top), [`bottom`](Self::bottom) -
+///   Get edge coordinates
+///
+/// # Spatial Operations
+///
+/// - [`inner`](Self::inner), [`outer`](Self::outer) - Apply margins to shrink or expand
+/// - [`offset`](Self::offset) - Move the rectangle by a relative amount
+/// - [`union`](Self::union) - Combine with another rectangle to create a bounding box
+/// - [`intersection`](Self::intersection) - Find the overlapping area with another rectangle
+/// - [`clamp`](Self::clamp) - Constrain the rectangle to fit within another
+///
+/// # Positioning and Centering
+///
+/// - [`centered_horizontally`](Self::centered_horizontally) - Center horizontally within a
+///   constraint
+/// - [`centered_vertically`](Self::centered_vertically) - Center vertically within a constraint
+/// - [`centered`](Self::centered) - Center both horizontally and vertically
+///
+/// # Testing and Iteration
+///
+/// - [`contains`](Self::contains) - Check if a position is within the rectangle
+/// - [`intersects`](Self::intersects) - Check if it overlaps with another rectangle
+/// - [`rows`](Self::rows) - Iterate over horizontal rows within the rectangle
+/// - [`columns`](Self::columns) - Iterate over vertical columns within the rectangle
+/// - [`positions`](Self::positions) - Iterate over all positions within the rectangle
+///
+/// # Examples
+///
+/// ```rust
+/// use ratatui_core::layout::{Position, Rect, Size};
+///
+/// // Create a rectangle manually
+/// let rect = Rect::new(10, 5, 80, 20);
+/// assert_eq!(rect.x, 10);
+/// assert_eq!(rect.y, 5);
+/// assert_eq!(rect.width, 80);
+/// assert_eq!(rect.height, 20);
+///
+/// // Create from position and size
+/// let rect = Rect::from((Position::new(10, 5), Size::new(80, 20)));
+/// ```
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rect {
@@ -298,17 +365,31 @@ impl Rect {
 
     /// An iterator over rows within the `Rect`.
     ///
+    /// Each row is a full `Rect` region with height 1 that can be used for rendering widgets
+    /// or as input to further layout methods.
+    ///
     /// # Example
     ///
     /// ```
     /// use ratatui_core::buffer::Buffer;
-    /// use ratatui_core::layout::Rect;
-    /// use ratatui_core::text::Line;
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     /// use ratatui_core::widgets::Widget;
     ///
-    /// fn render(area: Rect, buf: &mut Buffer) {
-    ///     for row in area.rows() {
-    ///         Line::raw("Hello, world!").render(row, buf);
+    /// fn render_list(area: Rect, buf: &mut Buffer) {
+    ///     // Renders "Item 0", "Item 1", etc. in each row
+    ///     for (i, row) in area.rows().enumerate() {
+    ///         format!("Item {i}").render(row, buf);
+    ///     }
+    /// }
+    ///
+    /// fn render_with_nested_layout(area: Rect, buf: &mut Buffer) {
+    ///     // Splits each row into left/right areas and renders labels and content
+    ///     for (i, row) in area.rows().take(3).enumerate() {
+    ///         let [left, right] =
+    ///             Layout::horizontal([Constraint::Percentage(30), Constraint::Fill(1)]).areas(row);
+    ///
+    ///         format!("{i}:").render(left, buf);
+    ///         "Content".render(right, buf);
     ///     }
     /// }
     /// ```
@@ -318,17 +399,20 @@ impl Rect {
 
     /// An iterator over columns within the `Rect`.
     ///
+    /// Each column is a full `Rect` region with width 1 that can be used for rendering widgets
+    /// or as input to further layout methods.
+    ///
     /// # Example
     ///
     /// ```
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_core::text::Text;
     /// use ratatui_core::widgets::Widget;
     ///
-    /// fn render(area: Rect, buf: &mut Buffer) {
+    /// fn render_columns(area: Rect, buf: &mut Buffer) {
+    ///     // Renders column indices (0-9 repeating) in each column
     ///     for (i, column) in area.columns().enumerate() {
-    ///         Text::from(format!("{}", i)).render(column, buf);
+    ///         format!("{}", i % 10).render(column, buf);
     ///     }
     /// }
     /// ```
@@ -339,16 +423,19 @@ impl Rect {
     /// An iterator over the positions within the `Rect`.
     ///
     /// The positions are returned in a row-major order (left-to-right, top-to-bottom).
+    /// Each position is a `Position` that represents a single cell coordinate.
     ///
     /// # Example
     ///
     /// ```
     /// use ratatui_core::buffer::Buffer;
-    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::layout::{Position, Rect};
+    /// use ratatui_core::widgets::Widget;
     ///
-    /// fn render(area: Rect, buf: &mut Buffer) {
-    ///     for position in area.positions() {
-    ///         buf[(position.x, position.y)].set_symbol("x");
+    /// fn render_positions(area: Rect, buf: &mut Buffer) {
+    ///     // Renders position indices (0-9 repeating) at each cell position
+    ///     for (i, position) in area.positions().enumerate() {
+    ///         buf[position].set_symbol(&format!("{}", i % 10));
     ///     }
     /// }
     /// ```
