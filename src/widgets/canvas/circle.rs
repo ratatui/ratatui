@@ -18,23 +18,26 @@ pub struct Circle {
     pub color: Color,
 }
 
-/// Iterator builder for Bresenham’s (midpoint) circle outline algorithm.
+/// Builds the integer‐grid offsets for a circle outline via the midpoint (Bresenham) algorithm.
 ///
-/// Yields grid coordinates of the circumference around (cx, cy).
-fn bresenham_circle(cx: i32, cy: i32, r: i32) -> Vec<(i32, i32)> {
+/// Returns the signed (dx, dy) coordinates around the given center that lie on the circumference.
+fn bresenham_circle(center_x: isize, center_y: isize, radius: isize) -> Vec<(isize, isize)> {
     let mut pts = Vec::new();
-    let mut x = r;
+    let mut x = radius;
     let mut y = 0;
-    let mut err = 1 - r;
+    let mut err = 1 - radius;
     while x >= y {
-        pts.push((cx + x, cy + y));
-        pts.push((cx - x, cy + y));
-        pts.push((cx + x, cy - y));
-        pts.push((cx - x, cy - y));
-        pts.push((cx + y, cy + x));
-        pts.push((cx - y, cy + x));
-        pts.push((cx + y, cy - x));
-        pts.push((cx - y, cy - x));
+        let deltas = [
+            ( x,  y), (-x,  y), ( x, -y), (-x, -y),
+            ( y,  x), (-y,  x), ( y, -x), (-y, -x),
+        ];
+        for &(dx, dy) in &deltas {
+            if let Some(px) = center_x.checked_add(dx) {
+                if let Some(py) = center_y.checked_add(dy) {
+                    pts.push((px, py));
+                }
+            }
+        }
         y += 1;
         if err < 0 {
             err += 2 * y + 1;
@@ -48,22 +51,23 @@ fn bresenham_circle(cx: i32, cy: i32, r: i32) -> Vec<(i32, i32)> {
 
 impl Shape for Circle {
     fn draw(&self, painter: &mut Painter<'_, '_>) {
-        // Map circle center and radius to grid (pixel) coordinates.
-        let cx = painter
+        // Map circle center and radius from world‑coords to grid‑coords (signed).
+        let center_x = painter
             .get_point_x(self.x)
-            .unwrap_or_else(convert::identity) as i32;
-        let cy = painter
+            .unwrap_or_else(convert::identity) as isize;
+        let center_y = painter
             .get_point_y(self.y)
-            .unwrap_or_else(convert::identity) as i32;
-        let gx = painter
+            .unwrap_or_else(convert::identity) as isize;
+        let grid_x = painter
             .get_point_x(self.x + self.radius)
-            .unwrap_or_else(convert::identity) as i32;
-        let gy = painter
+            .unwrap_or_else(convert::identity) as isize;
+        let grid_y = painter
             .get_point_y(self.y + self.radius)
-            .unwrap_or_else(convert::identity) as i32;
-        let r = (gx - cx).abs().min((gy - cy).abs());
+            .unwrap_or_else(convert::identity) as isize;
+        let radius = (grid_x - center_x).abs().min((grid_y - center_y).abs());
 
-        for (px, py) in bresenham_circle(cx, cy, r) {
+        // Paint the circle outline, skipping any points that overflow beyond the grid
+        for (px, py) in bresenham_circle(center_x, center_y, radius) {
             if px >= 0 && py >= 0 {
                 painter.paint(px as usize, py as usize, self.color);
             }
@@ -185,4 +189,102 @@ mod tests {
         ]);
         assert_eq!(buffer, expected);
     }
+
+    #[test]
+    fn test_circle_partial_bounds() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let canvas = Canvas::default()
+            .paint(|ctx| {
+                ctx.draw(&Circle {
+                    x: -5.0,
+                    y: -5.0,
+                    radius: 10.0,
+                    color: Color::Reset,
+                });
+            })
+            .marker(Marker::Braille)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0]);
+        canvas.render(buffer.area, &mut buffer);
+        // partial circle clipped on left/top
+        let expected = Buffer::with_lines(vec![
+            "                    ",
+            "                    ",
+            "⣀⠤⠔⠒⠒⠒⠒⠤⢄⡀          ",
+            "         ⠈⠑⢄        ",
+            "            ⠑⡄      ",
+            "             ⠘⡄     ",
+            "              ⢱     ",
+            "              ⢸     ",
+            "              ⡜     ",
+            "             ⡰⠁     ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_circle_out_of_bounds() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let canvas = Canvas::default()
+            .paint(|ctx| {
+                ctx.draw(&Circle {
+                    x: 100.0,
+                    y: 100.0,
+                    radius: 5.0,
+                    color: Color::Reset,
+                });
+            })
+            .marker(Marker::Braille)
+            .x_bounds([-100.0, -90.0])
+            .y_bounds([-100.0, -90.0]);
+        canvas.render(buffer.area, &mut buffer);
+        // fully out of bounds → nothing drawn
+        let expected = Buffer::with_lines(vec![
+            "                   ⠈",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_circle_partial_bounds_bottom_right() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let canvas = Canvas::default()
+            .paint(|ctx| {
+                ctx.draw(&Circle {
+                    x: 5.0,
+                    y: 5.0,
+                    radius: 10.0,
+                    color: Color::Reset,
+                });
+            })
+            .marker(Marker::Braille)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0]);
+        canvas.render(buffer.area, &mut buffer);
+        // partial circle clipped on bottom & right edges
+        let expected = Buffer::with_lines(vec![
+            "           ⡠⠔⠊⠉⠉⠒⠤⡀ ",
+            "          ⡰⠁      ⠱⡀",
+            "          ⡇        ⡇",
+            "          ⠘⡄      ⡜ ",
+            "           ⠈⠑⠢⠤⠤⠒⠉  ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+
 }
