@@ -1,5 +1,3 @@
-use std::convert;
-
 use crate::{
     style::Color,
     widgets::canvas::{Painter, Shape},
@@ -18,26 +16,99 @@ pub struct Circle {
     pub color: Color,
 }
 
-/// Builds the integer‐grid offsets for a circle outline via the midpoint (Bresenham) algorithm.
+impl Circle {
+    /// Create a new circle with the given center, radius, and color
+    pub fn new((x, y): (f64, f64), radius: f64, color: Color) -> Self {
+        Self {
+            x,
+            y,
+            radius,
+            color,
+        }
+    }
+}
+
+impl Shape for Circle {
+    fn draw(&self, painter: &mut Painter<'_, '_>) {
+        if self.is_completely_outside_bounds(painter) {
+            return;
+        }
+
+        let (x_bounds, y_bounds) = painter.bounds();
+        let translated_x = self.x - x_bounds[0];
+        let translated_y = y_bounds[1] - self.y; // invert y to match the coordinate system
+        let (center_x, center_y) = self.to_grid(translated_x, translated_y, painter);
+
+        let (radius_x, radius_y) = self.to_grid(self.radius, self.radius, painter);
+        let radius = radius_x.min(radius_y);
+
+        let (x_resolution, y_resolution) = painter.resolution();
+        for (px, py) in bresenham_circle(center_x, center_y, radius) {
+            let x_in_bounds = (0..x_resolution as isize).contains(&px);
+            let y_in_bounds = (0..y_resolution as isize).contains(&py);
+            if x_in_bounds && y_in_bounds {
+                painter.paint(px as usize, py as usize, self.color);
+            }
+        }
+    }
+}
+
+impl Circle {
+    /// Check if the circle is completely outside the canvas bounds for early exit optimization
+    fn is_completely_outside_bounds(&self, painter: &Painter<'_, '_>) -> bool {
+        let (x_bounds, y_bounds) = painter.bounds();
+        self.x + self.radius < x_bounds[0]
+            || self.x - self.radius > x_bounds[1]
+            || self.y + self.radius < y_bounds[0]
+            || self.y - self.radius > y_bounds[1]
+    }
+
+    /// Transform values to grid coordinates
+    ///
+    /// Returns isize coordinates to handle negative values when coordinates are outside
+    /// the canvas bounds. Using isize is safe as grid dimensions are bounded by terminal
+    /// size (u16::MAX) times pixels per cell (typically 2x4 for Braille), ensuring values
+    /// fit within isize range while allowing negative coordinates for proper clipping.
+    fn to_grid(&self, x_value: f64, y_value: f64, painter: &Painter<'_, '_>) -> (isize, isize) {
+        let (x_bounds, y_bounds) = painter.bounds();
+        let x_width = x_bounds[1] - x_bounds[0];
+        let y_height = y_bounds[1] - y_bounds[0];
+        if x_width <= 0.0 || y_height <= 0.0 {
+            return (0, 0);
+        }
+
+        let (x_resolution, y_resolution) = painter.resolution();
+        // Uses (resolution - 1.0) to account for zero-based indexing.
+        let grid_x = (x_value * (x_resolution - 1.0) / x_width) as isize;
+        let grid_y = (y_value * (y_resolution - 1.0) / y_height) as isize;
+
+        (grid_x, grid_y)
+    }
+}
+
+/// Builds the integer grid coordinates for a circle outline via the midpoint (Bresenham) algorithm.
 ///
-/// Returns the signed (dx, dy) coordinates around the given center that lie on the circumference.
+/// Uses isize parameters and returns isize coordinates to handle negative values during
+/// calculation, which is essential for proper circle generation when centers are outside bounds.
+/// Returns the signed (x, y) coordinates that lie on the circumference of the circle.
 fn bresenham_circle(center_x: isize, center_y: isize, radius: isize) -> Vec<(isize, isize)> {
-    let mut pts = Vec::new();
+    let mut points = Vec::new();
     let mut x = radius;
     let mut y = 0;
     let mut err = 1 - radius;
+
+    // Generate points using Bresenham's algorithm and 8-fold symmetry
     while x >= y {
-        let deltas = [
-            ( x,  y), (-x,  y), ( x, -y), (-x, -y),
-            ( y,  x), (-y,  x), ( y, -x), (-y, -x),
-        ];
-        for &(dx, dy) in &deltas {
-            if let Some(px) = center_x.checked_add(dx) {
-                if let Some(py) = center_y.checked_add(dy) {
-                    pts.push((px, py));
-                }
-            }
-        }
+        // Generate all 8 symmetric points for this (x, y) pair in counter-clockwise order
+        points.extend(center_x.checked_add(x).zip(center_y.checked_add(y)));
+        points.extend(center_x.checked_add(y).zip(center_y.checked_add(x)));
+        points.extend(center_x.checked_sub(y).zip(center_y.checked_add(x)));
+        points.extend(center_x.checked_sub(x).zip(center_y.checked_add(y)));
+        points.extend(center_x.checked_sub(x).zip(center_y.checked_sub(y)));
+        points.extend(center_x.checked_sub(y).zip(center_y.checked_sub(x)));
+        points.extend(center_x.checked_add(y).zip(center_y.checked_sub(x)));
+        points.extend(center_x.checked_add(x).zip(center_y.checked_sub(y)));
+
         y += 1;
         if err < 0 {
             err += 2 * y + 1;
@@ -46,33 +117,7 @@ fn bresenham_circle(center_x: isize, center_y: isize, radius: isize) -> Vec<(isi
             err += 2 * (y - x + 1);
         }
     }
-    pts
-}
-
-impl Shape for Circle {
-    fn draw(&self, painter: &mut Painter<'_, '_>) {
-        // Map circle center and radius from world‑coords to grid‑coords (signed).
-        let center_x = painter
-            .get_point_x(self.x)
-            .unwrap_or_else(convert::identity) as isize;
-        let center_y = painter
-            .get_point_y(self.y)
-            .unwrap_or_else(convert::identity) as isize;
-        let grid_x = painter
-            .get_point_x(self.x + self.radius)
-            .unwrap_or_else(convert::identity) as isize;
-        let grid_y = painter
-            .get_point_y(self.y + self.radius)
-            .unwrap_or_else(convert::identity) as isize;
-        let radius = (grid_x - center_x).abs().min((grid_y - center_y).abs());
-
-        // Paint the circle outline, skipping any points that overflow beyond the grid
-        for (px, py) in bresenham_circle(center_x, center_y, radius) {
-            if px >= 0 && py >= 0 {
-                painter.paint(px as usize, py as usize, self.color);
-            }
-        }
-    }
+    points
 }
 
 #[cfg(test)]
@@ -89,52 +134,163 @@ mod tests {
     };
 
     #[test]
-    fn test_it_draws_a_circle() {
+    fn small_circle() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
-        let canvas = Canvas::default()
-            .paint(|ctx| {
-                ctx.draw(&Circle {
-                    x: 5.0,
-                    y: 2.0,
-                    radius: 5.0,
-                    color: Color::Reset,
-                });
-            })
+        let circle = Circle::new((0.0, 0.0), 10.0, Color::Reset);
+        Canvas::default()
             .marker(Marker::Braille)
             .x_bounds([-10.0, 10.0])
-            .y_bounds([-10.0, 10.0]);
-        canvas.render(buffer.area, &mut buffer);
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
         let expected = Buffer::with_lines(vec![
-            "     ⢀⠤⠤⢄ ",
-            "    ⢰⠁   ⢱",
-            "    ⠘⢄  ⢀⠜",
-            "      ⠉⠉⠁ ",
-            "          ",
+            " ⡠⠔⠊⠉⠉⠒⠤⡀ ",
+            "⡰⠁      ⠱⡀",
+            "⡇        ⡇",
+            "⠘⡄      ⡜ ",
+            " ⠈⠑⠢⠤⠤⠒⠉  ",
         ]);
         assert_eq!(buffer, expected);
     }
 
-    /// Render a larger circle into a 100×50 buffer using Braille markers.
-    ///
-    /// This test is initially blank; fill in `expected` after inspecting the printed output.
+    #[test]
+    fn medium_circle() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let circle = Circle::new((0.0, 0.0), 10.0, Color::Reset);
+        Canvas::default()
+            .marker(Marker::Braille)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec![
+            "    ⢀⠤⠒⠊⠉⠉⠉⠉⠒⠢⢄     ",
+            "  ⡠⠊⠁          ⠉⠢⡀  ",
+            " ⡔⠁              ⠑⡄ ",
+            "⡸                 ⠸⡀",
+            "⡇                  ⡇",
+            "⡇                  ⡇",
+            "⠸⡀                ⡸ ",
+            " ⠑⡄              ⡔⠁ ",
+            "  ⠈⠢⢄         ⢀⠤⠊   ",
+            "     ⠉⠒⠢⠤⠤⠤⠤⠒⠊⠁     ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn medium_circle_dot() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let circle = Circle::new((0.0, 0.0), 10.0, Color::Reset);
+        Canvas::default()
+            .marker(Marker::Dot)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec![
+            "     •••••••••      ",
+            "   ••         ••    ",
+            "  •             •   ",
+            " •               •  ",
+            "•                 • ",
+            "•                 • ",
+            " •               •  ",
+            "  •             •   ",
+            "   ••         ••    ",
+            "     •••••••••      ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn medium_circle_block() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let circle = Circle::new((0.0, 0.0), 10.0, Color::Reset);
+        Canvas::default()
+            .marker(Marker::Block)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec![
+            "     █████████      ",
+            "   ██         ██    ",
+            "  █             █   ",
+            " █               █  ",
+            "█                 █ ",
+            "█                 █ ",
+            " █               █  ",
+            "  █             █   ",
+            "   ██         ██    ",
+            "     █████████      ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn medium_circle_half_block() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let circle = Circle::new((0.0, 0.0), 10.0, Color::Reset);
+        Canvas::default()
+            .marker(Marker::HalfBlock)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec![
+            "     ▄▄▄▄▄▄▄▄▄      ",
+            "   ▄▄         ▄▄    ",
+            "  ▄             ▄   ",
+            " ▄               ▄  ",
+            "▄                 ▄ ",
+            "▄                 ▄ ",
+            " ▄               ▄  ",
+            "  ▄             ▄   ",
+            "   ▄▄         ▄▄    ",
+            "     ▄▄▄▄▄▄▄▄▄      ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn medium_circle_bar() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let circle = Circle::new((0.0, 0.0), 10.0, Color::Reset);
+        Canvas::default()
+            .marker(Marker::Bar)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec![
+            "     ▐▐▐▐▐▐▐▐▐      ",
+            "   ▐▐         ▐▐    ",
+            "  ▐             ▐   ",
+            " ▐               ▐  ",
+            "▐                 ▐ ",
+            "▐                 ▐ ",
+            " ▐               ▐  ",
+            "  ▐             ▐   ",
+            "   ▐▐         ▐▐    ",
+            "     ▐▐▐▐▐▐▐▐▐      ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    /// Ensures that circles with more then 360 points are rendered correctly without omitting any
+    /// points.
     #[test]
     #[allow(unused_mut)]
-    fn test_draws_large_circle() {
+    fn large_circle() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 100, 50));
-        let canvas = Canvas::default()
-            .paint(|ctx| {
-                ctx.draw(&Circle {
-                    x: 0.0,
-                    y: 0.0,
-                    radius: 25.0,
-                    color: Color::Reset,
-                });
-            })
+        let circle = Circle::new((0.0, 0.0), 10.0, Color::Reset);
+        Canvas::default()
             .marker(Marker::Braille)
-            .x_bounds([-25.0, 25.0])
-            .y_bounds([-25.0, 25.0]);
-        canvas.render(buffer.area, &mut buffer);
-        // Expected rendering of a circle in a 100×50 buffer using Braille markers.
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
         let expected = Buffer::with_lines(vec![
             "                                    ⢀⣀⡠⠤⠤⠒⠒⠒⠒⠉⠉⠉⠉⠉⠉⠉⠉⠉⠑⠒⠒⠒⠢⠤⠤⣀⣀                                     ",
             "                               ⣀⠤⠔⠒⠉⠁                          ⠉⠑⠒⠤⢄⡀                               ",
@@ -191,56 +347,17 @@ mod tests {
     }
 
     #[test]
-    fn test_circle_partial_bounds() {
+    fn out_of_bounds() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
-        let canvas = Canvas::default()
-            .paint(|ctx| {
-                ctx.draw(&Circle {
-                    x: -5.0,
-                    y: -5.0,
-                    radius: 10.0,
-                    color: Color::Reset,
-                });
-            })
+        let circle = Circle::new((20.0, 20.0), 5.0, Color::Reset);
+        Canvas::default()
             .marker(Marker::Braille)
             .x_bounds([-10.0, 10.0])
-            .y_bounds([-10.0, 10.0]);
-        canvas.render(buffer.area, &mut buffer);
-        // partial circle clipped on left/top
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
         let expected = Buffer::with_lines(vec![
             "                    ",
-            "                    ",
-            "⣀⠤⠔⠒⠒⠒⠒⠤⢄⡀          ",
-            "         ⠈⠑⢄        ",
-            "            ⠑⡄      ",
-            "             ⠘⡄     ",
-            "              ⢱     ",
-            "              ⢸     ",
-            "              ⡜     ",
-            "             ⡰⠁     ",
-        ]);
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn test_circle_out_of_bounds() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
-        let canvas = Canvas::default()
-            .paint(|ctx| {
-                ctx.draw(&Circle {
-                    x: 100.0,
-                    y: 100.0,
-                    radius: 5.0,
-                    color: Color::Reset,
-                });
-            })
-            .marker(Marker::Braille)
-            .x_bounds([-100.0, -90.0])
-            .y_bounds([-100.0, -90.0]);
-        canvas.render(buffer.area, &mut buffer);
-        // fully out of bounds → nothing drawn
-        let expected = Buffer::with_lines(vec![
-            "                   ⠈",
             "                    ",
             "                    ",
             "                    ",
@@ -255,28 +372,72 @@ mod tests {
     }
 
     #[test]
-    fn test_circle_partial_bounds_bottom_right() {
+    fn partial_out_of_bounds_bottom_left() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
-        let canvas = Canvas::default()
-            .paint(|ctx| {
-                ctx.draw(&Circle {
-                    x: 5.0,
-                    y: 5.0,
-                    radius: 10.0,
-                    color: Color::Reset,
-                });
-            })
+        let circle = Circle::new((-5.0, -5.0), 10.0, Color::Reset);
+        Canvas::default()
             .marker(Marker::Braille)
             .x_bounds([-10.0, 10.0])
-            .y_bounds([-10.0, 10.0]);
-        canvas.render(buffer.area, &mut buffer);
-        // partial circle clipped on bottom & right edges
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
         let expected = Buffer::with_lines(vec![
-            "           ⡠⠔⠊⠉⠉⠒⠤⡀ ",
-            "          ⡰⠁      ⠱⡀",
-            "          ⡇        ⡇",
-            "          ⠘⡄      ⡜ ",
-            "           ⠈⠑⠢⠤⠤⠒⠉  ",
+            "                    ",
+            "                    ",
+            " ⣀⡠⠤⠤⠤⠤⣀⡀           ",
+            "⠉       ⠈⠑⠤⡀        ",
+            "           ⠈⢆       ",
+            "             ⢣      ",
+            "             ⠈⡆     ",
+            "              ⡇     ",
+            "             ⢠⠃     ",
+            "            ⢀⠎      ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn partial_out_of_bounds_top_right() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let circle = Circle::new((5.0, 5.0), 10.0, Color::Reset);
+        Canvas::default()
+            .marker(Marker::Braille)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec![
+            "     ⢠⠃             ",
+            "     ⡎              ",
+            "     ⡇              ",
+            "     ⢣              ",
+            "     ⠈⢆             ",
+            "       ⠣⡀           ",
+            "        ⠈⠑⠤⣀⡀    ⣀⡠⠔",
+            "            ⠈⠉⠉⠉⠉   ",
+            "                    ",
+            "                    ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn center_out_of_bounds() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        let circle = Circle::new((20.0, 20.0), 20.0, Color::Reset);
+        Canvas::default()
+            .marker(Marker::Braille)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0])
+            .paint(|ctx| ctx.draw(&circle))
+            .render(buffer.area, &mut buffer);
+        // Now correctly handles centers outside bounds - circle is completely out of view
+        let expected = Buffer::with_lines(vec![
+            "            ⠱⡀      ",
+            "             ⠘⢄     ",
+            "               ⠑⢄   ",
+            "                 ⠉⠢⢄",
+            "                    ",
             "                    ",
             "                    ",
             "                    ",
@@ -285,6 +446,4 @@ mod tests {
         ]);
         assert_eq!(buffer, expected);
     }
-
-
 }
