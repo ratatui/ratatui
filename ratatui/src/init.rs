@@ -12,7 +12,8 @@
 //!
 //! Once you have initialized a terminal using the functions in this module, you can use it to
 //! [draw the UI](`crate#drawing-the-ui`) and [handle events](`crate#handling-events`). For more
-//! information about building widgets for your application, see the [`widgets`](`crate::widgets`) module.
+//! information about building widgets for your application, see the [`widgets`](`crate::widgets`)
+//! module.
 //!
 //! **Note**: All functions and types in this module are re-exported at the crate root for
 //! convenience, so you can call `ratatui::run()`, `ratatui::init()`, etc. instead of
@@ -105,9 +106,9 @@
 //! to handle errors (they are printed to stderr). Use [`try_restore`] when you need to handle
 //! restoration errors, perhaps to retry or provide user feedback.
 //!
-//! Once you have a terminal set up, continue with the main loop to [draw the UI](`crate#drawing-the-ui`)
-//! and [handle events](`crate#handling-events`). See the [main crate documentation](`crate`) for
-//! comprehensive examples of complete applications.
+//! Once you have a terminal set up, continue with the main loop to [draw the
+//! UI](`crate#drawing-the-ui`) and [handle events](`crate#handling-events`). See the [main crate
+//! documentation](`crate`) for comprehensive examples of complete applications.
 //!
 //! # Key Differences
 //!
