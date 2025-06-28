@@ -91,7 +91,7 @@ This is a quick summary of the sections below:
 
 ## v0.30.0 Unreleased
 
-### Old `Flex::SpaceAround` behavior is available by using `Flex::SpaceEvenly` and new `Flex::SpaceAround` now distributes space evenly around each element except the middle spacers are twice the size of first and last elements ([#1952])
+### `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps ([#1952])
 
 [#1952]: https://github.com/ratatui/ratatui/pull/1952
 
