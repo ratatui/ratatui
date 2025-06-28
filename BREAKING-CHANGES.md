@@ -11,6 +11,9 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.30.0 Unreleased](#v0300-unreleased)
+  - Old `Flex::SpaceAround` behavior is available by using `Flex::SpaceEvenly` and new `Flex::SpaceAround`
+    now distributes space evenly around each element except the first and last element are half the
+    size of other elements
   - `block::Title` no longer exists
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
