@@ -585,7 +585,6 @@ impl Rect {
     ///
     /// [`Vec`]: alloc::vec::Vec
     #[must_use]
-    #[cfg(feature = "std")]
     pub fn layout_vec(self, layout: &Layout) -> alloc::vec::Vec<Self> {
         layout.split(self).as_ref().to_vec()
     }
