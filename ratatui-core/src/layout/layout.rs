@@ -453,7 +453,8 @@ impl Layout {
     ///   - [`Flex::Center`]: The items are aligned to the center of the layout.
     ///   - [`Flex::End`]: The items are aligned to the end of the layout.
     ///   - [`Flex::SpaceBetween`]: The items are evenly distributed with equal space between them.
-    ///   - [`Flex::SpaceAround`]: The items are evenly distributed with equal space around them, except the first and last items, which have half the space on their sides.
+    ///   - [`Flex::SpaceAround`]: The items are evenly distributed with equal space around them,
+    ///     except the first and last items, which have half the space on their sides.
     ///   - [`Flex::SpaceEvenly`]: The items are evenly distributed with equal space around them.
     ///
     /// # Examples
@@ -493,7 +494,8 @@ impl Layout {
     /// passed to this function. See the documentation of the [`Spacing`] enum for more information.
     ///
     /// Note that if the layout has only one segment, the spacing will not be applied.
-    /// Also, spacing will not be applied for [`Flex::SpaceAround`], [`Flex::SpaceEvenly`] and [`Flex::SpaceBetween`]
+    /// Also, spacing will not be applied for [`Flex::SpaceAround`], [`Flex::SpaceEvenly`] and
+    /// [`Flex::SpaceBetween`]
     ///
     /// # Examples
     ///
