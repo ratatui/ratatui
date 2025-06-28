@@ -22,7 +22,7 @@ use crate::borders::{BorderType, Borders};
 
 mod padding;
 
-/// A widget that displays borders, titles, and padding around other widgets.
+/// A widget that renders borders, titles, and padding around other widgets.
 ///
 /// A `Block` is a foundational widget that creates visual containers by drawing borders around an
 /// area. It serves as a wrapper or frame for other widgets, providing structure and visual
