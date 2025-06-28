@@ -481,8 +481,8 @@ impl<'a> Block<'a> {
     /// Block::bordered()
     ///     .title_position(TitlePosition::Bottom)
     ///     .title("foo") // will be at the bottom
-    ///     .title_top("top"); // will be at the top
-    ///     .title("bar") // will be at the bottom
+    ///     .title_top("top") // will be at the top
+    ///     .title("bar"); // will be at the bottom
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn title_position(mut self, position: TitlePosition) -> Self {
