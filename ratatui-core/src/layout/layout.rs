@@ -896,9 +896,46 @@ fn configure_flex_constraints(
                 solver.add_constraint(last.is_empty())?;
             }
         }
+
+        // all spacers (excluding first and last) are the same size and will grow to fill any remaining space after the
+        // constraints are satisfied. first and last are half the other spacers in sizer
+        Flex::SpaceAround => {
+            if spacers.len() <= 2 {
+                // If there are two or less spacers, fallback to Flex::SpaceAround
+                for (left, right) in spacers.iter().tuple_combinations() {
+                    solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
+                }
+                for spacer in spacers {
+                    solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
+                    solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
+                }
+            } else {
+                // Separate the first and last spacer from the middle ones
+                let (first, rest) = spacers.split_first().unwrap();
+                let (last, middle) = rest.split_last().unwrap();
+
+                // All middle spacers should be equal in size
+                for (left, right) in middle.iter().tuple_combinations() {
+                    solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
+                }
+
+                // First and last spacers should be half the size of any middle spacer
+                if let Some(any_middle) = middle.first() {
+                    solver.add_constraint(first.has_half_size(any_middle, SPACER_SIZE_EQ))?;
+                    solver.add_constraint(last.has_half_size(any_middle, SPACER_SIZE_EQ))?;
+                }
+
+                // Apply minimum size and growth constraints
+                for spacer in spacers.iter() {
+                    solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
+                    solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
+                }
+            }
+        }
+
         // all spacers are the same size and will grow to fill any remaining space after the
         // constraints are satisfied
-        Flex::SpaceAround => {
+        Flex::SpaceEvenly => {
             for (left, right) in spacers.iter().tuple_combinations() {
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
             }
@@ -923,6 +960,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(last.is_empty())?;
             }
         }
+
         Flex::Start => {
             for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
@@ -1105,6 +1143,14 @@ impl Element {
 
     fn has_size<E: Into<Expression>>(&self, size: E, strength: Strength) -> kasuari::Constraint {
         self.size() | EQ(strength) | size.into()
+    }
+
+    fn has_half_size<E: Into<Expression>>(
+        &self,
+        size: E,
+        strength: Strength,
+    ) -> kasuari::Constraint {
+        self.size() | EQ(strength) | size.into() / 2.0
     }
 
     fn is_empty(&self) -> kasuari::Constraint {
