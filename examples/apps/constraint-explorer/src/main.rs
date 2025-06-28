@@ -329,16 +329,16 @@ impl App {
             start,
             center,
             end,
-            space_around,
             space_between,
+            space_around,
             space_evenly,
         ] = Layout::vertical([Length(7); 6]).areas(area);
 
         self.render_layout_block(Flex::Start, start, buf);
         self.render_layout_block(Flex::Center, center, buf);
         self.render_layout_block(Flex::End, end, buf);
-        self.render_layout_block(Flex::SpaceAround, space_around, buf);
         self.render_layout_block(Flex::SpaceBetween, space_between, buf);
+        self.render_layout_block(Flex::SpaceAround, space_around, buf);
         self.render_layout_block(Flex::SpaceEvenly, space_evenly, buf);
     }
 
