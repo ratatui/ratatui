@@ -209,8 +209,10 @@
 //! - [`Flex::End`] - Align content to the end, leaving excess space at the start
 //! - [`Flex::Center`] - Center content, distributing excess space equally on both sides
 //! - [`Flex::SpaceBetween`] - Distribute excess space evenly *between* elements, none at the ends
-//! - [`Flex::SpaceAround`] - Distribute space *around* elements: equal padding on both sides of each element; gaps between elements are twice the edge spacing
-//! - [`Flex::SpaceEvenly`] - Distribute space *evenly*: equal spacing between all elements, including before the first and after the last.
+//! - [`Flex::SpaceAround`] - Distribute space *around* elements: equal padding on both sides of
+//!   each element; gaps between elements are twice the edge spacing
+//! - [`Flex::SpaceEvenly`] - Distribute space *evenly*: equal spacing between all elements,
+//!   including before the first and after the last.
 //! - [`Flex::Legacy`] - Legacy behavior (puts excess space in the last element)
 //!
 //! # Positioning and Alignment

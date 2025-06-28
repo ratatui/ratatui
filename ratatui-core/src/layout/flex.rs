@@ -163,7 +163,8 @@ pub enum Flex {
     /// ```
     SpaceBetween,
 
-    /// Evenly distributes excess space between all elements, including before the first and after the last.
+    /// Evenly distributes excess space between all elements, including before the first and after
+    /// the last.
     ///
     /// # Examples
     ///
