@@ -11,6 +11,8 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.30.0 Unreleased](#v0300-unreleased)
+  - `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps
+    are twice the size of first and last elements
   - `block::Title` no longer exists
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
@@ -88,6 +90,19 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.30.0 Unreleased
+
+### `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps ([#1952])
+
+[#1952]: https://github.com/ratatui/ratatui/pull/1952
+
+The old `Flex::SpaceAround` behavior has been changed to distribute space evenly around each
+element, with the middle spacers being twice the size of the first and last one. The old
+behavior can be achieved by using `Flex::SpaceEvenly` instead.
+
+```diff
+- let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::SpaceAround).split(area);
++ let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::SpaceEvenly).split(area);
+```
 
 ### `block::Title` no longer exists ([#1926])
 
