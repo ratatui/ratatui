@@ -18,9 +18,11 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
+pub use self::shadow::{Shadow, dimmed};
 use crate::borders::{BorderType, Borders};
 
 mod padding;
+mod shadow;
 
 /// Base widget to be used to display a box border around all other built-in widgets.
 ///
@@ -126,6 +128,8 @@ pub struct Block<'a> {
     padding: Padding,
     /// Border merging strategy
     merge_borders: MergeStrategy,
+    /// Block shadow
+    shadow: Option<Shadow>,
 }
 
 /// Defines the position of the title.
@@ -167,6 +171,7 @@ impl<'a> Block<'a> {
             style: Style::new(),
             padding: Padding::ZERO,
             merge_borders: MergeStrategy::Replace,
+            shadow: None,
         }
     }
 
@@ -591,6 +596,13 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// TODO: docs
+    #[must_use]
+    pub const fn shadow(mut self, shadow: Shadow) -> Self {
+        self.shadow = Some(shadow);
+        self
+    }
+
     /// Compute the inner area of a block based on its border visibility rules.
     ///
     /// # Examples
@@ -671,6 +683,7 @@ impl Widget for &Block<'_> {
         buf.set_style(area, self.style);
         self.render_borders(area, buf);
         self.render_titles(area, buf);
+        self.render_shadow(area, buf);
     }
 }
 
@@ -879,6 +892,12 @@ impl Block<'_> {
             // bump the titles area to the right and reduce its width
             titles_area.x = titles_area.x.saturating_add(title_width + 1);
             titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+        }
+    }
+
+    fn render_shadow(&self, base_area: Rect, buf: &mut Buffer) {
+        if let Some(shadow) = self.shadow {
+            shadow.render(base_area, buf);
         }
     }
 
@@ -1195,6 +1214,7 @@ mod tests {
                 style: Style::new(),
                 padding: Padding::ZERO,
                 merge_borders: MergeStrategy::Replace,
+                shadow: None,
             }
         );
     }
