@@ -96,7 +96,7 @@ This is a quick summary of the sections below:
 [#1952]: https://github.com/ratatui/ratatui/pull/1952
 
 The old `Flex::SpaceAround` behavior has been changed to distribute space evenly around each
-element, with the middle spacers being twice the size of the first and last elements. The old
+element, with the middle spacers being twice the size of the first and last one. The old
 behavior can be achieved by using `Flex::SpaceEvenly` instead.
 
 ```diff
