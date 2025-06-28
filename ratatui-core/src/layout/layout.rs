@@ -898,7 +898,7 @@ fn configure_flex_constraints(
         }
 
         // all spacers (excluding first and last) are the same size and will grow to fill any remaining space after the
-        // constraints are satisfied. first and last are half the other spacers in sizer
+        // constraints are satisfied. All spacers excluding first and last are also twice the size of the first and last spacers
         Flex::SpaceAround => {
             if spacers.len() <= 2 {
                 // If there are two or less spacers, fallback to Flex::SpaceAround
