@@ -920,9 +920,9 @@ fn configure_flex_constraints(
                 }
 
                 // First and last spacers should be half the size of any middle spacer
-                if let Some(any_middle) = middle.first() {
-                    solver.add_constraint(first.has_half_size(any_middle, SPACER_SIZE_EQ))?;
-                    solver.add_constraint(last.has_half_size(any_middle, SPACER_SIZE_EQ))?;
+                if let Some(first_middle) = middle.first() {
+                    solver.add_constraint(first_middle.has_double_size(first, SPACER_SIZE_EQ))?;
+                    solver.add_constraint(first_middle.has_double_size(last, SPACER_SIZE_EQ))?;
                 }
 
                 // Apply minimum size and growth constraints
@@ -1145,12 +1145,12 @@ impl Element {
         self.size() | EQ(strength) | size.into()
     }
 
-    fn has_half_size<E: Into<Expression>>(
+    fn has_double_size<E: Into<Expression>>(
         &self,
         size: E,
         strength: Strength,
     ) -> kasuari::Constraint {
-        self.size() | EQ(strength) | size.into() / 2.0
+        self.size() | EQ(strength) | size.into() * 2.0
     }
 
     fn is_empty(&self) -> kasuari::Constraint {
