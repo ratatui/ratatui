@@ -22,8 +22,8 @@ on the crate or its users should ideally be discussed in a "Feature Request" iss
 
 ### Keep PRs small, intentional, and focused
 
-Try to do one pull request per change. The time taken to review a PR grows exponential with the size
-of the change. Small focused PRs will generally be much more faster to review. PRs that include both
+Try to do one pull request per change. The time taken to review a PR grows exponentially with the size
+of the change. Small focused PRs will generally be much faster to review. PRs that include both
 refactoring (or reformatting) with actual changes are more difficult to review as every line of the
 change becomes a place where a bug may have been introduced. Consider splitting refactoring /
 reformatting changes into a separate PR from those that make a behavioral change, as the tests help
