@@ -153,6 +153,7 @@ enum SelectedTab {
     Center,
     End,
     SpaceAround,
+    SpaceEvenly,
     SpaceBetween,
 }
 
@@ -369,8 +370,9 @@ impl SelectedTab {
             Self::Start => SKY.c400,
             Self::Center => SKY.c300,
             Self::End => SKY.c200,
-            Self::SpaceAround => INDIGO.c400,
+            Self::SpaceEvenly => INDIGO.c400,
             Self::SpaceBetween => INDIGO.c300,
+            Self::SpaceAround => INDIGO.c500,
         };
         format!(" {text} ").fg(color).bg(Color::Black).into()
     }
@@ -385,8 +387,9 @@ impl StatefulWidget for SelectedTab {
             Self::Start => Self::render_examples(area, buf, Flex::Start, spacing),
             Self::Center => Self::render_examples(area, buf, Flex::Center, spacing),
             Self::End => Self::render_examples(area, buf, Flex::End, spacing),
-            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
+            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing),
             Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing),
+            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
         }
     }
 }
