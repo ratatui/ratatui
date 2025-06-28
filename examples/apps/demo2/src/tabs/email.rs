@@ -71,15 +71,15 @@ impl Widget for EmailTab {
             horizontal: 2,
         });
         Clear.render(area, buf);
-        let vertical = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
-        let [inbox, email] = vertical.areas(area);
+        let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
+        let [inbox, email] = area.layout(&layout);
         render_inbox(self.row_index, inbox, buf);
         render_email(self.row_index, email, buf);
     }
 }
 fn render_inbox(selected_index: usize, area: Rect, buf: &mut Buffer) {
-    let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    let [tabs, inbox] = vertical.areas(area);
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    let [tabs, inbox] = area.layout(&layout);
     let theme = THEME.email;
     Tabs::new(vec![" Inbox ", " Sent ", " Drafts "])
         .style(theme.tabs)
@@ -130,8 +130,8 @@ fn render_email(selected_index: usize, area: Rect, buf: &mut Buffer) {
     let inner = block.inner(area);
     block.render(area, buf);
     if let Some(email) = email {
-        let vertical = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]);
-        let [headers_area, body_area] = vertical.areas(inner);
+        let layout = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]);
+        let [headers_area, body_area] = inner.layout(&layout);
         let headers = vec![
             Line::from(vec![
                 "From: ".set_style(theme.header),

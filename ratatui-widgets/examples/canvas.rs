@@ -40,8 +40,8 @@ fn main() -> Result<()> {
 fn render(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let horizontal = Layout::horizontal([Constraint::Percentage(100)]).spacing(1);
-    let [top, main] = vertical.areas(frame.area());
-    let [area] = horizontal.areas(main);
+    let [top, main] = frame.area().layout(&vertical);
+    let [area] = main.layout(&horizontal);
 
     let title = TextLine::from_iter([
         Span::from("Canvas Widget").bold(),

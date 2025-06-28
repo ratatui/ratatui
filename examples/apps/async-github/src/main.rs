@@ -78,8 +78,8 @@ impl App {
     }
 
     fn render(&self, frame: &mut Frame) {
-        let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
-        let [title_area, body_area] = vertical.areas(frame.area());
+        let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
+        let [title_area, body_area] = frame.area().layout(&layout);
         let title = Line::from("Ratatui async example").centered().bold();
         frame.render_widget(title, title_area);
         frame.render_widget(&self.pull_requests, body_area);

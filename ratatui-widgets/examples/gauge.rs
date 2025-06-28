@@ -36,13 +36,13 @@ fn main() -> Result<()> {
 
 /// Render the UI with various progress bars.
 fn render(frame: &mut Frame) {
-    let vertical = Layout::vertical([
+    let constraints = [
         Constraint::Length(1),
         Constraint::Max(2),
         Constraint::Fill(1),
-    ])
-    .spacing(1);
-    let [top, first, second] = vertical.areas(frame.area());
+    ];
+    let layout = Layout::vertical(constraints).spacing(1);
+    let [top, first, second] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Gauge Widget").bold(),

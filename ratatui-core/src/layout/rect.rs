@@ -1,4 +1,5 @@
 #![warn(missing_docs)]
+use core::array::TryFromSliceError;
 use core::cmp::{max, min};
 use core::fmt;
 
@@ -482,9 +483,7 @@ impl Rect {
     /// ```
     #[must_use]
     pub fn centered_horizontally(self, constraint: Constraint) -> Self {
-        let [area] = Layout::horizontal([constraint])
-            .flex(Flex::Center)
-            .areas(self);
+        let [area] = self.layout(&Layout::horizontal([constraint]).flex(Flex::Center));
         area
     }
 
@@ -502,9 +501,7 @@ impl Rect {
     /// ```
     #[must_use]
     pub fn centered_vertically(self, constraint: Constraint) -> Self {
-        let [area] = Layout::vertical([constraint])
-            .flex(Flex::Center)
-            .areas(self);
+        let [area] = self.layout(&Layout::vertical([constraint]).flex(Flex::Center));
         area
     }
 
@@ -530,6 +527,99 @@ impl Rect {
     ) -> Self {
         self.centered_horizontally(horizontal_constraint)
             .centered_vertically(vertical_constraint)
+    }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`].
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split`] instead.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of constraints is not equal to the length of the returned array.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 10);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = area.layout(&layout);
+    /// assert_eq!(top, Rect::new(0, 0, 10, 1));
+    /// assert_eq!(main, Rect::new(0, 1, 10, 9));
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let areas = area.layout::<2>(&layout);
+    /// assert_eq!(areas, [Rect::new(0, 0, 10, 1), Rect::new(0, 1, 10, 9),]);
+    /// ```
+    #[must_use]
+    pub fn layout<const N: usize>(self, layout: &Layout) -> [Self; N] {
+        let areas = layout.split(self);
+        areas.as_ref().try_into().unwrap_or_else(|_| {
+            panic!(
+                "invalid number of rects: expected {N}, found {}",
+                areas.len()
+            )
+        })
+    }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`].
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns a [`Vec`] of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 10);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let areas = area.layout_vec(&layout);
+    /// assert_eq!(areas, vec![Rect::new(0, 0, 10, 1), Rect::new(0, 1, 10, 9),]);
+    /// ```
+    ///
+    /// [`Vec`]: alloc::vec::Vec
+    #[must_use]
+    pub fn layout_vec(self, layout: &Layout) -> alloc::vec::Vec<Self> {
+        layout.split(self).as_ref().to_vec()
+    }
+
+    /// Try to split the rect into a number of sub-rects according to the given [`Layout`].
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the number of constraints is not equal to the length of the returned
+    /// array.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 10);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = area.try_layout(&layout)?;
+    /// assert_eq!(top, Rect::new(0, 0, 10, 1));
+    /// assert_eq!(main, Rect::new(0, 1, 10, 9));
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let areas = area.try_layout::<2>(&layout)?;
+    /// assert_eq!(areas, [Rect::new(0, 0, 10, 1), Rect::new(0, 1, 10, 9),]);
+    /// # Ok::<(), core::array::TryFromSliceError>(())
+    /// ``````
+    pub fn try_layout<const N: usize>(
+        self,
+        layout: &Layout,
+    ) -> Result<[Self; N], TryFromSliceError> {
+        layout.split(self).as_ref().try_into()
     }
 
     /// indents the x value of the `Rect` by a given `offset`
@@ -891,5 +981,55 @@ mod tests {
             rect.centered(Constraint::Length(3), Constraint::Length(1)),
             Rect::new(1, 2, 3, 1)
         );
+    }
+
+    #[test]
+    fn layout() {
+        let layout = Layout::horizontal([Constraint::Length(3), Constraint::Min(0)]);
+
+        let [a, b] = Rect::new(0, 0, 10, 10).layout(&layout);
+        assert_eq!(a, Rect::new(0, 0, 3, 10));
+        assert_eq!(b, Rect::new(3, 0, 7, 10));
+
+        let areas = Rect::new(0, 0, 10, 10).layout::<2>(&layout);
+        assert_eq!(areas[0], Rect::new(0, 0, 3, 10));
+        assert_eq!(areas[1], Rect::new(3, 0, 7, 10));
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid number of rects: expected 3, found 1")]
+    fn layout_invalid_number_of_rects() {
+        let layout = Layout::horizontal([Constraint::Length(1)]);
+        let [_, _, _] = Rect::new(0, 0, 10, 10).layout(&layout);
+    }
+
+    #[test]
+    fn layout_vec() {
+        let layout = Layout::horizontal([Constraint::Length(3), Constraint::Min(0)]);
+
+        let areas = Rect::new(0, 0, 10, 10).layout_vec(&layout);
+        assert_eq!(areas[0], Rect::new(0, 0, 3, 10));
+        assert_eq!(areas[1], Rect::new(3, 0, 7, 10));
+    }
+
+    #[test]
+    fn try_layout() {
+        let layout = Layout::horizontal([Constraint::Length(3), Constraint::Min(0)]);
+
+        let [a, b] = Rect::new(0, 0, 10, 10).try_layout(&layout).unwrap();
+        assert_eq!(a, Rect::new(0, 0, 3, 10));
+        assert_eq!(b, Rect::new(3, 0, 7, 10));
+
+        let areas = Rect::new(0, 0, 10, 10).try_layout::<2>(&layout).unwrap();
+        assert_eq!(areas[0], Rect::new(0, 0, 3, 10));
+        assert_eq!(areas[1], Rect::new(3, 0, 7, 10));
+    }
+
+    #[test]
+    fn try_layout_invalid_number_of_rects() {
+        let layout = Layout::horizontal([Constraint::Length(1)]);
+        Rect::new(0, 0, 10, 10)
+            .try_layout::<3>(&layout)
+            .unwrap_err();
     }
 }
