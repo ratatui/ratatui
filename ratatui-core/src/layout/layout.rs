@@ -927,7 +927,7 @@ fn configure_flex_constraints(
                 }
 
                 // Apply minimum size and growth constraints
-                for spacer in spacers.iter() {
+                for spacer in spacers {
                     solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
                     solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
                 }
@@ -1152,7 +1152,7 @@ impl Element {
         size: E,
         strength: Strength,
     ) -> kasuari::Constraint {
-        self.size() | EQ(strength) | size.into() * 2.0
+        self.size() | EQ(strength) | (size.into() * 2.0)
     }
 
     fn is_empty(&self) -> kasuari::Constraint {
