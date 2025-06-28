@@ -901,7 +901,7 @@ fn configure_flex_constraints(
         // constraints are satisfied. All spacers excluding first and last are also twice the size of the first and last spacers
         Flex::SpaceAround => {
             if spacers.len() <= 2 {
-                // If there are two or less spacers, fallback to Flex::SpaceAround
+                // If there are two or less spacers, fallback to Flex::SpaceEvenly
                 for (left, right) in spacers.iter().tuple_combinations() {
                     solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
                 }
