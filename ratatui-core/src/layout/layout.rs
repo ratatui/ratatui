@@ -897,8 +897,9 @@ fn configure_flex_constraints(
             }
         }
 
-        // all spacers (excluding first and last) are the same size and will grow to fill any remaining space after the
-        // constraints are satisfied. All spacers excluding first and last are also twice the size of the first and last spacers
+        // All spacers excluding first and last are the same size and will grow to fill
+        // any remaining space after the constraints are satisfied.
+        // All spacers excluding first and last are also twice the size of the first and last spacers
         Flex::SpaceAround => {
             if spacers.len() <= 2 {
                 // If there are two or less spacers, fallback to Flex::SpaceEvenly
@@ -933,7 +934,7 @@ fn configure_flex_constraints(
             }
         }
 
-        // all spacers are the same size and will grow to fill any remaining space after the
+        // All spacers are the same size and will grow to fill any remaining space after the
         // constraints are satisfied
         Flex::SpaceEvenly => {
             for (left, right) in spacers.iter().tuple_combinations() {
@@ -945,8 +946,9 @@ fn configure_flex_constraints(
             }
         }
 
-        // all spacers are the same size and will grow to fill any remaining space after the
-        // constraints are satisfied, but the first and last spacers are zero size
+        // All spacers excluding first and last are the same size and will grow to fill
+        // any remaining space after the constraints are satisfied.
+        // The first and last spacers are zero size.
         Flex::SpaceBetween => {
             for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?;
