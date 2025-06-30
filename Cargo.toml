@@ -48,13 +48,13 @@ palette = "0.7"
 pretty_assertions = "1"
 rand = "0.9"
 rand_chacha = "0.9"
-ratatui = { path = "ratatui", version = "0.30.0-alpha.4" }
-ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.5" }
-ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.4" }
-ratatui-macros = { path = "ratatui-macros", version = "0.7.0-alpha.3" }
-ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.4" }
-ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-alpha.4" }
-ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-alpha.4" }
+ratatui = { path = "ratatui", version = "0.30.0-alpha.5" }
+ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.6" }
+ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.5" }
+ratatui-macros = { path = "ratatui-macros", version = "0.7.0-alpha.4" }
+ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.5" }
+ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-alpha.5" }
+ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-alpha.5" }
 rstest = "0.25"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

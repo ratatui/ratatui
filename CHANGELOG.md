@@ -4,6 +4,624 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+## ratatui - [0.30.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.4...ratatui-v0.30.0-alpha.5) - 2025-06-30
+
+### Features
+
+- [1399d95](https://github.com/ratatui/ratatui/commit/1399d95ae0c93b0f802e500022853e32fa604cf9) *(no_std)* Make palette and serde features depends on std by @j-g00da in [#1919](https://github.com/ratatui/ratatui/pull/1919)
+
+- [7bc78bc](https://github.com/ratatui/ratatui/commit/7bc78bca1b8ce9aac0cab3831a0c9c864ab02b02) *(uncategorized)* Add ratatui::run() method by @joshka in [#1707](https://github.com/ratatui/ratatui/pull/1707)
+
+  > This introduces a new `ratatui::run()` method which runs a closure with
+  > a terminal initialized with reasonable defaults for most applications.
+  > This calls `ratatui::init()` before running the closure and
+  > `ratatui::restore()` after the closure completes, and returns the result
+  > of the closure.
+  >
+  > A minimal hello world example using the new `ratatui::run()` method:
+  >
+  > ```rust
+  > fn main() -> Result<(), Box<dyn std::error::Error>> {
+  >     ratatui::run(|terminal| {
+  >         loop {
+  >             terminal.draw(|frame| frame.render_widget("Hello World!", frame.area()))?;
+  >             if crossterm::event::read()?.is_key_press() {
+  >                 break Ok(());
+  >             }
+  >         }
+  >     })
+  > }
+  > ```
+  >
+  > Of course, this also works both with apps that use free methods and
+  > structs:
+  >
+  > ```rust
+  > fn run(terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
+  >
+  > ratatui::run(run)?;
+  > ```
+  >
+  > ```rust
+  > struct App { ... }
+  >
+  > impl App {
+  >     fn new() -> Self { ... }
+  >     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
+  > }
+  >
+  > ratatui::run(|terminal| App::new().run(terminal))?;
+  > ```
+
+### Bug Fixes
+
+- [80bc818](https://github.com/ratatui/ratatui/commit/80bc8187233f4d98659b552d85520cd0e24ec8ad) *(uncategorized)* Fix truncation of left aligned block titles by @joshka in [#1931](https://github.com/ratatui/ratatui/pull/1931)
+
+  > truncate the right side of left aligned titles rather than the left side
+  > of right aligned titles. This is more obvious as the left side of text
+  > often contains more important information. And we generally read
+  > left to right.
+  >
+  > This change makes centered titles overwrite left aligned titles and
+  > right aligned titles overwrite centered or left aligned titles.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/358
+
+### Documentation
+
+- [68b9f67](https://github.com/ratatui/ratatui/commit/68b9f67f59ce7b46649fe3c96c558f4b88cd1007) *(readme)* Add `Built with Ratatui` badge for downstream projects by @harilvfs in [#1905](https://github.com/ratatui/ratatui/pull/1905)
+
+- [055522e](https://github.com/ratatui/ratatui/commit/055522ef7bafa5ed2a9370b9907f647f616cbfb0) *(uncategorized)* Add docs for authoring widget crates by @j-g00da in [#1955](https://github.com/ratatui/ratatui/pull/1955)
+
+  > - added Authoring Widget Libraries sub-section
+  > - moved built-in and third-party widgets sections higher
+
+- [4c708dd](https://github.com/ratatui/ratatui/commit/4c708ddf8a4dfcc7e31435cc9269fce62ef48212) *(uncategorized)* Improve docs for run/init/restore etc. by @joshka in [#1947](https://github.com/ratatui/ratatui/pull/1947)
+
+  > - **docs: document the init module**
+  > - **docs: use the ratatui::run() methods in the main doc**
+  > - **docs: add more intradoc / website links and historical perspective
+  > on Terminal / backend**
+  > - **docs: add notes about new run/init/restore methods and the
+  > defaultterminal type to terminal docs**
+
+- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
+
+  > Adds summary-level crate organization documentation to all crates
+  > explaining the modular workspace structure and when to use each crate.
+  > Links to ARCHITECTURE.md for detailed information.
+
+- [cfb65e6](https://github.com/ratatui/ratatui/commit/cfb65e64ba9e9758e44c5bfe54adc331a9084932) *(uncategorized)* Add examples for handling state by @joshka in [#1849](https://github.com/ratatui/ratatui/pull/1849)
+
+  > Added comprehensive state management examples covering both immutable
+  > and mutable patterns and documentation to help developers choose the
+  > right approach for their applications.
+
+- [3de41a8](https://github.com/ratatui/ratatui/commit/3de41a8249d221d603ce9f294cac81df62fffc3c) *(uncategorized)* Document widgets module by @joshka in [#1932](https://github.com/ratatui/ratatui/pull/1932)
+
+  > Adds a good overview of the use and implementation of widget traits.
+  >
+  > Goals with the doc rewrite:
+  > - document the rationale for the ratatui-widgets crate with info for app
+  > builders and widget makers.
+  > - Show how to use the widgets for rendering as well as implement the
+  > traits- document the differences and reasons for each trait
+  > - document the historical perspective (to make it easy to understand
+  > older Ratatui apps as well as migrate to newer approaches
+  > - give recommended approaches to implementing traits
+  > - explain the differences between Consuming and Shared / Mutable
+  > Reference implementations of Widget
+  > - explain the differences between using StatefulWidget and Mutable
+  > References
+  > - Explain the use case for WidgetRef and StatefulWidgetRef
+  > - Link out to third part widget lists
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/366
+  >
+  > ---------
+
+### Miscellaneous Tasks
+
+- [4c86513](https://github.com/ratatui/ratatui/commit/4c86513790a12d7a4d9e38959430395a3a7dc868) *(uncategorized)* Remove block::Title by @joshka in [#1926](https://github.com/ratatui/ratatui/pull/1926)
+
+  > The title alignment is better expressed in the `Line` as this fits more
+  > coherently with the rest of the library.
+  >
+  > BREAKING CHANGES:
+  > - `widgets::block` is no longer exported
+  > - `widgets::block::Title` no longer exists
+  > - `widgets::block::Position` is now `widgets::TitlePosition`
+  > - `Block::title()` now accepts `Into::<Line>` instead of `Into<Title>`
+  > - `BlockExt` is now exported at widgets::`BlockExt`
+  >
+  > Closes:https://github.com/ratatui/ratatui/issues/738
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.4...ratatui-v0.30.0-alpha.5
+
+
+
+## ratatui-termion - [0.1.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.4...ratatui-termion-v0.1.0-alpha.5) - 2025-06-30
+
+### Documentation
+
+- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
+
+  > Adds summary-level crate organization documentation to all crates
+  > explaining the modular workspace structure and when to use each crate.
+  > Links to ARCHITECTURE.md for detailed information.
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.4...ratatui-termion-v0.1.0-alpha.5
+
+
+
+## ratatui-termwiz - [0.1.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.4...ratatui-termwiz-v0.1.0-alpha.5) - 2025-06-30
+
+### Documentation
+
+- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
+
+  > Adds summary-level crate organization documentation to all crates
+  > explaining the modular workspace structure and when to use each crate.
+  > Links to ARCHITECTURE.md for detailed information.
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.4...ratatui-termwiz-v0.1.0-alpha.5
+
+
+
+## ratatui-macros - [0.7.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.3...ratatui-macros-v0.7.0-alpha.4) - 2025-06-30
+
+### Features
+
+- [b32f781](https://github.com/ratatui/ratatui/commit/b32f78195bfa4b131e091d64f02676fa1ba0a360) *(no_std)* Make `ratatui-macros` no-std by @j-g00da in [#1865](https://github.com/ratatui/ratatui/pull/1865)
+
+### Documentation
+
+- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
+
+  > Adds summary-level crate organization documentation to all crates
+  > explaining the modular workspace structure and when to use each crate.
+  > Links to ARCHITECTURE.md for detailed information.
+
+- [ca2ad4a](https://github.com/ratatui/ratatui/commit/ca2ad4a1f93432f81a87ca1e3766f510723d3652) *(uncategorized)* Simplify ratatui-macro docs by @joshka in [#1923](https://github.com/ratatui/ratatui/pull/1923)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.3...ratatui-macros-v0.7.0-alpha.4
+
+
+
+## ratatui-widgets - [0.3.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.4...ratatui-widgets-v0.3.0-alpha.5) - 2025-06-30
+
+### Features
+
+- [89b7421](https://github.com/ratatui/ratatui/commit/89b74214d9d09343743c8601d9401c0139a887a4) *(serde)* Derive Serialize/Deserialize for additional structs/enums by @aurreland in [#1883](https://github.com/ratatui/ratatui/pull/1883)
+
+  > This PR adds `#[derive(Serialize, Deserialize)]` to the following
+  > structs:
+  > - `Constraint`
+  > - `Direction`
+  > - `Spacing`
+  > - `Layout`
+  > - `AccentedPalette`
+  > - `NonAccentedPalette`
+  > - `Palette`
+  > - `Padding`
+  > - `Borders`
+  > - `BorderType`
+  > - `ListDirection`
+  > - `ScrollbarOrientation`
+  > - `ScrollDirection`
+  > - `RenderDirection`
+  > - `HighlightSpacing`
+  >
+  > Fixes #1877
+
+- [6dcd53b](https://github.com/ratatui/ratatui/commit/6dcd53bc6ba172d4b96d02809c6a46105e67d85a) *(uncategorized)* Add ergonomic methods for layouting Rects by @joshka in [#1909](https://github.com/ratatui/ratatui/pull/1909)
+
+  > This commit introduces new methods for the `Rect` struct that simplify
+  > the process of splitting a `Rect` into sub-rects according to a given
+  > `Layout`. By putting these methods on the `Rect` struct, we make it a
+  > bit more natural that a layout is applied to the `Rect` itself, rather
+  > than passing a `Rect` to the `Layout` struct to be split.
+  >
+  > Adds:- `Rect::layout` and `Rect::try_layout` methods that allow splitting a
+  >   `Rect` into an array of sub-rects according to a given `Layout`.
+  > - `Rect::layout_vec` method that returns a `Vec` of sub-rects.
+  > - `Layout::try_areas` method that returns an array of sub-rects, with
+  >   compile-time checks for the number of constraints. This is added
+  >   mainly for consistency with the new `Rect` methods.
+  >
+  > ```rust
+  > use ratatui_core::layout::{Layout, Constraint, Rect};
+  > let area = Rect::new(0, 0, 10, 10);
+  > let layout = Layout::vertical([Constraint::Fill(1); 2]);
+  >
+  > // Rect::layout() infers the number of constraints at compile time:
+  > let [top, main] = area.layout(&layout);
+  >
+  > // Rect::try_layout() and Layout::try_areas() do the same, but return a
+  > // Result:
+  > let [top, main] = area.try_layout(&layout)?;
+  > let [top, main] = layout.try_areas(area)?;
+  >
+  > // Rect::layout_vec() returns a Vec of sub-rects:
+  > let areas_vec = area.layout_vec(&layout);
+  >
+  > // you can also explicitly specify the number of constraints:
+  > let areas = area.layout::<2>(&layout);
+  > let areas = area.try_layout::<2>(&layout)?;
+  > let areas = layout.try_areas::<2>(area)?;
+  > ```
+
+- [7bc78bc](https://github.com/ratatui/ratatui/commit/7bc78bca1b8ce9aac0cab3831a0c9c864ab02b02) *(uncategorized)* Add ratatui::run() method by @joshka in [#1707](https://github.com/ratatui/ratatui/pull/1707)
+
+  > This introduces a new `ratatui::run()` method which runs a closure with
+  > a terminal initialized with reasonable defaults for most applications.
+  > This calls `ratatui::init()` before running the closure and
+  > `ratatui::restore()` after the closure completes, and returns the result
+  > of the closure.
+  >
+  > A minimal hello world example using the new `ratatui::run()` method:
+  >
+  > ```rust
+  > fn main() -> Result<(), Box<dyn std::error::Error>> {
+  >     ratatui::run(|terminal| {
+  >         loop {
+  >             terminal.draw(|frame| frame.render_widget("Hello World!", frame.area()))?;
+  >             if crossterm::event::read()?.is_key_press() {
+  >                 break Ok(());
+  >             }
+  >         }
+  >     })
+  > }
+  > ```
+  >
+  > Of course, this also works both with apps that use free methods and
+  > structs:
+  >
+  > ```rust
+  > fn run(terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
+  >
+  > ratatui::run(run)?;
+  > ```
+  >
+  > ```rust
+  > struct App { ... }
+  >
+  > impl App {
+  >     fn new() -> Self { ... }
+  >     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
+  > }
+  >
+  > ratatui::run(|terminal| App::new().run(terminal))?;
+  > ```
+
+- [b6fbfcd](https://github.com/ratatui/ratatui/commit/b6fbfcdd1cf1813879af523a52fb8c5a496a685b) *(uncategorized)* Add lifetime to symbol sets by @joshka in [#1935](https://github.com/ratatui/ratatui/pull/1935)
+
+  > This makes it possible to create symbol sets at runtime with non-static
+  > lifetimes.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1722
+
+- [488e5f0](https://github.com/ratatui/ratatui/commit/488e5f020f7a1b4c120d8b074c62a97abac0a4b6) *(uncategorized)* Make `border!` work without importing `Borders` by @j-g00da in [#1918](https://github.com/ratatui/ratatui/pull/1918)
+
+  > Currently using `border!` macro requires explicit import of `Borders`
+  > which is unnecessary.
+
+- [671c2b4](https://github.com/ratatui/ratatui/commit/671c2b4fd4ee277ba0dc36d152d66c40cfa1f030) *(uncategorized)* Support merging the borders of blocks by @j-g00da
+
+  > When two borders overlap, they will automatically merge into a single,
+  > clean border instead of overlapping.
+  >
+  > This improves visual clarity and reduces rendering glitches around corners.
+  >
+  > For example:
+  >
+  > ```
+  > assert_eq!(Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact).symbol(), "╆");
+  > ```
+
+### Bug Fixes
+
+- [80bc818](https://github.com/ratatui/ratatui/commit/80bc8187233f4d98659b552d85520cd0e24ec8ad) *(uncategorized)* Fix truncation of left aligned block titles by @joshka in [#1931](https://github.com/ratatui/ratatui/pull/1931)
+
+  > truncate the right side of left aligned titles rather than the left side
+  > of right aligned titles. This is more obvious as the left side of text
+  > often contains more important information. And we generally read
+  > left to right.
+  >
+  > This change makes centered titles overwrite left aligned titles and
+  > right aligned titles overwrite centered or left aligned titles.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/358
+
+- [21e3b59](https://github.com/ratatui/ratatui/commit/21e3b598ce00300e9c7363139be73bba27f6e3c5) *(uncategorized)* Fix handling of multi-byte chars in bar chart by @joshka in [#1934](https://github.com/ratatui/ratatui/pull/1934)
+
+  > The split_at method requires that the split point is at a valid utf8
+  > character boundary.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1928
+
+- [e1e4004](https://github.com/ratatui/ratatui/commit/e1e400406c531fe6a81e731242dffe19b1199f23) *(uncategorized)* Derive copy for list state by @janTatesa in [#1921](https://github.com/ratatui/ratatui/pull/1921)
+
+- [12cb5a2](https://github.com/ratatui/ratatui/commit/12cb5a28fe8e6c4526e70465a52c0d223140b8a1) *(uncategorized)* Allow canvas area to exceed u16::MAX by @Daksh14 in [#1891](https://github.com/ratatui/ratatui/pull/1891)
+
+  > This allows Canvas grids where the width * height exceeds u16::MAX by
+  > converting values to usize earlier in several methods.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1449
+
+### Documentation
+
+- [617d318](https://github.com/ratatui/ratatui/commit/617d31851a30cfe751af421c8c438692c43fff4d) *(uncategorized)* Improve Block docs by @joshka in [#1953](https://github.com/ratatui/ratatui/pull/1953)
+
+- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
+
+  > Adds summary-level crate organization documentation to all crates
+  > explaining the modular workspace structure and when to use each crate.
+  > Links to ARCHITECTURE.md for detailed information.
+
+- [92b6a16](https://github.com/ratatui/ratatui/commit/92b6a16bdedb7fd14bafd1f4cbab6ee7b98295e8) *(uncategorized)* Fix grammar in ratatui-widgets README by @sevki in [#1885](https://github.com/ratatui/ratatui/pull/1885)
+
+### Miscellaneous Tasks
+
+- [92bb9b2](https://github.com/ratatui/ratatui/commit/92bb9b22198ac06439d14b4c6d4d0c4882e55eb1) *(uncategorized)* Remove `Title` references by @j-g00da in [#1943](https://github.com/ratatui/ratatui/pull/1943)
+
+- [4c86513](https://github.com/ratatui/ratatui/commit/4c86513790a12d7a4d9e38959430395a3a7dc868) *(uncategorized)* Remove block::Title by @joshka in [#1926](https://github.com/ratatui/ratatui/pull/1926)
+
+  > The title alignment is better expressed in the `Line` as this fits more
+  > coherently with the rest of the library.
+  >
+  > BREAKING CHANGES:
+  > - `widgets::block` is no longer exported
+  > - `widgets::block::Title` no longer exists
+  > - `widgets::block::Position` is now `widgets::TitlePosition`
+  > - `Block::title()` now accepts `Into::<Line>` instead of `Into<Title>`
+  > - `BlockExt` is now exported at widgets::`BlockExt`
+  >
+  > Closes:https://github.com/ratatui/ratatui/issues/738
+
+- [272f5c0](https://github.com/ratatui/ratatui/commit/272f5c05dc4399389c011d8693bae073523aebfb) *(uncategorized)* Fix new lints by @joshka in [#1922](https://github.com/ratatui/ratatui/pull/1922)
+
+- [770cb7c](https://github.com/ratatui/ratatui/commit/770cb7c3c31fd23b3ecc48c1f267e40f9f98b583) *(uncategorized)* Add tests for combining list styles by @joshka in [#1884](https://github.com/ratatui/ratatui/pull/1884)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.4...ratatui-widgets-v0.3.0-alpha.5
+
+
+
+## ratatui-crossterm - [0.1.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.4...ratatui-crossterm-v0.1.0-alpha.5) - 2025-06-30
+
+### Documentation
+
+- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
+
+  > Adds summary-level crate organization documentation to all crates
+  > explaining the modular workspace structure and when to use each crate.
+  > Links to ARCHITECTURE.md for detailed information.
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.4...ratatui-crossterm-v0.1.0-alpha.5
+
+
+
+## ratatui-core - [0.1.0-alpha.6](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.5...ratatui-core-v0.1.0-alpha.6) - 2025-06-30
+
+### Features
+
+- [d99984f](https://github.com/ratatui/ratatui/commit/d99984f1e9143243cfbdd818ac17853300de5645) *(layout)* Add `Flex::SpaceEvenly` by @kdheepak in [#1952](https://github.com/ratatui/ratatui/pull/1952) [**breaking**]
+
+  > Resolves https://github.com/ratatui/ratatui/issues/1951
+  >
+  > BREAKING CHANGE:Old `Flex::SpaceAround` behavior is available by using
+  >
+  > `Flex::SpaceEvenly` and new
+  >
+  > `Flex::SpaceAround` now distributes space evenly around each element
+  > except the middle spacers
+  >     are twice the size of first and last elements
+  >
+  > With this change, the following variants of `Flex` are supported:
+  >
+  > - `Flex::Start`: Aligns items to the start; excess space appears at the
+  > end.
+  > - `Flex::End`: Aligns items to the end; excess space appears at the
+  > start.
+  > - `Flex::Center`: Centers items with equal space on both sides.
+  > - `Flex::SpaceAround` (**new**): Distributes space _around_ items; space
+  > between items is _twice_ the edge spacing.
+  > - `Flex::SpaceBetween`: Distributes space _evenly between_ items except
+  > no space at the edges.
+  > - `Flex::SpaceEvenly` (**previously `Flex::SpaceAround`**): Distributes
+  > space _evenly between_ items and edges.
+  > - `Flex::Legacy`: Preserves legacy behavior, placing all excess space at
+  > the end.
+  >
+  > This aligns behavior of `Flex` with CSS flexbox more closely.
+  >
+  > The following is a screenshot in action:
+  >
+  > <img width="1090" alt="image"
+  >
+  > src="https://github.com/user-attachments/assets/2c7cd797-27bd-4242-a824-4565d369227b"
+  > />
+  >
+  > ---------
+
+- [1399d95](https://github.com/ratatui/ratatui/commit/1399d95ae0c93b0f802e500022853e32fa604cf9) *(no_std)* Make palette and serde features depends on std by @j-g00da in [#1919](https://github.com/ratatui/ratatui/pull/1919)
+
+- [b9da192](https://github.com/ratatui/ratatui/commit/b9da1926a0c102d97a552487fc9963590bea80ff) *(serde)* Derive Serialize/Deserialize for alignment enums by @j-g00da in [#1957](https://github.com/ratatui/ratatui/pull/1957)
+  >
+  > Resolves #1954
+
+- [89b7421](https://github.com/ratatui/ratatui/commit/89b74214d9d09343743c8601d9401c0139a887a4) *(serde)* Derive Serialize/Deserialize for additional structs/enums by @aurreland in [#1883](https://github.com/ratatui/ratatui/pull/1883)
+
+  > This PR adds `#[derive(Serialize, Deserialize)]` to the following
+  > structs:
+  > - `Constraint`
+  > - `Direction`
+  > - `Spacing`
+  > - `Layout`
+  > - `AccentedPalette`
+  > - `NonAccentedPalette`
+  > - `Palette`
+  > - `Padding`
+  > - `Borders`
+  > - `BorderType`
+  > - `ListDirection`
+  > - `ScrollbarOrientation`
+  > - `ScrollDirection`
+  > - `RenderDirection`
+  > - `HighlightSpacing`
+  >
+  > Fixes #1877
+
+- [4c301e8](https://github.com/ratatui/ratatui/commit/4c301e891d9704fd3578af96d63a3b068252ec6a) *(text)* Implement `AddAssign` for `Text` by @acuteenvy in [#1956](https://github.com/ratatui/ratatui/pull/1956)
+
+  > This makes it possible to add a second `Text` instance to a first one using the += operator.
+  >
+  > ```rust
+  > let mut text = Text::from("line 1");
+  > text += Text::from("line 2");
+  > ```
+  >
+  > Style and alignment applied to the second text is ignored (though styles and alignment of lines and spans are copied).
+
+- [6dcd53b](https://github.com/ratatui/ratatui/commit/6dcd53bc6ba172d4b96d02809c6a46105e67d85a) *(uncategorized)* Add ergonomic methods for layouting Rects by @joshka in [#1909](https://github.com/ratatui/ratatui/pull/1909)
+
+  > This commit introduces new methods for the `Rect` struct that simplify
+  > the process of splitting a `Rect` into sub-rects according to a given
+  > `Layout`. By putting these methods on the `Rect` struct, we make it a
+  > bit more natural that a layout is applied to the `Rect` itself, rather
+  > than passing a `Rect` to the `Layout` struct to be split.
+  >
+  > Adds:- `Rect::layout` and `Rect::try_layout` methods that allow splitting a
+  >   `Rect` into an array of sub-rects according to a given `Layout`.
+  > - `Rect::layout_vec` method that returns a `Vec` of sub-rects.
+  > - `Layout::try_areas` method that returns an array of sub-rects, with
+  >   compile-time checks for the number of constraints. This is added
+  >   mainly for consistency with the new `Rect` methods.
+  >
+  > ```rust
+  > use ratatui_core::layout::{Layout, Constraint, Rect};
+  > let area = Rect::new(0, 0, 10, 10);
+  > let layout = Layout::vertical([Constraint::Fill(1); 2]);
+  >
+  > // Rect::layout() infers the number of constraints at compile time:
+  > let [top, main] = area.layout(&layout);
+  >
+  > // Rect::try_layout() and Layout::try_areas() do the same, but return a
+  > // Result:
+  > let [top, main] = area.try_layout(&layout)?;
+  > let [top, main] = layout.try_areas(area)?;
+  >
+  > // Rect::layout_vec() returns a Vec of sub-rects:
+  > let areas_vec = area.layout_vec(&layout);
+  >
+  > // you can also explicitly specify the number of constraints:
+  > let areas = area.layout::<2>(&layout);
+  > let areas = area.try_layout::<2>(&layout)?;
+  > let areas = layout.try_areas::<2>(area)?;
+  > ```
+
+- [0c3872f](https://github.com/ratatui/ratatui/commit/0c3872f1c5105153ebb0368e83e8b72cb68b8b34) *(uncategorized)* Add Rect::outer() by @joshka in [#1929](https://github.com/ratatui/ratatui/pull/1929)
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/211
+
+- [b6fbfcd](https://github.com/ratatui/ratatui/commit/b6fbfcdd1cf1813879af523a52fb8c5a496a685b) *(uncategorized)* Add lifetime to symbol sets by @joshka in [#1935](https://github.com/ratatui/ratatui/pull/1935)
+
+  > This makes it possible to create symbol sets at runtime with non-static
+  > lifetimes.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1722
+
+- [671c2b4](https://github.com/ratatui/ratatui/commit/671c2b4fd4ee277ba0dc36d152d66c40cfa1f030) *(uncategorized)* Support merging the borders of blocks by @j-g00da
+
+  > When two borders overlap, they will automatically merge into a single,
+  > clean border instead of overlapping.
+  >
+  > This improves visual clarity and reduces rendering glitches around corners.
+  >
+  > For example:
+  >
+  > ```
+  > assert_eq!(Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact).symbol(), "╆");
+  > ```
+
+### Documentation
+
+- [8e2d568](https://github.com/ratatui/ratatui/commit/8e2d568428047994f57886d64d9925d6eace130a) *(uncategorized)* Improve layout related docs by @joshka in [#1948](https://github.com/ratatui/ratatui/pull/1948)
+
+  > Adds module level docs and more comprehensive docs on all the types in
+  > the layout module
+  >
+  > Fixes #1937
+
+- [4c708dd](https://github.com/ratatui/ratatui/commit/4c708ddf8a4dfcc7e31435cc9269fce62ef48212) *(uncategorized)* Improve docs for run/init/restore etc. by @joshka in [#1947](https://github.com/ratatui/ratatui/pull/1947)
+
+  > - **docs: document the init module**
+  > - **docs: use the ratatui::run() methods in the main doc**
+  > - **docs: add more intradoc / website links and historical perspective
+  > on Terminal / backend**
+  > - **docs: add notes about new run/init/restore methods and the
+  > defaultterminal type to terminal docs**
+
+- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
+
+  > Adds summary-level crate organization documentation to all crates
+  > explaining the modular workspace structure and when to use each crate.
+  > Links to ARCHITECTURE.md for detailed information.
+
+- [3de41a8](https://github.com/ratatui/ratatui/commit/3de41a8249d221d603ce9f294cac81df62fffc3c) *(uncategorized)* Document widgets module by @joshka in [#1932](https://github.com/ratatui/ratatui/pull/1932)
+
+  > Adds a good overview of the use and implementation of widget traits.
+  >
+  > Goals with the doc rewrite:
+  > - document the rationale for the ratatui-widgets crate with info for app
+  > builders and widget makers.
+  > - Show how to use the widgets for rendering as well as implement the
+  > traits- document the differences and reasons for each trait
+  > - document the historical perspective (to make it easy to understand
+  > older Ratatui apps as well as migrate to newer approaches
+  > - give recommended approaches to implementing traits
+  > - explain the differences between Consuming and Shared / Mutable
+  > Reference implementations of Widget
+  > - explain the differences between using StatefulWidget and Mutable
+  > References
+  > - Explain the use case for WidgetRef and StatefulWidgetRef
+  > - Link out to third part widget lists
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/366
+  >
+  > ---------
+
+### Miscellaneous Tasks
+
+- [d6647db](https://github.com/ratatui/ratatui/commit/d6647db74486117affb20104c25b0645f32ce684) *(uncategorized)* Remove some allow attributes for fixed clippy bugs by @joshka in [#1944](https://github.com/ratatui/ratatui/pull/1944)
+
+- [272f5c0](https://github.com/ratatui/ratatui/commit/272f5c05dc4399389c011d8693bae073523aebfb) *(uncategorized)* Fix new lints by @joshka in [#1922](https://github.com/ratatui/ratatui/pull/1922)
+
+
+
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.5...ratatui-core-v0.1.0-alpha.6
+
+
+
 ## ratatui - [0.30.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.3...ratatui-v0.30.0-alpha.4) - 2025-05-19
 
 ### Features
