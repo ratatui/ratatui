@@ -39,6 +39,62 @@
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
 //!
+//! # Built-in Widgets
+//!
+//! Ratatui provides a comprehensive set of built-in widgets:
+//!
+//! - [`Block`]: a basic widget that draws a block with optional borders, titles and styles.
+//! - [`BarChart`]: displays multiple datasets as bars with optional grouping.
+//! - [`calendar::Monthly`]: displays a single month.
+//! - [`Canvas`]: draws arbitrary shapes using drawing characters.
+//! - [`Chart`]: displays multiple datasets as a lines or scatter graph.
+//! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
+//! - [`Gauge`]: displays progress percentage using block characters.
+//! - [`LineGauge`]: display progress as a line.
+//! - [`List`]: displays a list of items and allows selection.
+//! - [`Paragraph`]: displays a paragraph of optionally styled and wrapped text.
+//! - [`Scrollbar`]: displays a scrollbar.
+//! - [`Sparkline`]: display a single data set as a sparkline.
+//! - [`Table`]: displays multiple rows and columns in a grid and allows selection.
+//! - [`Tabs`]: displays a tab bar and allows selection.
+//! - [`RatatuiLogo`]: displays the Ratatui logo.
+//! - [`RatatuiMascot`]: displays the Ratatui mascot.
+//!
+//! Additionally, primitive text types implement [`Widget`]:
+//! - [`String`]: renders the owned string content
+//! - [`&str`]: renders the string slice content
+//! - [`Line`]: renders a single line of styled text spans
+//! - [`Span`]: renders a styled text segment
+//! - [`Text`]: renders multiple lines of styled text
+//!
+//! For more information on these widgets, you can view the widget showcase and examples.
+//!
+//! # Third-Party Widgets
+//!
+//! Beyond the built-in widgets, there's a rich ecosystem of third-party widgets available that
+//! extend Ratatui's functionality. These community-contributed widgets provide specialized UI
+//! components for various use cases.
+//!
+//! To discover third-party widgets:
+//!
+//! - **Search crates.io**: Look for crates with "tui" or "ratatui" in their names or descriptions
+//! - **Awesome Ratatui**: Check the [Awesome Ratatui](https://github.com/ratatui-org/awesome-ratatui)
+//!   repository for a curated list of widgets, libraries, and applications
+//! - **Widget Showcase**: Browse the [third-party widgets showcase](https://ratatui.rs/showcase/third-party-widgets/)
+//!   on the Ratatui website to see widgets in action
+//!
+//! These third-party widgets cover a wide range of functionality including specialized input
+//! components, data visualization widgets, layout helpers, and domain-specific UI elements.
+//!
+//! [`Canvas`]: crate::widgets::canvas::Canvas
+//! [`Frame`]: crate::Frame
+//! [`Terminal::draw`]: crate::Terminal::draw
+//! [`Line`]: crate::text::Line
+//! [`Span`]: crate::text::Span
+//! [`Text`]: crate::text::Text
+//! [`String`]: alloc::string::String
+//! [`&str`]: str
+//!
 //! # Widget Traits
 //!
 //! In Ratatui, widgets are implemented as Rust traits, which allow for easy implementation and
@@ -532,61 +588,76 @@
 //! storing references or using the automatic [`WidgetRef`] implementation without needing to
 //! manually implement the trait.
 //!
-//! # Built-in Widgets
+//! ## Authoring Custom Widget Libraries
 //!
-//! Ratatui provides a comprehensive set of built-in widgets:
+//! When creating a library of custom widgets for distribution, there are specific considerations
+//! that will make your library more compatible and accessible to a wider range of users. Following
+//! these guidelines will help ensure your widget library works well in various environments and
+//! can be easily integrated into different types of applications.
 //!
-//! - [`Block`]: a basic widget that draws a block with optional borders, titles and styles.
-//! - [`BarChart`]: displays multiple datasets as bars with optional grouping.
-//! - [`calendar::Monthly`]: displays a single month.
-//! - [`Canvas`]: draws arbitrary shapes using drawing characters.
-//! - [`Chart`]: displays multiple datasets as a lines or scatter graph.
-//! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
-//! - [`Gauge`]: displays progress percentage using block characters.
-//! - [`LineGauge`]: display progress as a line.
-//! - [`List`]: displays a list of items and allows selection.
-//! - [`Paragraph`]: displays a paragraph of optionally styled and wrapped text.
-//! - [`Scrollbar`]: displays a scrollbar.
-//! - [`Sparkline`]: display a single data set as a sparkline.
-//! - [`Table`]: displays multiple rows and columns in a grid and allows selection.
-//! - [`Tabs`]: displays a tab bar and allows selection.
-//! - [`RatatuiLogo`]: displays the Ratatui logo.
-//! - [`RatatuiMascot`]: displays the Ratatui mascot.
+//! ### Depend on `ratatui_core`
 //!
-//! Additionally, primitive text types implement [`Widget`]:
-//! - [`String`]: renders the owned string content
-//! - [`&str`]: renders the string slice content
-//! - [`Line`]: renders a single line of styled text spans
-//! - [`Span`]: renders a styled text segment
-//! - [`Text`]: renders multiple lines of styled text
+//! For widget libraries, depend on [`ratatui-core`] instead of the full `ratatui` crate. This
+//! provides all the essential types and traits needed for widget development while avoiding
+//! unnecessary dependencies on backends and other components that widget libraries don't need.
 //!
-//! For more information on these widgets, you can view the widget showcase and examples.
+//! This approach offers several key advantages for both library authors and users:
 //!
-//! # Third-Party Widgets
+//! - **Lighter dependencies**: Users don't pull in backend code they don't need, keeping their
+//!   dependency tree smaller and more focused
+//! - **Better compile times**: Fewer dependencies mean faster builds for both development and
+//!   end-user projects
+//! - **Future-proofing**: Your library remains compatible as Ratatui evolves its architecture,
+//!   since core widget functionality is stable across versions
 //!
-//! Beyond the built-in widgets, there's a rich ecosystem of third-party widgets available that
-//! extend Ratatui's functionality. These community-contributed widgets provide specialized UI
-//! components for various use cases.
+//! ### Make Your Crate `no_std` Compatible
 //!
-//! To discover third-party widgets:
+//! For maximum compatibility, especially in embedded environments, consider making your widget
+//! library `no_std` compatible. This is often easier than you might expect and broadens the range
+//! of projects that can use your widgets.
 //!
-//! - **Search crates.io**: Look for crates with "tui" or "ratatui" in their names or descriptions
-//! - **Awesome Ratatui**: Check the [Awesome Ratatui](https://github.com/ratatui-org/awesome-ratatui)
-//!   repository for a curated list of widgets, libraries, and applications
-//! - **Widget Showcase**: Browse the [third-party widgets showcase](https://ratatui.rs/showcase/third-party-widgets/)
-//!   on the Ratatui website to see widgets in action
+//! To implement `no_std` compatibility, add the `#![no_std]` attribute at the top of your `lib.rs`.
+//! When working in a `no_std` environment, you'll need to make a few adjustments:
 //!
-//! These third-party widgets cover a wide range of functionality including specialized input
-//! components, data visualization widgets, layout helpers, and domain-specific UI elements.
+//! - Use `core::` instead of `std::` for basic functionality
+//! - Add `extern crate alloc;` to access allocation types
+//! - Use `alloc::` for heap-allocated types like `String`, `Vec`, and `Box`
 //!
-//! [`Canvas`]: crate::widgets::canvas::Canvas
-//! [`Frame`]: crate::Frame
-//! [`Terminal::draw`]: crate::Terminal::draw
-//! [`Line`]: crate::text::Line
-//! [`Span`]: crate::text::Span
-//! [`Text`]: crate::text::Text
-//! [`String`]: alloc::string::String
-//! [`&str`]: str
+//! Here's a complete example of a `no_std` compatible widget:
+//!
+//! ```ignore
+//! #![no_std]
+//!
+//! extern crate alloc;
+//!
+//! use alloc::string::String;
+//!
+//! use ratatui_core::buffer::Buffer;
+//! use ratatui_core::layout::Rect;
+//! use ratatui_core::text::Line;
+//! use ratatui_core::widgets::Widget;
+//!
+//! struct MyWidget {
+//!     content: String,
+//! }
+//!
+//! impl Widget for &MyWidget {
+//!     fn render(self, area: Rect, buf: &mut Buffer) {
+//!         Line::raw(&self.content).render(area, buf);
+//!     }
+//! }
+//! ```
+//!
+//! The benefits of `no_std` compatibility include:
+//!
+//! - **Broader compatibility**: Your widgets work seamlessly in embedded environments and other
+//!   `no_std` contexts where standard library functionality isn't available
+//! - **Easy to adopt**: Even if you haven't worked with `no_std` development before, the changes
+//!   are typically minimal for widget libraries. Most widget logic involves basic data manipulation
+//!   and rendering operations that work well within `no_std` constraints, making this compatibility
+//!   straightforward to implement
+//!
+//! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
 pub use ratatui_widgets::barchart::{Bar, BarChart, BarGroup};
