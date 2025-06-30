@@ -1,5 +1,9 @@
 name: Release alpha version
 
+# Set the permissions of the github token to the minimum and only enable what is needed
+# See https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions
+permissions: {}
+
 on:
   workflow_dispatch:
   schedule:
@@ -20,21 +24,23 @@ jobs:
       contents: write
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
+          # probably needs to be set to true for git-cliff to work - check build
+          persist-credentials: false
 
       - name: Calculate the next release
         run: .github/workflows/calculate-alpha-release.bash
 
       - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
 
       - name: Publish
         run: cargo publish --allow-dirty --token ${{ secrets.CARGO_TOKEN }}
 
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@4a4a951bc43fafe41cd2348d181853f52356bee7 # v4
         with:
           config: cliff.toml
           args: --unreleased --tag ${{ env.NEXT_TAG }} --strip header
@@ -42,7 +48,7 @@ jobs:
           OUTPUT: BODY.md
 
       - name: Publish on GitHub
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # v1
         with:
           tag: ${{ env.NEXT_TAG }}
           prerelease: true

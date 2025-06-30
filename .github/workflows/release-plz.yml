@@ -1,8 +1,8 @@
 name: Release-plz
 
-permissions:
-  pull-requests: write
-  contents: write
+# Set the permissions of the github token to the minimum and only enable what is needed
+# See https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions
+permissions: {}
 
 on:
   push:
@@ -14,17 +14,21 @@ jobs:
   # Release unpublished packages.
   release-plz-release:
     name: Release-plz release
+    permissions:
+      pull-requests: write
+      contents: write
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'ratatui' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
       - name: Run release-plz
-        uses: release-plz/action@v0.5
+        uses: release-plz/action@8724d33cd97b8295051102e2e19ca592962238f5 # v0.5
         with:
           command: release
         env:
@@ -34,6 +38,8 @@ jobs:
   # Create a PR with the new versions and changelog, preparing the next release.
   release-plz-pr:
     name: Release-plz PR
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'ratatui' }}
     concurrency:
@@ -41,13 +47,14 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
       - name: Run release-plz
-        uses: release-plz/action@v0.5
+        uses: release-plz/action@8724d33cd97b8295051102e2e19ca592962238f5 # v0.5
         with:
           command: release-pr
         env:

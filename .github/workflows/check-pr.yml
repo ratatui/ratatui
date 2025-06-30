@@ -1,6 +1,13 @@
 name: Check Pull Requests
 
+# Set the permissions of the github token to the minimum and only enable what is needed
+# See https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions
+permissions: {}
+
 on:
+  # this workflow is required to be run on pull_request_target as it modifies the PR comments
+  # care should be taken that the jobs do not run any untrusted input
+  # zizmor: ignore[dangerous-triggers]
   pull_request_target:
     types:
       - opened
@@ -8,23 +15,21 @@ on:
       - synchronize
       - labeled
       - unlabeled
-  merge_group:
-
-permissions:
-  pull-requests: write
 
 jobs:
   check-title:
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Check PR title
         if: github.event_name == 'pull_request_target'
-        uses: amannn/action-semantic-pull-request@v5
+        uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5
         id: check_pr_title
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Add comment indicating we require pull request titles to follow conventional commits specification
-      - uses: marocchino/sticky-pull-request-comment@v2
+      - uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2
         if: always() && (steps.check_pr_title.outputs.error_message != null)
         with:
           header: pr-title-lint-error
@@ -39,40 +44,42 @@ jobs:
 
       # Delete a previous comment when the issue has been resolved
       - if: ${{ steps.check_pr_title.outputs.error_message == null }}
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2
         with:
           header: pr-title-lint-error
           delete: true
 
   check-breaking-change-label:
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     env:
       # use an environment variable to pass untrusted input to the script
       # see https://securitylab.github.com/research/github-actions-untrusted-input/
       PR_TITLE: ${{ github.event.pull_request.title }}
     steps:
-    - name: Check breaking change label
-      id: check_breaking_change
-      run: |
-        pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!:'
-        # Check if pattern matches
-        if echo "${PR_TITLE}" | grep -qE "$pattern"; then
-          echo "breaking_change=true" >> $GITHUB_OUTPUT
-        else
-          echo "breaking_change=false" >> $GITHUB_OUTPUT
-        fi
-    - name: Add label
-      if: steps.check_breaking_change.outputs.breaking_change == 'true'
-      uses: actions/github-script@v7
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          github.rest.issues.addLabels({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            labels: ['Type: Breaking Change']
-          })
+      - name: Check breaking change label
+        id: check_breaking_change
+        run: |
+          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!:'
+          # Check if pattern matches
+          if echo "${PR_TITLE}" | grep -qE "$pattern"; then
+            echo "breaking_change=true" >> $GITHUB_OUTPUT
+          else
+            echo "breaking_change=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Add label
+        if: steps.check_breaking_change.outputs.breaking_change == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['Type: Breaking Change']
+            })
 
   do-not-merge:
     if: ${{ contains(github.event.*.labels.*.name, 'do not merge') }}

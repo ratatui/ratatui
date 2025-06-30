@@ -60,6 +60,22 @@ command = ["cargo", "xtask", "hack"]
 [jobs.format]
 command = ["cargo", "xtask", "format"]
 
+[jobs.zizmor-offline]
+# zizmor checks the workflow files for security issues. The fffline version is generally faster, but
+# checks for fewer issues.
+command = ["zizmor", "--color", "always", ".github/workflows", "--offline"]
+need_stdout = true
+default_watch = false
+watch = [".github/workflows/"]
+
+[jobs.zizmor-online]
+# zizmor checks the workflow files for security issues. The online version is a bit slower, but it
+# checks for more issues
+command = ["zizmor", "--color", "always", ".github/workflows"]
+need_stdout = true
+default_watch = false
+watch = [".github/workflows/"]
+
 # You may define here keybindings that would be specific to
 # a project, for example a shortcut to launch a specific job.
 # Shortcuts to internal functions (scrolling, toggling, etc.)
@@ -74,3 +90,5 @@ ctrl-v = "job:coverage-unit-tests-only"
 u = "job:test-unit"
 n = "job:nextest"
 f = "job:format"
+z = "job:zizmor-offline"
+shift-z = "job:zizmor-online"
