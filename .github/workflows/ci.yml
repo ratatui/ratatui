@@ -61,7 +61,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
-      - uses: taiki-e/install-action@6bacb65d2d3b6af9f35e32e03022b97653a66b84 # cargo-deny
+      - uses: taiki-e/install-action@4294a5359c6effcec012fc3b158b96042ad0a709 # cargo-deny
       - run: cargo deny --log-level info --all-features check
 
   # Check for any unused dependencies in the codebase.
@@ -125,7 +125,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
         with:
           components: llvm-tools
-      - uses: taiki-e/install-action@36f08abcddfe01426be18a857101e9146a6f44cf # cargo-llvm-cov
+      - uses: taiki-e/install-action@b46213fbe5dd7af6827214c9c5744953da33316e # cargo-llvm-cov
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
       - run: cargo xtask coverage
       - uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
@@ -182,7 +182,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
-      - uses: taiki-e/install-action@6f9079ce4bc1f6657f25bdd8c64ab320fcf0937c # cargo-rdme
+      - uses: taiki-e/install-action@409c0ccb0cbd554005a3573371b3f722088d5f2a # cargo-rdme
       - run: cargo xtask readme --check
 
   # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account the
