@@ -32,8 +32,10 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
-        with: { components: rustfmt }
+      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
+        with:
+          toolchain: nightly
+          components: rustfmt
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
       - uses: taiki-e/install-action@491d37bbaa844af8400b3595395e1bca723e6141 # v2
         with:
@@ -60,8 +62,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
-      - uses: taiki-e/install-action@4294a5359c6effcec012fc3b158b96042ad0a709 # cargo-deny
+      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
+        with:
+          toolchain: stable
+      - uses: taiki-e/install-action@491d37bbaa844af8400b3595395e1bca723e6141 # v2
+        with:
+          tool: cargo-deny
       - run: cargo deny --log-level info --all-features check
 
   # Check for any unused dependencies in the codebase.
@@ -122,10 +128,13 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
+      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
         with:
+          toolchain: stable
           components: llvm-tools
-      - uses: taiki-e/install-action@b46213fbe5dd7af6827214c9c5744953da33316e # cargo-llvm-cov
+      - uses: taiki-e/install-action@491d37bbaa844af8400b3595395e1bca723e6141 # v2
+        with:
+          tool: cargo-llvm-cov
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
       - run: cargo xtask coverage
       - uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
@@ -159,8 +168,9 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
+      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
         with:
+          toolchain: stable
           targets: x86_64-unknown-none
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
       # This makes it easier to debug the exact versions of the dependencies
@@ -182,7 +192,9 @@ jobs:
         with:
           persist-credentials: false
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
-      - uses: taiki-e/install-action@409c0ccb0cbd554005a3573371b3f722088d5f2a # cargo-rdme
+      - uses: taiki-e/install-action@491d37bbaa844af8400b3595395e1bca723e6141 # v2
+        with:
+          tool: cargo-rdme
       - run: cargo xtask readme --check
 
   # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account the
@@ -196,8 +208,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
-      - uses: dtolnay/install@982daea0f5d846abc3c83e01a6a1d73c040047c1 # cargo-docs-rs
+      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
+        with:
+          toolchain: nightly
+      - uses: dtolnay/install@74f735cdf643820234e37ae1c4089a08fd266d8a # master
+        with:
+          crate: cargo-docs-rs
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
       - run: cargo xtask docs
 
@@ -210,7 +226,9 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
+      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
+        with:
+          toolchain: stable
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
       - run: cargo xtask test-docs
 
@@ -226,7 +244,9 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
+      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
+        with:
+          toolchain: stable
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
       - run: cargo xtask test-libs
 
@@ -247,6 +267,8 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
+      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
+        with:
+          toolchain: stable
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
       - run: cargo xtask test-backend ${{ matrix.backend }}
