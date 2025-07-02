@@ -1,5 +1,9 @@
 name: Release stable version
 
+# Set the permissions of the github token to the minimum and only enable what is needed
+# See https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions
+permissions: {}
+
 on:
   push:
     tags:
@@ -13,12 +17,14 @@ jobs:
       contents: write
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
+          # this possibly needs to be set to true for git-cliff to work - check build results
+          persist-credentials: false
 
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@4a4a951bc43fafe41cd2348d181853f52356bee7 # v4
         with:
           config: cliff.toml
           args: --latest --strip header
@@ -26,7 +32,7 @@ jobs:
           OUTPUT: BODY.md
 
       - name: Publish on GitHub
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # v1
         with:
           prerelease: false
           bodyFile: BODY.md
@@ -36,10 +42,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
 
       - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
+        with:
+          toolchain: stable
 
       - name: Publish
         run: cargo publish --token ${{ secrets.CARGO_TOKEN }}
