@@ -520,6 +520,60 @@ where
         self.backend.size()
     }
 
+    /// Sets the height of an inline viewport and resizes it accordingly.
+    ///
+    /// This method only works with inline viewports. For other viewport types, it has no effect.
+    /// The viewport will be resized to the new height, and the buffers will be cleared and
+    /// reallocated to match the new size.
+    ///
+    /// # Arguments
+    ///
+    /// * `new_height` - The new height for the inline viewport in lines
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// use ratatui::{Terminal, TerminalOptions, Viewport};
+    /// 
+    /// let mut terminal = Terminal::with_options(backend, TerminalOptions {
+    ///     viewport: Viewport::Inline(8),
+    /// })?;
+    /// 
+    /// // Later, resize the viewport to 12 lines
+    /// terminal.set_viewport_height(12)?;
+    /// ```
+    pub fn set_viewport_height(&mut self, new_height: u16) -> Result<(), B::Error> {
+        match &mut self.viewport {
+            Viewport::Inline(height) => {
+                if *height != new_height {
+                    *height = new_height;
+                    
+                    // Keep the same position but update the height
+                    let new_viewport_area = Rect {
+                        x: self.viewport_area.x,
+                        y: self.viewport_area.y,
+                        width: self.viewport_area.width,
+                        height: new_height,
+                    };
+                    
+                    // Clear the old viewport area first
+                    self.clear()?;
+                    
+                    // Update the viewport area and resize buffers
+                    self.set_viewport_area(new_viewport_area);
+                    
+                    // Clear the new viewport area to ensure clean state
+                    self.clear()?;
+                }
+                Ok(())
+            }
+            _ => {
+                // For non-inline viewports, this operation has no effect
+                Ok(())
+            }
+        }
+    }
+
     /// Insert some content before the current inline viewport. This has no effect when the
     /// viewport is not inline.
     ///
