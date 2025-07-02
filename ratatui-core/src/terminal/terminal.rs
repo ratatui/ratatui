@@ -534,11 +534,11 @@ where
     ///
     /// ```rust,ignore
     /// use ratatui::{Terminal, TerminalOptions, Viewport};
-    /// 
+    ///
     /// let mut terminal = Terminal::with_options(backend, TerminalOptions {
     ///     viewport: Viewport::Inline(8),
     /// })?;
-    /// 
+    ///
     /// // Later, resize the viewport to 12 lines
     /// terminal.set_viewport_height(12)?;
     /// ```
@@ -547,7 +547,7 @@ where
             Viewport::Inline(height) => {
                 if *height != new_height {
                     *height = new_height;
-                    
+
                     // Keep the same position but update the height
                     let new_viewport_area = Rect {
                         x: self.viewport_area.x,
@@ -555,13 +555,13 @@ where
                         width: self.viewport_area.width,
                         height: new_height,
                     };
-                    
+
                     // Clear the old viewport area first
                     self.clear()?;
-                    
+
                     // Update the viewport area and resize buffers
                     self.set_viewport_area(new_viewport_area);
-                    
+
                     // Clear the new viewport area to ensure clean state
                     self.clear()?;
                 }
