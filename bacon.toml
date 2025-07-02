@@ -61,7 +61,7 @@ command = ["cargo", "xtask", "hack"]
 command = ["cargo", "xtask", "format"]
 
 [jobs.zizmor-offline]
-# zizmor checks the workflow files for security issues. The fffline version is generally faster, but
+# zizmor checks the workflow files for security issues. The offline version is generally faster, but
 # checks for fewer issues.
 command = ["zizmor", "--color", "always", ".github/workflows", "--offline"]
 need_stdout = true
