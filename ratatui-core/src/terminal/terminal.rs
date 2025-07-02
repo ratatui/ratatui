@@ -543,63 +543,27 @@ where
     /// terminal.set_viewport_height(12)?;
     /// ```
     pub fn set_viewport_height(&mut self, new_height: u16) -> Result<(), B::Error> {
-        match &mut self.viewport {
-            Viewport::Inline(height) => {
-                if *height != new_height {
-                    let old_height = *height;
-                    *height = new_height;
+        let Viewport::Inline(height) = &mut self.viewport else { return Ok(()) };
+        if *height == new_height { return Ok(()) }
 
-                    // Clear the old viewport area first
-                    self.clear()?;
+        let old_height = std::mem::replace(height, new_height);
+        self.clear()?;
 
-                    // Calculate if we need to scroll to make room for the larger viewport
-                    if new_height > old_height {
-                        let height_diff = new_height - old_height;
-                        let screen_height = self.last_known_area.height;
-                        let current_bottom = self.viewport_area.y + old_height;
-                        
-                        // If the viewport would extend beyond the screen, we need to scroll
-                        if current_bottom + height_diff > screen_height {
-                            let scroll_amount = current_bottom + height_diff - screen_height;
-                            self.scroll_up(scroll_amount)?;
-                            
-                            // Update viewport position after scrolling
-                            let new_y = self.viewport_area.y.saturating_sub(scroll_amount);
-                            self.set_viewport_area(Rect {
-                                x: self.viewport_area.x,
-                                y: new_y,
-                                width: self.viewport_area.width,
-                                height: new_height,
-                            });
-                        } else {
-                            // No scrolling needed, just update the height
-                            self.set_viewport_area(Rect {
-                                x: self.viewport_area.x,
-                                y: self.viewport_area.y,
-                                width: self.viewport_area.width,
-                                height: new_height,
-                            });
-                        }
-                    } else {
-                        // Shrinking the viewport, no scrolling needed
-                        self.set_viewport_area(Rect {
-                            x: self.viewport_area.x,
-                            y: self.viewport_area.y,
-                            width: self.viewport_area.width,
-                            height: new_height,
-                        });
-                    }
-
-                    // Clear the new viewport area to ensure clean state
-                    self.clear()?;
+        let new_y = match new_height.cmp(&old_height) {
+            std::cmp::Ordering::Greater => {
+                let overflow = (self.viewport_area.y + new_height).saturating_sub(self.last_known_area.height);
+                if overflow > 0 {
+                    self.scroll_up(overflow)?;
+                    self.viewport_area.y.saturating_sub(overflow)
+                } else {
+                    self.viewport_area.y
                 }
-                Ok(())
             }
-            _ => {
-                // For non-inline viewports, this operation has no effect
-                Ok(())
-            }
-        }
+            _ => self.viewport_area.y,
+        };
+
+        self.set_viewport_area(Rect { height: new_height, y: new_y, ..self.viewport_area });
+        self.clear()
     }
 
     /// Insert some content before the current inline viewport. This has no effect when the
