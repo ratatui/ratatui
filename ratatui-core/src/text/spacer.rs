@@ -24,7 +24,7 @@ use crate::layout::Rect;
 ///
 /// These methods are fluent setters. They return a `Spacer` with the property set.
 ///
-/// - [`Spacer::width`] sets the width of the spacer.
+/// - [`Spacer::width`] sets the width of the `Spacer`.
 ///
 /// # Other Methods
 ///
@@ -36,7 +36,7 @@ use crate::layout::Rect;
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Spacer {
     /// The width in terminal cells, used to shift the cursor horizontally without rendering any content.
-    pub(crate) width: usize,
+    pub width: usize,
 }
 
 impl fmt::Debug for Spacer {
@@ -71,6 +71,8 @@ impl Spacer {
     /// # Examples
     ///
     /// ```
+    /// use ratatui_core::text::Spacer;
+    ///
     /// let spacer = Spacer::default().width(4);
     /// assert_eq!(spacer.width, 4);
     /// ```
