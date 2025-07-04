@@ -13,8 +13,8 @@ use crate::layout::Rect;
 ///
 /// # Constructor Methods
 ///
-/// - [`Spacer::new`] creates a space segment with the given width.
-/// - [`Spacer::default`] creates an empty spacer (i.e. zero width).
+/// - [`Spacer::new`] creates a `Spacer` with the given width.
+/// - [`Spacer::default`] creates an empty `Spacer` (i.e. zero width).
 ///
 /// # Conversion Methods
 ///
@@ -28,15 +28,14 @@ use crate::layout::Rect;
 ///
 /// # Other Methods
 ///
-/// - [`Spacer::apply`] applies the spacer by advancing the `x` position of a [`Rect`] by its width.
+/// - [`Spacer::apply`] applies the `Spacer` by advancing the `x` position of a [`Rect`] by its width.
 ///
 /// [`Rect`]: crate::layout::Rect
 /// [`Span`]: crate::text::Span
 /// [`Line`]: crate::text::Line
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Spacer {
-    /// The width of the spacer in terminal cells, used to shift the cursor horizontally without
-    /// rendering any content.
+    /// The width in terminal cells, used to shift the cursor horizontally without rendering any content.
     pub(crate) width: usize,
 }
 
@@ -59,7 +58,7 @@ impl Spacer {
     /// use ratatui_core::text::Spacer;
     ///
     /// let spacer = Spacer::new(4);
-    /// assert_eq!(spacer.width(), 4);
+    /// assert_eq!(spacer.width, 4);
     /// ```
     pub fn new(width: usize) -> Self {
         Self { width }
@@ -67,7 +66,7 @@ impl Spacer {
 
     /// Returns a new `Spacer` with the specified width.
     ///
-    /// The width determines how many terminal cells the spacer occupies during rendering.
+    /// The width determines how many terminal cells the `Spacer` occupies during rendering.
     ///
     /// # Examples
     ///
@@ -81,9 +80,9 @@ impl Spacer {
         self
     }
 
-    /// Applies the spacer by advancing the horizontal position of the given layout area.
+    /// Applies the `Spacer` by advancing the horizontal position of the given layout area.
     ///
-    /// This method shifts the `x` coordinate of the provided [`Rect`] by the spacer's width,
+    /// This method shifts the `x` coordinate of the provided [`Rect`] by the `Spacer`'s width,
     /// using saturating addition to prevent overflow.
     ///
     /// # Examples
@@ -112,7 +111,7 @@ impl From<usize> for Spacer {
     }
 }
 
-/// Adds a number of units to the width of the spacer, returning a new `Spacer`.
+/// Adds a number of units to the width of the `Spacer`, returning a new `Spacer`.
 impl core::ops::Add<usize> for Spacer {
     type Output = Self;
 
@@ -121,7 +120,7 @@ impl core::ops::Add<usize> for Spacer {
     }
 }
 
-/// Adds a number of units to the width of the spacer in place.
+/// Adds a number of units to the width of the `Spacer` in place.
 impl core::ops::AddAssign<usize> for Spacer {
     fn add_assign(&mut self, rhs: usize) {
         self.width += rhs;
