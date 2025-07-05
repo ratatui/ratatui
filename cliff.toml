@@ -115,6 +115,7 @@ commit_parsers = [
   { message = "^chore\\(changelog\\)", skip = true },
   { message = "^[cC]hore", group = "<!-- 07 -->Miscellaneous Tasks" },
   { body = ".*security", group = "<!-- 08 -->Security" },
+  { message = "^build\\(deps\\)", skip = true },
   { message = "^build", group = "<!-- 09 -->Build" },
   { message = "^ci", group = "<!-- 10 -->Continuous Integration" },
   { message = "^revert", group = "<!-- 11 -->Reverted Commits" },
