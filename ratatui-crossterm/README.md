@@ -2,10 +2,35 @@
 
 <!-- cargo-rdme start -->
 
-This module provides the [`CrosstermBackend`] implementation for the [`Backend`] trait. It uses
-the [Crossterm] crate to interact with the terminal.
+This crate provides [`CrosstermBackend`], an implementation of the [`Backend`] trait for the
+[Ratatui] library. It uses the [Crossterm] library for all terminal manipulation.
 
+### Crossterm Version and Re-export
+
+`ratatui-crossterm` requires you to specify a version of the [Crossterm] library to be used.
+This is managed via feature flags. You **must** enable one, and only one, of the available
+`crossterm_xx` features (e.g., `crossterm_28`, `crossterm_29`). These features determine which
+version of Crossterm is compiled and used by the backend. Attempting to enable none or multiple
+`crossterm_xx` features will result in a compile-time error.
+
+To promote interoperability within the [Ratatui] ecosystem, the selected Crossterm crate is
+re-exported as `ratatui_crossterm::crossterm`. This re-export is essential for authors of widget
+libraries or any applications that need to perform direct Crossterm operations while ensuring
+compatibility with the version used by `ratatui-crossterm`. By using
+`ratatui_crossterm::crossterm` for such operations, developers can avoid version conflicts and
+ensure that all parts of their application use a consistent set of Crossterm types and
+functions.
+
+For example, if your application's `Cargo.toml` enables the `crossterm_0_29` feature for
+`ratatui-crossterm`, then any code using `ratatui_crossterm::crossterm` will refer to the
+0.29 version of Crossterm.
+
+For more information on how to use the backend, see the documentation for the
+[`CrosstermBackend`] struct.
+
+[Ratatui]: https://ratatui.rs
 [Crossterm]: https://crates.io/crates/crossterm
+[`Backend`]: ratatui_core::backend::Backend
 
 ## Crate Organization
 
