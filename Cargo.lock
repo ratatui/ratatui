@@ -2524,7 +2524,6 @@ dependencies = [
  "crossterm 0.29.0",
  "document-features",
  "instability",
- "ratatui",
  "ratatui-core",
  "rstest",
 ]
