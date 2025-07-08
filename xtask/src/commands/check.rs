@@ -1,6 +1,6 @@
 use color_eyre::Result;
 
-use crate::{Run, run_cargo};
+use crate::{CROSSTERM_VERSIONS, Run, run_cargo};
 
 /// Run cargo check
 #[derive(Clone, Debug, clap::Args)]
@@ -29,7 +29,7 @@ impl Run for Check {
             .join(",");
 
             // Run `cargo check` on `ratatui-crossterm` with specific crossterm versions
-            for crossterm_feature in ["crossterm_0_28", "crossterm_0_29"] {
+            for crossterm_feature in CROSSTERM_VERSIONS {
                 let mut command_args = base_command_parts.clone();
                 let features = format!("{common_features},{crossterm_feature}");
                 command_args.extend(vec![

@@ -16,6 +16,8 @@ use duct::cmd;
 
 mod commands;
 
+const CROSSTERM_VERSIONS: [&'static str; 2] = ["crossterm_0_28", "crossterm_0_29"];
+
 pub trait Run {
     fn run(self) -> Result<()>;
 }

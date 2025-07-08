@@ -1,6 +1,6 @@
 use color_eyre::Result;
 
-use crate::{Run, run_cargo};
+use crate::{CROSSTERM_VERSIONS, Run, run_cargo};
 
 /// Run clippy on the project
 #[derive(Clone, Debug, clap::Args)]
@@ -33,7 +33,7 @@ impl Run for Clippy {
         let clippy_options = ["--", "-D", "warnings"];
 
         // Run Clippy on `ratatui-crossterm` with `crossterm_0_28` and `crossterm_0_29`
-        for crossterm_feature in ["crossterm_0_28", "crossterm_0_29"] {
+        for crossterm_feature in CROSSTERM_VERSIONS {
             let mut command = clippy_command.clone();
             let features = format!("{common_features},{crossterm_feature}");
             // Note that adding --tests or --benches causes clippy to pick up the default features.
