@@ -30,18 +30,20 @@ impl Run for Check {
                 run_cargo(command)?;
             }
 
-            // Run `cargo check` on all other workspace packages with --all-features
             run_cargo(vec![
                 "hack",
                 "--exclude",
                 "ratatui-crossterm",
+                #[cfg(windows)]
+                "--exclude",
+                #[cfg(windows)]
+                "ratatui-termion",
                 "check",
                 "--all-targets",
                 "--all-features",
-            ])?;
+            ])
         } else {
-            run_cargo(vec!["check", "--all-targets"])?;
+            run_cargo(vec!["check", "--all-targets"])
         }
-        Ok(())
     }
 }
