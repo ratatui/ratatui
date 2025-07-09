@@ -16,7 +16,21 @@ use duct::cmd;
 
 mod commands;
 
-const CROSSTERM_VERSIONS: [&str; 2] = ["crossterm_0_28", "crossterm_0_29"];
+/// The available feature flags for ratatui-crossterm.
+///
+/// These will be enabled for both crossterm 0.28 and 0.29 runs. `underline-color` is part of
+/// default features for ratatui-crossterm, but with `--no-default-features`, we must add it
+/// explicitly if desired.
+const CROSSTERM_COMMON_FEATURES: &[&str] = &[
+    "serde",
+    "underline-color",
+    "scrolling-regions",
+    "unstable",
+    "unstable-backend-writer",
+];
+
+/// The available feature flags for crossterm versions.
+const CROSSTERM_VERSION_FEATURES: [&str; 2] = ["crossterm_0_28", "crossterm_0_29"];
 
 pub trait Run {
     fn run(self) -> Result<()>;

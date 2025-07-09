@@ -1,6 +1,6 @@
 use color_eyre::Result;
 
-use crate::{CROSSTERM_VERSIONS, Run, run_cargo};
+use crate::{CROSSTERM_COMMON_FEATURES, CROSSTERM_VERSION_FEATURES, Run, run_cargo};
 
 /// Run cargo check
 #[derive(Clone, Debug, clap::Args)]
@@ -15,21 +15,10 @@ impl Run for Check {
         if self.all_features {
             let base_command_parts = vec!["check", "--all-targets"];
 
-            // Define common non-version-specific features for ratatui-crossterm.
-            // These will be enabled for both crossterm 0.28 and 0.29 runs.
-            // `underline-color` is part of default features for ratatui-crossterm,
-            // but with `--no-default-features`, we must add it explicitly if desired.
-            let common_features = [
-                "serde",
-                "underline-color",
-                "scrolling-regions",
-                "unstable",
-                "unstable-backend-writer",
-            ]
-            .join(",");
+            let common_features = CROSSTERM_COMMON_FEATURES.join(",");
 
             // Run `cargo check` on `ratatui-crossterm` with specific crossterm versions
-            for crossterm_feature in CROSSTERM_VERSIONS {
+            for crossterm_feature in CROSSTERM_VERSION_FEATURES {
                 let mut command_args = base_command_parts.clone();
                 let features = format!("{common_features},{crossterm_feature}");
                 command_args.extend(vec![

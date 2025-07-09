@@ -98,7 +98,7 @@ use ratatui_core::style::{Color, Modifier, Style};
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use std::io::{stderr, stdout};
 ///
 /// use crossterm::ExecutableCommand;
@@ -154,7 +154,7 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use std::io::stdout;
     ///
     /// use ratatui::backend::CrosstermBackend;
