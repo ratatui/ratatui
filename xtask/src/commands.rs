@@ -22,6 +22,7 @@ mod coverage;
 mod docs;
 mod format;
 mod rdme;
+mod test_docs;
 mod typos;
 
 #[derive(Clone, Debug, Subcommand)]
@@ -110,7 +111,7 @@ impl Run for Command {
             Command::LintMarkdown => lint_markdown(),
             Command::Test => test(),
             Command::TestBackend(command) => command.run(),
-            Command::TestDocs => test_docs(),
+            Command::TestDocs => test_docs::test_docs(),
             Command::TestLibs => test_libs(),
             Command::Hack => hack(),
         }
@@ -154,13 +155,8 @@ fn test() -> Result<()> {
     for backend in [Backend::Crossterm, Backend::Termion, Backend::Termwiz] {
         TestBackend { backend }.run()?;
     }
-    test_docs()?; // run last because it's slow
+    test_docs::test_docs()?; // run last because it's slow
     Ok(())
-}
-
-/// Run doc tests for the workspace's default packages
-fn test_docs() -> Result<()> {
-    run_cargo(vec!["test", "--doc", "--all-features"])
 }
 
 /// Run lib tests for the workspace's default packages
