@@ -17,6 +17,8 @@ pub fn test_docs() -> Result<()> {
         let features = format!("{common_features},{crossterm_version}");
         run_cargo(vec![
             "test",
+            "--package",
+            "ratatui-crossterm",
             "--doc",
             "--no-default-features",
             "--features",

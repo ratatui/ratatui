@@ -39,7 +39,7 @@ impl Run for Clippy {
             // Note that adding --tests or --benches causes clippy to pick up the default features.
             // I'm not sure why this is the case (JM 2025-05-10).
             command.extend(vec![
-                "-p",
+                "--package",
                 "ratatui-crossterm",
                 "--no-default-features",
                 "--features",
