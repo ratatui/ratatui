@@ -22,7 +22,7 @@ impl Run for Check {
                 let mut command_args = base_command_parts.clone();
                 let features = format!("{common_features},{crossterm_feature}");
                 command_args.extend(vec![
-                    "-p",
+                    "--package",
                     "ratatui-crossterm",
                     "--no-default-features",
                     "--features",
