@@ -13,7 +13,7 @@ use self::clippy::Clippy;
 use self::docs::Docs;
 use self::format::Format;
 use self::typos::Typos;
-use crate::{ExpressionExt, Run, run_cargo};
+use crate::{CROSSTERM_COMMON_FEATURES, ExpressionExt, Run, run_cargo};
 
 mod backend;
 mod check;
@@ -161,7 +161,30 @@ fn test() -> Result<()> {
 
 /// Run lib tests for the workspace's default packages
 fn test_libs() -> Result<()> {
-    run_cargo(vec!["test", "--lib", "--all-targets", "--all-features"])
+    run_cargo(vec![
+        "hack",
+        "--ignore-private", // exclude packages that are libraries
+        "--exclude",
+        "ratatui-crossterm",
+        "test",
+        "--lib",
+        "--all-targets",
+        "--all-features",
+    ])?;
+    let crossterm_feature = CROSSTERM_COMMON_FEATURES.join(",");
+    for crossterm_version in crate::CROSSTERM_VERSION_FEATURES {
+        let features = format!("{crossterm_feature},{crossterm_version}");
+        run_cargo(vec![
+            "test",
+            "--package",
+            "ratatui-crossterm",
+            "--lib",
+            "--no-default-features",
+            "--features",
+            features.as_str(),
+        ])?;
+    }
+    Ok(())
 }
 
 /// Run cargo hack to test each feature in isolation
