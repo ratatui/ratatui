@@ -99,19 +99,10 @@ trait ExpressionExt {
 
 impl ExpressionExt for duct::Expression {
     fn run_with_trace(&self) -> io::Result<Output> {
-        let is_ci = std::env::var("CI") == Ok("true".to_string());
-        if is_ci {
-            println!("::group::{title}", title = format!("{self:?}"));
-        } else {
-            tracing::info!("running command: {:?}", self);
-        }
-        let result = self.run().inspect_err(|_| {
+        tracing::info!("running command: {:?}", self);
+        self.run().inspect_err(|_| {
             // The command that was run may have scrolled off the screen, so repeat it here
             tracing::error!("failed to run command: {:?}", self);
-        });
-        if is_ci {
-            println!("::endgroup::");
-        }
-        result
+        })
     }
 }
