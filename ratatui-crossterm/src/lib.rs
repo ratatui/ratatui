@@ -12,10 +12,15 @@
 //! ## Crossterm Version and Re-export
 //!
 //! `ratatui-crossterm` requires you to specify a version of the [Crossterm] library to be used.
-//! This is managed via feature flags. You **must** enable one, and only one, of the available
-//! `crossterm_xx` features (e.g., `crossterm_28`, `crossterm_29`). These features determine which
-//! version of Crossterm is compiled and used by the backend. Attempting to enable none or multiple
-//! `crossterm_xx` features will result in a compile-time error.
+//! This is managed via feature flags. You **must enable one, and only one**, of the available
+//! `crossterm_0_xx` features (e.g., `crossterm_0_28`, `crossterm_0_29`). These features determine
+//! which version of Crossterm is compiled and used by the backend. Attempting to enable none or
+//! multiple `crossterm_0_xx` features will result in a compile-time error.
+//!
+//! Ratatui will support at least the two most recent versions of Crossterm (though we may increase
+//! this if crossterm release cadence increases). We will remove support for older versions in
+//! major (0.x) releases of `ratatui-crossterm`, and we may add support for newer versions in
+//! minor (0.x.y) releases.
 //!
 //! To promote interoperability within the [Ratatui] ecosystem, the selected Crossterm crate is
 //! re-exported as `ratatui_crossterm::crossterm`. This re-export is essential for authors of widget
@@ -26,8 +31,8 @@
 //! functions.
 //!
 //! For example, if your application's `Cargo.toml` enables the `crossterm_0_29` feature for
-//! `ratatui-crossterm`, then any code using `ratatui_crossterm::crossterm` will refer to the
-//! 0.29 version of Crossterm.
+//! `ratatui-crossterm`, then any code using `ratatui_crossterm::crossterm` will refer to the 0.29
+//! version of Crossterm.
 //!
 //! For more information on how to use the backend, see the documentation for the
 //! [`CrosstermBackend`] struct.
