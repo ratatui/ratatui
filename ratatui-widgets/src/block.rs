@@ -13,7 +13,7 @@ use ratatui_core::layout::{Alignment, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols::border;
 use ratatui_core::symbols::merge::MergeStrategy;
-use ratatui_core::text::Line;
+use ratatui_core::text::{Line, spans_after_width};
 use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
@@ -933,10 +933,6 @@ impl Block<'_> {
     }
 
     /// Render titles in the center of the block
-    ///
-    /// Currently this method aligns the titles to the left inside a centered area. This is not
-    /// ideal and should be fixed in the future to align the titles to the center of the block and
-    /// truncate both sides of the titles if the block is too small to fit all titles.
     #[expect(clippy::similar_names)]
     fn render_center_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         let titles = self
@@ -944,30 +940,73 @@ impl Block<'_> {
             .collect_vec();
         let total_width = titles
             .iter()
-            .map(|title| title.width() as u16 + 1) // space between titles
+            // Add space width between titles.
+            .map(|title| title.width() as u16 + 1)
             .sum::<u16>()
-            .saturating_sub(1); // no space for the last title
+            // Remove redundant space width, i.e., the trailing one.
+            .saturating_sub(1);
+        let mut titles_area = self.titles_area(area, position);
 
-        let titles_area = self.titles_area(area, position);
-        let mut titles_area = Rect {
-            x: titles_area.left() + (titles_area.width.saturating_sub(total_width) / 2),
-            ..titles_area
-        };
-        for title in titles {
-            if titles_area.is_empty() {
-                break;
-            }
-            let title_width = title.width() as u16;
-            let title_area = Rect {
-                width: title_width.min(titles_area.width),
+        // If the total title width fits within the available area, center the titles.
+        if total_width <= titles_area.width {
+            // Adjust the rendering area to center the titles horizontally.
+            titles_area = Rect {
+                x: titles_area.left() + (titles_area.width.saturating_sub(total_width) / 2),
                 ..titles_area
             };
-            buf.set_style(title_area, self.titles_style);
-            title.render(title_area, buf);
-
-            // bump the titles area to the right and reduce its width
-            titles_area.x = titles_area.x.saturating_add(title_width + 1);
-            titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+            for title in titles {
+                if titles_area.is_empty() {
+                    break;
+                }
+                let title_width = title.width() as u16;
+                let title_area = Rect {
+                    width: title_width.min(titles_area.width),
+                    ..titles_area
+                };
+                // Apply background style and render the title.
+                buf.set_style(title_area, self.titles_style);
+                title.render(title_area, buf);
+                // Move the rendering cursor to the right, leaving 1 column space.
+                titles_area.x = titles_area.x.saturating_add(title_width + 1);
+                titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+            }
+        // If the titles are too wide, render them partially (as spans) with a horizontal offset.
+        } else {
+            // Calculate how much width to skip from the start (left side);
+            // the right side will be implicitly cropped based on the remaining `titles_area.width`.
+            let mut skip_width = total_width.saturating_sub(titles_area.width) / 2;
+            for title in titles {
+                if titles_area.is_empty() {
+                    break;
+                }
+                let title_width = title.width() as u16;
+                let title_area = Rect {
+                    width: title_width.min(titles_area.width),
+                    ..titles_area
+                };
+                // Apply background styles.
+                buf.set_style(title_area, self.titles_style);
+                buf.set_style(title_area, title.style);
+                // Collect the spans that make up the title.
+                let spans = title.iter().cloned().collect::<Vec<_>>();
+                // Skip the initial width and render remaining spans within the visible area.
+                spans_after_width(&spans, skip_width as usize).for_each(|(span, _, _)| {
+                    let span_width = span.width() as u16;
+                    let span_area = Rect {
+                        width: span_width.min(title_area.width),
+                        ..title_area
+                    };
+                    span.render(span_area, buf);
+                    // Move the rendering cursor to the right.
+                    titles_area.x = titles_area.x.saturating_add(span_width);
+                    titles_area.width = titles_area.width.saturating_sub(span_width);
+                });
+                // Advance skip_width by the full title width.
+                skip_width = skip_width.saturating_sub(title_width);
+                // Leave 1 column of spacing between titles.
+                titles_area.x = titles_area.x.saturating_add(1);
+                titles_area.width = titles_area.width.saturating_sub(1);
+            }
         }
     }
 
@@ -1979,7 +2018,7 @@ mod tests {
             .title(Line::from("C12345").centered())
             .title(Line::from("C67890").centered())
             .render(buffer.area, &mut buffer);
-        //assert_eq!(buffer, Buffer::with_lines(["12345 C678"]));
+        assert_eq!(buffer, Buffer::with_lines(["12345 C678"]));
     }
 
     #[test]

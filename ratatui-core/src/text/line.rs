@@ -745,7 +745,11 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, span_skip_widt
 
 /// Returns an iterator over the spans that lie after a given skip width from the start of the
 /// `Line` (including a partially visible span if the `skip_width` lands within a span).
-fn spans_after_width<'a>(
+///
+/// NOTE: This is used internally by `ratatui_widgets::Block` for title truncation,
+/// and is made `pub` for that reason. It is not considered part of the public API.
+#[doc(hidden)]
+pub fn spans_after_width<'a>(
     spans: &'a [Span],
     mut skip_width: usize,
 ) -> impl Iterator<Item = (Span<'a>, usize, u16)> {
