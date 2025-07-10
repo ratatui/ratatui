@@ -53,7 +53,8 @@ pub use grapheme::StyledGrapheme;
 
 mod line;
 // `Line` and `ToLine` are part of the public API, while `spans_after_width` is re-exported only for
-// internal use (e.g., `ratatui_widgets::Block` title truncation) and is not intended for public consumption.
+// internal use (e.g., `ratatui_widgets::Block` title truncation) and is not intended for public
+// consumption.
 pub use line::{Line, ToLine, spans_after_width};
 
 mod masked;
