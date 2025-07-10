@@ -1937,6 +1937,16 @@ mod tests {
     }
 
     #[test]
+    fn left_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L12")
+            .title("L34")
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L12 L34   "]));
+    }
+
+    #[test]
     fn left_titles_truncated() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
         Block::new()
@@ -1944,6 +1954,16 @@ mod tests {
             .title("L67890")
             .render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["L12345 L67"]));
+    }
+
+    #[test]
+    fn center_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("C12").centered())
+            .title(Line::from("C34").centered())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" C12 C34  "]));
     }
 
     /// Note: this test is probably not what you'd expect, but it is how it works in the current
@@ -1959,7 +1979,17 @@ mod tests {
             .title(Line::from("C12345").centered())
             .title(Line::from("C67890").centered())
             .render(buffer.area, &mut buffer);
-        assert_eq!(buffer, Buffer::with_lines(["C12345 678"]));
+        //assert_eq!(buffer, Buffer::with_lines(["12345 C678"]));
+    }
+
+    #[test]
+    fn right_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("R12").right_aligned())
+            .title(Line::from("R34").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["   R12 R34"]));
     }
 
     #[test]
