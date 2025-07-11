@@ -934,7 +934,7 @@ impl Block<'_> {
 
     /// Render titles in the center of the block
     fn render_center_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let mut area = self.titles_area(area, position);
+        let area = self.titles_area(area, position);
         let titles = self
             .filtered_titles(position, Alignment::Center)
             .collect_vec();
@@ -946,41 +946,61 @@ impl Block<'_> {
             .saturating_sub(1);
 
         if total_width <= area.width {
-            // titles fit in the area, center them
-            let x = area.left() + area.width.saturating_sub(total_width) / 2;
-            area = Rect { x, ..area };
-            for title in titles {
-                let width = title.width() as u16;
-                let title_area = Rect { width, ..area };
-                buf.set_style(title_area, self.titles_style);
-                title.render(title_area, buf);
-                // Move the rendering cursor to the right, leaving 1 column space.
-                area.x = area.x.saturating_add(width + 1);
-                area.width = area.width.saturating_sub(width + 1);
-            }
+            self.render_centered_titles_without_truncation(titles, total_width, area, buf);
         } else {
-            // titles do not fit in the area, truncate the left side using an offset. The right side
-            // is truncated by the area width.
-            let mut offset = total_width.saturating_sub(area.width) / 2;
-            for title in titles {
-                if area.is_empty() {
-                    break;
-                }
-                let width = area.width.min(title.width() as u16).saturating_sub(offset);
-                let title_area = Rect { width, ..area };
-                buf.set_style(title_area, self.titles_style);
-                if offset > 0 {
-                    // truncate the left side of the title to fit the area
-                    title.clone().right_aligned().render(title_area, buf);
-                    offset = offset.saturating_sub(width).saturating_sub(1);
-                } else {
-                    // truncate the right side of the title to fit the area if needed
-                    title.clone().left_aligned().render(title_area, buf);
-                }
-                // Leave 1 column of spacing between titles.
-                area.x = area.x.saturating_add(width + 1);
-                area.width = area.width.saturating_sub(width + 1);
+            self.render_centered_titles_with_truncation(titles, total_width, area, buf);
+        }
+    }
+
+    fn render_centered_titles_without_truncation(
+        &self,
+        titles: Vec<&Line<'_>>,
+        total_width: u16,
+        area: Rect,
+        buf: &mut Buffer,
+    ) {
+        // titles fit in the area, center them
+        let x = area.left() + area.width.saturating_sub(total_width) / 2;
+        let mut area = Rect { x, ..area };
+        for title in titles {
+            let width = title.width() as u16;
+            let title_area = Rect { width, ..area };
+            buf.set_style(title_area, self.titles_style);
+            title.render(title_area, buf);
+            // Move the rendering cursor to the right, leaving 1 column space.
+            area.x = area.x.saturating_add(width + 1);
+            area.width = area.width.saturating_sub(width + 1);
+        }
+    }
+
+    fn render_centered_titles_with_truncation(
+        &self,
+        titles: Vec<&Line<'_>>,
+        total_width: u16,
+        mut area: Rect,
+        buf: &mut Buffer,
+    ) {
+        // titles do not fit in the area, truncate the left side using an offset. The right side
+        // is truncated by the area width.
+        let mut offset = total_width.saturating_sub(area.width) / 2;
+        for title in titles {
+            if area.is_empty() {
+                break;
             }
+            let width = area.width.min(title.width() as u16).saturating_sub(offset);
+            let title_area = Rect { width, ..area };
+            buf.set_style(title_area, self.titles_style);
+            if offset > 0 {
+                // truncate the left side of the title to fit the area
+                title.clone().right_aligned().render(title_area, buf);
+                offset = offset.saturating_sub(width).saturating_sub(1);
+            } else {
+                // truncate the right side of the title to fit the area if needed
+                title.clone().left_aligned().render(title_area, buf);
+            }
+            // Leave 1 column of spacing between titles.
+            area.x = area.x.saturating_add(width + 1);
+            area.width = area.width.saturating_sub(width + 1);
         }
     }
 
