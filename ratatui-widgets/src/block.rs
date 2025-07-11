@@ -933,41 +933,74 @@ impl Block<'_> {
     }
 
     /// Render titles in the center of the block
-    ///
-    /// Currently this method aligns the titles to the left inside a centered area. This is not
-    /// ideal and should be fixed in the future to align the titles to the center of the block and
-    /// truncate both sides of the titles if the block is too small to fit all titles.
-    #[expect(clippy::similar_names)]
     fn render_center_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
+        let area = self.titles_area(area, position);
         let titles = self
             .filtered_titles(position, Alignment::Center)
             .collect_vec();
+        // titles are rendered with a space after each title except the last one
         let total_width = titles
             .iter()
-            .map(|title| title.width() as u16 + 1) // space between titles
+            .map(|title| title.width() as u16 + 1)
             .sum::<u16>()
-            .saturating_sub(1); // no space for the last title
+            .saturating_sub(1);
 
-        let titles_area = self.titles_area(area, position);
-        let mut titles_area = Rect {
-            x: titles_area.left() + (titles_area.width.saturating_sub(total_width) / 2),
-            ..titles_area
-        };
+        if total_width <= area.width {
+            self.render_centered_titles_without_truncation(titles, total_width, area, buf);
+        } else {
+            self.render_centered_titles_with_truncation(titles, total_width, area, buf);
+        }
+    }
+
+    fn render_centered_titles_without_truncation(
+        &self,
+        titles: Vec<&Line<'_>>,
+        total_width: u16,
+        area: Rect,
+        buf: &mut Buffer,
+    ) {
+        // titles fit in the area, center them
+        let x = area.left() + area.width.saturating_sub(total_width) / 2;
+        let mut area = Rect { x, ..area };
         for title in titles {
-            if titles_area.is_empty() {
-                break;
-            }
-            let title_width = title.width() as u16;
-            let title_area = Rect {
-                width: title_width.min(titles_area.width),
-                ..titles_area
-            };
+            let width = title.width() as u16;
+            let title_area = Rect { width, ..area };
             buf.set_style(title_area, self.titles_style);
             title.render(title_area, buf);
+            // Move the rendering cursor to the right, leaving 1 column space.
+            area.x = area.x.saturating_add(width + 1);
+            area.width = area.width.saturating_sub(width + 1);
+        }
+    }
 
-            // bump the titles area to the right and reduce its width
-            titles_area.x = titles_area.x.saturating_add(title_width + 1);
-            titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+    fn render_centered_titles_with_truncation(
+        &self,
+        titles: Vec<&Line<'_>>,
+        total_width: u16,
+        mut area: Rect,
+        buf: &mut Buffer,
+    ) {
+        // titles do not fit in the area, truncate the left side using an offset. The right side
+        // is truncated by the area width.
+        let mut offset = total_width.saturating_sub(area.width) / 2;
+        for title in titles {
+            if area.is_empty() {
+                break;
+            }
+            let width = area.width.min(title.width() as u16).saturating_sub(offset);
+            let title_area = Rect { width, ..area };
+            buf.set_style(title_area, self.titles_style);
+            if offset > 0 {
+                // truncate the left side of the title to fit the area
+                title.clone().right_aligned().render(title_area, buf);
+                offset = offset.saturating_sub(width).saturating_sub(1);
+            } else {
+                // truncate the right side of the title to fit the area if needed
+                title.clone().left_aligned().render(title_area, buf);
+            }
+            // Leave 1 column of spacing between titles.
+            area.x = area.x.saturating_add(width + 1);
+            area.width = area.width.saturating_sub(width + 1);
         }
     }
 
@@ -1937,6 +1970,16 @@ mod tests {
     }
 
     #[test]
+    fn left_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L12")
+            .title("L34")
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L12 L34   "]));
+    }
+
+    #[test]
     fn left_titles_truncated() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
         Block::new()
@@ -1946,12 +1989,16 @@ mod tests {
         assert_eq!(buffer, Buffer::with_lines(["L12345 L67"]));
     }
 
-    /// Note: this test is probably not what you'd expect, but it is how it works in the current
-    /// implementation. Update this if the behavior changes.
-    ///
-    /// This probably should render the titles centered as a whole and then truncate both titles
-    /// to fit, but instead it renders each title and truncates them individually. This causes the
-    /// left title to be displayed in full, while the right title is truncated.
+    #[test]
+    fn center_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("C12").centered())
+            .title(Line::from("C34").centered())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" C12 C34  "]));
+    }
+
     #[test]
     fn center_titles_truncated() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
@@ -1959,7 +2006,17 @@ mod tests {
             .title(Line::from("C12345").centered())
             .title(Line::from("C67890").centered())
             .render(buffer.area, &mut buffer);
-        assert_eq!(buffer, Buffer::with_lines(["C12345 678"]));
+        assert_eq!(buffer, Buffer::with_lines(["12345 C678"]));
+    }
+
+    #[test]
+    fn right_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("R12").right_aligned())
+            .title(Line::from("R34").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["   R12 R34"]));
     }
 
     #[test]
