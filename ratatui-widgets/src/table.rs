@@ -19,11 +19,19 @@ use ratatui_core::widgets::{StatefulWidget, Widget};
 
 use crate::block::Block;
 
+/// The type of borders for a table.
+///
+/// This enum defines the different border styles that can be applied to a table.
+/// It allows for controlling which borders are displayed in the table.
 #[derive(Clone, Debug, PartialEq)]
-pub enum TableBorder {
+pub enum TableBorderType {
+    /// No borders displayed.
     None,
+    /// Only horizontal borders displayed.
     Horizontal,
+    /// Only vertical borders displayed.
     Vertical,
+    /// All borders displayed.
     All,
 }
 
@@ -42,7 +50,7 @@ pub struct Table<'a> {
     pub highlight_symbol: Text<'a>,
     pub highlight_spacing: HighlightSpacing,
     pub flex: Flex,
-    pub border_type: TableBorder,
+    pub border_type: TableBorderType,
     pub border_style: Style,
 }
 
@@ -62,7 +70,7 @@ impl<'a> Default for Table<'a> {
             highlight_symbol: Text::default(),
             highlight_spacing: HighlightSpacing::WhenSelected,
             flex: Flex::Start,
-            border_type: TableBorder::None,
+            border_type: TableBorderType::None,
             border_style: Style::default(),
         }
     }
@@ -156,11 +164,23 @@ impl<'a> Table<'a> {
         self
     }
 
-    pub const fn border_type(mut self, border: TableBorder) -> Self {
+    /// Sets the border type for the table.
+    ///
+    /// This determines which borders are displayed in the table.
+    /// The border style can be customized with [`border_style`].
+    ///
+    /// [`border_style`]: Self::border_style
+    pub const fn border_type(mut self, border: TableBorderType) -> Self {
         self.border_type = border;
         self
     }
 
+    /// Sets the border style for the table.
+    ///
+    /// This determines the styling (color, modifiers) of the table borders.
+    /// The border type can be set with [`border_type`].
+    ///
+    /// [`border_type`]: Self::border_type
     pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.border_style = style.into();
         self
@@ -354,14 +374,14 @@ impl<'a> Table<'a> {
     ) {
         use symbols::line;
         match self.border_type {
-            TableBorder::None => return,
-            TableBorder::Horizontal => {
+            TableBorderType::None => return,
+            TableBorderType::Horizontal => {
                 self.render_horizontal_borders(area, buf, selection_width, start_index, end_index);
             }
-            TableBorder::Vertical => {
+            TableBorderType::Vertical => {
                 self.render_vertical_borders(area, buf, selection_width, columns_widths);
             }
-            TableBorder::All => {
+            TableBorderType::All => {
                 self.render_horizontal_borders(area, buf, selection_width, start_index, end_index);
                 self.render_vertical_borders(area, buf, selection_width, columns_widths);
             }
@@ -533,4 +553,4 @@ where
         let widths: [Constraint; 0] = [];
         Self::new(rows, widths)
     }
-}
+}
