@@ -677,7 +677,7 @@ pub use ratatui_widgets::scrollbar::{
     ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState,
 };
 pub use ratatui_widgets::sparkline::{RenderDirection, Sparkline, SparklineBar};
-pub use ratatui_widgets::table::{Cell, HighlightSpacing, Row, Table, TableState};
+pub use ratatui_widgets::table::{Cell, HighlightSpacing, Row, Table, TableBorderType, TableState};
 pub use ratatui_widgets::tabs::Tabs;
 #[instability::unstable(feature = "widget-ref")]
 pub use {stateful_widget_ref::StatefulWidgetRef, widget_ref::WidgetRef};
