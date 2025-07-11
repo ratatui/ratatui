@@ -969,7 +969,6 @@ impl Block<'_> {
                 let width = area.width.min(title.width() as u16).saturating_sub(offset);
                 let title_area = Rect { width, ..area };
                 buf.set_style(title_area, self.titles_style);
-                buf.set_style(title_area, title.style);
                 if offset > 0 {
                     // truncate the left side of the title to fit the area
                     title.clone().right_aligned().render(title_area, buf);
@@ -1980,12 +1979,6 @@ mod tests {
         assert_eq!(buffer, Buffer::with_lines([" C12 C34  "]));
     }
 
-    /// Note: this test is probably not what you'd expect, but it is how it works in the current
-    /// implementation. Update this if the behavior changes.
-    ///
-    /// This probably should render the titles centered as a whole and then truncate both titles
-    /// to fit, but instead it renders each title and truncates them individually. This causes the
-    /// left title to be displayed in full, while the right title is truncated.
     #[test]
     fn center_titles_truncated() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
