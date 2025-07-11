@@ -300,10 +300,14 @@ impl MergeStrategy {
     /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
     /// [`Cell::merge_symbol`]: crate::buffer::Cell::merge_symbol
     pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
+        // Replace should always just return the last symbol.
+        if self == Self::Replace {
+            return next;
+        }
         let (Ok(prev_symbol), Ok(next_symbol)) =
             (BorderSymbol::from_str(prev), BorderSymbol::from_str(next))
         else {
-            return next;
+            return prev;
         };
         if let Ok(merged) = prev_symbol.merge(next_symbol, self).try_into() {
             return merged;
@@ -523,7 +527,6 @@ macro_rules! define_symbols {
 }
 
 define_symbols!(
-    " " => (Nothing, Nothing, Nothing, Nothing),
     "─" => (Plain, Nothing, Plain, Nothing),
     "━" => (Thick, Nothing, Thick, Nothing),
     "│" => (Nothing, Plain, Nothing, Plain),
@@ -666,7 +669,7 @@ mod tests {
             "╄", "╅", "╆", "╇", "╈", "╉", "╊", "╋", "╌", "╍", "╎", "╏", "═", "║", "╒", "╓", "╔",
             "╕", "╖", "╗", "╘", "╙", "╚", "╛", "╜", "╝", "╞", "╟", "╠", "╡", "╢", "╣", "╤", "╥",
             "╦", "╧", "╨", "╩", "╪", "╫", "╬", "╭", "╮", "╯", "╰", "╴", "╵", "╶", "╷", "╸", "╹",
-            "╺", "╻", "╼", "╽", "╾", "╿", " ",
+            "╺", "╻", "╼", "╽", "╾", "╿", " ", "a",
         ];
 
         for a in symbols {
@@ -695,7 +698,7 @@ mod tests {
         assert_eq!(strategy.merge("┵", "┝"), "┿");
         assert_eq!(strategy.merge("│", "━"), "┿");
         assert_eq!(strategy.merge("┵", "╞"), "╞");
-        assert_eq!(strategy.merge(" ", "╠"), "╠");
+        assert_eq!(strategy.merge(" ", "╠"), " ");
         assert_eq!(strategy.merge("╠", " "), "╠");
         assert_eq!(strategy.merge("╎", "╧"), "╧");
         assert_eq!(strategy.merge("╛", "╒"), "╪");
@@ -704,6 +707,8 @@ mod tests {
         assert_eq!(strategy.merge("╡", "╞"), "╪");
         assert_eq!(strategy.merge("┌", "╭"), "╭");
         assert_eq!(strategy.merge("┘", "╭"), "╭");
+        assert_eq!(strategy.merge("┌", "a"), "┌");
+        assert_eq!(strategy.merge("a", "╭"), "a");
     }
 
     #[test]
@@ -711,7 +716,7 @@ mod tests {
         let strategy = MergeStrategy::Fuzzy;
         assert_eq!(strategy.merge("┄", "╴"), "─");
         assert_eq!(strategy.merge("│", "┆"), "┆");
-        assert_eq!(strategy.merge(" ", "┉"), "┉");
+        assert_eq!(strategy.merge(" ", "┉"), " ");
         assert_eq!(strategy.merge("┋", "┋"), "┋");
         assert_eq!(strategy.merge("╷", "╶"), "┌");
         assert_eq!(strategy.merge("╭", "┌"), "┌");
@@ -725,7 +730,7 @@ mod tests {
         assert_eq!(strategy.merge("┘", "┌"), "┼");
         assert_eq!(strategy.merge("┘", "╭"), "┼");
         assert_eq!(strategy.merge("╎", "┉"), "┿");
-        assert_eq!(strategy.merge(" ", "╠"), "╠");
+        assert_eq!(strategy.merge(" ", "╠"), " ");
         assert_eq!(strategy.merge("╠", " "), "╠");
         assert_eq!(strategy.merge("┵", "╞"), "╪");
         assert_eq!(strategy.merge("╛", "╒"), "╪");
@@ -734,5 +739,7 @@ mod tests {
         assert_eq!(strategy.merge("╡", "╞"), "╪");
         assert_eq!(strategy.merge("╎", "╧"), "╪");
         assert_eq!(strategy.merge("┌", "╭"), "╭");
+        assert_eq!(strategy.merge("┌", "a"), "┌");
+        assert_eq!(strategy.merge("a", "╭"), "a");
     }
 }
