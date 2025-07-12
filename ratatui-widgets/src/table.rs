@@ -622,7 +622,7 @@ mod tests {
     use ratatui_core::buffer::Buffer;
     use ratatui_core::layout::Constraint::*;
     use ratatui_core::layout::{Alignment, Flex, Rect};
-    use ratatui_core::style::{Color, Modifier, Style};
+    use ratatui_core::style::{Color, Modifier, Style, Stylize};
     use ratatui_core::text::{Line, Text};
     use ratatui_core::widgets::{StatefulWidget, Widget};
     use rstest::rstest;
@@ -971,7 +971,7 @@ mod tests {
             #[case] expected_items: [&str; 5],
         ) {
             // render 100 rows offset at 50, with a selected row
-            let rows = (0..100).map(|i| Row::new([i.to_string()]));
+            let rows = (0..100).map(|i: usize| Row::new([i.to_string()]));
             let table = Table::new(rows, [Constraint::Length(2)]);
             let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
             let mut state = TableState::new()
@@ -1221,7 +1221,7 @@ mod tests {
 
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
-                .widths([5, 5])
+                .widths([Length(5), Length(5)])
                 .column_spacing(0);
             let area = Rect::new(0, 0, 15, 3);
             let mut buf = Buffer::empty(area);
