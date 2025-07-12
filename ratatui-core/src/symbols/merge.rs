@@ -305,18 +305,15 @@ impl MergeStrategy {
             return next;
         }
 
-        // Non-border symbols take precedence in strategies other than Replace.
-        let Ok(prev_symbol) = BorderSymbol::from_str(prev) else {
-            return prev;
-        };
-        let Ok(next_symbol) = BorderSymbol::from_str(next) else {
-            return next;
-        };
-
-        if let Ok(merged) = prev_symbol.merge(next_symbol, self).try_into() {
-            return merged;
+        match (BorderSymbol::from_str(prev), BorderSymbol::from_str(next)) {
+            (Ok(prev_symbol), Ok(next_symbol)) => prev_symbol
+                .merge(next_symbol, self)
+                .try_into()
+                .unwrap_or(next),
+            // Non-border symbols take precedence in strategies other than Replace.
+            (Err(_), Ok(_)) => prev,
+            (_, Err(_)) => next,
         }
-        next
     }
 }
 
@@ -673,7 +670,7 @@ mod tests {
             "╄", "╅", "╆", "╇", "╈", "╉", "╊", "╋", "╌", "╍", "╎", "╏", "═", "║", "╒", "╓", "╔",
             "╕", "╖", "╗", "╘", "╙", "╚", "╛", "╜", "╝", "╞", "╟", "╠", "╡", "╢", "╣", "╤", "╥",
             "╦", "╧", "╨", "╩", "╪", "╫", "╬", "╭", "╮", "╯", "╰", "╴", "╵", "╶", "╷", "╸", "╹",
-            "╺", "╻", "╼", "╽", "╾", "╿", " ", "a",
+            "╺", "╻", "╼", "╽", "╾", "╿", " ", "a", "b",
         ];
 
         for a in symbols {
@@ -713,6 +710,7 @@ mod tests {
         assert_eq!(strategy.merge("┘", "╭"), "╭");
         assert_eq!(strategy.merge("┌", "a"), "a");
         assert_eq!(strategy.merge("a", "╭"), "a");
+        assert_eq!(strategy.merge("a", "b"), "b");
     }
 
     #[test]
@@ -745,5 +743,6 @@ mod tests {
         assert_eq!(strategy.merge("┌", "╭"), "╭");
         assert_eq!(strategy.merge("┌", "a"), "a");
         assert_eq!(strategy.merge("a", "╭"), "a");
+        assert_eq!(strategy.merge("a", "b"), "b");
     }
 }
