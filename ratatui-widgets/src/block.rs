@@ -1969,6 +1969,82 @@ mod tests {
         pretty_assertions::assert_eq!(Buffer::with_lines(expected.lines()), buffer);
     }
 
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┗━━━━━━━━━━━┛",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Exact, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┡block btm━━┩",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Fuzzy, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┡block btm━━┩",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    fn merged_titles_bottom_first(#[case] strategy: MergeStrategy, #[case] expected: Buffer) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 13, 5));
+        Block::bordered()
+            .title("block btm")
+            .render(Rect::new(0, 2, 13, 3), &mut buffer);
+        Block::bordered()
+            .title("block top")
+            .border_type(BorderType::Thick)
+            .merge_borders(strategy)
+            .render(Rect::new(0, 0, 13, 3), &mut buffer);
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┌block btm──┐",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Exact, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┞block btm──┦",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Fuzzy, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┞block btm──┦",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    fn merged_titles_top_first(#[case] strategy: MergeStrategy, #[case] expected: Buffer) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 13, 5));
+        Block::bordered()
+            .title("block top")
+            .border_type(BorderType::Thick)
+            .render(Rect::new(0, 0, 13, 3), &mut buffer);
+        Block::bordered()
+            .title("block btm")
+            .merge_borders(strategy)
+            .render(Rect::new(0, 2, 13, 3), &mut buffer);
+        assert_eq!(buffer, expected);
+    }
+
     #[test]
     fn left_titles() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
