@@ -14,6 +14,7 @@ jobs:
   # Release unpublished packages.
   release-plz-release:
     name: Release-plz release
+    environment: release
     permissions:
       pull-requests: write
       contents: write
