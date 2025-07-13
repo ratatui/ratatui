@@ -94,7 +94,7 @@ pub fn render_table(frame: &mut Frame, area: Rect, table_state: &mut TableState)
         .column_highlight_style(Color::Gray)
         .cell_highlight_style(Style::new().reversed().yellow())
         .highlight_symbol("🍴 ")
-        .border_type(ratatui_widgets::table::TableBorderType::All)
+        .border_type(TableBorderType::All)
         .border_style(Style::new().gray());
 
     frame.render_stateful_widget(table, area, table_state);
