@@ -2,11 +2,11 @@
 
 use_field_init_shorthand = true
 
-# unstable options
-comment_width = 100
-format_code_in_doc_comments = true
-format_macro_matchers = true
-group_imports = "StdExternalCrate"
-imports_granularity = "Module"
-normalize_doc_attributes = true
-wrap_comments = true
+# Only stable features - removed unstable options that require nightly
+# comment_width = 100
+# format_code_in_doc_comments = true
+# format_macro_matchers = true
+# group_imports = "StdExternalCrate"
+# imports_granularity = "Module"
+# normalize_doc_attributes = true
+# wrap_comments = true
