@@ -289,17 +289,14 @@ impl<'a> Table<'a> {
 
     fn selection_width(&self, state: &TableState) -> u16 {
         let has_selection = state.selected().is_some();
-        if self.highlight_spacing.should_add(has_selection) {
-            self.highlight_symbol.width() as u16
-        } else {
-            0
-        }
-    }
-
-    fn max_selection_width(&self) -> u16 {
         match self.highlight_spacing {
-            HighlightSpacing::Always | HighlightSpacing::WhenSelected => {
-                self.highlight_symbol.width() as u16
+            HighlightSpacing::Always => self.highlight_symbol.width() as u16,
+            HighlightSpacing::WhenSelected => {
+                if has_selection {
+                    self.highlight_symbol.width() as u16
+                } else {
+                    0
+                }
             }
             HighlightSpacing::Never => 0,
         }
@@ -547,10 +544,9 @@ impl<'a> StatefulWidget for &Table<'a> {
         if column_count == 0 {
             state.select_column(None);
         }
-        let max_selection_width = self.max_selection_width();
-        let column_widths =
-            self.get_column_widths(table_area.width, max_selection_width, column_count);
         let selection_width = self.selection_width(state);
+        let column_widths =
+            self.get_column_widths(table_area.width, selection_width, column_count);
         let (header_area, rows_area, footer_area) = {
             let header_top_margin = self.header.as_ref().map_or(0, |h| h.top_margin);
             let header_height = self.header.as_ref().map_or(0, |h| h.height);
@@ -971,7 +967,7 @@ mod tests {
             #[case] expected_items: [&str; 5],
         ) {
             // render 100 rows offset at 50, with a selected row
-            let rows = (0..100).map(|i: usize| Row::new([i.to_string()]));
+            let rows = (0..100).map(|i: usize| Row::new([alloc::string::ToString::to_string(&i)]));
             let table = Table::new(rows, [Constraint::Length(2)]);
             let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
             let mut state = TableState::new()
@@ -1270,9 +1266,7 @@ mod tests {
                     "               ", // row 2
                     "               ", // row 3
                 ],
-            );
-
-            // highlight_symbol always rendered even no selection is made
+            );            // highlight_symbol always rendered even no selection is made
             test_table_with_selection(
                 HighlightSpacing::Always,
                 15,   // width
@@ -1285,7 +1279,7 @@ mod tests {
                 ],
             );
 
-            // no highlight_symbol rendered because no selection is made
+            // highlight_symbol rendered because selection is made
             test_table_with_selection(
                 HighlightSpacing::Always,
                 15,      // width
