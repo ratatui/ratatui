@@ -5,8 +5,9 @@ mod highlight_spacing;
 mod row;
 mod state;
 
-use std::vec;
-use std::vec::Vec;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::borrow::Borrow;
 
 pub use cell::Cell;
 pub use highlight_spacing::HighlightSpacing;
@@ -83,7 +84,7 @@ pub struct Table<'a> {
     pub border_style: Style,
 }
 
-impl<'a> Default for Table<'a> {
+impl Default for Table<'_> {
     fn default() -> Self {
         Self {
             rows: Vec::new(),
@@ -106,12 +107,14 @@ impl<'a> Default for Table<'a> {
 }
 
 impl<'a> Table<'a> {
+    /// Creates a new [`Table`] widget with the given rows and widths.
     pub fn new<R, I>(rows: R, widths: I) -> Self
     where
         R: IntoIterator<Item = Row<'a>>,
-        I: IntoIterator<Item = Constraint>,
+        I: IntoIterator,
+        I::Item: Borrow<Constraint>,
     {
-        let widths: Vec<Constraint> = widths.into_iter().collect();
+        let widths: Vec<Constraint> = widths.into_iter().map(|w| *w.borrow()).collect();
         ensure_percentages_less_than_100(&widths);
         Self {
             rows: rows.into_iter().collect(),
@@ -120,6 +123,8 @@ impl<'a> Table<'a> {
         }
     }
 
+    /// Sets the rows of the table.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn rows<T>(mut self, rows: T) -> Self
     where
         T: IntoIterator<Item = Row<'a>>,
@@ -128,66 +133,91 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Sets the header row of the table.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn header(mut self, header: Row<'a>) -> Self {
         self.header = Some(header);
         self
     }
 
+    /// Sets the footer row of the table.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn footer(mut self, footer: Row<'a>) -> Self {
         self.footer = Some(footer);
         self
     }
 
+    /// Sets the width constraints for columns.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn widths<I>(mut self, widths: I) -> Self
     where
-        I: IntoIterator<Item = Constraint>,
+        I: IntoIterator,
+        I::Item: Borrow<Constraint>,
     {
-        let widths: Vec<Constraint> = widths.into_iter().collect();
+        let widths: Vec<Constraint> = widths.into_iter().map(|w| *w.borrow()).collect();
         ensure_percentages_less_than_100(&widths);
         self.widths = widths;
         self
     }
 
+    /// Sets the spacing between columns.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
     }
 
+    /// Wraps the table with a block.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
 
+    /// Sets the base style of the table.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
 
+    /// Sets the style for highlighted rows.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn row_highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.row_highlight_style = style.into();
         self
     }
 
+    /// Sets the style for highlighted columns.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn column_highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.column_highlight_style = style.into();
         self
     }
 
+    /// Sets the style for highlighted cells.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn cell_highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.cell_highlight_style = style.into();
         self
     }
 
+    /// Sets the symbol to display in front of selected rows.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_symbol<T: Into<Text<'a>>>(mut self, symbol: T) -> Self {
         self.highlight_symbol = symbol.into();
         self
     }
 
+    /// Sets when to allocate space for the highlight symbol.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn highlight_spacing(mut self, spacing: HighlightSpacing) -> Self {
         self.highlight_spacing = spacing;
         self
     }
 
+    /// Sets how to distribute extra space among columns.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
         self
@@ -199,6 +229,7 @@ impl<'a> Table<'a> {
     /// The border style can be customized with [`border_style`].
     ///
     /// [`border_style`]: Self::border_style
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn border_type(mut self, border: TableBorderType) -> Self {
         self.border_type = border;
         self
@@ -210,6 +241,7 @@ impl<'a> Table<'a> {
     /// The border type can be set with [`border_type`].
     ///
     /// [`border_type`]: Self::border_type
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.border_style = style.into();
         self
@@ -415,7 +447,7 @@ impl<'a> Table<'a> {
         end_index: usize,
     ) {
         match self.border_type {
-            TableBorderType::None => return,
+            TableBorderType::None => (),
             TableBorderType::Horizontal => {
                 self.render_horizontal_borders(area, buf, selection_width, start_index, end_index);
             }
@@ -495,28 +527,28 @@ impl<'a> Table<'a> {
     }
 }
 
-impl<'a> Widget for Table<'a> {
+impl Widget for Table<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let mut state = TableState::default();
         StatefulWidget::render(&self, area, buf, &mut state);
     }
 }
 
-impl<'a> Widget for &Table<'a> {
+impl Widget for &Table<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let mut state = TableState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }
 }
 
-impl<'a> StatefulWidget for Table<'a> {
+impl StatefulWidget for Table<'_> {
     type State = TableState;
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         StatefulWidget::render(&self, area, buf, state);
     }
 }
 
-impl<'a> StatefulWidget for &Table<'a> {
+impl StatefulWidget for &Table<'_> {
     type State = TableState;
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
@@ -545,8 +577,7 @@ impl<'a> StatefulWidget for &Table<'a> {
             state.select_column(None);
         }
         let selection_width = self.selection_width(state);
-        let column_widths =
-            self.get_column_widths(table_area.width, selection_width, column_count);
+        let column_widths = self.get_column_widths(table_area.width, selection_width, column_count);
         let (header_area, rows_area, footer_area) = {
             let header_top_margin = self.header.as_ref().map_or(0, |h| h.top_margin);
             let header_height = self.header.as_ref().map_or(0, |h| h.height);
@@ -608,7 +639,7 @@ where
 {
     fn from_iter<Iter: IntoIterator<Item = Item>>(rows: Iter) -> Self {
         let widths: [Constraint; 0] = [];
-        let converted_rows: Vec<Row<'a>> = rows.into_iter().map(|item| item.into()).collect();
+        let converted_rows: Vec<Row<'a>> = rows.into_iter().map(Into::into).collect();
         Self::new(converted_rows, widths)
     }
 }
@@ -1266,7 +1297,7 @@ mod tests {
                     "               ", // row 2
                     "               ", // row 3
                 ],
-            );            // highlight_symbol always rendered even no selection is made
+            ); // highlight_symbol always rendered even no selection is made
             test_table_with_selection(
                 HighlightSpacing::Always,
                 15,   // width
