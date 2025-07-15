@@ -4,11 +4,13 @@
 use alloc::vec;
 use alloc::vec::Vec;
 
+use bitflags::bitflags;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Constraint, Flex, Layout, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols;
+use ratatui_core::symbols::merge::MergeStrategy;
 use ratatui_core::text::Text;
 use ratatui_core::widgets::{StatefulWidget, Widget};
 
@@ -23,32 +25,35 @@ mod highlight_spacing;
 mod row;
 mod state;
 
-/// The type of borders for a table.
-///
-/// This enum defines the different border styles that can be applied to a table.
-/// It allows for controlling which borders are displayed in the table.
-///
-/// # Examples
-///
-/// ```rust
-/// use ratatui_core::style::{Color, Style};
-/// use ratatui_core::layout::Constraint;
-/// use ratatui_widgets::table::{Table, TableBorderType, Row};
-///
-/// let table = Table::new(Vec::<Row>::new(), Vec::<Constraint>::new())
-///     .border_type(TableBorderType::All)
-///     .border_style(Style::default().fg(Color::Blue));
-/// ```
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum TableBorderType {
-    /// No borders displayed.
-    None,
-    /// Only horizontal borders displayed.
-    Horizontal,
-    /// Only vertical borders displayed.
-    Vertical,
-    /// All borders displayed.
-    All,
+bitflags! {
+    /// The type of internal borders for a table.
+    ///
+    /// This bitflags defines the different internal border styles that can be applied to a table.
+    /// It allows for controlling which internal borders are displayed within the table.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui_core::style::{Color, Style};
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_widgets::table::{Table, TableBorders, Row};
+    ///
+    /// let table = Table::new(Vec::<Row>::new(), Vec::<Constraint>::new())
+    ///     .internal_borders(TableBorders::ALL)
+    ///     .border_style(Style::default().fg(Color::Blue));
+    /// ```
+    #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+    pub struct TableBorders: u8 {
+        /// No borders displayed.
+        const NONE = 0b00;
+        /// Only horizontal borders displayed.
+        const HORIZONTAL = 0b01;
+        /// Only vertical borders displayed.
+        const VERTICAL = 0b10;
+        /// All borders displayed.
+        const ALL = Self::HORIZONTAL.bits() | Self::VERTICAL.bits();
+    }
 }
 
 /// A widget to display data in formatted columns.
@@ -72,6 +77,20 @@ pub enum TableBorderType {
 ///
 /// Note: if the `widths` field is empty, the table will be rendered with equal widths.
 /// Note: Highlight styles are applied in the following order: Row, Column, Cell.
+///
+/// ## Internal Borders
+///
+/// Tables support internal borders that are drawn between and around the table cells. These are
+/// separate from any external borders that might be added by wrapping the table in a [`Block`].
+/// You can control which internal borders are visible using [`Table::internal_borders`] and style
+/// them with [`Table::border_style`]. The available border options are:
+///
+/// - [`TableBorders::NONE`] - No internal borders (default)
+/// - [`TableBorders::HORIZONTAL`] - Horizontal lines between rows
+/// - [`TableBorders::VERTICAL`] - Vertical lines between columns
+/// - [`TableBorders::ALL`] - Both horizontal and vertical borders
+///
+/// Borders can also be combined using bitwise operations for more fine-grained control.
 ///
 /// See the table example and the recipe and traceroute tabs in the demo2 example in the [Examples]
 /// directory for a more in depth example of the various configuration options and for how to handle
@@ -100,6 +119,8 @@ pub enum TableBorderType {
 /// - [`Table::cell_highlight_style`] sets the style of the selected cell.
 /// - [`Table::highlight_symbol`] sets the symbol to be displayed in front of the selected row.
 /// - [`Table::highlight_spacing`] sets when to show the highlight spacing.
+/// - [`Table::internal_borders`] sets which internal borders to display within the table.
+/// - [`Table::border_style`] sets the style for the internal borders.
 ///
 /// # Example
 ///
@@ -107,6 +128,7 @@ pub enum TableBorderType {
 /// use ratatui::layout::Constraint;
 /// use ratatui::style::{Style, Stylize};
 /// use ratatui::widgets::{Block, Row, Table};
+/// use ratatui_widgets::table::TableBorders;
 ///
 /// let rows = [Row::new(vec!["Cell1", "Cell2", "Cell3"])];
 /// // Columns widths are constrained in the same way as Layout...
@@ -131,6 +153,9 @@ pub enum TableBorderType {
 ///     .footer(Row::new(vec!["Updated on Dec 28"]))
 ///     // As any other widget, a Table can be wrapped in a Block.
 ///     .block(Block::new().title("Table"))
+///     // You can add internal borders between and around cells.
+///     .internal_borders(TableBorders::ALL)
+///     .border_style(Style::new().white())
 ///     // The selected row, column, cell and its content can also be styled.
 ///     .row_highlight_style(Style::new().reversed())
 ///     .column_highlight_style(Style::new().red())
@@ -299,8 +324,8 @@ pub struct Table<'a> {
     /// Controls how to distribute extra space among the columns
     flex: Flex,
 
-    /// The type of borders to display.
-    border_type: TableBorderType,
+    /// The type of internal borders to display.
+    internal_borders: TableBorders,
 
     /// The style for borders.
     border_style: Style,
@@ -322,7 +347,7 @@ impl Default for Table<'_> {
             highlight_symbol: Text::default(),
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
-            border_type: TableBorderType::None,
+            internal_borders: TableBorders::NONE,
             border_style: Style::default(),
         }
     }
@@ -759,7 +784,21 @@ impl<'a> Table<'a> {
         self
     }
 
-    /// Set the type of borders to display.
+    /// Set which internal borders to display within the table.
+    ///
+    /// Internal borders are the lines drawn between and around table cells, separate from any
+    /// external borders that might be added by wrapping the table in a [`Block`]. This method
+    /// controls which of these internal borders are visible.
+    ///
+    /// The borders are drawn using the style set by [`border_style`](Self::border_style).
+    ///
+    /// - [`TableBorders::NONE`] - No internal borders (default)
+    /// - [`TableBorders::HORIZONTAL`] - Only horizontal lines between rows
+    /// - [`TableBorders::VERTICAL`] - Only vertical lines between columns  
+    /// - [`TableBorders::ALL`] - Both horizontal and vertical borders
+    ///
+    /// You can also combine borders using bitwise operations, e.g., 
+    /// `TableBorders::HORIZONTAL | TableBorders::VERTICAL`.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -769,19 +808,33 @@ impl<'a> Table<'a> {
     /// use ratatui::layout::Constraint;
     /// use ratatui::style::{Color, Style};
     /// use ratatui::widgets::{Block, Table};
-    /// use ratatui_widgets::table::TableBorderType;
+    /// use ratatui_widgets::table::TableBorders;
     ///
     /// let table = Table::default()
-    ///     .border_type(TableBorderType::All)
+    ///     .internal_borders(TableBorders::ALL)
     ///     .border_style(Style::default().fg(Color::Blue));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_type(mut self, border_type: TableBorderType) -> Self {
-        self.border_type = border_type;
+    pub const fn internal_borders(mut self, internal_borders: TableBorders) -> Self {
+        self.internal_borders = internal_borders;
         self
     }
 
-    /// Set the style for borders.
+    /// Set the style for internal borders.
+    ///
+    /// This method sets the visual style (color, modifiers, etc.) that will be applied to the
+    /// internal borders of the table. The borders themselves are controlled by the 
+    /// [`internal_borders`](Self::internal_borders) method, while this method determines how
+    /// those borders will look.
+    ///
+    /// The style affects all internal borders equally - you cannot style horizontal and vertical
+    /// borders differently. The style is applied to the border characters themselves, not to the
+    /// content of the cells.
+    ///
+    /// Common styling options include:
+    /// - Colors: `.fg(Color::Blue)`, `.bg(Color::Gray)`
+    /// - Modifiers: `.bold()`, `.dim()`, `.italic()`
+    /// - Combined: `.fg(Color::Red).bold()`
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -791,11 +844,22 @@ impl<'a> Table<'a> {
     /// use ratatui::layout::Constraint;
     /// use ratatui::style::{Color, Style};
     /// use ratatui::widgets::{Block, Table};
-    /// use ratatui_widgets::table::TableBorderType;
+    /// use ratatui_widgets::table::TableBorders;
     ///
+    /// // Blue colored borders
     /// let table = Table::default()
-    ///     .border_type(TableBorderType::All)
+    ///     .internal_borders(TableBorders::ALL)
     ///     .border_style(Style::default().fg(Color::Blue));
+    ///
+    /// // Gray borders with bold styling
+    /// let table = Table::default()
+    ///     .internal_borders(TableBorders::HORIZONTAL)
+    ///     .border_style(Style::default().fg(Color::Gray).bold());
+    ///
+    /// // Dim borders for a subtle appearance
+    /// let table = Table::default()
+    ///     .internal_borders(TableBorders::VERTICAL)
+    ///     .border_style(Style::default().dim());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn border_style(mut self, border_style: Style) -> Self {
@@ -861,6 +925,17 @@ impl StatefulWidget for &Table<'_> {
         self.render_rows(rows_area, buf, state, selection_width, &column_widths);
 
         self.render_footer(footer_area, buf, &column_widths);
+
+        // Render internal borders
+        let (start_index, end_index) = self.visible_rows(state, rows_area);
+        self.render_internal_borders(
+            rows_area,
+            buf,
+            selection_width,
+            &column_widths,
+            start_index,
+            end_index,
+        );
     }
 }
 
@@ -921,7 +996,7 @@ impl Table<'_> {
         let (start_index, end_index) = self.visible_rows(state, area);
         state.offset = start_index;
 
-        let mut y_offset = 0;
+        let mut y_offset: u16 = 0;
 
         let mut selected_row_area = None;
         for (i, row) in self
@@ -931,8 +1006,8 @@ impl Table<'_> {
             .skip(start_index)
             .take(end_index - start_index)
         {
-            let y = area.y + y_offset + row.top_margin;
-            let height = (y + row.height).min(area.bottom()).saturating_sub(y);
+            let y = area.y.saturating_add(y_offset).saturating_add(row.top_margin);
+            let height = (y.saturating_add(row.height)).min(area.bottom()).saturating_sub(y);
             let row_area = Rect { y, height, ..area };
             buf.set_style(row_area, row.style);
 
@@ -947,21 +1022,21 @@ impl Table<'_> {
             }
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
-                    Rect::new(row_area.x + x, row_area.y, *width, row_area.height),
+                    Rect::new(row_area.x.saturating_add(*x), row_area.y, *width, row_area.height),
                     buf,
                 );
             }
             if is_selected {
                 selected_row_area = Some(row_area);
             }
-            y_offset += row.height_with_margin();
+            y_offset = y_offset.saturating_add(row.height_with_margin());
         }
 
         let selected_column_area = state.selected_column.and_then(|s| {
             // The selection is clamped by the column count. Since a user can manually specify an
             // incorrect number of widths, we should use panic free methods.
             columns_widths.get(s).map(|(x, width)| Rect {
-                x: x + area.x,
+                x: x.saturating_add(area.x),
                 width: *width,
                 ..area
             })
@@ -983,15 +1058,97 @@ impl Table<'_> {
             (None, None) => (),
         }
 
-        // Render internal borders
-        self.render_internal_borders(
-            area,
-            buf,
-            selection_width,
-            columns_widths,
-            start_index,
-            end_index,
-        );
+
+    }
+
+    fn render_internal_borders(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        selection_width: u16,
+        columns_widths: &[(u16, u16)],
+        start_index: usize,
+        end_index: usize,
+    ) {
+        match self.internal_borders {
+            TableBorders::NONE => (),
+            TableBorders::HORIZONTAL => {
+                self.render_horizontal_borders(area, buf, selection_width, start_index, end_index);
+            }
+            TableBorders::VERTICAL => {
+                self.render_vertical_borders(area, buf, selection_width, columns_widths);
+            }
+            TableBorders::ALL => {
+                self.render_horizontal_borders(area, buf, selection_width, start_index, end_index);
+                self.render_vertical_borders(area, buf, selection_width, columns_widths);
+            }
+            _ => {
+                // Handle any other combinations of flags
+                if self.internal_borders.contains(TableBorders::HORIZONTAL) {
+                    self.render_horizontal_borders(area, buf, selection_width, start_index, end_index);
+                }
+                if self.internal_borders.contains(TableBorders::VERTICAL) {
+                    self.render_vertical_borders(area, buf, selection_width, columns_widths);
+                }
+            }
+        }
+    }
+
+    fn render_horizontal_borders(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        selection_width: u16,
+        start_index: usize,
+        end_index: usize,
+    ) {
+        use symbols::line;
+        let mut y_offset: u16 = 0;
+        for (i, row) in self
+            .rows
+            .iter()
+            .enumerate()
+            .skip(start_index)
+            .take(end_index - start_index)
+        {
+            y_offset = y_offset.saturating_add(row.top_margin).saturating_add(row.height);
+            if i < end_index - 1 && y_offset < area.height {
+                let border_y = area.y.saturating_add(y_offset);
+                if border_y < area.bottom() {
+                    for x in (area.x.saturating_add(selection_width))..area.right() {
+                        let cell = &mut buf[(x, border_y)];
+                        cell.merge_symbol(line::NORMAL.horizontal, MergeStrategy::Exact)
+                            .set_style(self.border_style);
+                    }
+                }
+            }
+            y_offset = y_offset.saturating_add(row.bottom_margin);
+        }
+    }
+
+    fn render_vertical_borders(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        _selection_width: u16,
+        columns_widths: &[(u16, u16)],
+    ) {
+        for (i, (x, width)) in columns_widths.iter().enumerate() {
+            if i < columns_widths.len() - 1 {
+                let border_x = if self.column_spacing > 0 {
+                    area.x.saturating_add(*x).saturating_add(*width).saturating_add(self.column_spacing / 2)
+                } else {
+                    area.x.saturating_add(*x).saturating_add(*width)
+                };
+                if border_x < area.right() {
+                    for y in area.y..area.bottom() {
+                        let cell = &mut buf[(border_x, y)];
+                        cell.merge_symbol(symbols::line::NORMAL.vertical, MergeStrategy::Exact)
+                            .set_style(self.border_style);
+                    }
+                }
+            }
+        }
     }
 
     /// Return the indexes of the visible rows.
@@ -1011,13 +1168,13 @@ impl Table<'_> {
         }
 
         let mut end = start;
-        let mut height = 0;
+        let mut height: u16 = 0;
 
         for item in self.rows.iter().skip(start) {
-            if height + item.height > area.height {
+            if height.saturating_add(item.height) > area.height {
                 break;
             }
-            height += item.height_with_margin();
+            height = height.saturating_add(item.height_with_margin());
             end += 1;
         }
 
@@ -1086,103 +1243,8 @@ impl Table<'_> {
         let has_selection = state.selected.is_some();
         match self.highlight_spacing {
             HighlightSpacing::Always => self.highlight_symbol.width() as u16,
-            HighlightSpacing::WhenSelected => {
-                if has_selection {
-                    self.highlight_symbol.width() as u16
-                } else {
-                    0
-                }
-            }
-            HighlightSpacing::Never => 0,
-        }
-    }
-
-    fn render_internal_borders(
-        &self,
-        area: Rect,
-        buf: &mut Buffer,
-        selection_width: u16,
-        columns_widths: &[(u16, u16)],
-        start_index: usize,
-        end_index: usize,
-    ) {
-        match self.border_type {
-            TableBorderType::None => (),
-            TableBorderType::Horizontal => {
-                self.render_horizontal_borders(area, buf, selection_width, start_index, end_index);
-            }
-            TableBorderType::Vertical => {
-                self.render_vertical_borders(area, buf, selection_width, columns_widths);
-            }
-            TableBorderType::All => {
-                self.render_horizontal_borders(area, buf, selection_width, start_index, end_index);
-                self.render_vertical_borders(area, buf, selection_width, columns_widths);
-            }
-        }
-    }
-
-    fn render_horizontal_borders(
-        &self,
-        area: Rect,
-        buf: &mut Buffer,
-        selection_width: u16,
-        start_index: usize,
-        end_index: usize,
-    ) {
-        use symbols::line;
-        let mut y_offset = 0;
-        for (i, row) in self
-            .rows
-            .iter()
-            .enumerate()
-            .skip(start_index)
-            .take(end_index - start_index)
-        {
-            y_offset += row.top_margin + row.height;
-            if i < end_index - 1 && y_offset < area.height {
-                let border_y = area.y + y_offset;
-                if border_y < area.bottom() {
-                    for x in (area.x + selection_width)..area.right() {
-                        let cell = &mut buf[(x, border_y)];
-                        let symbol = if cell.symbol() == line::NORMAL.vertical {
-                            line::NORMAL.cross
-                        } else {
-                            line::NORMAL.horizontal
-                        };
-                        cell.set_symbol(symbol).set_style(self.border_style);
-                    }
-                }
-            }
-            y_offset += row.bottom_margin;
-        }
-    }
-
-    fn render_vertical_borders(
-        &self,
-        area: Rect,
-        buf: &mut Buffer,
-        _selection_width: u16,
-        columns_widths: &[(u16, u16)],
-    ) {
-        for (i, (x, width)) in columns_widths.iter().enumerate() {
-            if i < columns_widths.len() - 1 {
-                let border_x = if self.column_spacing > 0 {
-                    area.x + x + width + self.column_spacing / 2
-                } else {
-                    area.x + x + width
-                };
-                if border_x < area.right() {
-                    for y in area.y..area.bottom() {
-                        let cell = &mut buf[(border_x, y)];
-                        let symbol = if cell.symbol() == symbols::line::NORMAL.horizontal {
-                            symbols::line::NORMAL.cross
-                        } else {
-                            symbols::line::NORMAL.vertical
-                        };
-                        cell.set_symbol(symbol).set_style(self.border_style);
-                    }
-                }
-            }
+            HighlightSpacing::WhenSelected if has_selection => self.highlight_symbol.width() as u16,
+            _ => 0,
         }
     }
 }
@@ -1253,7 +1315,7 @@ mod tests {
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
-        assert_eq!(table.border_type, TableBorderType::None);
+        assert_eq!(table.internal_borders, TableBorders::NONE);
         assert_eq!(table.border_style, Style::default());
     }
 
@@ -1271,7 +1333,7 @@ mod tests {
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
-        assert_eq!(table.border_type, TableBorderType::None);
+        assert_eq!(table.internal_borders, TableBorders::NONE);
         assert_eq!(table.border_style, Style::default());
     }
 
@@ -2038,7 +2100,7 @@ mod tests {
         #[test]
         fn no_constraint_with_header() {
             let table = Table::default()
-                .rows(Vec::<Row>::new())
+                .rows(vec![] as Vec<Row>)
                 .header(Row::new(vec!["f", "g"]))
                 .column_spacing(0);
             assert_eq!(table.get_column_widths(10, 0, 2), [(0, 5), (5, 5)]);
@@ -2047,7 +2109,7 @@ mod tests {
         #[test]
         fn no_constraint_with_footer() {
             let table = Table::default()
-                .rows(Vec::<Row>::new())
+                .rows(vec![] as Vec<Row>)
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
             assert_eq!(table.get_column_widths(10, 0, 2), [(0, 5), (5, 5)]);
@@ -2465,3 +2527,4 @@ mod tests {
         assert_eq!(column_count, expected);
     }
 }
+

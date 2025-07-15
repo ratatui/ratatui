@@ -7,6 +7,7 @@ use ratatui::layout::Constraint;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Cell, HighlightSpacing, Row, Table, TableState};
+use ratatui_widgets::table::TableBorders;
 use rstest::rstest;
 
 #[rstest]
@@ -838,5 +839,97 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
         "│                            │",
         "│                            │",
         "└────────────────────────────┘",
+    ]);
+}
+
+#[test]
+fn widgets_table_internal_borders_none() {
+    let backend = TestBackend::new(10, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal.draw(|f| {
+        let table = Table::new(
+            vec![
+                Row::new(vec!["A", "B"]),
+                Row::new(vec!["C", "D"]),
+            ],
+            [Constraint::Length(4), Constraint::Length(4)],
+        )
+        .internal_borders(TableBorders::NONE);
+        f.render_widget(table, f.area());
+    }).unwrap();
+    terminal.backend().assert_buffer_lines([
+        "A    B    ",
+        "C    D    ",
+        "          ",
+        "          ",
+    ]);
+}
+
+#[test]
+fn widgets_table_internal_borders_horizontal() {
+    let backend = TestBackend::new(10, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal.draw(|f| {
+        let table = Table::new(
+            vec![
+                Row::new(vec!["A", "B"]),
+                Row::new(vec!["C", "D"]),
+            ],
+            [Constraint::Length(4), Constraint::Length(4)],
+        )
+        .internal_borders(TableBorders::HORIZONTAL);
+        f.render_widget(table, f.area());
+    }).unwrap();
+    terminal.backend().assert_buffer_lines([
+        "A    B    ",
+        "C────D────",
+        "          ",
+        "          ",
+    ]);
+}
+
+#[test]
+fn widgets_table_internal_borders_vertical() {
+    let backend = TestBackend::new(10, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal.draw(|f| {
+        let table = Table::new(
+            vec![
+                Row::new(vec!["A", "B"]),
+                Row::new(vec!["C", "D"]),
+            ],
+            [Constraint::Length(4), Constraint::Length(4)],
+        )
+        .internal_borders(TableBorders::VERTICAL);
+        f.render_widget(table, f.area());
+    }).unwrap();
+    terminal.backend().assert_buffer_lines([
+        "A   │B    ",
+        "C   │D    ",
+        "    │     ",
+        "    │     ",
+    ]);
+}
+
+#[test]
+fn widgets_table_internal_borders_all() {
+    let backend = TestBackend::new(10, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal.draw(|f| {
+        let table = Table::new(
+            vec![
+                Row::new(vec!["A", "B"]),
+                Row::new(vec!["C", "D"]),
+            ],
+            [Constraint::Length(4), Constraint::Length(4)],
+        )
+        .internal_borders(TableBorders::ALL);
+        f.render_widget(table, f.area());
+    }).unwrap();
+    terminal.backend().assert_buffer_lines([
+        "A   │B    ",
+        "C───┼D────",
+        "    │     ",
+        "    │     ",
     ]);
 }

@@ -1,0 +1,33 @@
+[1mdiff --git a/.github/workflows/release-plz.yml b/.github/workflows/release-plz.yml[m
+[1mindex 7d6f821..c1ff648 100644[m
+[1m--- a/.github/workflows/release-plz.yml[m
+[1m+++ b/.github/workflows/release-plz.yml[m
+[36m@@ -14,9 +14,11 @@[m [mjobs:[m
+   # Release unpublished packages.[m
+   release-plz-release:[m
+     name: Release-plz release[m
+[32m+[m[32m    environment: release[m
+     permissions:[m
+       pull-requests: write[m
+       contents: write[m
+[32m+[m[32m      id-token: write[m
+     runs-on: ubuntu-latest[m
+     if: ${{ github.repository_owner == 'ratatui' }}[m
+     steps:[m
+[36m@@ -29,13 +31,15 @@[m [mjobs:[m
+         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master[m
+         with:[m
+           toolchain: stable[m
+[32m+[m[32m      - uses: rust-lang/crates-io-auth-action@63a7064947ceca9989005e118db3a5fecdc9259f # v1[m
+[32m+[m[32m        id: auth[m
+       - name: Run release-plz[m
+         uses: release-plz/action@8724d33cd97b8295051102e2e19ca592962238f5 # v0.5[m
+         with:[m
+           command: release[m
+         env:[m
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}[m
+[31m-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}[m
+[32m+[m[32m          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}[m
+ [m
+   # Create a PR with the new versions and changelog, preparing the next release.[m
+   release-plz-pr:[m
