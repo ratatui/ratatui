@@ -1153,11 +1153,26 @@ impl<'a> Table<'a> {
         columns_widths: &[(u16, u16)],
     ) {
         if self.rows.is_empty() {
+            // Clear selection for empty tables
+            state.selected = None;
+            state.selected_column = None;
             return;
         }
 
         let (start_index, end_index) = self.visible_rows(state, area);
         state.offset = start_index;
+
+        // Correct selection indices
+        if let Some(selected) = state.selected {
+            if selected >= self.rows.len() {
+                state.selected = Some(self.rows.len().saturating_sub(1));
+            }
+        }
+        if let Some(selected_column) = state.selected_column {
+            if selected_column >= columns_widths.len() {
+                state.selected_column = Some(columns_widths.len().saturating_sub(1));
+            }
+        }
 
         let mut y_offset: u16 = 0;
 
@@ -1365,6 +1380,10 @@ impl<'a> Table<'a> {
     /// - if there is still space to fill then there's a partial row at the end which should be
     ///   included in the view.
     fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
+        if self.rows.is_empty() {
+            return (0, 0);
+        }
+
         let last_row = self.rows.len().saturating_sub(1);
         let mut start = state.offset.min(last_row);
 
@@ -1387,10 +1406,10 @@ impl<'a> Table<'a> {
             let selected = selected.min(last_row);
 
             // scroll down until the selected row is visible
-            while selected >= end {
+            while selected >= end && end < self.rows.len() {
                 height = height.saturating_add(self.rows[end].height_with_margin());
                 end += 1;
-                while height > area.height {
+                while height > area.height && start < self.rows.len() {
                     height = height.saturating_sub(self.rows[start].height_with_margin());
                     start += 1;
                 }
@@ -1488,6 +1507,66 @@ where
     fn from_iter<Iter: IntoIterator<Item = Item>>(rows: Iter) -> Self {
         let widths: [Constraint; 0] = [];
         Self::new(rows, widths)
+    }
+}
+
+impl Widget for Table<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+impl Widget for &Table<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut state = TableState::default();
+        StatefulWidget::render(self, area, buf, &mut state);
+    }
+}
+
+impl StatefulWidget for Table<'_> {
+    type State = TableState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        StatefulWidget::render(&self, area, buf, state);
+    }
+}
+
+impl StatefulWidget for &Table<'_> {
+    type State = TableState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        buf.set_style(area, self.style);
+        self.block.as_ref().render(area, buf);
+        let table_area = self.block.inner_if_some(area);
+
+        if table_area.is_empty() {
+            return;
+        }
+
+        let (header_area, rows_area, footer_area) = self.layout(table_area);
+        let selection_width = self.selection_width(state);
+        let column_count = self.column_count();
+        let column_widths = self.get_column_widths(rows_area.width, selection_width, column_count);
+
+        // Render header
+        self.render_header(header_area, buf, &column_widths);
+
+        // Render rows
+        self.render_rows(rows_area, buf, state, selection_width, &column_widths);
+
+        // Render footer
+        self.render_footer(footer_area, buf, &column_widths);
+
+        // Render internal borders
+        let (start_index, end_index) = self.visible_rows(state, rows_area);
+        self.render_internal_borders(
+            rows_area,
+            buf,
+            selection_width,
+            &column_widths,
+            start_index,
+            end_index,
+        );
     }
 }
 
