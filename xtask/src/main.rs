@@ -9,6 +9,7 @@ use std::process::Output;
 
 use cargo_metadata::{MetadataCommand, TargetKind};
 use clap::Parser;
+use clap::builder::styling::{AnsiColor, Styles};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use color_eyre::Result;
 use color_eyre::eyre::Context;
@@ -39,8 +40,18 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Matches the clap styling
+pub const HELP_STYLES: Styles = Styles::styled()
+    .header(AnsiColor::Green.on_default().bold())
+    .usage(AnsiColor::Green.on_default().bold())
+    .literal(AnsiColor::Cyan.on_default().bold())
+    .placeholder(AnsiColor::Cyan.on_default())
+    .error(AnsiColor::Red.on_default().bold())
+    .valid(AnsiColor::Cyan.on_default().bold())
+    .invalid(AnsiColor::Yellow.on_default().bold());
+
 #[derive(Debug, Parser)]
-#[command(bin_name = "cargo xtask", styles = clap_cargo::style::CLAP_STYLING)]
+#[command(bin_name = "cargo xtask", styles = HELP_STYLES)]
 struct Args {
     #[command(subcommand)]
     command: Command,
