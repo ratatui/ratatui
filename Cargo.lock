@@ -4301,7 +4301,6 @@ dependencies = [
  "clap-verbosity-flag",
  "color-eyre",
  "duct",
- "itertools 0.14.0",
  "tracing 0.1.41",
  "tracing-subscriber",
 ]
