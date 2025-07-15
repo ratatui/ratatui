@@ -1034,39 +1034,23 @@ impl<'a> Table<'a> {
 
     const fn get_border_symbol(
         _self: &Self,
-        x: u16,
-        y: u16,
-        area: Rect,
+        _x: u16,
+        _y: u16,
+        _area: Rect,
         is_horizontal: bool,
         has_horizontal_border: bool,
         has_vertical_border: bool,
     ) -> &'static str {
         use symbols::line;
 
-        // Check if this position is at the edge of the table area (where block borders are)
-        let is_left_edge = x == area.x;
-        let is_right_edge = x == area.right() - 1;
-        let is_top_edge = y == area.y;
-        let is_bottom_edge = y == area.bottom() - 1;
-
-        // If both horizontal and vertical borders are present, use cross symbol
+        // For internal borders, we only use simple symbols:
+        // - Cross (┼) when both horizontal and vertical borders intersect
+        // - Horizontal line (─) for horizontal borders
+        // - Vertical line (│) for vertical borders
         if has_horizontal_border && has_vertical_border {
-            return line::NORMAL.cross;
-        }
-
-        // If we're at an edge, we need to use intersection symbols
-        if is_horizontal {
-            if is_left_edge {
-                line::NORMAL.vertical_right
-            } else if is_right_edge {
-                line::NORMAL.vertical_left
-            } else {
-                line::NORMAL.horizontal
-            }
-        } else if is_top_edge {
-            line::NORMAL.horizontal_down
-        } else if is_bottom_edge {
-            line::NORMAL.horizontal_up
+            line::NORMAL.cross
+        } else if is_horizontal {
+            line::NORMAL.horizontal
         } else {
             line::NORMAL.vertical
         }
