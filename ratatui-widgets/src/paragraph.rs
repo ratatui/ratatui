@@ -227,7 +227,7 @@ impl<'a> Paragraph<'a> {
     /// convention across the crate.
     ///
     /// For more information about future scrolling design and concerns, see [RFC: Design of
-    /// Scrollable Widgets](https://github.com/ratatui/ratatui/issues/174) on GitHub.
+    /// Scrollable Widgets](https://github.com/ratatui/ratatui/discussions/1924) on GitHub.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
         self.scroll = Position {
