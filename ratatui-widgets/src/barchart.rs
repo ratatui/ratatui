@@ -1473,6 +1473,7 @@ mod tests {
         ]);
         assert_eq!(buffer, expected);
     }
+
     #[rstest]
     #[case::horizontal(Direction::Horizontal)]
     #[case::vertical(Direction::Vertical)]
