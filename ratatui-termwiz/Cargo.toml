@@ -27,7 +27,7 @@ serde = ["termwiz/use_serde"]
 
 ## Enables the backend code that sets the underline color.
 ## Underline color is not supported on Windows 7.
-underline-color = []
+underline-color = ["ratatui-core/underline-color"]
 
 ## Use terminal scrolling regions to make Terminal::insert_before less prone to flickering.
 scrolling-regions = ["ratatui-core/scrolling-regions"]
@@ -38,7 +38,7 @@ ratatui-core = { workspace = true }
 termwiz.workspace = true
 
 [dev-dependencies]
-ratatui = { path = "../ratatui", features = ["termwiz"] }
+ratatui = { path = "../ratatui", features = ["termwiz"], default-features = false }
 rstest.workspace = true
 
 [lints]
