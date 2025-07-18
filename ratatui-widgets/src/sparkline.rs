@@ -701,7 +701,7 @@ mod tests {
     }
 
     #[test]
-    fn buffer_overflow() {
+    fn render_in_minimal_buffer() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         let sparkline = Sparkline::default()
             .data([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])

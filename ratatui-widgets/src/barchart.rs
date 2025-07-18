@@ -1477,7 +1477,7 @@ mod tests {
     #[rstest]
     #[case::horizontal(Direction::Horizontal)]
     #[case::vertical(Direction::Vertical)]
-    fn buffer_overflow(#[case] direction: Direction) {
+    fn render_in_minimal_buffer(#[case] direction: Direction) {
         let chart = BarChart::default()
             .data(&[("A", 1), ("B", 2)])
             .bar_width(3)

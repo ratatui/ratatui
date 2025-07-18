@@ -304,7 +304,7 @@ mod tests {
     }
 
     #[test]
-    fn buffer_overflow() {
+    fn render_in_minimal_buffer() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         let calendar = Monthly::new(
             Date::from_calendar_date(1984, Month::January, 1).unwrap(),

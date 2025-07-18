@@ -242,7 +242,7 @@ mod tests {
     }
 
     #[test]
-    fn buffer_overflow() {
+    fn render_in_minimal_buffer() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         let mascot = RatatuiMascot::new();
         // This should not panic, even if the buffer is too small to render the mascot.

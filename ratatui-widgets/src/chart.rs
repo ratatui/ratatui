@@ -1549,7 +1549,7 @@ mod tests {
     }
 
     #[test]
-    fn buffer_overflow() {
+    fn render_in_minimal_buffer() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         let chart = Chart::new(vec![Dataset::default().data(&[(0.0, 0.0), (1.0, 1.0)])])
             .x_axis(Axis::default().bounds([0.0, 1.0]))

@@ -240,7 +240,7 @@ mod tests {
     #[rstest]
     #[case::tiny(Size::Tiny)]
     #[case::small(Size::Small)]
-    fn buffer_overflow(#[case] size: Size) {
+    fn render_in_minimal_buffer(#[case] size: Size) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         let logo = RatatuiLogo::new(size);
         // This should not panic, even if the buffer is too small to render the logo.

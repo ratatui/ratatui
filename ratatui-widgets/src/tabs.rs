@@ -678,7 +678,7 @@ mod tests {
     }
 
     #[test]
-    fn buffer_overflow() {
+    fn render_in_minimal_buffer() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
             .select(1)
