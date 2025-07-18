@@ -237,10 +237,12 @@ mod tests {
         );
     }
 
-    #[test]
-    fn buffer_overflow() {
+    #[rstest]
+    #[case::tiny(Size::Tiny)]
+    #[case::small(Size::Small)]
+    fn buffer_overflow(#[case] size: Size) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
-        let logo = RatatuiLogo::new(Size::Tiny);
+        let logo = RatatuiLogo::new(size);
         // This should not panic, even if the buffer is too small to render the logo.
         logo.render(buffer.area, &mut buffer);
     }
