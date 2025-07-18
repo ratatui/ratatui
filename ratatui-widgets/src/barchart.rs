@@ -515,7 +515,7 @@ impl BarChart<'_> {
             let margin = u16::from(label_size != 0);
             Rect {
                 x: area.x + label_size + margin,
-                width: area.width - label_size - margin,
+                width: area.width.saturating_sub(label_size + margin),
                 ..area
             }
         };
@@ -579,10 +579,10 @@ impl BarChart<'_> {
     }
 
     fn render_vertical(&self, buf: &mut Buffer, area: Rect) {
-        let label_info = self.label_info(area.height - 1);
+        let label_info = self.label_info(area.height.saturating_sub(1));
 
         let bars_area = Rect {
-            height: area.height - label_info.height,
+            height: area.height.saturating_sub(label_info.height),
             ..area
         };
 
@@ -722,6 +722,7 @@ mod tests {
     use ratatui_core::layout::Alignment;
     use ratatui_core::style::{Color, Modifier, Stylize};
     use ratatui_core::text::Span;
+    use rstest::rstest;
 
     use super::*;
     use crate::borders::BorderType;
@@ -1471,5 +1472,19 @@ mod tests {
             "\u{202f}███",
         ]);
         assert_eq!(buffer, expected);
+    }
+    #[rstest]
+    #[case::horizontal(Direction::Horizontal)]
+    #[case::vertical(Direction::Vertical)]
+    fn buffer_overflow(#[case] direction: Direction) {
+        let chart = BarChart::default()
+            .data(&[("A", 1), ("B", 2)])
+            .bar_width(3)
+            .bar_gap(1)
+            .direction(direction);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        // This should not panic, even if the buffer is too small to render the chart.
+        chart.render(buffer.area, &mut buffer);
     }
 }

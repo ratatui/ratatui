@@ -135,10 +135,21 @@ impl Widget for RatatuiMascot {
     /// The logo colors are hardcorded in the widget.
     /// The eye color depends on whether it's open / blinking
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         for (y, (line1, line2)) in RATATUI_MASCOT.lines().tuples().enumerate() {
             for (x, (ch1, ch2)) in line1.chars().zip(line2.chars()).enumerate() {
                 let x = area.left() + x as u16;
                 let y = area.top() + y as u16;
+
+                // Check if coordinates are within the buffer area
+                if x >= area.right() || y >= area.bottom() {
+                    continue;
+                }
+
                 let cell = &mut buf[(x, y)];
                 // given two cells which make up the top and bottom of the character,
                 // Foreground color should be the non-space, non-terminal
@@ -228,5 +239,13 @@ mod tests {
             .map(ratatui_core::buffer::Cell::symbol)
             .collect::<String>()
         );
+    }
+
+    #[test]
+    fn buffer_overflow() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let mascot = RatatuiMascot::new();
+        // This should not panic, even if the buffer is too small to render the mascot.
+        mascot.render(buffer.area, &mut buffer);
     }
 }

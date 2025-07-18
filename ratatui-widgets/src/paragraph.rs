@@ -1219,4 +1219,14 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn buffer_overflow() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let paragraph = Paragraph::new(
+            "This is a long paragraph that should not panic when rendered in a very small buffer area.",
+        );
+        // This should not panic, even if the buffer is too small to render the paragraph.
+        paragraph.render(buffer.area, &mut buffer);
+    }
 }

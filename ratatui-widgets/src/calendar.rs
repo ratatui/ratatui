@@ -302,4 +302,15 @@ mod tests {
     fn test_today() {
         CalendarEventStore::today(Style::default());
     }
+
+    #[test]
+    fn buffer_overflow() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let calendar = Monthly::new(
+            Date::from_calendar_date(2023, Month::January, 1).unwrap(),
+            CalendarEventStore::default(),
+        );
+        // This should not panic, even if the buffer is too small to render the calendar.
+        calendar.render(buffer.area, &mut buffer);
+    }
 }

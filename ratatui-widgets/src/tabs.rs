@@ -676,4 +676,14 @@ mod tests {
             Style::default().black().on_white().bold().not_italic()
         );
     }
+
+    #[test]
+    fn buffer_overflow() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
+            .select(1)
+            .divider("|");
+        // This should not panic, even if the buffer is too small to render the tabs.
+        tabs.render(buffer.area, &mut buffer);
+    }
 }

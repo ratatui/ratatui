@@ -2134,4 +2134,14 @@ mod tests {
             .render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["  C1R67890"]));
     }
+
+    #[test]
+    fn buffer_overflow() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        // This should not panic, even if the buffer is too small to render the block.
+        Block::bordered()
+            .title("I'm too big for this buffer")
+            .padding(Padding::uniform(10))
+            .render(buffer.area, &mut buffer);
+    }
 }

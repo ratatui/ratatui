@@ -586,4 +586,20 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn buffer_overflow_gauge() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let gauge = Gauge::default().percent(50);
+        // This should not panic, even if the buffer is too small to render the gauge.
+        gauge.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn buffer_overflow_line_gauge() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let line_gauge = LineGauge::default().ratio(0.5);
+        // This should not panic, even if the buffer is too small to render the line gauge.
+        line_gauge.render(buffer.area, &mut buffer);
+    }
 }

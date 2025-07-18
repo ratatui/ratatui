@@ -970,6 +970,8 @@ mod tests {
     #[case::position_8("<---#####>", 8, 10)]
     #[case::position_9("<----####>", 9, 10)]
     #[case::position_one_out_of_bounds("<----####>", 10, 10)]
+    #[case::position_few_out_of_bounds("<----####>", 15, 10)]
+    #[case::position_very_many_out_of_bounds("<----####>", 500, 10)]
     fn render_scrollbar_vertical_left(
         #[case] expected: &str,
         #[case] position: usize,
@@ -1000,7 +1002,9 @@ mod tests {
     #[case::position_8("<---#####>", 8, 10)]
     #[case::position_9("<----####>", 9, 10)]
     #[case::position_one_out_of_bounds("<----####>", 10, 10)]
-    fn render_scrollbar_vertical_rightl(
+    #[case::position_few_out_of_bounds("<----####>", 15, 10)]
+    #[case::position_very_many_out_of_bounds("<----####>", 500, 10)]
+    fn render_scrollbar_vertical_right(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
@@ -1088,5 +1092,18 @@ mod tests {
 
         let mut state = ScrollbarState::new(10);
         scrollbar.render(zero_width_area, &mut buffer, &mut state);
+    }
+
+    #[rstest]
+    #[case::vertical_left(ScrollbarOrientation::VerticalLeft)]
+    #[case::vertical_right(ScrollbarOrientation::VerticalRight)]
+    #[case::horizontal_top(ScrollbarOrientation::HorizontalTop)]
+    #[case::horizontal_bottom(ScrollbarOrientation::HorizontalBottom)]
+    fn buffer_overflow(#[case] orientation: ScrollbarOrientation) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let scrollbar = Scrollbar::new(orientation);
+        let mut state = ScrollbarState::new(10).position(5);
+        // This should not panic, even if the buffer is too small to render the scrollbar.
+        scrollbar.render(buffer.area, &mut buffer, &mut state);
     }
 }
