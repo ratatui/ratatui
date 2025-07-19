@@ -593,6 +593,7 @@ mod tests {
         let gauge = Gauge::default().percent(50);
         // This should not panic, even if the buffer is too small to render the gauge.
         gauge.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["5"]));
     }
 
     #[test]
@@ -600,6 +601,23 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         let line_gauge = LineGauge::default().ratio(0.5);
         // This should not panic, even if the buffer is too small to render the line gauge.
+        line_gauge.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["5"]));
+    }
+
+    #[test]
+    fn render_in_empty_buffer_gauge() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let gauge = Gauge::default().percent(50);
+        // This should not panic, even if the buffer is empty.
+        gauge.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn render_in_empty_buffer_line_gauge() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let line_gauge = LineGauge::default().ratio(0.5);
+        // This should not panic, even if the buffer is empty.
         line_gauge.render(buffer.area, &mut buffer);
     }
 }

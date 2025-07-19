@@ -1105,5 +1105,19 @@ mod tests {
         let mut state = ScrollbarState::new(10).position(5);
         // This should not panic, even if the buffer is too small to render the scrollbar.
         scrollbar.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[rstest]
+    #[case::vertical_left(ScrollbarOrientation::VerticalLeft)]
+    #[case::vertical_right(ScrollbarOrientation::VerticalRight)]
+    #[case::horizontal_top(ScrollbarOrientation::HorizontalTop)]
+    #[case::horizontal_bottom(ScrollbarOrientation::HorizontalBottom)]
+    fn render_in_empty_buffer(#[case] orientation: ScrollbarOrientation) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let scrollbar = Scrollbar::new(orientation);
+        let mut state = ScrollbarState::new(10).position(5);
+        // This should not panic, even if the buffer is empty.
+        scrollbar.render(buffer.area, &mut buffer, &mut state);
     }
 }

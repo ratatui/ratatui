@@ -2143,5 +2143,16 @@ mod tests {
             .title("I'm too big for this buffer")
             .padding(Padding::uniform(10))
             .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["┌"]));
+    }
+
+    #[test]
+    fn render_in_empty_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        // This should not panic, even if the buffer is empty.
+        Block::bordered()
+            .title("I'm too big for this buffer")
+            .padding(Padding::uniform(10))
+            .render(buffer.area, &mut buffer);
     }
 }

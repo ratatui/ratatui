@@ -638,5 +638,20 @@ mod tests {
         let list = List::new(items);
         // This should not panic, even if the buffer is too small to render the list.
         list.render(buffer.area, &mut buffer, &mut state);
+        std::assert_eq!(buffer, Buffer::with_lines(["I"]));
+    }
+
+    #[test]
+    fn render_in_empty_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let mut state = ListState::default().with_selected(None);
+        let items = vec![
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+        ];
+        let list = List::new(items);
+        // This should not panic, even if the buffer is empty.
+        list.render(buffer.area, &mut buffer, &mut state);
     }
 }

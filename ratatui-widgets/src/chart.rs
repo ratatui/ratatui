@@ -1556,5 +1556,16 @@ mod tests {
             .y_axis(Axis::default().bounds([0.0, 1.0]));
         // This should not panic, even if the buffer is too small to render the chart.
         chart.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["•"]));
+    }
+
+    #[test]
+    fn render_in_empty_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let chart = Chart::new(vec![Dataset::default().data(&[(0.0, 0.0), (1.0, 1.0)])])
+            .x_axis(Axis::default().bounds([0.0, 1.0]))
+            .y_axis(Axis::default().bounds([0.0, 1.0]));
+        // This should not panic, even if the buffer is empty.
+        chart.render(buffer.area, &mut buffer);
     }
 }

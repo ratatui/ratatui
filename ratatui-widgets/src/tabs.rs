@@ -685,5 +685,16 @@ mod tests {
             .divider("|");
         // This should not panic, even if the buffer is too small to render the tabs.
         tabs.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_empty_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
+            .select(1)
+            .divider("|");
+        // This should not panic, even if the buffer is empty.
+        tabs.render(buffer.area, &mut buffer);
     }
 }

@@ -986,5 +986,17 @@ mod tests {
             .paint(|_ctx| {});
         // This should not panic, even if the buffer is too small to render the canvas.
         canvas.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_empty_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let canvas = Canvas::default()
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .paint(|_ctx| {});
+        // This should not panic, even if the buffer is empty.
+        canvas.render(buffer.area, &mut buffer);
     }
 }

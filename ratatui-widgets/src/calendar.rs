@@ -312,5 +312,17 @@ mod tests {
         );
         // This should not panic, even if the buffer is too small to render the calendar.
         calendar.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_empty_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let calendar = Monthly::new(
+            Date::from_calendar_date(1984, Month::January, 1).unwrap(),
+            CalendarEventStore::default(),
+        );
+        // This should not panic, even if the buffer is empty.
+        calendar.render(buffer.area, &mut buffer);
     }
 }

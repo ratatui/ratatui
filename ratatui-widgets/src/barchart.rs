@@ -1487,5 +1487,21 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         // This should not panic, even if the buffer is too small to render the chart.
         chart.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[rstest]
+    #[case::horizontal(Direction::Horizontal)]
+    #[case::vertical(Direction::Vertical)]
+    fn render_in_empty_buffer(#[case] direction: Direction) {
+        let chart = BarChart::default()
+            .data(&[("A", 1), ("B", 2)])
+            .bar_width(3)
+            .bar_gap(1)
+            .direction(direction);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        // This should not panic, even if the buffer is empty.
+        chart.render(buffer.area, &mut buffer);
     }
 }

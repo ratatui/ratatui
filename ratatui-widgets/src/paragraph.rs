@@ -1228,5 +1228,16 @@ mod tests {
         );
         // This should not panic, even if the buffer is too small to render the paragraph.
         paragraph.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["T"]));
+    }
+
+    #[test]
+    fn render_in_empty_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+        let paragraph = Paragraph::new(
+            "This is a long paragraph that should not panic when rendered in a very small buffer area.",
+        );
+        // This should not panic, even if the buffer is empty.
+        paragraph.render(buffer.area, &mut buffer);
     }
 }
