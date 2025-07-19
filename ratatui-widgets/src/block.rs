@@ -2134,4 +2134,25 @@ mod tests {
             .render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["  C1R67890"]));
     }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        // This should not panic, even if the buffer is too small to render the block.
+        Block::bordered()
+            .title("I'm too big for this buffer")
+            .padding(Padding::uniform(10))
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["┌"]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        // This should not panic, even if the buffer has zero size.
+        Block::bordered()
+            .title("I'm too big for this buffer")
+            .padding(Padding::uniform(10))
+            .render(buffer.area, &mut buffer);
+    }
 }

@@ -699,4 +699,25 @@ mod tests {
                 .remove_modifier(Modifier::DIM)
         );
     }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let sparkline = Sparkline::default()
+            .data([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+            .max(10);
+        // This should not panic, even if the buffer is too small to render the sparkline.
+        sparkline.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let sparkline = Sparkline::default()
+            .data([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+            .max(10);
+        // This should not panic, even if the buffer has zero size.
+        sparkline.render(buffer.area, &mut buffer);
+    }
 }
