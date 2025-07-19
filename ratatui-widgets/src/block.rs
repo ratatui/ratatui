@@ -19,6 +19,7 @@ use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
 use crate::borders::{BorderType, Borders};
+use crate::clear::Clear;
 
 mod padding;
 
@@ -233,6 +234,8 @@ pub struct Block<'a> {
     padding: Padding,
     /// Border merging strategy
     merge_borders: MergeStrategy,
+    /// Whether or not to clear the area before rendering
+    clear_first: bool,
 }
 
 /// Defines the position of the title.
@@ -274,6 +277,7 @@ impl<'a> Block<'a> {
             style: Style::new(),
             padding: Padding::ZERO,
             merge_borders: MergeStrategy::Replace,
+            clear_first: false,
         }
     }
 
@@ -288,6 +292,32 @@ impl<'a> Block<'a> {
         let mut block = Self::new();
         block.borders = Borders::ALL;
         block
+    }
+
+    /// Clears the area to allow overdrawing with [Clear] before rendering.
+    ///
+    /// ```
+    /// use ratatui::widgets::Block;
+    ///
+    /// let block = Block::bordered().clear_first();
+    /// ```
+    ///
+    /// When rendered, it is equivalent to:
+    /// ```
+    /// use ratatui::Frame;
+    /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{Block, Clear};
+    ///
+    /// fn draw_block_on_clear(f: &mut Frame, area: Rect) {
+    ///     let block = Block::bordered();
+    ///     f.render_widget(Clear, area);
+    ///     f.render_widget(block, area);
+    /// }
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn clear_first(mut self) -> Self {
+        self.clear_first = true;
+        self
     }
 
     /// Adds a title to the block using the default position.
@@ -779,6 +809,9 @@ impl Widget for &Block<'_> {
         let area = area.intersection(buf.area);
         if area.is_empty() {
             return;
+        }
+        if self.clear_first {
+            Clear.render(area, buf);
         }
         buf.set_style(area, self.style);
         self.render_borders(area, buf);
@@ -1340,6 +1373,7 @@ mod tests {
                 style: Style::new(),
                 padding: Padding::ZERO,
                 merge_borders: MergeStrategy::Replace,
+                clear_first: false,
             }
         );
     }
