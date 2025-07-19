@@ -606,18 +606,18 @@ mod tests {
     }
 
     #[test]
-    fn render_in_empty_buffer_gauge() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer_gauge() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let gauge = Gauge::default().percent(50);
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         gauge.render(buffer.area, &mut buffer);
     }
 
     #[test]
-    fn render_in_empty_buffer_line_gauge() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer_line_gauge() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let line_gauge = LineGauge::default().ratio(0.5);
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         line_gauge.render(buffer.area, &mut buffer);
     }
 }

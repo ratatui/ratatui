@@ -642,8 +642,8 @@ mod tests {
     }
 
     #[test]
-    fn render_in_empty_buffer() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let mut state = ListState::default().with_selected(None);
         let items = vec![
             ListItem::new("Item 1"),
@@ -651,7 +651,7 @@ mod tests {
             ListItem::new("Item 3"),
         ];
         let list = List::new(items);
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         list.render(buffer.area, &mut buffer, &mut state);
     }
 }

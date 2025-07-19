@@ -2290,8 +2290,8 @@ mod tests {
     }
 
     #[test]
-    fn render_in_empty_buffer() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let rows = vec![
             Row::new(vec!["Cell1", "Cell2", "Cell3"]),
             Row::new(vec!["Cell4", "Cell5", "Cell6"]),
@@ -2299,7 +2299,7 @@ mod tests {
         let table = Table::new(rows, [Constraint::Length(10); 3])
             .header(Row::new(vec!["Header1", "Header2", "Header3"]))
             .footer(Row::new(vec!["Footer1", "Footer2", "Footer3"]));
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         Widget::render(table, buffer.area, &mut buffer);
     }
 }

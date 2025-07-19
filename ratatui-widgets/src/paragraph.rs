@@ -1232,12 +1232,12 @@ mod tests {
     }
 
     #[test]
-    fn render_in_empty_buffer() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let paragraph = Paragraph::new(
             "This is a long paragraph that should not panic when rendered in a very small buffer area.",
         );
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         paragraph.render(buffer.area, &mut buffer);
     }
 }

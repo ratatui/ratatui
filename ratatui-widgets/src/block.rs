@@ -2147,9 +2147,9 @@ mod tests {
     }
 
     #[test]
-    fn render_in_empty_buffer() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
-        // This should not panic, even if the buffer is empty.
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        // This should not panic, even if the buffer has zero size.
         Block::bordered()
             .title("I'm too big for this buffer")
             .padding(Padding::uniform(10))

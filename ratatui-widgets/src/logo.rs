@@ -251,10 +251,10 @@ mod tests {
     #[rstest]
     #[case::tiny(Size::Tiny)]
     #[case::small(Size::Small)]
-    fn render_in_empty_buffer(#[case] size: Size) {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer(#[case] size: Size) {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let logo = RatatuiLogo::new(size);
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         logo.render(buffer.area, &mut buffer);
     }
 }

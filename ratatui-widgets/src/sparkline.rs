@@ -712,12 +712,12 @@ mod tests {
     }
 
     #[test]
-    fn render_in_empty_buffer() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let sparkline = Sparkline::default()
             .data([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
             .max(10);
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         sparkline.render(buffer.area, &mut buffer);
     }
 }

@@ -1113,11 +1113,11 @@ mod tests {
     #[case::vertical_right(ScrollbarOrientation::VerticalRight)]
     #[case::horizontal_top(ScrollbarOrientation::HorizontalTop)]
     #[case::horizontal_bottom(ScrollbarOrientation::HorizontalBottom)]
-    fn render_in_empty_buffer(#[case] orientation: ScrollbarOrientation) {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer(#[case] orientation: ScrollbarOrientation) {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let scrollbar = Scrollbar::new(orientation);
         let mut state = ScrollbarState::new(10).position(5);
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         scrollbar.render(buffer.area, &mut buffer, &mut state);
     }
 }

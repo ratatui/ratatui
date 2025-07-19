@@ -1493,15 +1493,15 @@ mod tests {
     #[rstest]
     #[case::horizontal(Direction::Horizontal)]
     #[case::vertical(Direction::Vertical)]
-    fn render_in_empty_buffer(#[case] direction: Direction) {
+    fn render_in_zero_size_buffer(#[case] direction: Direction) {
         let chart = BarChart::default()
             .data(&[("A", 1), ("B", 2)])
             .bar_width(3)
             .bar_gap(1)
             .direction(direction);
 
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
-        // This should not panic, even if the buffer is empty.
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        // This should not panic, even if the buffer has zero size.
         chart.render(buffer.area, &mut buffer);
     }
 }

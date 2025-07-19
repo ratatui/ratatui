@@ -316,13 +316,13 @@ mod tests {
     }
 
     #[test]
-    fn render_in_empty_buffer() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let calendar = Monthly::new(
             Date::from_calendar_date(1984, Month::January, 1).unwrap(),
             CalendarEventStore::default(),
         );
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         calendar.render(buffer.area, &mut buffer);
     }
 }

@@ -1560,12 +1560,12 @@ mod tests {
     }
 
     #[test]
-    fn render_in_empty_buffer() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
         let chart = Chart::new(vec![Dataset::default().data(&[(0.0, 0.0), (1.0, 1.0)])])
             .x_axis(Axis::default().bounds([0.0, 1.0]))
             .y_axis(Axis::default().bounds([0.0, 1.0]));
-        // This should not panic, even if the buffer is empty.
+        // This should not panic, even if the buffer has zero size.
         chart.render(buffer.area, &mut buffer);
     }
 }
