@@ -1,8 +1,6 @@
 # configuration for https://rust-lang.github.io/rustfmt/
 
 use_field_init_shorthand = true
-
-# unstable options
 comment_width = 100
 format_code_in_doc_comments = true
 format_macro_matchers = true

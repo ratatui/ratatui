@@ -21,6 +21,7 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Row, Table, TableState};
+use ratatui_widgets::table::{TableBorders, TableBorderSet};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -92,7 +93,11 @@ pub fn render_table(frame: &mut Frame, area: Rect, table_state: &mut TableState)
         .row_highlight_style(Style::new().on_black().bold())
         .column_highlight_style(Color::Gray)
         .cell_highlight_style(Style::new().reversed().yellow())
-        .highlight_symbol("🍴 ");
+        .highlight_symbol("🍴 ")
+        // Use enhanced border control with header separator
+        .table_borders(TableBorders::OUTER | TableBorders::INNER_VERTICAL | TableBorders::HEADER_TOP)
+        .border_set(TableBorderSet::with_header_style())
+        .border_style(Style::new().gray());
 
     frame.render_stateful_widget(table, area, table_state);
 }
