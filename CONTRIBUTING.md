@@ -29,12 +29,12 @@ change becomes a place where a bug may have been introduced. Consider splitting 
 reformatting changes into a separate PR from those that make a behavioral change, as the tests help
 guarantee that the behavior is unchanged.
 
-**Guidelines for PR size:**
+Guidelines for PR size:
 
-- Aim for PRs under 500 lines of changes when possible
-- Split large features into incremental PRs that build on each other
-- Separate refactoring, formatting, and functional changes into different PRs
-- If a large PR is unavoidable, clearly explain why in the PR description
+- Aim for PRs under 500 lines of changes when possible.
+- Split large features into incremental PRs that build on each other.
+- Separate refactoring, formatting, and functional changes into different PRs.
+- If a large PR is unavoidable, clearly explain why in the PR description.
 
 ### Breaking changes and backwards compatibility
 
@@ -61,8 +61,10 @@ to be installed when running rustfmt. You can install the nightly version of Rus
 rustup install nightly
 ```
 
-**Important**: Do not modify formatting configuration (`rustfmt.toml`, `.clippy.toml`) without
-prior discussion. These changes affect all contributors and should be carefully considered.
+```suggestion
+> [!IMPORTANT]  
+> Do not modify formatting configuration (`rustfmt.toml`, `.clippy.toml`) without
+> prior discussion. These changes affect all contributors and should be carefully considered.
 
 ### Search `tui-rs` for similar work
 
@@ -90,13 +92,14 @@ Running `cargo xtask ci` before pushing will perform the same checks that we do 
 It's not mandatory to do this before pushing, however it may save you time to do so instead of
 waiting for GitHub to run the checks.
 
-**Available xtask commands:**
+Available xtask commands:
 
 - `cargo xtask ci` - Run all CI checks
 - `cargo xtask format` - Format code
 - `cargo xtask lint` - Run linting checks
 - `cargo xtask test` - Run all tests
-- `cargo xtask --help` - See all available commands
+
+Run `cargo xtask --help` to see all available commands.
 
 ### Sign your commits
 
@@ -109,10 +112,10 @@ in GitHub docs.
 
 Changes to project configuration files require special consideration:
 
-- **Linting configuration** (`.clippy.toml`, `rustfmt.toml`): Affects all contributors
-- **CI configuration** (`.github/workflows/`): Affects build and deployment
-- **Build system** (`xtask/`, `Cargo.toml` workspace config): Affects development workflow
-- **Dependencies**: Consider MSRV compatibility and licensing
+- Linting configuration (`.clippy.toml`, `rustfmt.toml`): Affects all contributors.
+- CI configuration (`.github/workflows/`): Affects build and deployment.
+- Build system (`xtask/`, `Cargo.toml` workspace config): Affects development workflow.
+- Dependencies: Consider MSRV compatibility and licensing.
 
 Please discuss these changes in an issue before implementing them.
 
@@ -139,11 +142,11 @@ For an understanding of the crate organization and design decisions, see [ARCHIT
 document explains the modular workspace structure introduced in version 0.30.0 and provides
 guidance on which crate to use for different use cases.
 
-**When making changes, consider:**
+When making changes, consider:
 
-- Which crate should contain your changes per the modular structure
-- Whether your changes affect the public API of `ratatui-core` (requires extra care)
-- How your changes fit into the overall architecture
+- Which crate should contain your changes per the modular structure,
+- Whether your changes affect the public API of `ratatui-core` (requires extra care),
+- And how your changes fit into the overall architecture.
 
 [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 
@@ -233,13 +236,13 @@ We generally want to wait at least two versions before removing deprecated items
 time to update. However, if a deprecation is blocking for us to implement a new feature we may
 *consider* removing it in a one version notice.
 
-**Deprecation process:**
+Deprecation process:
 
-1. Add `#[deprecated]` attribute with a clear message
-2. Update documentation to point to the replacement
-3. Add an entry to `BREAKING-CHANGES.md` if applicable
-4. Wait at least two versions before removal
-5. Consider the impact on the ecosystem before removing
+1. Add `#[deprecated]` attribute with a clear message.
+2. Update documentation to point to the replacement.
+3. Add an entry to `BREAKING-CHANGES.md` if applicable.
+4. Wait at least two versions before removal.
+5. Consider the impact on the ecosystem before removing.
 
 ### Use of unsafe for optimization purposes
 
