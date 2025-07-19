@@ -2544,6 +2544,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ratatui-release-header"
+version = "0.0.0"
+dependencies = [
+ "ratatui",
+]
+
+[[package]]
 name = "ratatui-state-examples"
 version = "0.0.0"
 dependencies = [
