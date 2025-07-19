@@ -1157,7 +1157,7 @@ mod tests {
     use alloc::{format, vec};
 
     use itertools::iproduct;
-    use ratatui_core::layout::Offset;
+    use ratatui_core::layout::{Margin, Offset};
     use ratatui_core::style::{Color, Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;
@@ -1458,16 +1458,49 @@ mod tests {
     }
 
     #[test]
-    fn render_clear_block() {
-        let mut buffer = Buffer::with_lines(["xxxxxxxxxx"; 3]);
-        Block::bordered()
-            .clear_first()
-            .render(buffer.area, &mut buffer);
+    fn render_block_with_clear_first() {
+        let mut buffer = Buffer::with_lines(["xxxxxxxxxxxx"; 8]);
+        Block::bordered().clear_first().render(
+            buffer.area.inner(Margin {
+                horizontal: 2,
+                vertical: 2,
+            }),
+            &mut buffer,
+        );
         #[rustfmt::skip]
         let expected = Buffer::with_lines([
-            "┌────────┐",
-            "│        │",
-            "└────────┘",
+            "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx",
+            "xx┌──────┐xx",
+            "xx│      │xx",
+            "xx│      │xx",
+            "xx└──────┘xx",
+            "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_block_without_clear_first() {
+        let mut buffer = Buffer::with_lines(["xxxxxxxxxxxx"; 8]);
+        Block::bordered().render(
+            buffer.area.inner(Margin {
+                horizontal: 2,
+                vertical: 2,
+            }),
+            &mut buffer,
+        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx",
+            "xx┌──────┐xx",
+            "xx│xxxxxx│xx",
+            "xx│xxxxxx│xx",
+            "xx└──────┘xx",
+            "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx",
         ]);
         assert_eq!(buffer, expected);
     }
