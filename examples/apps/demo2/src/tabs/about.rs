@@ -47,8 +47,8 @@ fn render_crate_description(area: Rect, buf: &mut Buffer) {
         vertical: 4,
         horizontal: 2,
     });
-    // clear out the color swatches before rendering the block
     Block::new()
+        // clear out the color swatches
         .clear_first()
         .style(THEME.content)
         .render(area, buf);
