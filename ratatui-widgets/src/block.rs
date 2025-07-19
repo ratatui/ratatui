@@ -1409,7 +1409,7 @@ mod tests {
                 merge_borders: MergeStrategy::Replace,
                 clear_first: true,
             }
-        )
+        );
     }
 
     /// Ensure Style from/into works the way a user would use it.
@@ -1468,7 +1468,7 @@ mod tests {
             "│        │",
             "└────────┘",
         ]);
-        assert_eq!(buffer, expected)
+        assert_eq!(buffer, expected);
     }
 
     #[test]
