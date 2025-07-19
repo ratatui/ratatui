@@ -1392,6 +1392,26 @@ mod tests {
             .padding(_DEFAULT_PADDING);
     }
 
+    #[test]
+    fn clear_area_before_block() {
+        assert_eq!(
+            Block::new().clear_first(),
+            Block {
+                titles: Vec::new(),
+                titles_style: Style::new(),
+                titles_alignment: Alignment::Left,
+                titles_position: TitlePosition::Top,
+                borders: Borders::NONE,
+                border_style: Style::new(),
+                border_set: BorderType::Plain.to_border_set(),
+                style: Style::new(),
+                padding: Padding::ZERO,
+                merge_borders: MergeStrategy::Replace,
+                clear_first: true,
+            }
+        )
+    }
+
     /// Ensure Style from/into works the way a user would use it.
     #[test]
     fn style_into_works_from_user_view() {
@@ -1434,6 +1454,21 @@ mod tests {
             block.style,
             Style::new().red().on_blue().bold().italic().not_dim()
         );
+    }
+
+    #[test]
+    fn render_clear_block() {
+        let mut buffer = Buffer::with_lines(["xxxxxxxxxx"; 3]);
+        Block::bordered()
+            .clear_first()
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌────────┐",
+            "│        │",
+            "└────────┘",
+        ]);
+        assert_eq!(buffer, expected)
     }
 
     #[test]
