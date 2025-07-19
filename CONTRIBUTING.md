@@ -166,8 +166,9 @@ If an area that you're making a change in is not tested, write tests to characte
 behavior before changing it. This helps ensure that we don't introduce bugs to existing software
 using Ratatui (and helps make it easy to migrate apps still using `tui-rs`).
 
-**Important**: Do not remove existing tests without clear justification. If tests need to be
-modified due to API changes, explain why in your PR description.
+> [!IMPORTANT]  
+> Do not remove existing tests without clear justification. If tests need to be
+> modified due to API changes, explain why in your PR description.
 
 For coverage, we have two [bacon](https://dystroy.org/bacon/) jobs (one for all tests, and one for
 unit tests, keyboard shortcuts `v` and `u` respectively) that run
