@@ -5,8 +5,8 @@ use ratatui::style::{Styled, Stylize};
 use ratatui::symbols::Marker;
 use ratatui::widgets::canvas::{self, Canvas, Map, MapResolution, Points};
 use ratatui::widgets::{
-    Block, BorderType, Clear, Padding, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
-    Sparkline, StatefulWidget, Table, TableState, Widget,
+    Block, BorderType, Padding, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Sparkline,
+    StatefulWidget, Table, TableState, Widget,
 };
 
 use crate::{RgbSwatch, THEME};
@@ -35,8 +35,10 @@ impl Widget for TracerouteTab {
             vertical: 1,
             horizontal: 2,
         });
-        Clear.render(area, buf);
-        Block::new().style(THEME.content).render(area, buf);
+        Block::new()
+            .clear_first()
+            .style(THEME.content)
+            .render(area, buf);
         let horizontal = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]);
         let vertical = Layout::vertical([Constraint::Min(0), Constraint::Length(3)]);
         let [left, map] = area.layout(&horizontal);

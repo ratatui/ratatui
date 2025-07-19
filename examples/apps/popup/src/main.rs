@@ -14,7 +14,7 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::Stylize;
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Clear};
+use ratatui::widgets::Block;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -52,10 +52,9 @@ fn render(frame: &mut Frame, show_popup: bool) {
     frame.render_widget(Block::bordered().title("Content").on_blue(), content);
 
     if show_popup {
-        let popup = Block::bordered().title("Popup");
-        let popup_area = centered_area(area, 60, 20);
         // clears out any background in the area before rendering the popup
-        frame.render_widget(Clear, popup_area);
+        let popup = Block::bordered().clear_first().title("Popup");
+        let popup_area = centered_area(area, 60, 20);
         frame.render_widget(popup, popup_area);
     }
 }

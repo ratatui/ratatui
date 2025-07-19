@@ -4,7 +4,7 @@ use ratatui::layout::{Alignment, Constraint, Layout, Margin, Rect};
 use ratatui::style::{Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::{
-    Block, Clear, Padding, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
+    Block, Padding, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
     StatefulWidget, Table, TableState, Widget, Wrap,
 };
 
@@ -116,8 +116,8 @@ impl Widget for RecipeTab {
             vertical: 1,
             horizontal: 2,
         });
-        Clear.render(area, buf);
         Block::new()
+            .clear_first()
             .title("Ratatouille Recipe".bold().white())
             .title_alignment(Alignment::Center)
             .style(THEME.content)

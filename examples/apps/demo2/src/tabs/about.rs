@@ -1,7 +1,7 @@
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Constraint, Layout, Margin, Rect};
 use ratatui::widgets::{
-    Block, Borders, Clear, MascotEyeColor, Padding, Paragraph, RatatuiMascot, Widget, Wrap,
+    Block, Borders, MascotEyeColor, Padding, Paragraph, RatatuiMascot, Widget, Wrap,
 };
 
 use crate::{RgbSwatch, THEME};
@@ -47,8 +47,11 @@ fn render_crate_description(area: Rect, buf: &mut Buffer) {
         vertical: 4,
         horizontal: 2,
     });
-    Clear.render(area, buf); // clear out the color swatches
-    Block::new().style(THEME.content).render(area, buf);
+    // clear out the color swatches before rendering the block
+    Block::new()
+        .clear_first()
+        .style(THEME.content)
+        .render(area, buf);
     let area = area.inner(Margin {
         vertical: 1,
         horizontal: 2,
