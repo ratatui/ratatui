@@ -234,7 +234,7 @@ pub struct Block<'a> {
     padding: Padding,
     /// Border merging strategy
     merge_borders: MergeStrategy,
-    /// Whether or not to clear the area before rendering
+    /// Whether to clear the area before rendering
     clear_first: bool,
 }
 
@@ -294,7 +294,7 @@ impl<'a> Block<'a> {
         block
     }
 
-    /// Clears the area to allow overdrawing with [Clear] before rendering.
+    /// Clears the area with [Clear] before rendering.
     ///
     /// ```
     /// use ratatui::widgets::Block;
@@ -303,6 +303,7 @@ impl<'a> Block<'a> {
     /// ```
     ///
     /// When rendered, it is equivalent to:
+    ///
     /// ```
     /// use ratatui::Frame;
     /// use ratatui::layout::Rect;
