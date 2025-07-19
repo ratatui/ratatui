@@ -515,7 +515,7 @@ impl BarChart<'_> {
             let margin = u16::from(label_size != 0);
             Rect {
                 x: area.x + label_size + margin,
-                width: area.width.saturating_sub(label_size + margin),
+                width: area.width.saturating_sub(label_size).saturating_sub(margin),
                 ..area
             }
         };
