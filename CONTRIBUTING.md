@@ -61,7 +61,6 @@ to be installed when running rustfmt. You can install the nightly version of Rus
 rustup install nightly
 ```
 
-```suggestion
 > [!IMPORTANT]  
 > Do not modify formatting configuration (`rustfmt.toml`, `.clippy.toml`) without
 > prior discussion. These changes affect all contributors and should be carefully considered.
