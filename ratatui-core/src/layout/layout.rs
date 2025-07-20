@@ -626,7 +626,7 @@ impl Layout {
             .expect("invalid number of rects")
     }
 
-    /// Wrapper function around the cassowary solver to be able to split a given area into
+    /// Wrapper function around the [`kasuari`] solver to be able to split a given area into
     /// smaller ones based on the preferred widths or heights and the direction.
     ///
     /// Note that the constraints are applied to the whole area that is to be split, so using
@@ -664,7 +664,7 @@ impl Layout {
         self.split_with_spacers(area).0
     }
 
-    /// Wrapper function around the cassowary solver that splits the given area into smaller ones
+    /// Wrapper function around the [`kasuari`] solver that splits the given area into smaller ones
     /// based on the preferred widths or heights and the direction, with the ability to include
     /// spacers between the areas.
     ///
@@ -726,7 +726,7 @@ impl Layout {
     }
 
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
-        // To take advantage of all of cassowary features, we would want to store the `Solver` in
+        // To take advantage of all of [`kasuari`] features, we would want to store the `Solver` in
         // one of the fields of the Layout struct. And we would want to set it up such that we could
         // add or remove constraints as and when needed.
         // The advantage of doing it as described above is that it would allow users to
