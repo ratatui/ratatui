@@ -638,7 +638,7 @@ mod tests {
         let list = List::new(items);
         // This should not panic, even if the buffer is too small to render the list.
         list.render(buffer.area, &mut buffer, &mut state);
-        std::assert_eq!(buffer, Buffer::with_lines(["I"]));
+        assert_eq!(buffer, Buffer::with_lines(["I"]));
     }
 
     #[test]
