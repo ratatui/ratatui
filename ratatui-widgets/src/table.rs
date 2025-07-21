@@ -143,8 +143,8 @@ bitflags! {
 ///
 /// ## Basic Usage
 /// ```rust
-/// use ratatui_widgets::table::{Table, TableBorderSet, TableBorders};
 /// use ratatui_core::symbols::line;
+/// use ratatui_widgets::table::{Table, TableBorderSet, TableBorders};
 ///
 /// // Use predefined border set
 /// let table = Table::default()
@@ -183,8 +183,8 @@ bitflags! {
 ///
 /// ## Header-Specific Styling
 /// ```rust
-/// use ratatui_widgets::table::{Table, TableBorderSet, TableBorders};
 /// use ratatui::widgets::Row;
+/// use ratatui_widgets::table::{Table, TableBorderSet, TableBorders};
 ///
 /// let table = Table::default()
 ///     .header(Row::new(vec!["Name", "Age", "City"]))
@@ -366,7 +366,8 @@ impl<'a> TableBorderSet<'a> {
         }
     }
 
-    /// Gets the horizontal symbol to use, preferring header-specific symbol if available and in header context.
+    /// Gets the horizontal symbol to use, preferring header-specific symbol if available and in
+    /// header context.
     pub const fn get_horizontal(&self, is_header: bool) -> &'a str {
         if is_header {
             if let Some(header_horizontal) = self.header_horizontal {
@@ -379,7 +380,8 @@ impl<'a> TableBorderSet<'a> {
         }
     }
 
-    /// Gets the vertical left symbol to use, preferring header-specific symbol if available and in header context.
+    /// Gets the vertical left symbol to use, preferring header-specific symbol if available and in
+    /// header context.
     pub const fn get_vertical_left(&self, is_header: bool) -> &'a str {
         if is_header {
             if let Some(header_vertical_left) = self.header_vertical_left {
@@ -392,7 +394,8 @@ impl<'a> TableBorderSet<'a> {
         }
     }
 
-    /// Gets the vertical right symbol to use, preferring header-specific symbol if available and in header context.
+    /// Gets the vertical right symbol to use, preferring header-specific symbol if available and in
+    /// header context.
     pub const fn get_vertical_right(&self, is_header: bool) -> &'a str {
         if is_header {
             if let Some(header_vertical_right) = self.header_vertical_right {
@@ -405,7 +408,8 @@ impl<'a> TableBorderSet<'a> {
         }
     }
 
-    /// Gets the cross symbol to use, preferring header-specific symbol if available and in header context.
+    /// Gets the cross symbol to use, preferring header-specific symbol if available and in header
+    /// context.
     pub const fn get_cross(&self, is_header: bool) -> &'a str {
         if is_header {
             if let Some(header_cross) = self.header_cross {
@@ -434,7 +438,9 @@ impl<'a> TableBorderSet<'a> {
 /// let context = BorderContext::HeaderSeparator { has_vertical: true };
 ///
 /// // Context for an inner horizontal border with no vertical intersection
-/// let context = BorderContext::InnerHorizontal { has_vertical: false };
+/// let context = BorderContext::InnerHorizontal {
+///     has_vertical: false,
+/// };
 ///
 /// // Context for a corner position
 /// let context = BorderContext::Corner(CornerType::TopLeft);
@@ -573,7 +579,7 @@ impl BorderContext {
 /// # Examples
 ///
 /// ```rust
-/// use ratatui_widgets::table::{Table, TableBorders, BorderConfigError};
+/// use ratatui_widgets::table::{BorderConfigError, Table, TableBorders};
 ///
 /// // This would be an example of conflicting border types (if validation was enabled)
 /// // let result = table.validate_border_config();
@@ -586,7 +592,8 @@ impl BorderContext {
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BorderConfigError {
-    /// Conflicting border types are being used (e.g., mixing legacy and new border flags inappropriately).
+    /// Conflicting border types are being used (e.g., mixing legacy and new border flags
+    /// inappropriately).
     ConflictingBorderTypes,
 
     /// An invalid border symbol was provided (e.g., empty string or invalid Unicode).
@@ -709,8 +716,8 @@ impl core::fmt::Display for BorderConfigError {
 ///
 /// ### Legacy API (Still Supported)
 /// ```rust
+/// use ratatui_core::style::{Color, Style};
 /// use ratatui_widgets::table::{Table, TableBorders};
-/// use ratatui_core::style::{Style, Color};
 ///
 /// // Old way - still works
 /// let table = Table::default()
@@ -720,8 +727,8 @@ impl core::fmt::Display for BorderConfigError {
 ///
 /// ### Enhanced API (Recommended)
 /// ```rust
-/// use ratatui_widgets::table::{Table, TableBorders, TableBorderSet};
-/// use ratatui_core::style::{Style, Color};
+/// use ratatui_core::style::{Color, Style};
+/// use ratatui_widgets::table::{Table, TableBorderSet, TableBorders};
 ///
 /// // New way - more control
 /// let table = Table::default()
@@ -754,12 +761,11 @@ impl core::fmt::Display for BorderConfigError {
 ///
 /// **Advanced Features (New Capabilities):**
 /// ```rust
-/// use ratatui_widgets::table::{Table, TableBorders, TableBorderSet};
 /// use ratatui::widgets::Row;
+/// use ratatui_widgets::table::{Table, TableBorderSet, TableBorders};
 ///
 /// // Individual outer border control
-/// let table = Table::default()
-///     .table_borders(TableBorders::TOP | TableBorders::BOTTOM);
+/// let table = Table::default().table_borders(TableBorders::TOP | TableBorders::BOTTOM);
 ///
 /// // Header separator with custom styling
 /// let table = Table::default()
@@ -775,7 +781,7 @@ impl core::fmt::Display for BorderConfigError {
 ///
 /// ### Validation and Best Practices
 /// ```rust
-/// use ratatui_widgets::table::{Table, TableBorders, TableBorderSet};
+/// use ratatui_widgets::table::{Table, TableBorderSet, TableBorders};
 ///
 /// // Validate your border configuration
 /// let table = Table::default()
@@ -1611,20 +1617,17 @@ impl<'a> Table<'a> {
     /// use ratatui_widgets::table::{Table, TableBorders};
     ///
     /// // Individual border control
-    /// let table = Table::default()
-    ///     .table_borders(TableBorders::TOP | TableBorders::INNER_HORIZONTAL);
+    /// let table = Table::default().table_borders(TableBorders::TOP | TableBorders::INNER_HORIZONTAL);
     ///
     /// // Outer borders only
-    /// let table = Table::default()
-    ///     .table_borders(TableBorders::OUTER);
+    /// let table = Table::default().table_borders(TableBorders::OUTER);
     ///
     /// // Header separator with vertical borders
-    /// let table = Table::default()
-    ///     .table_borders(TableBorders::HEADER_TOP | TableBorders::INNER_VERTICAL);
+    /// let table =
+    ///     Table::default().table_borders(TableBorders::HEADER_TOP | TableBorders::INNER_VERTICAL);
     ///
     /// // All borders including outer and inner
-    /// let table = Table::default()
-    ///     .table_borders(TableBorders::ALL_BORDERS);
+    /// let table = Table::default().table_borders(TableBorders::ALL_BORDERS);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn table_borders(mut self, borders: TableBorders) -> Self {
@@ -1675,7 +1678,7 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_widgets::table::{Table, TableBorders, TableBorderSet};
+    /// use ratatui_widgets::table::{Table, TableBorderSet, TableBorders};
     ///
     /// let table = Table::default()
     ///     .table_borders(TableBorders::ALL_BORDERS)
@@ -5291,7 +5294,7 @@ mod tests {
         // Border rendering should not be more than 10x slower than no borders
         // This is a reasonable performance threshold for the added functionality
         assert!(
-            all_borders_time.as_nanos() < no_borders_time.as_nanos() * 10 + 1_000_000, // Add 1ms buffer for timing variations
+            all_borders_time.as_nanos() < no_borders_time.as_nanos() * 10 + 1_000_000, /* Add 1ms buffer for timing variations */
             "Border rendering performance regression detected. No borders: {no_borders_time:?}, All borders: {all_borders_time:?}"
         );
 
