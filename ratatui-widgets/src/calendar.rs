@@ -302,4 +302,27 @@ mod tests {
     fn test_today() {
         CalendarEventStore::today(Style::default());
     }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let calendar = Monthly::new(
+            Date::from_calendar_date(1984, Month::January, 1).unwrap(),
+            CalendarEventStore::default(),
+        );
+        // This should not panic, even if the buffer is too small to render the calendar.
+        calendar.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let calendar = Monthly::new(
+            Date::from_calendar_date(1984, Month::January, 1).unwrap(),
+            CalendarEventStore::default(),
+        );
+        // This should not panic, even if the buffer has zero size.
+        calendar.render(buffer.area, &mut buffer);
+    }
 }

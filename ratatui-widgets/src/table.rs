@@ -4991,12 +4991,18 @@ mod tests {
     }
 
     #[test]
+ issue-604-solved
     fn render_with_block_and_internal_borders() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 20, 6));
+
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+main
         let rows = vec![
             Row::new(vec!["Cell1", "Cell2", "Cell3"]),
             Row::new(vec!["Cell4", "Cell5", "Cell6"]),
         ];
+ issue-604-solved
         let table = Table::new(rows, [Constraint::Length(6); 3])
             .block(Block::bordered().title("Table"))
             .internal_borders(TableBorders::ALL)
@@ -5357,5 +5363,27 @@ mod tests {
                 );
             }
         }
+
+        let table = Table::new(rows, [Constraint::Length(10); 3])
+            .header(Row::new(vec!["Header1", "Header2", "Header3"]))
+            .footer(Row::new(vec!["Footer1", "Footer2", "Footer3"]));
+        // This should not panic, even if the buffer is too small to render the table.
+        Widget::render(table, buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let rows = vec![
+            Row::new(vec!["Cell1", "Cell2", "Cell3"]),
+            Row::new(vec!["Cell4", "Cell5", "Cell6"]),
+        ];
+        let table = Table::new(rows, [Constraint::Length(10); 3])
+            .header(Row::new(vec!["Header1", "Header2", "Header3"]))
+            .footer(Row::new(vec!["Footer1", "Footer2", "Footer3"]));
+        // This should not panic, even if the buffer has zero size.
+        Widget::render(table, buffer.area, &mut buffer);
+ main
     }
 }

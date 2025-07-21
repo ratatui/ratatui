@@ -29,6 +29,26 @@ change becomes a place where a bug may have been introduced. Consider splitting 
 reformatting changes into a separate PR from those that make a behavioral change, as the tests help
 guarantee that the behavior is unchanged.
 
+Guidelines for PR size:
+
+- Aim for PRs under 500 lines of changes when possible.
+- Split large features into incremental PRs that build on each other.
+- Separate refactoring, formatting, and functional changes into different PRs.
+- If a large PR is unavoidable, clearly explain why in the PR description.
+
+### Breaking changes and backwards compatibility
+
+We prioritize maintaining backwards compatibility and minimizing disruption to users:
+
+- **Prefer deprecation over removal**: Add deprecation warnings rather than immediately removing
+  public APIs
+- **Provide migration paths**: Include clear upgrade instructions for any breaking changes
+- **Follow our deprecation policy**: Wait at least two versions before removing deprecated items
+- **Consider feature flags**: Use feature flags for experimental or potentially disruptive changes
+- **Document breaking changes**: Clearly mark breaking changes in commit messages and PR descriptions
+
+See our [deprecation notice policy](#deprecation-notice) for more details.
+
 ### Code formatting
 
 Run `cargo xtask format` before committing to ensure that code is consistently formatted with
@@ -40,6 +60,10 @@ to be installed when running rustfmt. You can install the nightly version of Rus
 ```shell
 rustup install nightly
 ```
+
+> [!IMPORTANT]  
+> Do not modify formatting configuration (`rustfmt.toml`, `.clippy.toml`) without
+> prior discussion. These changes affect all contributors and should be carefully considered.
 
 ### Search `tui-rs` for similar work
 
@@ -67,12 +91,32 @@ Running `cargo xtask ci` before pushing will perform the same checks that we do 
 It's not mandatory to do this before pushing, however it may save you time to do so instead of
 waiting for GitHub to run the checks.
 
+Available xtask commands:
+
+- `cargo xtask ci` - Run all CI checks
+- `cargo xtask format` - Format code
+- `cargo xtask lint` - Run linting checks
+- `cargo xtask test` - Run all tests
+
+Run `cargo xtask --help` to see all available commands.
+
 ### Sign your commits
 
 We use commit signature verification, which will block commits from being merged via the UI unless
 they are signed. To set up your machine to sign commits, see [managing commit signature
 verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
 in GitHub docs.
+
+### Configuration and build system changes
+
+Changes to project configuration files require special consideration:
+
+- Linting configuration (`.clippy.toml`, `rustfmt.toml`): Affects all contributors.
+- CI configuration (`.github/workflows/`): Affects build and deployment.
+- Build system (`xtask/`, `Cargo.toml` workspace config): Affects development workflow.
+- Dependencies: Consider MSRV compatibility and licensing.
+
+Please discuss these changes in an issue before implementing them.
 
 ## Implementation Guidelines
 
@@ -97,7 +141,13 @@ For an understanding of the crate organization and design decisions, see [ARCHIT
 document explains the modular workspace structure introduced in version 0.30.0 and provides
 guidance on which crate to use for different use cases.
 
-[ARCHITECTURE.md]: ./ARCHITECTURE.md
+When making changes, consider:
+
+- Which crate should contain your changes per the modular structure,
+- Whether your changes affect the public API of `ratatui-core` (requires extra care),
+- And how your changes fit into the overall architecture.
+
+[ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 
 ### Tests
 
@@ -114,6 +164,10 @@ being tested rather than integration tests in the `tests/` folder.
 If an area that you're making a change in is not tested, write tests to characterize the existing
 behavior before changing it. This helps ensure that we don't introduce bugs to existing software
 using Ratatui (and helps make it easy to migrate apps still using `tui-rs`).
+
+> [!IMPORTANT]  
+> Do not remove existing tests without clear justification. If tests need to be
+> modified due to API changes, explain why in your PR description.
 
 For coverage, we have two [bacon](https://dystroy.org/bacon/) jobs (one for all tests, and one for
 unit tests, keyboard shortcuts `v` and `u` respectively) that run
@@ -181,6 +235,14 @@ i.e. ``[`Block`]``, **NOT** ``[Block]``
 We generally want to wait at least two versions before removing deprecated items, so users have
 time to update. However, if a deprecation is blocking for us to implement a new feature we may
 *consider* removing it in a one version notice.
+
+Deprecation process:
+
+1. Add `#[deprecated]` attribute with a clear message.
+2. Update documentation to point to the replacement.
+3. Add an entry to `BREAKING-CHANGES.md` if applicable.
+4. Wait at least two versions before removal.
+5. Consider the impact on the ecosystem before removing.
 
 ### Use of unsafe for optimization purposes
 
