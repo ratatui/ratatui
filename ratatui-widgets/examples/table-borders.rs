@@ -16,7 +16,7 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Row, Table};
-use ratatui_widgets::table::{TableBorders, TableBorderSet};
+use ratatui_widgets::table::{TableBorderSet, TableBorders};
 
 #[derive(Debug, Clone, Copy)]
 enum BorderExample {
@@ -29,7 +29,7 @@ enum BorderExample {
 }
 
 impl BorderExample {
-    fn next(self) -> Self {
+    const fn next(self) -> Self {
         match self {
             Self::Legacy => Self::Individual,
             Self::Individual => Self::Outer,
@@ -40,7 +40,7 @@ impl BorderExample {
         }
     }
 
-    fn title(self) -> &'static str {
+    const fn title(self) -> &'static str {
         match self {
             Self::Legacy => "Legacy Borders (ALL)",
             Self::Individual => "Individual Border Control",
@@ -51,7 +51,7 @@ impl BorderExample {
         }
     }
 
-    fn description(self) -> &'static str {
+    const fn description(self) -> &'static str {
         match self {
             Self::Legacy => "Traditional internal_borders(TableBorders::ALL)",
             Self::Individual => "table_borders(TOP | BOTTOM | INNER_HORIZONTAL)",
@@ -67,7 +67,7 @@ fn main() -> Result<()> {
     color_eyre::install()?;
 
     let mut current_example = BorderExample::Legacy;
-    
+
     ratatui::run(|terminal| {
         loop {
             terminal.draw(|frame| render(frame, current_example))?;
@@ -93,10 +93,11 @@ fn main() -> Result<()> {
 /// Render the UI with different border examples.
 fn render(frame: &mut Frame, example: BorderExample) {
     let layout = Layout::vertical([
-        Constraint::Length(3),  // Title and instructions
-        Constraint::Fill(1),    // Main table
-        Constraint::Length(2),  // Description
-    ]).spacing(1);
+        Constraint::Length(3), // Title and instructions
+        Constraint::Fill(1),   // Main table
+        Constraint::Length(2), // Description
+    ])
+    .spacing(1);
     let [top, main, bottom] = frame.area().layout(&layout);
 
     // Title and instructions
@@ -109,7 +110,10 @@ fn render(frame: &mut Frame, example: BorderExample) {
         Line::from("Press SPACE/TAB/→ for next example, ← for previous, 'q' to quit").dim(),
     ];
     for (i, line) in title_lines.into_iter().enumerate() {
-        frame.render_widget(line.centered(), Rect::new(top.x, top.y + i as u16, top.width, 1));
+        frame.render_widget(
+            line.centered(),
+            Rect::new(top.x, top.y + i as u16, top.width, 1),
+        );
     }
 
     // Main table with the current border example
@@ -137,8 +141,7 @@ fn render_example_table(frame: &mut Frame, area: Rect, example: BorderExample) {
         Row::new(["Desk Lamp", "$45", "Furniture", "8"]),
     ];
 
-    let footer = Row::new(["Total Items", "", "", "198"])
-        .style(Style::new().bold().green());
+    let footer = Row::new(["Total Items", "", "", "198"]).style(Style::new().bold().green());
 
     let widths = [
         Constraint::Percentage(25),
@@ -165,7 +168,9 @@ fn render_example_table(frame: &mut Frame, area: Rect, example: BorderExample) {
                 .footer(footer)
                 .column_spacing(1)
                 .style(Color::White)
-                .table_borders(TableBorders::TOP | TableBorders::BOTTOM | TableBorders::INNER_HORIZONTAL)
+                .table_borders(
+                    TableBorders::TOP | TableBorders::BOTTOM | TableBorders::INNER_HORIZONTAL,
+                )
                 .border_style(Style::new().green())
         }
         BorderExample::Outer => {
@@ -208,9 +213,7 @@ fn render_example_table(frame: &mut Frame, area: Rect, example: BorderExample) {
                 .column_spacing(1)
                 .style(Color::White)
                 .table_borders(
-                    TableBorders::OUTER | 
-                    TableBorders::INNER_VERTICAL | 
-                    TableBorders::HEADER_TOP
+                    TableBorders::OUTER | TableBorders::INNER_VERTICAL | TableBorders::HEADER_TOP,
                 )
                 .border_set(TableBorderSet::double())
                 .border_style(Style::new().yellow())
