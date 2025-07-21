@@ -236,4 +236,25 @@ mod tests {
             ])
         );
     }
+
+    #[rstest]
+    #[case::tiny(Size::Tiny, Buffer::with_lines(["▛"]))]
+    #[case::small(Size::Small, Buffer::with_lines(["█"]))]
+    fn render_in_minimal_buffer(#[case] size: Size, #[case] expected: Buffer) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let logo = RatatuiLogo::new(size);
+        // This should not panic, even if the buffer is too small to render the logo.
+        logo.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::tiny(Size::Tiny)]
+    #[case::small(Size::Small)]
+    fn render_in_zero_size_buffer(#[case] size: Size) {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let logo = RatatuiLogo::new(size);
+        // This should not panic, even if the buffer has zero size.
+        logo.render(buffer.area, &mut buffer);
+    }
 }
