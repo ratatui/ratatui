@@ -41,7 +41,7 @@ hashbrown = "0.15"
 indoc = "2"
 instability = "0.3"
 itertools = { version = "0.14", default-features = false, features = ["use_alloc"] }
-kasuari = { version = "0.4", default-features = false }
+kasuari = { git = "https://github.com/j-g00da/kasuari.git", branch = "js/cycle-prevention", default-features = false }
 line-clipping = "0.3"
 lru = "0.14"
 palette = "0.7"

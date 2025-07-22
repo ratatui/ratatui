@@ -1582,8 +1582,7 @@ dependencies = [
 [[package]]
 name = "kasuari"
 version = "0.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96d9e0d6a8bf886abccc1cbcac7d74f9000ae5882aedc4a9042188bbc9cd4487"
+source = "git+https://github.com/j-g00da/kasuari.git?branch=js%2Fcycle-prevention#dd15b398666924a192ca05d5a6d207df9c84afe3"
 dependencies = [
  "hashbrown",
  "thiserror 2.0.12",
