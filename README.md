@@ -113,7 +113,8 @@ There is also a [Matrix](https://matrix.org/) bridge available at
 We rely on GitHub for [bugs][Report a bug] and [feature requests][Request a Feature].
 
 Please make sure you read the [contributing](./CONTRIBUTING.md) guidelines before [creating a pull
-request][Create a Pull Request].
+request][Create a Pull Request]. We accept AI generated code, but please read the [AI Contributions]
+guidelines to ensure compliance.
 
 If you'd like to show your support, you can add the Ratatui badge to your project's README:
 
@@ -152,6 +153,7 @@ This project is licensed under the [MIT License][License].
 [Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
 [Create a Pull Request]: https://github.com/ratatui/ratatui/compare
 [Contributing]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md
+[AI Contributions]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md#ai-generated-content
 [Crate]: https://crates.io/crates/ratatui
 [tui-rs]: https://crates.io/crates/tui
 [Sponsors]: https://github.com/sponsors/ratatui
