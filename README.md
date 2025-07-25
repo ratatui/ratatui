@@ -12,7 +12,7 @@
 
 </details>
 
-![Demo](https://github.com/ratatui/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
+![Release header](https://github.com/ratatui/ratatui/blob/b23480adfa9430697071c906c7ba4d4f9bd37a73/assets/release-header.png?raw=true)
 
 <div align="center">
 

@@ -1,0 +1,12 @@
+[package]
+name = "release-header"
+publish = false
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ratatui.workspace = true
+
+[lints]
+workspace = true
