@@ -1,4 +1,3 @@
-
 # Release Header
 
 Generates a banner for Ratatui releases featuring a Ratatui logo, version info, and a list of crates.
