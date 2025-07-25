@@ -6,6 +6,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+color-eyre.workspace = true
 ratatui.workspace = true
 
 [lints]

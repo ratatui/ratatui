@@ -11,14 +11,16 @@
 //! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 
 use std::io::stdout;
+use std::iter::zip;
 
-use ratatui::crossterm::execute;
 use ratatui::crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
-use ratatui::layout::{Offset, Spacing};
-use ratatui::prelude::*;
+use ratatui::crossterm::{event, execute};
+use ratatui::layout::{Constraint, Flex, Layout, Margin, Rect, Spacing};
+use ratatui::style::{Color, Stylize};
 use ratatui::symbols::merge::MergeStrategy;
+use ratatui::text::Line;
 use ratatui::widgets::{Block, BorderType, Padding, Paragraph, RatatuiLogo};
-use ratatui::{DefaultTerminal, TerminalOptions, Viewport};
+use ratatui::{DefaultTerminal, Frame, TerminalOptions, Viewport};
 
 const SEMVER: &str = "0.30.0";
 const RELEASE_NAME: &str = "Bryndza";
@@ -39,12 +41,7 @@ const FG_COLOR: Color = Color::Rgb(246, 214, 187); // #F6D6BB
 const BG_COLOR: Color = Color::Rgb(20, 20, 50); // #141432
 const MENU_BORDER_COLOR: Color = Color::Rgb(255, 255, 160); // #FFFFA0
 
-const GRADIENT_RED: [u8; 6] = [41, 43, 50, 68, 104, 156];
-const GRADIENT_GREEN: [u8; 6] = [24, 30, 41, 65, 105, 168];
-const GRADIENT_BLUE: [u8; 6] = [55, 57, 62, 78, 113, 166];
-const GRADIENT_AMBIENT: [u8; 6] = [17, 18, 20, 25, 40, 60];
-
-enum RainbowColor {
+enum Rainbow {
     Red,
     Orange,
     Yellow,
@@ -54,51 +51,8 @@ enum RainbowColor {
     Violet,
 }
 
-const ROYGBIV: [RainbowColor; 7] = [
-    RainbowColor::Red,
-    RainbowColor::Orange,
-    RainbowColor::Yellow,
-    RainbowColor::Green,
-    RainbowColor::Blue,
-    RainbowColor::Indigo,
-    RainbowColor::Violet,
-];
-
-fn get_gradient_color(color: &RainbowColor, index: usize) -> Color {
-    let blue_ambience = GRADIENT_AMBIENT[index].saturating_mul(6 - index as u8);
-    let (r, g, b) = match color {
-        RainbowColor::Red => (GRADIENT_RED[index], GRADIENT_AMBIENT[index], blue_ambience),
-        RainbowColor::Orange => (
-            GRADIENT_RED[index],
-            GRADIENT_GREEN[index] / 2,
-            blue_ambience,
-        ),
-        RainbowColor::Yellow => (GRADIENT_RED[index], GRADIENT_GREEN[index], blue_ambience),
-        RainbowColor::Green => (
-            GRADIENT_AMBIENT[index],
-            GRADIENT_GREEN[index],
-            blue_ambience,
-        ),
-        RainbowColor::Blue => (
-            GRADIENT_AMBIENT[index],
-            GRADIENT_AMBIENT[index],
-            GRADIENT_BLUE[index].max(blue_ambience),
-        ),
-        RainbowColor::Indigo => (
-            GRADIENT_BLUE[index],
-            GRADIENT_AMBIENT[index],
-            GRADIENT_BLUE[index].max(blue_ambience),
-        ),
-        RainbowColor::Violet => (
-            GRADIENT_RED[index],
-            GRADIENT_AMBIENT[index],
-            GRADIENT_BLUE[index].max(blue_ambience),
-        ),
-    };
-    Color::Rgb(r, g, b)
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> color_eyre::Result<()> {
+    color_eyre::install()?;
     let viewport = Viewport::Fixed(Rect::new(0, 0, 68, 16));
     let terminal = ratatui::init_with_options(TerminalOptions { viewport });
     execute!(stdout(), EnterAlternateScreen).expect("failed to enter alternate screen");
@@ -108,93 +62,97 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     result
 }
 
-fn run(mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
+fn run(mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
     loop {
-        terminal.draw(render_header)?;
-        if ratatui::crossterm::event::read()?.is_key_press() {
+        terminal.draw(render)?;
+        if event::read()?.is_key_press() {
             break Ok(());
         }
     }
 }
 
-fn render_header(frame: &mut Frame) {
+fn render(frame: &mut Frame) {
     let area = frame.area();
-    frame
-        .buffer_mut()
-        .set_style(area, Style::new().fg(FG_COLOR).bg(BG_COLOR));
+    frame.buffer_mut().set_style(area, (FG_COLOR, BG_COLOR));
 
-    let horizontal_layout = Layout::horizontal([Constraint::Length(31), Constraint::Length(23)])
-        .spacing(Spacing::Overlap(1));
-    let [left_area, right_area] = area
-        .centered(
-            Constraint::Length(53),
-            Constraint::Length(MAIN_DISHES.len() as u16 + BACKENDS.len() as u16 + 3),
-        )
-        .layout(&horizontal_layout);
+    let logo_width = 29;
+    let menu_width = 23;
+    let padding = 2; // Padding between logo and menu
+    let menu_borders = 3;
+    let height = MAIN_DISHES.len() as u16 + BACKENDS.len() as u16 + menu_borders;
+    let width = logo_width + menu_width + padding;
+    let center_area = area.centered(Constraint::Length(width), Constraint::Length(height));
+    let layout = Layout::horizontal(Constraint::from_lengths([logo_width, padding, menu_width]));
+    let [logo_area, _, menu_area] = center_area.layout(&layout);
 
-    render_logo(frame, left_area);
-    render_menu(frame, right_area);
+    render_logo(frame, logo_area);
+    render_menu(frame, menu_area);
 }
 
 fn render_logo(frame: &mut Frame, area: Rect) {
-    let logo_block = Block::new().padding(Padding::new(1, 1, 1, 0));
-    let logo_inner_area = logo_block.inner(area);
-    let vertical_layout = Layout::vertical([
-        Constraint::Length(2),
-        Constraint::Fill(1),
-        Constraint::Length(1),
-    ]);
-    let [logo_area, _, version_area] = logo_inner_area.layout(&vertical_layout);
+    let area = area.inner(Margin::new(1, 0));
+    let layout = Layout::vertical(Constraint::from_lengths([6, 2, 1])).flex(Flex::End);
+    let [shadow_area, logo_area, version_area] = area.layout(&layout);
 
-    render_logo_rainbow_shadow(frame, logo_area);
+    // Divide the logo into letter sections for individual coloring, then render a block for each
+    // letter with a color based on the row index.
+    let letter_layout = Layout::horizontal(Constraint::from_lengths([5, 4, 4, 4, 4, 5, 1]));
+    for (row_index, row) in shadow_area.rows().enumerate() {
+        for (rainbow, letter_area) in zip(Rainbow::ROYGBIV, row.layout_vec(&letter_layout)) {
+            let color = rainbow.gradient_color(row_index);
+            frame.render_widget(Block::new().style(color), letter_area);
+        }
+        // Render the Ratatui logo truncated.
+        frame.render_widget(RatatuiLogo::small(), row);
+    }
 
-    let logo_offset = Offset::new(0, 6);
-    frame.render_widget(Block::new().style(FG_COLOR), logo_area.offset(logo_offset));
-    frame.render_widget(RatatuiLogo::small(), logo_area.offset(logo_offset));
-
-    frame.render_widget(
-        Line::from(format!("v{SEMVER} \"{RELEASE_NAME}\"")).dim(),
-        version_area,
-    );
+    frame.render_widget(Block::new().style(FG_COLOR), logo_area);
+    frame.render_widget(RatatuiLogo::small(), logo_area);
+    frame.render_widget(format!("v{SEMVER} \"{RELEASE_NAME}\"").dim(), version_area);
 }
 
-fn render_logo_rainbow_shadow(frame: &mut Frame, area: Rect) {
-    // Divide the logo into letter sections for individual coloring
-    let letter_constraints = [
-        Constraint::Length(5),
-        Constraint::Length(4),
-        Constraint::Length(4),
-        Constraint::Length(4),
-        Constraint::Length(4),
-        Constraint::Length(5),
-        Constraint::Length(1),
+impl Rainbow {
+    const RED_GRADIENT: [u8; 6] = [41, 43, 50, 68, 104, 156];
+    const GREEN_GRADIENT: [u8; 6] = [24, 30, 41, 65, 105, 168];
+    const BLUE_GRADIENT: [u8; 6] = [55, 57, 62, 78, 113, 166];
+    const AMBIENT_GRADIENT: [u8; 6] = [17, 18, 20, 25, 40, 60];
+
+    const ROYGBIV: [Self; 7] = [
+        Self::Red,
+        Self::Orange,
+        Self::Yellow,
+        Self::Green,
+        Self::Blue,
+        Self::Indigo,
+        Self::Violet,
     ];
-    let letter_layout = Layout::horizontal(letter_constraints);
-    let letter_areas: [Rect; 7] = area.layout(&letter_layout);
 
-    // Render multiple shadow layers
-    for layer_idx in 0..6 {
-        let shadow_offset = Offset::new(0, layer_idx as i32);
-
-        // Apply rainbow colors to each letter
-        for (letter_area, rainbow_color) in letter_areas.iter().zip(ROYGBIV) {
-            let gradient_color = get_gradient_color(&rainbow_color, layer_idx);
-            frame.render_widget(
-                Block::new().style(gradient_color),
-                letter_area.offset(shadow_offset),
-            );
-        }
-        frame.render_widget(RatatuiLogo::small(), area.offset(shadow_offset));
+    fn gradient_color(&self, row: usize) -> Color {
+        let ambient = Self::AMBIENT_GRADIENT[row];
+        let red = Self::RED_GRADIENT[row];
+        let green = Self::GREEN_GRADIENT[row];
+        let blue = Self::BLUE_GRADIENT[row];
+        let blue_sat = Self::AMBIENT_GRADIENT[row].saturating_mul(6 - row as u8);
+        let (r, g, b) = match self {
+            Self::Red => (red, ambient, blue_sat),
+            Self::Orange => (red, green / 2, blue_sat),
+            Self::Yellow => (red, green, blue_sat),
+            Self::Green => (ambient, green, blue_sat),
+            Self::Blue => (ambient, ambient, blue.max(blue_sat)),
+            Self::Indigo => (blue, ambient, blue.max(blue_sat)),
+            Self::Violet => (red, ambient, blue.max(blue_sat)),
+        };
+        Color::Rgb(r, g, b)
     }
 }
 
 fn render_menu(frame: &mut Frame, area: Rect) {
-    let vertical_layout = Layout::vertical([
-        Constraint::Length(MAIN_DISHES.len() as u16 + 2),
-        Constraint::Fill(BACKENDS.len() as u16 + 2),
-    ])
-    .spacing(Spacing::Overlap(1));
-    let [main_dishes_area, backends_area] = area.layout(&vertical_layout);
+    let layout = Layout::vertical(Constraint::from_lengths([
+        MAIN_DISHES.len() as u16 + 2,
+        BACKENDS.len() as u16 + 2,
+    ]))
+    .spacing(Spacing::Overlap(1)); // Overlap to merge borders
+    let [main_dishes_area, backends_area] = area.layout(&layout);
 
     render_menu_block(frame, main_dishes_area, "Main Courses", &MAIN_DISHES);
     render_menu_block(frame, backends_area, "Pairings", &BACKENDS);
