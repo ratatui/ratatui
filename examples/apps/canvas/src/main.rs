@@ -153,16 +153,15 @@ impl App {
 
         let vertical = Layout::vertical([
             Constraint::Length(header.height() as u16),
-            Constraint::Percentage(50),
-            Constraint::Percentage(50),
+            Constraint::Fill(1),
+            Constraint::Fill(1),
         ]);
-        let [text_area, up, down] = vertical.areas(frame.area());
+        let [text_area, up, down] = frame.area().layout(&vertical);
         frame.render_widget(header.centered(), text_area);
 
-        let horizontal =
-            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [draw, pong] = horizontal.areas(up);
-        let [map, boxes] = horizontal.areas(down);
+        let horizontal = Layout::horizontal([Constraint::Fill(1); 2]);
+        let [draw, pong] = up.layout(&horizontal);
+        let [map, boxes] = down.layout(&horizontal);
 
         frame.render_widget(self.map_canvas(), map);
         frame.render_widget(self.draw_canvas(draw), draw);

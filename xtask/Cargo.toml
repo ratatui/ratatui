@@ -5,12 +5,9 @@ publish = false
 license.workspace = true
 
 [dependencies]
-cargo_metadata = "0.20"
-clap = { version = "4.5.40", features = ["derive"] }
-clap-cargo = { version = "0.15.1", features = ["cargo_metadata"] }
+clap = { version = "4.5.41", features = ["derive"] }
 clap-verbosity-flag = { version = "3.0.3", default-features = false, features = ["tracing"] }
 color-eyre = "0.6.5"
 duct = "1.0.0"
-itertools.workspace = true
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18" }

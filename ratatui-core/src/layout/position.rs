@@ -3,11 +3,25 @@ use core::fmt;
 
 use crate::layout::Rect;
 
-/// Position in the terminal
+/// Position in the terminal coordinate system.
 ///
 /// The position is relative to the top left corner of the terminal window, with the top left corner
 /// being (0, 0). The x axis is horizontal increasing to the right, and the y axis is vertical
 /// increasing downwards.
+///
+/// `Position` is used throughout the layout system to represent specific points in the terminal.
+/// It can be created from coordinates, tuples, or extracted from rectangular areas.
+///
+/// # Construction
+///
+/// - [`new`](Self::new) - Create a new position from x and y coordinates
+/// - [`default`](Default::default) - Create at origin (0, 0)
+///
+/// # Conversion
+///
+/// - [`from((u16, u16))`](Self::from) - Create from `(u16, u16)` tuple
+/// - [`from(Rect)`](Self::from) - Create from [`Rect`] (uses top-left corner)
+/// - [`into((u16, u16))`] - Convert to `(u16, u16)` tuple
 ///
 /// # Examples
 ///
@@ -23,6 +37,8 @@ use crate::layout::Rect;
 /// // position can be converted back into the components when needed
 /// let (x, y) = position.into();
 /// ```
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Position {

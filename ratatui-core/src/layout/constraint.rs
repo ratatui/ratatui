@@ -5,10 +5,9 @@ use strum::EnumIs;
 
 /// A constraint that defines the size of a layout element.
 ///
-/// Constraints can be used to specify a fixed size, a percentage of the available space, a ratio of
-/// the available space, a minimum or maximum size or a fill proportional value for a layout
-/// element.
-///
+/// Constraints are the core mechanism for defining how space should be allocated within a
+/// [`Layout`](crate::layout::Layout). They can specify fixed sizes (length), proportional sizes
+/// (percentage, ratio), size limits (min, max), or proportional fill values for layout elements.
 /// Relative constraints (percentage, ratio) are calculated relative to the entire space being
 /// divided, rather than the space available after applying more fixed constraints (min, max,
 /// length).
@@ -21,6 +20,27 @@ use strum::EnumIs;
 /// 4. [`Constraint::Percentage`]
 /// 5. [`Constraint::Ratio`]
 /// 6. [`Constraint::Fill`]
+///
+/// # Size Calculation
+///
+/// - [`apply`](Self::apply) - Apply the constraint to a length and return the resulting size
+///
+/// # Collection Creation
+///
+/// - [`from_lengths`](Self::from_lengths) - Create a collection of length constraints
+/// - [`from_ratios`](Self::from_ratios) - Create a collection of ratio constraints
+/// - [`from_percentages`](Self::from_percentages) - Create a collection of percentage constraints
+/// - [`from_maxes`](Self::from_maxes) - Create a collection of maximum constraints
+/// - [`from_mins`](Self::from_mins) - Create a collection of minimum constraints
+/// - [`from_fills`](Self::from_fills) - Create a collection of fill constraints
+///
+/// # Conversion and Construction
+///
+/// - [`from(u16)`](Self::from) - Create a [`Length`](Self::Length) constraint from `u16`
+/// - [`from(&Constraint)`](Self::from) - Create from `&Constraint` (copy)
+/// - [`as_ref()`](Self::as_ref) - Get a reference to self
+/// - [`default()`](Self::default) - Create default constraint
+///   ([`Percentage(100)`](Self::Percentage))
 ///
 /// # Examples
 ///
@@ -45,6 +65,8 @@ use strum::EnumIs;
 /// // Create a layout with fill proportional sizes for each element
 /// let constraints = Constraint::from_fills([1, 2, 1]);
 /// ```
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Constraint {

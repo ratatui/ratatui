@@ -11,6 +11,8 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.30.0 Unreleased](#v0300-unreleased)
+  - `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps
+    are twice the size of first and last elements
   - `block::Title` no longer exists
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
@@ -24,6 +26,7 @@ This is a quick summary of the sections below:
     feature is enabled
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
     `Terminal`
+  - Support a broader range for `unicode-width` version
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
     const
@@ -88,6 +91,19 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.30.0 Unreleased
+
+### `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps ([#1952])
+
+[#1952]: https://github.com/ratatui/ratatui/pull/1952
+
+The old `Flex::SpaceAround` behavior has been changed to distribute space evenly around each
+element, with the middle spacers being twice the size of the first and last one. The old
+behavior can be achieved by using `Flex::SpaceEvenly` instead.
+
+```diff
+- let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::SpaceAround).split(area);
++ let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::SpaceEvenly).split(area);
+```
 
 ### `block::Title` no longer exists ([#1926])
 
@@ -361,6 +377,17 @@ The `termwiz` backend is upgraded from 0.22.0 to 0.23.0.
 
 This release has a few fixes for hyperlinks and input handling, plus some dependency updates.
 See the [commits](https://github.com/wezterm/wezterm/commits/main/termwiz) for more details.
+
+### Support a broader range for `unicode-width` version ([#1999])
+
+[#1999]: https://github.com/ratatui/ratatui/pull/1999
+
+Ratatui's dependency on `unicode-width`, previously pinned to 0.2.0, has
+expanded to allow version 0.2.1. This comes with 2 behavior changes described in
+[unicode-width#61] and [unicode-width#74].
+
+[unicode-width#61]: https://github.com/unicode-rs/unicode-width/pull/61
+[unicode-width#74]: https://github.com/unicode-rs/unicode-width/pull/74
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 

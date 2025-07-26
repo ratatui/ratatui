@@ -1,5 +1,6 @@
 use alloc::rc::Rc;
 use alloc::vec::Vec;
+use core::array::TryFromSliceError;
 use core::iter;
 #[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
@@ -109,47 +110,57 @@ impl From<i16> for Spacing {
     }
 }
 
+/// The primary layout engine for dividing terminal space using constraints and direction.
+///
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
-/// ones.
+/// rectangular areas. This is the core building block for creating structured user interfaces in
+/// terminal applications.
 ///
 /// A layout is composed of:
 /// - a direction (horizontal or vertical)
 /// - a set of constraints (length, ratio, percentage, fill, min, max)
 /// - a margin (horizontal and vertical), the space between the edge of the main area and the split
 ///   areas
-/// - a flex option
-/// - a spacing option
+/// - a flex option that controls space distribution
+/// - a spacing option that controls gaps between segments
 ///
-/// The algorithm used to compute the layout is based on the [`kasuari`] solver. It is a simple
-/// linear solver that can be used to solve linear equations and inequalities. In our case, we
-/// define a set of constraints that are applied to split the provided area into Rects aligned in a
-/// single direction, and the solver computes the values of the position and sizes that satisfy as
-/// many of the constraints in order of their priorities.
+/// The algorithm used to compute the layout is based on the [`kasuari`] solver, a linear constraint
+/// solver that computes positions and sizes to satisfy as many constraints as possible in order of
+/// their priorities.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
 /// can be configured using [`Layout::init_cache()`].
 ///
-/// # Constructors
+/// # Construction
 ///
-/// There are four ways to create a new layout:
+/// - [`default`](Default::default) - Create a layout with default values (vertical direction, no
+///   constraints, no margin)
+/// - [`new`](Self::new) - Create a new layout with a given direction and constraints
+/// - [`vertical`](Self::vertical) - Create a new vertical layout with the given constraints
+/// - [`horizontal`](Self::horizontal) - Create a new horizontal layout with the given constraints
 ///
-/// - [`Layout::default`]: create a new layout with default values
-/// - [`Layout::new`]: create a new layout with a given direction and constraints
-/// - [`Layout::vertical`]: create a new vertical layout with the given constraints
-/// - [`Layout::horizontal`]: create a new horizontal layout with the given constraints
+/// # Configuration
 ///
-/// # Setters
+/// - [`direction`](Self::direction) - Set the direction of the layout
+/// - [`constraints`](Self::constraints) - Set the constraints of the layout
+/// - [`margin`](Self::margin) - Set uniform margin on all sides
+/// - [`horizontal_margin`](Self::horizontal_margin) - Set the horizontal margin of the layout
+/// - [`vertical_margin`](Self::vertical_margin) - Set the vertical margin of the layout
+/// - [`flex`](Self::flex) - Set the way space is distributed when constraints are satisfied
+/// - [`spacing`](Self::spacing) - Set the gap between the constraints of the layout
 ///
-/// There are several setters to modify the layout:
+/// # Layout Operations
 ///
-/// - [`Layout::direction`]: set the direction of the layout
-/// - [`Layout::constraints`]: set the constraints of the layout
-/// - [`Layout::margin`]: set the margin of the layout
-/// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
-/// - [`Layout::vertical_margin`]: set the vertical margin of the layout
-/// - [`Layout::flex`]: set the way the space is distributed when the constraints are satisfied
-/// - [`Layout::spacing`]: sets the gap between the constraints of the layout
+/// - [`areas`](Self::areas) - Split area into fixed number of rectangles (compile-time known)
+/// - [`spacers`](Self::spacers) - Get spacer rectangles between layout areas
+/// - [`split`](Self::split) - Split area into rectangles (runtime determined count)
+/// - [`split_with_spacers`](Self::split_with_spacers) - Split area and return both areas and
+///   spacers
+///
+/// # Cache Management
+///
+/// - [`init_cache`](Self::init_cache) - Initialize layout cache with custom size
 ///
 /// # Example
 ///
@@ -160,15 +171,17 @@ impl From<i16> for Spacing {
 /// use ratatui_core::widgets::Widget;
 ///
 /// fn render(area: Rect, buf: &mut Buffer) {
-///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
-///     let [left, right] = layout.areas(area);
-///     Text::from("foo").render(left, buf);
-///     Text::from("bar").render(right, buf);
+///     let layout = Layout::vertical([Constraint::Length(5), Constraint::Fill(1)]);
+///     let [top, bottom] = layout.areas(area);
+///     Text::from("foo").render(top, buf);
+///     Text::from("bar").render(bottom, buf);
 /// }
 /// ```
 ///
 /// See the `layout`, `flex`, and `constraints` examples in the [Examples] folder for more details
 /// about how to use layouts.
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 ///
 /// ![layout
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
@@ -215,7 +228,7 @@ impl Layout {
     ///
     /// Layout::new(
     ///     Direction::Horizontal,
-    ///     [Constraint::Length(5), Constraint::Min(0)],
+    ///     [Constraint::Length(5), Constraint::Fill(1)],
     /// );
     ///
     /// Layout::new(
@@ -247,7 +260,7 @@ impl Layout {
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Layout};
     ///
-    /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
+    /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Fill(1)]);
     /// ```
     pub fn vertical<I>(constraints: I) -> Self
     where
@@ -267,7 +280,7 @@ impl Layout {
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Layout};
     ///
-    /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
+    /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Fill(1)]);
     /// ```
     pub fn horizontal<I>(constraints: I) -> Self
     where
@@ -299,13 +312,13 @@ impl Layout {
     ///
     /// let layout = Layout::default()
     ///     .direction(Direction::Horizontal)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Fill(1)])
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 5, 10), Rect::new(5, 0, 5, 10)]);
     ///
     /// let layout = Layout::default()
     ///     .direction(Direction::Vertical)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Fill(1)])
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 10, 5), Rect::new(0, 5, 10, 5)]);
     /// ```
@@ -352,10 +365,10 @@ impl Layout {
     ///     ]
     /// );
     ///
-    /// Layout::default().constraints([Constraint::Min(0)]);
-    /// Layout::default().constraints(&[Constraint::Min(0)]);
-    /// Layout::default().constraints(vec![Constraint::Min(0)]);
-    /// Layout::default().constraints([Constraint::Min(0)].iter().filter(|_| true));
+    /// Layout::default().constraints([Constraint::Fill(1)]);
+    /// Layout::default().constraints(&[Constraint::Fill(1)]);
+    /// Layout::default().constraints(vec![Constraint::Fill(1)]);
+    /// Layout::default().constraints([Constraint::Fill(1)].iter().filter(|_| true));
     /// Layout::default().constraints([1, 2, 3].iter().map(|&c| Constraint::Length(c)));
     /// Layout::default().constraints([1, 2, 3]);
     /// Layout::default().constraints(vec![1, 2, 3]);
@@ -378,7 +391,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
+    ///     .constraints([Constraint::Fill(1)])
     ///     .margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 2, 6, 6)]);
@@ -400,7 +413,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
+    ///     .constraints([Constraint::Fill(1)])
     ///     .horizontal_margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 0, 6, 10)]);
@@ -419,7 +432,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
+    ///     .constraints([Constraint::Fill(1)])
     ///     .vertical_margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 2, 10, 6)]);
@@ -440,8 +453,10 @@ impl Layout {
     ///   - [`Flex::Start`]: The items are aligned to the start of the layout.
     ///   - [`Flex::Center`]: The items are aligned to the center of the layout.
     ///   - [`Flex::End`]: The items are aligned to the end of the layout.
-    ///   - [`Flex::SpaceAround`]: The items are evenly distributed with equal space around them.
     ///   - [`Flex::SpaceBetween`]: The items are evenly distributed with equal space between them.
+    ///   - [`Flex::SpaceAround`]: The items are evenly distributed with equal space around them,
+    ///     except the first and last items, which have half the space on their sides.
+    ///   - [`Flex::SpaceEvenly`]: The items are evenly distributed with equal space around them.
     ///
     /// # Examples
     ///
@@ -480,7 +495,8 @@ impl Layout {
     /// passed to this function. See the documentation of the [`Spacing`] enum for more information.
     ///
     /// Note that if the layout has only one segment, the spacing will not be applied.
-    /// Also, spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
+    /// Also, spacing will not be applied for [`Flex::SpaceAround`], [`Flex::SpaceEvenly`] and
+    /// [`Flex::SpaceBetween`]
     ///
     /// # Examples
     ///
@@ -525,17 +541,53 @@ impl Layout {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::layout::{Layout, Constraint, Rect};
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let area = Rect::new(0, 0, 10, 10);
-    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
     /// let [top, main] = layout.areas(area);
     ///
     /// // or explicitly specify the number of constraints:
     /// let areas = layout.areas::<2>(area);
+    /// ```
     pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
-        let (areas, _) = self.split_with_spacers(area);
-        areas.as_ref().try_into().expect("invalid number of rects")
+        let areas = self.split(area);
+        areas.as_ref().try_into().unwrap_or_else(|_| {
+            panic!(
+                "invalid number of rects: expected {N}, found {}",
+                areas.len()
+            )
+        })
+    }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`].
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split`] instead.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the number of constraints is not equal to the length of the returned
+    /// array.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 10);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = layout.try_areas(area)?;
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let areas = layout.try_areas::<2>(area)?;
+    /// # Ok::<(), core::array::TryFromSliceError>(())
+    /// ```
+    pub fn try_areas<const N: usize>(&self, area: Rect) -> Result<[Rect; N], TryFromSliceError> {
+        self.split(area).as_ref().try_into()
     }
 
     /// Split the rect into a number of sub-rects according to the given [`Layout`] and return just
@@ -559,7 +611,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
     ///
     /// let area = Rect::new(0, 0, 10, 10);
-    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
     /// let [top, main] = layout.areas(area);
     /// let [before, inbetween, after] = layout.spacers(area);
     ///
@@ -574,7 +626,7 @@ impl Layout {
             .expect("invalid number of rects")
     }
 
-    /// Wrapper function around the cassowary solver to be able to split a given area into
+    /// Wrapper function around the [`kasuari`] solver to be able to split a given area into
     /// smaller ones based on the preferred widths or heights and the direction.
     ///
     /// Note that the constraints are applied to the whole area that is to be split, so using
@@ -598,7 +650,7 @@ impl Layout {
     /// use ratatui_core::layout::{Constraint, Direction, Layout, Rect};
     /// let layout = Layout::default()
     ///     .direction(Direction::Vertical)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Fill(1)])
     ///     .split(Rect::new(2, 2, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 2, 10, 5), Rect::new(2, 7, 10, 5)]);
     ///
@@ -612,7 +664,7 @@ impl Layout {
         self.split_with_spacers(area).0
     }
 
-    /// Wrapper function around the cassowary solver that splits the given area into smaller ones
+    /// Wrapper function around the [`kasuari`] solver that splits the given area into smaller ones
     /// based on the preferred widths or heights and the direction, with the ability to include
     /// spacers between the areas.
     ///
@@ -631,7 +683,7 @@ impl Layout {
     ///
     /// let (areas, spacers) = Layout::default()
     ///     .direction(Direction::Vertical)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Fill(1)])
     ///     .split_with_spacers(Rect::new(2, 2, 10, 10));
     /// assert_eq!(areas[..], [Rect::new(2, 2, 10, 5), Rect::new(2, 7, 10, 5)]);
     /// assert_eq!(
@@ -674,7 +726,7 @@ impl Layout {
     }
 
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
-        // To take advantage of all of cassowary features, we would want to store the `Solver` in
+        // To take advantage of all of [`kasuari`] features, we would want to store the `Solver` in
         // one of the fields of the Layout struct. And we would want to set it up such that we could
         // add or remove constraints as and when needed.
         // The advantage of doing it as described above is that it would allow users to
@@ -883,9 +935,48 @@ fn configure_flex_constraints(
                 solver.add_constraint(last.is_empty())?;
             }
         }
-        // all spacers are the same size and will grow to fill any remaining space after the
-        // constraints are satisfied
+
+        // All spacers excluding first and last are the same size and will grow to fill
+        // any remaining space after the constraints are satisfied.
+        // All spacers excluding first and last are also twice the size of the first and last
+        // spacers
         Flex::SpaceAround => {
+            if spacers.len() <= 2 {
+                // If there are two or less spacers, fallback to Flex::SpaceEvenly
+                for (left, right) in spacers.iter().tuple_combinations() {
+                    solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
+                }
+                for spacer in spacers {
+                    solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
+                    solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
+                }
+            } else {
+                // Separate the first and last spacer from the middle ones
+                let (first, rest) = spacers.split_first().unwrap();
+                let (last, middle) = rest.split_last().unwrap();
+
+                // All middle spacers should be equal in size
+                for (left, right) in middle.iter().tuple_combinations() {
+                    solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
+                }
+
+                // First and last spacers should be half the size of any middle spacer
+                if let Some(first_middle) = middle.first() {
+                    solver.add_constraint(first_middle.has_double_size(first, SPACER_SIZE_EQ))?;
+                    solver.add_constraint(first_middle.has_double_size(last, SPACER_SIZE_EQ))?;
+                }
+
+                // Apply minimum size and growth constraints
+                for spacer in spacers {
+                    solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
+                    solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
+                }
+            }
+        }
+
+        // All spacers are the same size and will grow to fill any remaining space after the
+        // constraints are satisfied
+        Flex::SpaceEvenly => {
             for (left, right) in spacers.iter().tuple_combinations() {
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
             }
@@ -895,8 +986,9 @@ fn configure_flex_constraints(
             }
         }
 
-        // all spacers are the same size and will grow to fill any remaining space after the
-        // constraints are satisfied, but the first and last spacers are zero size
+        // All spacers excluding first and last are the same size and will grow to fill
+        // any remaining space after the constraints are satisfied.
+        // The first and last spacers are zero size.
         Flex::SpaceBetween => {
             for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?;
@@ -910,6 +1002,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(last.is_empty())?;
             }
         }
+
         Flex::Start => {
             for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
@@ -950,7 +1043,7 @@ fn configure_flex_constraints(
 /// │abcdef││abcdef│
 /// └──────┘└──────┘
 ///
-/// [Min(0), Fill(2)]
+/// [Fill(1), Fill(2)]
 /// ┌──────┐┌────────────┐
 /// │abcdef││abcdefabcdef│
 /// └──────┘└────────────┘
@@ -1092,6 +1185,14 @@ impl Element {
 
     fn has_size<E: Into<Expression>>(&self, size: E, strength: Strength) -> kasuari::Constraint {
         self.size() | EQ(strength) | size.into()
+    }
+
+    fn has_double_size<E: Into<Expression>>(
+        &self,
+        size: E,
+        strength: Strength,
+    ) -> kasuari::Constraint {
+        self.size() | EQ(strength) | (size.into() * 2.0)
     }
 
     fn is_empty(&self) -> kasuari::Constraint {
@@ -2171,6 +2272,7 @@ mod tests {
                 Flex::End,
                 Flex::Center,
                 Flex::SpaceAround,
+                Flex::SpaceEvenly,
                 Flex::SpaceBetween,
             ] {
                 let widths = Layout::horizontal(&constraints)
@@ -2308,26 +2410,37 @@ mod tests {
         #[case::length_center2(vec![Length(25), Length(25)], vec![25..50, 50..75], Flex::Center)]
         #[case::length_end2(vec![Length(25), Length(25)], vec![50..75, 75..100], Flex::End)]
         #[case::length_spacebetween(vec![Length(25), Length(25)], vec![0..25, 75..100], Flex::SpaceBetween)]
-        #[case::length_spacearound(vec![Length(25), Length(25)], vec![17..42, 58..83], Flex::SpaceAround)]
+        #[case::length_spaceevenly(vec![Length(25), Length(25)], vec![17..42, 58..83], Flex::SpaceEvenly)]
+        #[case::length_spacearound(vec![Length(25), Length(25)], vec![13..38, 63..88], Flex::SpaceAround)]
         #[case::percentage_legacy(vec![Percentage(25), Percentage(25)], vec![0..25, 25..100], Flex::Legacy)]
         #[case::percentage_start(vec![Percentage(25), Percentage(25)], vec![0..25, 25..50], Flex::Start)]
         #[case::percentage_center(vec![Percentage(25), Percentage(25)], vec![25..50, 50..75], Flex::Center)]
         #[case::percentage_end(vec![Percentage(25), Percentage(25)], vec![50..75, 75..100], Flex::End)]
         #[case::percentage_spacebetween(vec![Percentage(25), Percentage(25)], vec![0..25, 75..100], Flex::SpaceBetween)]
-        #[case::percentage_spacearound(vec![Percentage(25), Percentage(25)], vec![17..42, 58..83], Flex::SpaceAround)]
+        #[case::percentage_spaceevenly(vec![Percentage(25), Percentage(25)], vec![17..42, 58..83], Flex::SpaceEvenly)]
+        #[case::percentage_spacearound(vec![Percentage(25), Percentage(25)], vec![13..38, 63..88], Flex::SpaceAround)]
         #[case::min_legacy2(vec![Min(25), Min(25)], vec![0..25, 25..100], Flex::Legacy)]
         #[case::min_start2(vec![Min(25), Min(25)], vec![0..50, 50..100], Flex::Start)]
         #[case::min_center2(vec![Min(25), Min(25)], vec![0..50, 50..100], Flex::Center)]
         #[case::min_end2(vec![Min(25), Min(25)], vec![0..50, 50..100], Flex::End)]
         #[case::min_spacebetween(vec![Min(25), Min(25)], vec![0..50, 50..100], Flex::SpaceBetween)]
+        #[case::min_spaceevenly(vec![Min(25), Min(25)], vec![0..50, 50..100], Flex::SpaceEvenly)]
         #[case::min_spacearound(vec![Min(25), Min(25)], vec![0..50, 50..100], Flex::SpaceAround)]
         #[case::max_legacy2(vec![Max(25), Max(25)], vec![0..25, 25..100], Flex::Legacy)]
         #[case::max_start2(vec![Max(25), Max(25)], vec![0..25, 25..50], Flex::Start)]
         #[case::max_center2(vec![Max(25), Max(25)], vec![25..50, 50..75], Flex::Center)]
         #[case::max_end2(vec![Max(25), Max(25)], vec![50..75, 75..100], Flex::End)]
         #[case::max_spacebetween(vec![Max(25), Max(25)], vec![0..25, 75..100], Flex::SpaceBetween)]
-        #[case::max_spacearound(vec![Max(25), Max(25)], vec![17..42, 58..83], Flex::SpaceAround)]
+        #[case::max_spaceevenly(vec![Max(25), Max(25)], vec![17..42, 58..83], Flex::SpaceEvenly)]
+        #[case::max_spacearound(vec![Max(25), Max(25)], vec![13..38, 63..88], Flex::SpaceAround)]
         #[case::length_spaced_around(vec![Length(25), Length(25), Length(25)], vec![0..25, 38..63, 75..100], Flex::SpaceBetween)]
+        #[case::one_segment_legacy(vec![Length(50)], vec![0..100], Flex::Legacy)]
+        #[case::one_segment_start(vec![Length(50)], vec![0..50], Flex::Start)]
+        #[case::one_segment_end(vec![Length(50)], vec![50..100], Flex::End)]
+        #[case::one_segment_center(vec![Length(50)], vec![25..75], Flex::Center)]
+        #[case::one_segment_spacebetween(vec![Length(50)], vec![0..100], Flex::SpaceBetween)]
+        #[case::one_segment_spaceevenly(vec![Length(50)], vec![25..75], Flex::SpaceEvenly)]
+        #[case::one_segment_spacearound(vec![Length(50)], vec![25..75], Flex::SpaceAround)]
         fn flex_constraint(
             #[case] constraints: Vec<Constraint>,
             #[case] expected: Vec<Range<u16>>,
@@ -2350,7 +2463,8 @@ mod tests {
         #[case::length_overlap4(vec![(42 , 20) , (61 , 20) , (80 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::End          , -1)]
         #[case::length_overlap5(vec![(0  , 20) , (19 , 20) , (38 , 62)] , vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy       , -1)]
         #[case::length_overlap6(vec![(0  , 20) , (40 , 20) , (80 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceBetween , -1)]
-        #[case::length_overlap7(vec![(10 , 20) , (40 , 20) , (70 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , -1)]
+        #[case::length_overlap7(vec![(10 , 20) , (40 , 20) , (70 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceEvenly  , -1)]
+        #[case::length_overlap7(vec![(7  , 20) , (40 , 20) , (73 , 20)] , vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround  , -1)]
         fn flex_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2377,7 +2491,8 @@ mod tests {
         #[case::length_spacing(vec![(36, 20), (58, 20) , (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End        , 2)]
         #[case::length_spacing(vec![(0 , 20), (22, 20) , (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::Legacy     , 2)]
         #[case::length_spacing(vec![(0 , 20), (40, 20) , (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::SpaceBetween, 2)]
-        #[case::length_spacing(vec![(10, 20), (40, 20) , (70, 20)], vec![Length(20), Length(20), Length(20)], Flex::SpaceAround, 2)]
+        #[case::length_spacing(vec![(10, 20), (40, 20) , (70, 20)], vec![Length(20), Length(20), Length(20)], Flex::SpaceEvenly, 2)]
+        #[case::length_spacing(vec![(7, 20), (40, 20) , (73, 20)], vec![Length(20), Length(20), Length(20)], Flex::SpaceAround, 2)]
         fn flex_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2434,7 +2549,8 @@ mod tests {
         #[case::c(vec![(36, 20), (58, 20), (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End, 2)]
         #[case::d(vec![(0, 20), (22, 20), (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::Legacy, 2)]
         #[case::e(vec![(0, 20), (22, 20), (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::Legacy, 2)]
-        #[case::f(vec![(10, 20), (40, 20), (70, 20)], vec![Length(20), Length(20), Length(20)], Flex::SpaceAround, 2)]
+        #[case::f(vec![(10, 20), (40, 20), (70, 20)], vec![Length(20), Length(20), Length(20)], Flex::SpaceEvenly, 2)]
+        #[case::f(vec![(7, 20), (40, 20), (73, 20)], vec![Length(20), Length(20), Length(20)], Flex::SpaceAround, 2)]
         fn constraint_specification_tests_for_priority_with_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2456,13 +2572,14 @@ mod tests {
         #[case::prop(vec![(0 , 10), (10, 80), (90 , 10)] , vec![Length(10), Fill(1), Length(10)], Flex::Legacy)]
         #[case::flex(vec![(0 , 10), (90 , 10)] , vec![Length(10), Length(10)], Flex::SpaceBetween)]
         #[case::prop(vec![(0 , 27), (27, 10), (37, 26), (63, 10), (73, 27)] , vec![Fill(1), Length(10), Fill(1), Length(10), Fill(1)], Flex::Legacy)]
-        #[case::flex(vec![(27 , 10), (63, 10)] , vec![Length(10), Length(10)], Flex::SpaceAround)]
+        #[case::flex(vec![(27 , 10), (63, 10)] , vec![Length(10), Length(10)], Flex::SpaceEvenly)]
         #[case::prop(vec![(0 , 10), (10, 10), (20 , 80)] , vec![Length(10), Length(10), Fill(1)], Flex::Legacy)]
         #[case::flex(vec![(0 , 10), (10, 10)] , vec![Length(10), Length(10)], Flex::Start)]
         #[case::prop(vec![(0 , 80), (80 , 10), (90, 10)] , vec![Fill(1), Length(10), Length(10)], Flex::Legacy)]
         #[case::flex(vec![(80 , 10), (90, 10)] , vec![Length(10), Length(10)], Flex::End)]
         #[case::prop(vec![(0 , 40), (40, 10), (50, 10), (60, 40)] , vec![Fill(1), Length(10), Length(10), Fill(1)], Flex::Legacy)]
         #[case::flex(vec![(40 , 10), (50, 10)] , vec![Length(10), Length(10)], Flex::Center)]
+        #[case::flex(vec![(20 , 10), (70, 10)] , vec![Length(10), Length(10)], Flex::SpaceAround)]
         fn fill_vs_flex(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2479,8 +2596,9 @@ mod tests {
 
         #[rstest]
         #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Legacy , 0)]
-        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceEvenly , 0)]
         #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 0)]
         #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Start , 0)]
         #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Center , 0)]
         #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::End , 0)]
@@ -2488,11 +2606,13 @@ mod tests {
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Start , 10)]
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Center , 10)]
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::End , 10)]
-        #[case::flex10(vec![(10 , 35), (55 , 35)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex10(vec![(10 , 35), (55 , 35)] , vec![Fill(1), Fill(1)], Flex::SpaceEvenly , 10)]
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex10(vec![(10 , 30), (60 , 30)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , 0)]
-        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 0)]
+        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceEvenly , 0)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 0)]
+        #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 0)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , 0)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , 0)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , 0)]
@@ -2500,8 +2620,9 @@ mod tests {
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , 10)]
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , 10)]
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , 10)]
-        #[case::flex_length10(vec![(10 , 25), (45, 10), (65 , 25)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex_length10(vec![(10 , 25), (45, 10), (65 , 25)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceEvenly , 10)]
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex_length10(vec![(10 , 15), (45, 10), (75 , 15)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 10)]
         fn fill_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2527,24 +2648,28 @@ mod tests {
         #[case::flex0_4(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::Start , -10)]
         #[case::flex0_5(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::Center , -10)]
         #[case::flex0_6(vec![(0 , 55), (45 , 55)] , vec![Fill(1), Fill(1)], Flex::End , -10)]
+        #[case::flex0_7(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceEvenly , -10)]
         #[case::flex10_1(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Legacy , -1)]
         #[case::flex10_2(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Start , -1)]
         #[case::flex10_3(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Center , -1)]
         #[case::flex10_4(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::End , -1)]
         #[case::flex10_5(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , -1)]
         #[case::flex10_6(vec![(0 , 51), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , -1)]
+        #[case::flex10_7(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceEvenly , -1)]
         #[case::flex_length0_1(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , -10)]
         #[case::flex_length0_2(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , -10)]
         #[case::flex_length0_3(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , -10)]
         #[case::flex_length0_4(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , -10)]
         #[case::flex_length0_5(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , -10)]
         #[case::flex_length0_6(vec![(0 , 55), (45, 10), (45 , 55)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , -10)]
+        #[case::flex_length0_7(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceEvenly , -10)]
         #[case::flex_length10_1(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , -1)]
         #[case::flex_length10_2(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , -1)]
         #[case::flex_length10_3(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , -1)]
         #[case::flex_length10_4(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , -1)]
         #[case::flex_length10_5(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , -1)]
         #[case::flex_length10_6(vec![(0 , 46), (45, 10), (54 , 46)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , -1)]
+        #[case::flex_length10_7(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceEvenly , -1)]
         fn fill_overlap(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2586,7 +2711,8 @@ mod tests {
         #[rstest]
         #[case::spacers(vec![(0, 0), (10, 0), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy)]
         #[case::spacers(vec![(0, 0), (10, 80), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween)]
-        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround)]
+        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceEvenly)]
+        #[case::spacers(vec![(0, 20), (30, 40), (80, 20)], vec![Length(10), Length(10)], Flex::SpaceAround)]
         #[case::spacers(vec![(0, 0), (10, 0), (20, 80)], vec![Length(10), Length(10)], Flex::Start)]
         #[case::spacers(vec![(0, 40), (50, 0), (60, 40)], vec![Length(10), Length(10)], Flex::Center)]
         #[case::spacers(vec![(0, 80), (90, 0), (100, 0)], vec![Length(10), Length(10)], Flex::End)]
@@ -2610,7 +2736,8 @@ mod tests {
         #[rstest]
         #[case::spacers(vec![(0, 0), (10, 5), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 5)]
         #[case::spacers(vec![(0, 0), (10, 80), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 5)]
-        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround, 5)]
+        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceEvenly, 5)]
+        #[case::spacers(vec![(0, 20), (30, 40), (80, 20)], vec![Length(10), Length(10)], Flex::SpaceAround, 5)]
         #[case::spacers(vec![(0, 0), (10, 5), (25, 75)], vec![Length(10), Length(10)], Flex::Start, 5)]
         #[case::spacers(vec![(0, 38), (48, 5), (63, 37)], vec![Length(10), Length(10)], Flex::Center, 5)]
         #[case::spacers(vec![(0, 75), (85, 5), (100, 0)], vec![Length(10), Length(10)], Flex::End, 5)]
@@ -2636,7 +2763,8 @@ mod tests {
         #[rstest]
         #[case::spacers_1(vec![(0, 0), (10, 0), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, -1)]
         #[case::spacers_2(vec![(0, 0), (10, 80), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, -1)]
-        #[case::spacers_3(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround, -1)]
+        #[case::spacers_3(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceEvenly, -1)]
+        #[case::spacers_3(vec![(0, 20), (30, 40), (80, 20)], vec![Length(10), Length(10)], Flex::SpaceAround, -1)]
         #[case::spacers_4(vec![(0, 0), (10, 0), (19, 81)], vec![Length(10), Length(10)], Flex::Start, -1)]
         #[case::spacers_5(vec![(0, 41), (51, 0), (60, 40)], vec![Length(10), Length(10)], Flex::Center, -1)]
         #[case::spacers_6(vec![(0, 81), (91, 0), (100, 0)], vec![Length(10), Length(10)], Flex::End, -1)]
@@ -2662,7 +2790,8 @@ mod tests {
         #[rstest]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
-        #[case::spacers(vec![(0, 33), (33, 34), (67, 33)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
+        #[case::spacers(vec![(0, 33), (33, 34), (67, 33)], vec![Length(10), Length(10)], Flex::SpaceEvenly, 200)]
+        #[case::spacers(vec![(0, 25), (25, 50), (75, 25)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Start, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Center, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::End, 200)]

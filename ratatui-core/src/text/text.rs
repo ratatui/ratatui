@@ -665,6 +665,15 @@ impl core::ops::Add<Self> for Text<'_> {
     }
 }
 
+/// Adds two `Text` together.
+///
+/// This ignores the style and alignment of the second `Text`.
+impl core::ops::AddAssign for Text<'_> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.lines.extend(rhs.lines);
+    }
+}
+
 impl<'a> core::ops::AddAssign<Line<'a>> for Text<'a> {
     fn add_assign(&mut self, line: Line<'a>) {
         self.push_line(line);
@@ -932,6 +941,20 @@ mod tests {
     fn add_text() {
         assert_eq!(
             Text::raw("Red").red() + Text::raw("Blue").blue(),
+            Text {
+                lines: vec![Line::raw("Red"), Line::raw("Blue")],
+                style: Style::new().red(),
+                alignment: None,
+            }
+        );
+    }
+
+    #[test]
+    fn add_assign_text() {
+        let mut text = Text::raw("Red").red();
+        text += Text::raw("Blue").blue();
+        assert_eq!(
+            text,
             Text {
                 lines: vec![Line::raw("Red"), Line::raw("Blue")],
                 style: Style::new().red(),

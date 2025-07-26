@@ -77,20 +77,14 @@ impl Data {
         [&self.name, &self.address, &self.email]
     }
 
-    // https://github.com/rust-lang/rust/issues/139338
-    #[allow(clippy::missing_const_for_fn)]
     fn name(&self) -> &str {
         &self.name
     }
 
-    // https://github.com/rust-lang/rust/issues/139338
-    #[allow(clippy::missing_const_for_fn)]
     fn address(&self) -> &str {
         &self.address
     }
 
-    // https://github.com/rust-lang/rust/issues/139338
-    #[allow(clippy::missing_const_for_fn)]
     fn email(&self) -> &str {
         &self.email
     }
@@ -192,8 +186,8 @@ impl App {
     }
 
     fn render(&mut self, frame: &mut Frame) {
-        let vertical = &Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
-        let rects = vertical.split(frame.area());
+        let layout = Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
+        let rects = frame.area().layout_vec(&layout);
 
         self.set_colors();
 

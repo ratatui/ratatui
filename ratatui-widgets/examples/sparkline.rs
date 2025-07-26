@@ -45,7 +45,8 @@ fn render(frame: &mut Frame) {
         Constraint::Fill(1),
         Constraint::Fill(1),
     ];
-    let [top, first, second, _] = Layout::vertical(constraints).spacing(1).areas(frame.area());
+    let layout = Layout::vertical(constraints).spacing(1);
+    let [top, first, second, _] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Sparkline Widget").bold(),

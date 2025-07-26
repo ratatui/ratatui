@@ -108,10 +108,11 @@ impl App {
     }
 
     fn render(&self, frame: &mut Frame) {
-        let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
-        let [animated_chart, bar_chart] =
-            Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]).areas(top);
-        let [line_chart, scatter] = Layout::horizontal([Constraint::Fill(1); 2]).areas(bottom);
+        let vertical = Layout::vertical([Constraint::Fill(1); 2]);
+        let [top, bottom] = frame.area().layout(&vertical);
+        let horizontal = Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]);
+        let [animated_chart, bar_chart] = top.layout(&horizontal);
+        let [line_chart, scatter] = bottom.layout(&Layout::horizontal([Constraint::Fill(1); 2]));
 
         self.render_animated_chart(frame, animated_chart);
         render_barchart(frame, bar_chart);

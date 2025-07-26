@@ -300,15 +300,20 @@ impl MergeStrategy {
     /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
     /// [`Cell::merge_symbol`]: crate::buffer::Cell::merge_symbol
     pub fn merge<'a>(self, prev: &'a str, next: &'a str) -> &'a str {
-        let (Ok(prev_symbol), Ok(next_symbol)) =
-            (BorderSymbol::from_str(prev), BorderSymbol::from_str(next))
-        else {
+        // Replace should always just return the last symbol.
+        if self == Self::Replace {
             return next;
-        };
-        if let Ok(merged) = prev_symbol.merge(next_symbol, self).try_into() {
-            return merged;
         }
-        next
+
+        match (BorderSymbol::from_str(prev), BorderSymbol::from_str(next)) {
+            (Ok(prev_symbol), Ok(next_symbol)) => prev_symbol
+                .merge(next_symbol, self)
+                .try_into()
+                .unwrap_or(next),
+            // Non-border symbols take precedence in strategies other than Replace.
+            (Err(_), Ok(_)) => prev,
+            (_, Err(_)) => next,
+        }
     }
 }
 
@@ -523,7 +528,6 @@ macro_rules! define_symbols {
 }
 
 define_symbols!(
-    " " => (Nothing, Nothing, Nothing, Nothing),
     "─" => (Plain, Nothing, Plain, Nothing),
     "━" => (Thick, Nothing, Thick, Nothing),
     "│" => (Nothing, Plain, Nothing, Plain),
@@ -666,7 +670,7 @@ mod tests {
             "╄", "╅", "╆", "╇", "╈", "╉", "╊", "╋", "╌", "╍", "╎", "╏", "═", "║", "╒", "╓", "╔",
             "╕", "╖", "╗", "╘", "╙", "╚", "╛", "╜", "╝", "╞", "╟", "╠", "╡", "╢", "╣", "╤", "╥",
             "╦", "╧", "╨", "╩", "╪", "╫", "╬", "╭", "╮", "╯", "╰", "╴", "╵", "╶", "╷", "╸", "╹",
-            "╺", "╻", "╼", "╽", "╾", "╿", " ",
+            "╺", "╻", "╼", "╽", "╾", "╿", " ", "a", "b",
         ];
 
         for a in symbols {
@@ -695,8 +699,8 @@ mod tests {
         assert_eq!(strategy.merge("┵", "┝"), "┿");
         assert_eq!(strategy.merge("│", "━"), "┿");
         assert_eq!(strategy.merge("┵", "╞"), "╞");
-        assert_eq!(strategy.merge(" ", "╠"), "╠");
-        assert_eq!(strategy.merge("╠", " "), "╠");
+        assert_eq!(strategy.merge(" ", "╠"), " ");
+        assert_eq!(strategy.merge("╠", " "), " ");
         assert_eq!(strategy.merge("╎", "╧"), "╧");
         assert_eq!(strategy.merge("╛", "╒"), "╪");
         assert_eq!(strategy.merge("│", "═"), "╪");
@@ -704,6 +708,9 @@ mod tests {
         assert_eq!(strategy.merge("╡", "╞"), "╪");
         assert_eq!(strategy.merge("┌", "╭"), "╭");
         assert_eq!(strategy.merge("┘", "╭"), "╭");
+        assert_eq!(strategy.merge("┌", "a"), "a");
+        assert_eq!(strategy.merge("a", "╭"), "a");
+        assert_eq!(strategy.merge("a", "b"), "b");
     }
 
     #[test]
@@ -711,7 +718,7 @@ mod tests {
         let strategy = MergeStrategy::Fuzzy;
         assert_eq!(strategy.merge("┄", "╴"), "─");
         assert_eq!(strategy.merge("│", "┆"), "┆");
-        assert_eq!(strategy.merge(" ", "┉"), "┉");
+        assert_eq!(strategy.merge(" ", "┉"), " ");
         assert_eq!(strategy.merge("┋", "┋"), "┋");
         assert_eq!(strategy.merge("╷", "╶"), "┌");
         assert_eq!(strategy.merge("╭", "┌"), "┌");
@@ -725,8 +732,8 @@ mod tests {
         assert_eq!(strategy.merge("┘", "┌"), "┼");
         assert_eq!(strategy.merge("┘", "╭"), "┼");
         assert_eq!(strategy.merge("╎", "┉"), "┿");
-        assert_eq!(strategy.merge(" ", "╠"), "╠");
-        assert_eq!(strategy.merge("╠", " "), "╠");
+        assert_eq!(strategy.merge(" ", "╠"), " ");
+        assert_eq!(strategy.merge("╠", " "), " ");
         assert_eq!(strategy.merge("┵", "╞"), "╪");
         assert_eq!(strategy.merge("╛", "╒"), "╪");
         assert_eq!(strategy.merge("│", "═"), "╪");
@@ -734,5 +741,8 @@ mod tests {
         assert_eq!(strategy.merge("╡", "╞"), "╪");
         assert_eq!(strategy.merge("╎", "╧"), "╪");
         assert_eq!(strategy.merge("┌", "╭"), "╭");
+        assert_eq!(strategy.merge("┌", "a"), "a");
+        assert_eq!(strategy.merge("a", "╭"), "a");
+        assert_eq!(strategy.merge("a", "b"), "b");
     }
 }

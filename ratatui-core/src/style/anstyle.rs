@@ -190,6 +190,8 @@ impl From<anstyle::Style> for Style {
         Self {
             fg: style.get_fg_color().map(Color::from),
             bg: style.get_bg_color().map(Color::from),
+            #[cfg(feature = "underline-color")]
+            underline_color: style.get_underline_color().map(Color::from),
             add_modifier: style.get_effects().into(),
             ..Default::default()
         }
@@ -206,6 +208,11 @@ impl From<Style> for anstyle::Style {
         if let Some(bg) = style.bg {
             let bg = anstyle::Color::from(bg);
             anstyle_style = anstyle_style.bg_color(Some(bg));
+        }
+        #[cfg(feature = "underline-color")]
+        if let Some(underline) = style.underline_color {
+            let underline = anstyle::Color::from(underline);
+            anstyle_style = anstyle_style.underline_color(Some(underline));
         }
         anstyle_style = anstyle_style.effects(style.add_modifier.into());
         anstyle_style
@@ -300,10 +307,13 @@ mod tests {
         let anstyle_style = anstyle::Style::new()
             .fg_color(Some(anstyle::Color::Ansi(AnsiColor::Red)))
             .bg_color(Some(anstyle::Color::Ansi(AnsiColor::Blue)))
+            .underline_color(Some(anstyle::Color::Ansi(AnsiColor::Green)))
             .effects(Effects::BOLD | Effects::ITALIC);
         let style = Style::from(anstyle_style);
         assert_eq!(style.fg, Some(Color::Red));
         assert_eq!(style.bg, Some(Color::Blue));
+        #[cfg(feature = "underline-color")]
+        assert_eq!(style.underline_color, Some(Color::Green));
         assert!(style.add_modifier.contains(Modifier::BOLD));
         assert!(style.add_modifier.contains(Modifier::ITALIC));
     }
@@ -313,6 +323,8 @@ mod tests {
         let style = Style {
             fg: Some(Color::Red),
             bg: Some(Color::Blue),
+            #[cfg(feature = "underline-color")]
+            underline_color: Some(Color::Green),
             add_modifier: Modifier::BOLD | Modifier::ITALIC,
             ..Default::default()
         };
@@ -324,6 +336,11 @@ mod tests {
         assert_eq!(
             anstyle_style.get_bg_color(),
             Some(anstyle::Color::Ansi(AnsiColor::Blue))
+        );
+        #[cfg(feature = "underline-color")]
+        assert_eq!(
+            anstyle_style.get_underline_color(),
+            Some(anstyle::Color::Ansi(AnsiColor::Green))
         );
         assert!(anstyle_style.get_effects().contains(Effects::BOLD));
         assert!(anstyle_style.get_effects().contains(Effects::ITALIC));

@@ -98,10 +98,10 @@ impl App {
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::vertical([Length(3), Min(0)]);
-        let [header_area, main_area] = layout.areas(area);
+        let [header_area, main_area] = area.layout(&layout);
 
-        let [gauge1_area, gauge4_area, gauge6_area] =
-            Layout::vertical([Length(2); 3]).areas(main_area);
+        let gauges_layout = Layout::vertical([Length(2); 3]);
+        let [gauge1_area, gauge4_area, gauge6_area] = main_area.layout(&gauges_layout);
 
         header(header_area, buf);
 
@@ -112,7 +112,7 @@ impl Widget for &App {
 }
 
 fn header(area: Rect, buf: &mut Buffer) {
-    let [p1_area, p2_area] = Layout::vertical([Length(1), Min(1)]).areas(area);
+    let [p1_area, p2_area] = area.layout(&Layout::vertical([Length(1), Min(1)]));
     Paragraph::new("LineGauge Example")
         .bold()
         .centered()

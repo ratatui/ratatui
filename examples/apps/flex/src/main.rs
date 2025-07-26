@@ -153,6 +153,7 @@ enum SelectedTab {
     Center,
     End,
     SpaceAround,
+    SpaceEvenly,
     SpaceBetween,
 }
 
@@ -255,7 +256,7 @@ fn example_height() -> u16 {
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::vertical([Length(3), Length(1), Fill(0)]);
-        let [tabs, axis, demo] = layout.areas(area);
+        let [tabs, axis, demo] = area.layout(&layout);
         self.tabs().render(tabs, buf);
         let scroll_needed = self.render_demo(demo, buf);
         let axis_width = if scroll_needed {
@@ -369,8 +370,9 @@ impl SelectedTab {
             Self::Start => SKY.c400,
             Self::Center => SKY.c300,
             Self::End => SKY.c200,
-            Self::SpaceAround => INDIGO.c400,
+            Self::SpaceEvenly => INDIGO.c400,
             Self::SpaceBetween => INDIGO.c300,
+            Self::SpaceAround => INDIGO.c500,
         };
         format!(" {text} ").fg(color).bg(Color::Black).into()
     }
@@ -385,8 +387,9 @@ impl StatefulWidget for SelectedTab {
             Self::Start => Self::render_examples(area, buf, Flex::Start, spacing),
             Self::Center => Self::render_examples(area, buf, Flex::Center, spacing),
             Self::End => Self::render_examples(area, buf, Flex::End, spacing),
-            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
+            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing),
             Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing),
+            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
         }
     }
 }
@@ -418,7 +421,7 @@ impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title_height = get_description_height(&self.description);
         let layout = Layout::vertical([Length(title_height), Fill(0)]);
-        let [title, illustrations] = layout.areas(area);
+        let [title, illustrations] = area.layout(&layout);
 
         let (blocks, spacers) = Layout::horizontal(&self.constraints)
             .flex(self.flex)

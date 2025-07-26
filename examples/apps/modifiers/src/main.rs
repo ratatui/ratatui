@@ -33,8 +33,8 @@ fn main() -> Result<()> {
 }
 
 fn render(frame: &mut Frame) {
-    let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    let [text_area, main_area] = vertical.areas(frame.area());
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    let [text_area, main_area] = frame.area().layout(&layout);
     frame.render_widget(
         Paragraph::new("Note: not all terminals support all modifiers")
             .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),

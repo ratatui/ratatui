@@ -29,6 +29,32 @@ Add `ratatui-core` to your `Cargo.toml`:
 cargo add ratatui-core
 ```
 
+## Crate Organization
+
+`ratatui-core` is part of the Ratatui workspace that was modularized in version 0.30.0 to
+improve compilation times, API stability, and dependency management. This crate provides the
+foundational types and traits that other crates in the workspace depend on.
+
+**When to use `ratatui-core`:**
+
+- Building widget libraries that implement [`Widget`] or [`StatefulWidget`]
+- Creating lightweight applications that don't need built-in widgets
+- You want minimal dependencies and faster compilation times
+- You need maximum API stability (core types change less frequently)
+
+**When to use the main [`ratatui`] crate:**
+
+- Building applications that use built-in widgets
+- You want convenience and don't mind slightly longer compilation times
+- You need backend implementations and terminal management utilities
+
+For detailed information about the workspace organization, see [ARCHITECTURE.md].
+
+[`ratatui`]: https://crates.io/crates/ratatui
+[`Widget`]: widgets::Widget
+[`StatefulWidget`]: widgets::StatefulWidget
+[ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
+
 ## Contributing
 
 We welcome contributions from the community! Please see our [CONTRIBUTING](../CONTRIBUTING.md)

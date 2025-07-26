@@ -7,12 +7,19 @@ use strum::{Display, EnumString};
 /// and libraries, it's unlikely that this alias will be removed in the future.
 pub type Alignment = HorizontalAlignment;
 
-/// A type representing horizontal alignment.
+/// Horizontal content alignment within a layout area.
 ///
 /// Prior to Ratatui 0.30.0, this type was named `Alignment`. In Ratatui 0.30.0, the name was
 /// changed to `HorizontalAlignment` to make it more descriptive. The old name is still available as
 /// an alias for backwards compatibility.
+///
+/// This type is used throughout Ratatui to control how content is positioned horizontally within
+/// available space. It's commonly used with widgets to control text alignment, but can also be
+/// used in layout calculations.
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum HorizontalAlignment {
     #[default]
     Left,
@@ -20,8 +27,14 @@ pub enum HorizontalAlignment {
     Right,
 }
 
-/// A type representing vertical alignment.
+/// Vertical content alignment within a layout area.
+///
+/// This type is used to control how content is positioned vertically within available space.
+/// It complements [`HorizontalAlignment`] to provide full 2D positioning control.
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum VerticalAlignment {
     #[default]
     Top,

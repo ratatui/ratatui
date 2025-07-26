@@ -41,8 +41,8 @@ fn main() -> Result<()> {
 fn render(frame: &mut Frame, show_popup: bool) {
     let area = frame.area();
 
-    let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
-    let [instructions, content] = vertical.areas(area);
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
+    let [instructions, content] = area.layout(&layout);
 
     frame.render_widget(
         Line::from("Press 'p' to toggle popup, 'q' to quit").centered(),
@@ -64,7 +64,7 @@ fn render(frame: &mut Frame, show_popup: bool) {
 fn centered_area(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
     let vertical = Layout::vertical([Constraint::Percentage(percent_y)]).flex(Flex::Center);
     let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
-    let [area] = vertical.areas(area);
-    let [area] = horizontal.areas(area);
+    let [area] = area.layout(&vertical);
+    let [area] = area.layout(&horizontal);
     area
 }

@@ -32,9 +32,8 @@ fn main() -> Result<()> {
 }
 
 fn render(frame: &mut Frame, temperatures: &[u8]) {
-    let [title, main] = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)])
-        .spacing(1)
-        .areas(frame.area());
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
+    let [title, main] = frame.area().layout(&layout);
 
     frame.render_widget("Weather demo".bold().into_centered_line(), title);
     frame.render_widget(vertical_barchart(temperatures), main);

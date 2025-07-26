@@ -42,13 +42,13 @@ fn main() -> color_eyre::Result<()> {
 
 /// Render the UI with various lists.
 fn render(frame: &mut Frame, list_state: &mut ListState) {
-    let vertical = Layout::vertical([
+    let constraints = [
         Constraint::Length(1),
         Constraint::Fill(1),
         Constraint::Fill(1),
-    ])
-    .spacing(1);
-    let [top, first, second] = vertical.areas(frame.area());
+    ];
+    let layout = Layout::vertical(constraints).spacing(1);
+    let [top, first, second] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("List Widget").bold(),

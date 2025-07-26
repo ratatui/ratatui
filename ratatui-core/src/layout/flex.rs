@@ -5,7 +5,12 @@ use crate::layout::Constraint;
 
 /// Defines the options for layout flex justify content in a container.
 ///
-/// This enumeration controls the distribution of space when layout constraints are met.
+/// This enumeration controls the distribution of space when layout constraints are met and there
+/// is excess space available. The `Flex` option is used with [`Layout`](crate::layout::Layout) to
+/// control how extra space is distributed among layout segments, which is particularly useful for
+/// creating responsive layouts that adapt to different terminal sizes.
+///
+/// Available options:
 ///
 /// - `Legacy`: Fills the available space within the container, putting excess space into the last
 ///   element.
@@ -14,6 +19,8 @@ use crate::layout::Constraint;
 /// - `Center`: Centers items within the container.
 /// - `SpaceBetween`: Adds excess space between each element.
 /// - `SpaceAround`: Adds excess space around each element.
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash, EnumIs)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Flex {
@@ -156,7 +163,8 @@ pub enum Flex {
     /// ```
     SpaceBetween,
 
-    /// Adds excess space around each element.
+    /// Evenly distributes excess space between all elements, including before the first and after
+    /// the last.
     ///
     /// # Examples
     ///
@@ -170,6 +178,28 @@ pub enum Flex {
     ///              ┌──────20 px───────┐              ┌──────20 px───────┐
     ///              │      Max(20)     │              │      Max(20)     │
     ///              └──────────────────┘              └──────────────────┘
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///                               ┌──────20 px───────┐
+    ///                               │      Max(20)     │
+    ///                               └──────────────────┘
+    /// ```
+    SpaceEvenly,
+
+    /// Adds excess space around each element.
+    ///
+    /// # Examples
+    ///
+    /// ```plain
+    /// <------------------------------------80 px------------------------------------->
+    ///     ┌────16 px─────┐       ┌──────20 px───────┐       ┌──────20 px───────┐
+    ///     │Percentage(20)│       │    Length(20)    │       │     Length(20)   │
+    ///     └──────────────┘       └──────────────────┘       └──────────────────┘
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///      ┌──────20 px───────┐                      ┌──────20 px───────┐
+    ///      │      Max(20)     │                      │      Max(20)     │
+    ///      └──────────────────┘                      └──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
     ///                               ┌──────20 px───────┐
