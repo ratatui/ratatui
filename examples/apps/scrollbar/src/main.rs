@@ -15,7 +15,7 @@ use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Alignment, Constraint, Layout, Margin};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::symbols::scrollbar;
-use ratatui::text::{Line, Masked, Span};
+use ratatui::text::{Line, Masked, Span, Text};
 use ratatui::widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState};
 use ratatui::{DefaultTerminal, Frame};
 
@@ -100,7 +100,7 @@ impl App {
         ])
         .split(area);
 
-        let text = vec![
+        let text = Text::from_iter([
             Line::from("This is a line "),
             Line::from("This is a line   ".red()),
             Line::from("This is a line".on_dark_gray()),
@@ -121,8 +121,9 @@ impl App {
                 Span::raw("Masked text: "),
                 Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
             ]),
-        ];
-        self.vertical_scroll_state = self.vertical_scroll_state.content_length(text.len());
+        ]);
+
+        self.vertical_scroll_state = self.vertical_scroll_state.content_length(text.lines.len());
         self.horizontal_scroll_state = self.horizontal_scroll_state.content_length(long_line.len());
 
         let create_block = |title: &'static str| Block::bordered().gray().title(title.bold());
@@ -132,7 +133,7 @@ impl App {
             .title("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold());
         frame.render_widget(title, chunks[0]);
 
-        let paragraph = Paragraph::new(text.clone())
+        let paragraph = Paragraph::from_borrowed_text(&text)
             .gray()
             .block(create_block("Vertical scrollbar with arrows"))
             .scroll((self.vertical_scroll as u16, 0));
@@ -145,7 +146,7 @@ impl App {
             &mut self.vertical_scroll_state,
         );
 
-        let paragraph = Paragraph::new(text.clone())
+        let paragraph = Paragraph::from_borrowed_text(&text)
             .gray()
             .block(create_block(
                 "Vertical scrollbar without arrows, without track symbol and mirrored",
@@ -165,7 +166,7 @@ impl App {
             &mut self.vertical_scroll_state,
         );
 
-        let paragraph = Paragraph::new(text.clone())
+        let paragraph = Paragraph::from_borrowed_text(&text)
             .gray()
             .block(create_block(
                 "Horizontal scrollbar with only begin arrow & custom thumb symbol",
@@ -183,7 +184,7 @@ impl App {
             &mut self.horizontal_scroll_state,
         );
 
-        let paragraph = Paragraph::new(text.clone())
+        let paragraph = Paragraph::from_borrowed_text(&text)
             .gray()
             .block(create_block(
                 "Horizontal scrollbar without arrows & custom thumb and track symbol",
