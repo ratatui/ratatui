@@ -4,3 +4,4 @@ target
 .gdb_history
 .idea/
 .env
+.DS_Store
