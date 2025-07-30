@@ -50,7 +50,6 @@ fn main() -> Result<()> {
 struct App {
     height: u16,
     start_time: Instant,
-    frame_count: u64,
     messages: Vec<String>,
     insert_count: u32,
 }
@@ -60,7 +59,6 @@ impl App {
         Self {
             height: INITIAL_HEIGHT,
             start_time: Instant::now(),
-            frame_count: 0,
             insert_count: 0,
             messages: vec![
                 "Welcome to Resizable Inline Viewport Demo!".to_string(),
@@ -72,7 +70,6 @@ impl App {
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         loop {
-            self.frame_count += 1;
             terminal.draw(|frame| self.render(frame))?;
             if !event::poll(Duration::from_millis(100))? {
                 // redraw at least 10fps
@@ -161,10 +158,9 @@ impl App {
         // Render the status area with runtime and frame count
         let elapsed = self.start_time.elapsed();
         let status = format!(
-            "Runtime: {:02}:{:02} | Frames: {} | Current Height: {}",
+            "Runtime: {:02}:{:02} | Current Height: {}",
             elapsed.as_secs() / 60,
             elapsed.as_secs() % 60,
-            self.frame_count,
             self.height
         );
         frame.render_widget(status.green(), status_area);
