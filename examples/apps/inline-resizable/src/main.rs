@@ -16,32 +16,32 @@
 //! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 //! [`BarChart`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html
 
-use std::sync::mpsc;
-use std::thread;
+use std::io;
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
-use ratatui::backend::Backend;
 use ratatui::layout::{Constraint, Layout};
-use ratatui::style::{Color, Modifier, Style, Stylize};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Gauge, List, ListItem, Paragraph, Widget};
-use ratatui::{Frame, Terminal, TerminalOptions, Viewport};
+use ratatui::macros::line;
+use ratatui::style::{Color, Stylize};
+use ratatui::text::Span;
+use ratatui::widgets::{Block, Gauge, List, ListItem, Widget};
+use ratatui::{DefaultTerminal, Frame, TerminalOptions, Viewport};
+
+const INITIAL_HEIGHT: u16 = 6;
+const MAX_HEIGHT: u16 = 20;
+const MIN_HEIGHT: u16 = 3;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
 
     // Start with an inline viewport of height 6
     let mut terminal = ratatui::init_with_options(TerminalOptions {
-        viewport: Viewport::Inline(6),
+        viewport: Viewport::Inline(INITIAL_HEIGHT),
     });
 
-    let (tx, rx) = mpsc::channel();
-    input_handling(tx.clone());
-
-    let mut app_state = App::new();
-    let app_result = app_state.run(&mut terminal, rx);
+    let mut app = App::new();
+    let app_result = app.run(&mut terminal);
 
     ratatui::restore();
     app_result
@@ -49,7 +49,6 @@ fn main() -> Result<()> {
 
 struct App {
     height: u16,
-    initial_height: u16,
     start_time: Instant,
     frame_count: u64,
     messages: Vec<String>,
@@ -59,8 +58,7 @@ struct App {
 impl App {
     fn new() -> Self {
         Self {
-            height: 6,
-            initial_height: 6,
+            height: INITIAL_HEIGHT,
             start_time: Instant::now(),
             frame_count: 0,
             insert_count: 0,
@@ -72,205 +70,137 @@ impl App {
         }
     }
 
-    fn increase_height(&mut self) {
-        if self.height < 20 {
-            self.height += 1;
-            self.messages
-                .push(format!("Height increased to {}", self.height));
-        } else {
-            self.messages
-                .push("Maximum height reached (20)".to_string());
-        }
-    }
-
-    fn decrease_height(&mut self) {
-        if self.height > 3 {
-            self.height -= 1;
-            self.messages
-                .push(format!("Height decreased to {}", self.height));
-        } else {
-            self.messages.push("Minimum height reached (3)".to_string());
-        }
-    }
-
-    fn reset_height(&mut self) {
-        self.height = self.initial_height;
-        self.messages
-            .push(format!("Height reset to {}", self.initial_height));
-    }
-
-    fn insert_line(&mut self) {
-        self.insert_count += 1;
-        self.messages.push(format!(
-            "Inserted line #{} before viewport",
-            self.insert_count
-        ));
-    }
-
-    fn run<B: Backend>(
-        &mut self,
-        terminal: &mut Terminal<B>,
-        rx: mpsc::Receiver<Event>,
-    ) -> Result<()>
-    where
-        B::Error: Send + Sync + 'static,
-    {
-        let mut redraw = true;
-
+    fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         loop {
-            if redraw {
-                terminal.draw(|frame| self.render(frame))?;
+            self.frame_count += 1;
+            terminal.draw(|frame| self.render(frame))?;
+            if !event::poll(Duration::from_millis(100))? {
+                // redraw at least 10fps
+                continue;
             }
-            redraw = true;
+            let Some(key) = event::read()?.as_key_press_event() else {
+                // other events (resize, mouse, etc.) just cause the viewport to redraw
+                continue;
+            };
 
-            match rx.recv()? {
-                Event::Input(key_event) => if key_event.is_press() {
-                    match key_event.code {
-                        KeyCode::Char('q') => break,
-                        KeyCode::Char('+') | KeyCode::Char('=') => {
-                            self.increase_height();
-                            terminal.set_viewport_height(self.height)?;
-                        }
-                        KeyCode::Char('-') | KeyCode::Char('_') => {
-                            self.decrease_height();
-                            terminal.set_viewport_height(self.height)?;
-                        }
-                        KeyCode::Char('r') => {
-                            self.reset_height();
-                            terminal.set_viewport_height(self.height)?;
-                        }
-                        KeyCode::Char('i') => {
-                            self.insert_line();
-                            let count = self.insert_count;
-                            let now = self.start_time.elapsed();
-                            terminal.insert_before(1, |buf| {
-                                Paragraph::new(format!(
-                                    "📝 Inserted line #{} at {:02}:{:02}",
-                                    count,
-                                    now.as_secs() / 60,
-                                    now.as_secs() % 60
-                                ))
-                                .style(
-                                    Style::default()
-                                        .fg(Color::Green)
-                                        .add_modifier(Modifier::BOLD),
-                                )
-                                .render(buf.area, buf);
-                            })?;
-                        }
-                        _ => {}
-                    }
-                }
-                Event::Tick => {
-                    self.frame_count += 1;
-                    redraw = false; // Don't redraw on every tick unless content changed
-                }
+            match key.code {
+                KeyCode::Char('q') => break Ok(()),
+                KeyCode::Char('+') | KeyCode::Char('=') => self.increase_height(terminal)?,
+                KeyCode::Char('-') | KeyCode::Char('_') => self.decrease_height(terminal)?,
+                KeyCode::Char('r') => self.reset_height(terminal)?,
+                KeyCode::Char('i') => self.insert_line(terminal)?,
+
                 _ => {}
             }
         }
+    }
+
+    fn increase_height(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        if self.height >= MAX_HEIGHT {
+            let message = format!("Maximum height reached ({MAX_HEIGHT})");
+            self.messages.push(message);
+            return Ok(());
+        }
+        self.height += 1;
+        let message = format!("Height increased to {}", self.height);
+        self.messages.push(message);
+        terminal.set_viewport_height(self.height)
+    }
+
+    fn decrease_height(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        if self.height <= MIN_HEIGHT {
+            let message = format!("Minimum height reached ({MIN_HEIGHT})");
+            self.messages.push(message);
+            return Ok(());
+        }
+        self.height -= 1;
+        let message = format!("Height decreased to {}", self.height);
+        self.messages.push(message);
+        terminal.set_viewport_height(self.height)
+    }
+
+    fn reset_height(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        self.height = INITIAL_HEIGHT;
+        let message = format!("Height reset to {}", INITIAL_HEIGHT);
+        self.messages.push(message);
+        terminal.set_viewport_height(self.height)
+    }
+
+    fn insert_line(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        self.insert_count += 1;
+        let message = format!("Inserted line #{}", self.insert_count);
+        self.messages.push(message);
+
+        let now = self.start_time.elapsed();
+        terminal.insert_before(1, |buf| {
+            let inserted_line = format!(
+                "📝 Inserted line #{} at {:02}:{:02}",
+                self.insert_count,
+                now.as_secs() / 60,
+                now.as_secs() % 60
+            );
+            inserted_line.green().bold().render(buf.area, buf);
+        })?;
         Ok(())
     }
 
-
-    fn render(&mut self, frame: &mut Frame) {
-        let area = frame.area();
-
+    fn render(&self, frame: &mut Frame) {
         // Create a block with border and title showing current height
-        let title = format!(" Resizable Viewport (Height: {}) ", self.height).cyan().bold();
-        let main_block = Block::bordered().title(title);
+        let title = format!(" Resizable Viewport (Height: {}) ", self.height);
+        let main_block = Block::bordered().title(title.cyan().bold());
+        frame.render_widget(&main_block, frame.area());
 
-        let inner_area = main_block.inner(area);
-        frame.render_widget(main_block, area);
-
-        // Split the inner area into sections
-        let vertical_layout = Layout::vertical([
-            Constraint::Length(1), // Status line
-            Constraint::Length(2), // Controls info
-            Constraint::Min(0),    // Messages list
-            Constraint::Length(1), // Bottom info
-        ]);
         let [status_area, controls_area, messages_area, bottom_area] =
-            vertical_layout.areas(inner_area);
+            main_block.inner(frame.area()).layout(&Layout::vertical([
+                Constraint::Length(1),
+                Constraint::Length(2),
+                Constraint::Min(0),
+                Constraint::Length(1),
+            ]));
 
-        // Status line
+        // Render the status area with runtime and frame count
         let elapsed = self.start_time.elapsed();
-        let status_line = Paragraph::new(format!(
+        let status = format!(
             "Runtime: {:02}:{:02} | Frames: {} | Current Height: {}",
             elapsed.as_secs() / 60,
             elapsed.as_secs() % 60,
             self.frame_count,
             self.height
-        ))
-        .style(Style::default().fg(Color::Green));
-        frame.render_widget(status_line, status_area);
+        );
+        frame.render_widget(status.green(), status_area);
 
-        // Controls info
-        let controls = Paragraph::new(vec![Line::from(vec![
-            Span::styled(
-                "Controls: ",
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::raw("'+' increase | '-' decrease | 'r' reset | 'i' insert | 'q' quit"),
-        ])]);
+        // Render the controls area with instructions
+        let controls = line![
+            "Controls: ".yellow().bold(),
+            "'+' increase | '-' decrease | 'r' reset | 'i' insert | 'q' quit",
+        ];
         frame.render_widget(controls, controls_area);
 
-        // Messages list (scrollable)
-        let message_items: Vec<ListItem> = self
+        // Render the messages area with the most recent messages
+        let message_list = self
             .messages
             .iter()
-            .rev() // Show newest messages first
+            .rev() // show only the most recent messages
             .take(messages_area.height as usize)
+            .rev() // reverse again to maintain order
             .enumerate()
             .map(|(i, msg)| {
-                let style = if i == 0 {
-                    Style::default().fg(Color::Yellow) // Highlight newest message
+                let color = if i == 0 {
+                    Color::Yellow // Highlight newest message
                 } else {
-                    Style::default().fg(Color::White)
+                    Color::White
                 };
-                ListItem::new(Line::from(Span::styled(msg, style)))
+                ListItem::new(Span::styled(msg, color))
             })
-            .collect();
-
-        let messages_list = List::new(message_items);
-        frame.render_widget(messages_list, messages_area);
+            .collect::<List>();
+        frame.render_widget(message_list, messages_area);
 
         // Bottom info with dynamic gauge showing height percentage
         let height_percentage = (self.height as f64 / 20.0).min(1.0);
         let gauge = Gauge::default()
-            .gauge_style(Style::default().fg(Color::Blue))
+            .gauge_style(Color::Blue)
             .ratio(height_percentage)
             .label(format!("Height: {}/20", self.height));
         frame.render_widget(gauge, bottom_area);
     }
 }
-
-#[derive(Debug)]
-enum Event {
-    Input(event::KeyEvent),
-    Tick,
-    Resize,
-}
-
-fn input_handling(tx: mpsc::Sender<Event>) {
-    let tick_rate = Duration::from_millis(250);
-    thread::spawn(move || {
-        let mut last_tick = Instant::now();
-        loop {
-            let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-            if event::poll(timeout).unwrap() {
-                match event::read().unwrap() {
-                    event::Event::Key(key) => tx.send(Event::Input(key)).unwrap(),
-                    event::Event::Resize(_, _) => tx.send(Event::Resize).unwrap(),
-                    _ => {}
-                }
-            }
-            if last_tick.elapsed() >= tick_rate {
-                tx.send(Event::Tick).unwrap();
-                last_tick = Instant::now();
-            }
-        }
-    });
-}
-

@@ -1,5 +1,5 @@
 [package]
-name = "resizable-inline"
+name = "inline-resizable"
 publish = false
 license.workspace = true
 edition.workspace = true
