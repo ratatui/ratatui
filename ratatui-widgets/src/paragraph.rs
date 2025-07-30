@@ -136,7 +136,7 @@ impl<'a> Paragraph<'a> {
     /// The `text` parameter can be a [`Text`] or any type that can be converted into a [`Text`]. By
     /// default, the text is styled with [`Style::default()`], not wrapped, and aligned to the left.
     ///
-    /// If you have a reference to [`Text`] use [`Paragraph::from_borrowed_text`]
+    /// If you have [`&Text`] or [`Cow<Text>`] use [`Paragraph::from`]
     /// # Examples
     ///
     /// ```rust
@@ -154,50 +154,7 @@ impl<'a> Paragraph<'a> {
     where
         T: Into<Text<'a>>,
     {
-        Self::from_cow_text(Cow::Owned(text.into()))
-    }
-
-    /// Creates a new [`Paragraph`] widget with the given text.
-    ///
-    /// By default, the text is styled with [`Style::default()`], not wrapped, and aligned to the
-    /// left.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use ratatui::style::{Style, Stylize};
-    /// use ratatui::text::{Line, Text};
-    /// use ratatui::widgets::Paragraph;
-    /// let text = Text::raw("Hello, world!");
-    /// let paragraph = Paragraph::from_cow_text(Cow::Borrowed(&text));
-    /// ```
-    pub const fn from_borrowed_text(text: &'a Text<'a>) -> Self {
-        Self::from_cow_text(Cow::Borrowed(text))
-    }
-
-    /// Creates a new [`Paragraph`] widget with the given text.
-    ///
-    /// By default, the text is styled with [`Style::default()`], not wrapped, and aligned to the
-    /// left.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use ratatui::style::{Style, Stylize};
-    /// use ratatui::text::{Line, Text};
-    /// use ratatui::widgets::Paragraph;
-    /// let text = Text::raw("Hello, world!");
-    /// let paragraph = Paragraph::from_cow_text(Cow::Borrowed(&text));
-    /// ```
-    pub const fn from_cow_text(text: Cow<'a, Text<'a>>) -> Self {
-        Self {
-            block: None,
-            style: Style::new(),
-            wrap: None,
-            text,
-            scroll: Position::ORIGIN,
-            alignment: Alignment::Left,
-        }
+        Self::from(Cow::Owned(text.into()))
     }
 
     /// Surrounds the [`Paragraph`] widget with a [`Block`].
@@ -531,6 +488,25 @@ impl Styled for Paragraph<'_> {
     }
 }
 
+impl<'a> From<Cow<'a, Text<'a>>> for Paragraph<'a> {
+    fn from(text: Cow<'a, Text<'a>>) -> Self {
+        Self {
+            block: None,
+            style: Style::new(),
+            wrap: None,
+            text,
+            scroll: Position::ORIGIN,
+            alignment: Alignment::Left,
+        }
+    }
+}
+
+impl<'a> From<&'a Text<'a>> for Paragraph<'a> {
+    fn from(text: &'a Text<'a>) -> Self {
+        Self::from(Cow::Borrowed(text))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::vec;
@@ -815,8 +791,8 @@ mod tests {
             .into_iter()
             .map(Line::from)
             .collect();
-        let paragraph = Paragraph::from_borrowed_text(&text).wrap(Wrap { trim: false });
-        let trimmed_paragraph = Paragraph::from_borrowed_text(&text).wrap(Wrap { trim: true });
+        let paragraph = Paragraph::from(&text).wrap(Wrap { trim: false });
+        let trimmed_paragraph = Paragraph::from(&text).wrap(Wrap { trim: true });
 
         test_case(
             &paragraph,
@@ -995,9 +971,9 @@ mod tests {
         );
 
         for paragraph in [
-            Paragraph::from_borrowed_text(&text),
-            Paragraph::from_borrowed_text(&text).wrap(Wrap { trim: false }),
-            Paragraph::from_borrowed_text(&text).wrap(Wrap { trim: true }),
+            Paragraph::from(&text),
+            Paragraph::from(&text).wrap(Wrap { trim: false }),
+            Paragraph::from(&text).wrap(Wrap { trim: true }),
         ] {
             test_case(
                 &paragraph.style(Style::default().bg(Color::Green)),

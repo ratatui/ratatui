@@ -133,7 +133,7 @@ impl App {
             .title("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold());
         frame.render_widget(title, chunks[0]);
 
-        let paragraph = Paragraph::from_borrowed_text(&text)
+        let paragraph = Paragraph::from(&text)
             .gray()
             .block(create_block("Vertical scrollbar with arrows"))
             .scroll((self.vertical_scroll as u16, 0));
@@ -146,7 +146,7 @@ impl App {
             &mut self.vertical_scroll_state,
         );
 
-        let paragraph = Paragraph::from_borrowed_text(&text)
+        let paragraph = Paragraph::from(&text)
             .gray()
             .block(create_block(
                 "Vertical scrollbar without arrows, without track symbol and mirrored",
@@ -166,7 +166,7 @@ impl App {
             &mut self.vertical_scroll_state,
         );
 
-        let paragraph = Paragraph::from_borrowed_text(&text)
+        let paragraph = Paragraph::from(&text)
             .gray()
             .block(create_block(
                 "Horizontal scrollbar with only begin arrow & custom thumb symbol",
@@ -184,7 +184,7 @@ impl App {
             &mut self.horizontal_scroll_state,
         );
 
-        let paragraph = Paragraph::from_borrowed_text(&text)
+        let paragraph = Paragraph::from(&text)
             .gray()
             .block(create_block(
                 "Horizontal scrollbar without arrows & custom thumb and track symbol",
