@@ -29,7 +29,7 @@ use ratatui::widgets::{Block, Gauge, List, ListItem, Widget};
 use ratatui::{DefaultTerminal, Frame, TerminalOptions, Viewport};
 
 const INITIAL_HEIGHT: u16 = 6;
-const MAX_HEIGHT: u16 = 20;
+const MAX_HEIGHT: u16 = 15;
 const MIN_HEIGHT: u16 = 3;
 
 fn main() -> Result<()> {

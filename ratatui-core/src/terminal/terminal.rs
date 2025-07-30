@@ -543,15 +543,20 @@ where
     /// terminal.set_viewport_height(12)?;
     /// ```
     pub fn set_viewport_height(&mut self, new_height: u16) -> Result<(), B::Error> {
-        let Viewport::Inline(height) = &mut self.viewport else { return Ok(()) };
-        if *height == new_height { return Ok(()) }
+        let Viewport::Inline(height) = &mut self.viewport else {
+            return Ok(());
+        };
+        if *height == new_height {
+            return Ok(());
+        }
 
         let old_height = std::mem::replace(height, new_height);
         self.clear()?;
 
         let new_y = match new_height.cmp(&old_height) {
             std::cmp::Ordering::Greater => {
-                let overflow = (self.viewport_area.y + new_height).saturating_sub(self.last_known_area.height);
+                let overflow =
+                    (self.viewport_area.y + new_height).saturating_sub(self.last_known_area.height);
                 if overflow > 0 {
                     self.scroll_up(overflow)?;
                     self.viewport_area.y.saturating_sub(overflow)
@@ -562,7 +567,11 @@ where
             _ => self.viewport_area.y,
         };
 
-        self.set_viewport_area(Rect { height: new_height, y: new_y, ..self.viewport_area });
+        self.set_viewport_area(Rect {
+            height: new_height,
+            y: new_y,
+            ..self.viewport_area
+        });
         self.clear()
     }
 
