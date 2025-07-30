@@ -135,6 +135,14 @@ Changes to project configuration files require special consideration:
 
 Please discuss these changes in an issue before implementing them.
 
+### Collaborative development
+
+We may occasionally make changes directly to your branch—such as force-pushes—to help move a PR
+forward, speed up review, or ensure it meets our quality standards. If you would prefer we do not do
+this, or if your workflow depends on us avoiding force-pushes (for example, if your app points to
+your branch in `Cargo.toml`), please mention this in your PR description and we will respect your
+preference.
+
 ## Implementation Guidelines
 
 ### Setup
