@@ -85,8 +85,8 @@ impl App {
 
             match key.code {
                 KeyCode::Char('q') => break Ok(()),
-                KeyCode::Char('+') | KeyCode::Char('=') => self.increase_height(terminal)?,
-                KeyCode::Char('-') | KeyCode::Char('_') => self.decrease_height(terminal)?,
+                KeyCode::Char('+' | '=') => self.increase_height(terminal)?,
+                KeyCode::Char('-' | '_') => self.decrease_height(terminal)?,
                 KeyCode::Char('r') => self.reset_height(terminal)?,
                 KeyCode::Char('i') => self.insert_line(terminal)?,
 
@@ -121,7 +121,7 @@ impl App {
 
     fn reset_height(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         self.height = INITIAL_HEIGHT;
-        let message = format!("Height reset to {}", INITIAL_HEIGHT);
+        let message = format!("Height reset to {INITIAL_HEIGHT}");
         self.messages.push(message);
         terminal.set_viewport_height(self.height)
     }
@@ -196,7 +196,7 @@ impl App {
         frame.render_widget(message_list, messages_area);
 
         // Bottom info with dynamic gauge showing height percentage
-        let height_percentage = (self.height as f64 / 20.0).min(1.0);
+        let height_percentage = (f64::from(self.height) / 20.0).min(1.0);
         let gauge = Gauge::default()
             .gauge_style(Color::Blue)
             .ratio(height_percentage)
