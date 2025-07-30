@@ -192,7 +192,7 @@ pub struct Line<'a> {
     pub spans: Vec<Span<'a>>,
 
     /// The overflow handling for this line of text.
-    pub overflow: Overflow<'a>,
+    overflow: Overflow<'a>,
 }
 
 impl fmt::Debug for Line<'_> {
