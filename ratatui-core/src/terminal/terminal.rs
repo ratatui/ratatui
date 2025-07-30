@@ -1,3 +1,6 @@
+use core::cmp::Ordering;
+use core::mem;
+
 use crate::backend::{Backend, ClearType};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
@@ -550,11 +553,11 @@ where
             return Ok(());
         }
 
-        let old_height = std::mem::replace(height, new_height);
+        let old_height = mem::replace(height, new_height);
         self.clear()?;
 
         let new_y = match new_height.cmp(&old_height) {
-            std::cmp::Ordering::Greater => {
+            Ordering::Greater => {
                 let overflow =
                     (self.viewport_area.y + new_height).saturating_sub(self.last_known_area.height);
                 if overflow > 0 {
