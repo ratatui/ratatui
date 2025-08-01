@@ -131,9 +131,9 @@ filter_commits = false
 # glob pattern for matching git tags
 tag_pattern = "v[0-9]*"
 # regex for skipping tags
-skip_tags = "v0.1.0-rc.1"
+skip_tags = "beta|alpha|v0.1.0-rc.1"
 # regex for ignoring tags
-ignore_tags = "alpha|beta|rc"
+ignore_tags = "rc"
 # sort the tags topologically
 topo_order = false
 # sort the commits inside sections by oldest/newest order
