@@ -24,7 +24,11 @@ body = """
 {%- if not version %}
 ## [unreleased]
 {% else -%}
+{%- if package -%}
 ## {{ package }} - [{{ version }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+{%- else -%}
+## [{{ version }}]({{ self::remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+{%- endif %}
 {% endif -%}
 
 {% macro commit(commit) -%}
@@ -59,14 +63,22 @@ body = """
 
 {% if version %}
 {% if previous.version %}
+{%- if release_link -%}
 **Full Changelog**: {{ release_link }}
+{%- else -%}
+**Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}
+{% endif %}
 {% endif %}
 {% else -%}
   {% raw %}\n{% endraw %}
 {% endif %}
 
 {%- macro remote_url() -%}
+{%- if remote.owner -%}
 https://github.com/{{ remote.owner }}/{{ remote.repo }}\
+{%- else -%}
+https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
+{%- endif -%}
 {% endmacro %}
 """
 # remove the leading and trailing whitespace from the template
