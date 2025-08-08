@@ -24,7 +24,7 @@ body = """
 {%- if not version %}
 ## [unreleased]
 {% else -%}
-{%- if package -%}
+{%- if package -%} {# release-plz specific variable #}
 ## {{ package }} - [{{ version }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {%- else -%}
 ## [{{ version }}]({{ self::remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
@@ -64,7 +64,7 @@ body = """
 {% if version %}
 {% if previous.version %}
 {%- if release_link -%}
-**Full Changelog**: {{ release_link }}
+**Full Changelog**: {{ release_link }} {# release-plz specific variable #}
 {%- else -%}
 **Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}
 {% endif %}
@@ -74,7 +74,7 @@ body = """
 {% endif %}
 
 {%- macro remote_url() -%}
-{%- if remote.owner -%}
+{%- if remote.owner -%} {# release-plz specific variable #}
 https://github.com/{{ remote.owner }}/{{ remote.repo }}\
 {%- else -%}
 https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
