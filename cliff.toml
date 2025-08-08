@@ -127,8 +127,8 @@ commit_parsers = [
   { message = "^chore\\(changelog\\)", skip = true },
   { message = "^[cC]hore", group = "<!-- 07 -->Miscellaneous Tasks" },
   { message = "^build\\(deps\\)", skip = true },
-  { message = "^build", group = "<!-- 09 -->Build" },
-  { body = ".*security", group = "<!-- 08 -->Security" },
+  { message = "^build", group = "<!-- 08 -->Build" },
+  { body = ".*security", group = "<!-- 09 -->Security" },
   { message = "^ci", group = "<!-- 10 -->Continuous Integration" },
   { message = "^revert", group = "<!-- 11 -->Reverted Commits" },
   # handle some old commits styles from pre 0.4
