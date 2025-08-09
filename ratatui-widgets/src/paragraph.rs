@@ -1,5 +1,7 @@
 //! The [`Paragraph`] widget and related types allows displaying a block of text with optional
 //! wrapping, alignment, and block styling.
+use alloc::borrow::Cow;
+
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Position, Rect};
 use ratatui_core::style::{Style, Styled};
@@ -82,7 +84,7 @@ pub struct Paragraph<'a> {
     /// How to wrap the text
     wrap: Option<Wrap>,
     /// The text to display
-    text: Text<'a>,
+    text: Cow<'a, Text<'a>>,
     /// Scroll
     scroll: Position,
     /// Alignment of the text
@@ -134,6 +136,7 @@ impl<'a> Paragraph<'a> {
     /// The `text` parameter can be a [`Text`] or any type that can be converted into a [`Text`]. By
     /// default, the text is styled with [`Style::default()`], not wrapped, and aligned to the left.
     ///
+    /// If you have [`&Text`] or [`Cow<Text>`] use [`Paragraph::from`]
     /// # Examples
     ///
     /// ```rust
@@ -151,14 +154,7 @@ impl<'a> Paragraph<'a> {
     where
         T: Into<Text<'a>>,
     {
-        Self {
-            block: None,
-            style: Style::default(),
-            wrap: None,
-            text: text.into(),
-            scroll: Position::ORIGIN,
-            alignment: Alignment::Left,
-        }
+        Self::from(Cow::Owned(text.into()))
     }
 
     /// Surrounds the [`Paragraph`] widget with a [`Block`].
@@ -492,6 +488,25 @@ impl Styled for Paragraph<'_> {
     }
 }
 
+impl<'a> From<Cow<'a, Text<'a>>> for Paragraph<'a> {
+    fn from(text: Cow<'a, Text<'a>>) -> Self {
+        Self {
+            block: None,
+            style: Style::new(),
+            wrap: None,
+            text,
+            scroll: Position::ORIGIN,
+            alignment: Alignment::Left,
+        }
+    }
+}
+
+impl<'a> From<&'a Text<'a>> for Paragraph<'a> {
+    fn from(text: &'a Text<'a>) -> Self {
+        Self::from(Cow::Borrowed(text))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::vec;
@@ -776,8 +791,8 @@ mod tests {
             .into_iter()
             .map(Line::from)
             .collect();
-        let paragraph = Paragraph::new(text.clone()).wrap(Wrap { trim: false });
-        let trimmed_paragraph = Paragraph::new(text).wrap(Wrap { trim: true });
+        let paragraph = Paragraph::from(&text).wrap(Wrap { trim: false });
+        let trimmed_paragraph = Paragraph::from(&text).wrap(Wrap { trim: true });
 
         test_case(
             &paragraph,
@@ -940,7 +955,7 @@ mod tests {
 
     #[test]
     fn test_render_paragraph_with_styled_text() {
-        let text = Line::from(vec![
+        let text = Text::from_iter([
             Span::styled("Hello, ", Style::default().fg(Color::Red)),
             Span::styled("world!", Style::default().fg(Color::Blue)),
         ]);
@@ -956,9 +971,9 @@ mod tests {
         );
 
         for paragraph in [
-            Paragraph::new(text.clone()),
-            Paragraph::new(text.clone()).wrap(Wrap { trim: false }),
-            Paragraph::new(text.clone()).wrap(Wrap { trim: true }),
+            Paragraph::from(&text),
+            Paragraph::from(&text).wrap(Wrap { trim: false }),
+            Paragraph::from(&text).wrap(Wrap { trim: true }),
         ] {
             test_case(
                 &paragraph.style(Style::default().bg(Color::Green)),
