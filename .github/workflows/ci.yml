@@ -29,7 +29,7 @@ jobs:
     name: Check Formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
@@ -37,7 +37,7 @@ jobs:
           toolchain: nightly
           components: rustfmt
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
-      - uses: taiki-e/install-action@a416ddeedbd372e614cc1386e8b642692f66865e # v2
+      - uses: taiki-e/install-action@2c73a741d1544cc346e9b0af11868feba03eb69d # v2
         with:
           tool: taplo-cli
       - run: cargo xtask format --check
@@ -48,10 +48,10 @@ jobs:
     name: Check Typos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      - uses: crate-ci/typos@392b78fe18a52790c53f42456e46124f77346842 # master
+      - uses: crate-ci/typos@52bd719c2c91f9d676e2aa359fc8e0db8925e6d8 # master
 
   # Check for any disallowed dependencies in the codebase due to license / security issues.
   # See <https://github.com/EmbarkStudios/cargo-deny>
@@ -59,13 +59,13 @@ jobs:
     name: Check Dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
         with:
           toolchain: stable
-      - uses: taiki-e/install-action@a416ddeedbd372e614cc1386e8b642692f66865e # v2
+      - uses: taiki-e/install-action@2c73a741d1544cc346e9b0af11868feba03eb69d # v2
         with:
           tool: cargo-deny
       - run: cargo deny --log-level info --all-features check
@@ -76,7 +76,7 @@ jobs:
     name: Check Unused Dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: bnjbvr/cargo-machete@b54422fa3319b3cac180f6030b663fe57af51635 # v0.8.0
@@ -95,7 +95,7 @@ jobs:
         toolchain: ["stable", "beta"]
     continue-on-error: ${{ matrix.toolchain == 'beta' }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
@@ -110,7 +110,7 @@ jobs:
     name: Check Markdown
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: DavidAnson/markdownlint-cli2-action@992badcdf24e3b8eb7e87ff9287fe931bcb00c6e # v20
@@ -125,14 +125,14 @@ jobs:
     name: Coverage Report
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
         with:
           toolchain: stable
           components: llvm-tools
-      - uses: taiki-e/install-action@a416ddeedbd372e614cc1386e8b642692f66865e # v2
+      - uses: taiki-e/install-action@2c73a741d1544cc346e9b0af11868feba03eb69d # v2
         with:
           tool: cargo-llvm-cov
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
@@ -152,7 +152,7 @@ jobs:
         toolchain: ["1.85.0", "stable"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
@@ -165,7 +165,7 @@ jobs:
     name: Build No-Std
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
@@ -188,11 +188,11 @@ jobs:
     name: Check README
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
-      - uses: taiki-e/install-action@a416ddeedbd372e614cc1386e8b642692f66865e # v2
+      - uses: taiki-e/install-action@2c73a741d1544cc346e9b0af11868feba03eb69d # v2
         with:
           tool: cargo-rdme
       - run: cargo xtask readme --check
@@ -205,7 +205,7 @@ jobs:
     env:
       RUSTDOCFLAGS: -Dwarnings
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
@@ -214,7 +214,7 @@ jobs:
       - uses: dtolnay/install@74f735cdf643820234e37ae1c4089a08fd266d8a # master
         with:
           crate: cargo-docs-rs
-      - uses: taiki-e/install-action@a416ddeedbd372e614cc1386e8b642692f66865e # v2
+      - uses: taiki-e/install-action@2c73a741d1544cc346e9b0af11868feba03eb69d # v2
         with:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
@@ -226,7 +226,7 @@ jobs:
     name: Test Docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
@@ -244,7 +244,7 @@ jobs:
       matrix:
         toolchain: ["1.85.0", "stable"]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
@@ -267,7 +267,7 @@ jobs:
           - os: windows-latest
             backend: termion
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # master
