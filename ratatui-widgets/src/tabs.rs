@@ -495,17 +495,13 @@ impl UnicodeWidthStr for Tabs<'_> {
     /// assert_eq!(tabs.width_cjk(), 18); // " 你 │ 好 │ 世界 "
     /// ```
     fn width_cjk(&self) -> usize {
-        use std::dbg;
         let titles_width = self.titles.iter().map(Line::width_cjk).sum::<usize>();
         let title_count = self.titles.len();
         let divider_count = title_count.saturating_sub(1);
         let divider_width = divider_count.saturating_mul(self.divider.width_cjk());
         let left_padding_width = title_count.saturating_mul(self.padding_left.width_cjk());
         let right_padding_width = title_count.saturating_mul(self.padding_right.width_cjk());
-        dbg!(titles_width)
-            + dbg!(divider_width)
-            + dbg!(left_padding_width)
-            + dbg!(right_padding_width)
+        titles_width + divider_width + left_padding_width + right_padding_width
     }
 }
 
