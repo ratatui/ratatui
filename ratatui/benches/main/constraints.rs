@@ -1,7 +1,7 @@
 use std::hint::black_box;
 use std::rc::Rc;
 
-use criterion::{criterion_group, Criterion};
+use criterion::{Criterion, criterion_group};
 use ratatui::layout::Constraint::{Fill, Length, Max, Min, Percentage, Ratio};
 use ratatui::layout::{Layout, Rect};
 
