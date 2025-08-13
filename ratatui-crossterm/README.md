@@ -8,15 +8,16 @@ This crate provides [`CrosstermBackend`], an implementation of the [`Backend`] t
 ### Crossterm Version and Re-export
 
 `ratatui-crossterm` requires you to specify a version of the [Crossterm] library to be used.
-This is managed via feature flags. You **must enable one, and only one**, of the available
-`crossterm_0_xx` features (e.g., `crossterm_0_28`, `crossterm_0_29`). These features determine
-which version of Crossterm is compiled and used by the backend. Attempting to enable none or
-multiple `crossterm_0_xx` features will result in a compile-time error.
+This is managed via feature flags. The highest enabled feature flag of the available
+`crossterm_0_xx` features (e.g., `crossterm_0_28`, `crossterm_0_29`) takes precendence. These
+features determine which version of Crossterm is compiled and used by the backend. Feature
+unification may mean that any crate in your dependency graph that chooses to depend on a
+specific version of Crossterm may be affected by the feature flags you enable.
 
 Ratatui will support at least the two most recent versions of Crossterm (though we may increase
-this if crossterm release cadence increases). We will remove support for older versions in
-major (0.x) releases of `ratatui-crossterm`, and we may add support for newer versions in
-minor (0.x.y) releases.
+this if crossterm release cadence increases). We will remove support for older versions in major
+(0.x) releases of `ratatui-crossterm`, and we may add support for newer versions in minor
+(0.x.y) releases.
 
 To promote interoperability within the [Ratatui] ecosystem, the selected Crossterm crate is
 re-exported as `ratatui_crossterm::crossterm`. This re-export is essential for authors of widget

@@ -2520,6 +2520,7 @@ dependencies = [
 name = "ratatui-crossterm"
 version = "0.1.0-beta.0"
 dependencies = [
+ "cfg-if",
  "crossterm 0.28.1",
  "crossterm 0.29.0",
  "document-features",
