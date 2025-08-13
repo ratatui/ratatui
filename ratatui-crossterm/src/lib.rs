@@ -12,15 +12,16 @@
 //! ## Crossterm Version and Re-export
 //!
 //! `ratatui-crossterm` requires you to specify a version of the [Crossterm] library to be used.
-//! This is managed via feature flags. You **must enable one, and only one**, of the available
-//! `crossterm_0_xx` features (e.g., `crossterm_0_28`, `crossterm_0_29`). These features determine
-//! which version of Crossterm is compiled and used by the backend. Attempting to enable none or
-//! multiple `crossterm_0_xx` features will result in a compile-time error.
+//! This is managed via feature flags. The highest enabled feature flag of the available
+//! `crossterm_0_xx` features (e.g., `crossterm_0_28`, `crossterm_0_29`) takes precendence. These
+//! features determine which version of Crossterm is compiled and used by the backend. Feature
+//! unification may mean that any crate in your dependency graph that chooses to depend on a
+//! specific version of Crossterm may be affected by the feature flags you enable.
 //!
 //! Ratatui will support at least the two most recent versions of Crossterm (though we may increase
-//! this if crossterm release cadence increases). We will remove support for older versions in
-//! major (0.x) releases of `ratatui-crossterm`, and we may add support for newer versions in
-//! minor (0.x.y) releases.
+//! this if crossterm release cadence increases). We will remove support for older versions in major
+//! (0.x) releases of `ratatui-crossterm`, and we may add support for newer versions in minor
+//! (0.x.y) releases.
 //!
 //! To promote interoperability within the [Ratatui] ecosystem, the selected Crossterm crate is
 //! re-exported as `ratatui_crossterm::crossterm`. This re-export is essential for authors of widget
@@ -76,10 +77,19 @@ use crossterm::style::{
 };
 use crossterm::terminal::{self, Clear};
 use crossterm::{execute, queue};
-#[cfg(feature = "crossterm_0_28")]
-pub use crossterm_0_28 as crossterm;
-#[cfg(feature = "crossterm_0_29")]
-pub use crossterm_0_29 as crossterm;
+cfg_if::cfg_if! {
+    // Re-export the selected Crossterm crate making sure to choose the latest version. We do this
+    // to make it possible to easily enable all features when compiling `ratatui-crossterm`.
+    if #[cfg(feature = "crossterm_0_29")] {
+        pub use crossterm_0_29 as crossterm;
+    } else if #[cfg(feature = "crossterm_0_28")] {
+        pub use crossterm_0_28 as crossterm;
+    } else {
+        compile_error!(
+            "At least one crossterm feature must be enabled. See the crate docs for more information."
+        );
+    }
+}
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
