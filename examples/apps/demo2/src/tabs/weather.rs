@@ -5,7 +5,7 @@ use ratatui::layout::{Constraint, Direction, Layout, Margin, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::symbols;
 use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
-use ratatui::widgets::{Bar, BarChart, BarGroup, Block, Clear, LineGauge, Padding, Widget};
+use ratatui::widgets::{Bar, BarChart, BarGroup, Block, LineGauge, Padding, Widget};
 use time::OffsetDateTime;
 
 use crate::{RgbSwatch, THEME, color_from_oklab};
@@ -34,8 +34,10 @@ impl Widget for WeatherTab {
             vertical: 1,
             horizontal: 2,
         });
-        Clear.render(area, buf);
-        Block::new().style(THEME.content).render(area, buf);
+        Block::new()
+            .clear_first()
+            .style(THEME.content)
+            .render(area, buf);
 
         let area = area.inner(Margin {
             horizontal: 2,
