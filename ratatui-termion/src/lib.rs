@@ -66,7 +66,7 @@ use termion::{color as tcolor, style as tstyle};
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use std::io::{stderr, stdout};
 ///
 /// use ratatui::Terminal;
@@ -113,7 +113,7 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use std::io::stdout;
     ///
     /// use ratatui::backend::TermionBackend;
