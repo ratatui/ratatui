@@ -13,7 +13,7 @@ use ratatui_core::layout::{Alignment, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols::border;
 use ratatui_core::symbols::merge::MergeStrategy;
-use ratatui_core::text::Line;
+use ratatui_core::text::{Inline, Line};
 use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
@@ -884,6 +884,7 @@ impl Block<'_> {
             }
         }
     }
+
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
         self.render_title_position(TitlePosition::Top, area, buf);
         self.render_title_position(TitlePosition::Bottom, area, buf);
@@ -897,134 +898,54 @@ impl Block<'_> {
     }
 
     /// Render titles aligned to the right of the block
-    ///
-    /// Currently (due to the way lines are truncated), the right side of the leftmost title will
-    /// be cut off if the block is too small to fit all titles. This is not ideal and should be
-    /// the left side of that leftmost that is cut off. This is due to the line being truncated
-    /// incorrectly. See <https://github.com/ratatui/ratatui/issues/932>
-    #[expect(clippy::similar_names)]
     fn render_right_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let titles = self.filtered_titles(position, Alignment::Right);
-        let mut titles_area = self.titles_area(area, position);
-
-        // render titles in reverse order to align them to the right
-        for title in titles.rev() {
-            if titles_area.is_empty() {
-                break;
-            }
-            let title_width = title.width() as u16;
-            let title_area = Rect {
-                x: titles_area
-                    .right()
-                    .saturating_sub(title_width)
-                    .max(titles_area.left()),
-                width: title_width.min(titles_area.width),
-                ..titles_area
-            };
-            buf.set_style(title_area, self.titles_style);
-            title.render(title_area, buf);
-
-            // bump the width of the titles area to the left
-            titles_area.width = titles_area
-                .width
-                .saturating_sub(title_width)
-                .saturating_sub(1); // space between titles
+        let titles = Inline::from(
+            self.filtered_titles(position, Alignment::Right)
+                .cloned()
+                .collect_vec(),
+        )
+        .style(self.titles_style)
+        .spacer(1)
+        .right_aligned();
+        let titles_area = self.titles_area(area, position);
+        if titles.width() == 0 || titles_area.is_empty() {
+            return;
         }
+        titles.render(titles_area, buf);
     }
 
     /// Render titles in the center of the block
     fn render_center_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let area = self.titles_area(area, position);
-        let titles = self
-            .filtered_titles(position, Alignment::Center)
-            .collect_vec();
-        // titles are rendered with a space after each title except the last one
-        let total_width = titles
-            .iter()
-            .map(|title| title.width() as u16 + 1)
-            .sum::<u16>()
-            .saturating_sub(1);
-
-        if total_width <= area.width {
-            self.render_centered_titles_without_truncation(titles, total_width, area, buf);
-        } else {
-            self.render_centered_titles_with_truncation(titles, total_width, area, buf);
+        let titles = Inline::from(
+            self.filtered_titles(position, Alignment::Center)
+                .cloned()
+                .collect_vec(),
+        )
+        .style(self.titles_style)
+        .spacer(1)
+        .centered();
+        let titles_area = self.titles_area(area, position);
+        if titles.width() == 0 || titles_area.is_empty() {
+            return;
         }
-    }
-
-    fn render_centered_titles_without_truncation(
-        &self,
-        titles: Vec<&Line<'_>>,
-        total_width: u16,
-        area: Rect,
-        buf: &mut Buffer,
-    ) {
-        // titles fit in the area, center them
-        let x = area.left() + area.width.saturating_sub(total_width) / 2;
-        let mut area = Rect { x, ..area };
-        for title in titles {
-            let width = title.width() as u16;
-            let title_area = Rect { width, ..area };
-            buf.set_style(title_area, self.titles_style);
-            title.render(title_area, buf);
-            // Move the rendering cursor to the right, leaving 1 column space.
-            area.x = area.x.saturating_add(width + 1);
-            area.width = area.width.saturating_sub(width + 1);
-        }
-    }
-
-    fn render_centered_titles_with_truncation(
-        &self,
-        titles: Vec<&Line<'_>>,
-        total_width: u16,
-        mut area: Rect,
-        buf: &mut Buffer,
-    ) {
-        // titles do not fit in the area, truncate the left side using an offset. The right side
-        // is truncated by the area width.
-        let mut offset = total_width.saturating_sub(area.width) / 2;
-        for title in titles {
-            if area.is_empty() {
-                break;
-            }
-            let width = area.width.min(title.width() as u16).saturating_sub(offset);
-            let title_area = Rect { width, ..area };
-            buf.set_style(title_area, self.titles_style);
-            if offset > 0 {
-                // truncate the left side of the title to fit the area
-                title.clone().right_aligned().render(title_area, buf);
-                offset = offset.saturating_sub(width).saturating_sub(1);
-            } else {
-                // truncate the right side of the title to fit the area if needed
-                title.clone().left_aligned().render(title_area, buf);
-            }
-            // Leave 1 column of spacing between titles.
-            area.x = area.x.saturating_add(width + 1);
-            area.width = area.width.saturating_sub(width + 1);
-        }
+        titles.render(titles_area, buf);
     }
 
     /// Render titles aligned to the left of the block
-    #[expect(clippy::similar_names)]
     fn render_left_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let titles = self.filtered_titles(position, Alignment::Left);
-        let mut titles_area = self.titles_area(area, position);
-        for title in titles {
-            if titles_area.is_empty() {
-                break;
-            }
-            let title_width = title.width() as u16;
-            let title_area = Rect {
-                width: title_width.min(titles_area.width),
-                ..titles_area
-            };
-            buf.set_style(title_area, self.titles_style);
-            title.render(title_area, buf);
-
-            // bump the titles area to the right and reduce its width
-            titles_area.x = titles_area.x.saturating_add(title_width + 1);
-            titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+        let titles = Inline::from(
+            self.filtered_titles(position, Alignment::Left)
+                .cloned()
+                .collect_vec(),
+        )
+        .style(self.titles_style)
+        .spacer(1)
+        .left_aligned();
+        let titles_area = self.titles_area(area, position);
+        if titles.width() == 0 || titles_area.is_empty() {
+            return;
         }
+        titles.render(titles_area, buf);
     }
 
     /// An iterator over the titles that match the position and alignment
