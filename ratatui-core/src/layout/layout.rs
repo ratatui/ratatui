@@ -2834,5 +2834,11 @@ mod tests {
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(result, expected);
         }
+
+        #[rstest]
+        #[timeout(core::time::Duration::from_secs(10))]
+        fn regression_1855() {
+            Layout::horizontal(vec![Min(0); 40]).split(Rect::new(0, 0, 40, 1));
+        }
     }
 }
