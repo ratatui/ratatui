@@ -245,8 +245,10 @@ pub struct Style {
     #[cfg(feature = "underline-color")]
     pub underline_color: Option<Color>,
     /// The modifiers to add.
+    #[cfg_attr(feature = "serde", serde(default))]
     pub add_modifier: Modifier,
     /// The modifiers to remove.
+    #[cfg_attr(feature = "serde", serde(default))]
     pub sub_modifier: Modifier,
 }
 
