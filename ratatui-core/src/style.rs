@@ -238,17 +238,29 @@ impl fmt::Debug for Modifier {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
     /// The foreground color.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub fg: Option<Color>,
     /// The background color.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub bg: Option<Color>,
     /// The underline color.
     #[cfg(feature = "underline-color")]
+    #[cfg_attr(
+        all(feature = "underline-color", feature = "serde"),
+        serde(skip_serializing_if = "Option::is_none")
+    )]
     pub underline_color: Option<Color>,
     /// The modifiers to add.
-    #[cfg_attr(feature = "serde", serde(default))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Modifier::is_empty")
+    )]
     pub add_modifier: Modifier,
     /// The modifiers to remove.
-    #[cfg_attr(feature = "serde", serde(default))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Modifier::is_empty")
+    )]
     pub sub_modifier: Modifier,
 }
 
@@ -924,5 +936,60 @@ mod tests {
                 .add_modifier(Modifier::ITALIC)
                 .remove_modifier(Modifier::DIM)
         );
+    }
+
+    #[cfg(all(feature = "serde", feature = "underline-color"))]
+    #[test]
+    fn serialize_then_deserialize() {
+        let style = Style {
+            fg: Some(Color::Rgb(255, 0, 255)),
+            bg: Some(Color::White),
+            #[cfg(feature = "underline-color")]
+            underline_color: Some(Color::Indexed(3)),
+            add_modifier: Modifier::UNDERLINED,
+            sub_modifier: Modifier::CROSSED_OUT,
+        };
+
+        let json_str = serde_json::to_string(&style).unwrap();
+        let json_value: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+
+        let mut expected_json = serde_json::json!({
+            "fg": "#FF00FF",
+            "bg": "White",
+            "add_modifier": "UNDERLINED",
+            "sub_modifier": "CROSSED_OUT"
+        });
+
+        #[cfg(feature = "underline-color")]
+        {
+            expected_json
+                .as_object_mut()
+                .unwrap()
+                .insert("underline_color".into(), "3".into());
+        }
+
+        assert_eq!(json_value, expected_json);
+
+        let deserialized: Style = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(deserialized, style);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialize_defaults() {
+        let style = Style {
+            fg: None,
+            bg: None,
+            #[cfg(feature = "underline-color")]
+            underline_color: None,
+            add_modifier: Modifier::empty(),
+            sub_modifier: Modifier::empty(),
+        };
+
+        let json_str = serde_json::to_string(&style).unwrap();
+        assert_eq!(json_str, "{}");
+
+        let deserialized: Style = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(deserialized, style);
     }
 }
