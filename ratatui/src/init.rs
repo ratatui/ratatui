@@ -133,6 +133,7 @@ use std::io::{self, Stdout, stdout};
 
 use ratatui_core::terminal::{Terminal, TerminalOptions};
 use ratatui_crossterm::CrosstermBackend;
+use ratatui_crossterm::crossterm::event::DisableMouseCapture;
 use ratatui_crossterm::crossterm::execute;
 use ratatui_crossterm::crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
@@ -438,7 +439,8 @@ pub fn try_init_with_options(options: TerminalOptions) -> io::Result<DefaultTerm
 /// following steps:
 ///
 /// 1. Raw mode is disabled.
-/// 2. The alternate screen buffer is left.
+/// 2. Mouse capture is disabled.
+/// 3. The alternate screen buffer is left.
 ///
 /// If either of these steps fail, the error is printed to stderr and ignored.
 ///
@@ -467,7 +469,8 @@ pub fn restore() {
 /// following steps:
 ///
 /// 1. Raw mode is disabled.
-/// 2. The alternate screen buffer is left.
+/// 2. Mouse capture is disabled.
+/// 3. The alternate screen buffer is left.
 ///
 /// If either of these steps fail, the error is returned.
 ///
@@ -488,6 +491,7 @@ pub fn try_restore() -> io::Result<()> {
     // disabling raw mode first is important as it has more side effects than leaving the alternate
     // screen buffer
     disable_raw_mode()?;
+    execute!(stdout(), DisableMouseCapture)?;
     execute!(stdout(), LeaveAlternateScreen)?;
     Ok(())
 }
