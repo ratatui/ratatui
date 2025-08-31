@@ -938,7 +938,7 @@ mod tests {
         );
     }
 
-    #[cfg(all(feature = "serde", feature = "underline-color"))]
+    #[cfg(all(feature = "serde"))]
     #[test]
     fn serialize_then_deserialize() {
         let style = Style {
