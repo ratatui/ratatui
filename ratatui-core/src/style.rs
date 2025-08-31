@@ -245,10 +245,7 @@ pub struct Style {
     pub bg: Option<Color>,
     /// The underline color.
     #[cfg(feature = "underline-color")]
-    #[cfg_attr(
-        all(feature = "underline-color", feature = "serde"),
-        serde(skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub underline_color: Option<Color>,
     /// The modifiers to add.
     #[cfg_attr(
