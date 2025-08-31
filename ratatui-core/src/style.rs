@@ -935,7 +935,7 @@ mod tests {
         );
     }
 
-    #[cfg(all(feature = "serde"))]
+    #[cfg(feature = "serde")]
     #[test]
     fn serialize_then_deserialize() {
         let style = Style {
