@@ -193,8 +193,9 @@ where
     ///
     /// This exists to support more advanced use cases. Most cases should be fine using [`Terminal::draw`].
     ///
-    /// `get_frame` should be used when you need direct access to the frame buffer
+    /// [`Terminal::get_frame`] should be used when you need direct access to the frame buffer
     /// outside of draw closure, for example:
+    ///
     /// - Unit testing widgets
     /// - Buffer state inspection
     /// - Cursor manipulation
