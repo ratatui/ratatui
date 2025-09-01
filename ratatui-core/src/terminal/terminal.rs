@@ -189,8 +189,9 @@ where
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
     ///
-    /// Note that this exists to support more advanced use cases. Most cases should be fine using
-    /// [`Terminal::draw`].
+    /// # Note
+    ///
+    /// This exists to support more advanced use cases. Most cases should be fine using [`Terminal::draw`].
     ///
     /// `get_frame` should be used when you need direct access to the frame buffer
     /// outside of draw closure, for example:
