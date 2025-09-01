@@ -191,7 +191,8 @@ where
     ///
     /// # Note
     ///
-    /// This exists to support more advanced use cases. Most cases should be fine using [`Terminal::draw`].
+    /// This exists to support more advanced use cases. Most cases should be fine using
+    /// [`Terminal::draw`].
     ///
     /// [`Terminal::get_frame`] should be used when you need direct access to the frame buffer
     /// outside of draw closure, for example:
