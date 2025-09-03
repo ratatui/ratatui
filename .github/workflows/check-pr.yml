@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Check PR title
         if: github.event_name == 'pull_request_target'
-        uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v5
         id: check_pr_title
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
