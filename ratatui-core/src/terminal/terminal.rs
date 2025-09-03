@@ -1,3 +1,5 @@
+use core::convert::Infallible;
+
 use crate::backend::{Backend, ClearType};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
@@ -327,13 +329,15 @@ where
     {
         self.try_draw(|frame| {
             render_callback(frame);
-            Ok::<(), B::Error>(())
+            Ok::<(), Infallible>(())
         })
+        // This will not panic as `Err` is `Infallible`
+        .map_or_else(Err, |result| Ok(result.unwrap()))
     }
 
     /// Tries to draw a single frame to the terminal.
     ///
-    /// Returns [`Result::Ok`] containing a [`CompletedFrame`] if successful, otherwise
+    /// Returns [`Result::Ok`] containing a [`Result<CompletedFrame, E>`] if successful, otherwise
     /// [`Result::Err`] containing the [`std::io::Error`] that caused the failure.
     ///
     /// This is the equivalent of [`Terminal::draw`] but the render callback is a function or
@@ -352,11 +356,9 @@ where
     /// - move the cursor to the last known position if it was set during the rendering closure
     /// - return a [`CompletedFrame`] with the current buffer and the area of the terminal
     ///
-    /// The render callback passed to `try_draw` can return any [`Result`] with an error type that
-    /// can be converted into an [`std::io::Error`] using the [`Into`] trait. This makes it possible
+    /// The render callback passed to `try_draw` can return any [`Result`]. This makes it possible
     /// to use the `?` operator to propagate errors that occur during rendering. If the render
-    /// callback returns an error, the error will be returned from `try_draw` as an
-    /// [`std::io::Error`] and the terminal will not be updated.
+    /// callback returns an error, it will be propagated in the inner [`Result`].
     ///
     /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
     /// purposes, but it is often not used in regular applications.
@@ -379,7 +381,7 @@ where
     ///
     /// // with a closure
     /// terminal.try_draw(|frame| {
-    ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
+    ///     let value: u8 = "not a number".parse()?;
     ///     let area = frame.area();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
     ///     frame.set_cursor_position(Position { x: 0, y: 0 });
@@ -389,17 +391,19 @@ where
     /// // or with a function
     /// terminal.try_draw(render)?;
     ///
-    /// fn render(frame: &mut ratatui::Frame) -> io::Result<()> {
-    ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
+    /// fn render(frame: &mut ratatui::Frame) -> Result<(), ParseIntError> {
+    ///     let value: u8 = "not a number".parse()?;
     ///     frame.render_widget(Paragraph::new("Hello World!"), frame.area());
     ///     Ok(())
     /// }
     /// # io::Result::Ok(())
     /// ```
-    pub fn try_draw<F, E>(&mut self, render_callback: F) -> Result<CompletedFrame<'_>, B::Error>
+    pub fn try_draw<F, E>(
+        &mut self,
+        render_callback: F,
+    ) -> Result<Result<CompletedFrame<'_>, E>, B::Error>
     where
         F: FnOnce(&mut Frame) -> Result<(), E>,
-        E: Into<B::Error>,
     {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
@@ -407,7 +411,9 @@ where
 
         let mut frame = self.get_frame();
 
-        render_callback(&mut frame).map_err(Into::into)?;
+        if let Err(err) = render_callback(&mut frame) {
+            return Ok(Err(err));
+        }
 
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
@@ -439,7 +445,7 @@ where
         // increment frame count before returning from draw
         self.frame_count = self.frame_count.wrapping_add(1);
 
-        Ok(completed_frame)
+        Ok(Ok(completed_frame))
     }
 
     /// Hides the cursor.
