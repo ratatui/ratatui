@@ -59,6 +59,9 @@ layout-cache = ["std", "ratatui-core/layout-cache"]
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["std", "ratatui-core/palette", "dep:palette"]
 
+## enables portable-atomic integration for targets that don't support atomic types.
+portable-atomic = ["ratatui-core/portable-atomic"]
+
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).
 scrolling-regions = [
