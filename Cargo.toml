@@ -38,7 +38,7 @@ crossterm = "0.29"
 document-features = "0.2"
 fakeit = "1"
 futures = "0.3"
-hashbrown = "0.15"
+hashbrown = "0.16"
 indoc = "2"
 instability = "0.3"
 itertools = { version = "0.14", default-features = false, features = ["use_alloc"] }
