@@ -128,6 +128,11 @@ where
 {
     /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
     ///
+    /// Note that unlike [`ratatui::init`], this does not install any panic hook,
+    /// so it is recommended to do that manually when using this function,
+    /// otherwise any panic messages will be printed to the alternate screen and
+    /// the terminal may be left in an unusable state.
+    ///
     /// # Example
     ///
     /// ```rust,ignore
@@ -137,6 +142,12 @@ where
     ///
     /// let backend = CrosstermBackend::new(stdout());
     /// let terminal = Terminal::new(backend)?;
+    ///
+    /// let old_hook = std::panic::take_hook();
+    /// std::panic::set_hook(Box::new(move |info| {
+    ///     ratatui::restore();
+    ///     old_hook(info);
+    /// }));
     /// # std::io::Result::Ok(())
     /// ```
     pub fn new(backend: B) -> Result<Self, B::Error> {
