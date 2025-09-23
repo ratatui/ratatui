@@ -458,20 +458,20 @@ impl TestBackend {
     /// use ratatui_core::style::{Color, Style};
     ///
     /// let mut backend = TestBackend::new(10, 3);
-    /// 
+    ///
     /// // Create styled cells
     /// let mut red_cell = Cell::default();
     /// red_cell.set_symbol("H");
     /// red_cell.set_style(Style::default().fg(Color::Red));
-    /// 
+    ///
     /// let mut blue_bg_cell = Cell::default();
     /// blue_bg_cell.set_symbol("W");
     /// blue_bg_cell.set_style(Style::default().bg(Color::Blue));
-    /// 
+    ///
     /// // Draw cells to backend
     /// backend.draw([(0, 0, &red_cell)].into_iter()).unwrap();
     /// backend.draw([(6, 0, &blue_bg_cell)].into_iter()).unwrap();
-    /// 
+    ///
     /// let styled_view = backend.buffer_view_with_style();
     ///
     /// // The styled view will contain style tags
