@@ -1142,7 +1142,7 @@ fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
             ))
             .collect::<Vec<(f64, f64)>>()
     );
-    std::dbg!(variables);
+    // Debug output removed
 }
 
 /// A container used by the solver inside split
