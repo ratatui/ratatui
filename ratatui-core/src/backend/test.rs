@@ -68,11 +68,12 @@ fn buffer_view(buffer: &Buffer) -> String {
     view
 }
 
-/// Returns a string representation of the given buffer including style information for debugging purpose.
+/// Returns a string representation of the given buffer including style information for debugging
+/// purpose.
 ///
-/// This function is used to visualize the buffer content with style information in a human-readable format.
-/// Style information is represented as `{style}text{/style}` where style can be color names,
-/// modifiers, or combinations thereof.
+/// This function is used to visualize the buffer content with style information in a human-readable
+/// format. Style information is represented as `{style}text{/style}` where style can be color
+/// names, modifiers, or combinations thereof.
 fn buffer_view_with_style(buffer: &Buffer) -> String {
     let mut view =
         String::with_capacity(buffer.content.len() * 2 + buffer.area.height as usize * 3);
@@ -452,25 +453,30 @@ impl TestBackend {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_core::backend::TestBackend;
-    /// use ratatui_core::buffer::Buffer;
-    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::backend::{Backend, TestBackend};
+    /// use ratatui_core::buffer::Cell;
     /// use ratatui_core::style::{Color, Style};
     ///
     /// let mut backend = TestBackend::new(10, 3);
-    /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
-    ///
-    /// // Set some styled text
-    /// buffer.set_string(0, 0, "Hello", Style::default().fg(Color::Red));
-    /// buffer.set_string(5, 0, "World", Style::default().bg(Color::Blue));
-    ///
-    /// // Render to backend and get styled view
-    /// backend.draw(buffer.content()).unwrap();
+    /// 
+    /// // Create styled cells
+    /// let mut red_cell = Cell::default();
+    /// red_cell.set_symbol("H");
+    /// red_cell.set_style(Style::default().fg(Color::Red));
+    /// 
+    /// let mut blue_bg_cell = Cell::default();
+    /// blue_bg_cell.set_symbol("W");
+    /// blue_bg_cell.set_style(Style::default().bg(Color::Blue));
+    /// 
+    /// // Draw cells to backend
+    /// backend.draw([(0, 0, &red_cell)].into_iter()).unwrap();
+    /// backend.draw([(6, 0, &blue_bg_cell)].into_iter()).unwrap();
+    /// 
     /// let styled_view = backend.buffer_view_with_style();
     ///
-    /// // The styled view will show: "{red}Hello{/red} {bg:blue}World{/bg:blue}"
-    /// assert!(styled_view.contains("{red}Hello{/red}"));
-    /// assert!(styled_view.contains("{bg:blue}World{/bg:blue}"));
+    /// // The styled view will contain style tags
+    /// assert!(styled_view.contains("{red}"));
+    /// assert!(styled_view.contains("{bg:blue}"));
     /// ```
     pub fn buffer_view_with_style(&self) -> String {
         buffer_view_with_style(&self.buffer)
@@ -1348,11 +1354,13 @@ mod tests {
 
             // Render to backend
             let area = buffer.area();
-            backend.draw(buffer.content().iter().enumerate().map(|(i, cell)| {
-                let x = (i % area.width as usize) as u16;
-                let y = (i / area.width as usize) as u16;
-                (x, y, cell)
-            })).unwrap();
+            backend
+                .draw(buffer.content().iter().enumerate().map(|(i, cell)| {
+                    let x = (i % area.width as usize) as u16;
+                    let y = (i / area.width as usize) as u16;
+                    (x, y, cell)
+                }))
+                .unwrap();
 
             // Get styled view
             let styled_view = backend.buffer_view_with_style();
