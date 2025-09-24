@@ -43,6 +43,9 @@ anstyle = ["dep:anstyle"]
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["std", "dep:palette"]
 
+## enables portable-atomic integration for targets that don't support atomic types.
+portable-atomic = ["kasuari/portable-atomic"]
+
 ## enables the backend code that sets the underline color. Underline color is only supported by
 ## the Crossterm backend, and is not supported on Windows 7.
 underline-color = []

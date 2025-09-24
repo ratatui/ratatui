@@ -646,6 +646,18 @@ impl From<(Position, Size)> for Rect {
     }
 }
 
+impl From<Size> for Rect {
+    /// Creates a new `Rect` with the given size at [`Position::ORIGIN`] (0, 0).
+    fn from(size: Size) -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            width: size.width,
+            height: size.height,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;
@@ -950,6 +962,23 @@ mod tests {
             Rect {
                 x: 1,
                 y: 2,
+                width: 3,
+                height: 4
+            }
+        );
+    }
+
+    #[test]
+    fn from_size() {
+        let size = Size {
+            width: 3,
+            height: 4,
+        };
+        assert_eq!(
+            Rect::from(size),
+            Rect {
+                x: 0,
+                y: 0,
                 width: 3,
                 height: 4
             }
