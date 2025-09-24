@@ -1373,7 +1373,7 @@ mod tests {
             assert!(styled_view.contains("Plain")); // No styling tags for plain text
 
             // Check that the regular view doesn't contain style tags
-            let regular_view = format!("{}", backend);
+            let regular_view = format!("{backend}");
             assert!(!regular_view.contains("{red}"));
             assert!(!regular_view.contains("{bold}"));
         }
