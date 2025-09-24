@@ -502,15 +502,16 @@ impl Buffer {
                 // result in visual artifacts (e.g., leftover characters). Emitting an explicit
                 // update for the trailing cells avoids this.
                 let symbol = current.symbol();
-                let cw = symbol.width();
+                let cell_width = symbol.width();
                 // Work around terminals that fail to clear the trailing cell of certain
                 // emoji presentation sequences (those containing VS16 / U+FE0F).
                 // Only emit explicit clears for such sequences to avoid bloating diffs
                 // for standard wide characters (e.g., CJK), which terminals handle well.
                 let contains_vs16 = symbol.chars().any(|c| c == '\u{FE0F}');
-                if cw > 1 && contains_vs16 {
-                    for k in 1..cw {
-                        let j = i + k as usize;
+                if cell_width > 1 && contains_vs16 {
+                    for k in 1..cell_width {
+                        let j = i + k;
+                        // Make sure that we are still inside the buffer.
                         if j >= next_buffer.len() || j >= previous_buffer.len() {
                             break;
                         }
@@ -518,6 +519,10 @@ impl Buffer {
                         let next_trailing = &next_buffer[j];
                         if !next_trailing.skip && prev_trailing != next_trailing {
                             let (tx, ty) = self.pos_of(j);
+                            // Push an explicit update for the trailing cell.
+                            // This is expected to be a blank cell, but we use the actual
+                            // content from the next buffer to handle cases where
+                            // the user has explicitly set something else.
                             updates.push((tx, ty, next_trailing));
                         }
                     }
