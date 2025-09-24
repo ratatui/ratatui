@@ -1132,7 +1132,7 @@ fn changes_to_rects(
 #[expect(dead_code)]
 #[cfg(feature = "std")]
 fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
-    let variables = alloc::format!(
+    let _variables = alloc::format!(
         "{:?}",
         elements
             .iter()
@@ -1142,7 +1142,7 @@ fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
             ))
             .collect::<Vec<(f64, f64)>>()
     );
-    std::dbg!(variables);
+    // Debug output removed
 }
 
 /// A container used by the solver inside split

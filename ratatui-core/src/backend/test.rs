@@ -1,8 +1,9 @@
 //! This module provides the `TestBackend` implementation for the [`Backend`] trait.
 //! It is used in the integration tests to verify the correctness of the library.
 
-use alloc::string::String;
-use alloc::vec;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::{format, vec};
 use core::fmt::{self, Write};
 use core::iter;
 
@@ -65,6 +66,225 @@ fn buffer_view(buffer: &Buffer) -> String {
         view.push('\n');
     }
     view
+}
+
+/// Returns a string representation of the given buffer including style information for debugging
+/// purpose.
+///
+/// This function is used to visualize the buffer content with style information in a human-readable
+/// format. Style information is represented as `{style}text{/style}` where style can be color
+/// names, modifiers, or combinations thereof.
+fn buffer_view_with_style(buffer: &Buffer) -> String {
+    let mut view =
+        String::with_capacity(buffer.content.len() * 2 + buffer.area.height as usize * 3);
+    for cells in buffer.content.chunks(buffer.area.width as usize) {
+        let mut overwritten = vec![];
+        let mut skip: usize = 0;
+        let mut current_style = crate::style::Style::default();
+        view.push('"');
+        for (x, c) in cells.iter().enumerate() {
+            if skip == 0 {
+                // Only output style tags when the style changes
+                if c.style() != current_style {
+                    // Close previous style if needed
+                    if current_style != crate::style::Style::default() {
+                        let style_end = format_style_end(&current_style);
+                        if !style_end.is_empty() {
+                            view.push_str(&style_end);
+                        }
+                    }
+                    // Open new style if needed
+                    if c.style() != crate::style::Style::default() {
+                        let style_start = format_style_start(&c.style());
+                        if !style_start.is_empty() {
+                            view.push_str(&style_start);
+                        }
+                    }
+                    current_style = c.style();
+                }
+                view.push_str(c.symbol());
+            } else {
+                overwritten.push((x, c.symbol()));
+            }
+            skip = core::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+        }
+        // Close any remaining style tags at the end of the line
+        if current_style != crate::style::Style::default() {
+            let style_end = format_style_end(&current_style);
+            if !style_end.is_empty() {
+                view.push_str(&style_end);
+            }
+        }
+        view.push('"');
+        if !overwritten.is_empty() {
+            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}").unwrap();
+        }
+        view.push('\n');
+    }
+    view
+}
+
+/// Format the start of a style tag based on the cell's style
+fn format_style_start(style: &crate::style::Style) -> String {
+    let mut tags = Vec::new();
+
+    // Add foreground color
+    if let Some(fg) = &style.fg {
+        if *fg != crate::style::Color::Reset {
+            tags.push(format_color(*fg));
+        }
+    }
+
+    // Add background color
+    if let Some(bg) = &style.bg {
+        if *bg != crate::style::Color::Reset {
+            tags.push(format!("bg:{}", format_color(*bg)));
+        }
+    }
+
+    // Add modifiers
+    if style.add_modifier.contains(crate::style::Modifier::BOLD) {
+        tags.push("bold".to_string());
+    }
+    if style.add_modifier.contains(crate::style::Modifier::ITALIC) {
+        tags.push("italic".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::UNDERLINED)
+    {
+        tags.push("underlined".to_string());
+    }
+    if style.add_modifier.contains(crate::style::Modifier::DIM) {
+        tags.push("dim".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::CROSSED_OUT)
+    {
+        tags.push("crossed_out".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::SLOW_BLINK)
+    {
+        tags.push("slow_blink".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::RAPID_BLINK)
+    {
+        tags.push("rapid_blink".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::REVERSED)
+    {
+        tags.push("reversed".to_string());
+    }
+    if style.add_modifier.contains(crate::style::Modifier::HIDDEN) {
+        tags.push("hidden".to_string());
+    }
+
+    if tags.is_empty() {
+        String::new()
+    } else {
+        format!("{{{}}}", tags.join(","))
+    }
+}
+
+/// Format the end of a style tag based on the cell's style
+fn format_style_end(style: &crate::style::Style) -> String {
+    let mut tags = Vec::new();
+
+    // Add foreground color
+    if let Some(fg) = &style.fg {
+        if *fg != crate::style::Color::Reset {
+            tags.push(format!("/{}", format_color(*fg)));
+        }
+    }
+
+    // Add background color
+    if let Some(bg) = &style.bg {
+        if *bg != crate::style::Color::Reset {
+            tags.push(format!("/bg:{}", format_color(*bg)));
+        }
+    }
+
+    // Add modifiers
+    if style.add_modifier.contains(crate::style::Modifier::BOLD) {
+        tags.push("/bold".to_string());
+    }
+    if style.add_modifier.contains(crate::style::Modifier::ITALIC) {
+        tags.push("/italic".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::UNDERLINED)
+    {
+        tags.push("/underlined".to_string());
+    }
+    if style.add_modifier.contains(crate::style::Modifier::DIM) {
+        tags.push("/dim".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::CROSSED_OUT)
+    {
+        tags.push("/crossed_out".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::SLOW_BLINK)
+    {
+        tags.push("/slow_blink".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::RAPID_BLINK)
+    {
+        tags.push("/rapid_blink".to_string());
+    }
+    if style
+        .add_modifier
+        .contains(crate::style::Modifier::REVERSED)
+    {
+        tags.push("/reversed".to_string());
+    }
+    if style.add_modifier.contains(crate::style::Modifier::HIDDEN) {
+        tags.push("/hidden".to_string());
+    }
+
+    if tags.is_empty() {
+        String::new()
+    } else {
+        format!("{{{}}}", tags.join(","))
+    }
+}
+
+/// Format a color as a human-readable string
+fn format_color(color: crate::style::Color) -> String {
+    match color {
+        crate::style::Color::Reset => "reset".to_string(),
+        crate::style::Color::Black => "black".to_string(),
+        crate::style::Color::Red => "red".to_string(),
+        crate::style::Color::Green => "green".to_string(),
+        crate::style::Color::Yellow => "yellow".to_string(),
+        crate::style::Color::Blue => "blue".to_string(),
+        crate::style::Color::Magenta => "magenta".to_string(),
+        crate::style::Color::Cyan => "cyan".to_string(),
+        crate::style::Color::Gray => "gray".to_string(),
+        crate::style::Color::DarkGray => "dark_gray".to_string(),
+        crate::style::Color::LightRed => "light_red".to_string(),
+        crate::style::Color::LightGreen => "light_green".to_string(),
+        crate::style::Color::LightYellow => "light_yellow".to_string(),
+        crate::style::Color::LightBlue => "light_blue".to_string(),
+        crate::style::Color::LightMagenta => "light_magenta".to_string(),
+        crate::style::Color::LightCyan => "light_cyan".to_string(),
+        crate::style::Color::White => "white".to_string(),
+        crate::style::Color::Rgb(r, g, b) => format!("rgb({r},{g},{b})"),
+        crate::style::Color::Indexed(i) => format!("indexed({i})"),
+    }
 }
 
 impl TestBackend {
@@ -221,6 +441,45 @@ impl TestBackend {
     pub fn assert_cursor_position<P: Into<Position>>(&mut self, position: P) {
         let actual = self.get_cursor_position().unwrap();
         assert_eq!(actual, position.into());
+    }
+
+    /// Returns a view of the buffer that includes style information in a human-readable format.
+    ///
+    /// This method displays styled text using tags like `{red}text{/red}` for colored text,
+    /// `{bg:blue}text{/bg:blue}` for background colors, and `{bold}text{/bold}` for modifiers.
+    /// This is particularly useful for testing styled terminal applications where you need to
+    /// verify both the text content and its styling.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui_core::backend::{Backend, TestBackend};
+    /// use ratatui_core::buffer::Cell;
+    /// use ratatui_core::style::{Color, Style};
+    ///
+    /// let mut backend = TestBackend::new(10, 3);
+    ///
+    /// // Create styled cells
+    /// let mut red_cell = Cell::default();
+    /// red_cell.set_symbol("H");
+    /// red_cell.set_style(Style::default().fg(Color::Red));
+    ///
+    /// let mut blue_bg_cell = Cell::default();
+    /// blue_bg_cell.set_symbol("W");
+    /// blue_bg_cell.set_style(Style::default().bg(Color::Blue));
+    ///
+    /// // Draw cells to backend
+    /// backend.draw([(0, 0, &red_cell)].into_iter()).unwrap();
+    /// backend.draw([(6, 0, &blue_bg_cell)].into_iter()).unwrap();
+    ///
+    /// let styled_view = backend.buffer_view_with_style();
+    ///
+    /// // The styled view will contain style tags
+    /// assert!(styled_view.contains("{red}"));
+    /// assert!(styled_view.contains("{bg:blue}"));
+    /// ```
+    pub fn buffer_view_with_style(&self) -> String {
+        buffer_view_with_style(&self.buffer)
     }
 }
 
@@ -1072,6 +1331,310 @@ mod tests {
             backend.scroll_region_down(range, scroll_by).unwrap();
             backend.assert_scrollback_empty();
             backend.assert_buffer_lines(expected_buffer);
+        }
+
+        #[test]
+        fn buffer_view_with_style() {
+            use crate::style::{Color, Modifier, Style};
+
+            let mut backend = TestBackend::new(20, 3);
+            let mut buffer = crate::buffer::Buffer::empty(crate::layout::Rect::new(0, 0, 20, 3));
+
+            // Set some styled text
+            buffer.set_string(0, 0, "Red", Style::default().fg(Color::Red));
+            buffer.set_string(4, 0, "Blue BG", Style::default().bg(Color::Blue));
+            buffer.set_string(0, 1, "Bold", Style::default().add_modifier(Modifier::BOLD));
+            buffer.set_string(
+                5,
+                1,
+                "RedBold",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            );
+            buffer.set_string(0, 2, "Plain", Style::default());
+
+            // Render to backend
+            let area = buffer.area();
+            backend
+                .draw(buffer.content().iter().enumerate().map(|(i, cell)| {
+                    let x = (i % area.width as usize) as u16;
+                    let y = (i / area.width as usize) as u16;
+                    (x, y, cell)
+                }))
+                .unwrap();
+
+            // Get styled view
+            let styled_view = backend.buffer_view_with_style();
+
+            // Check that styling is properly formatted
+            assert!(styled_view.contains("{red}Red{/red}"));
+            assert!(styled_view.contains("{bg:blue}Blue BG{/bg:blue}"));
+            assert!(styled_view.contains("{bold}Bold{/bold}"));
+            assert!(styled_view.contains("{red,bold}RedBold{/red,/bold}"));
+            assert!(styled_view.contains("Plain")); // No styling tags for plain text
+
+            // Check that the regular view doesn't contain style tags
+            let regular_view = format!("{backend}");
+            assert!(!regular_view.contains("{red}"));
+            assert!(!regular_view.contains("{bold}"));
+        }
+
+        #[test]
+        fn buffer_view_with_style_all_colors() {
+            use crate::style::{Color, Style};
+
+            let mut backend = TestBackend::new(50, 10);
+            let mut buffer = crate::buffer::Buffer::empty(crate::layout::Rect::new(0, 0, 50, 10));
+
+            // Test all named colors
+            buffer.set_string(0, 0, "Black", Style::default().fg(Color::Black));
+            buffer.set_string(6, 0, "Green", Style::default().fg(Color::Green));
+            buffer.set_string(12, 0, "Yellow", Style::default().fg(Color::Yellow));
+            buffer.set_string(19, 0, "Magenta", Style::default().fg(Color::Magenta));
+            buffer.set_string(27, 0, "Cyan", Style::default().fg(Color::Cyan));
+            buffer.set_string(32, 0, "Gray", Style::default().fg(Color::Gray));
+
+            // Test light colors
+            buffer.set_string(0, 1, "DarkGray", Style::default().fg(Color::DarkGray));
+            buffer.set_string(9, 1, "LightRed", Style::default().fg(Color::LightRed));
+            buffer.set_string(18, 1, "LightGreen", Style::default().fg(Color::LightGreen));
+            buffer.set_string(
+                29,
+                1,
+                "LightYellow",
+                Style::default().fg(Color::LightYellow),
+            );
+            buffer.set_string(0, 2, "LightBlue", Style::default().fg(Color::LightBlue));
+            buffer.set_string(
+                10,
+                2,
+                "LightMagenta",
+                Style::default().fg(Color::LightMagenta),
+            );
+            buffer.set_string(23, 2, "LightCyan", Style::default().fg(Color::LightCyan));
+            buffer.set_string(33, 2, "White", Style::default().fg(Color::White));
+
+            // Test RGB colors
+            buffer.set_string(0, 3, "RGB", Style::default().fg(Color::Rgb(255, 128, 64)));
+
+            // Test indexed colors
+            buffer.set_string(0, 4, "Indexed", Style::default().fg(Color::Indexed(42)));
+
+            // Render to backend
+            let area = buffer.area();
+            backend
+                .draw(buffer.content().iter().enumerate().map(|(i, cell)| {
+                    let x = (i % area.width as usize) as u16;
+                    let y = (i / area.width as usize) as u16;
+                    (x, y, cell)
+                }))
+                .unwrap();
+
+            let styled_view = backend.buffer_view_with_style();
+
+            // Verify all color formats
+            assert!(styled_view.contains("{black}Black{/black}"));
+            assert!(styled_view.contains("{green}Green{/green}"));
+            assert!(styled_view.contains("{yellow}Yellow{/yellow}"));
+            assert!(styled_view.contains("{magenta}Magenta{/magenta}"));
+            assert!(styled_view.contains("{cyan}Cyan{/cyan}"));
+            assert!(styled_view.contains("{gray}Gray{/gray}"));
+            assert!(styled_view.contains("{dark_gray}DarkGray{/dark_gray}"));
+            assert!(styled_view.contains("{light_red}LightRed{/light_red}"));
+            assert!(styled_view.contains("{light_green}LightGreen{/light_green}"));
+            assert!(styled_view.contains("{light_yellow}LightYellow{/light_yellow}"));
+            assert!(styled_view.contains("{light_blue}LightBlue{/light_blue}"));
+            assert!(styled_view.contains("{light_magenta}LightMagenta{/light_magenta}"));
+            assert!(styled_view.contains("{light_cyan}LightCyan{/light_cyan}"));
+            assert!(styled_view.contains("{white}White{/white}"));
+            assert!(styled_view.contains("{rgb(255,128,64)}RGB{/rgb(255,128,64)}"));
+            assert!(styled_view.contains("{indexed(42)}Indexed{/indexed(42)}"));
+        }
+
+        #[test]
+        fn buffer_view_with_style_all_modifiers() {
+            use crate::style::{Modifier, Style};
+
+            let mut backend = TestBackend::new(50, 10);
+            let mut buffer = crate::buffer::Buffer::empty(crate::layout::Rect::new(0, 0, 50, 10));
+
+            // Test all modifiers
+            buffer.set_string(
+                0,
+                0,
+                "Italic",
+                Style::default().add_modifier(Modifier::ITALIC),
+            );
+            buffer.set_string(
+                7,
+                0,
+                "Underlined",
+                Style::default().add_modifier(Modifier::UNDERLINED),
+            );
+            buffer.set_string(18, 0, "Dim", Style::default().add_modifier(Modifier::DIM));
+            buffer.set_string(
+                0,
+                1,
+                "CrossedOut",
+                Style::default().add_modifier(Modifier::CROSSED_OUT),
+            );
+            buffer.set_string(
+                11,
+                1,
+                "SlowBlink",
+                Style::default().add_modifier(Modifier::SLOW_BLINK),
+            );
+            buffer.set_string(
+                21,
+                1,
+                "RapidBlink",
+                Style::default().add_modifier(Modifier::RAPID_BLINK),
+            );
+            buffer.set_string(
+                0,
+                2,
+                "Reversed",
+                Style::default().add_modifier(Modifier::REVERSED),
+            );
+            buffer.set_string(
+                9,
+                2,
+                "Hidden",
+                Style::default().add_modifier(Modifier::HIDDEN),
+            );
+
+            // Test multiple modifiers combined
+            buffer.set_string(
+                0,
+                3,
+                "BoldItalic",
+                Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC),
+            );
+            buffer.set_string(
+                11,
+                3,
+                "UnderlinedDim",
+                Style::default().add_modifier(Modifier::UNDERLINED | Modifier::DIM),
+            );
+
+            // Render to backend
+            let area = buffer.area();
+            backend
+                .draw(buffer.content().iter().enumerate().map(|(i, cell)| {
+                    let x = (i % area.width as usize) as u16;
+                    let y = (i / area.width as usize) as u16;
+                    (x, y, cell)
+                }))
+                .unwrap();
+
+            let styled_view = backend.buffer_view_with_style();
+
+            // Verify all modifier formats
+            assert!(styled_view.contains("{italic}Italic{/italic}"));
+            assert!(styled_view.contains("{underlined}Underlined{/underlined}"));
+            assert!(styled_view.contains("{dim}Dim{/dim}"));
+            assert!(styled_view.contains("{crossed_out}CrossedOut{/crossed_out}"));
+            assert!(styled_view.contains("{slow_blink}SlowBlink{/slow_blink}"));
+            assert!(styled_view.contains("{rapid_blink}RapidBlink{/rapid_blink}"));
+            assert!(styled_view.contains("{reversed}Reversed{/reversed}"));
+            assert!(styled_view.contains("{hidden}Hidden{/hidden}"));
+
+            // Verify combined modifiers
+            assert!(styled_view.contains("{bold,italic}BoldItalic{/bold,/italic}"));
+            assert!(styled_view.contains("{underlined,dim}UnderlinedDim{/underlined,/dim}"));
+        }
+
+        #[test]
+        fn buffer_view_with_style_empty_buffer() {
+            let backend = TestBackend::new(10, 2);
+            let styled_view = backend.buffer_view_with_style();
+
+            // Empty buffer should just have spaces with quotes and newlines
+            assert_eq!(styled_view, "\"          \"\n\"          \"\n");
+        }
+
+        #[test]
+        fn buffer_view_with_style_background_colors() {
+            use crate::style::{Color, Style};
+
+            let mut backend = TestBackend::new(30, 3);
+            let mut buffer = crate::buffer::Buffer::empty(crate::layout::Rect::new(0, 0, 30, 3));
+
+            // Test background colors
+            buffer.set_string(0, 0, "RedBG", Style::default().bg(Color::Red));
+            buffer.set_string(6, 0, "GreenBG", Style::default().bg(Color::Green));
+            buffer.set_string(14, 0, "BlueBG", Style::default().bg(Color::Blue));
+
+            // Test RGB background
+            buffer.set_string(0, 1, "RGBBG", Style::default().bg(Color::Rgb(128, 64, 32)));
+
+            // Test indexed background
+            buffer.set_string(0, 2, "IndexedBG", Style::default().bg(Color::Indexed(200)));
+
+            // Render to backend
+            let area = buffer.area();
+            backend
+                .draw(buffer.content().iter().enumerate().map(|(i, cell)| {
+                    let x = (i % area.width as usize) as u16;
+                    let y = (i / area.width as usize) as u16;
+                    (x, y, cell)
+                }))
+                .unwrap();
+
+            let styled_view = backend.buffer_view_with_style();
+
+            // Verify background color formats
+            assert!(styled_view.contains("{bg:red}RedBG{/bg:red}"));
+            assert!(styled_view.contains("{bg:green}GreenBG{/bg:green}"));
+            assert!(styled_view.contains("{bg:blue}BlueBG{/bg:blue}"));
+            assert!(styled_view.contains("{bg:rgb(128,64,32)}RGBBG{/bg:rgb(128,64,32)}"));
+            assert!(styled_view.contains("{bg:indexed(200)}IndexedBG{/bg:indexed(200)}"));
+        }
+
+        #[test]
+        fn buffer_view_with_style_complex_combinations() {
+            use crate::style::{Color, Modifier, Style};
+
+            let mut backend = TestBackend::new(40, 4);
+            let mut buffer = crate::buffer::Buffer::empty(crate::layout::Rect::new(0, 0, 40, 4));
+
+            // Test complex style combinations
+            buffer.set_string(
+                0,
+                0,
+                "Complex1",
+                Style::default()
+                    .fg(Color::Red)
+                    .bg(Color::Blue)
+                    .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+            );
+
+            buffer.set_string(
+                0,
+                1,
+                "Complex2",
+                Style::default()
+                    .fg(Color::Rgb(255, 200, 100))
+                    .bg(Color::Indexed(50))
+                    .add_modifier(Modifier::ITALIC | Modifier::DIM | Modifier::CROSSED_OUT),
+            );
+
+            // Render to backend
+            let area = buffer.area();
+            backend
+                .draw(buffer.content().iter().enumerate().map(|(i, cell)| {
+                    let x = (i % area.width as usize) as u16;
+                    let y = (i / area.width as usize) as u16;
+                    (x, y, cell)
+                }))
+                .unwrap();
+
+            let styled_view = backend.buffer_view_with_style();
+
+            // Verify complex combinations
+            assert!(styled_view.contains(
+                "{red,bg:blue,bold,underlined}Complex1{/red,/bg:blue,/bold,/underlined}"
+            ));
+            assert!(styled_view.contains("{rgb(255,200,100),bg:indexed(50),italic,dim,crossed_out}Complex2{/rgb(255,200,100),/bg:indexed(50),/italic,/dim,/crossed_out}"));
         }
     }
 }
