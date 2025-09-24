@@ -1392,21 +1392,31 @@ mod tests {
             buffer.set_string(19, 0, "Magenta", Style::default().fg(Color::Magenta));
             buffer.set_string(27, 0, "Cyan", Style::default().fg(Color::Cyan));
             buffer.set_string(32, 0, "Gray", Style::default().fg(Color::Gray));
-            
+
             // Test light colors
             buffer.set_string(0, 1, "DarkGray", Style::default().fg(Color::DarkGray));
             buffer.set_string(9, 1, "LightRed", Style::default().fg(Color::LightRed));
             buffer.set_string(18, 1, "LightGreen", Style::default().fg(Color::LightGreen));
-            buffer.set_string(29, 1, "LightYellow", Style::default().fg(Color::LightYellow));
+            buffer.set_string(
+                29,
+                1,
+                "LightYellow",
+                Style::default().fg(Color::LightYellow),
+            );
             buffer.set_string(0, 2, "LightBlue", Style::default().fg(Color::LightBlue));
-            buffer.set_string(10, 2, "LightMagenta", Style::default().fg(Color::LightMagenta));
+            buffer.set_string(
+                10,
+                2,
+                "LightMagenta",
+                Style::default().fg(Color::LightMagenta),
+            );
             buffer.set_string(23, 2, "LightCyan", Style::default().fg(Color::LightCyan));
             buffer.set_string(33, 2, "White", Style::default().fg(Color::White));
-            
+
             // Test RGB colors
             buffer.set_string(0, 3, "RGB", Style::default().fg(Color::Rgb(255, 128, 64)));
-            
-            // Test indexed colors  
+
+            // Test indexed colors
             buffer.set_string(0, 4, "Indexed", Style::default().fg(Color::Indexed(42)));
 
             // Render to backend
@@ -1448,25 +1458,62 @@ mod tests {
             let mut buffer = crate::buffer::Buffer::empty(crate::layout::Rect::new(0, 0, 50, 10));
 
             // Test all modifiers
-            buffer.set_string(0, 0, "Italic", Style::default().add_modifier(Modifier::ITALIC));
-            buffer.set_string(7, 0, "Underlined", Style::default().add_modifier(Modifier::UNDERLINED));
-            buffer.set_string(18, 0, "Dim", Style::default().add_modifier(Modifier::DIM));
-            buffer.set_string(0, 1, "CrossedOut", Style::default().add_modifier(Modifier::CROSSED_OUT));
-            buffer.set_string(11, 1, "SlowBlink", Style::default().add_modifier(Modifier::SLOW_BLINK));
-            buffer.set_string(21, 1, "RapidBlink", Style::default().add_modifier(Modifier::RAPID_BLINK));
-            buffer.set_string(0, 2, "Reversed", Style::default().add_modifier(Modifier::REVERSED));
-            buffer.set_string(9, 2, "Hidden", Style::default().add_modifier(Modifier::HIDDEN));
-            
-            // Test multiple modifiers combined
             buffer.set_string(
-                0, 3, "BoldItalic", 
-                Style::default()
-                    .add_modifier(Modifier::BOLD | Modifier::ITALIC)
+                0,
+                0,
+                "Italic",
+                Style::default().add_modifier(Modifier::ITALIC),
             );
             buffer.set_string(
-                11, 3, "UnderlinedDim",
-                Style::default()
-                    .add_modifier(Modifier::UNDERLINED | Modifier::DIM)
+                7,
+                0,
+                "Underlined",
+                Style::default().add_modifier(Modifier::UNDERLINED),
+            );
+            buffer.set_string(18, 0, "Dim", Style::default().add_modifier(Modifier::DIM));
+            buffer.set_string(
+                0,
+                1,
+                "CrossedOut",
+                Style::default().add_modifier(Modifier::CROSSED_OUT),
+            );
+            buffer.set_string(
+                11,
+                1,
+                "SlowBlink",
+                Style::default().add_modifier(Modifier::SLOW_BLINK),
+            );
+            buffer.set_string(
+                21,
+                1,
+                "RapidBlink",
+                Style::default().add_modifier(Modifier::RAPID_BLINK),
+            );
+            buffer.set_string(
+                0,
+                2,
+                "Reversed",
+                Style::default().add_modifier(Modifier::REVERSED),
+            );
+            buffer.set_string(
+                9,
+                2,
+                "Hidden",
+                Style::default().add_modifier(Modifier::HIDDEN),
+            );
+
+            // Test multiple modifiers combined
+            buffer.set_string(
+                0,
+                3,
+                "BoldItalic",
+                Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC),
+            );
+            buffer.set_string(
+                11,
+                3,
+                "UnderlinedDim",
+                Style::default().add_modifier(Modifier::UNDERLINED | Modifier::DIM),
             );
 
             // Render to backend
@@ -1490,7 +1537,7 @@ mod tests {
             assert!(styled_view.contains("{rapid_blink}RapidBlink{/rapid_blink}"));
             assert!(styled_view.contains("{reversed}Reversed{/reversed}"));
             assert!(styled_view.contains("{hidden}Hidden{/hidden}"));
-            
+
             // Verify combined modifiers
             assert!(styled_view.contains("{bold,italic}BoldItalic{/bold,/italic}"));
             assert!(styled_view.contains("{underlined,dim}UnderlinedDim{/underlined,/dim}"));
@@ -1500,7 +1547,7 @@ mod tests {
         fn buffer_view_with_style_empty_buffer() {
             let backend = TestBackend::new(10, 2);
             let styled_view = backend.buffer_view_with_style();
-            
+
             // Empty buffer should just have spaces with quotes and newlines
             assert_eq!(styled_view, "\"          \"\n\"          \"\n");
         }
@@ -1516,10 +1563,10 @@ mod tests {
             buffer.set_string(0, 0, "RedBG", Style::default().bg(Color::Red));
             buffer.set_string(6, 0, "GreenBG", Style::default().bg(Color::Green));
             buffer.set_string(14, 0, "BlueBG", Style::default().bg(Color::Blue));
-            
+
             // Test RGB background
             buffer.set_string(0, 1, "RGBBG", Style::default().bg(Color::Rgb(128, 64, 32)));
-            
+
             // Test indexed background
             buffer.set_string(0, 2, "IndexedBG", Style::default().bg(Color::Indexed(200)));
 
@@ -1552,19 +1599,23 @@ mod tests {
 
             // Test complex style combinations
             buffer.set_string(
-                0, 0, "Complex1",
+                0,
+                0,
+                "Complex1",
                 Style::default()
                     .fg(Color::Red)
                     .bg(Color::Blue)
-                    .add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+                    .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
             );
-            
+
             buffer.set_string(
-                0, 1, "Complex2",
+                0,
+                1,
+                "Complex2",
                 Style::default()
                     .fg(Color::Rgb(255, 200, 100))
                     .bg(Color::Indexed(50))
-                    .add_modifier(Modifier::ITALIC | Modifier::DIM | Modifier::CROSSED_OUT)
+                    .add_modifier(Modifier::ITALIC | Modifier::DIM | Modifier::CROSSED_OUT),
             );
 
             // Render to backend
@@ -1580,7 +1631,9 @@ mod tests {
             let styled_view = backend.buffer_view_with_style();
 
             // Verify complex combinations
-            assert!(styled_view.contains("{red,bg:blue,bold,underlined}Complex1{/red,/bg:blue,/bold,/underlined}"));
+            assert!(styled_view.contains(
+                "{red,bg:blue,bold,underlined}Complex1{/red,/bg:blue,/bold,/underlined}"
+            ));
             assert!(styled_view.contains("{rgb(255,200,100),bg:indexed(50),italic,dim,crossed_out}Complex2{/rgb(255,200,100),/bg:indexed(50),/italic,/dim,/crossed_out}"));
         }
     }
