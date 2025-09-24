@@ -1219,4 +1219,21 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let paragraph = Paragraph::new("Lorem ipsum");
+        // This should not panic, even if the buffer is too small to render the paragraph.
+        paragraph.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L"]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let paragraph = Paragraph::new("Lorem ipsum");
+        // This should not panic, even if the buffer has zero size.
+        paragraph.render(buffer.area, &mut buffer);
+    }
 }

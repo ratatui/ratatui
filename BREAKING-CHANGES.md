@@ -26,6 +26,7 @@ This is a quick summary of the sections below:
     feature is enabled
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
     `Terminal`
+  - Support a broader range for `unicode-width` version
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
     const
@@ -376,6 +377,17 @@ The `termwiz` backend is upgraded from 0.22.0 to 0.23.0.
 
 This release has a few fixes for hyperlinks and input handling, plus some dependency updates.
 See the [commits](https://github.com/wezterm/wezterm/commits/main/termwiz) for more details.
+
+### Support a broader range for `unicode-width` version ([#1999])
+
+[#1999]: https://github.com/ratatui/ratatui/pull/1999
+
+Ratatui's dependency on `unicode-width`, previously pinned to 0.2.0, has
+expanded to allow version 0.2.1. This comes with 2 behavior changes described in
+[unicode-width#61] and [unicode-width#74].
+
+[unicode-width#61]: https://github.com/unicode-rs/unicode-width/pull/61
+[unicode-width#74]: https://github.com/unicode-rs/unicode-width/pull/74
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 

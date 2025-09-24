@@ -431,7 +431,7 @@ impl Widget for &LineGauge<'_> {
         }
 
         let ratio = self.ratio;
-        let default_label = Line::from(format!("{:.0}%", ratio * 100.0));
+        let default_label = Line::from(format!("{:3.0}%", ratio * 100.0));
         let label = self.label.as_ref().unwrap_or(&default_label);
         let (col, row) = buf.set_line(gauge_area.left(), gauge_area.top(), label, gauge_area.width);
         let start = col + 1;
@@ -585,5 +585,39 @@ mod tests {
                 unfilled_style: Style::default()
             }
         );
+    }
+
+    #[test]
+    fn render_in_minimal_buffer_gauge() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let gauge = Gauge::default().percent(50);
+        // This should not panic, even if the buffer is too small to render the gauge.
+        gauge.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["5"]));
+    }
+
+    #[test]
+    fn render_in_minimal_buffer_line_gauge() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let line_gauge = LineGauge::default().ratio(0.5);
+        // This should not panic, even if the buffer is too small to render the line gauge.
+        line_gauge.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer_gauge() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let gauge = Gauge::default().percent(50);
+        // This should not panic, even if the buffer has zero size.
+        gauge.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer_line_gauge() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let line_gauge = LineGauge::default().ratio(0.5);
+        // This should not panic, even if the buffer has zero size.
+        line_gauge.render(buffer.area, &mut buffer);
     }
 }

@@ -12,7 +12,7 @@
 
 </details>
 
-![Demo](https://github.com/ratatui/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
+![Release header](https://github.com/ratatui/ratatui/blob/b23480adfa9430697071c906c7ba4d4f9bd37a73/assets/release-header.png?raw=true)
 
 <div align="center">
 
@@ -113,15 +113,16 @@ There is also a [Matrix](https://matrix.org/) bridge available at
 We rely on GitHub for [bugs][Report a bug] and [feature requests][Request a Feature].
 
 Please make sure you read the [contributing](./CONTRIBUTING.md) guidelines before [creating a pull
-request][Create a Pull Request].
+request][Create a Pull Request]. We accept AI generated code, but please read the [AI Contributions]
+guidelines to ensure compliance.
 
 If you'd like to show your support, you can add the Ratatui badge to your project's README:
 
 ```md
-[![Built With Ratatui](https://ratatui.rs/built-with-ratatui/badge.svg)](https://ratatui.rs/)
+[![Built With Ratatui](https://img.shields.io/badge/Built_With_Ratatui-000?logo=ratatui&logoColor=fff)](https://ratatui.rs/)
 ```
 
-[![Built With Ratatui](https://ratatui.rs/built-with-ratatui/badge.svg)](https://ratatui.rs/)
+[![Built With Ratatui](https://img.shields.io/badge/Built_With_Ratatui-000?logo=ratatui&logoColor=fff)](https://ratatui.rs/)
 
 ## Acknowledgements
 
@@ -152,6 +153,7 @@ This project is licensed under the [MIT License][License].
 [Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
 [Create a Pull Request]: https://github.com/ratatui/ratatui/compare
 [Contributing]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md
+[AI Contributions]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md#ai-generated-content
 [Crate]: https://crates.io/crates/ratatui
 [tui-rs]: https://crates.io/crates/tui
 [Sponsors]: https://github.com/sponsors/ratatui

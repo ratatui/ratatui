@@ -2,6 +2,7 @@ pub mod main {
     pub mod barchart;
     pub mod block;
     pub mod buffer;
+    pub mod constraints;
     pub mod line;
     pub mod list;
     pub mod paragraph;
@@ -21,4 +22,5 @@ criterion::criterion_main!(
     rect::benches,
     sparkline::benches,
     table::benches,
+    constraints::benches,
 );

@@ -30,32 +30,34 @@ rust-version = "1.85.0"
 [workspace.dependencies]
 anstyle = "1"
 bitflags = "2.9"
+clap = { version = "4.5", features = ["derive"] }
 color-eyre = "0.6"
 compact_str = { version = "0.9", default-features = false }
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.7", features = ["html_reports"] }
 crossterm = "0.29"
 document-features = "0.2"
 fakeit = "1"
 futures = "0.3"
-hashbrown = "0.15"
+hashbrown = "0.16"
 indoc = "2"
 instability = "0.3"
 itertools = { version = "0.14", default-features = false, features = ["use_alloc"] }
 kasuari = { version = "0.4", default-features = false }
 line-clipping = "0.3"
-lru = "0.14"
+lru = "0.16"
+octocrab = "0.44"
 palette = "0.7"
 pretty_assertions = "1"
 rand = "0.9"
 rand_chacha = "0.9"
-ratatui = { path = "ratatui", version = "0.30.0-alpha.5" }
-ratatui-core = { path = "ratatui-core", version = "0.1.0-alpha.6" }
-ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-alpha.5" }
-ratatui-macros = { path = "ratatui-macros", version = "0.7.0-alpha.4" }
-ratatui-termion = { path = "ratatui-termion", version = "0.1.0-alpha.5" }
-ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-alpha.5" }
-ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-alpha.5" }
-rstest = "0.25"
+ratatui = { path = "ratatui", version = "0.30.0-beta.0" }
+ratatui-core = { path = "ratatui-core", version = "0.1.0-beta.0" }
+ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-beta.0" }
+ratatui-macros = { path = "ratatui-macros", version = "0.7.0-beta.0" }
+ratatui-termion = { path = "ratatui-termion", version = "0.1.0-beta.0" }
+ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-beta.0" }
+ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-beta.0" }
+rstest = "0.26"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 strum = { version = "0.27", default-features = false, features = ["derive"] }
@@ -64,6 +66,7 @@ termwiz = "0.23"
 thiserror = { version = "2", default-features = false }
 time = { version = "0.3", default-features = false }
 tokio = "1"
+tokio-stream = "0.1"
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3"
@@ -71,7 +74,7 @@ trybuild = "1"
 unicode-segmentation = "1"
 unicode-truncate = { version = "2", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
-unicode-width = "=0.2.0"
+unicode-width = ">=0.2.0, <=0.2.1"
 
 # Improve benchmark consistency
 [profile.bench]

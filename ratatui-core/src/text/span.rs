@@ -269,7 +269,7 @@ impl<'a> Span<'a> {
 
     /// Returns the unicode width of the content held by this span.
     pub fn width(&self) -> usize {
-        self.content.width()
+        UnicodeWidthStr::width(self)
     }
 
     /// Returns an iterator over the graphemes held by this span.
@@ -373,6 +373,16 @@ impl<'a> Span<'a> {
     #[deprecated = "use `into_right_aligned_line()` instead"]
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()
+    }
+}
+
+impl UnicodeWidthStr for Span<'_> {
+    fn width(&self) -> usize {
+        self.content.width()
+    }
+
+    fn width_cjk(&self) -> usize {
+        self.content.width_cjk()
     }
 }
 

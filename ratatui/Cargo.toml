@@ -1,7 +1,7 @@
 [package]
 name = "ratatui"
 description = "A library that's all about cooking up terminal user interfaces"
-version = "0.30.0-alpha.5"
+version = "0.30.0-beta.0"
 authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
@@ -58,6 +58,9 @@ layout-cache = ["std", "ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["std", "ratatui-core/palette", "dep:palette"]
+
+## enables portable-atomic integration for targets that don't support atomic types.
+portable-atomic = ["ratatui-core/portable-atomic"]
 
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).
