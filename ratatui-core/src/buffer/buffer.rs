@@ -495,6 +495,38 @@ impl Buffer {
             if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
                 let (x, y) = self.pos_of(i);
                 updates.push((x, y, &next_buffer[i]));
+
+                // If the current cell is multi-width, ensure the trailing cells are explicitly
+                // cleared when they previously contained non-blank content. Some terminals do not
+                // reliably clear the trailing cell(s) when printing a wide grapheme, which can
+                // result in visual artifacts (e.g., leftover characters). Emitting an explicit
+                // update for the trailing cells avoids this.
+                let symbol = current.symbol();
+                let cell_width = symbol.width();
+                // Work around terminals that fail to clear the trailing cell of certain
+                // emoji presentation sequences (those containing VS16 / U+FE0F).
+                // Only emit explicit clears for such sequences to avoid bloating diffs
+                // for standard wide characters (e.g., CJK), which terminals handle well.
+                let contains_vs16 = symbol.chars().any(|c| c == '\u{FE0F}');
+                if cell_width > 1 && contains_vs16 {
+                    for k in 1..cell_width {
+                        let j = i + k;
+                        // Make sure that we are still inside the buffer.
+                        if j >= next_buffer.len() || j >= previous_buffer.len() {
+                            break;
+                        }
+                        let prev_trailing = &previous_buffer[j];
+                        let next_trailing = &next_buffer[j];
+                        if !next_trailing.skip && prev_trailing != next_trailing {
+                            let (tx, ty) = self.pos_of(j);
+                            // Push an explicit update for the trailing cell.
+                            // This is expected to be a blank cell, but we use the actual
+                            // content from the next buffer to handle cases where
+                            // the user has explicitly set something else.
+                            updates.push((tx, ty, next_trailing));
+                        }
+                    }
+                }
             }
 
             to_skip = current.symbol().width().saturating_sub(1);
@@ -1248,6 +1280,9 @@ mod tests {
     // Both eye and speech bubble include a 'display as emoji' variation selector
     // Prior to unicode-width 0.2, this was incorrectly detected as width 4 for some reason
     #[case::eye_speechbubble("👁️‍🗨️", "👁️‍🗨️xxxxx")]
+    // Keyboard keycap emoji: base symbol + VS16 for emoji presentation
+    // This should render as a single grapheme with width 2.
+    #[case::keyboard_emoji("⌨️", "⌨️xxxxx")]
     fn renders_emoji(#[case] input: &str, #[case] expected: &str) {
         use unicode_width::UnicodeWidthChar;
 
@@ -1296,5 +1331,35 @@ mod tests {
 
         assert_eq!(buffer.index_of(255, 256), 65791);
         assert_eq!(buffer.pos_of(65791), (255, 256)); // previously (255, 0)
+    }
+
+    #[test]
+    fn diff_clears_trailing_cell_for_wide_grapheme() {
+        // Reproduce: write "ab", then overwrite with a wide emoji like "⌨️"
+        let prev = Buffer::with_lines(["ab"]); // width 2 area inferred
+        assert_eq!(prev.area.width, 2);
+
+        let mut next = Buffer::with_lines(["  "]); // start with blanks
+        next.set_string(0, 0, "⌨️", Style::new());
+
+        // The next buffer contains a wide grapheme occupying cell 0 and implicitly cell 1.
+        // The debug formatting shows the hidden trailing space.
+        let expected_next = Buffer::with_lines(["⌨️"]);
+        assert_eq!(next, expected_next);
+
+        // The diff should include an update for (0,0) to draw the emoji. Depending on
+        // terminal behavior, it may or may not be necessary to explicitly clear (1,0).
+        // At minimum, ensure the first cell is updated and nothing incorrect is emitted.
+        let diff = prev.diff(&next);
+        assert!(
+            diff.iter()
+                .any(|(x, y, c)| *x == 0 && *y == 0 && c.symbol() == "⌨️")
+        );
+        // And it should explicitly clear the trailing cell (1,0) to avoid leftovers on terminals
+        // that don't automatically clear the following cell for wide characters.
+        assert!(
+            diff.iter()
+                .any(|(x, y, c)| *x == 1 && *y == 0 && c.symbol() == " ")
+        );
     }
 }
