@@ -61,7 +61,8 @@ fn buffer_view(buffer: &Buffer) -> String {
         }
         view.push('"');
         if !overwritten.is_empty() {
-            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}").unwrap();
+            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}")
+                .expect("writing to String should not fail");
         }
         view.push('\n');
     }
@@ -117,7 +118,8 @@ fn buffer_view_with_style(buffer: &Buffer) -> String {
         }
         view.push('"');
         if !overwritten.is_empty() {
-            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}").unwrap();
+            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}")
+                .expect("writing to String should not fail");
         }
         view.push('\n');
     }
@@ -264,27 +266,8 @@ fn format_style_end(style: &crate::style::Style) -> String {
 
 /// Format a color as a human-readable string
 fn format_color(color: crate::style::Color) -> String {
-    match color {
-        crate::style::Color::Reset => "reset".to_string(),
-        crate::style::Color::Black => "black".to_string(),
-        crate::style::Color::Red => "red".to_string(),
-        crate::style::Color::Green => "green".to_string(),
-        crate::style::Color::Yellow => "yellow".to_string(),
-        crate::style::Color::Blue => "blue".to_string(),
-        crate::style::Color::Magenta => "magenta".to_string(),
-        crate::style::Color::Cyan => "cyan".to_string(),
-        crate::style::Color::Gray => "gray".to_string(),
-        crate::style::Color::DarkGray => "dark_gray".to_string(),
-        crate::style::Color::LightRed => "light_red".to_string(),
-        crate::style::Color::LightGreen => "light_green".to_string(),
-        crate::style::Color::LightYellow => "light_yellow".to_string(),
-        crate::style::Color::LightBlue => "light_blue".to_string(),
-        crate::style::Color::LightMagenta => "light_magenta".to_string(),
-        crate::style::Color::LightCyan => "light_cyan".to_string(),
-        crate::style::Color::White => "white".to_string(),
-        crate::style::Color::Rgb(r, g, b) => format!("rgb({r},{g},{b})"),
-        crate::style::Color::Indexed(i) => format!("indexed({i})"),
-    }
+    // Use the new helper function from the color module to avoid duplication
+    color.short_name()
 }
 
 impl TestBackend {
@@ -736,17 +719,21 @@ mod tests {
         assert_eq!(buffer_view(&buffer), "\"aaaa\"\n\"aaaa\"\n");
     }
 
-    #[test]
-    fn buffer_view_with_overwrites() {
-        let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 2 wide
-        let buffer = Buffer::with_lines([multi_byte_char]);
-        assert_eq!(
-            buffer_view(&buffer),
+    #[rstest::rstest]
+    #[case("👨‍👩‍👧‍👦", 2)] // family emoji renders 2 wide
+    #[case("🌟", 2)] // star emoji renders 2 wide
+    #[case("a", 1)] // regular ASCII character
+    fn buffer_view_with_overwrites(#[case] test_char: &str, #[case] expected_width: usize) {
+        let buffer = Buffer::with_lines([test_char]);
+        let expected = if expected_width > 1 {
             format!(
-                r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " ")]
+                r#""{test_char}" Hidden by multi-width symbols: [(1, " ")]
 "#,
             )
-        );
+        } else {
+            format!("\"{test_char}\"\n")
+        };
+        assert_eq!(buffer_view(&buffer), expected);
     }
 
     #[test]

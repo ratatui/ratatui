@@ -3,6 +3,8 @@
 use core::fmt;
 use core::str::FromStr;
 
+use alloc::{format, string::ToString};
+
 use crate::style::stylize::{ColorDebug, ColorDebugKind};
 
 /// ANSI Color
@@ -477,6 +479,72 @@ impl Color {
         }: Srgb<u8> = Srgb::from_color(hsluv).into();
 
         Self::Rgb(red, green, blue)
+    }
+
+    /// Returns a short name for the color that can be used for display purposes.
+    ///
+    /// This is useful for avoiding duplication in future features that need to display
+    /// color names in a compact format.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::style::Color;
+    ///
+    /// assert_eq!(Color::Red.short_name(), "red");
+    /// assert_eq!(Color::LightBlue.short_name(), "light_blue");
+    /// assert_eq!(Color::Rgb(255, 128, 0).short_name(), "rgb(255,128,0)");
+    /// assert_eq!(Color::Indexed(42).short_name(), "indexed(42)");
+    /// ```
+    pub fn short_name(&self) -> alloc::string::String {
+        match self {
+            Color::Reset => "reset".to_string(),
+            Color::Black => "black".to_string(),
+            Color::Red => "red".to_string(),
+            Color::Green => "green".to_string(),
+            Color::Yellow => "yellow".to_string(),
+            Color::Blue => "blue".to_string(),
+            Color::Magenta => "magenta".to_string(),
+            Color::Cyan => "cyan".to_string(),
+            Color::Gray => "gray".to_string(),
+            Color::DarkGray => "dark_gray".to_string(),
+            Color::LightRed => "light_red".to_string(),
+            Color::LightGreen => "light_green".to_string(),
+            Color::LightYellow => "light_yellow".to_string(),
+            Color::LightBlue => "light_blue".to_string(),
+            Color::LightMagenta => "light_magenta".to_string(),
+            Color::LightCyan => "light_cyan".to_string(),
+            Color::White => "white".to_string(),
+            Color::Rgb(r, g, b) => format!("rgb({r},{g},{b})"),
+            Color::Indexed(i) => format!("indexed({i})"),
+        }
+    }
+
+    /// Returns whether the color is a bright/light variant.
+    ///
+    /// This helper function can be used to determine if a color is one of the
+    /// bright variants (Light* colors) for styling decisions.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::style::Color;
+    ///
+    /// assert!(Color::LightRed.is_bright());
+    /// assert!(!Color::Red.is_bright());
+    /// assert!(!Color::Rgb(255, 0, 0).is_bright());
+    /// ```
+    pub fn is_bright(&self) -> bool {
+        matches!(
+            self,
+            Color::LightRed
+                | Color::LightGreen
+                | Color::LightYellow
+                | Color::LightBlue
+                | Color::LightMagenta
+                | Color::LightCyan
+                | Color::White
+        )
     }
 }
 
