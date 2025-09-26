@@ -204,6 +204,54 @@ where
     }
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
+    ///
+    /// # Note
+    ///
+    /// This exists to support more advanced use cases. Most cases should be fine using
+    /// [`Terminal::draw`].
+    ///
+    /// [`Terminal::get_frame`] should be used when you need direct access to the frame buffer
+    /// outside of draw closure, for example:
+    ///
+    /// - Unit testing widgets
+    /// - Buffer state inspection
+    /// - Cursor manipulation
+    /// - Multiple rendering passes/Buffer Manipulation
+    /// - Custom frame lifecycle management
+    /// - Buffer exporting
+    /// # Example
+    /// Getting the buffer and asserting on some cells after rendering a widget.
+    /// ```rust,ignore
+    /// #[cfg(test)]
+    /// mod tests {
+    ///     use ratatui::{
+    ///         backend::TestBackend,
+    ///         widgets::{Block, Borders, Paragraph},
+    ///         Terminal,
+    ///     };
+    ///
+    ///     #[test]
+    ///     fn test_paragraph_with_get_frame() {
+    ///         let backend = TestBackend::new(30, 5);
+    ///         let mut terminal = Terminal::new(backend).unwrap();
+    ///
+    ///         {
+    ///             let mut frame = terminal.get_frame();
+    ///             let para = Paragraph::new("Hello World!")
+    ///                 .block(Block::default().title("Demo").borders(Borders::ALL));
+    ///             frame.render_widget(para, frame.area());
+    ///
+    ///             let buf = frame.buffer_mut();
+    ///
+    ///             // cell assertions
+    ///             assert_eq!(buf[(0, 0)].symbol(), "┌");
+    ///             assert_eq!(buf[(29, 0)].symbol(), "┐");
+    ///             assert_eq!(buf[(1, 0)].symbol(), "D");
+    ///             assert_eq!(buf[(1, 1)].symbol(), "H");
+    ///         }
+    ///     }
+    /// }
+    /// ```
     pub const fn get_frame(&mut self) -> Frame<'_> {
         let count = self.frame_count;
         Frame {
