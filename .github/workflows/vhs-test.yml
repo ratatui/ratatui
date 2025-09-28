@@ -1,0 +1,28 @@
+name: vhs
+on:
+  push:
+    branches:
+      - vhs-test
+
+jobs:
+  vhs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # master
+        with:
+          toolchain: stable
+
+      - run: cargo build -p demo2
+
+      - name: Run VHS to generate GIF
+        uses: charmbracelet/vhs-action@v1
+        with:
+          path: ./examples/vhs/demo2.tape
+
+      - name: Upload GIF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo2-gif
+          path: ./examples/vhs/demo2.gif
