@@ -108,31 +108,6 @@ enum InlineTextItem<'a> {
     Spacer(&'a Spacer),
 }
 
-// An owned version of `InlineTextItem<'a>`, holding cloned data.
-//
-// This enum is useful when the contents of an inline block need to be detached from their
-// original lifetimes.
-#[derive(Debug, Clone)]
-enum OwnedInlineTextItem<'a> {
-    // An owned span of styled text from a line. The style value represents the style of the
-    // parent line.
-    Span(Span<'a>, Style),
-
-    // An owned spacer between lines in an inline block.
-    Spacer(Spacer),
-}
-
-impl<'a> InlineTextItem<'a> {
-    fn to_owned(&self) -> OwnedInlineTextItem<'a> {
-        match self {
-            InlineTextItem::Span(span, style) => {
-                OwnedInlineTextItem::Span((*span).clone(), **style)
-            }
-            InlineTextItem::Spacer(spacer) => OwnedInlineTextItem::Spacer((*spacer).clone()),
-        }
-    }
-}
-
 impl fmt::Debug for InlineText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.lines.is_empty() {
@@ -705,9 +680,22 @@ impl Widget for &InlineText<'_> {
 impl InlineText<'_> {
     // Renders all the items of the inline that should be visible.
     fn render_items(&self, mut area: Rect, buf: &mut Buffer, skip_width: usize) {
-        for (item, item_width, offset) in self.owned_items_after(skip_width) {
-            match item {
-                OwnedInlineTextItem::Span(span, line_style) => {
+        for fragment in self.fragments_after(skip_width) {
+            match fragment {
+                InlineTextFragment::FullSpan(span, line_style, item_width) => {
+                    if area.is_empty() {
+                        break;
+                    }
+                    let item_width = u16::try_from(item_width).unwrap_or(u16::MAX);
+                    let span_area = Rect {
+                        width: item_width,
+                        ..area
+                    };
+                    buf.set_style(span_area, *line_style);
+                    span.render(area, buf);
+                    area = area.indent_x(item_width);
+                }
+                InlineTextFragment::PartialSpan(span, line_style, item_width, offset) => {
                     area = area.indent_x(offset);
                     if area.is_empty() {
                         break;
@@ -717,11 +705,14 @@ impl InlineText<'_> {
                         width: item_width,
                         ..area
                     };
-                    buf.set_style(span_area, line_style);
+                    buf.set_style(span_area, *line_style);
                     span.render(area, buf);
                     area = area.indent_x(item_width);
                 }
-                OwnedInlineTextItem::Spacer(spacer) => {
+                InlineTextFragment::FullSpacer(spacer) => {
+                    spacer.apply(&mut area);
+                }
+                InlineTextFragment::PartialSpacer(spacer) => {
                     spacer.apply(&mut area);
                 }
             }
@@ -729,62 +720,95 @@ impl InlineText<'_> {
     }
 }
 
+/// Represents a single fragment (span or spacer) of an inline text block as used during rendering.
+///
+/// This enum is designed to express both fully visible and partially visible fragments of a block
+/// of inline text.
+#[derive(Debug, Clone)]
+enum InlineTextFragment<'a> {
+    /// A fully visible span, referencing the source data and style.
+    ///
+    /// # Fields
+    /// - `&'a Span<'a>`: Reference to the span.
+    /// - `&'a Style`: Reference to the parent line style.
+    /// - `usize`: The width of the span (in Unicode cells).
+    FullSpan(&'a Span<'a>, &'a Style, usize),
+
+    /// A partially visible span, holding owned data for the truncated fragment.
+    ///
+    /// # Fields
+    /// - `Span<'a>`: Owned span representing the visible part.
+    /// - `&'a Style`: Reference to the parent line style.
+    /// - `usize`: The width of the truncated span (in Unicode cells).
+    /// - `u16`: The offset from the start of the span (used for rendering).
+    PartialSpan(Span<'a>, &'a Style, usize, u16),
+
+    /// A fully visible spacer, referencing the source data.
+    FullSpacer(&'a Spacer),
+
+    /// A partially visible spacer, holding owned data for the truncated fragment.
+    PartialSpacer(Spacer),
+}
+
 impl<'a> InlineText<'a> {
-    // Returns an iterator over the spans and spacers that lie after a given skip width from the
-    // start of the inline (including a partially visible span and/or spacer if the `skip_width`
-    // lands within a span and/or spacer).
-    fn owned_items_after(
+    // Returns an iterator over the fragments of spans and spacers that lie after a given skip width
+    // from the start of the inline (including a partially visible span and/or spacer if the
+    // `skip_width` lands within a span and/or spacer).
+    fn fragments_after(
         &'a self,
         mut skip_width: usize,
-    ) -> impl Iterator<Item = (OwnedInlineTextItem<'a>, usize, u16)> {
+    ) -> impl Iterator<Item = InlineTextFragment<'a>> + 'a {
         self.items()
+            // Attach width information to each item.
             .map(|item| match item {
                 InlineTextItem::Span(span, _) => (item, span.width()),
                 InlineTextItem::Spacer(spacer) => (item, spacer.width),
             })
             // Filter invisible items out.
             .filter_map(move |(item, item_width)| {
-                // Ignore items that are completely before the offset. Decrement `skip_width` by
-                // the item width until we find a item that is partially or completely visible.
                 if skip_width >= item_width {
                     skip_width = skip_width.saturating_sub(item_width);
                     return None;
                 }
-                // Apply the skip from the start of the item, not the end as the end will be trimmed
-                // when rendering the item to the buffer.
                 let available_width = item_width.saturating_sub(skip_width);
-                // Ensure the next span is rendered in full.
                 skip_width = 0;
                 Some((item, item_width, available_width))
             })
             .map(|(item, item_width, available_width)| {
-                // Item is fully visible.
-                if item_width <= available_width {
-                    return (item.to_owned(), item_width, 0u16);
-                }
                 match item {
                     InlineTextItem::Span(span, style) => {
-                        // Span is only partially visible. As the end is truncated by the area
-                        // width, only truncate the start of the span.
-                        let (content, actual_width) =
-                            span.content.unicode_truncate_start(available_width);
-                        // When the first grapheme of the span was truncated, start rendering from a
-                        // position that takes that into account by
-                        // indenting the start of the area
-                        let first_grapheme_offset = available_width.saturating_sub(actual_width);
-                        let first_grapheme_offset =
-                            u16::try_from(first_grapheme_offset).unwrap_or(u16::MAX);
-                        (
-                            OwnedInlineTextItem::Span(Span::styled(content, span.style), *style),
-                            actual_width,
-                            first_grapheme_offset,
-                        )
+                        // Render fully.
+                        if item_width <= available_width {
+                            InlineTextFragment::FullSpan(span, style, item_width)
+                        // Render Partially.
+                        } else {
+                            // Span is only partially visible. As the end is truncated by the area
+                            // width, only truncate the start of the span.
+                            let (content, actual_width) =
+                                span.content.unicode_truncate_start(available_width);
+                            // When the first grapheme of the span was truncated, start rendering
+                            // from a position that takes that into
+                            // account by indenting the start of the
+                            // area
+                            let first_grapheme_offset =
+                                available_width.saturating_sub(actual_width);
+                            let first_grapheme_offset =
+                                u16::try_from(first_grapheme_offset).unwrap_or(u16::MAX);
+                            InlineTextFragment::PartialSpan(
+                                Span::styled(content, span.style),
+                                style,
+                                actual_width,
+                                first_grapheme_offset,
+                            )
+                        }
                     }
-                    InlineTextItem::Spacer(_) => (
-                        OwnedInlineTextItem::Spacer(Spacer::new(available_width)),
-                        0,
-                        0,
-                    ),
+                    InlineTextItem::Spacer(spacer) => {
+                        if item_width <= available_width {
+                            InlineTextFragment::FullSpacer(spacer)
+                        } else {
+                            InlineTextFragment::PartialSpacer(Spacer::new(available_width))
+                        }
+                    }
                 }
             })
     }
