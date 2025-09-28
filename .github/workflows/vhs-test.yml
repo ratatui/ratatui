@@ -19,10 +19,7 @@ jobs:
 
       - run: |
           cargo build -p demo2
-          sudo apt update
-          sudo apt install -y ffmpeg ttyd
-          go install github.com/charmbracelet/vhs@latest
-          ~/go/bin ./examples/vhs/demo2.tape
+          docker run --rm -v $PWD:/vhs ghcr.io/charmbracelet/vhs ./examples/vhs/demo2.tape
 
       - name: Upload GIF artifact
         uses: actions/upload-artifact@v4
