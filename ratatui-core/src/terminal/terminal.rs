@@ -128,14 +128,13 @@ where
 {
     /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
     ///
-    /// Note that unlike `ratatui::init`, this does not install any panic hook,
-    /// so it is recommended to do that manually when using this function,
-    /// otherwise any panic messages will be printed to the alternate screen and
-    /// the terminal may be left in an unusable state.
+    /// Note that unlike `ratatui::init`, this does not install a panic hook, so it is recommended
+    /// to do that manually when using this function, otherwise any panic messages will be printed
+    /// to the alternate screen and the terminal may be left in an unusable state.
     ///
-    /// See [how to set up panic hooks](https://ratatui.rs/recipes/apps/panic-hooks/)
-    /// and [`better-panic` example](https://ratatui.rs/recipes/apps/better-panic/)
-    /// for more information.
+    /// See [how to set up panic hooks](https://ratatui.rs/recipes/apps/panic-hooks/) and
+    /// [`better-panic` example](https://ratatui.rs/recipes/apps/better-panic/) for more
+    /// information.
     ///
     /// # Example
     ///
