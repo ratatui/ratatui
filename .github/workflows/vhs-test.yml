@@ -17,12 +17,16 @@ jobs:
       - uses: FedericoCarboni/setup-ffmpeg@v3
         id: setup-ffmpeg
 
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "^1.13.1" # The Go version to download (if necessary) and use.
+
       - run: |
           cargo build -p demo2
           sudo apt update
           sudo apt install -y ffmpeg ttyd
           go install github.com/charmbracelet/vhs@latest
-          ~/go/bin/vhs ./examples/vhs/demo2.tape
+          vhs ./examples/vhs/demo2.tape
 
       - name: Upload GIF artifact
         uses: actions/upload-artifact@v4
