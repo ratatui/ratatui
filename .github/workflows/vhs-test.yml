@@ -14,6 +14,9 @@ jobs:
         with:
           toolchain: stable
 
+      - uses: FedericoCarboni/setup-ffmpeg@v3
+        id: setup-ffmpeg
+
       - run: cargo build -p demo2
 
       - name: Run VHS to generate GIF
