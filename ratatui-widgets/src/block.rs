@@ -13,7 +13,7 @@ use ratatui_core::layout::{Alignment, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols::border;
 use ratatui_core::symbols::merge::MergeStrategy;
-use ratatui_core::text::{Inline, Line};
+use ratatui_core::text::{InlineText, Line};
 use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
@@ -899,7 +899,7 @@ impl Block<'_> {
 
     /// Render titles aligned to the right of the block
     fn render_right_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let titles = Inline::from(
+        let titles = InlineText::from(
             self.filtered_titles(position, Alignment::Right)
                 .cloned()
                 .collect_vec(),
@@ -916,7 +916,7 @@ impl Block<'_> {
 
     /// Render titles in the center of the block
     fn render_center_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let titles = Inline::from(
+        let titles = InlineText::from(
             self.filtered_titles(position, Alignment::Center)
                 .cloned()
                 .collect_vec(),
@@ -933,7 +933,7 @@ impl Block<'_> {
 
     /// Render titles aligned to the left of the block
     fn render_left_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let titles = Inline::from(
+        let titles = InlineText::from(
             self.filtered_titles(position, Alignment::Left)
                 .cloned()
                 .collect_vec(),
