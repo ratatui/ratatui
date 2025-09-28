@@ -1,5 +1,6 @@
 #![warn(clippy::pedantic, clippy::nursery, clippy::arithmetic_side_effects)]
 use alloc::borrow::{Cow, ToOwned};
+use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
@@ -491,21 +492,19 @@ impl<'a> InlineText<'a> {
 impl<'a> InlineText<'a> {
     // Returns an iterator over all spans in all lines, with spacers inserted between lines.
     fn items(&'a self) -> impl Iterator<Item = InlineTextItem<'a>> + 'a {
-        let mut lines_iter = self.lines.iter().peekable();
-        iter::from_fn(move || {
-            let line = lines_iter.next()?;
+        self.lines.iter().enumerate().flat_map(move |(i, line)| {
             let style = &line.style;
-            let mut items: Vec<InlineTextItem<'a>> = line
+            let iter = line
                 .spans
                 .iter()
-                .map(|span| InlineTextItem::Span(span, style))
-                .collect();
-            if lines_iter.peek().is_some() {
-                items.push(InlineTextItem::Spacer(&self.spacer));
+                .map(move |span| InlineTextItem::Span(span, style));
+            if i < self.lines.len() - 1 {
+                Box::new(iter.chain(iter::once(InlineTextItem::Spacer(&self.spacer))))
+                    as Box<dyn Iterator<Item = InlineTextItem<'a>>>
+            } else {
+                Box::new(iter) as Box<dyn Iterator<Item = InlineTextItem<'a>>>
             }
-            Some(items.into_iter())
         })
-        .flatten()
     }
 }
 
