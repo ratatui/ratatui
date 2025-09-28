@@ -51,8 +51,8 @@
 mod grapheme;
 pub use grapheme::StyledGrapheme;
 
-mod inline;
-pub use inline::{Inline, ToInline};
+mod inline_text;
+pub use inline_text::{InlineText, ToInlineText};
 
 mod line;
 pub use line::{Line, ToLine};
