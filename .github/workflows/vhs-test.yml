@@ -17,15 +17,15 @@ jobs:
       - uses: FedericoCarboni/setup-ffmpeg@v3
         id: setup-ffmpeg
 
-      - run: cargo build -p demo2
-
-      - name: Run VHS to generate GIF
-        uses: charmbracelet/vhs-action@v1
-        with:
-          path: ./examples/vhs/demo2.tape
+      - run: |
+          cargo build -p demo2
+          sudo apt update
+          sudo apt install -y ffmpeg ttyd
+          go install github.com/charmbracelet/vhs@latest
+          vhs ./examples/vhs/demo2.tape
 
       - name: Upload GIF artifact
         uses: actions/upload-artifact@v4
         with:
           name: demo2-gif
-          path: ./examples/vhs/demo2.gif
+          path: ./target/demo2.gif
