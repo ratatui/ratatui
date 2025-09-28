@@ -498,7 +498,7 @@ impl<'a> InlineText<'a> {
                 .spans
                 .iter()
                 .map(move |span| InlineTextItem::Span(span, style));
-            if i < self.lines.len() - 1 {
+            if i < self.lines.len().saturating_sub(1) {
                 Box::new(iter.chain(iter::once(InlineTextItem::Spacer(&self.spacer))))
                     as Box<dyn Iterator<Item = InlineTextItem<'a>>>
             } else {
