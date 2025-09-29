@@ -130,7 +130,7 @@ impl From<i16> for Spacing {
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
-/// can be configured using [`Layout::init_cache()`].
+/// can be configured using `Layout::init_cache()` when the `layout-cache` feature is enabled.
 ///
 /// # Construction
 ///
@@ -160,7 +160,7 @@ impl From<i16> for Spacing {
 ///
 /// # Cache Management
 ///
-/// - [`init_cache`](Self::init_cache) - Initialize layout cache with custom size
+/// - `init_cache` - Initialize layout cache with custom size (requires the `layout-cache` feature)
 ///
 /// # Example
 ///
@@ -203,8 +203,8 @@ impl Layout {
     /// on my laptop's terminal (171+51 = 222) and doubling it for good measure and then adding a
     /// bit more to make it a round number. This gives enough entries to store a layout for every
     /// row and every column, twice over, which should be enough for most apps. For those that need
-    /// more, the cache size can be set with [`Layout::init_cache()`].
-    /// This const is unused if layout cache is disabled.
+    /// more, the cache size can be set with `Layout::init_cache()` (requires the `layout-cache`
+    /// feature). This const is unused if layout cache is disabled.
     #[cfg(feature = "layout-cache")]
     pub const DEFAULT_CACHE_SIZE: usize = 500;
 
@@ -297,7 +297,7 @@ impl Layout {
     /// that subsequent calls with the same parameters are faster. The cache is a `LruCache`, and
     /// grows until `cache_size` is reached.
     ///
-    /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
+    /// By default, the cache size is `DEFAULT_CACHE_SIZE`.
     #[cfg(feature = "layout-cache")]
     pub fn init_cache(cache_size: NonZeroUsize) {
         LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
@@ -636,8 +636,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
-    /// is initialized with the [`Layout::init_cache()`] grows until the initialized cache size.
+    /// `LruCache`, and grows until `DEFAULT_CACHE_SIZE` is reached by default. If the cache is
+    /// initialized with `Layout::init_cache()`, it grows until the initialized cache size.
     ///
     /// There is a helper method that can be used to split the whole area into smaller ones based on
     /// the layout: [`Layout::areas()`]. That method is a shortcut for calling this method. It
@@ -673,8 +673,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
-    /// is initialized with the [`Layout::init_cache()`] grows until the initialized cache size.
+    /// `LruCache`, and grows until `DEFAULT_CACHE_SIZE` is reached by default. If the cache is
+    /// initialized with `Layout::init_cache()`, it grows until the initialized cache size.
     ///
     /// # Examples
     ///

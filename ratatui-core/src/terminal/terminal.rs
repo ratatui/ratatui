@@ -203,38 +203,23 @@ where
     /// - Multiple rendering passes/Buffer Manipulation
     /// - Custom frame lifecycle management
     /// - Buffer exporting
+    /// 
     /// # Example
+    /// 
     /// Getting the buffer and asserting on some cells after rendering a widget.
     /// ```rust,ignore
-    /// #[cfg(test)]
-    /// mod tests {
-    ///     use ratatui::{
-    ///         backend::TestBackend,
-    ///         widgets::{Block, Borders, Paragraph},
-    ///         Terminal,
-    ///     };
-    ///
-    ///     #[test]
-    ///     fn test_paragraph_with_get_frame() {
-    ///         let backend = TestBackend::new(30, 5);
-    ///         let mut terminal = Terminal::new(backend).unwrap();
-    ///
-    ///         {
-    ///             let mut frame = terminal.get_frame();
-    ///             let para = Paragraph::new("Hello World!")
-    ///                 .block(Block::default().title("Demo").borders(Borders::ALL));
-    ///             frame.render_widget(para, frame.area());
-    ///
-    ///             let buf = frame.buffer_mut();
-    ///
-    ///             // cell assertions
-    ///             assert_eq!(buf[(0, 0)].symbol(), "┌");
-    ///             assert_eq!(buf[(29, 0)].symbol(), "┐");
-    ///             assert_eq!(buf[(1, 0)].symbol(), "D");
-    ///             assert_eq!(buf[(1, 1)].symbol(), "H");
-    ///         }
-    ///     }
+    /// use ratatui::{backend::TestBackend, Terminal};
+    /// use ratatui::widgets::Paragraph;
+    /// let backend = TestBackend::new(30, 5);
+    /// let mut terminal = Terminal::new(backend).unwrap();
+    /// {
+    ///     let mut frame = terminal.get_frame();
+    ///     frame.render_widget(Paragraph::new("Hello"), frame.area());
     /// }
+    /// // When not using `draw`, present the buffer manually:
+    /// terminal.flush().unwrap();
+    /// terminal.swap_buffers();
+    /// terminal.backend_mut().flush().unwrap();
     /// ```
     pub const fn get_frame(&mut self) -> Frame<'_> {
         let count = self.frame_count;
