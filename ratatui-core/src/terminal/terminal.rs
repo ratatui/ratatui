@@ -222,6 +222,7 @@ where
     /// # Example
     ///
     /// Getting the buffer and asserting on some cells after rendering a widget.
+    ///
     /// ```rust,ignore
     /// use ratatui::{backend::TestBackend, Terminal};
     /// use ratatui::widgets::Paragraph;
