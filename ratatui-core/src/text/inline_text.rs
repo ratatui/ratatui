@@ -95,19 +95,6 @@ pub struct InlineText<'a> {
     pub lines: Vec<Line<'a>>,
 }
 
-// Represents an item in an inline block: either a span of text or a spacer between lines.
-//
-// This enum is used when iterating over the contents of an inline via methods like `items()`,
-// allowing each part—text or spacer—to be processed uniformly.
-#[derive(Debug, Clone)]
-enum InlineTextItem<'a> {
-    // A span of styled text from a line. The style value represents the style of the parent line.
-    Span(&'a Span<'a>, &'a Style),
-
-    // A spacer inserted between lines in an inline block.
-    Spacer(&'a Spacer),
-}
-
 impl fmt::Debug for InlineText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.lines.is_empty() {
@@ -464,6 +451,19 @@ impl<'a> InlineText<'a> {
     }
 }
 
+// Represents an item in an inline block: either a span of text or a spacer between lines.
+//
+// This enum is used when iterating over the contents of an inline via methods like `items()`,
+// allowing each part—text or spacer—to be processed uniformly.
+#[derive(Debug, Clone)]
+enum InlineTextItem<'a> {
+    // A span of styled text from a line. The style value represents the style of the parent line.
+    Span(&'a Span<'a>, &'a Style),
+
+    // A spacer inserted between lines in an inline block.
+    Spacer(&'a Spacer),
+}
+
 impl<'a> InlineText<'a> {
     // Returns an iterator over all spans in all lines, with spacers inserted between lines.
     fn items(&'a self) -> impl Iterator<Item = InlineTextItem<'a>> + 'a {
@@ -787,9 +787,8 @@ impl<'a> InlineText<'a> {
                             let (content, actual_width) =
                                 span.content.unicode_truncate_start(available_width);
                             // When the first grapheme of the span was truncated, start rendering
-                            // from a position that takes that into
-                            // account by indenting the start of the
-                            // area
+                            // from a position that takes that into account by indenting the start
+                            // of the area.
                             let first_grapheme_offset =
                                 available_width.saturating_sub(actual_width);
                             let first_grapheme_offset =
