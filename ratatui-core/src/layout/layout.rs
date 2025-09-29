@@ -204,7 +204,7 @@ impl Layout {
     /// bit more to make it a round number. This gives enough entries to store a layout for every
     /// row and every column, twice over, which should be enough for most apps. For those that need
     /// more, the cache size can be set with `Layout::init_cache()` (requires the `layout-cache`
-    /// feature). This const is unused if layout cache is disabled.
+    /// feature).
     #[cfg(feature = "layout-cache")]
     pub const DEFAULT_CACHE_SIZE: usize = 500;
 
