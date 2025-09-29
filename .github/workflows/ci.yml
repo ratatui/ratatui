@@ -37,7 +37,7 @@ jobs:
           toolchain: nightly
           components: rustfmt
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
-      - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
+      - uses: taiki-e/install-action@d0f4f69b07c0804d1003ca9a5a5f853423872ed9 # v2
         with:
           tool: taplo-cli
       - run: cargo xtask format --check
@@ -65,7 +65,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # master
         with:
           toolchain: stable
-      - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
+      - uses: taiki-e/install-action@d0f4f69b07c0804d1003ca9a5a5f853423872ed9 # v2
         with:
           tool: cargo-deny
       - run: cargo deny --log-level info --all-features check
@@ -134,7 +134,7 @@ jobs:
         with:
           toolchain: stable
           components: llvm-tools
-      - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
+      - uses: taiki-e/install-action@d0f4f69b07c0804d1003ca9a5a5f853423872ed9 # v2
         with:
           tool: cargo-llvm-cov
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
@@ -160,7 +160,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # master
         with:
           toolchain: ${{ matrix.toolchain }}
-      - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
+      - uses: taiki-e/install-action@d0f4f69b07c0804d1003ca9a5a5f853423872ed9 # v2
         with:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
@@ -197,7 +197,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
-      - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
+      - uses: taiki-e/install-action@d0f4f69b07c0804d1003ca9a5a5f853423872ed9 # v2
         with:
           tool: cargo-rdme
       - run: cargo xtask readme --check
@@ -219,7 +219,7 @@ jobs:
       - uses: dtolnay/install@74f735cdf643820234e37ae1c4089a08fd266d8a # master
         with:
           crate: cargo-docs-rs
-      - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
+      - uses: taiki-e/install-action@d0f4f69b07c0804d1003ca9a5a5f853423872ed9 # v2
         with:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
@@ -237,7 +237,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # master
         with:
           toolchain: stable
-      - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
+      - uses: taiki-e/install-action@d0f4f69b07c0804d1003ca9a5a5f853423872ed9 # v2
         with:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
@@ -258,7 +258,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # master
         with:
           toolchain: stable
-      - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
+      - uses: taiki-e/install-action@d0f4f69b07c0804d1003ca9a5a5f853423872ed9 # v2
         with:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
