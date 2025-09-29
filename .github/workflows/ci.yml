@@ -36,7 +36,7 @@ jobs:
         with:
           toolchain: nightly
           components: rustfmt
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
         with:
           tool: taplo-cli
@@ -102,7 +102,7 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           components: clippy
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - run: cargo xtask clippy
         env:
           RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
@@ -137,7 +137,7 @@ jobs:
       - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
         with:
           tool: cargo-llvm-cov
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - run: cargo xtask coverage
       - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5
         with:
@@ -163,7 +163,7 @@ jobs:
       - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
         with:
           tool: cargo-hack
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - run: cargo xtask check --all-features
 
   build-no-std:
@@ -177,7 +177,7 @@ jobs:
         with:
           toolchain: stable
           targets: x86_64-unknown-none
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       # This makes it easier to debug the exact versions of the dependencies
       - run: cargo tree --target x86_64-unknown-none -p ratatui-core
       - run: cargo tree --target x86_64-unknown-none -p ratatui-widgets
@@ -196,7 +196,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
         with:
           tool: cargo-rdme
@@ -222,7 +222,7 @@ jobs:
       - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
         with:
           tool: cargo-hack
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - run: cargo xtask docs
 
   # Run cargo test on the documentation of the crate. This will catch any code examples that don't
@@ -240,7 +240,7 @@ jobs:
       - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
         with:
           tool: cargo-hack
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - run: cargo xtask test-docs
 
   # Run cargo test on the libraries of the crate.
@@ -261,7 +261,7 @@ jobs:
       - uses: taiki-e/install-action@4575ae687efd0e2c78240087f26013fb2484987f # v2
         with:
           tool: cargo-hack
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - run: cargo xtask test-libs
 
   # Run cargo test on all the backends.
@@ -284,5 +284,5 @@ jobs:
       - uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # master
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - run: cargo xtask test-backend ${{ matrix.backend }}
