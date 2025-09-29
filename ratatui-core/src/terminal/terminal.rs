@@ -203,9 +203,9 @@ where
     /// - Multiple rendering passes/Buffer Manipulation
     /// - Custom frame lifecycle management
     /// - Buffer exporting
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// Getting the buffer and asserting on some cells after rendering a widget.
     /// ```rust,ignore
     /// use ratatui::{backend::TestBackend, Terminal};
