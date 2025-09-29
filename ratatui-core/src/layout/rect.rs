@@ -164,8 +164,7 @@ impl Rect {
         }
     }
 
-    /// The area of the `Rect`. If the area is larger than the maximum value of `u16`, it will be
-    /// clamped to `u16::MAX`.
+    /// The area of the `Rect`.
     pub const fn area(self) -> u32 {
         (self.width as u32) * (self.height as u32)
     }

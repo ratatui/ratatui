@@ -181,7 +181,7 @@ good, but this can always be improved. Focus on keeping the tests simple and obv
 tests for all new or modified code. Beside the usual doc and unit tests, one of the most valuable
 test you can write for Ratatui is a test against the `TestBackend`. It allows you to assert the
 content of the output buffer that would have been flushed to the terminal after a given draw call.
-See `widgets_block_renders` in [tests/widgets_block.rs](./tests/widget_block.rs) for an example.
+See `widgets_block_renders` in [ratatui/tests/widgets_block.rs](./ratatui/tests/widgets_block.rs) for an example.
 
 When writing tests, generally prefer to write unit tests and doc tests directly in the code file
 being tested rather than integration tests in the `tests/` folder.
