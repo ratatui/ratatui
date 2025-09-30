@@ -1642,9 +1642,9 @@ dependencies = [
 
 [[package]]
 name = "line-clipping"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51a1679740111eb63b7b4cb3c97b1d5d9f82e142292a25edcfdb4120a48b3880"
+checksum = "b9bd35dcd25f8578944c44cd75649d6487d74cf895002f6d86613164f2635b72"
 dependencies = [
  "bitflags 2.9.4",
 ]
