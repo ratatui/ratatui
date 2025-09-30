@@ -391,7 +391,7 @@ impl<'a> InlineText<'a> {
     #[must_use = "method returns the inline's width and should not be ignored"]
     pub fn width(&self) -> usize {
         self.span_or_spacer_iter()
-            .map(|item| match item {
+            .map(|span_or_spacer| match span_or_spacer {
                 SpanOrSpacer::Span(span, _) => span.width(),
                 SpanOrSpacer::Spacer(spacer) => spacer.width,
             })
@@ -457,7 +457,11 @@ impl<'a> InlineText<'a> {
 // `iter_spans_or_spacers()`, allowing each part—text or spacer—to be processed uniformly.
 #[derive(Debug, Clone)]
 enum SpanOrSpacer<'a> {
-    // A span of styled text from a line. The style value represents the style of the parent line.
+    // A span of styled text from a line.
+    //
+    // # Fields
+    // - `&'a Span<'a>`: Reference to the span.
+    // - `&'a Style`: Reference to the parent line style.
     Span(&'a Span<'a>, &'a Style),
 
     // A spacer inserted between lines in an inline block.
@@ -468,11 +472,10 @@ impl<'a> InlineText<'a> {
     // Returns an iterator over all spans in all lines, with spacers inserted between lines.
     fn span_or_spacer_iter(&'a self) -> impl Iterator<Item = SpanOrSpacer<'a>> + 'a {
         self.lines.iter().enumerate().flat_map(move |(i, line)| {
-            let style = &line.style;
             let iter = line
                 .spans
                 .iter()
-                .map(move |span| SpanOrSpacer::Span(span, style));
+                .map(move |span| SpanOrSpacer::Span(span, &line.style));
             if i < self.lines.len().saturating_sub(1) {
                 Box::new(iter.chain(iter::once(SpanOrSpacer::Spacer(&self.spacer))))
                     as Box<dyn Iterator<Item = SpanOrSpacer<'a>>>
@@ -665,54 +668,74 @@ impl Widget for &InlineText<'_> {
             };
             let indent_width = u16::try_from(indent_width).unwrap_or(u16::MAX);
             let area = area.indent_x(indent_width);
-            self.render_items(area, buf, 0);
+            self.render_fragments(area, buf, 0);
         } else {
             let skip_width = match self.alignment {
                 Some(Alignment::Center) => (inline_width.saturating_sub(area_width)) / 2,
                 Some(Alignment::Right) => inline_width.saturating_sub(area_width),
                 Some(Alignment::Left) | None => 0,
             };
-            self.render_items(area, buf, skip_width);
+            self.render_fragments(area, buf, skip_width);
         }
     }
 }
 
+// Represents a single fragment (span or spacer) of an inline text block as used during rendering.
+//
+// This enum is designed to express both fully visible and partially visible fragments of a block
+// of inline text.
+#[derive(Debug, Clone)]
+enum Fragment<'a> {
+    // A fully visible span, referencing the source data and style.
+    //
+    // # Fields
+    // - `&'a Span<'a>`: Reference to the span.
+    // - `&'a Style`: Reference to the parent line style.
+    Span(&'a Span<'a>, &'a Style),
+
+    // A partially visible span, holding owned data for the truncated fragment.
+    //
+    // # Fields
+    // - `Span<'a>`: Owned span representing the visible part.
+    // - `&'a Style`: Reference to the parent line style.
+    PartialSpan(Span<'a>, &'a Style),
+
+    // A fully visible spacer, referencing the source data.
+    Spacer(&'a Spacer),
+
+    // A partially visible spacer, holding owned data for the truncated fragment.
+    PartialSpacer(Spacer),
+}
+
 impl InlineText<'_> {
-    // Renders all the items of the inline that should be visible.
-    fn render_items(&self, mut area: Rect, buf: &mut Buffer, skip_width: usize) {
-        for fragment in self.fragments_after(skip_width) {
+    // Renders all the fragments of the inline that should be visible.
+    fn render_fragments(&self, mut area: Rect, buf: &mut Buffer, skip_width: usize) {
+        for fragment in self.fragment_iter(skip_width) {
             match fragment {
-                InlineTextFragment::FullSpan(span, line_style, item_width) => {
+                Fragment::Span(span, line_style) => {
                     if area.is_empty() {
                         break;
                     }
-                    let item_width = u16::try_from(item_width).unwrap_or(u16::MAX);
-                    let span_area = Rect {
-                        width: item_width,
-                        ..area
-                    };
+                    let width = u16::try_from(span.width()).unwrap_or(u16::MAX);
+                    let span_area = Rect { width, ..area };
                     buf.set_style(span_area, *line_style);
                     span.render(area, buf);
-                    area = area.indent_x(item_width);
+                    area = area.indent_x(width);
                 }
-                InlineTextFragment::PartialSpan(span, line_style, item_width, offset) => {
-                    area = area.indent_x(offset);
+                Fragment::PartialSpan(span, line_style) => {
                     if area.is_empty() {
                         break;
                     }
-                    let item_width = u16::try_from(item_width).unwrap_or(u16::MAX);
-                    let span_area = Rect {
-                        width: item_width,
-                        ..area
-                    };
+                    let width = u16::try_from(span.width()).unwrap_or(u16::MAX);
+                    let span_area = Rect { width, ..area };
                     buf.set_style(span_area, *line_style);
                     span.render(area, buf);
-                    area = area.indent_x(item_width);
+                    area = area.indent_x(width);
                 }
-                InlineTextFragment::FullSpacer(spacer) => {
+                Fragment::Spacer(spacer) => {
                     spacer.apply(&mut area);
                 }
-                InlineTextFragment::PartialSpacer(spacer) => {
+                Fragment::PartialSpacer(spacer) => {
                     spacer.apply(&mut area);
                 }
             }
@@ -720,92 +743,48 @@ impl InlineText<'_> {
     }
 }
 
-/// Represents a single fragment (span or spacer) of an inline text block as used during rendering.
-///
-/// This enum is designed to express both fully visible and partially visible fragments of a block
-/// of inline text.
-#[derive(Debug, Clone)]
-enum InlineTextFragment<'a> {
-    /// A fully visible span, referencing the source data and style.
-    ///
-    /// # Fields
-    /// - `&'a Span<'a>`: Reference to the span.
-    /// - `&'a Style`: Reference to the parent line style.
-    /// - `usize`: The width of the span (in Unicode cells).
-    FullSpan(&'a Span<'a>, &'a Style, usize),
-
-    /// A partially visible span, holding owned data for the truncated fragment.
-    ///
-    /// # Fields
-    /// - `Span<'a>`: Owned span representing the visible part.
-    /// - `&'a Style`: Reference to the parent line style.
-    /// - `usize`: The width of the truncated span (in Unicode cells).
-    /// - `u16`: The offset from the start of the span (used for rendering).
-    PartialSpan(Span<'a>, &'a Style, usize, u16),
-
-    /// A fully visible spacer, referencing the source data.
-    FullSpacer(&'a Spacer),
-
-    /// A partially visible spacer, holding owned data for the truncated fragment.
-    PartialSpacer(Spacer),
-}
-
 impl<'a> InlineText<'a> {
     // Returns an iterator over the fragments of spans and spacers that lie after a given skip width
     // from the start of the inline (including a partially visible span and/or spacer if the
     // `skip_width` lands within a span and/or spacer).
-    fn fragments_after(
-        &'a self,
-        mut skip_width: usize,
-    ) -> impl Iterator<Item = InlineTextFragment<'a>> + 'a {
+    fn fragment_iter(&'a self, mut skip_width: usize) -> impl Iterator<Item = Fragment<'a>> + 'a {
         self.span_or_spacer_iter()
             // Attach width information to each item.
-            .map(|item| match item {
-                SpanOrSpacer::Span(span, _) => (item, span.width()),
-                SpanOrSpacer::Spacer(spacer) => (item, spacer.width),
+            .map(|span_or_spacer| match span_or_spacer {
+                SpanOrSpacer::Span(span, _) => (span_or_spacer, span.width()),
+                SpanOrSpacer::Spacer(spacer) => (span_or_spacer, spacer.width),
             })
             // Filter invisible items out.
-            .filter_map(move |(item, item_width)| {
-                if skip_width >= item_width {
-                    skip_width = skip_width.saturating_sub(item_width);
+            .filter_map(move |(span_or_spacer, width)| {
+                if skip_width >= width {
+                    skip_width = skip_width.saturating_sub(width);
                     return None;
                 }
-                let available_width = item_width.saturating_sub(skip_width);
+                let width = width.saturating_sub(skip_width);
                 skip_width = 0;
-                Some((item, item_width, available_width))
+                Some((span_or_spacer, width))
             })
-            .map(|(item, item_width, available_width)| {
-                match item {
-                    SpanOrSpacer::Span(span, style) => {
+            .map(|(span_or_spacer, width)| {
+                match span_or_spacer {
+                    SpanOrSpacer::Span(span, line_style) => {
                         // Render fully.
-                        if item_width <= available_width {
-                            InlineTextFragment::FullSpan(span, style, item_width)
+                        if span.width() == width {
+                            Fragment::Span(span, line_style)
                         // Render Partially.
                         } else {
                             // Span is only partially visible. As the end is truncated by the area
                             // width, only truncate the start of the span.
-                            let (content, actual_width) =
-                                span.content.unicode_truncate_start(available_width);
-                            // When the first grapheme of the span was truncated, start rendering
-                            // from a position that takes that into account by indenting the start
-                            // of the area.
-                            let first_grapheme_offset =
-                                available_width.saturating_sub(actual_width);
-                            let first_grapheme_offset =
-                                u16::try_from(first_grapheme_offset).unwrap_or(u16::MAX);
-                            InlineTextFragment::PartialSpan(
-                                Span::styled(content, span.style),
-                                style,
-                                actual_width,
-                                first_grapheme_offset,
-                            )
+                            let (content, _) = span.content.unicode_truncate_start(width);
+                            Fragment::PartialSpan(Span::styled(content, span.style), line_style)
                         }
                     }
                     SpanOrSpacer::Spacer(spacer) => {
-                        if item_width <= available_width {
-                            InlineTextFragment::FullSpacer(spacer)
+                        // Render fully.
+                        if spacer.width == width {
+                            Fragment::Spacer(spacer)
+                        // Render Partially.
                         } else {
-                            InlineTextFragment::PartialSpacer(Spacer::new(available_width))
+                            Fragment::PartialSpacer(Spacer::new(width))
                         }
                     }
                 }
