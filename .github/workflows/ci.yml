@@ -165,6 +165,8 @@ jobs:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - run: cargo xtask check --all-features
+        env:
+          RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
 
   build-no-std:
     name: Build No-Std
