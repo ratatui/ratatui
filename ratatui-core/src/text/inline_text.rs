@@ -390,10 +390,10 @@ impl<'a> InlineText<'a> {
     /// ```
     #[must_use = "method returns the inline's width and should not be ignored"]
     pub fn width(&self) -> usize {
-        self.items()
+        self.span_or_spacer_iter()
             .map(|item| match item {
-                InlineTextItem::Span(span, _) => span.width(),
-                InlineTextItem::Spacer(spacer) => spacer.width,
+                SpanOrSpacer::Span(span, _) => span.width(),
+                SpanOrSpacer::Spacer(spacer) => spacer.width,
             })
             .sum()
     }
@@ -453,10 +453,10 @@ impl<'a> InlineText<'a> {
 
 // Represents an item in an inline block: either a span of text or a spacer between lines.
 //
-// This enum is used when iterating over the contents of an inline via methods like `items()`,
-// allowing each part—text or spacer—to be processed uniformly.
+// This enum is used when iterating over the contents of an inline via methods like
+// `iter_spans_or_spacers()`, allowing each part—text or spacer—to be processed uniformly.
 #[derive(Debug, Clone)]
-enum InlineTextItem<'a> {
+enum SpanOrSpacer<'a> {
     // A span of styled text from a line. The style value represents the style of the parent line.
     Span(&'a Span<'a>, &'a Style),
 
@@ -466,18 +466,18 @@ enum InlineTextItem<'a> {
 
 impl<'a> InlineText<'a> {
     // Returns an iterator over all spans in all lines, with spacers inserted between lines.
-    fn items(&'a self) -> impl Iterator<Item = InlineTextItem<'a>> + 'a {
+    fn span_or_spacer_iter(&'a self) -> impl Iterator<Item = SpanOrSpacer<'a>> + 'a {
         self.lines.iter().enumerate().flat_map(move |(i, line)| {
             let style = &line.style;
             let iter = line
                 .spans
                 .iter()
-                .map(move |span| InlineTextItem::Span(span, style));
+                .map(move |span| SpanOrSpacer::Span(span, style));
             if i < self.lines.len().saturating_sub(1) {
-                Box::new(iter.chain(iter::once(InlineTextItem::Spacer(&self.spacer))))
-                    as Box<dyn Iterator<Item = InlineTextItem<'a>>>
+                Box::new(iter.chain(iter::once(SpanOrSpacer::Spacer(&self.spacer))))
+                    as Box<dyn Iterator<Item = SpanOrSpacer<'a>>>
             } else {
-                Box::new(iter) as Box<dyn Iterator<Item = InlineTextItem<'a>>>
+                Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpacer<'a>>>
             }
         })
     }
@@ -620,19 +620,19 @@ where
     }
 }
 
-impl fmt::Display for InlineTextItem<'_> {
+impl fmt::Display for SpanOrSpacer<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            InlineTextItem::Span(span, _) => write!(f, "{span}"),
-            InlineTextItem::Spacer(spacer) => write!(f, "{spacer}"),
+            SpanOrSpacer::Span(span, _) => write!(f, "{span}"),
+            SpanOrSpacer::Spacer(spacer) => write!(f, "{spacer}"),
         }
     }
 }
 
 impl fmt::Display for InlineText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for item in self.items() {
-            write!(f, "{item}")?;
+        for span_or_spacer in self.span_or_spacer_iter() {
+            write!(f, "{span_or_spacer}")?;
         }
         Ok(())
     }
@@ -758,11 +758,11 @@ impl<'a> InlineText<'a> {
         &'a self,
         mut skip_width: usize,
     ) -> impl Iterator<Item = InlineTextFragment<'a>> + 'a {
-        self.items()
+        self.span_or_spacer_iter()
             // Attach width information to each item.
             .map(|item| match item {
-                InlineTextItem::Span(span, _) => (item, span.width()),
-                InlineTextItem::Spacer(spacer) => (item, spacer.width),
+                SpanOrSpacer::Span(span, _) => (item, span.width()),
+                SpanOrSpacer::Spacer(spacer) => (item, spacer.width),
             })
             // Filter invisible items out.
             .filter_map(move |(item, item_width)| {
@@ -776,7 +776,7 @@ impl<'a> InlineText<'a> {
             })
             .map(|(item, item_width, available_width)| {
                 match item {
-                    InlineTextItem::Span(span, style) => {
+                    SpanOrSpacer::Span(span, style) => {
                         // Render fully.
                         if item_width <= available_width {
                             InlineTextFragment::FullSpan(span, style, item_width)
@@ -801,7 +801,7 @@ impl<'a> InlineText<'a> {
                             )
                         }
                     }
-                    InlineTextItem::Spacer(spacer) => {
+                    SpanOrSpacer::Spacer(spacer) => {
                         if item_width <= available_width {
                             InlineTextFragment::FullSpacer(spacer)
                         } else {
