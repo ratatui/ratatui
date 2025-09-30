@@ -1,7 +1,9 @@
 # Examples
 
 This folder contains examples that are more application focused.
-There are also [widget examples] in `ratatui-widgets`.
+
+> [!TIP]
+> There are also [widget examples] in `ratatui-widgets`.
 
 [widget examples]: ../ratatui-widgets/examples
 
@@ -11,8 +13,9 @@ You can run these examples using:
 cargo run -p example-name
 ```
 
-This folder might use unreleased code. Consider viewing the examples in the `latest` branch instead
-of the `main` branch for code which is guaranteed to work with the released ratatui version.
+> [!NOTE]
+> This folder might use unreleased code. Consider viewing the examples in the `latest` branch instead
+> of the `main` branch for code which is guaranteed to work with the released Ratatui version.
 
 > [!WARNING]
 >
