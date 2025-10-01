@@ -5,7 +5,7 @@ use crate::layout::Rect;
 
 /// Represents a horizontal gap in a line of text for alignment or spacing purposes.
 ///
-/// `Spacer` is used within a [`Inline`] to reserve horizontal space without rendering any visible
+/// `Spacer` is used within a [`InlineText`] to reserve horizontal space without rendering any visible
 /// characters. Unlike a [`Span`], which displays styled text, a `Spacer` affects only the rendering
 /// position by shifting the cursor horizontally by a specified width. This is useful when aligning
 /// text elements manually or inserting visual gaps between components.
