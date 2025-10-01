@@ -46,6 +46,7 @@ jobs:
     name: Release-plz PR
     permissions:
       pull-requests: write
+      contents: write
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'ratatui' }}
     concurrency:
