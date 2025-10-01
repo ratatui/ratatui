@@ -716,7 +716,13 @@ impl InlineText<'_> {
                     if area.is_empty() {
                         break;
                     }
-                    let width = u16::try_from(span.width()).unwrap_or(u16::MAX);
+                    let width = u16::try_from(span.width()).unwrap_or_else(|err| {
+                        panic!(
+                            "failed to convert span width (usize) {} to u16: {}",
+                            span.width(),
+                            err
+                        )
+                    });
                     let span_area = Rect { width, ..area };
                     buf.set_style(span_area, *line_style);
                     span.render(area, buf);
@@ -726,7 +732,13 @@ impl InlineText<'_> {
                     if area.is_empty() {
                         break;
                     }
-                    let width = u16::try_from(span.width()).unwrap_or(u16::MAX);
+                    let width = u16::try_from(span.width()).unwrap_or_else(|err| {
+                        panic!(
+                            "failed to convert span width (usize) {} to u16: {}",
+                            span.width(),
+                            err
+                        )
+                    });
                     let span_area = Rect { width, ..area };
                     buf.set_style(span_area, *line_style);
                     span.render(area, buf);
@@ -749,43 +761,36 @@ impl<'a> InlineText<'a> {
     // `skip_width` lands within a span and/or spacer).
     fn fragment_iter(&'a self, mut skip_width: usize) -> impl Iterator<Item = Fragment<'a>> + 'a {
         self.span_or_spacer_iter()
-            // Attach width information to each item.
             .map(|span_or_spacer| match span_or_spacer {
                 SpanOrSpacer::Span(span, _) => (span_or_spacer, span.width()),
                 SpanOrSpacer::Spacer(spacer) => (span_or_spacer, spacer.width),
             })
-            // Filter invisible items out.
-            .filter_map(move |(span_or_spacer, width)| {
-                if skip_width >= width {
-                    skip_width = skip_width.saturating_sub(width);
-                    return None;
-                }
-                let width = width.saturating_sub(skip_width);
-                skip_width = 0;
-                Some((span_or_spacer, width))
-            })
-            .map(|(span_or_spacer, width)| {
-                match span_or_spacer {
-                    SpanOrSpacer::Span(span, line_style) => {
-                        // Render fully.
-                        if span.width() == width {
-                            Fragment::Span(span, line_style)
-                        // Render Partially.
-                        } else {
-                            // Span is only partially visible. As the end is truncated by the area
-                            // width, only truncate the start of the span.
-                            let (content, _) = span.content.unicode_truncate_start(width);
-                            Fragment::PartialSpan(Span::styled(content, span.style), line_style)
-                        }
+            .filter_map(move |(span_or_spacer, mut width)| {
+                if skip_width < width {
+                    if skip_width != 0 {
+                        width = width.saturating_sub(skip_width);
+                        skip_width = 0;
                     }
-                    SpanOrSpacer::Spacer(spacer) => {
-                        // Render fully.
-                        if spacer.width == width {
-                            Fragment::Spacer(spacer)
-                        // Render Partially.
-                        } else {
-                            Fragment::PartialSpacer(Spacer::new(width))
-                        }
+                    Some((span_or_spacer, width))
+                } else {
+                    skip_width = skip_width.saturating_sub(width);
+                    None
+                }
+            })
+            .map(|(span_or_spacer, width)| match span_or_spacer {
+                SpanOrSpacer::Span(span, line_style) => {
+                    if span.width() == width {
+                        Fragment::Span(span, line_style)
+                    } else {
+                        let (content, _) = span.content.unicode_truncate_start(width);
+                        Fragment::PartialSpan(Span::styled(content, span.style), line_style)
+                    }
+                }
+                SpanOrSpacer::Spacer(spacer) => {
+                    if spacer.width == width {
+                        Fragment::Spacer(spacer)
+                    } else {
+                        Fragment::PartialSpacer(Spacer::new(width))
                     }
                 }
             })
