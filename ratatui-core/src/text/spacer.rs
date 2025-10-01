@@ -30,9 +30,9 @@ use crate::layout::Rect;
 /// - [`Spacer::apply`] applies the `Spacer` by advancing the `x` position of a [`Rect`] by its
 ///   width.
 ///
+/// [`InlineText`]: crate::text::InlineText
 /// [`Rect`]: crate::layout::Rect
 /// [`Span`]: crate::text::Span
-/// [`Line`]: crate::text::Line
 #[doc(hidden)]
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Spacer {
