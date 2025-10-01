@@ -71,7 +71,7 @@ use crate::widgets::Widget;
 /// - [`InlineText::reset_style`] resets the style of the `InlineText`.
 /// - [`InlineText::width`] returns the unicode width of the content held by the `InlineText`.
 /// - [`InlineText::push_line`] adds a line to the `InlineText`.
-/// - [`Text::push_span`] adds a span to the last line of the `InlineText`.
+/// - [`InlineText::push_span`] adds a span to the last line of the `InlineText`.
 ///
 /// [`Text`]: crate::text::Text
 /// [`Span`]: crate::text::Span
@@ -680,33 +680,6 @@ impl Widget for &InlineText<'_> {
     }
 }
 
-// Represents a single fragment (span or spacer) of an inline text block as used during rendering.
-//
-// This enum is designed to express both fully visible and partially visible fragments of a block
-// of inline text.
-#[derive(Debug, Clone)]
-enum Fragment<'a> {
-    // A fully visible span, referencing the source data and style.
-    //
-    // # Fields
-    // - `&'a Span<'a>`: Reference to the span.
-    // - `&'a Style`: Reference to the parent line style.
-    Span(&'a Span<'a>, &'a Style),
-
-    // A partially visible span, holding owned data for the truncated fragment.
-    //
-    // # Fields
-    // - `Span<'a>`: Owned span representing the visible part.
-    // - `&'a Style`: Reference to the parent line style.
-    PartialSpan(Span<'a>, &'a Style),
-
-    // A fully visible spacer, referencing the source data.
-    Spacer(&'a Spacer),
-
-    // A partially visible spacer, holding owned data for the truncated fragment.
-    PartialSpacer(Spacer),
-}
-
 impl InlineText<'_> {
     // Renders all the fragments of the inline that should be visible.
     fn render_fragments(&self, mut area: Rect, buf: &mut Buffer, skip_width: usize) {
@@ -753,6 +726,33 @@ impl InlineText<'_> {
             }
         }
     }
+}
+
+// Represents a single fragment (span or spacer) of an inline text block as used during rendering.
+//
+// This enum is designed to express both fully visible and partially visible fragments of a block
+// of inline text.
+#[derive(Debug, Clone)]
+enum Fragment<'a> {
+    // A fully visible span, referencing the source data and style.
+    //
+    // # Fields
+    // - `&'a Span<'a>`: Reference to the span.
+    // - `&'a Style`: Reference to the parent line style.
+    Span(&'a Span<'a>, &'a Style),
+
+    // A partially visible span, holding owned data for the truncated fragment.
+    //
+    // # Fields
+    // - `Span<'a>`: Owned span representing the visible part.
+    // - `&'a Style`: Reference to the parent line style.
+    PartialSpan(Span<'a>, &'a Style),
+
+    // A fully visible spacer, referencing the source data.
+    Spacer(&'a Spacer),
+
+    // A partially visible spacer, holding owned data for the truncated fragment.
+    PartialSpacer(Spacer),
 }
 
 impl<'a> InlineText<'a> {
