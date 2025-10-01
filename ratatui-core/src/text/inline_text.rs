@@ -767,10 +767,8 @@ impl<'a> InlineText<'a> {
             })
             .filter_map(move |(span_or_spacer, mut width)| {
                 if skip_width < width {
-                    if skip_width != 0 {
-                        width = width.saturating_sub(skip_width);
-                        skip_width = 0;
-                    }
+                    width = width.saturating_sub(skip_width);
+                    skip_width = 0;
                     Some((span_or_spacer, width))
                 } else {
                     skip_width = skip_width.saturating_sub(width);
