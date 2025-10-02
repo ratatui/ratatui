@@ -44,9 +44,6 @@ serde = ["crossterm_0_28?/serde", "crossterm_0_29?/serde"]
 ## Underline color is not supported on Windows 7.
 underline-color = ["ratatui-core/underline-color"]
 
-## Use terminal scrolling regions to make Terminal::insert_before less prone to flickering.
-scrolling-regions = ["ratatui-core/scrolling-regions"]
-
 #! The following features are unstable and may change in the future:
 
 ## Enable all unstable features.

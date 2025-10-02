@@ -62,15 +62,6 @@ palette = ["std", "ratatui-core/palette", "dep:palette"]
 ## enables portable-atomic integration for targets that don't support atomic types.
 portable-atomic = ["ratatui-core/portable-atomic"]
 
-## Use terminal scrolling regions to make some operations less prone to
-## flickering. (i.e. Terminal::insert_before).
-scrolling-regions = [
-  "ratatui-core/scrolling-regions",
-  "ratatui-crossterm?/scrolling-regions",
-  "ratatui-termion?/scrolling-regions",
-  "ratatui-termwiz?/scrolling-regions",
-]
-
 ## enables the [`macros`](macros) module which provides some useful macros for creating spans,
 ## lines, text, and layouts
 macros = ["dep:ratatui-macros"]

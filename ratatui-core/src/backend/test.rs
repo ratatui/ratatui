@@ -8,7 +8,7 @@ use core::iter;
 
 use unicode_width::UnicodeWidthStr;
 
-use crate::backend::{Backend, ClearType, WindowSize};
+use crate::backend::{Backend, ClearType, ScrollingMethod, WindowSize};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
 
@@ -36,6 +36,7 @@ pub struct TestBackend {
     scrollback: Buffer,
     cursor: bool,
     pos: (u16, u16),
+    scrolling_method: ScrollingMethod,
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
@@ -75,6 +76,7 @@ impl TestBackend {
             scrollback: Buffer::empty(Rect::new(0, 0, width, 0)),
             cursor: false,
             pos: (0, 0),
+            scrolling_method: ScrollingMethod::Cursor,
         }
     }
 
@@ -97,7 +99,17 @@ impl TestBackend {
             scrollback,
             cursor: false,
             pos: (0, 0),
+            scrolling_method: ScrollingMethod::Cursor,
         }
+    }
+
+    /// Sets the [`ScrollingMethod`] used by the backend.
+    ///
+    /// This may be useful to test how something behaves with different scrolling methods enabled.
+    #[must_use]
+    pub const fn scrolling_method(mut self, scrolling_method: ScrollingMethod) -> Self {
+        self.scrolling_method = scrolling_method;
+        self
     }
 
     /// Returns a reference to the internal buffer of the `TestBackend`.
@@ -368,7 +380,10 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    #[cfg(feature = "scrolling-regions")]
+    fn get_scrolling_method(&self) -> ScrollingMethod {
+        self.scrolling_method
+    }
+
     fn scroll_region_up(&mut self, region: core::ops::Range<u16>, scroll_by: u16) -> Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
@@ -414,7 +429,6 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: core::ops::Range<u16>, scroll_by: u16) -> Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
@@ -456,6 +470,7 @@ mod tests {
     use alloc::format;
 
     use itertools::Itertools as _;
+    use rstest::rstest;
 
     use super::*;
 
@@ -468,6 +483,7 @@ mod tests {
                 scrollback: Buffer::empty(Rect::new(0, 0, 10, 0)),
                 cursor: false,
                 pos: (0, 0),
+                scrolling_method: ScrollingMethod::Cursor
             }
         );
     }
@@ -998,80 +1014,73 @@ mod tests {
         backend.flush().unwrap();
     }
 
-    #[cfg(feature = "scrolling-regions")]
-    mod scrolling_regions {
-        use rstest::rstest;
+    const A: &str = "aaaa";
+    const B: &str = "bbbb";
+    const C: &str = "cccc";
+    const D: &str = "dddd";
+    const E: &str = "eeee";
+    const S: &str = "    ";
 
-        use super::*;
-
-        const A: &str = "aaaa";
-        const B: &str = "bbbb";
-        const C: &str = "cccc";
-        const D: &str = "dddd";
-        const E: &str = "eeee";
-        const S: &str = "    ";
-
-        #[rstest]
-        #[case([A, B, C, D, E], 0..5, 0, [],                    [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 0..5, 2, [A, B],                [C, D, E, S, S])]
-        #[case([A, B, C, D, E], 0..5, 5, [A, B, C, D, E],       [S, S, S, S, S])]
-        #[case([A, B, C, D, E], 0..5, 7, [A, B, C, D, E, S, S], [S, S, S, S, S])]
-        #[case([A, B, C, D, E], 0..3, 0, [],                    [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 0..3, 2, [A, B],                [C, S, S, D, E])]
-        #[case([A, B, C, D, E], 0..3, 3, [A, B, C],             [S, S, S, D, E])]
-        #[case([A, B, C, D, E], 0..3, 4, [A, B, C, S],          [S, S, S, D, E])]
-        #[case([A, B, C, D, E], 1..4, 0, [],                    [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 1..4, 2, [],                    [A, D, S, S, E])]
-        #[case([A, B, C, D, E], 1..4, 3, [],                    [A, S, S, S, E])]
-        #[case([A, B, C, D, E], 1..4, 4, [],                    [A, S, S, S, E])]
-        #[case([A, B, C, D, E], 0..0, 0, [],                    [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 0..0, 2, [S, S],                [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 2..2, 0, [],                    [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 2..2, 2, [],                    [A, B, C, D, E])]
-        fn scroll_region_up<const L: usize, const M: usize, const N: usize>(
-            #[case] initial_screen: [&'static str; L],
-            #[case] range: core::ops::Range<u16>,
-            #[case] scroll_by: u16,
-            #[case] expected_scrollback: [&'static str; M],
-            #[case] expected_buffer: [&'static str; N],
-        ) {
-            let mut backend = TestBackend::with_lines(initial_screen);
-            backend.scroll_region_up(range, scroll_by).unwrap();
-            if expected_scrollback.is_empty() {
-                backend.assert_scrollback_empty();
-            } else {
-                backend.assert_scrollback_lines(expected_scrollback);
-            }
-            backend.assert_buffer_lines(expected_buffer);
-        }
-
-        #[rstest]
-        #[case([A, B, C, D, E], 0..5, 0, [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 0..5, 2, [S, S, A, B, C])]
-        #[case([A, B, C, D, E], 0..5, 5, [S, S, S, S, S])]
-        #[case([A, B, C, D, E], 0..5, 7, [S, S, S, S, S])]
-        #[case([A, B, C, D, E], 0..3, 0, [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 0..3, 2, [S, S, A, D, E])]
-        #[case([A, B, C, D, E], 0..3, 3, [S, S, S, D, E])]
-        #[case([A, B, C, D, E], 0..3, 4, [S, S, S, D, E])]
-        #[case([A, B, C, D, E], 1..4, 0, [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 1..4, 2, [A, S, S, B, E])]
-        #[case([A, B, C, D, E], 1..4, 3, [A, S, S, S, E])]
-        #[case([A, B, C, D, E], 1..4, 4, [A, S, S, S, E])]
-        #[case([A, B, C, D, E], 0..0, 0, [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 0..0, 2, [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 2..2, 0, [A, B, C, D, E])]
-        #[case([A, B, C, D, E], 2..2, 2, [A, B, C, D, E])]
-        fn scroll_region_down<const M: usize, const N: usize>(
-            #[case] initial_screen: [&'static str; M],
-            #[case] range: core::ops::Range<u16>,
-            #[case] scroll_by: u16,
-            #[case] expected_buffer: [&'static str; N],
-        ) {
-            let mut backend = TestBackend::with_lines(initial_screen);
-            backend.scroll_region_down(range, scroll_by).unwrap();
+    #[rstest]
+    #[case([A, B, C, D, E], 0..5, 0, [],                    [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 0..5, 2, [A, B],                [C, D, E, S, S])]
+    #[case([A, B, C, D, E], 0..5, 5, [A, B, C, D, E],       [S, S, S, S, S])]
+    #[case([A, B, C, D, E], 0..5, 7, [A, B, C, D, E, S, S], [S, S, S, S, S])]
+    #[case([A, B, C, D, E], 0..3, 0, [],                    [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 0..3, 2, [A, B],                [C, S, S, D, E])]
+    #[case([A, B, C, D, E], 0..3, 3, [A, B, C],             [S, S, S, D, E])]
+    #[case([A, B, C, D, E], 0..3, 4, [A, B, C, S],          [S, S, S, D, E])]
+    #[case([A, B, C, D, E], 1..4, 0, [],                    [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 1..4, 2, [],                    [A, D, S, S, E])]
+    #[case([A, B, C, D, E], 1..4, 3, [],                    [A, S, S, S, E])]
+    #[case([A, B, C, D, E], 1..4, 4, [],                    [A, S, S, S, E])]
+    #[case([A, B, C, D, E], 0..0, 0, [],                    [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 0..0, 2, [S, S],                [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 2..2, 0, [],                    [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 2..2, 2, [],                    [A, B, C, D, E])]
+    fn scroll_region_up<const L: usize, const M: usize, const N: usize>(
+        #[case] initial_screen: [&'static str; L],
+        #[case] range: core::ops::Range<u16>,
+        #[case] scroll_by: u16,
+        #[case] expected_scrollback: [&'static str; M],
+        #[case] expected_buffer: [&'static str; N],
+    ) {
+        let mut backend = TestBackend::with_lines(initial_screen);
+        backend.scroll_region_up(range, scroll_by).unwrap();
+        if expected_scrollback.is_empty() {
             backend.assert_scrollback_empty();
-            backend.assert_buffer_lines(expected_buffer);
+        } else {
+            backend.assert_scrollback_lines(expected_scrollback);
         }
+        backend.assert_buffer_lines(expected_buffer);
+    }
+
+    #[rstest]
+    #[case([A, B, C, D, E], 0..5, 0, [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 0..5, 2, [S, S, A, B, C])]
+    #[case([A, B, C, D, E], 0..5, 5, [S, S, S, S, S])]
+    #[case([A, B, C, D, E], 0..5, 7, [S, S, S, S, S])]
+    #[case([A, B, C, D, E], 0..3, 0, [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 0..3, 2, [S, S, A, D, E])]
+    #[case([A, B, C, D, E], 0..3, 3, [S, S, S, D, E])]
+    #[case([A, B, C, D, E], 0..3, 4, [S, S, S, D, E])]
+    #[case([A, B, C, D, E], 1..4, 0, [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 1..4, 2, [A, S, S, B, E])]
+    #[case([A, B, C, D, E], 1..4, 3, [A, S, S, S, E])]
+    #[case([A, B, C, D, E], 1..4, 4, [A, S, S, S, E])]
+    #[case([A, B, C, D, E], 0..0, 0, [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 0..0, 2, [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 2..2, 0, [A, B, C, D, E])]
+    #[case([A, B, C, D, E], 2..2, 2, [A, B, C, D, E])]
+    fn scroll_region_down<const M: usize, const N: usize>(
+        #[case] initial_screen: [&'static str; M],
+        #[case] range: core::ops::Range<u16>,
+        #[case] scroll_by: u16,
+        #[case] expected_buffer: [&'static str; N],
+    ) {
+        let mut backend = TestBackend::with_lines(initial_screen);
+        backend.scroll_region_down(range, scroll_by).unwrap();
+        backend.assert_scrollback_empty();
+        backend.assert_buffer_lines(expected_buffer);
     }
 }
