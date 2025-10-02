@@ -38,7 +38,7 @@
 use std::fmt;
 use std::io::{self, Write};
 
-use ratatui_core::backend::{Backend, ClearType, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, ScrollingMethod, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -91,12 +91,25 @@ use termion::{color as tcolor, style as tstyle};
 /// [`IntoAlternateScreen::into_alternate_screen()`]: termion::screen::IntoAlternateScreen
 /// [`Terminal`]: ratatui_core::terminal::Terminal
 /// [Termion]: https://docs.rs/termion
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TermionBackend<W>
 where
     W: Write,
 {
     writer: W,
+    scrolling_method: ScrollingMethod,
+}
+
+impl<W> Default for TermionBackend<W>
+where
+    W: Default + Write,
+{
+    fn default() -> Self {
+        Self {
+            writer: W::default(),
+            scrolling_method: ScrollingMethod::Regions,
+        }
+    }
 }
 
 impl<W> TermionBackend<W>
@@ -120,7 +133,22 @@ where
     /// let backend = TermionBackend::new(stdout());
     /// ```
     pub const fn new(writer: W) -> Self {
-        Self { writer }
+        Self {
+            writer,
+            scrolling_method: ScrollingMethod::Regions,
+        }
+    }
+
+    /// Sets the [`ScrollingMethod`] used by the terminal.
+    ///
+    /// By default, this backend uses [scrolling regions] to prevent flickering when scrolling the
+    /// terminal.
+    ///
+    /// [scrolling regions]: ScrollingMethod::Regions
+    #[must_use]
+    pub const fn scrolling_method(mut self, scrolling_method: ScrollingMethod) -> Self {
+        self.scrolling_method = scrolling_method;
+        self
     }
 
     /// Gets the writer.
@@ -270,7 +298,10 @@ where
         self.writer.flush()
     }
 
-    #[cfg(feature = "scrolling-regions")]
+    fn get_scrolling_method(&self) -> ScrollingMethod {
+        self.scrolling_method
+    }
+
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         write!(
             self.writer,
@@ -282,7 +313,6 @@ where
         self.writer.flush()
     }
 
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         write!(
             self.writer,

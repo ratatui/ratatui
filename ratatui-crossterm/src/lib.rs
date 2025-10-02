@@ -89,7 +89,7 @@ cfg_if::cfg_if! {
         );
     }
 }
-use ratatui_core::backend::{Backend, ClearType, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, ScrollingMethod, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -149,10 +149,23 @@ use ratatui_core::style::{Color, Modifier, Style};
 /// [`backend`]: ratatui_core::backend
 /// [Crossterm]: https://crates.io/crates/crossterm
 /// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CrosstermBackend<W: Write> {
     /// The writer used to send commands to the terminal.
     writer: W,
+    scrolling_method: ScrollingMethod,
+}
+
+impl<W> Default for CrosstermBackend<W>
+where
+    W: Write + Default,
+{
+    fn default() -> Self {
+        Self {
+            writer: W::default(),
+            scrolling_method: ScrollingMethod::Regions,
+        }
+    }
 }
 
 impl<W> CrosstermBackend<W>
@@ -176,7 +189,22 @@ where
     /// let backend = CrosstermBackend::new(stdout());
     /// ```
     pub const fn new(writer: W) -> Self {
-        Self { writer }
+        Self {
+            writer,
+            scrolling_method: ScrollingMethod::Regions,
+        }
+    }
+
+    /// Sets the [`ScrollingMethod`] used by the terminal.
+    ///
+    /// By default, this backend uses [scrolling regions] to prevent flickering when scrolling the
+    /// terminal.
+    ///
+    /// [scrolling regions]: ScrollingMethod::Regions
+    #[must_use]
+    pub const fn scrolling_method(mut self, scrolling_method: ScrollingMethod) -> Self {
+        self.scrolling_method = scrolling_method;
+        self
     }
 
     /// Gets the writer.
@@ -352,7 +380,10 @@ where
         self.writer.flush()
     }
 
-    #[cfg(feature = "scrolling-regions")]
+    fn get_scrolling_method(&self) -> ScrollingMethod {
+        self.scrolling_method
+    }
+
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         queue!(
             self.writer,
@@ -365,7 +396,6 @@ where
         self.writer.flush()
     }
 
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         queue!(
             self.writer,
@@ -614,7 +644,6 @@ impl FromCrossterm<ContentStyle> for Style {
 /// crossterm PRs that will address this:
 ///   - [918](https://github.com/crossterm-rs/crossterm/pull/918)
 ///   - [923](https://github.com/crossterm-rs/crossterm/pull/923)
-#[cfg(feature = "scrolling-regions")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ScrollUpInRegion {
     /// The first row of the scrolling region.
@@ -627,7 +656,6 @@ struct ScrollUpInRegion {
     pub lines_to_scroll: u16,
 }
 
-#[cfg(feature = "scrolling-regions")]
 impl crate::crossterm::Command for ScrollUpInRegion {
     fn write_ansi(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
         if self.lines_to_scroll != 0 {
@@ -662,7 +690,6 @@ impl crate::crossterm::Command for ScrollUpInRegion {
 /// crossterm PRs that will address this:
 ///   - [918](https://github.com/crossterm-rs/crossterm/pull/918)
 ///   - [923](https://github.com/crossterm-rs/crossterm/pull/923)
-#[cfg(feature = "scrolling-regions")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ScrollDownInRegion {
     /// The first row of the scrolling region.
@@ -675,7 +702,6 @@ struct ScrollDownInRegion {
     pub lines_to_scroll: u16,
 }
 
-#[cfg(feature = "scrolling-regions")]
 impl crate::crossterm::Command for ScrollDownInRegion {
     fn write_ansi(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
         if self.lines_to_scroll != 0 {

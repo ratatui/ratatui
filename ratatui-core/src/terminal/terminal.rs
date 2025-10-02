@@ -1,4 +1,4 @@
-use crate::backend::{Backend, ClearType};
+use crate::backend::{Backend, ClearType, ScrollingMethod};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
 use crate::terminal::{CompletedFrame, Frame, TerminalOptions, Viewport};
@@ -649,17 +649,17 @@ where
     where
         F: FnOnce(&mut Buffer),
     {
-        match self.viewport {
-            #[cfg(feature = "scrolling-regions")]
-            Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),
-            #[cfg(not(feature = "scrolling-regions"))]
-            Viewport::Inline(_) => self.insert_before_no_scrolling_regions(height, draw_fn),
-            _ => Ok(()),
+        if matches!(self.viewport, Viewport::Inline(_)) {
+            match self.backend.get_scrolling_method() {
+                ScrollingMethod::Regions => self.insert_before_scrolling_regions(height, draw_fn),
+                ScrollingMethod::Cursor => self.insert_before_no_scrolling_regions(height, draw_fn),
+            }
+        } else {
+            Ok(())
         }
     }
 
     /// Implement `Self::insert_before` using standard backend capabilities.
-    #[cfg(not(feature = "scrolling-regions"))]
     fn insert_before_no_scrolling_regions(
         &mut self,
         height: u16,
@@ -760,7 +760,6 @@ where
     /// either by splitting the screen at the top of the viewport, and then creating a gap by
     /// either scrolling the viewport down, or scrolling the area above it up. The lines to insert
     /// are then drawn into the gap created.
-    #[cfg(feature = "scrolling-regions")]
     fn insert_before_scrolling_regions(
         &mut self,
         mut height: u16,
@@ -854,7 +853,6 @@ where
     /// Draw lines at the given vertical offset, assuming that the lines they are replacing on the
     /// screen are cleared. The slice of cells must contain enough cells for the requested lines. A
     /// slice of the unused cells are returned.
-    #[cfg(feature = "scrolling-regions")]
     fn draw_lines_over_cleared<'a>(
         &mut self,
         y_offset: u16,
@@ -877,7 +875,6 @@ where
     }
 
     /// Scroll the whole screen up by the given number of lines.
-    #[cfg(not(feature = "scrolling-regions"))]
     fn scroll_up(&mut self, lines_to_scroll: u16) -> Result<(), B::Error> {
         if lines_to_scroll > 0 {
             self.set_cursor_position(Position::new(
