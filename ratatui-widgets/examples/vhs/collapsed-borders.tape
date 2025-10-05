@@ -1,5 +1,5 @@
 # This is a vhs script. See https://github.com/charmbracelet/vhs for more info.
-# To run this script, install vhs and run `vhs ./examples/vhs/gauge.tape`
+# To run this script, install vhs and run `vhs ./ratatui-widgets/examples/vhs/collapsed-borders.tape`
 Output "target/collapsed-borders.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
