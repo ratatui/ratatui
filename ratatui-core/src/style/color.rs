@@ -655,8 +655,8 @@ mod tests {
             "abcdef0",       // 7 chars is not a color
             " bcdefa",       // doesn't start with a '#'
             "#abcdef00",     // too many chars
-            "#1🦀2",         // len 7 but on char boundaries shouldnt panic
-            "resett",        // typo
+            "#1🦀2",         // len 7 but on char boundaries shouldn't panic
+            "resets",        // typo
             "lightblackk",   // typo
         ];
 
