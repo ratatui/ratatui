@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      - uses: crate-ci/typos@0c17dabcee8b8f1957fa917d17393a23e02e1583 # master
+      - uses: crate-ci/typos@7436548694def3314aacd93ed06c721b1f91ea04 # master
 
   # Check for any disallowed dependencies in the codebase due to license / security issues.
   # See <https://github.com/EmbarkStudios/cargo-deny>
