@@ -465,6 +465,9 @@ enum SpanOrSpacer<'a> {
     Span(&'a Span<'a>, &'a Style),
 
     // A spacer inserted between lines in an inline block.
+    //
+    // # Fields
+    // - `&'a Spacer`: Reference to the spacer.
     Spacer(&'a Spacer),
 }
 
@@ -666,24 +669,29 @@ impl Widget for &InlineText<'_> {
                 Some(Alignment::Right) => area_width.saturating_sub(inline_width),
                 Some(Alignment::Left) | None => 0,
             };
-            let indent_width = u16::try_from(indent_width).unwrap_or(u16::MAX);
+            let indent_width = u16::try_from(indent_width).unwrap_or_else(|err| {
+                panic!(
+                    "failed to convert indent width (usize) {} to u16: {}",
+                    indent_width, err
+                )
+            });
             let area = area.indent_x(indent_width);
-            self.render_fragments(area, buf, 0);
+            self.render_fragments(area, buf, 0, area_width);
         } else {
             let skip_width = match self.alignment {
                 Some(Alignment::Center) => (inline_width.saturating_sub(area_width)) / 2,
                 Some(Alignment::Right) => inline_width.saturating_sub(area_width),
                 Some(Alignment::Left) | None => 0,
             };
-            self.render_fragments(area, buf, skip_width);
+            self.render_fragments(area, buf, skip_width, area_width);
         }
     }
 }
 
 impl InlineText<'_> {
     // Renders all the fragments of the inline that should be visible.
-    fn render_fragments(&self, mut area: Rect, buf: &mut Buffer, skip_width: usize) {
-        for fragment in self.fragment_iter(skip_width) {
+    fn render_fragments(&self, mut area: Rect, buf: &mut Buffer, offset: usize, width: usize) {
+        for fragment in self.fragment_iter(offset, width) {
             match fragment {
                 Fragment::Span(span, line_style) => {
                     if area.is_empty() {
@@ -749,49 +757,105 @@ enum Fragment<'a> {
     PartialSpan(Span<'a>, &'a Style),
 
     // A fully visible spacer, referencing the source data.
+    //
+    // # Fields
+    // - `&'a Spacer`: Reference to the spacer.
     Spacer(&'a Spacer),
 
     // A partially visible spacer, holding owned data for the truncated fragment.
+    //
+    // # Fields
+    // - `Spacer`: Owned spacer representing the visible part.
     PartialSpacer(Spacer),
 }
 
 impl<'a> InlineText<'a> {
-    // Returns an iterator over the fragments of spans and spacers that lie after a given skip width
-    // from the start of the inline (including a partially visible span and/or spacer if the
-    // `skip_width` lands within a span and/or spacer).
-    fn fragment_iter(&'a self, mut skip_width: usize) -> impl Iterator<Item = Fragment<'a>> + 'a {
+    // Returns an iterator over the fragments of spans and spacers that lie within a given range.
+    // This iterator includes partially visible spans and/or spacers if the specified `offset` lands
+    // within a span or spacer. The iteration will stop once the `remaining` width has been fully
+    // consumed.
+    fn fragment_iter(
+        &'a self,
+        mut offset: usize,
+        mut remaining: usize,
+    ) -> impl Iterator<Item = Fragment<'a>> + 'a {
         self.span_or_spacer_iter()
             .map(|span_or_spacer| match span_or_spacer {
                 SpanOrSpacer::Span(span, _) => (span_or_spacer, span.width()),
                 SpanOrSpacer::Spacer(spacer) => (span_or_spacer, spacer.width),
             })
-            .filter_map(move |(span_or_spacer, mut width)| {
-                if skip_width < width {
-                    width = width.saturating_sub(skip_width);
-                    skip_width = 0;
-                    Some((span_or_spacer, width))
+            .skip_while(move |(_, width)| {
+                if offset > *width {
+                    offset = offset.saturating_sub(*width);
+                    true
                 } else {
-                    skip_width = skip_width.saturating_sub(width);
-                    None
+                    false
                 }
             })
-            .map(|(span_or_spacer, width)| match span_or_spacer {
-                SpanOrSpacer::Span(span, line_style) => {
-                    if span.width() == width {
-                        Fragment::Span(span, line_style)
-                    } else {
-                        let (content, _) = span.content.unicode_truncate_start(width);
-                        Fragment::PartialSpan(Span::styled(content, span.style), line_style)
-                    }
-                }
-                SpanOrSpacer::Spacer(spacer) => {
-                    if spacer.width == width {
-                        Fragment::Spacer(spacer)
-                    } else {
-                        Fragment::PartialSpacer(Spacer::new(width))
-                    }
+            .map(move |(span_or_spacer, mut width)| {
+                if offset > 0 {
+                    width = width.saturating_sub(offset);
+                    offset = 0;
+                    (span_or_spacer, width)
+                } else {
+                    (span_or_spacer, width)
                 }
             })
+            .scan(
+                remaining,
+                move |remaining, (span_or_spacer, left_trimmed_width)| {
+                    if *remaining == 0 {
+                        None
+                    } else {
+                        let content_width = left_trimmed_width.min(*remaining);
+                        *remaining = remaining.saturating_sub(content_width);
+                        Some((span_or_spacer, left_trimmed_width, content_width))
+                    }
+                },
+            )
+            .map(
+                |(span_or_spacer, left_trimmed_width, content_width)| match span_or_spacer {
+                    SpanOrSpacer::Span(span, line_style) => {
+                        if span.width() == content_width {
+                            Fragment::Span(span, line_style)
+                        } else {
+                            let (content, _) =
+                                span.content.unicode_truncate_start(left_trimmed_width);
+                            let (content, _) = content.unicode_truncate(content_width);
+                            Fragment::PartialSpan(Span::styled(content, span.style), line_style)
+                        }
+                    }
+                    SpanOrSpacer::Spacer(spacer) => {
+                        if spacer.width == content_width {
+                            Fragment::Spacer(spacer)
+                        } else {
+                            Fragment::PartialSpacer(Spacer::new(content_width))
+                        }
+                    }
+                },
+            )
+    }
+}
+
+// Represents an inclusive range of indices, i.e., `[start, end]`.
+//
+// # Fields
+// - `usize`: The start index of the range (inclusive).
+// - `usize`: The end index of the range (inclusive).
+type Range = (usize, usize);
+
+// Represents an optional inclusive range of indices, i.e., `[start, end]`.
+//
+// # Fields
+// - `Some(Range)`: The inclusive range of overlapping indices.
+// - `None`: Indicates that there is no overlap.
+type Overlap = Option<Range>;
+
+impl<'a> InlineText<'a> {
+    // Calculates the overlapping range between two ranges.
+    fn overlap(lhs: Range, rhs: Range) -> Overlap {
+        let overlap = (lhs.0.max(rhs.0), lhs.1.min(rhs.1));
+        (overlap.0 <= overlap.1).then(|| overlap)
     }
 }
 
