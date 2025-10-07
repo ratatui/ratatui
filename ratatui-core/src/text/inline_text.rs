@@ -652,6 +652,7 @@ impl Widget for InlineText<'_> {
 
 impl Widget for &InlineText<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        // TODO: use `Wrap`.
         let area = area.intersection(buf.area);
         if area.is_empty() {
             return;
@@ -675,6 +676,7 @@ impl Widget for &InlineText<'_> {
                     indent_width, err
                 )
             });
+            // TODO: use `Wrap`.
             let area = area.indent_x(indent_width);
             self.render_fragments(area, buf, 0, area_width);
         } else {
@@ -777,13 +779,15 @@ impl<'a> InlineText<'a> {
     fn fragment_iter(
         &'a self,
         mut offset: usize,
-        mut remaining: usize,
+        remaining: usize,
     ) -> impl Iterator<Item = Fragment<'a>> + 'a {
         self.span_or_spacer_iter()
+            // Attach width to each `SpanOrSpacer`.
             .map(|span_or_spacer| match span_or_spacer {
                 SpanOrSpacer::Span(span, _) => (span_or_spacer, span.width()),
                 SpanOrSpacer::Spacer(spacer) => (span_or_spacer, spacer.width),
             })
+            // Skip elements until the starting offset is reached.
             .skip_while(move |(_, width)| {
                 if offset > *width {
                     offset = offset.saturating_sub(*width);
@@ -792,6 +796,7 @@ impl<'a> InlineText<'a> {
                     false
                 }
             })
+            // Compute the visible width after applying left-side offset.
             .map(move |(span_or_spacer, mut width)| {
                 if offset > 0 {
                     width = width.saturating_sub(offset);
@@ -801,6 +806,7 @@ impl<'a> InlineText<'a> {
                     (span_or_spacer, width)
                 }
             })
+            // Limit iteration to the requested `remaining` width and compute the final visible width.
             .scan(
                 remaining,
                 move |remaining, (span_or_spacer, left_trimmed_width)| {
@@ -813,6 +819,7 @@ impl<'a> InlineText<'a> {
                     }
                 },
             )
+            // Convert width metadata back into renderable `Fragment`s.
             .map(
                 |(span_or_spacer, left_trimmed_width, content_width)| match span_or_spacer {
                     SpanOrSpacer::Span(span, line_style) => {
