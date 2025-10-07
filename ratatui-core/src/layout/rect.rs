@@ -224,7 +224,7 @@ impl Rect {
 
     /// Returns a new `Rect` outside the current one, with the given margin applied on each side.
     ///
-    /// If the margin causes the `Rect`'s bounds to outsdie the range of a `u16`, the `Rect` will
+    /// If the margin causes the `Rect`'s bounds to be outside the range of a `u16`, the `Rect` will
     /// be truncated to keep the bounds within `u16`. This will cause the size of the `Rect` to
     /// change.
     ///
