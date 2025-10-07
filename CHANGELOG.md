@@ -5955,7 +5955,7 @@ Adds conversions for various Color and Modifier combinations
   - removed box borders
   - show the difference between ratio / percentage and unicode / no unicode better
   - better application approach (consistent with newer examples)
-  - various changes for 0.26 featuers
+  - various changes for 0.26 features
   - impl `Widget` for `&App`
   - use color_eyre
 
@@ -6910,7 +6910,7 @@ Also, we created various tutorials and walkthroughs in [Ratatui Book](https://gi
   color attribute - it is enabled by default, but can be disabled by
   passing `--no-default-features` to cargo.
 
-  We could specically check for Windows 7 and disable the feature flag
+  We could specially check for Windows 7 and disable the feature flag
   automatically, but I think it's better for this check to be done by the
   crossterm crate, since it's the one that actually knows about the
   underlying terminal.
@@ -8035,7 +8035,7 @@ Here is the list of contributors who have contributed to `ratatui` for the first
 ### Bug Fixes
 
 - _(clippy)_ Unused_mut lint for layout ([#285](https://github.com/ratatui/ratatui/issues/285))
-- _(examples)_ Correct progress label in gague example ([#263](https://github.com/ratatui/ratatui/issues/263))
+- _(examples)_ Correct progress label in gauge example ([#263](https://github.com/ratatui/ratatui/issues/263))
 - _(layout)_ Cap Constraint::apply to 100% length ([#264](https://github.com/ratatui/ratatui/issues/264))
 - _(lint)_ Suspicious_double_ref_op is new in 1.71 ([#311](https://github.com/ratatui/ratatui/issues/311))
 - _(prelude)_ Remove widgets module from prelude ([#317](https://github.com/ratatui/ratatui/issues/317))
