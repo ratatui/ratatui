@@ -27,6 +27,8 @@ This is a quick summary of the sections below:
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
     `Terminal`
   - Support a broader range for `unicode-width` version
+  - The `scrolling-regions` feature flag is removed in favor of making this behavior configurable
+    at runtime for each backend.
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
     const
