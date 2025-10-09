@@ -852,7 +852,7 @@ impl Span<'_> {
 
 impl Position {
     // Increments this position by `symbol_width` grapheme-wise, wrapping within `area` if needed,
-    // preserving grapheme context, and returns the next position with wrapping occurence or `None`
+    // preserving grapheme context, and returns the next position with wrapping occurrence or `None`
     // if it overflows.
     const fn step_inline_grapheme_mut(&mut self, symbol_width: u16, area: Rect) -> Option<Self> {
         if area.is_empty() || !area.contains(*self) || symbol_width > area.width {
