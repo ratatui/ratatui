@@ -708,33 +708,13 @@ impl InlineText<'_> {
                     if area.is_empty() {
                         break;
                     }
-                    let width = u16::try_from(span.width()).unwrap_or_else(|err| {
-                        panic!(
-                            "failed to convert span width (usize) {} to u16: {}",
-                            span.width(),
-                            err
-                        )
-                    });
-                    area.inline_rows(*position, width)
-                        .for_each(|rect| buf.set_style(rect, *line_style));
-                    // TODO: pass line style here.
-                    span.render_wrapped(position, area, buf);
+                    span.render_wrapped(position, *line_style, area, buf);
                 }
                 Fragment::PartialSpan(span, line_style) => {
                     if area.is_empty() {
                         break;
                     }
-                    let width = u16::try_from(span.width()).unwrap_or_else(|err| {
-                        panic!(
-                            "failed to convert span width (usize) {} to u16: {}",
-                            span.width(),
-                            err
-                        )
-                    });
-                    area.inline_rows(*position, width)
-                        .for_each(|rect| buf.set_style(rect, *line_style));
-                    // TODO: pass line style here.
-                    span.render_wrapped(position, area, buf);
+                    span.render_wrapped(position, *line_style, area, buf);
                 }
                 Fragment::Spacer(spacer) => {
                     let spacer_width = u16::try_from(spacer.width).unwrap_or_else(|err| {
@@ -803,11 +783,18 @@ impl Span<'_> {
     // This method is similar to the `render` implementation in `Widget for &Span<'_>`, but modified
     // to properly handle grapheme-wise wrapping. The provided `position` is updated to reflect the
     // final cursor location after rendering.
-    fn render_wrapped(&self, position: &mut Position, area: Rect, buf: &mut Buffer) {
+    fn render_wrapped<S: Into<Style>>(
+        &self,
+        position: &mut Position,
+        line_style: S,
+        area: Rect,
+        buf: &mut Buffer,
+    ) {
         let area = area.intersection(buf.area);
         if area.is_empty() || !area.contains(*position) {
             return;
         }
+        let line_style = line_style.into();
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
             let symbol_width = u16::try_from(grapheme.symbol.width()).unwrap_or_else(|err| {
                 panic!(
@@ -826,23 +813,27 @@ impl Span<'_> {
             if i == 0 {
                 buf[(position.x, position.y)]
                     .set_symbol(grapheme.symbol)
+                    .set_style(line_style)
                     .set_style(grapheme.style);
             // There is one or more zero-width graphemes in the first cell, so the first cell
             // must be appended to.
             } else if position.x == area.x {
                 buf[(position.x, position.y)]
                     .append_symbol(grapheme.symbol)
+                    .set_style(line_style)
                     .set_style(grapheme.style);
             // Append zero-width graphemes to the previous cell.
             } else if symbol_width == 0 {
                 // TODO: properly implement the previous coord.
                 buf[(position.x.saturating_sub(1), position.y)]
                     .append_symbol(grapheme.symbol)
+                    .set_style(line_style)
                     .set_style(grapheme.style);
             // Just a normal grapheme (not first, not zero-width, not overflowing the area).
             } else {
                 buf[(position.x, position.y)]
                     .set_symbol(grapheme.symbol)
+                    .set_style(line_style)
                     .set_style(grapheme.style);
             }
             // Multi-width graphemes must clear the cells of characters that are hidden by the
@@ -1477,24 +1468,24 @@ mod tests {
         }
     }
 
-    //    mod span {
-    //        use super::*;
-    //
-    //        #[test]
-    //        fn render_wrapped_basic() {
-    //            let style = Style::new().green().on_yellow();
-    //            let span = Span::styled("abcde", style);
-    //            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 2));
-    //            let mut position = buf.area.as_position();
-    //            span.render_wrapped(&mut position, buf.area, &mut buf);
-    //            let expected = Buffer::with_lines([
-    //                Line::from(vec!["abc".green().on_yellow()]),
-    //                Line::from(vec!["de ".green().on_yellow()]),
-    //            ]);
-    //            assert_eq!(buf, expected);
-    //            assert_eq!(position, Position { x: 2, y: 1 });
-    //        }
-    //    }
+    mod span {
+        use super::*;
+
+        #[test]
+        fn render_wrapped_basic() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("abcde", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 2));
+            let mut position = buf.area.as_position();
+            span.render_wrapped(&mut position, style, buf.area, &mut buf);
+            let expected = Buffer::with_lines([
+                Line::from(vec!["abc".green().on_yellow()]),
+                Line::from(vec!["de ".green().on_yellow()]),
+            ]);
+            assert_eq!(buf, expected);
+            assert_eq!(position, Position { x: 2, y: 1 });
+        }
+    }
 
     mod position {
         use super::*;

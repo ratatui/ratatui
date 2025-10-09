@@ -397,34 +397,6 @@ impl Rect {
         Rows::new(self)
     }
 
-    /// An iterator over inline rows within the `Rect`.
-    ///
-    /// Each row is a full `Rect` region with height 1 that can be used for rendering widgets
-    /// or as input to further layout methods.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use ratatui_core::buffer::Buffer;
-    /// use ratatui_core::layout::{Position, Rect};
-    /// use ratatui_core::widgets::Widget;
-    ///
-    /// fn render_inline_rows(position: Position, width: u16, area: Rect, buf: &mut Buffer) {
-    ///     // Renders column indices (0-9 repeating) in each column
-    ///     for (i, inline_row) in area.inline_rows(position, width).enumerate() {
-    ///         let width = inline_row.width;
-    ///         let s: String = std::iter::repeat(i % 10)
-    ///             .take(width as usize)
-    ///             .map(|c| std::char::from_digit(c as u32, 10).unwrap())
-    ///             .collect();
-    ///         format!("{}", s).render(inline_row, buf);
-    ///     }
-    /// }
-    /// ```
-    pub const fn inline_rows(self, position: Position, width: u16) -> InlineRows {
-        InlineRows::new(self, position, width)
-    }
-
     /// An iterator over columns within the `Rect`.
     ///
     /// Each column is a full `Rect` region with width 1 that can be used for rendering widgets
@@ -942,21 +914,6 @@ mod tests {
         let expected_rows: Vec<Rect> = vec![Rect::new(0, 0, 3, 1), Rect::new(0, 1, 3, 1)];
 
         assert_eq!(rows, expected_rows);
-    }
-
-    #[test]
-    fn inline_rows() {
-        let area = Rect::new(0, 0, 4, 5);
-        let position = Position::new(1, 1);
-        let inline_rows: Vec<Rect> = area.inline_rows(position, 9).collect();
-
-        let expected_rows: Vec<Rect> = vec![
-            Rect::new(1, 1, 3, 1),
-            Rect::new(0, 2, 4, 1),
-            Rect::new(0, 3, 2, 1),
-        ];
-
-        assert_eq!(inline_rows, expected_rows);
     }
 
     #[test]

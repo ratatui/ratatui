@@ -62,65 +62,6 @@ impl DoubleEndedIterator for Rows {
     }
 }
 
-/// An iterator over horizontal slices (inline segments) within a `Rect`, starting from a given
-/// `Position`.
-pub struct InlineRows {
-    /// The `Rect` associated with the iterator.
-    rect: Rect,
-    /// The starting position within the `Rect` for iteration.
-    position: Position,
-    /// The number of horizontal units remaining to cover.
-    remaining: u16,
-}
-
-impl InlineRows {
-    /// Creates a new `InlineRows` iterator.
-    pub const fn new(rect: Rect, position: Position, width: u16) -> Self {
-        Self {
-            rect,
-            position,
-            remaining: width,
-        }
-    }
-}
-
-impl Iterator for InlineRows {
-    type Item = Rect;
-
-    /// Retrieves the next horizontal slice (inline segment) within the `Rect`, starting from
-    /// `position` and covering at most `remaining` horizontal units.
-    ///
-    /// Returns `None` when no more inline units remain or the end of the `Rect` is reached.
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.remaining == 0 || !self.rect.contains(self.position) {
-            return None;
-        }
-        // Compute how many horizontal units fit in the current row.
-        let remaining = self.rect.right().saturating_sub(self.position.x);
-        let take = self.remaining.min(remaining);
-        let rect = Rect::new(self.position.x, self.position.y, take, 1);
-        // Advance position and remaining.
-        self.position.x += take;
-        self.remaining -= take;
-        // Wrap to next line if necessary.
-        if self.position.x >= self.rect.right() {
-            self.position.x = self.rect.left();
-            self.position.y = self.position.y.saturating_add(1);
-        }
-        Some(rect)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        if self.rect.width == 0 || self.rect.height == 0 {
-            return (0, Some(0));
-        }
-        let count = self.remaining as usize;
-        let width = self.rect.width as usize;
-        let rows = (count.saturating_add(width).saturating_sub(1)) / width;
-        (rows, Some(rows))
-    }
-}
-
 /// An iterator over columns within a `Rect`.
 pub struct Columns {
     /// The `Rect` associated with the columns.
@@ -291,52 +232,6 @@ mod tests {
         assert_eq!(rows.size_hint(), (0, Some(0)));
         assert_eq!(rows.next_back(), None);
         assert_eq!(rows.size_hint(), (0, Some(0)));
-    }
-
-    #[test]
-    fn inline_rows() {
-        let rect = Rect::new(0, 0, 4, 5);
-        let position = Position::new(1, 1);
-        let mut inline_rows = InlineRows::new(rect, position, 9);
-        assert_eq!(inline_rows.size_hint(), (3, Some(3)));
-        assert_eq!(inline_rows.next(), Some(Rect::new(1, 1, 3, 1)));
-        assert_eq!(inline_rows.size_hint(), (2, Some(2)));
-        assert_eq!(inline_rows.next(), Some(Rect::new(0, 2, 4, 1)));
-        assert_eq!(inline_rows.size_hint(), (1, Some(1)));
-        assert_eq!(inline_rows.next(), Some(Rect::new(0, 3, 2, 1)));
-        assert_eq!(inline_rows.size_hint(), (0, Some(0)));
-        assert_eq!(inline_rows.next(), None);
-        assert_eq!(inline_rows.size_hint(), (0, Some(0)));
-    }
-
-    #[test]
-    fn inline_rows_zero_width() {
-        let rect = Rect::new(0, 0, 0, 5);
-        let position = Position::new(1, 1);
-        let mut inline_rows = InlineRows::new(rect, position, 9);
-        assert_eq!(inline_rows.size_hint(), (0, Some(0)));
-        assert_eq!(inline_rows.next(), None);
-        assert_eq!(inline_rows.size_hint(), (0, Some(0)));
-    }
-
-    #[test]
-    fn inline_rows_zero_height() {
-        let rect = Rect::new(0, 0, 4, 0);
-        let position = Position::new(1, 1);
-        let mut inline_rows = InlineRows::new(rect, position, 9);
-        assert_eq!(inline_rows.size_hint(), (0, Some(0)));
-        assert_eq!(inline_rows.next(), None);
-        assert_eq!(inline_rows.size_hint(), (0, Some(0)));
-    }
-
-    #[test]
-    fn inline_rows_zero_by_zero() {
-        let rect = Rect::new(0, 0, 0, 0);
-        let position = Position::new(1, 1);
-        let mut inline_rows = InlineRows::new(rect, position, 9);
-        assert_eq!(inline_rows.size_hint(), (0, Some(0)));
-        assert_eq!(inline_rows.next(), None);
-        assert_eq!(inline_rows.size_hint(), (0, Some(0)));
     }
 
     #[test]
