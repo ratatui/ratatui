@@ -1479,8 +1479,8 @@ mod tests {
             let mut position = buf.area.as_position();
             span.render_wrapped(&mut position, style, buf.area, &mut buf);
             let expected = Buffer::with_lines([
-                Line::from(vec!["abc".green().on_yellow()]),
-                Line::from(vec!["de ".green().on_yellow()]),
+                Line::from(Span::from("abc").green().on_yellow()),
+                Line::from(Span::from("de").green().on_yellow()),
             ]);
             assert_eq!(buf, expected);
             assert_eq!(position, Position { x: 2, y: 1 });
