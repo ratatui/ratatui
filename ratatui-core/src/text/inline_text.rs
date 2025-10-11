@@ -705,15 +705,9 @@ impl InlineText<'_> {
         for fragment in self.fragment_iter(offset, width) {
             match fragment {
                 Fragment::Span(span, line_style) => {
-                    if area.is_empty() {
-                        break;
-                    }
                     span.render_wrapped(position, *line_style, area, buf);
                 }
                 Fragment::PartialSpan(span, line_style) => {
-                    if area.is_empty() {
-                        break;
-                    }
                     span.render_wrapped(position, *line_style, area, buf);
                 }
                 Fragment::Spacer(spacer) => {
@@ -795,6 +789,13 @@ impl Span<'_> {
             return;
         }
         let line_style = line_style.into();
+        // TODO: NOTE:
+        // `styled_graphemes` iterates over grapheme clusters.
+        // Since multiple grapheme clusters (e.g., certain emoji sequences) can occupy a single
+        // cell, it is important to correctly track the previous position and the starting
+        // position of the span for rendering.
+        // SEE:
+        // https://github.com/ratatui/ratatui/issues/1160
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
             let symbol_width = u16::try_from(grapheme.symbol.width()).unwrap_or_else(|err| {
                 panic!(
@@ -803,12 +804,9 @@ impl Span<'_> {
                     err
                 )
             });
-            let next_position;
-            if let Some(next) = position.step_inline_grapheme_mut(symbol_width, area) {
-                next_position = next;
-            } else {
+            let Some(next_position) = position.step_inline_grapheme_mut(symbol_width, area) else {
                 break;
-            }
+            };
             // The first grapheme is always set on the cell.
             if i == 0 {
                 buf[(position.x, position.y)]
