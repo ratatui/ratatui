@@ -428,23 +428,43 @@ impl Widget for &Span<'_> {
             return;
         }
         let Rect { mut x, y, .. } = area;
-        for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
+        let mut graphemes = self.styled_graphemes(Style::default()).peekable();
+        // Collect and render any zero-width graphemes that appear at the start of the cell.
+        // These zero-width graphemes form a "prefix" for the first visible grapheme.
+        // Examples include characters like Left-to-Right Mark (LRM, U+200E) that may appear
+        // at the start of a grapheme cluster.
+        // See: https://github.com/ratatui/ratatui/issues/1160
+        let mut had_zero_width_prefix = false;
+        let mut zero_width_prefix =
+            core::iter::from_fn(|| graphemes.next_if(|g| g.symbol.width() == 0));
+        // The first zero-width grapheme initializes the cell (via `set_symbol`),
+        // and any subsequent zero-width graphemes are appended (via `append_symbol`).
+        if let Some(first) = zero_width_prefix.next() {
+            had_zero_width_prefix = true;
+            buf[(area.x, area.y)]
+                .set_symbol(first.symbol)
+                .set_style(first.style);
+            for grapheme in zero_width_prefix {
+                buf[(area.x, area.y)]
+                    .append_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            }
+        }
+        for grapheme in graphemes {
             let symbol_width = grapheme.symbol.width();
             let next_x = x.saturating_add(symbol_width as u16);
             if next_x > area.right() {
                 break;
             }
-
-            if i == 0 {
-                // the first grapheme is always set on the cell
-                buf[(x, y)]
-                    .set_symbol(grapheme.symbol)
-                    .set_style(grapheme.style);
-            } else if x == area.x {
-                // there is one or more zero-width graphemes in the first cell, so the first cell
-                // must be appended to.
+            if x == area.x && had_zero_width_prefix {
+                // the first grapheme (with a zero-width prefix) should be appended to the cell
                 buf[(x, y)]
                     .append_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            } else if x == area.x {
+                // the first grapheme (without a zero-width prefix) should be set on the cell
+                buf[(x, y)]
+                    .set_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             } else if symbol_width == 0 {
                 // append zero-width graphemes to the previous cell
@@ -457,7 +477,6 @@ impl Widget for &Span<'_> {
                     .set_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             }
-
             // multi-width graphemes must clear the cells of characters that are hidden by the
             // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
             // overwritten.
