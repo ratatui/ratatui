@@ -811,35 +811,40 @@ impl Span<'_> {
             let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
                 break;
             };
-            if *position == start
-                && let Some((first, rest)) = zero_width_prefix.split_first()
-            {
-                // The first grapheme (with a zero-width prefix) should be appended to the cell.
-                buf[(position.x, position.y)]
-                    .set_symbol(first.symbol)
-                    .set_style(line_style)
-                    .set_style(first.style);
-                for grapheme in rest {
+            if *position == start {
+                if let Some((first, rest)) = zero_width_prefix.split_first() {
+                    // The first grapheme (with a zero-width prefix) should be appended to the cell.
+                    buf[(position.x, position.y)]
+                        .set_symbol(first.symbol)
+                        .set_style(line_style)
+                        .set_style(first.style);
+                    for grapheme in rest {
+                        buf[(position.x, position.y)]
+                            .append_symbol(grapheme.symbol)
+                            .set_style(line_style)
+                            .set_style(grapheme.style);
+                    }
                     buf[(position.x, position.y)]
                         .append_symbol(grapheme.symbol)
                         .set_style(line_style)
                         .set_style(grapheme.style);
+                } else {
+                    // The first grapheme (without a zero-width prefix) should be set to the cell.
+                    buf[(position.x, position.y)]
+                        .set_symbol(grapheme.symbol)
+                        .set_style(line_style)
+                        .set_style(grapheme.style);
                 }
-                buf[(position.x, position.y)]
-                    .append_symbol(grapheme.symbol)
-                    .set_style(line_style)
-                    .set_style(grapheme.style);
-            } else if symbol_width == 0
-                && let Some(prev) = prev_position
-            {
-                // Append zero-width graphemes to the previous cell.
-                buf[(prev.x, prev.y)]
-                    .append_symbol(grapheme.symbol)
-                    .set_style(line_style)
-                    .set_style(grapheme.style);
+            } else if symbol_width == 0 {
+                if let Some(prev) = prev_position {
+                    // Append zero-width graphemes to the previous cell.
+                    buf[(prev.x, prev.y)]
+                        .append_symbol(grapheme.symbol)
+                        .set_style(line_style)
+                        .set_style(grapheme.style);
+                }
             } else {
-                // Just a normal grapheme (not first with zero-width prefix, not zero-width,
-                // not overflowing the area)
+                // Just a normal grapheme (not zero-width, not overflowing the area)
                 buf[(position.x, position.y)]
                     .set_symbol(grapheme.symbol)
                     .set_style(line_style)
