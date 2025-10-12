@@ -822,6 +822,21 @@ mod tests {
         }
 
         #[test]
+        fn render_multiple_first_zero_width() {
+            let span = Span::raw("\u{2066}\u{200E}abc\u{2069}");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [
+                    Cell::new("\u{2066}\u{200E}a"),
+                    Cell::new("b"),
+                    Cell::new("c\u{2069}")
+                ]
+            );
+        }
+
+        #[test]
         fn render_second_zero_width() {
             let span = Span::raw("a\u{200B}bc");
             let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
