@@ -461,18 +461,14 @@ impl Widget for &Span<'_> {
                 buf[(x, y)]
                     .append_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
-            } else if x == area.x {
-                // the first grapheme (without a zero-width prefix) should be set on the cell
-                buf[(x, y)]
-                    .set_symbol(grapheme.symbol)
-                    .set_style(grapheme.style);
             } else if symbol_width == 0 {
                 // append zero-width graphemes to the previous cell
                 buf[(x - 1, y)]
                     .append_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             } else {
-                // just a normal grapheme (not first, not zero-width, not overflowing the area)
+                // just a normal grapheme (not first with zero-width prefix, not zero-width,
+                // not overflowing the area)
                 buf[(x, y)]
                     .set_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
