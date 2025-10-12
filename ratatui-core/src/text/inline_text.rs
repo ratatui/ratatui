@@ -4,6 +4,7 @@ use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
+use core::option::Option;
 use core::{fmt, iter};
 
 use unicode_truncate::UnicodeTruncateStr;
@@ -676,9 +677,9 @@ impl Widget for &InlineText<'_> {
                 )
             });
             // NOTE: Check if this is valid for grapheme increment later, i.e.,
-            // `step_inline_grapheme_mut`.
+            // `try_step_wrapping_mut`.
             let mut position = area.as_position();
-            position.increment_inline_mut(indent_width, area);
+            position.step_wrapping_mut(indent_width, area);
             self.render_fragments(&mut position, area, buf, 0, area_width);
         } else {
             let skip_width = match self.alignment {
@@ -705,10 +706,10 @@ impl InlineText<'_> {
         for fragment in self.fragment_iter(offset, width) {
             match fragment {
                 Fragment::Span(span, line_style) => {
-                    span.render_wrapped(position, *line_style, area, buf);
+                    span.render_wrapping(position, *line_style, area, buf);
                 }
                 Fragment::PartialSpan(span, line_style) => {
-                    span.render_wrapped(position, *line_style, area, buf);
+                    span.render_wrapping(position, *line_style, area, buf);
                 }
                 Fragment::Spacer(spacer) => {
                     let spacer_width = u16::try_from(spacer.width).unwrap_or_else(|err| {
@@ -718,7 +719,7 @@ impl InlineText<'_> {
                         )
                     });
                     // TODO: set line style here.
-                    position.increment_inline_mut(spacer_width, area);
+                    position.step_wrapping_mut(spacer_width, area);
                 }
                 Fragment::PartialSpacer(spacer) => {
                     let spacer_width = u16::try_from(spacer.width).unwrap_or_else(|err| {
@@ -728,7 +729,7 @@ impl InlineText<'_> {
                         )
                     });
                     // TODO: set line style here.
-                    position.increment_inline_mut(spacer_width, area);
+                    position.step_wrapping_mut(spacer_width, area);
                 }
             }
         }
@@ -777,7 +778,7 @@ impl Span<'_> {
     // This method is similar to the `render` implementation in `Widget for &Span<'_>`, but modified
     // to properly handle grapheme-wise wrapping. The provided `position` is updated to reflect the
     // final cursor location after rendering.
-    fn render_wrapped<S: Into<Style>>(
+    fn render_wrapping<S: Into<Style>>(
         &self,
         position: &mut Position,
         line_style: S,
@@ -789,14 +790,17 @@ impl Span<'_> {
             return;
         }
         let line_style = line_style.into();
-        // TODO: NOTE:
-        // `styled_graphemes` iterates over grapheme clusters.
-        // Since multiple grapheme clusters (e.g., certain emoji sequences) can occupy a single
-        // cell, it is important to correctly track the previous position and the starting
-        // position of the span for rendering.
-        // SEE:
-        // https://github.com/ratatui/ratatui/issues/1160
-        for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
+        let mut graphemes = self.styled_graphemes(Style::default()).peekable();
+        // Collect any zero-width graphemes that appear at the start of the cell.
+        // These zero-width graphemes form a "prefix" for the first visible grapheme.
+        // Examples include characters like Left-to-Right Mark (LRM, U+200E) that may appear
+        // at the start of a grapheme cluster.
+        // See: https://github.com/ratatui/ratatui/issues/1160
+        let zero_width_prefix: Vec<_> =
+            core::iter::from_fn(|| graphemes.next_if(|g| g.symbol.width() == 0)).collect();
+        let start = *position;
+        let mut prev_position: Option<Position> = None;
+        for grapheme in graphemes {
             let symbol_width = u16::try_from(grapheme.symbol.width()).unwrap_or_else(|err| {
                 panic!(
                     "failed to convert symbol width (usize) {} to u16: {}",
@@ -804,31 +808,38 @@ impl Span<'_> {
                     err
                 )
             });
-            let Some(next_position) = position.step_inline_grapheme_mut(symbol_width, area) else {
+            let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
                 break;
             };
-            // The first grapheme is always set on the cell.
-            if i == 0 {
+            if *position == start
+                && let Some((first, rest)) = zero_width_prefix.split_first()
+            {
+                // The first grapheme (with a zero-width prefix) should be appended to the cell.
                 buf[(position.x, position.y)]
-                    .set_symbol(grapheme.symbol)
+                    .set_symbol(first.symbol)
                     .set_style(line_style)
-                    .set_style(grapheme.style);
-            // There is one or more zero-width graphemes in the first cell, so the first cell
-            // must be appended to.
-            } else if position.x == area.x {
+                    .set_style(first.style);
+                for grapheme in rest {
+                    buf[(position.x, position.y)]
+                        .append_symbol(grapheme.symbol)
+                        .set_style(line_style)
+                        .set_style(grapheme.style);
+                }
                 buf[(position.x, position.y)]
                     .append_symbol(grapheme.symbol)
                     .set_style(line_style)
                     .set_style(grapheme.style);
-            // Append zero-width graphemes to the previous cell.
-            } else if symbol_width == 0 {
-                // TODO: properly implement the previous coord.
-                buf[(position.x.saturating_sub(1), position.y)]
+            } else if symbol_width == 0
+                && let Some(prev) = prev_position
+            {
+                // Append zero-width graphemes to the previous cell.
+                buf[(prev.x, prev.y)]
                     .append_symbol(grapheme.symbol)
                     .set_style(line_style)
                     .set_style(grapheme.style);
-            // Just a normal grapheme (not first, not zero-width, not overflowing the area).
             } else {
+                // Just a normal grapheme (not first with zero-width prefix, not zero-width,
+                // not overflowing the area)
                 buf[(position.x, position.y)]
                     .set_symbol(grapheme.symbol)
                     .set_style(line_style)
@@ -837,27 +848,43 @@ impl Span<'_> {
             // Multi-width graphemes must clear the cells of characters that are hidden by the
             // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
             // overwritten.
-            // TODO: Check the next_position in wrapping
-            for x_hidden in (position.x.saturating_add(1))..next_position.x {
-                // It may seem odd that the style of the hidden cells are not set to the style of
-                // the grapheme, but this is how the existing buffer.set_span() method works.
-                buf[(x_hidden, position.y)].reset();
+            for hidden_position in position
+                .after_wrapping(1, area)
+                .into_iter()
+                .flat_map(|p| p.iter_wrapping_to(next_position, area))
+            {
+                buf[(hidden_position.x, hidden_position.y)].reset();
             }
+            prev_position = Some(*position);
             *position = next_position;
         }
     }
 }
 
 impl Position {
-    // Increments this position by `symbol_width` grapheme-wise, wrapping within `area` if needed,
-    // preserving grapheme context, and returns the next position with wrapping occurrence or `None`
-    // if it overflows.
-    const fn step_inline_grapheme_mut(&mut self, symbol_width: u16, area: Rect) -> Option<Self> {
-        if area.is_empty() || !area.contains(*self) || symbol_width > area.width {
+    // Increments this position by `width` coordinate-wise, wrapping within `area` if needed.
+    const fn step_wrapping_mut(&mut self, width: u16, area: Rect) {
+        if area.is_empty() || !area.contains(*self) {
+            return;
+        }
+        self.x = self.x.saturating_add(width);
+        // Unlike the condition in `try_step_wrapping_mut`, this check uses `self.x`; when
+        // `self.x == area.right()`, rendering overflows.
+        if self.x >= area.right() {
+            let overflow = self.x.saturating_sub(area.right());
+            self.x = area.left().saturating_add(overflow).saturating_add(1);
+            self.y = self.y.saturating_add(1);
+        }
+    }
+
+    // Increments this position by `width` grapheme-wise, wrapping within `area` if needed,
+    // preserving grapheme context, and returns the next position or `None` if it overflows.
+    const fn try_step_wrapping_mut(&mut self, width: u16, area: Rect) -> Option<Self> {
+        if area.is_empty() || !area.contains(*self) || width > area.width {
             return None;
         }
         let mut next = *self;
-        next.x = next.x.saturating_add(symbol_width);
+        next.x = next.x.saturating_add(width);
         // When `next.x == area.right()`, the current (x, y) position is still valid for rendering
         // the grapheme.
         if next.x == area.right() {
@@ -875,24 +902,54 @@ impl Position {
                 return None;
             }
             next = *self;
-            next.x = next.x.saturating_add(symbol_width);
+            next.x = next.x.saturating_add(width);
         }
         Some(next)
     }
 
-    // Increments this position by `width` coordinate-wise, wrapping within `area` if needed.
-    const fn increment_inline_mut(&mut self, width: u16, area: Rect) {
-        if area.is_empty() || !area.contains(*self) {
-            return;
+    // Returns the position after moving `width` units, wrapping within `area` if needed.
+    const fn after_wrapping(self, width: u16, area: Rect) -> Option<Self> {
+        if area.is_empty() || !area.contains(self) {
+            return None;
         }
-        self.x = self.x.saturating_add(width);
-        // Unlike the condition in `step_inline_grapheme_mut`, this check uses `self.x`; when
-        // `self.x == area.right()`, rendering overflows.
-        if self.x >= area.right() {
-            let overflow = self.x.saturating_sub(area.right());
-            self.x = area.left().saturating_add(overflow).saturating_add(1);
-            self.y = self.y.saturating_add(1);
+        let mut next = self;
+        next.x = next.x.saturating_add(width);
+        if next.x >= area.right() {
+            let overflow = next.x.saturating_sub(area.right());
+            next.x = area.left().saturating_add(overflow).saturating_add(1);
+            next.y = next.y.saturating_add(1);
+            if next.y >= area.bottom() {
+                return None;
+            }
         }
+        Some(next)
+    }
+
+    // Iterates from self (inclusive) to `end` (exclusive) coordinate-wise, wrapping within `area`
+    // if needed.
+    fn iter_wrapping_to(self, other: Self, area: Rect) -> Box<dyn Iterator<Item = Self>> {
+        let linear = |p: Self| {
+            let dy = p.y.saturating_sub(area.y);
+            let dx = p.x.saturating_sub(area.x);
+            dy.saturating_mul(area.width).saturating_add(dx)
+        };
+        if area.is_empty() || !area.contains(self) || linear(self) >= linear(other) {
+            return Box::new(core::iter::empty());
+        }
+        let mut next = self;
+        Box::new(core::iter::from_fn(move || {
+            if next == other || !area.contains(next) {
+                None
+            } else {
+                let result = next;
+                next.x = next.x.saturating_add(1);
+                if next.x >= area.right() {
+                    next.x = area.left();
+                    next.y = next.y.saturating_add(1);
+                }
+                Some(result)
+            }
+        }))
     }
 }
 
@@ -1470,12 +1527,12 @@ mod tests {
         use super::*;
 
         #[test]
-        fn render_wrapped_basic() {
+        fn render_wrapping_basic() {
             let style = Style::new().green().on_yellow();
             let span = Span::styled("abcde", style);
             let mut buf = Buffer::empty(Rect::new(0, 0, 3, 2));
             let mut position = buf.area.as_position();
-            span.render_wrapped(&mut position, style, buf.area, &mut buf);
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
             let expected = Buffer::with_lines([
                 Line::from(Span::from("abc").green().on_yellow()),
                 Line::from(Span::from("de").green().on_yellow()),
@@ -1489,37 +1546,98 @@ mod tests {
         use super::*;
 
         #[rstest]
+        #[case(Position { x: 0, y: 0 }, 3, Rect::new(0, 0, 5, 3), Position { x: 3, y: 0 })]
+        #[case(Position { x: 4, y: 0 }, 2, Rect::new(0, 0, 5, 3), Position { x: 2, y: 1 })]
+        #[case(Position { x: 4, y: 2 }, 3, Rect::new(0, 0, 5, 3), Position { x: 3, y: 3 })]
+        #[case(Position { x: 0, y: 0 }, 0, Rect::new(0, 0, 5, 3), Position { x: 0, y: 0 })]
+        #[case(Position { x: 2, y: 1 }, 2, Rect::new(0, 0, 5, 3), Position { x: 4, y: 1 })]
+        fn step_wrapping_mut(
+            #[case] mut position: Position,
+            #[case] width: u16,
+            #[case] area: Rect,
+            #[case] expected: Position,
+        ) {
+            position.step_wrapping_mut(width, area);
+            assert_eq!(position, expected);
+        }
+
+        #[rstest]
         #[case(Position { x: 0, y: 0 }, 3, Rect::new(0, 0, 5, 3), Some(Position { x: 3, y: 0 }), Position { x: 0, y: 0 })]
         #[case(Position { x: 4, y: 0 }, 2, Rect::new(0, 0, 5, 3), Some(Position { x: 2, y: 1 }), Position { x: 0, y: 1 })]
         #[case(Position { x: 4, y: 2 }, 3, Rect::new(0, 0, 5, 3), None, Position { x: 0, y: 3 })]
         #[case(Position { x: 0, y: 0 }, 0, Rect::new(0, 0, 5, 3), Some(Position { x: 0, y: 0 }), Position { x: 0, y: 0 })]
         #[case(Position { x: 2, y: 1 }, 2, Rect::new(0, 0, 5, 3), Some(Position { x: 4, y: 1 }), Position { x: 2, y: 1 })]
-        fn step_inline_grapheme_mut(
+        fn try_step_wrapping_mut(
             #[case] mut position: Position,
             #[case] symbol_width: u16,
             #[case] area: Rect,
             #[case] expected_result: Option<Position>,
             #[case] expected_position: Position,
         ) {
-            let result = position.step_inline_grapheme_mut(symbol_width, area);
+            let result = position.try_step_wrapping_mut(symbol_width, area);
             assert_eq!(result, expected_result);
             assert_eq!(position, expected_position);
         }
 
         #[rstest]
-        #[case(Position { x: 0, y: 0 }, 3, Rect::new(0, 0, 5, 3), Position { x: 3, y: 0 })]
-        #[case(Position { x: 4, y: 0 }, 2, Rect::new(0, 0, 5, 3), Position { x: 2, y: 1 })]
-        #[case(Position { x: 4, y: 2 }, 3, Rect::new(0, 0, 5, 3), Position { x: 3, y: 3 })]
-        #[case(Position { x: 0, y: 0 }, 0, Rect::new(0, 0, 5, 3), Position { x: 0, y: 0 })]
-        #[case(Position { x: 2, y: 1 }, 2, Rect::new(0, 0, 5, 3), Position { x: 4, y: 1 })]
-        fn increment_inline_mut(
-            #[case] mut position: Position,
+        #[case(Position { x: 0, y: 0 }, 3, Rect::new(0, 0, 5, 3), Some(Position { x: 3, y: 0 }))]
+        #[case(Position { x: 4, y: 0 }, 2, Rect::new(0, 0, 5, 3), Some(Position { x: 2, y: 1 }))]
+        #[case(Position { x: 4, y: 2 }, 3, Rect::new(0, 0, 5, 3), None)]
+        #[case(Position { x: 0, y: 0 }, 0, Rect::new(0, 0, 5, 3), Some(Position { x: 0, y: 0 }))]
+        #[case(Position { x: 2, y: 1 }, 2, Rect::new(0, 0, 5, 3), Some(Position { x: 4, y: 1 }))]
+        fn after_wrapping(
+            #[case] position: Position,
             #[case] width: u16,
             #[case] area: Rect,
-            #[case] expected: Position,
+            #[case] expected: Option<Position>,
         ) {
-            position.increment_inline_mut(width, area);
-            assert_eq!(position, expected);
+            let result = position.after_wrapping(width, area);
+            assert_eq!(result, expected);
+        }
+
+        #[rstest]
+        #[case(
+            Position { x: 0, y: 0 },
+            Position { x: 3, y: 0 },
+            Rect::new(0, 0, 5, 3),
+            vec![
+                Position { x: 0, y: 0 },
+                Position { x: 1, y: 0 },
+                Position { x: 2, y: 0 },
+            ]
+        )]
+        #[case(
+            Position { x: 4, y: 0 },
+            Position { x: 2, y: 1 },
+            Rect::new(0, 0, 5, 3),
+            vec![
+                Position { x: 4, y: 0 },
+                Position { x: 0, y: 1 },
+                Position { x: 1, y: 1 },
+            ]
+        )]
+        #[case(
+            Position { x: 4, y: 2 },
+            Position { x: 3, y: 3 },
+            Rect::new(0, 0, 5, 3),
+            vec![
+                Position { x: 4, y: 2 },
+            ]
+        )]
+        #[case(
+            Position { x: 0, y: 0 },
+            Position { x: 0, y: 0 },
+            Rect::new(0, 0, 5, 3),
+            vec![]
+        )]
+        fn iter_wrapping_to(
+            #[case] start: Position,
+            #[case] end: Position,
+            #[case] area: Rect,
+            #[case] expected: Vec<Position>,
+        ) {
+            let result: Vec<_> = start.iter_wrapping_to(end, area).collect();
+            assert_eq!(result, expected);
         }
     }
 
