@@ -13,6 +13,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Position, Rect};
 use crate::style::{Style, Styled};
+use crate::text::grapheme::StyledGrapheme;
 use crate::text::spacer::Spacer;
 use crate::text::{Line, Span};
 use crate::widgets::Widget;
@@ -791,95 +792,119 @@ impl Span<'_> {
         }
         let line_style = line_style.into();
         let mut graphemes = self.styled_graphemes(Style::default()).peekable();
-        // Collect any zero-width graphemes that appear at the start of the cell.
+        // Renders a grapheme into a buffer with the specified position and the line style.
+        // If the `append` flag set to be true, the grapheme will be appended to the existing
+        // grapheme.
+        let render_grapheme = |buf: &mut Buffer,
+                               position: &Position,
+                               grapheme: &StyledGrapheme,
+                               line_style: Style,
+                               append: bool| {
+            let cell = &mut buf[(position.x, position.y)];
+            if append {
+                cell.append_symbol(grapheme.symbol);
+            } else {
+                cell.set_symbol(grapheme.symbol);
+            }
+            cell.set_style(line_style).set_style(grapheme.style);
+        };
+        // Multi-width graphemes must clear the cells of characters that are hidden by the
+        // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
+        // overwritten.
+        let clear_hidden = |buf: &mut Buffer, position: &mut Position, next_position: Position| {
+            for hidden_position in position
+                .clone()
+                .step_wrapping_mut(1, area)
+                .iter_wrapping_to(next_position, area)
+            {
+                buf[(hidden_position.x, hidden_position.y)].reset();
+            }
+        };
+        // Collects any zero-width graphemes that appear at the start of the cell.
         // These zero-width graphemes form a "prefix" for the first visible grapheme.
         // Examples include characters like Left-to-Right Mark (LRM, U+200E) that may appear
         // at the start of a grapheme cluster.
         // See: https://github.com/ratatui/ratatui/issues/1160
         let zero_width_prefix: Vec<_> =
             core::iter::from_fn(|| graphemes.next_if(|g| g.symbol.width() == 0)).collect();
-        let start = *position;
-        let mut prev_position: Option<Position> = None;
-        for grapheme in graphemes {
-            let symbol_width = u16::try_from(grapheme.symbol.width()).unwrap_or_else(|err| {
+        for (i, grapheme) in zero_width_prefix.iter().enumerate() {
+            render_grapheme(buf, position, grapheme, line_style, i != 0);
+        }
+        // Renders the first grapheme, handling zero-width prefix if present.
+        if let Some(first) = graphemes.next() {
+            let symbol_width = u16::try_from(first.symbol.width()).unwrap_or_else(|err| {
                 panic!(
                     "failed to convert symbol width (usize) {} to u16: {}",
-                    grapheme.symbol.width(),
+                    first.symbol.width(),
                     err
                 )
             });
+            // Advances the cursor; stop rendering if the current position is out of bounds.
             let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
-                break;
+                return;
             };
-            if *position == start {
-                if let Some((first, rest)) = zero_width_prefix.split_first() {
-                    // The first grapheme (with a zero-width prefix) should be appended to the cell.
-                    buf[(position.x, position.y)]
-                        .set_symbol(first.symbol)
-                        .set_style(line_style)
-                        .set_style(first.style);
-                    for grapheme in rest {
-                        buf[(position.x, position.y)]
-                            .append_symbol(grapheme.symbol)
-                            .set_style(line_style)
-                            .set_style(grapheme.style);
-                    }
-                    buf[(position.x, position.y)]
-                        .append_symbol(grapheme.symbol)
-                        .set_style(line_style)
-                        .set_style(grapheme.style);
-                } else {
-                    // The first grapheme (without a zero-width prefix) should be set to the cell.
-                    buf[(position.x, position.y)]
-                        .set_symbol(grapheme.symbol)
-                        .set_style(line_style)
-                        .set_style(grapheme.style);
-                }
-            } else if symbol_width == 0 {
-                if let Some(prev) = prev_position {
-                    // Append zero-width graphemes to the previous cell.
-                    buf[(prev.x, prev.y)]
-                        .append_symbol(grapheme.symbol)
-                        .set_style(line_style)
-                        .set_style(grapheme.style);
-                }
-            } else {
-                // Just a normal grapheme (not zero-width, not overflowing the area)
-                buf[(position.x, position.y)]
-                    .set_symbol(grapheme.symbol)
-                    .set_style(line_style)
-                    .set_style(grapheme.style);
-            }
-            // Multi-width graphemes must clear the cells of characters that are hidden by the
-            // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
-            // overwritten.
-            for hidden_position in position
-                .after_wrapping(1, area)
-                .into_iter()
-                .flat_map(|p| p.iter_wrapping_to(next_position, area))
-            {
-                buf[(hidden_position.x, hidden_position.y)].reset();
-            }
-            prev_position = Some(*position);
+            render_grapheme(
+                buf,
+                position,
+                &first,
+                line_style,
+                !zero_width_prefix.is_empty(),
+            );
+            clear_hidden(buf, position, next_position);
+            let mut prev_position = *position;
             *position = next_position;
+            // Processes the remaining graphemes.
+            for grapheme in graphemes {
+                let symbol_width = u16::try_from(grapheme.symbol.width()).unwrap_or_else(|err| {
+                    panic!(
+                        "failed to convert symbol width (usize) {} to u16: {}",
+                        grapheme.symbol.width(),
+                        err
+                    )
+                });
+                // Continues the same cursor; zero-width graphemes are appended to the previous
+                // cell.
+                if symbol_width == 0 {
+                    render_grapheme(buf, &prev_position, &grapheme, line_style, true);
+                    continue;
+                }
+                // Advances the cursor; stop rendering if the current position is out of bounds.
+                let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
+                    break;
+                };
+                render_grapheme(buf, position, &grapheme, line_style, false);
+                clear_hidden(buf, position, next_position);
+                prev_position = *position;
+                *position = next_position;
+            }
         }
     }
 }
 
 impl Position {
+    // Calculates the linear index of `position` within `area`.
+    // Validation (e.g., ensuring `position` is inside `area`) is the caller's responsibility.
+    const fn index(self, area: Rect) -> u16 {
+        let dx = self.x.saturating_sub(area.x);
+        let dy = self.y.saturating_sub(area.y);
+        dy.saturating_mul(area.width).saturating_add(dx)
+    }
+
     // Increments this position by `width` coordinate-wise, wrapping within `area` if needed.
-    const fn step_wrapping_mut(&mut self, width: u16, area: Rect) {
+    const fn step_wrapping_mut(&mut self, width: u16, area: Rect) -> &Self {
         if area.is_empty() || !area.contains(*self) {
-            return;
+            return self;
         }
-        self.x = self.x.saturating_add(width);
-        // Unlike the condition in `try_step_wrapping_mut`, this check uses `self.x`; when
-        // `self.x == area.right()`, rendering overflows.
-        if self.x >= area.right() {
-            let overflow = self.x.saturating_sub(area.right());
-            self.x = area.left().saturating_add(overflow).saturating_add(1);
-            self.y = self.y.saturating_add(1);
-        }
+        let i = self.index(area).saturating_add(width);
+        let dx = i
+            .checked_rem(area.width)
+            .expect("division by zero while computing remainder for wrapped position");
+        let dy = i
+            .checked_div(area.width)
+            .expect("division by zero while computing wrapped line count");
+        self.x = area.x.saturating_add(dx);
+        self.y = area.y.saturating_add(dy);
+        self
     }
 
     // Increments this position by `width` grapheme-wise, wrapping within `area` if needed,
@@ -912,49 +937,30 @@ impl Position {
         Some(next)
     }
 
-    // Returns the position after moving `width` units, wrapping within `area` if needed.
-    const fn after_wrapping(self, width: u16, area: Rect) -> Option<Self> {
-        if area.is_empty() || !area.contains(self) {
-            return None;
-        }
-        let mut next = self;
-        next.x = next.x.saturating_add(width);
-        if next.x >= area.right() {
-            let overflow = next.x.saturating_sub(area.right());
-            next.x = area.left().saturating_add(overflow).saturating_add(1);
-            next.y = next.y.saturating_add(1);
-            if next.y >= area.bottom() {
-                return None;
-            }
-        }
-        Some(next)
-    }
-
     // Iterates from self (inclusive) to `end` (exclusive) coordinate-wise, wrapping within `area`
     // if needed.
     fn iter_wrapping_to(self, other: Self, area: Rect) -> Box<dyn Iterator<Item = Self>> {
-        let linear = |p: Self| {
-            let dy = p.y.saturating_sub(area.y);
-            let dx = p.x.saturating_sub(area.x);
-            dy.saturating_mul(area.width).saturating_add(dx)
-        };
-        if area.is_empty() || !area.contains(self) || linear(self) >= linear(other) {
+        if area.is_empty() || !area.contains(self) || self.index(area) >= other.index(area) {
             return Box::new(core::iter::empty());
         }
-        let mut next = self;
-        Box::new(core::iter::from_fn(move || {
-            if next == other || !area.contains(next) {
-                None
-            } else {
-                let result = next;
-                next.x = next.x.saturating_add(1);
-                if next.x >= area.right() {
-                    next.x = area.left();
-                    next.y = next.y.saturating_add(1);
-                }
-                Some(result)
-            }
-        }))
+        Box::new(
+            (self.index(area)
+                ..other
+                    .index(area)
+                    .min(area.width.saturating_mul(area.height)))
+                .map(move |i| {
+                    let dx = i
+                        .checked_rem(area.width)
+                        .expect("division by zero while computing remainder for wrapped position");
+                    let dy = i
+                        .checked_div(area.width)
+                        .expect("division by zero while computing wrapped line count");
+                    Self {
+                        x: area.x.saturating_add(dx),
+                        y: area.y.saturating_add(dy),
+                    }
+                }),
+        )
     }
 }
 
@@ -1073,6 +1079,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::buffer::Cell;
     use crate::style::{Color, Modifier, Style, Stylize};
 
     #[test]
@@ -1532,18 +1539,192 @@ mod tests {
         use super::*;
 
         #[test]
-        fn render_wrapping_basic() {
+        fn render_wrapping_with_sufficient_area() {
             let style = Style::new().green().on_yellow();
-            let span = Span::styled("abcde", style);
-            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 2));
+            let span = Span::styled("Hello, world! Hello, Rustaceans!", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 4));
             let mut position = buf.area.as_position();
             span.render_wrapping(&mut position, style, buf.area, &mut buf);
             let expected = Buffer::with_lines([
-                Line::from(Span::from("abc").green().on_yellow()),
-                Line::from(Span::from("de").green().on_yellow()),
+                Line::from(Span::from("Hello, wor").green().on_yellow()),
+                Line::from(Span::from("ld! Hello,").green().on_yellow()),
+                Line::from(Span::from(" Rustacean").green().on_yellow()),
+                Line::from(Span::from("s!").green().on_yellow()),
+            ]);
+            assert_eq!(buf, expected);
+            assert_eq!(position, Position { x: 2, y: 3 });
+        }
+
+        #[test]
+        fn render_wrapping_without_sufficient_area() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("Hello, world! Hello, Rustaceans!", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 2));
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            let expected = Buffer::with_lines([
+                Line::from(Span::from("Hello, wor").green().on_yellow()),
+                Line::from(Span::from("ld! Hello,").green().on_yellow()),
+            ]);
+            assert_eq!(buf, expected);
+            assert_eq!(position, Position { x: 0, y: 2 });
+        }
+
+        #[test]
+        fn render_warpping_out_of_bounds() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("Hello, world! Hello, Rustaceans!", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 2));
+            let out_of_bounds = Rect::new(20, 20, 10, 2);
+            let mut position = out_of_bounds.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            assert_eq!(buf, Buffer::empty(buf.area));
+            assert_eq!(position, Position { x: 20, y: 20 });
+        }
+
+        #[test]
+        fn render_wrapping_patches_existing_style() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("Hello, world! Hello, Rustaceans!", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 4));
+            buf.set_style(buf.area, Style::new().italic());
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            let expected = Buffer::with_lines([
+                Line::from(Span::from("Hello, wor").green().on_yellow().italic()),
+                Line::from(Span::from("ld! Hello,").green().on_yellow().italic()),
+                Line::from(Span::from(" Rustacean").green().on_yellow().italic()),
+                Line::from(vec!["s!".green().on_yellow().italic(), "        ".italic()]),
+            ]);
+            assert_eq!(buf, expected);
+            assert_eq!(position, Position { x: 2, y: 3 });
+        }
+
+        #[test]
+        fn render_wrapping_multi_width_symbol() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("Hello, world 😃 Hello, Rustaceans 😃", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 4));
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            let expected = Buffer::with_lines([
+                Line::from(Span::from("Hello, wor").green().on_yellow()),
+                Line::from(Span::from("ld 😃 Hell").green().on_yellow()),
+                Line::from(Span::from("o, Rustace").green().on_yellow()),
+                Line::from(Span::from("ans 😃").green().on_yellow()),
+            ]);
+            assert_eq!(buf, expected);
+            assert_eq!(position, Position { x: 6, y: 3 });
+        }
+
+        #[test]
+        fn render_wrapping_multi_width_symbol_with_wrapping() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("Hello, world 😃", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 14, 2));
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            let expected = Buffer::with_lines([
+                Line::from(vec!["Hello, world ".green().on_yellow(), " ".into()]),
+                Line::from(Span::from("😃").green().on_yellow()),
             ]);
             assert_eq!(buf, expected);
             assert_eq!(position, Position { x: 2, y: 1 });
+        }
+
+        #[test]
+        fn render_wrapping_multi_width_symbol_truncates_entire_symbol() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("Hello, world 😃", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 14, 1));
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            let expected = Buffer::with_lines([Line::from(vec![
+                "Hello, world ".green().on_yellow(),
+                " ".into(),
+            ])]);
+            assert_eq!(buf, expected);
+            assert_eq!(position, Position { x: 0, y: 1 });
+        }
+
+        #[test]
+        fn render_wrapping_first_zero_width() {
+            let style = Style::new();
+            let span = Span::styled("\u{200B}Hello", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [
+                    Cell::new("\u{200B}H"),
+                    Cell::new("e"),
+                    Cell::new("l"),
+                    Cell::new("l"),
+                    Cell::new("o"),
+                ]
+            );
+            assert_eq!(position, Position { x: 0, y: 1 });
+        }
+
+        #[test]
+        fn render_wrapping_second_zero_width() {
+            let style = Style::new();
+            let span = Span::styled("H\u{200B}ello", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [
+                    Cell::new("H\u{200B}"),
+                    Cell::new("e"),
+                    Cell::new("l"),
+                    Cell::new("l"),
+                    Cell::new("o"),
+                ]
+            );
+            assert_eq!(position, Position { x: 0, y: 1 });
+        }
+
+        #[test]
+        fn render_wrapping_middle_zero_width() {
+            let style = Style::new();
+            let span = Span::styled("He\u{200B}l\u{200B}l\u{200B}o", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [
+                    Cell::new("H"),
+                    Cell::new("e\u{200B}"),
+                    Cell::new("l\u{200B}"),
+                    Cell::new("l\u{200B}"),
+                    Cell::new("o"),
+                ]
+            );
+            assert_eq!(position, Position { x: 0, y: 1 });
+        }
+
+        #[test]
+        fn render_wrapping_last_zero_width() {
+            let style = Style::new();
+            let span = Span::styled("Hello\u{200B}", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            let mut position = buf.area.as_position();
+            span.render_wrapping(&mut position, style, buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [
+                    Cell::new("H"),
+                    Cell::new("e"),
+                    Cell::new("l"),
+                    Cell::new("l"),
+                    Cell::new("o\u{200B}"),
+                ]
+            );
+            assert_eq!(position, Position { x: 0, y: 1 });
         }
     }
 
@@ -1552,10 +1733,9 @@ mod tests {
 
         #[rstest]
         #[case(Position { x: 0, y: 0 }, 3, Rect::new(0, 0, 5, 3), Position { x: 3, y: 0 })]
-        #[case(Position { x: 4, y: 0 }, 2, Rect::new(0, 0, 5, 3), Position { x: 2, y: 1 })]
-        #[case(Position { x: 4, y: 2 }, 3, Rect::new(0, 0, 5, 3), Position { x: 3, y: 3 })]
-        #[case(Position { x: 0, y: 0 }, 0, Rect::new(0, 0, 5, 3), Position { x: 0, y: 0 })]
-        #[case(Position { x: 2, y: 1 }, 2, Rect::new(0, 0, 5, 3), Position { x: 4, y: 1 })]
+        #[case(Position { x: 4, y: 0 }, 2, Rect::new(0, 0, 5, 3), Position { x: 1, y: 1 })]
+        #[case(Position { x: 3, y: 0 }, 13, Rect::new(0, 0, 5, 3), Position { x: 1, y: 3 })]
+        #[case(Position { x: 6, y: 8 }, 13, Rect::new(0, 0, 5, 3), Position { x: 6, y: 8 })]
         fn step_wrapping_mut(
             #[case] mut position: Position,
             #[case] width: u16,
@@ -1582,22 +1762,6 @@ mod tests {
             let result = position.try_step_wrapping_mut(symbol_width, area);
             assert_eq!(result, expected_result);
             assert_eq!(position, expected_position);
-        }
-
-        #[rstest]
-        #[case(Position { x: 0, y: 0 }, 3, Rect::new(0, 0, 5, 3), Some(Position { x: 3, y: 0 }))]
-        #[case(Position { x: 4, y: 0 }, 2, Rect::new(0, 0, 5, 3), Some(Position { x: 2, y: 1 }))]
-        #[case(Position { x: 4, y: 2 }, 3, Rect::new(0, 0, 5, 3), None)]
-        #[case(Position { x: 0, y: 0 }, 0, Rect::new(0, 0, 5, 3), Some(Position { x: 0, y: 0 }))]
-        #[case(Position { x: 2, y: 1 }, 2, Rect::new(0, 0, 5, 3), Some(Position { x: 4, y: 1 }))]
-        fn after_wrapping(
-            #[case] position: Position,
-            #[case] width: u16,
-            #[case] area: Rect,
-            #[case] expected: Option<Position>,
-        ) {
-            let result = position.after_wrapping(width, area);
-            assert_eq!(result, expected);
         }
 
         #[rstest]
