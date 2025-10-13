@@ -1,4 +1,5 @@
-//! The [`Checkbox`] widget displays a checkbox with a label that can be in a checked or unchecked state.
+//! The [`Checkbox`] widget displays a checkbox with a label that can be in a checked or unchecked
+//! state.
 
 use alloc::borrow::Cow;
 
@@ -38,8 +39,7 @@ use crate::block::{Block, BlockExt};
 /// ```
 /// use ratatui::widgets::{Block, Checkbox};
 ///
-/// Checkbox::new("Accept terms", false)
-///     .block(Block::bordered().title("Settings"));
+/// Checkbox::new("Accept terms", false).block(Block::bordered().title("Settings"));
 /// ```
 ///
 /// # Styling
@@ -358,8 +358,9 @@ impl Checkbox<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ratatui_core::style::{Color, Modifier, Stylize};
+
+    use super::*;
 
     #[test]
     fn checkbox_new() {
