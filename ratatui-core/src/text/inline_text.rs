@@ -1571,7 +1571,7 @@ mod tests {
         }
 
         #[test]
-        fn render_warpping_out_of_bounds() {
+        fn render_wrapping_out_of_bounds() {
             let style = Style::new().green().on_yellow();
             let span = Span::styled("Hello, world! Hello, Rustaceans!", style);
             let mut buf = Buffer::empty(Rect::new(0, 0, 10, 2));
