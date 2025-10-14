@@ -60,9 +60,6 @@ pub use line::{Line, ToLine};
 mod masked;
 pub use masked::Masked;
 
-mod spacer;
-pub use spacer::Spacer;
-
 mod span;
 pub use span::{Span, ToSpan};
 

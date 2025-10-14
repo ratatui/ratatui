@@ -14,7 +14,6 @@ use crate::buffer::Buffer;
 use crate::layout::{Alignment, Position, Rect};
 use crate::style::{Style, Styled};
 use crate::text::grapheme::StyledGrapheme;
-use crate::text::spacer::Spacer;
 use crate::text::{Line, Span};
 use crate::widgets::Widget;
 
@@ -29,8 +28,8 @@ use crate::widgets::Widget;
 /// This is useful when you want to lay out multiple lines side-by-side with consistent alignment,
 /// such as titles.
 ///
-/// Lines within the block are separated by a configurable [`Spacer`], which inserts horizontal
-/// gaps between flattened spans when rendered.
+/// Lines within the block are separated by a space, which inserts horizontal gaps between flattened
+/// spans when rendered.
 ///
 /// # Constructor Methods
 ///
@@ -59,7 +58,6 @@ use crate::widgets::Widget;
 /// - [`InlineText::left_aligned`] sets the alignment to [`Alignment::Left`].
 /// - [`InlineText::centered`] sets the alignment to [`Alignment::Center`].
 /// - [`InlineText::right_aligned`] sets the alignment to [`Alignment::Right`].
-/// - [`InlineText::spacer`] sets the [`Spacer`] between [`Line`]s.
 ///
 /// # Iteration Methods
 ///
@@ -80,7 +78,6 @@ use crate::widgets::Widget;
 /// [`Span`]: crate::text::Span
 /// [`Line`]: crate::text::Line
 /// [`Style`]: crate::style::Style
-/// [`Spacer`]: crate::text::Spacer
 /// [`Alignment`]: crate::layout::Alignment
 #[doc(hidden)]
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
@@ -91,8 +88,8 @@ pub struct InlineText<'a> {
     /// The alignment of the inline block.
     pub alignment: Option<Alignment>,
 
-    /// The spacer inserted between lines.
-    pub spacer: Spacer,
+    /// The space inserted between lines.
+    pub space: usize,
 
     /// The lines that make up the inline block.
     pub lines: Vec<Line<'a>>,
@@ -109,7 +106,7 @@ impl fmt::Debug for InlineText<'_> {
             f.debug_list().entries(self.lines.iter()).finish()?;
             f.write_str(")")?;
         }
-        write!(f, ".with_space({})", self.spacer.width)?;
+        write!(f, ".with_space({})", self.space)?;
         self.style.fmt_stylize(f)?;
         match self.alignment {
             Some(Alignment::Left) => f.write_str(".left_aligned()")?,
@@ -122,7 +119,7 @@ impl fmt::Debug for InlineText<'_> {
 }
 
 impl<'a> InlineText<'a> {
-    /// Creates an `InlineText` block with the default style, alignment, and spacer.
+    /// Creates an `InlineText` block with the default style, alignment, and space.
     ///
     /// `content` can be any type that is convertible to [`Cow<str>`] (e.g. [`&str`], [`String`],
     /// [`Cow<str>`], or your own type that implements [`Into<Cow<str>>`]).
@@ -287,7 +284,7 @@ impl<'a> InlineText<'a> {
     /// Although [`Alignment`] can be set individually on each [`Line`], this is currently
     /// ignored. The [`Alignment`] defined on the `InlineText` itself is applied to all [`Line`]s
     /// as a whole. In effect, all [`Line`]s are aligned together as if they were a single [`Line`]
-    /// separated by [`Spacer`]s, rather than being aligned independently per [`Line`].
+    /// separated by spaces, rather than being aligned independently per [`Line`].
     ///
     /// # Examples
     ///
@@ -358,21 +355,18 @@ impl<'a> InlineText<'a> {
         self.alignment(Alignment::Right)
     }
 
-    /// Sets the spacer of this `InlineText`.
-    ///
-    /// `spacer` accepts any type that is convertible to [`Spacer`] (e.g. [`Spacer`], [`usize`], or
-    /// your own type that implements [`Into<Spacer>`]).
+    /// Sets the space of this `InlineText`.
     ///
     /// # Examples
     ///
     /// ```
     /// use ratatui_core::text::InlineText;
     ///
-    /// let mut inline = InlineText::from(vec!["Hello, world!", "Hello, Rustaceans!"]).spacer(1);
+    /// let mut inline = InlineText::from(vec!["Hello, world!", "Hello, Rustaceans!"]).space(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn spacer<S: Into<Spacer>>(mut self, spacer: S) -> Self {
-        self.spacer = spacer.into();
+    pub const fn space(mut self, space: usize) -> Self {
+        self.space = space;
         self
     }
 
@@ -388,15 +382,15 @@ impl<'a> InlineText<'a> {
     ///     Line::raw("Hello, world!").blue(),
     ///     Line::raw("Hello, Rustaceans!").green(),
     /// ])
-    /// .spacer(1);
+    /// .space(1);
     /// assert_eq!(inline.width(), 32);
     /// ```
     #[must_use = "method returns the inline's width and should not be ignored"]
     pub fn width(&self) -> usize {
-        self.span_or_spacer_iter()
-            .map(|span_or_spacer| match span_or_spacer {
-                SpanOrSpacer::Span(span, _) => span.width(),
-                SpanOrSpacer::Spacer(spacer) => spacer.width,
+        self.span_or_space_iter()
+            .map(|span_or_space| match span_or_space {
+                SpanOrSpace::Span(span, _) => span.width(),
+                SpanOrSpace::Space(space) => space,
             })
             .sum()
     }
@@ -454,12 +448,12 @@ impl<'a> InlineText<'a> {
     }
 }
 
-// Represents an item in an inline block: either a span of text or a spacer between lines.
+// Represents an item in an inline block: either a span of text or a space between lines.
 //
 // This enum is used when iterating over the contents of an inline via methods like
-// `iter_spans_or_spacers()`, allowing each part—text or spacer—to be processed uniformly.
+// `iter_spans_or_spaces()`, allowing each part—text or space—to be processed uniformly.
 #[derive(Debug, Clone)]
-enum SpanOrSpacer<'a> {
+enum SpanOrSpace<'a> {
     // A span of styled text from a line.
     //
     // # Fields
@@ -467,26 +461,26 @@ enum SpanOrSpacer<'a> {
     // - `&'a Style`: Reference to the parent line style.
     Span(&'a Span<'a>, &'a Style),
 
-    // A spacer inserted between lines in an inline block.
+    // A space inserted between lines in an inline block.
     //
     // # Fields
-    // - `&'a Spacer`: Reference to the spacer.
-    Spacer(&'a Spacer),
+    // - usize: Owned space width.
+    Space(usize),
 }
 
 impl<'a> InlineText<'a> {
-    // Returns an iterator over all spans in all lines, with spacers inserted between lines.
-    fn span_or_spacer_iter(&'a self) -> impl Iterator<Item = SpanOrSpacer<'a>> + 'a {
+    // Returns an iterator over all spans in all lines, with spaces inserted between lines.
+    fn span_or_space_iter(&'a self) -> impl Iterator<Item = SpanOrSpace<'a>> + 'a {
         self.lines.iter().enumerate().flat_map(move |(i, line)| {
             let iter = line
                 .spans
                 .iter()
-                .map(move |span| SpanOrSpacer::Span(span, &line.style));
+                .map(move |span| SpanOrSpace::Span(span, &line.style));
             if i < self.lines.len().saturating_sub(1) {
-                Box::new(iter.chain(iter::once(SpanOrSpacer::Spacer(&self.spacer))))
-                    as Box<dyn Iterator<Item = SpanOrSpacer<'a>>>
+                Box::new(iter.chain(iter::once(SpanOrSpace::Space(self.space))))
+                    as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
             } else {
-                Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpacer<'a>>>
+                Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
             }
         })
     }
@@ -629,19 +623,25 @@ where
     }
 }
 
-impl fmt::Display for SpanOrSpacer<'_> {
+impl fmt::Display for SpanOrSpace<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SpanOrSpacer::Span(span, _) => write!(f, "{span}"),
-            SpanOrSpacer::Spacer(spacer) => write!(f, "{spacer}"),
+            SpanOrSpace::Span(span, _) => write!(f, "{span}"),
+            SpanOrSpace::Space(space) => {
+                let width = f.precision().map_or(*space, |p| *space.min(&p));
+                for _ in 0..width {
+                    f.write_str(" ")?;
+                }
+                Ok(())
+            }
         }
     }
 }
 
 impl fmt::Display for InlineText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for span_or_spacer in self.span_or_spacer_iter() {
-            write!(f, "{span_or_spacer}")?;
+        for span_or_space in self.span_or_space_iter() {
+            write!(f, "{span_or_space}")?;
         }
         Ok(())
     }
@@ -712,32 +712,22 @@ impl InlineText<'_> {
                 Fragment::PartialSpan(span, line_style) => {
                     span.render_wrapping(position, *line_style, area, buf);
                 }
-                Fragment::Spacer(spacer) => {
-                    let spacer_width = u16::try_from(spacer.width).unwrap_or_else(|err| {
+                Fragment::Space(space) => {
+                    let space = u16::try_from(space).unwrap_or_else(|err| {
                         panic!(
-                            "failed to convert spacer width (usize) {} to u16: {}",
-                            spacer.width, err
+                            "failed to convert space width (usize) {} to u16: {}",
+                            space, err
                         )
                     });
                     // TODO: set line style here.
-                    position.step_wrapping_mut(spacer_width, area);
-                }
-                Fragment::PartialSpacer(spacer) => {
-                    let spacer_width = u16::try_from(spacer.width).unwrap_or_else(|err| {
-                        panic!(
-                            "failed to convert spacer width (usize) {} to u16: {}",
-                            spacer.width, err
-                        )
-                    });
-                    // TODO: set line style here.
-                    position.step_wrapping_mut(spacer_width, area);
+                    position.step_wrapping_mut(space, area);
                 }
             }
         }
     }
 }
 
-// Represents a single fragment (span or spacer) of an inline text block as used during rendering.
+// Represents a single fragment (span or space) of an inline text block as used during rendering.
 //
 // This enum is designed to express both fully visible and partially visible fragments of a block
 // of inline text.
@@ -757,20 +747,81 @@ enum Fragment<'a> {
     // - `&'a Style`: Reference to the parent line style.
     PartialSpan(Span<'a>, &'a Style),
 
-    // A fully visible spacer, referencing the source data.
+    // A fully visible or partially visible space, referencing the source data.
     //
     // # Fields
-    // - `&'a Spacer`: Reference to the spacer.
-    Spacer(&'a Spacer),
-
-    // A partially visible spacer, holding owned data for the truncated fragment.
-    //
-    // # Fields
-    // - `Spacer`: Owned spacer representing the visible part.
-    PartialSpacer(Spacer),
+    // - usize: Owned space width.
+    Space(usize),
 }
 
 // TODO: implement widget for Fragment here?
+
+impl<'a> InlineText<'a> {
+    // Returns an iterator over the fragments of spans and spaces that lie within a given range.
+    //
+    // This iterator includes partially visible spans and/or spaces if the specified `offset` lands
+    // within a span or space. The iteration will stop once the `remaining` width has been fully
+    // consumed.
+    fn fragment_iter(
+        &'a self,
+        mut offset: usize,
+        remaining: usize,
+    ) -> impl Iterator<Item = Fragment<'a>> + 'a {
+        self.span_or_space_iter()
+            // Attach width to each `SpanOrSpace`.
+            .map(|span_or_space| match span_or_space {
+                SpanOrSpace::Span(span, _) => (span_or_space, span.width()),
+                SpanOrSpace::Space(space) => (span_or_space, space),
+            })
+            // Skip elements until the starting offset is reached.
+            .skip_while(move |(_, width)| {
+                if offset > *width {
+                    offset = offset.saturating_sub(*width);
+                    true
+                } else {
+                    false
+                }
+            })
+            // Compute the visible width after applying left-side offset.
+            .map(move |(span_or_space, mut width)| {
+                if offset > 0 {
+                    width = width.saturating_sub(offset);
+                    offset = 0;
+                }
+                (span_or_space, width)
+            })
+            // Limit iteration to the requested `remaining` width and compute the final visible
+            // width.
+            .scan(
+                remaining,
+                move |remaining, (span_or_space, left_trimmed_width)| {
+                    if *remaining == 0 {
+                        None
+                    } else {
+                        let content_width = left_trimmed_width.min(*remaining);
+                        *remaining = remaining.saturating_sub(content_width);
+                        Some((span_or_space, left_trimmed_width, content_width))
+                    }
+                },
+            )
+            // Convert width metadata back into renderable `Fragment`s.
+            .map(
+                |(span_or_space, left_trimmed_width, content_width)| match span_or_space {
+                    SpanOrSpace::Span(span, line_style) => {
+                        if span.width() == content_width {
+                            Fragment::Span(span, line_style)
+                        } else {
+                            let (content, _) =
+                                span.content.unicode_truncate_start(left_trimmed_width);
+                            let (content, _) = content.unicode_truncate(content_width);
+                            Fragment::PartialSpan(Span::styled(content, span.style), line_style)
+                        }
+                    }
+                    SpanOrSpace::Space(_) => Fragment::Space(content_width),
+                },
+            )
+    }
+}
 
 impl Span<'_> {
     // Renders this `Span` within the given `area` and `buf`, advancing `position` and wrapping
@@ -792,14 +843,14 @@ impl Span<'_> {
         }
         let line_style = line_style.into();
         let mut graphemes = self.styled_graphemes(Style::default()).peekable();
-        // Renders a grapheme into a buffer with the specified position and the line style.
+        // Draws a grapheme into a buffer with the specified position and the line style.
         // If the `append` flag set to be true, the grapheme will be appended to the existing
         // grapheme.
-        let render_grapheme = |buf: &mut Buffer,
-                               position: &Position,
-                               grapheme: &StyledGrapheme,
-                               line_style: Style,
-                               append: bool| {
+        let draw_grapheme = |buf: &mut Buffer,
+                             position: &Position,
+                             grapheme: &StyledGrapheme,
+                             line_style: Style,
+                             append: bool| {
             let cell = &mut buf[(position.x, position.y)];
             if append {
                 cell.append_symbol(grapheme.symbol);
@@ -828,7 +879,7 @@ impl Span<'_> {
         let zero_width_prefix: Vec<_> =
             core::iter::from_fn(|| graphemes.next_if(|g| g.symbol.width() == 0)).collect();
         for (i, grapheme) in zero_width_prefix.iter().enumerate() {
-            render_grapheme(buf, position, grapheme, line_style, i != 0);
+            draw_grapheme(buf, position, grapheme, line_style, i != 0);
         }
         // Renders the first grapheme, handling zero-width prefix if present.
         if let Some(first) = graphemes.next() {
@@ -843,7 +894,7 @@ impl Span<'_> {
             let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
                 return;
             };
-            render_grapheme(
+            draw_grapheme(
                 buf,
                 position,
                 &first,
@@ -865,14 +916,14 @@ impl Span<'_> {
                 // Continues the same cursor; zero-width graphemes are appended to the previous
                 // cell.
                 if symbol_width == 0 {
-                    render_grapheme(buf, &prev_position, &grapheme, line_style, true);
+                    draw_grapheme(buf, &prev_position, &grapheme, line_style, true);
                     continue;
                 }
                 // Advances the cursor; stop rendering if the current position is out of bounds.
                 let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
                     break;
                 };
-                render_grapheme(buf, position, &grapheme, line_style, false);
+                draw_grapheme(buf, position, &grapheme, line_style, false);
                 clear_hidden(buf, position, next_position);
                 prev_position = *position;
                 *position = next_position;
@@ -964,79 +1015,6 @@ impl Position {
     }
 }
 
-impl<'a> InlineText<'a> {
-    // Returns an iterator over the fragments of spans and spacers that lie within a given range.
-    //
-    // This iterator includes partially visible spans and/or spacers if the specified `offset` lands
-    // within a span or spacer. The iteration will stop once the `remaining` width has been fully
-    // consumed.
-    fn fragment_iter(
-        &'a self,
-        mut offset: usize,
-        remaining: usize,
-    ) -> impl Iterator<Item = Fragment<'a>> + 'a {
-        self.span_or_spacer_iter()
-            // Attach width to each `SpanOrSpacer`.
-            .map(|span_or_spacer| match span_or_spacer {
-                SpanOrSpacer::Span(span, _) => (span_or_spacer, span.width()),
-                SpanOrSpacer::Spacer(spacer) => (span_or_spacer, spacer.width),
-            })
-            // Skip elements until the starting offset is reached.
-            .skip_while(move |(_, width)| {
-                if offset > *width {
-                    offset = offset.saturating_sub(*width);
-                    true
-                } else {
-                    false
-                }
-            })
-            // Compute the visible width after applying left-side offset.
-            .map(move |(span_or_spacer, mut width)| {
-                if offset > 0 {
-                    width = width.saturating_sub(offset);
-                    offset = 0;
-                }
-                (span_or_spacer, width)
-            })
-            // Limit iteration to the requested `remaining` width and compute the final visible
-            // width.
-            .scan(
-                remaining,
-                move |remaining, (span_or_spacer, left_trimmed_width)| {
-                    if *remaining == 0 {
-                        None
-                    } else {
-                        let content_width = left_trimmed_width.min(*remaining);
-                        *remaining = remaining.saturating_sub(content_width);
-                        Some((span_or_spacer, left_trimmed_width, content_width))
-                    }
-                },
-            )
-            // Convert width metadata back into renderable `Fragment`s.
-            .map(
-                |(span_or_spacer, left_trimmed_width, content_width)| match span_or_spacer {
-                    SpanOrSpacer::Span(span, line_style) => {
-                        if span.width() == content_width {
-                            Fragment::Span(span, line_style)
-                        } else {
-                            let (content, _) =
-                                span.content.unicode_truncate_start(left_trimmed_width);
-                            let (content, _) = content.unicode_truncate(content_width);
-                            Fragment::PartialSpan(Span::styled(content, span.style), line_style)
-                        }
-                    }
-                    SpanOrSpacer::Spacer(spacer) => {
-                        if spacer.width == content_width {
-                            Fragment::Spacer(spacer)
-                        } else {
-                            Fragment::PartialSpacer(Spacer::new(content_width))
-                        }
-                    }
-                },
-            )
-    }
-}
-
 // Represents an inclusive range of indices, i.e., `[start, end]`.
 //
 // # Fields
@@ -1097,7 +1075,7 @@ mod tests {
         assert!(inline.style.add_modifier.is_empty());
         assert!(inline.style.sub_modifier.is_empty());
         assert!(inline.alignment.is_none());
-        assert_eq!(inline.spacer.width, 0);
+        assert_eq!(inline.space, 0);
     }
 
     #[test]
@@ -1108,7 +1086,7 @@ mod tests {
         assert!(inline.style.add_modifier.is_empty());
         assert!(inline.style.sub_modifier.is_empty());
         assert!(inline.alignment.is_none());
-        assert_eq!(inline.spacer.width, 0);
+        assert_eq!(inline.space, 0);
         assert!(inline.lines.is_empty());
     }
 
@@ -1173,14 +1151,14 @@ mod tests {
     }
 
     #[test]
-    fn spacer() {
-        let inline = InlineText::default().spacer(Spacer::new(1));
-        assert_eq!(inline.spacer.width, 1);
+    fn space() {
+        let inline = InlineText::default().space(1);
+        assert_eq!(inline.space, 1);
     }
 
     #[test]
     fn width() {
-        let inline = InlineText::raw("Hello, world!\nHello, Rustaceans!").spacer(1);
+        let inline = InlineText::raw("Hello, world!\nHello, Rustaceans!").space(1);
         assert_eq!(inline.width(), 32);
     }
 
@@ -1468,7 +1446,7 @@ mod tests {
                 InlineText {
                     style: Style::new().red(),
                     alignment: None,
-                    spacer: Spacer::default(),
+                    space: Default::default(),
                     lines: vec![
                         Line::raw("Hello, world!"),
                         Line::raw("Hello, Rustaceans!").blue()
@@ -1486,7 +1464,7 @@ mod tests {
                 InlineText {
                     style: Style::new().red(),
                     alignment: None,
-                    spacer: Spacer::default(),
+                    space: Default::default(),
                     lines: vec![
                         Line::raw("Hello, world!"),
                         Line::raw("Hello, Rustaceans!").blue()
@@ -1812,19 +1790,19 @@ mod tests {
 
     #[rstest]
     #[case::one_line(
-        InlineText::raw("Hello, world!").spacer(1),
+        InlineText::raw("Hello, world!").space(1),
         "Hello, world!",
     )]
     #[case::multiple_lines(
-        InlineText::raw("Hello, world!\nHello, Rustaceans!").spacer(1),
-        "Hello, world!.Hello, Rustaceans!",
+        InlineText::raw("Hello, world!\nHello, Rustaceans!").space(1),
+        "Hello, world! Hello, Rustaceans!",
     )]
     #[case::styled(
         InlineText::styled(
             "Hello, world!\nHello, Rustaceans!",
             Style::new().yellow().italic(),
-        ).spacer(1),
-        "Hello, world!.Hello, Rustaceans!",
+        ).space(1),
+        "Hello, world! Hello, Rustaceans!",
     )]
     #[cfg(debug_assertions)]
     fn display(#[case] inline: InlineText, #[case] expected: &str) {
@@ -1833,18 +1811,18 @@ mod tests {
 
     #[rstest]
     #[case::one_line(
-        InlineText::raw("Hello, world!").spacer(1),
+        InlineText::raw("Hello, world!").space(1),
         "Hello, world!",
     )]
     #[case::multiple_lines(
-        InlineText::raw("Hello, world!\nHello, Rustaceans!").spacer(1),
+        InlineText::raw("Hello, world!\nHello, Rustaceans!").space(1),
         "Hello, world! Hello, Rustaceans!",
     )]
     #[case::styled(
         InlineText::styled(
             "Hello, world!\nHello, Rustaceans!",
             Style::new().yellow().italic(),
-        ).spacer(1),
+        ).space(1),
         "Hello, world! Hello, Rustaceans!",
     )]
     #[cfg(not(debug_assertions))]
@@ -1989,9 +1967,9 @@ mod tests {
         }
 
         #[test]
-        fn render_with_spacer_left_aligned() {
+        fn render_with_space_left_aligned() {
             let inline = InlineText::from(vec!["Hello,", "world!"])
-                .spacer(1)
+                .space(1)
                 .alignment(Alignment::Left);
             let area = Rect::new(0, 0, 15, 1);
             let mut buf = Buffer::empty(area);
@@ -2000,9 +1978,9 @@ mod tests {
         }
 
         #[test]
-        fn render_with_spacer_right_aligned() {
+        fn render_with_space_right_aligned() {
             let inline = InlineText::from(vec!["Hello,", "world!"])
-                .spacer(1)
+                .space(1)
                 .alignment(Alignment::Right);
             let area = Rect::new(0, 0, 15, 1);
             let mut buf = Buffer::empty(area);
@@ -2011,9 +1989,9 @@ mod tests {
         }
 
         #[test]
-        fn render_with_spacer_centered_odd() {
+        fn render_with_space_centered_odd() {
             let inline = InlineText::from(vec!["Hello,", "world!"])
-                .spacer(1)
+                .space(1)
                 .alignment(Alignment::Center);
             let area = Rect::new(0, 0, 15, 1);
             let mut buf = Buffer::empty(area);
@@ -2022,9 +2000,9 @@ mod tests {
         }
 
         #[test]
-        fn render_with_spacer_centered_even() {
+        fn render_with_space_centered_even() {
             let inline = InlineText::from(vec!["Hello,", "world!"])
-                .spacer(1)
+                .space(1)
                 .alignment(Alignment::Center);
             let area = Rect::new(0, 0, 16, 1);
             let mut buf = Buffer::empty(area);
@@ -2033,9 +2011,9 @@ mod tests {
         }
 
         #[test]
-        fn render_left_aligned_with_spacer_and_truncation() {
+        fn render_left_aligned_with_space_and_truncation() {
             let inline = InlineText::from(vec!["Hello,", "world!"])
-                .spacer(1)
+                .space(1)
                 .alignment(Alignment::Left);
             let area = Rect::new(0, 0, 7, 1);
             let mut buf = Buffer::empty(area);
@@ -2044,9 +2022,9 @@ mod tests {
         }
 
         #[test]
-        fn render_right_aligned_with_spacer_and_truncation() {
+        fn render_right_aligned_with_space_and_truncation() {
             let inline = InlineText::from(vec!["Hello,", "world!"])
-                .spacer(1)
+                .space(1)
                 .alignment(Alignment::Right);
             let area = Rect::new(0, 0, 7, 1);
             let mut buf = Buffer::empty(area);
@@ -2055,9 +2033,9 @@ mod tests {
         }
 
         #[test]
-        fn render_centered_odd_with_spacer_and_truncation() {
+        fn render_centered_odd_with_space_and_truncation() {
             let inline = InlineText::from(vec!["Hello,", "world!"])
-                .spacer(1)
+                .space(1)
                 .alignment(Alignment::Center);
             let area = Rect::new(0, 0, 7, 1);
             let mut buf = Buffer::empty(area);
@@ -2066,9 +2044,9 @@ mod tests {
         }
 
         #[test]
-        fn render_centered_even_with_spacer_and_truncation() {
+        fn render_centered_even_with_space_and_truncation() {
             let inline = InlineText::from(vec!["Hello,", "world!"])
-                .spacer(1)
+                .space(1)
                 .alignment(Alignment::Center);
             let area = Rect::new(0, 0, 6, 1);
             let mut buf = Buffer::empty(area);

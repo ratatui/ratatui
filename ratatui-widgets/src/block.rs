@@ -905,7 +905,7 @@ impl Block<'_> {
                 .collect_vec(),
         )
         .style(self.titles_style)
-        .spacer(1)
+        .space(1)
         .right_aligned();
         let titles_area = self.titles_area(area, position);
         if titles.width() == 0 || titles_area.is_empty() {
@@ -922,7 +922,7 @@ impl Block<'_> {
                 .collect_vec(),
         )
         .style(self.titles_style)
-        .spacer(1)
+        .space(1)
         .centered();
         let titles_area = self.titles_area(area, position);
         if titles.width() == 0 || titles_area.is_empty() {
@@ -939,7 +939,7 @@ impl Block<'_> {
                 .collect_vec(),
         )
         .style(self.titles_style)
-        .spacer(1)
+        .space(1)
         .left_aligned();
         let titles_area = self.titles_area(area, position);
         if titles.width() == 0 || titles_area.is_empty() {
