@@ -3,6 +3,7 @@ pub mod main {
     pub mod block;
     pub mod buffer;
     pub mod constraints;
+    pub mod inline_text;
     pub mod line;
     pub mod list;
     pub mod paragraph;
@@ -23,4 +24,5 @@ criterion::criterion_main!(
     sparkline::benches,
     table::benches,
     constraints::benches,
+    inline_text::benches,
 );

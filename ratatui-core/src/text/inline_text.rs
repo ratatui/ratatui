@@ -390,7 +390,7 @@ impl<'a> InlineText<'a> {
         self.span_or_space_iter()
             .map(|span_or_space| match span_or_space {
                 SpanOrSpace::Span(span, _) => span.width(),
-                SpanOrSpace::Space(space) => space,
+                SpanOrSpace::Space(space, _) => space,
             })
             .sum()
     }
@@ -464,8 +464,9 @@ enum SpanOrSpace<'a> {
     // A space inserted between lines in an inline block.
     //
     // # Fields
-    // - usize: Owned space width.
-    Space(usize),
+    // - `usize`: Owned space width.
+    // - `&'a Style`: Reference to the parent line style.
+    Space(usize, &'a Style),
 }
 
 impl<'a> InlineText<'a> {
@@ -477,7 +478,7 @@ impl<'a> InlineText<'a> {
                 .iter()
                 .map(move |span| SpanOrSpace::Span(span, &line.style));
             if i < self.lines.len().saturating_sub(1) {
-                Box::new(iter.chain(iter::once(SpanOrSpace::Space(self.space))))
+                Box::new(iter.chain(iter::once(SpanOrSpace::Space(self.space, &line.style))))
                     as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
             } else {
                 Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
@@ -627,7 +628,7 @@ impl fmt::Display for SpanOrSpace<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SpanOrSpace::Span(span, _) => write!(f, "{span}"),
-            SpanOrSpace::Space(space) => {
+            SpanOrSpace::Space(space, _) => {
                 let width = f.precision().map_or(*space, |p| *space.min(&p));
                 for _ in 0..width {
                     f.write_str(" ")?;
@@ -712,15 +713,18 @@ impl InlineText<'_> {
                 Fragment::PartialSpan(span, line_style) => {
                     span.render_wrapping(position, *line_style, area, buf);
                 }
-                Fragment::Space(space) => {
+                Fragment::Space(space, line_style) => {
                     let space = u16::try_from(space).unwrap_or_else(|err| {
                         panic!(
                             "failed to convert space width (usize) {} to u16: {}",
                             space, err
                         )
                     });
-                    // TODO: set line style here.
-                    position.step_wrapping_mut(space, area);
+                    for spaced_position in &mut *position
+                        .iter_wrapping_to(*position.step_wrapping_mut(space, area), area)
+                    {
+                        buf[(spaced_position.x, spaced_position.y)].set_style(*line_style);
+                    }
                 }
             }
         }
@@ -750,8 +754,9 @@ enum Fragment<'a> {
     // A fully visible or partially visible space, referencing the source data.
     //
     // # Fields
-    // - usize: Owned space width.
-    Space(usize),
+    // - `usize`: Owned space width.
+    // - `&'a Style`: Reference to the parent line style.
+    Space(usize, &'a Style),
 }
 
 // TODO: implement widget for Fragment here?
@@ -771,7 +776,7 @@ impl<'a> InlineText<'a> {
             // Attach width to each `SpanOrSpace`.
             .map(|span_or_space| match span_or_space {
                 SpanOrSpace::Span(span, _) => (span_or_space, span.width()),
-                SpanOrSpace::Space(space) => (span_or_space, space),
+                SpanOrSpace::Space(space, _) => (span_or_space, space),
             })
             // Skip elements until the starting offset is reached.
             .skip_while(move |(_, width)| {
@@ -817,7 +822,7 @@ impl<'a> InlineText<'a> {
                             Fragment::PartialSpan(Span::styled(content, span.style), line_style)
                         }
                     }
-                    SpanOrSpace::Space(_) => Fragment::Space(content_width),
+                    SpanOrSpace::Space(_, line_style) => Fragment::Space(content_width, line_style),
                 },
             )
     }
@@ -843,10 +848,10 @@ impl Span<'_> {
         }
         let line_style = line_style.into();
         let mut graphemes = self.styled_graphemes(Style::default()).peekable();
-        // Draws a grapheme into a buffer with the specified position and the line style.
+        // Writes a grapheme into a buffer with the specified position and the line style.
         // If the `append` flag set to be true, the grapheme will be appended to the existing
         // grapheme.
-        let draw_grapheme = |buf: &mut Buffer,
+        let write_grapheme = |buf: &mut Buffer,
                              position: &Position,
                              grapheme: &StyledGrapheme,
                              line_style: Style,
@@ -879,7 +884,7 @@ impl Span<'_> {
         let zero_width_prefix: Vec<_> =
             core::iter::from_fn(|| graphemes.next_if(|g| g.symbol.width() == 0)).collect();
         for (i, grapheme) in zero_width_prefix.iter().enumerate() {
-            draw_grapheme(buf, position, grapheme, line_style, i != 0);
+            write_grapheme(buf, position, grapheme, line_style, i != 0);
         }
         // Renders the first grapheme, handling zero-width prefix if present.
         if let Some(first) = graphemes.next() {
@@ -894,7 +899,7 @@ impl Span<'_> {
             let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
                 return;
             };
-            draw_grapheme(
+            write_grapheme(
                 buf,
                 position,
                 &first,
@@ -916,14 +921,14 @@ impl Span<'_> {
                 // Continues the same cursor; zero-width graphemes are appended to the previous
                 // cell.
                 if symbol_width == 0 {
-                    draw_grapheme(buf, &prev_position, &grapheme, line_style, true);
+                    write_grapheme(buf, &prev_position, &grapheme, line_style, true);
                     continue;
                 }
                 // Advances the cursor; stop rendering if the current position is out of bounds.
                 let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
                     break;
                 };
-                draw_grapheme(buf, position, &grapheme, line_style, false);
+                write_grapheme(buf, position, &grapheme, line_style, false);
                 clear_hidden(buf, position, next_position);
                 prev_position = *position;
                 *position = next_position;
