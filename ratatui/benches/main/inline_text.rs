@@ -1,41 +1,50 @@
-use std::hint::black_box;
-
-use criterion::{Criterion, criterion_group};
+use criterion::{BatchSize, Bencher, Criterion, criterion_group};
 use ratatui::buffer::Buffer;
-use ratatui::layout::{Alignment, Rect};
+use ratatui::layout::Rect;
 use ratatui::style::Stylize;
 use ratatui::text::InlineText;
 use ratatui::widgets::Widget;
 
-fn line_render(criterion: &mut Criterion) {
-    for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {
-        let mut group = criterion.benchmark_group(format!("inline_text_render/{alignment}"));
-        group.sample_size(1000);
-
-        let inline = &InlineText::from(vec![
-            "Hello, world!".red(),
-            "The quick brown fox jumps over the lazy dog.".green(),
-            "Pack my box with five dozen liquor jugs.".italic(),
-            "Sphinx of black quartz, judge my vow.".blue(),
-            "Lorem ipsum dolor sit amet...".bold(),
-            "naïve café".into(),
-            "東京 Rust 開発者会".into(),
-            "🙂😇🤖".into(),
-            "A\u{200B}".into(),
-            "👩‍💻".into(),
-        ])
-        .space(1)
-        .alignment(alignment);
-
-        for width in [0, 7, 10, 42, 80, 120] {
-            let area = Rect::new(0, 0, width, 10);
-            group.bench_function(width.to_string(), |bencher| {
-                let mut buffer = Buffer::empty(area);
-                bencher.iter(|| black_box(inline).render(area, &mut buffer));
-            });
-        }
-        group.finish();
+/// Benchmark for rendering a inline text.
+fn inline_text(c: &mut Criterion) {
+    let mut group = c.benchmark_group("inline_text");
+    for (width, height) in [
+        (1, 256),   // Heavily vertically skewed
+        (256, 1),   // Heavily horizontally skewed
+        (50, 50),   // Typical rendering area
+        (100, 50),  // Vertically split screen
+        (200, 50),  // 1080p fullscreen with medium font
+        (256, 256), // Max sized area
+    ] {
+        let buffer_size = Rect::new(0, 0, width, height);
+        group.bench_with_input(
+            format!("render/{width}x{height}"),
+            &InlineText::from(vec![
+                "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.".into(),
+                "🦀 Rustaceans unite! 東京・İstanbul・Sydney・San Francisco・Warsaw 🌏 RustConf連携中！".bold(),
+                "naïve cafés ☕ serve résumé-ready developers 👩‍💻🧑🏾‍💻 testing text rendering engines.".green(),
+                "ゼロ幅スペース\u{200B}、結合絵文字👨‍👩‍👧‍👦、全角文字ＡＢＣ、半角abcが混在。".blue(),
+                "Emoji test: 🙂😇🤖👩🏻‍🎨🧑‍🚀 — wrapped in a 50x50 buffer for layout & clipping check.".italic(),
+            ])
+            .space(1),
+            |b, inline| render(b, inline, buffer_size),
+        );
     }
+    group.finish();
 }
 
-criterion_group!(benches, line_render);
+/// Renders the inline text into a buffer of the given `size`
+fn render(bencher: &mut Bencher, inline: &InlineText, size: Rect) {
+    let mut buffer = Buffer::empty(size);
+    // We use `iter_batched` to clone the value in the setup function.
+    // See https://github.com/ratatui/ratatui/pull/377.
+    bencher.iter_batched(
+        || inline.to_owned(),
+        |bench_inline| {
+            bench_inline.render(buffer.area, &mut buffer);
+        },
+        BatchSize::SmallInput,
+    );
+}
+
+criterion_group!(benches, inline_text);

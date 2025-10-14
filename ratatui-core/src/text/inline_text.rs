@@ -720,6 +720,7 @@ impl InlineText<'_> {
                             space, err
                         )
                     });
+                    // NOTE: Should be the style reseted here instead?
                     for spaced_position in &mut *position
                         .iter_wrapping_to(*position.step_wrapping_mut(space, area), area)
                     {
@@ -852,10 +853,10 @@ impl Span<'_> {
         // If the `append` flag set to be true, the grapheme will be appended to the existing
         // grapheme.
         let write_grapheme = |buf: &mut Buffer,
-                             position: &Position,
-                             grapheme: &StyledGrapheme,
-                             line_style: Style,
-                             append: bool| {
+                              position: &Position,
+                              grapheme: &StyledGrapheme,
+                              line_style: Style,
+                              append: bool| {
             let cell = &mut buf[(position.x, position.y)];
             if append {
                 cell.append_symbol(grapheme.symbol);
@@ -971,15 +972,15 @@ impl Position {
         }
         let mut next = *self;
         next.x = next.x.saturating_add(width);
-        // When `next.x == area.right()`, the current (x, y) position is still valid for rendering
-        // the grapheme.
+        #[allow(clippy::else_if_without_else)]
         if next.x == area.right() {
+            // When `next.x == area.right()`, the current (x, y) position is still valid for
+            // rendering the grapheme.
             next.x = area.left();
             next.y = self.y.saturating_add(1);
-        }
-        // When `next.x > area.right()`, the current grapheme does not fit in the remaining width
-        // and must be wrapped to the next line.
-        if next.x > area.right() {
+        } else if next.x > area.right() {
+            // When `next.x > area.right()`, the current grapheme does not fit in the remaining
+            // width and must be wrapped to the next line.
             self.x = area.left();
             self.y = self.y.saturating_add(1);
             // Unlike the condition above, this check uses `self.y`; when `self.y == area.bottom()`,
