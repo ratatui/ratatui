@@ -387,7 +387,7 @@ impl<'a> InlineText<'a> {
     /// ```
     #[must_use = "method returns the inline's width and should not be ignored"]
     pub fn width(&self) -> usize {
-        self.span_or_space_iter()
+        self.span_or_space_iter(None)
             .map(|span_or_space| match span_or_space {
                 SpanOrSpace::Span(span, _) => span.width(),
                 SpanOrSpace::Space(space, _) => space,
@@ -471,19 +471,31 @@ enum SpanOrSpace<'a> {
 
 impl<'a> InlineText<'a> {
     // Returns an iterator over all spans in all lines, with spaces inserted between lines.
-    fn span_or_space_iter(&'a self) -> impl Iterator<Item = SpanOrSpace<'a>> + 'a {
-        self.lines.iter().enumerate().flat_map(move |(i, line)| {
-            let iter = line
-                .spans
-                .iter()
-                .map(move |span| SpanOrSpace::Span(span, &line.style));
-            if i < self.lines.len().saturating_sub(1) {
-                Box::new(iter.chain(iter::once(SpanOrSpace::Space(self.space, &line.style))))
-                    as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
-            } else {
-                Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
-            }
-        })
+    fn span_or_space_iter(
+        &'a self,
+        maybe_alignment: Option<Alignment>,
+    ) -> impl Iterator<Item = SpanOrSpace<'a>> + 'a {
+        self.lines
+            .iter()
+            .filter(move |line| {
+                match (maybe_alignment, line.alignment.unwrap_or(Alignment::Left)) {
+                    (Some(alignment), line_alignment) => alignment == line_alignment,
+                    (None, _) => true,
+                }
+            })
+            .enumerate()
+            .flat_map(move |(i, line)| {
+                let iter = line
+                    .spans
+                    .iter()
+                    .map(move |span| SpanOrSpace::Span(span, &line.style));
+                if i < self.lines.len().saturating_sub(1) {
+                    Box::new(iter.chain(iter::once(SpanOrSpace::Space(self.space, &line.style))))
+                        as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
+                } else {
+                    Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
+                }
+            })
     }
 }
 
@@ -641,7 +653,7 @@ impl fmt::Display for SpanOrSpace<'_> {
 
 impl fmt::Display for InlineText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for span_or_space in self.span_or_space_iter() {
+        for span_or_space in self.span_or_space_iter(None) {
             write!(f, "{span_or_space}")?;
         }
         Ok(())
@@ -682,7 +694,7 @@ impl Widget for &InlineText<'_> {
             // `try_step_wrapping_mut`.
             let mut position = area.as_position();
             position.step_wrapping_mut(indent_width, area);
-            self.render_fragments(&mut position, area, buf, 0, area_width);
+            self.render_fragments(&mut position, area, buf, 0, area_width, None);
         } else {
             let skip_width = match self.alignment {
                 Some(Alignment::Center) => (inline_width.saturating_sub(area_width)) / 2,
@@ -690,7 +702,7 @@ impl Widget for &InlineText<'_> {
                 Some(Alignment::Left) | None => 0,
             };
             let mut position = area.as_position();
-            self.render_fragments(&mut position, area, buf, skip_width, area_width);
+            self.render_fragments(&mut position, area, buf, skip_width, area_width, None);
         }
     }
 }
@@ -704,8 +716,12 @@ impl InlineText<'_> {
         buf: &mut Buffer,
         offset: usize,
         width: usize,
+        maybe_alignment: Option<Alignment>,
     ) {
-        for fragment in self.fragment_iter(offset, width) {
+        for fragment in self
+            .span_or_space_iter(maybe_alignment)
+            .into_fragment_iter(offset, width)
+        {
             match fragment {
                 Fragment::Span(span, line_style) => {
                     span.render_wrapping(position, *line_style, area, buf);
@@ -760,20 +776,18 @@ enum Fragment<'a> {
     Space(usize, &'a Style),
 }
 
-// TODO: implement widget for Fragment here?
-
-impl<'a> InlineText<'a> {
+trait FragmentIteratorExt<'a>: Iterator<Item = SpanOrSpace<'a>> + Sized {
     // Returns an iterator over the fragments of spans and spaces that lie within a given range.
     //
     // This iterator includes partially visible spans and/or spaces if the specified `offset` lands
     // within a span or space. The iteration will stop once the `remaining` width has been fully
     // consumed.
-    fn fragment_iter(
-        &'a self,
+    fn into_fragment_iter(
+        self,
         mut offset: usize,
         remaining: usize,
-    ) -> impl Iterator<Item = Fragment<'a>> + 'a {
-        self.span_or_space_iter()
+    ) -> impl Iterator<Item = Fragment<'a>> {
+        self
             // Attach width to each `SpanOrSpace`.
             .map(|span_or_space| match span_or_space {
                 SpanOrSpace::Span(span, _) => (span_or_space, span.width()),
@@ -828,6 +842,8 @@ impl<'a> InlineText<'a> {
             )
     }
 }
+
+impl<'a, I> FragmentIteratorExt<'a> for I where I: Iterator<Item = SpanOrSpace<'a>> {}
 
 impl Span<'_> {
     // Renders this `Span` within the given `area` and `buf`, advancing `position` and wrapping
@@ -1021,11 +1037,11 @@ impl Position {
     }
 }
 
-// Represents an inclusive range of indices, i.e., `[start, end]`.
+// Represents an inclusive range of indices, i.e., `[start, end)`.
 //
 // # Fields
 // - `usize`: The start index of the range (inclusive).
-// - `usize`: The end index of the range (inclusive).
+// - `usize`: The end index of the range (exclusive).
 //type Range = (usize, usize);
 
 // Represents an optional inclusive range of indices, i.e., `[start, end]`.
@@ -1035,11 +1051,11 @@ impl Position {
 // - `None`: Indicates that there is no overlap.
 //type Overlap = Option<Range>;
 
-//impl<'a> InlineText<'a> {
+//impl InlineText<'_> {
 //    // Calculates the overlapping range between two ranges.
 //    fn overlap(lhs: Range, rhs: Range) -> Overlap {
 //        let overlap = (lhs.0.max(rhs.0), lhs.1.min(rhs.1));
-//        (overlap.0 <= overlap.1).then(|| overlap)
+//        (overlap.0 < overlap.1).then_some(overlap)
 //    }
 //}
 
