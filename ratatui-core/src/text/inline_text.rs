@@ -720,7 +720,7 @@ impl InlineText<'_> {
                             space, err
                         )
                     });
-                    // NOTE: Should be the style reseted here instead?
+                    // NOTE: Should be the style reset here instead?
                     for spaced_position in &mut *position
                         .iter_wrapping_to(*position.step_wrapping_mut(space, area), area)
                     {

@@ -2,7 +2,7 @@ use criterion::{BatchSize, Bencher, Criterion, criterion_group};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
-use ratatui::text::InlineText;
+use ratatui::text::{InlineText, Line};
 use ratatui::widgets::Widget;
 
 /// Benchmark for rendering a inline text.
@@ -20,11 +20,11 @@ fn inline_text(c: &mut Criterion) {
         group.bench_with_input(
             format!("render/{width}x{height}"),
             &InlineText::from(vec![
-                "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.".into(),
-                "🦀 Rustaceans unite! 東京・İstanbul・Sydney・San Francisco・Warsaw 🌏 RustConf連携中！".bold(),
-                "naïve cafés ☕ serve résumé-ready developers 👩‍💻🧑🏾‍💻 testing text rendering engines.".green(),
-                "ゼロ幅スペース\u{200B}、結合絵文字👨‍👩‍👧‍👦、全角文字ＡＢＣ、半角abcが混在。".blue(),
-                "Emoji test: 🙂😇🤖👩🏻‍🎨🧑‍🚀 — wrapped in a 50x50 buffer for layout & clipping check.".italic(),
+                Line::from("The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs."),
+                Line::from("🦀 Rustaceans unite! 東京・İstanbul・Sydney・San Francisco・Warsaw 🌏 RustConf連携中！").bold(),
+                Line::from("naïve cafés ☕ serve résumé-ready developers 👩‍💻🧑🏾‍💻 testing text rendering engines.").green(),
+                Line::from("ゼロ幅スペース\u{200B}、結合絵文字👨‍👩‍👧‍👦、全角文字ＡＢＣ、半角abcが混在。").blue(),
+                Line::from("Emoji test: 🙂😇🤖👩🏻‍🎨🧑‍🚀 — wrapped in a 50x50 buffer for layout & clipping check.").italic(),
             ])
             .space(1),
             |b, inline| render(b, inline, buffer_size),
