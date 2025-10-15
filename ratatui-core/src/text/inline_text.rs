@@ -705,19 +705,95 @@ impl Widget for &InlineText<'_> {
         buf.set_style(area, self.style);
         // If `alignment` is not set, each `Line`'s own alignment is used to group, reorder, and
         // align individually.
-        //let Some(alignment) = self.alignment else {
-        //    // PLACEHOLDER
-        //    return;
-        //};
-        let alignment = self.alignment.unwrap_or(Alignment::Left);
+        let Some(alignment) = self.alignment else {
+            // Computes the rendering range with skip width for each alignment within the given
+            // `area.width`.
+            let (left, center, right) = self.alignment_widths();
+            let (left, center, right) = [
+                (left, Alignment::Left),
+                (center, Alignment::Center),
+                (right, Alignment::Right),
+            ]
+            .map(|(width, alignment)| {
+                let width = u16::try_from(width).unwrap_or(u16::MAX);
+                InlineText::alignment_bounds(width, area.width, alignment)
+            })
+            .into();
+            let mut position = area.as_position();
+            // If there is a left-aligned lines, render it.
+            if let Some((range, skip_width)) = left {
+                let candidates = [center, right];
+                let other = candidates.iter().flatten().next();
+                let end = if let Some((other_range, _)) = other {
+                    InlineText::overlap(range, *other_range)
+                        .map_or(range.1, |overlap| (overlap.0.saturating_add(overlap.1)) / 2)
+                } else {
+                    range.1
+                };
+                position.move_to_mut(range.0, area);
+                self.render_fragments(
+                    &mut position,
+                    area,
+                    buf,
+                    skip_width,
+                    end.saturating_sub(range.0),
+                    Some(Alignment::Left),
+                );
+            }
+            // If there is a center-aligned lines, render it.
+            if let Some((range, skip_width)) = center {
+                let start = if let Some((left_range, _)) = left {
+                    InlineText::overlap(left_range, range)
+                        .map_or(range.0, |overlap| (overlap.0.saturating_add(overlap.1)) / 2)
+                } else {
+                    range.0
+                };
+                let end = if let Some((right_range, _)) = right {
+                    InlineText::overlap(range, right_range)
+                        .map_or(range.1, |overlap| (overlap.0.saturating_add(overlap.1)) / 2)
+                } else {
+                    range.1
+                };
+                position.move_to_mut(start, area);
+                self.render_fragments(
+                    &mut position,
+                    area,
+                    buf,
+                    skip_width.saturating_add(start.saturating_sub(range.0)),
+                    end.saturating_sub(start),
+                    Some(Alignment::Center),
+                );
+            }
+            // If there is a right-aligned lines, render it.
+            if let Some((range, skip_width)) = right {
+                let candidates = [center, left];
+                let other = candidates.iter().flatten().next();
+                let start = if let Some((other_range, _)) = other {
+                    InlineText::overlap(*other_range, range)
+                        .map_or(range.0, |overlap| (overlap.0.saturating_add(overlap.1)) / 2)
+                } else {
+                    range.0
+                };
+                position.move_to_mut(start, area);
+                self.render_fragments(
+                    &mut position,
+                    area,
+                    buf,
+                    skip_width.saturating_add(start.saturating_sub(range.0)),
+                    range.1.saturating_sub(start),
+                    Some(Alignment::Right),
+                );
+            }
+            return;
+        };
         // If `alignment` is set, all Lines are concatenated and rendered according to the specified
         // alignment.
-        if let Some(((indent_width, _), skip_width)) =
+        if let Some(((indent_width, area_width), skip_width)) =
             InlineText::alignment_bounds(width, area.width, alignment)
         {
             let mut position = area.as_position();
             position.step_wrapping_mut(indent_width, area);
-            self.render_fragments(&mut position, area, buf, skip_width, area.width, None);
+            self.render_fragments(&mut position, area, buf, skip_width, area_width, None);
         }
     }
 }
@@ -970,6 +1046,20 @@ impl Position {
         dy.saturating_mul(area.width).saturating_add(dx)
     }
 
+    // Moves this position to the coordinates corresponding to the given linear `index` within
+    // `area`.
+    const fn move_to_mut(&mut self, index: u16, area: Rect) -> &Self {
+        let dx = index
+            .checked_rem(area.width)
+            .expect("division by zero while computing remainder for wrapped position");
+        let dy = index
+            .checked_div(area.width)
+            .expect("division by zero while computing wrapped line count");
+        self.x = area.x.saturating_add(dx);
+        self.y = area.y.saturating_add(dy);
+        self
+    }
+
     // Increments this position by `width` coordinate-wise, wrapping within `area` if needed.
     const fn step_wrapping_mut(&mut self, width: u16, area: Rect) -> &Self {
         if area.is_empty() || !area.contains(*self) {
@@ -1075,10 +1165,10 @@ impl InlineText<'_> {
     }
 
     // Calculates the overlapping range between two ranges.
-    //fn overlap(lhs: (u16, u16), rhs: (u16, u16)) -> Option<(u16, u16)> {
-    //    let overlap = (lhs.0.max(rhs.0), lhs.1.min(rhs.1));
-    //    (overlap.0 < overlap.1).then_some(overlap)
-    //}
+    fn overlap(lhs: (u16, u16), rhs: (u16, u16)) -> Option<(u16, u16)> {
+        let overlap = (lhs.0.max(rhs.0), lhs.1.min(rhs.1));
+        (overlap.0 < overlap.1).then_some(overlap)
+    }
 }
 
 impl Styled for InlineText<'_> {

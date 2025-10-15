@@ -57,7 +57,7 @@ fn widgets_block_titles_overlap() {
             .title(Line::from("bbb").centered())
             .title(Line::from("ccc").right_aligned()),
         Rect::new(0, 0, 10, 1),
-        ["aaabbb ccc"],
+        ["aaaabb ccc"],
     );
 
     // Right alignment overrides the center alignment which overrides the left alignment
@@ -67,7 +67,7 @@ fn widgets_block_titles_overlap() {
             .title(Line::from("bbbbb").centered())
             .title(Line::from("ccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
-        ["aaabbbccccc"],
+        ["aaaabbbcccc"],
     );
 
     // Center alignment overwrites multiple left alignment, right alignment overwrites center
@@ -79,7 +79,7 @@ fn widgets_block_titles_overlap() {
             .title(Line::from("bbbbb").centered())
             .title(Line::from("ccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
-        ["aaabbbccccc"],
+        ["aaaaabbcccc"],
     );
 
     // Right alignment overrides the center alignment
@@ -88,7 +88,7 @@ fn widgets_block_titles_overlap() {
             .title(Line::from("bbbbb").centered())
             .title(Line::from("ccccccccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
-        ["ccccccccccc"],
+        ["   bbcccccc"],
     );
 }
 

@@ -891,56 +891,17 @@ impl Block<'_> {
     }
 
     fn render_title_position(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        // NOTE: the order in which these functions are called defines the overlapping behavior
-        self.render_left_titles(position, area, buf);
-        self.render_center_titles(position, area, buf);
-        self.render_right_titles(position, area, buf);
-    }
-
-    /// Render titles aligned to the right of the block
-    fn render_right_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         let titles = InlineText::from(
-            self.filtered_titles(position, Alignment::Right)
+            self.filtered_titles(position)
                 .cloned()
+                .map(|mut line| {
+                    line.alignment.get_or_insert(self.titles_alignment);
+                    line
+                })
                 .collect_vec(),
         )
         .style(self.titles_style)
-        .space(1)
-        .right_aligned();
-        let titles_area = self.titles_area(area, position);
-        if titles.width() == 0 || titles_area.is_empty() {
-            return;
-        }
-        titles.render(titles_area, buf);
-    }
-
-    /// Render titles in the center of the block
-    fn render_center_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let titles = InlineText::from(
-            self.filtered_titles(position, Alignment::Center)
-                .cloned()
-                .collect_vec(),
-        )
-        .style(self.titles_style)
-        .space(1)
-        .centered();
-        let titles_area = self.titles_area(area, position);
-        if titles.width() == 0 || titles_area.is_empty() {
-            return;
-        }
-        titles.render(titles_area, buf);
-    }
-
-    /// Render titles aligned to the left of the block
-    fn render_left_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
-        let titles = InlineText::from(
-            self.filtered_titles(position, Alignment::Left)
-                .cloned()
-                .collect_vec(),
-        )
-        .style(self.titles_style)
-        .space(1)
-        .left_aligned();
+        .space(1);
         let titles_area = self.titles_area(area, position);
         if titles.width() == 0 || titles_area.is_empty() {
             return;
@@ -952,12 +913,10 @@ impl Block<'_> {
     fn filtered_titles(
         &self,
         position: TitlePosition,
-        alignment: Alignment,
     ) -> impl DoubleEndedIterator<Item = &Line<'_>> {
         self.titles
             .iter()
             .filter(move |(pos, _)| pos.unwrap_or(self.titles_position) == position)
-            .filter(move |(_, line)| line.alignment.unwrap_or(self.titles_alignment) == alignment)
             .map(|(_, line)| line)
     }
 
@@ -2033,7 +1992,7 @@ mod tests {
             .title("L1234")
             .title(Line::from("C5678").centered())
             .render(buffer.area, &mut buffer);
-        assert_eq!(buffer, Buffer::with_lines(["L1C5678   "]));
+        assert_eq!(buffer, Buffer::with_lines(["L125678   "]));
     }
 
     #[test]
@@ -2043,7 +2002,7 @@ mod tests {
             .title("L12345")
             .title(Line::from("R67890").right_aligned())
             .render(buffer.area, &mut buffer);
-        assert_eq!(buffer, Buffer::with_lines(["L123R67890"]));
+        assert_eq!(buffer, Buffer::with_lines(["L123467890"]));
     }
 
     #[test]
@@ -2053,7 +2012,7 @@ mod tests {
             .title(Line::from("C12345").centered())
             .title(Line::from("R67890").right_aligned())
             .render(buffer.area, &mut buffer);
-        assert_eq!(buffer, Buffer::with_lines(["  C1R67890"]));
+        assert_eq!(buffer, Buffer::with_lines(["  C1237890"]));
     }
 
     #[test]
