@@ -387,8 +387,12 @@ impl<'a> InlineText<'a> {
     /// ```
     #[must_use = "method returns the inline's width and should not be ignored"]
     pub fn width(&self) -> usize {
-        let (left, center, right) = self.alignment_widths();
-        left.saturating_add(center).saturating_add(right)
+        self.span_or_space_iter(None)
+            .map(|span_or_space| match span_or_space {
+                SpanOrSpace::Span(span, _) => span.width(),
+                SpanOrSpace::Space(space, _) => space,
+            })
+            .sum()
     }
 
     /// Returns an iterator over the [`Line`]s of this `InlineText`.
@@ -492,36 +496,6 @@ impl<'a> InlineText<'a> {
                     Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
                 }
             })
-    }
-
-    // Calculates the total width of spans for each alignment (Left, Center, Right).
-    fn alignment_widths(&self) -> (usize, usize, usize) {
-        // Tracks (total width, number of spans) for each alignment as an array [Left, Center,
-        // Right].
-        let acc = {
-            let mut acc: [(usize, usize); 3] = [(0, 0); 3];
-            self.lines
-                .iter()
-                .flat_map(|line| {
-                    let alignment = line.alignment.unwrap_or(Alignment::Left);
-                    line.spans.iter().map(move |span| (span, alignment))
-                })
-                .for_each(|(span, alignment)| {
-                    let i = match alignment {
-                        Alignment::Left => 0,
-                        Alignment::Center => 1,
-                        Alignment::Right => 2,
-                    };
-                    acc[i].0 = acc[i].0.saturating_add(span.width());
-                    acc[i].1 = acc[i].1.saturating_add(1);
-                });
-            acc
-        };
-        // Adds spacing and convert to final widths.
-        acc.map(|(width, count): (usize, usize)| {
-            width.saturating_add(count.saturating_sub(1).saturating_mul(self.space))
-        })
-        .into()
     }
 }
 
@@ -698,10 +672,6 @@ impl Widget for &InlineText<'_> {
         if area.is_empty() {
             return;
         }
-        let width = u16::try_from(self.width()).unwrap_or(u16::MAX);
-        if width == 0 {
-            return;
-        }
         buf.set_style(area, self.style);
         // If `alignment` is not set, each `Line`'s own alignment is used to group, reorder, and
         // align individually.
@@ -788,6 +758,10 @@ impl Widget for &InlineText<'_> {
         };
         // If `alignment` is set, all Lines are concatenated and rendered according to the specified
         // alignment.
+        let width = u16::try_from(self.width()).unwrap_or(u16::MAX);
+        if width == 0 {
+            return;
+        }
         if let Some(((indent_width, area_width), skip_width)) =
             InlineText::alignment_bounds(width, area.width, alignment)
         {
@@ -1135,6 +1109,36 @@ impl Position {
 }
 
 impl InlineText<'_> {
+    // Calculates the total width of spans for each alignment (Left, Center, Right).
+    fn alignment_widths(&self) -> (usize, usize, usize) {
+        // Tracks (total width, number of spans) for each alignment as an array [Left, Center,
+        // Right].
+        let acc = {
+            let mut acc: [(usize, usize); 3] = [(0, 0); 3];
+            self.lines
+                .iter()
+                .flat_map(|line| {
+                    let alignment = line.alignment.unwrap_or(Alignment::Left);
+                    line.spans.iter().map(move |span| (span, alignment))
+                })
+                .for_each(|(span, alignment)| {
+                    let i = match alignment {
+                        Alignment::Left => 0,
+                        Alignment::Center => 1,
+                        Alignment::Right => 2,
+                    };
+                    acc[i].0 = acc[i].0.saturating_add(span.width());
+                    acc[i].1 = acc[i].1.saturating_add(1);
+                });
+            acc
+        };
+        // Adds spacing and convert to final widths.
+        acc.map(|(width, count): (usize, usize)| {
+            width.saturating_add(count.saturating_sub(1).saturating_mul(self.space))
+        })
+        .into()
+    }
+
     // Returns ([start_index, end_index), skip_width) for the given alignment within `area_width`.
     fn alignment_bounds(
         width: u16,
