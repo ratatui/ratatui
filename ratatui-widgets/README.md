@@ -39,6 +39,7 @@ cargo add ratatui-widgets
 - [`calendar::Monthly`]: displays a single month.
 - [`Canvas`]: draws arbitrary shapes using drawing characters.
 - [`Chart`]: displays multiple datasets as lines or scatter graphs.
+- [`Checkbox`]: displays a checkbox with a label that can be checked or unchecked.
 - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
 - [`Gauge`]: displays progress percentage using block characters.
 - [`LineGauge`]: displays progress as a line.
@@ -56,6 +57,7 @@ cargo add ratatui-widgets
 [`calendar::Monthly`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/calendar/struct.Monthly.html
 [`Canvas`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/canvas/struct.Canvas.html
 [`Chart`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/chart/struct.Chart.html
+[`Checkbox`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/checkbox/struct.Checkbox.html
 [`Clear`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/clear/struct.Clear.html
 [`Gauge`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/gauge/struct.Gauge.html
 [`LineGauge`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/gauge/struct.LineGauge.html
