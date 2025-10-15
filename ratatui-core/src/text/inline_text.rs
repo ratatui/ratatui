@@ -387,12 +387,8 @@ impl<'a> InlineText<'a> {
     /// ```
     #[must_use = "method returns the inline's width and should not be ignored"]
     pub fn width(&self) -> usize {
-        self.span_or_space_iter(None)
-            .map(|span_or_space| match span_or_space {
-                SpanOrSpace::Span(span, _) => span.width(),
-                SpanOrSpace::Space(space, _) => space,
-            })
-            .sum()
+        let (left, center, right) = self.alignment_widths();
+        left.saturating_add(center).saturating_add(right)
     }
 
     /// Returns an iterator over the [`Line`]s of this `InlineText`.
@@ -496,6 +492,36 @@ impl<'a> InlineText<'a> {
                     Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
                 }
             })
+    }
+
+    // Calculates the total width of spans for each alignment (Left, Center, Right).
+    fn alignment_widths(&self) -> (usize, usize, usize) {
+        // Tracks (total width, number of spans) for each alignment as an array [Left, Center,
+        // Right].
+        let acc = {
+            let mut acc: [(usize, usize); 3] = [(0, 0); 3];
+            self.lines
+                .iter()
+                .flat_map(|line| {
+                    let alignment = line.alignment.unwrap_or(Alignment::Left);
+                    line.spans.iter().map(move |span| (span, alignment))
+                })
+                .for_each(|(span, alignment)| {
+                    let i = match alignment {
+                        Alignment::Left => 0,
+                        Alignment::Center => 1,
+                        Alignment::Right => 2,
+                    };
+                    acc[i].0 = acc[i].0.saturating_add(span.width());
+                    acc[i].1 = acc[i].1.saturating_add(1);
+                });
+            acc
+        };
+        // Adds spacing and convert to final widths.
+        acc.map(|(width, count): (usize, usize)| {
+            width.saturating_add(count.saturating_sub(1).saturating_mul(self.space))
+        })
+        .into()
     }
 }
 
@@ -672,37 +698,26 @@ impl Widget for &InlineText<'_> {
         if area.is_empty() {
             return;
         }
-        let area_width = usize::from(area.width);
-        let inline_width = self.width();
-        if inline_width == 0 {
+        let width = u16::try_from(self.width()).unwrap_or(u16::MAX);
+        if width == 0 {
             return;
         }
         buf.set_style(area, self.style);
-        if inline_width <= area_width {
-            let indent_width = match self.alignment {
-                Some(Alignment::Center) => (area_width.saturating_sub(inline_width)) / 2,
-                Some(Alignment::Right) => area_width.saturating_sub(inline_width),
-                Some(Alignment::Left) | None => 0,
-            };
-            let indent_width = u16::try_from(indent_width).unwrap_or_else(|err| {
-                panic!(
-                    "failed to convert indent width (usize) {} to u16: {}",
-                    indent_width, err
-                )
-            });
-            // NOTE: Check if this is valid for grapheme increment later, i.e.,
-            // `try_step_wrapping_mut`.
+        // If `alignment` is not set, each `Line`'s own alignment is used to group, reorder, and
+        // align individually.
+        //let Some(alignment) = self.alignment else {
+        //    // PLACEHOLDER
+        //    return;
+        //};
+        let alignment = self.alignment.unwrap_or(Alignment::Left);
+        // If `alignment` is set, all Lines are concatenated and rendered according to the specified
+        // alignment.
+        if let Some(((indent_width, _), skip_width)) =
+            InlineText::alignment_bounds(width, area.width, alignment)
+        {
             let mut position = area.as_position();
             position.step_wrapping_mut(indent_width, area);
-            self.render_fragments(&mut position, area, buf, 0, area_width, None);
-        } else {
-            let skip_width = match self.alignment {
-                Some(Alignment::Center) => (inline_width.saturating_sub(area_width)) / 2,
-                Some(Alignment::Right) => inline_width.saturating_sub(area_width),
-                Some(Alignment::Left) | None => 0,
-            };
-            let mut position = area.as_position();
-            self.render_fragments(&mut position, area, buf, skip_width, area_width, None);
+            self.render_fragments(&mut position, area, buf, skip_width, area.width, None);
         }
     }
 }
@@ -714,8 +729,8 @@ impl InlineText<'_> {
         position: &mut Position,
         area: Rect,
         buf: &mut Buffer,
-        offset: usize,
-        width: usize,
+        offset: u16,
+        width: u16,
         maybe_alignment: Option<Alignment>,
     ) {
         for fragment in self
@@ -730,13 +745,8 @@ impl InlineText<'_> {
                     span.render_wrapping(position, *line_style, area, buf);
                 }
                 Fragment::Space(space, line_style) => {
-                    let space = u16::try_from(space).unwrap_or_else(|err| {
-                        panic!(
-                            "failed to convert space width (usize) {} to u16: {}",
-                            space, err
-                        )
-                    });
                     // NOTE: Should be the style reset here instead?
+                    let space = u16::try_from(space).unwrap_or(u16::MAX);
                     for spaced_position in &mut *position
                         .iter_wrapping_to(*position.step_wrapping_mut(space, area), area)
                     {
@@ -784,14 +794,19 @@ trait FragmentIteratorExt<'a>: Iterator<Item = SpanOrSpace<'a>> + Sized {
     // consumed.
     fn into_fragment_iter(
         self,
-        mut offset: usize,
-        remaining: usize,
+        mut offset: u16,
+        remaining: u16,
     ) -> impl Iterator<Item = Fragment<'a>> {
         self
             // Attach width to each `SpanOrSpace`.
             .map(|span_or_space| match span_or_space {
-                SpanOrSpace::Span(span, _) => (span_or_space, span.width()),
-                SpanOrSpace::Space(space, _) => (span_or_space, space),
+                SpanOrSpace::Span(span, _) => (
+                    span_or_space,
+                    u16::try_from(span.width()).unwrap_or(u16::MAX),
+                ),
+                SpanOrSpace::Space(space, _) => {
+                    (span_or_space, u16::try_from(space).unwrap_or(u16::MAX))
+                }
             })
             // Skip elements until the starting offset is reached.
             .skip_while(move |(_, width)| {
@@ -803,41 +818,45 @@ trait FragmentIteratorExt<'a>: Iterator<Item = SpanOrSpace<'a>> + Sized {
                 }
             })
             // Compute the visible width after applying left-side offset.
-            .map(move |(span_or_space, mut width)| {
+            .map(move |(span_or_space, width)| {
+                let mut left_trimmed_width = width;
                 if offset > 0 {
-                    width = width.saturating_sub(offset);
+                    left_trimmed_width = width.saturating_sub(offset);
                     offset = 0;
                 }
-                (span_or_space, width)
+                (span_or_space, width, left_trimmed_width)
             })
             // Limit iteration to the requested `remaining` width and compute the final visible
             // width.
             .scan(
                 remaining,
-                move |remaining, (span_or_space, left_trimmed_width)| {
+                move |remaining, (span_or_space, width, left_trimmed_width)| {
                     if *remaining == 0 {
                         None
                     } else {
                         let content_width = left_trimmed_width.min(*remaining);
                         *remaining = remaining.saturating_sub(content_width);
-                        Some((span_or_space, left_trimmed_width, content_width))
+                        Some((span_or_space, width, left_trimmed_width, content_width))
                     }
                 },
             )
             // Convert width metadata back into renderable `Fragment`s.
             .map(
-                |(span_or_space, left_trimmed_width, content_width)| match span_or_space {
+                |(span_or_space, width, left_trimmed_width, content_width)| match span_or_space {
                     SpanOrSpace::Span(span, line_style) => {
-                        if span.width() == content_width {
+                        if width == content_width {
                             Fragment::Span(span, line_style)
                         } else {
-                            let (content, _) =
-                                span.content.unicode_truncate_start(left_trimmed_width);
-                            let (content, _) = content.unicode_truncate(content_width);
+                            let (content, _) = span
+                                .content
+                                .unicode_truncate_start(left_trimmed_width.into());
+                            let (content, _) = content.unicode_truncate(content_width.into());
                             Fragment::PartialSpan(Span::styled(content, span.style), line_style)
                         }
                     }
-                    SpanOrSpace::Space(_, line_style) => Fragment::Space(content_width, line_style),
+                    SpanOrSpace::Space(_, line_style) => {
+                        Fragment::Space(content_width.into(), line_style)
+                    }
                 },
             )
     }
@@ -905,13 +924,7 @@ impl Span<'_> {
         }
         // Renders the first grapheme, handling zero-width prefix if present.
         if let Some(first) = graphemes.next() {
-            let symbol_width = u16::try_from(first.symbol.width()).unwrap_or_else(|err| {
-                panic!(
-                    "failed to convert symbol width (usize) {} to u16: {}",
-                    first.symbol.width(),
-                    err
-                )
-            });
+            let symbol_width = u16::try_from(first.symbol.width()).unwrap_or(u16::MAX);
             // Advances the cursor; stop rendering if the current position is out of bounds.
             let Some(next_position) = position.try_step_wrapping_mut(symbol_width, area) else {
                 return;
@@ -928,13 +941,7 @@ impl Span<'_> {
             *position = next_position;
             // Processes the remaining graphemes.
             for grapheme in graphemes {
-                let symbol_width = u16::try_from(grapheme.symbol.width()).unwrap_or_else(|err| {
-                    panic!(
-                        "failed to convert symbol width (usize) {} to u16: {}",
-                        grapheme.symbol.width(),
-                        err
-                    )
-                });
+                let symbol_width = u16::try_from(grapheme.symbol.width()).unwrap_or(u16::MAX);
                 // Continues the same cursor; zero-width graphemes are appended to the previous
                 // cell.
                 if symbol_width == 0 {
@@ -1037,27 +1044,42 @@ impl Position {
     }
 }
 
-// Represents an inclusive range of indices, i.e., `[start, end)`.
-//
-// # Fields
-// - `usize`: The start index of the range (inclusive).
-// - `usize`: The end index of the range (exclusive).
-//type Range = (usize, usize);
+impl InlineText<'_> {
+    // Returns ([start_index, end_index), skip_width) for the given alignment within `area_width`.
+    fn alignment_bounds(
+        width: u16,
+        area_width: u16,
+        alignment: Alignment,
+    ) -> Option<((u16, u16), u16)> {
+        (width > 0).then(|| match alignment {
+            Alignment::Left => ((0, width.min(area_width)), 0),
+            Alignment::Center => {
+                if width > area_width {
+                    let overflow = width.saturating_sub(area_width);
+                    let skip_width = overflow / 2;
+                    ((0, area_width), skip_width)
+                } else {
+                    let space = area_width.saturating_sub(width);
+                    let indent_width = space / 2;
+                    ((indent_width, indent_width.saturating_add(width)), 0)
+                }
+            }
+            Alignment::Right => {
+                if width > area_width {
+                    ((0, area_width), width.saturating_sub(area_width))
+                } else {
+                    ((area_width.saturating_sub(width), area_width), 0)
+                }
+            }
+        })
+    }
 
-// Represents an optional inclusive range of indices, i.e., `[start, end]`.
-//
-// # Fields
-// - `Some(Range)`: The inclusive range of overlapping indices.
-// - `None`: Indicates that there is no overlap.
-//type Overlap = Option<Range>;
-
-//impl InlineText<'_> {
-//    // Calculates the overlapping range between two ranges.
-//    fn overlap(lhs: Range, rhs: Range) -> Overlap {
-//        let overlap = (lhs.0.max(rhs.0), lhs.1.min(rhs.1));
-//        (overlap.0 < overlap.1).then_some(overlap)
-//    }
-//}
+    // Calculates the overlapping range between two ranges.
+    //fn overlap(lhs: (u16, u16), rhs: (u16, u16)) -> Option<(u16, u16)> {
+    //    let overlap = (lhs.0.max(rhs.0), lhs.1.min(rhs.1));
+    //    (overlap.0 < overlap.1).then_some(overlap)
+    //}
+}
 
 impl Styled for InlineText<'_> {
     type Item = Self;
