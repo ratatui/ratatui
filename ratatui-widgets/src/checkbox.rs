@@ -498,4 +498,67 @@ mod tests {
         assert_eq!(checkbox.checkbox_style.fg, Some(Color::Green));
         assert_eq!(checkbox.label_style.fg, Some(Color::Gray));
     }
+
+    #[test]
+    fn checkbox_emoji_symbols() {
+        let checkbox = Checkbox::new("Test", true)
+            .checked_symbol("✅ ")
+            .unchecked_symbol("⬜ ");
+
+        assert_eq!(checkbox.checked_symbol, "✅ ");
+        assert_eq!(checkbox.unchecked_symbol, "⬜ ");
+    }
+
+    #[test]
+    fn checkbox_unicode_symbols() {
+        let checkbox = Checkbox::new("Test", false)
+            .checked_symbol("● ")
+            .unchecked_symbol("○ ");
+
+        assert_eq!(checkbox.checked_symbol, "● ");
+        assert_eq!(checkbox.unchecked_symbol, "○ ");
+    }
+
+    #[test]
+    fn checkbox_arrow_symbols() {
+        let checkbox = Checkbox::new("Test", true)
+            .checked_symbol("▶ ")
+            .unchecked_symbol("▷ ");
+
+        assert_eq!(checkbox.checked_symbol, "▶ ");
+        assert_eq!(checkbox.unchecked_symbol, "▷ ");
+    }
+
+    #[test]
+    fn checkbox_parenthesis_symbols() {
+        let checkbox = Checkbox::new("Test", false)
+            .checked_symbol("(X)")
+            .unchecked_symbol("(O)");
+
+        assert_eq!(checkbox.checked_symbol, "(X)");
+        assert_eq!(checkbox.unchecked_symbol, "(O)");
+    }
+
+    #[test]
+    fn checkbox_render_emoji() {
+        let checkbox = Checkbox::new("Emoji", true)
+            .checked_symbol("✅ ")
+            .unchecked_symbol("⬜ ");
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 1));
+        checkbox.render(buffer.area, &mut buffer);
+
+        // Should render without panic
+        assert!(!buffer.content().is_empty());
+    }
+
+    #[test]
+    fn checkbox_label_style_overrides() {
+        let checkbox = Checkbox::new("Test", true)
+            .style(Style::default().fg(Color::White))
+            .label_style(Style::default().fg(Color::Blue));
+
+        assert_eq!(checkbox.style.fg, Some(Color::White));
+        assert_eq!(checkbox.label_style.fg, Some(Color::Blue));
+    }
 }
