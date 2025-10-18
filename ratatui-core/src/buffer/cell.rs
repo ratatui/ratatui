@@ -61,15 +61,15 @@ impl From<char> for EmbeddedStr {
     fn from(c: char) -> Self {
         let c = c as u32;
 
-        // Fast path for ASCII (0-127)
-        if c < 128 {
+        // fast path for ASCII
+        if c < 0x7F {
             return Self {
                 bytes: [c as u8, 0, 0],
                 len: 1,
             };
         }
 
-        // Direct UTF-8 encoding without temp array
+        // direct UTF-8 encoding
         let mut bytes = [0u8; 3];
         let len = if c < 0x800 {
             // 2-byte UTF-8: 110xxxxx 10xxxxxx
@@ -83,7 +83,7 @@ impl From<char> for EmbeddedStr {
             bytes[2] = 0x80 | ((c & 0x3F) as u8);
             3
         } else {
-            // 4-byte chars fallback to space
+            // 4-byte chars fallback to space (they don't exist in bmp fonts)
             bytes[0] = b' ';
             1
         };
@@ -95,14 +95,6 @@ impl From<char> for EmbeddedStr {
 impl From<&str> for EmbeddedStr {
     fn from(s: &str) -> Self {
         let bytes = s.as_bytes();
-
-        // Fast paths
-        if bytes.is_empty() {
-            return Self {
-                bytes: [b' ', 0, 0],
-                len: 1,
-            };
-        }
 
         if bytes.len() <= 3 { // s.is_char_boundary(bytes.len()) {
             let mut result_bytes = [0u8; 3];

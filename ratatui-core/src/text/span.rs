@@ -307,21 +307,23 @@ impl<'a> Span<'a> {
         &'a self,
         base_style: S,
     ) -> impl Iterator<Item = StyledGrapheme<'a>> {
+        use core::iter::once;
+        
         let style = base_style.into().patch(self.style);
         if self.content.len() <= 4 {
-            return [
-                StyledGrapheme {
-                    symbol: self.content.as_ref(),
-                    style,
-                }
-            ].into_iter();
+            itertools::Either::Left(once(StyledGrapheme {
+                symbol: self.content.as_ref(),
+                style,
+            }))
+        } else {
+            itertools::Either::Right(
+                self.content
+                    .as_ref()
+                    .graphemes(true)
+                    .filter(|g| !g.contains(char::is_control))
+                    .map(move |g| StyledGrapheme { symbol: g, style })
+            )
         }
-
-        self.content
-            .as_ref()
-            .graphemes(true)
-            .filter(|g| !g.contains(char::is_control))
-            .map(move |g| StyledGrapheme { symbol: g, style })
     }
 
     /// Converts this Span into a left-aligned [`Line`]
