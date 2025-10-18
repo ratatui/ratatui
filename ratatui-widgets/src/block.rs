@@ -436,7 +436,8 @@ impl<'a> Block<'a> {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{ widgets::Block, text::Line };
+    /// use ratatui::text::Line;
+    /// use ratatui::widgets::Block;
     ///
     /// Block::bordered()
     ///     .title_left("Left") // By default in the top left corner
@@ -444,25 +445,25 @@ impl<'a> Block<'a> {
     ///     .title_left(Line::from("Center").centered());
     ///
     /// // Renders
-    /// // ┌──────────────────────────────────┐
-    /// // L                                  │
-    /// // e                                  │
-    /// // f                                  │
-    /// // t                                  │
-    /// // │                                  │
-    /// // C                                  │
-    /// // e                                  │
-    /// // n                                  │
-    /// // t                                  │
-    /// // e                                  │
-    /// // r                                  │
-    /// // │                                  │
-    /// // R                                  │
-    /// // i                                  │
-    /// // g                                  │
-    /// // h                                  │
-    /// // t                                  │
-    /// // └──────────────────────────────────┘
+    /// // ┌──┐
+    /// // L  │
+    /// // e  │
+    /// // f  │
+    /// // t  │
+    /// // │  │
+    /// // C  │
+    /// // e  │
+    /// // n  │
+    /// // t  │
+    /// // e  │
+    /// // r  │
+    /// // │  │
+    /// // R  │
+    /// // i  │
+    /// // g  │
+    /// // h  │
+    /// // t  │
+    /// // └──┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_left<T: Into<Line<'a>>>(mut self, title: T) -> Self {
@@ -480,7 +481,8 @@ impl<'a> Block<'a> {
     /// # Example
     ///
     /// ```
-    /// use ratatui::{ widgets::Block, text::Line };
+    /// use ratatui::text::Line;
+    /// use ratatui::widgets::Block;
     ///
     /// Block::bordered()
     ///     .title_right("Left") // By default in the top left corner
@@ -488,25 +490,25 @@ impl<'a> Block<'a> {
     ///     .title_right(Line::from("Center").centered());
     ///
     /// // Renders
-    /// // ┌──────────────────────────────────┐
-    /// // │                                  L
-    /// // │                                  e
-    /// // │                                  f
-    /// // │                                  t
-    /// // │                                  │
-    /// // │                                  C
-    /// // │                                  e
-    /// // │                                  n
-    /// // │                                  t
-    /// // │                                  e
-    /// // │                                  r
-    /// // │                                  │
-    /// // │                                  R
-    /// // │                                  i
-    /// // │                                  g
-    /// // │                                  h
-    /// // │                                  t
-    /// // └──────────────────────────────────┘
+    /// // ┌──┐
+    /// // │  L
+    /// // │  e
+    /// // │  f
+    /// // │  t
+    /// // │  │
+    /// // │  C
+    /// // │  e
+    /// // │  n
+    /// // │  t
+    /// // │  e
+    /// // │  r
+    /// // │  │
+    /// // │  R
+    /// // │  i
+    /// // │  g
+    /// // │  h
+    /// // │  t
+    /// // └──┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_right<T: Into<Line<'a>>>(mut self, title: T) -> Self {
@@ -978,10 +980,14 @@ impl Block<'_> {
     }
 
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
-        self.render_title_position(TitlePosition::Top, area, buf);
-        self.render_title_position(TitlePosition::Bottom, area, buf);
-        self.render_title_position(TitlePosition::Left, area, buf);
-        self.render_title_position(TitlePosition::Right, area, buf);
+        for position in [
+            TitlePosition::Top,
+            TitlePosition::Bottom,
+            TitlePosition::Left,
+            TitlePosition::Right,
+        ] {
+            self.render_title_position(position, area, buf);
+        }
     }
 
     fn render_title_position(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
@@ -1024,7 +1030,7 @@ impl Block<'_> {
         let right_border = u16::from(self.borders.contains(Borders::RIGHT));
         match position {
             TitlePosition::Top => Rect {
-                x: area.left() + left_border,
+                x: area.left().saturating_add(left_border),
                 y: area.top(),
                 width: area
                     .width
@@ -1033,8 +1039,8 @@ impl Block<'_> {
                 height: 1,
             },
             TitlePosition::Bottom => Rect {
-                x: area.left() + left_border,
-                y: area.bottom() - 1,
+                x: area.left().saturating_add(left_border),
+                y: area.bottom().saturating_sub(1),
                 width: area
                     .width
                     .saturating_sub(left_border)
@@ -1043,7 +1049,7 @@ impl Block<'_> {
             },
             TitlePosition::Left => Rect {
                 x: area.left(),
-                y: area.top() + top_border,
+                y: area.top().saturating_add(top_border),
                 width: 1,
                 height: area
                     .height
@@ -1051,7 +1057,7 @@ impl Block<'_> {
                     .saturating_sub(bottom_border),
             },
             TitlePosition::Right => Rect {
-                x: area.right() - 1,
+                x: area.right().saturating_sub(1),
                 y: area.top() + top_border,
                 width: 1,
                 height: area
@@ -1064,16 +1070,15 @@ impl Block<'_> {
 
     /// Calculate the left, and right space the [`Block`] will take up.
     ///
-    /// The result takes the [`Block`]'s, [`Borders`], and [`Padding`] into account.
+    /// Takes the [`Padding`], [`TitlePosition`], and the [`Borders`] that are selected into
+    /// account when calculating the result.
     pub(crate) fn horizontal_space(&self) -> (u16, u16) {
-        let left = self
-            .padding
-            .left
-            .saturating_add(u16::from(self.borders.contains(Borders::LEFT)));
-        let right = self
-            .padding
-            .right
-            .saturating_add(u16::from(self.borders.contains(Borders::RIGHT)));
+        let has_left =
+            self.borders.contains(Borders::LEFT) || self.has_title_at_position(TitlePosition::Left);
+        let left = self.padding.left.saturating_add(u16::from(has_left));
+        let has_right = self.borders.contains(Borders::RIGHT)
+            || self.has_title_at_position(TitlePosition::Right);
+        let right = self.padding.right.saturating_add(u16::from(has_right));
         (left, right)
     }
 
@@ -1184,12 +1189,16 @@ mod tests {
     }
 
     #[rstest]
-    #[case::top_top(Block::new().title_top("Test").borders(Borders::TOP), Rect::new(0, 1, 0, 1))]
-    #[case::top_bot(Block::new().title_top("Test").borders(Borders::BOTTOM), Rect::new(0, 1, 0, 0))]
-    #[case::bot_top(Block::new().title_bottom("Test").borders(Borders::TOP), Rect::new(0, 1, 0, 0))]
-    #[case::bot_bot(Block::new().title_bottom("Test").borders(Borders::BOTTOM), Rect::new(0, 0, 0, 1))]
+    #[case::top_top(Block::new().title_top("Test").borders(Borders::TOP), Rect::new(0, 1, 2, 1))]
+    #[case::top_bot(Block::new().title_top("Test").borders(Borders::BOTTOM), Rect::new(0, 1, 2, 0))]
+    #[case::bot_top(Block::new().title_bottom("Test").borders(Borders::TOP), Rect::new(0, 1, 2, 0))]
+    #[case::bot_bot(Block::new().title_bottom("Test").borders(Borders::BOTTOM), Rect::new(0, 0, 2, 1))]
+    #[case::lft_lft(Block::new().title_left("Test").borders(Borders::LEFT), Rect::new(1, 0, 1, 2))]
+    #[case::lft_rgt(Block::new().title_left("Test").borders(Borders::RIGHT), Rect::new(0, 0, 1, 2))]
+    #[case::rgt_lft(Block::new().title_right("Test").borders(Borders::LEFT), Rect::new(1, 0, 1, 2))]
+    #[case::rgt_rgt(Block::new().title_right("Test").borders(Borders::RIGHT), Rect::new(0, 0, 1, 2))]
     fn inner_takes_into_account_border_and_title(#[case] block: Block, #[case] expected: Rect) {
-        let area = Rect::new(0, 0, 0, 2);
+        let area = Rect::new(0, 0, 2, 2);
         assert_eq!(block.inner(area), expected);
     }
 
@@ -1198,18 +1207,42 @@ mod tests {
         let block = Block::new();
         assert!(!block.has_title_at_position(TitlePosition::Top));
         assert!(!block.has_title_at_position(TitlePosition::Bottom));
+        assert!(!block.has_title_at_position(TitlePosition::Left));
+        assert!(!block.has_title_at_position(TitlePosition::Right));
 
         let block = Block::new().title_top("test");
         assert!(block.has_title_at_position(TitlePosition::Top));
         assert!(!block.has_title_at_position(TitlePosition::Bottom));
+        assert!(!block.has_title_at_position(TitlePosition::Left));
+        assert!(!block.has_title_at_position(TitlePosition::Right));
 
         let block = Block::new().title_bottom("test");
         assert!(!block.has_title_at_position(TitlePosition::Top));
         assert!(block.has_title_at_position(TitlePosition::Bottom));
+        assert!(!block.has_title_at_position(TitlePosition::Left));
+        assert!(!block.has_title_at_position(TitlePosition::Right));
 
-        let block = Block::new().title_top("test").title_bottom("test");
+        let block = Block::new().title_left("test");
+        assert!(!block.has_title_at_position(TitlePosition::Top));
+        assert!(!block.has_title_at_position(TitlePosition::Bottom));
+        assert!(block.has_title_at_position(TitlePosition::Left));
+        assert!(!block.has_title_at_position(TitlePosition::Right));
+
+        let block = Block::new().title_right("test");
+        assert!(!block.has_title_at_position(TitlePosition::Top));
+        assert!(!block.has_title_at_position(TitlePosition::Bottom));
+        assert!(!block.has_title_at_position(TitlePosition::Left));
+        assert!(block.has_title_at_position(TitlePosition::Right));
+
+        let block = Block::new()
+            .title_top("test")
+            .title_bottom("test")
+            .title_left("test")
+            .title_right("test");
         assert!(block.has_title_at_position(TitlePosition::Top));
         assert!(block.has_title_at_position(TitlePosition::Bottom));
+        assert!(block.has_title_at_position(TitlePosition::Left));
+        assert!(block.has_title_at_position(TitlePosition::Right));
     }
 
     #[rstest]
@@ -1304,6 +1337,15 @@ mod tests {
         assert_eq!(block.horizontal_space(), (1, 0));
     }
 
+    #[test]
+    fn horizonral_space_takes_into_account_titles() {
+        let block = Block::new().title_left("Test");
+        assert_eq!(block.horizontal_space(), (1, 0));
+
+        let block = Block::new().title_right("Test");
+        assert_eq!(block.horizontal_space(), (0, 1));
+    }
+
     #[rstest]
     #[case::all_bordered_all_padded(Block::bordered(), Padding::new(1, 1, 1, 1), (2, 2))]
     #[case::all_bordered_left_padded(Block::bordered(), Padding::new(1, 0, 0, 0), (2, 1))]
@@ -1320,6 +1362,25 @@ mod tests {
         #[case] horizontal_space: (u16, u16),
     ) {
         let block = block.padding(padding);
+        assert_eq!(block.horizontal_space(), horizontal_space);
+    }
+
+    #[rstest]
+    #[case::top_border_left_title(Block::new(), Borders::TOP, TitlePosition::Left, (1, 0))]
+    #[case::right_border_left_title(Block::new(), Borders::RIGHT, TitlePosition::Left, (1, 1))]
+    #[case::bottom_border_left_title(Block::new(), Borders::BOTTOM, TitlePosition::Left, (1, 0))]
+    #[case::left_border_left_title(Block::new(), Borders::LEFT, TitlePosition::Left, (1, 0))]
+    #[case::top_border_right_title(Block::new(), Borders::TOP, TitlePosition::Right, (0, 1))]
+    #[case::right_border_right_title(Block::new(), Borders::RIGHT, TitlePosition::Right, (0, 1))]
+    #[case::bottom_border_right_title(Block::new(), Borders::BOTTOM, TitlePosition::Right, (0, 1))]
+    #[case::left_border_right_title(Block::new(), Borders::LEFT, TitlePosition::Right, (1, 1))]
+    fn horizontal_space_takes_into_account_borders_and_title(
+        #[case] block: Block,
+        #[case] borders: Borders,
+        #[case] pos: TitlePosition,
+        #[case] horizontal_space: (u16, u16),
+    ) {
+        let block = block.borders(borders).title_position(pos).title("Test");
         assert_eq!(block.horizontal_space(), horizontal_space);
     }
 
@@ -1439,6 +1500,30 @@ mod tests {
     }
 
     #[test]
+    fn title_left_right() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 7));
+        Block::bordered()
+            .title_left(Line::raw("A").left_aligned())
+            .title_left(Line::raw("B").centered())
+            .title_left(Line::raw("C").right_aligned())
+            .title_right(Line::raw("D").left_aligned())
+            .title_right(Line::raw("E").centered())
+            .title_right(Line::raw("F").right_aligned())
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌─┐",
+            "A D",
+            "│ │",
+            "B E",
+            "│ │",
+            "C F",
+            "└─┘",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
     fn title_alignment() {
         let tests = vec![
             (Alignment::Left, "test    "),
@@ -1456,6 +1541,32 @@ mod tests {
     }
 
     #[test]
+    fn title_alignment_vertical() {
+        let tests = vec![
+            (
+                Alignment::Left,
+                vec!["t", "e", "s", "t", " ", " ", " ", " "],
+            ),
+            (
+                Alignment::Center,
+                vec![" ", " ", "t", "e", "s", "t", " ", " "],
+            ),
+            (
+                Alignment::Right,
+                vec![" ", " ", " ", " ", "t", "e", "s", "t"],
+            ),
+        ];
+        for (alignment, expected) in tests {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 8));
+            Block::new()
+                .title_alignment(alignment)
+                .title_left("test")
+                .render(buffer.area, &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines(expected));
+        }
+    }
+
+    #[test]
     fn title_alignment_overrides_block_title_alignment() {
         let tests = vec![
             (Alignment::Right, Alignment::Left, "test    "),
@@ -1469,6 +1580,35 @@ mod tests {
                 .title(Line::from("test").alignment(alignment))
                 .render(buffer.area, &mut buffer);
             assert_eq!(buffer, Buffer::with_lines([expected]));
+        }
+    }
+
+    #[test]
+    fn title_alignment_overrides_block_title_alignment_vertical() {
+        let tests = vec![
+            (
+                Alignment::Right,
+                Alignment::Left,
+                vec!["t", "e", "s", "t", " ", " ", " ", " "],
+            ),
+            (
+                Alignment::Left,
+                Alignment::Center,
+                vec![" ", " ", "t", "e", "s", "t", " ", " "],
+            ),
+            (
+                Alignment::Center,
+                Alignment::Right,
+                vec![" ", " ", " ", " ", "t", "e", "s", "t"],
+            ),
+        ];
+        for (block_title_alignment, alignment, expected) in tests {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 8));
+            Block::new()
+                .title_alignment(block_title_alignment)
+                .title_left(Line::from("test").alignment(alignment))
+                .render(buffer.area, &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines(expected));
         }
     }
 
@@ -1491,6 +1631,13 @@ mod tests {
             .title("test")
             .render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["    ", "test"]));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 4));
+        Block::new()
+            .title_position(TitlePosition::Right)
+            .title_left("test")
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["t ", "e ", "s ", "t ",]));
     }
 
     #[test]
@@ -1502,6 +1649,16 @@ mod tests {
                 .title("test".yellow())
                 .render(buffer.area, &mut buffer);
             assert_eq!(buffer, Buffer::with_lines(["test".yellow()]));
+
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 4));
+            Block::new()
+                .title_alignment(alignment)
+                .title_left("test".yellow())
+                .render(buffer.area, &mut buffer);
+            assert_eq!(
+                buffer,
+                Buffer::with_lines(["t".yellow(), "e".yellow(), "s".yellow(), "t".yellow(),])
+            );
         }
     }
 
@@ -1528,6 +1685,22 @@ mod tests {
                 .title("test".yellow())
                 .render(buffer.area, &mut buffer);
             assert_eq!(buffer, Buffer::with_lines(["test".yellow().on_red()]));
+
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 4));
+            Block::new()
+                .title_alignment(alignment)
+                .title_style(Style::new().green().on_red())
+                .title_left("test".yellow())
+                .render(buffer.area, &mut buffer);
+            assert_eq!(
+                buffer,
+                Buffer::with_lines([
+                    "t".yellow().on_red(),
+                    "e".yellow().on_red(),
+                    "s".yellow().on_red(),
+                    "t".yellow().on_red(),
+                ])
+            );
         }
     }
 
@@ -2012,6 +2185,50 @@ mod tests {
 
     #[rstest]
     #[case::replace(MergeStrategy::Replace, Buffer::with_lines([
+            "┏━┓─┐",
+            "l ┃ │",
+            "e ┃ │",
+            "f ┃ │",
+            "t ┃ │",
+            "┃ ┃ │",
+            "┗━┛─┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Exact, Buffer::with_lines([
+            "┏━┱─┐",
+            "l r │",
+            "e i │",
+            "f g │",
+            "t h │",
+            "┃ t │",
+            "┗━┹─┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Fuzzy, Buffer::with_lines([
+            "┏━┱─┐",
+            "l r │",
+            "e i │",
+            "f g │",
+            "t h │",
+            "┃ t │",
+            "┗━┹─┘",
+        ])
+    )]
+    fn merged_titles_right_first(#[case] strategy: MergeStrategy, #[case] expected: Buffer) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 7));
+        Block::bordered()
+            .title_left("right")
+            .render(Rect::new(2, 0, 3, 7), &mut buffer);
+        Block::bordered()
+            .title_left("left")
+            .border_type(BorderType::Thick)
+            .merge_borders(strategy)
+            .render(Rect::new(0, 0, 3, 7), &mut buffer);
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, Buffer::with_lines([
             "┏block top━━┓",
             "┃           ┃",
             "┌block btm──┐",
@@ -2045,6 +2262,50 @@ mod tests {
             .title("block btm")
             .merge_borders(strategy)
             .render(Rect::new(0, 2, 13, 3), &mut buffer);
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, Buffer::with_lines([
+            "┏━┌─┐",
+            "l r │",
+            "e i │",
+            "f g │",
+            "t h │",
+            "┃ t │",
+            "┗━└─┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Exact, Buffer::with_lines([
+            "┏━┭─┐",
+            "l r │",
+            "e i │",
+            "f g │",
+            "t h │",
+            "┃ t │",
+            "┗━┵─┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Fuzzy, Buffer::with_lines([
+            "┏━┭─┐",
+            "l r │",
+            "e i │",
+            "f g │",
+            "t h │",
+            "┃ t │",
+            "┗━┵─┘",
+        ])
+    )]
+    fn merged_titles_left_first(#[case] strategy: MergeStrategy, #[case] expected: Buffer) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 7));
+        Block::bordered()
+            .title_left("left")
+            .border_type(BorderType::Thick)
+            .render(Rect::new(0, 0, 3, 7), &mut buffer);
+        Block::bordered()
+            .title_left("right")
+            .merge_borders(strategy)
+            .render(Rect::new(2, 0, 3, 7), &mut buffer);
         assert_eq!(buffer, expected);
     }
 
