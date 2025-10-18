@@ -866,7 +866,7 @@ fn widgets_block_multiple_titles<'line, Lines>(
     " a     ",
     " r     ",
 ])]
-fn widgets_block_multiple_titles_vartical<'line, Lines>(
+fn widgets_block_multiple_titles_vertical<'line, Lines>(
     #[case] title_a: Line,
     #[case] title_b: Line,
     #[case] borders: Borders,
