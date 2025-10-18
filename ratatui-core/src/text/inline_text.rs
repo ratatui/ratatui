@@ -22,14 +22,23 @@ use crate::widgets::Widget;
 /// `InlineText` groups multiple [`Line`]s into a single block that is rendered **column-wise**
 /// — that is, [`Line`]s are concatenated horizontally into a single visual line of text. This
 /// contrasts with [`Text`], which renders [`Line`]s **row-wise**, stacking each line vertically.
-/// The `InlineText` block is styled and aligned as a unit, and each line may contain its own
-/// [`Span`]s and styles.
+/// The `InlineText` block is treated as a single visual unit for styling and alignment, while
+/// each contained [`Line`] can define its own [`Span`]s and styles.
+///
+/// When rendered within a given [`Rect`], `InlineText` automatically performs **text wrapping**
+/// to ensure that the content fits within the available horizontal space. Long lines are truncated
+/// or wrapped accordingly to the layout rules, preventing overlap with adjacent text or boundaries.
+///
+/// When no [`Alignment`] is specified for the `InlineText` itself, lines are grouped by their
+/// individual [`Line`] alignments and rendered according to each group's alignment within the
+/// inline area. Conversely, when the `InlineText` has an explicit [`Alignment`], all lines are
+/// treated as a single group and rendered according to that alignment.
+///
+/// [`Line`]s within the `InlineText` are separated by a space, which inserts horizontal gaps
+/// between lines when rendered.
 ///
 /// This is useful when you want to lay out multiple lines side-by-side with consistent alignment,
 /// such as titles.
-///
-/// Lines within the block are separated by a space, which inserts horizontal gaps between flattened
-/// spans when rendered.
 ///
 /// # Constructor Methods
 ///
@@ -85,7 +94,7 @@ pub struct InlineText<'a> {
     /// The style applied to the entire inline block.
     pub style: Style,
 
-    /// The alignment of the inline block.
+    /// The alignment applied to the entire inline block.
     pub alignment: Option<Alignment>,
 
     /// The space inserted between lines.
@@ -279,12 +288,14 @@ impl<'a> InlineText<'a> {
 
     /// Sets the alignment for this `InlineText`.
     ///
-    /// Defaults to: [`None`], in practice, this is equivalent to [`Alignment::Left`].
+    /// When an alignment is specified for the `InlineText`, all contained [`Line`]s are treated
+    /// as a single group and rendered according to that alignment.
     ///
-    /// Although [`Alignment`] can be set individually on each [`Line`], this is currently
-    /// ignored. The [`Alignment`] defined on the `InlineText` itself is applied to all [`Line`]s
-    /// as a whole. In effect, all [`Line`]s are aligned together as if they were a single [`Line`]
-    /// separated by spaces, rather than being aligned independently per [`Line`].
+    /// When no alignment is explicitly set on the `InlineText` (`None`), lines are grouped by
+    /// their individual [`Line`] alignments and rendered per-group within the inline area.
+    /// For any `Line` that does not have an explicit alignment, `Alignment::Left` is assumed.
+    ///
+    /// Defaults to [`None`].
     ///
     /// # Examples
     ///
@@ -355,7 +366,12 @@ impl<'a> InlineText<'a> {
         self.alignment(Alignment::Right)
     }
 
-    /// Sets the space of this `InlineText`.
+    /// Sets the horizontal space between [`Line`]s within each alignment group of this
+    /// `InlineText`.
+    ///
+    /// Each alignment group is rendered according to either the `InlineText` alignment (if set)
+    /// or per-`Line` alignment (if `InlineText` alignment is `None`). The `space` is applied
+    /// between consecutive lines within the same group.
     ///
     /// # Examples
     ///
@@ -370,7 +386,11 @@ impl<'a> InlineText<'a> {
         self
     }
 
-    /// Returns the width of the underlying string.
+    /// Returns the total width of all lines if concatenated horizontally,
+    /// including the spaces set by [`InlineText::space`] between consecutive lines.
+    ///
+    /// Alignment groups are ignored — this measures the width as if all lines
+    /// were placed sequentially in a single row with the configured spacing.
     ///
     /// # Examples
     ///
