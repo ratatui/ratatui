@@ -980,6 +980,8 @@ impl Block<'_> {
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
         self.render_title_position(TitlePosition::Top, area, buf);
         self.render_title_position(TitlePosition::Bottom, area, buf);
+        self.render_title_position(TitlePosition::Left, area, buf);
+        self.render_title_position(TitlePosition::Right, area, buf);
     }
 
     fn render_title_position(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
