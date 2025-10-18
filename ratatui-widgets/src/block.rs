@@ -258,6 +258,10 @@ pub enum TitlePosition {
     Top,
     /// Position the title at the bottom of the block.
     Bottom,
+    /// Position the title at the left of the block.
+    Left,
+    /// Position the title at the right of the block.
+    Right,
 }
 
 impl<'a> Block<'a> {
@@ -420,6 +424,94 @@ impl<'a> Block<'a> {
     pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
         let line = title.into();
         self.titles.push((Some(TitlePosition::Bottom), line));
+        self
+    }
+
+    /// Adds a title to the left of the block.
+    ///
+    /// You can provide any type that can be converted into [`Line`] including: strings, string
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](ratatui_core::text::Span), or
+    /// vectors of [spans](ratatui_core::text::Span) (`Vec<Span>`).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::{ widgets::Block, text::Line };
+    ///
+    /// Block::bordered()
+    ///     .title_left("Left") // By default in the top left corner
+    ///     .title_left(Line::from("Right").right_aligned())
+    ///     .title_left(Line::from("Center").centered());
+    ///
+    /// // Renders
+    /// // ┌──────────────────────────────────┐
+    /// // L                                  │
+    /// // e                                  │
+    /// // f                                  │
+    /// // t                                  │
+    /// // │                                  │
+    /// // C                                  │
+    /// // e                                  │
+    /// // n                                  │
+    /// // t                                  │
+    /// // e                                  │
+    /// // r                                  │
+    /// // │                                  │
+    /// // R                                  │
+    /// // i                                  │
+    /// // g                                  │
+    /// // h                                  │
+    /// // t                                  │
+    /// // └──────────────────────────────────┘
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn title_left<T: Into<Line<'a>>>(mut self, title: T) -> Self {
+        let line = title.into();
+        self.titles.push((Some(TitlePosition::Left), line));
+        self
+    }
+
+    /// Adds a title to the right of the block.
+    ///
+    /// You can provide any type that can be converted into [`Line`] including: strings, string
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](ratatui_core::text::Span), or
+    /// vectors of [spans](ratatui_core::text::Span) (`Vec<Span>`).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::{ widgets::Block, text::Line };
+    ///
+    /// Block::bordered()
+    ///     .title_right("Left") // By default in the top left corner
+    ///     .title_right(Line::from("Right").right_aligned())
+    ///     .title_right(Line::from("Center").centered());
+    ///
+    /// // Renders
+    /// // ┌──────────────────────────────────┐
+    /// // │                                  L
+    /// // │                                  e
+    /// // │                                  f
+    /// // │                                  t
+    /// // │                                  │
+    /// // │                                  C
+    /// // │                                  e
+    /// // │                                  n
+    /// // │                                  t
+    /// // │                                  e
+    /// // │                                  r
+    /// // │                                  │
+    /// // │                                  R
+    /// // │                                  i
+    /// // │                                  g
+    /// // │                                  h
+    /// // │                                  t
+    /// // └──────────────────────────────────┘
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn title_right<T: Into<Line<'a>>>(mut self, title: T) -> Self {
+        let line = title.into();
+        self.titles.push((Some(TitlePosition::Right), line));
         self
     }
 
@@ -920,22 +1012,51 @@ impl Block<'_> {
             .map(|(_, line)| line)
     }
 
-    /// An area that is one line tall and spans the width of the block excluding the borders and
-    /// is positioned at the top or bottom of the block.
+    /// An area that spans one line or one column along the inside edge of the block,
+    /// excluding the borders. It is positioned at the top, bottom, left, or right
+    /// side of the block depending on the title's alignment.
     fn titles_area(&self, area: Rect, position: TitlePosition) -> Rect {
+        let top_border = u16::from(self.borders.contains(Borders::TOP));
+        let bottom_border = u16::from(self.borders.contains(Borders::BOTTOM));
         let left_border = u16::from(self.borders.contains(Borders::LEFT));
         let right_border = u16::from(self.borders.contains(Borders::RIGHT));
-        Rect {
-            x: area.left() + left_border,
-            y: match position {
-                TitlePosition::Top => area.top(),
-                TitlePosition::Bottom => area.bottom() - 1,
+        match position {
+            TitlePosition::Top => Rect {
+                x: area.left() + left_border,
+                y: area.top(),
+                width: area
+                    .width
+                    .saturating_sub(left_border)
+                    .saturating_sub(right_border),
+                height: 1,
             },
-            width: area
-                .width
-                .saturating_sub(left_border)
-                .saturating_sub(right_border),
-            height: 1,
+            TitlePosition::Bottom => Rect {
+                x: area.left() + left_border,
+                y: area.bottom() - 1,
+                width: area
+                    .width
+                    .saturating_sub(left_border)
+                    .saturating_sub(right_border),
+                height: 1,
+            },
+            TitlePosition::Left => Rect {
+                x: area.left(),
+                y: area.top() + top_border,
+                width: 1,
+                height: area
+                    .height
+                    .saturating_sub(top_border)
+                    .saturating_sub(bottom_border),
+            },
+            TitlePosition::Right => Rect {
+                x: area.right(),
+                y: area.top() + top_border,
+                width: 1,
+                height: area
+                    .height
+                    .saturating_sub(top_border)
+                    .saturating_sub(bottom_border),
+            },
         }
     }
 
