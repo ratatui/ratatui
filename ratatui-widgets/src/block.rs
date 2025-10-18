@@ -1051,7 +1051,7 @@ impl Block<'_> {
                     .saturating_sub(bottom_border),
             },
             TitlePosition::Right => Rect {
-                x: area.right(),
+                x: area.right() - 1,
                 y: area.top() + top_border,
                 width: 1,
                 height: area
