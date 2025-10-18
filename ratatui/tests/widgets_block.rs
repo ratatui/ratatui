@@ -385,6 +385,192 @@ fn widgets_block_title_alignment_bottom<'line, Lines>(
 }
 
 #[rstest]
+#[case::left(Alignment::Left, Borders::ALL, [
+    " ┌───┐ ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " │   │ ",
+    " │   │ ",
+    " └───┘ ",
+])]
+#[case::left(Alignment::Left, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──── ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " │     ",
+    " │     ",
+    " └──── ",
+])]
+#[case::left(Alignment::Left, Borders::LEFT | Borders::RIGHT | Borders::BOTTOM, [
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " │   │ ",
+    " │   │ ",
+    " │   │ ",
+    " └───┘ ",
+])]
+#[case::left(Alignment::Left, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
+    " ┌───┐ ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " │   │ ",
+    " │   │ ",
+    " │   │ ",
+])]
+#[case::left(Alignment::Left, Borders::NONE, [
+    "     T ",
+    "     i ",
+    "     t ",
+    "     l ",
+    "     e ",
+    "       ",
+    "       ",
+    "       ",
+    "       ",
+])]
+#[case::center(Alignment::Center, Borders::ALL, [
+    " ┌───┐ ",
+    " │   │ ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " │   │ ",
+    " └───┘ ",
+])]
+#[case::center(Alignment::Center, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──── ",
+    " │     ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " │     ",
+    " └──── ",
+])]
+#[case::center(Alignment::Center, Borders::LEFT | Borders::RIGHT | Borders::BOTTOM, [
+    " │   │ ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " │   │ ",
+    " │   │ ",
+    " └───┘ ",
+])]
+#[case::center(Alignment::Center, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
+    " ┌───┐ ",
+    " │   │ ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " │   │ ",
+    " │   │ ",
+])]
+#[case::center(Alignment::Center, Borders::NONE, [
+    "       ",
+    "       ",
+    "     T ",
+    "     i ",
+    "     t ",
+    "     l ",
+    "     e ",
+    "       ",
+    "       ",
+])]
+#[case::right(Alignment::Right, Borders::ALL, [
+    " ┌───┐ ",
+    " │   │ ",
+    " │   │ ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " └───┘ ",
+])]
+#[case::right(Alignment::Right, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──── ",
+    " │     ",
+    " │     ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " └──── ",
+])]
+#[case::right(Alignment::Right, Borders::LEFT | Borders::RIGHT | Borders::BOTTOM, [
+    " │   │ ",
+    " │   │ ",
+    " │   │ ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+    " └───┘ ",
+])]
+#[case::right(Alignment::Right, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
+    " ┌───┐ ",
+    " │   │ ",
+    " │   │ ",
+    " │   │ ",
+    " │   T ",
+    " │   i ",
+    " │   t ",
+    " │   l ",
+    " │   e ",
+])]
+#[case::right(Alignment::Right, Borders::NONE, [
+    "       ",
+    "       ",
+    "       ",
+    "       ",
+    "     T ",
+    "     i ",
+    "     t ",
+    "     l ",
+    "     e ",
+])]
+fn widgets_block_title_alignment_right<'line, Lines>(
+    #[case] alignment: Alignment,
+    #[case] borders: Borders,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<ratatui::text::Line<'line>>,
+{
+    let backend = TestBackend::new(7, 9);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    let title = Line::from("Title").alignment(alignment);
+    let block = Block::default().title_right(title).borders(borders);
+    let area = Rect::new(1, 0, 5, 9);
+    terminal
+        .draw(|frame| frame.render_widget(block, area))
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
+}
+
+#[rstest]
 #[case::left_with_all_borders(Line::from("foo"), Line::from("bar"), Borders::ALL, [
     " ┌foo─bar────┐ ",
     " │           │ ",
@@ -476,6 +662,226 @@ fn widgets_block_multiple_titles<'line, Lines>(
         .title(title_b)
         .borders(borders);
     let area = Rect::new(1, 0, 13, 3);
+    terminal
+        .draw(|f| {
+            f.render_widget(block, area);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
+}
+
+#[rstest]
+#[case::left_with_all_borders(Line::from("foo"), Line::from("bar"), Borders::ALL, [
+    " ┌───┐ ",
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    " │   │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    " │   │ ",
+    " │   │ ",
+    " └───┘ ",
+])]
+#[case::left_without_top_border(Line::from("foo"), Line::from("bar"), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    " │   │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    " │   │ ",
+    " │   │ ",
+    " │   │ ",
+    " └───┘ ",
+])]
+#[case::left_without_left_border(Line::from("foo"), Line::from("bar"), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ────┐ ",
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    "     │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    "     │ ",
+    "     │ ",
+    " ────┘ ",
+])]
+#[case::left_without_right_border(Line::from("foo"), Line::from("bar"), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──── ",
+    " f     ",
+    " o     ",
+    " o     ",
+    " │     ",
+    " b     ",
+    " a     ",
+    " r     ",
+    " │     ",
+    " │     ",
+    " └──── ",
+])]
+#[case::left_without_borders(Line::from("foo"), Line::from("bar"), Borders::NONE, [
+    " f     ",
+    " o     ",
+    " o     ",
+    "       ",
+    " b     ",
+    " a     ",
+    " r     ",
+    "       ",
+    "       ",
+    "       ",
+    "       ",
+])]
+#[case::center_with_borders(Line::from("foo").centered(), Line::from("bar").centered(), Borders::ALL, [
+    " ┌───┐ ",
+    " │   │ ",
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    " │   │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    " │   │ ",
+    " └───┘ ",
+])]
+#[case::center_without_top_border(Line::from("foo").centered(), Line::from("bar").centered(), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " │   │ ",
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    " │   │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    " │   │ ",
+    " │   │ ",
+    " └───┘ ",
+])]
+#[case::center_without_left_border(Line::from("foo").centered(), Line::from("bar").centered(), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ────┐ ",
+    "     │ ",
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    "     │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    "     │ ",
+    " ────┘ ",
+])]
+#[case::center_without_right_border(Line::from("foo").centered(), Line::from("bar").centered(), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──── ",
+    " │     ",
+    " f     ",
+    " o     ",
+    " o     ",
+    " │     ",
+    " b     ",
+    " a     ",
+    " r     ",
+    " │     ",
+    " └──── ",
+])]
+#[case::center_without_borders(Line::from("foo").centered(), Line::from("bar").centered(), Borders::NONE, [
+    "       ",
+    "       ",
+    " f     ",
+    " o     ",
+    " o     ",
+    "       ",
+    " b     ",
+    " a     ",
+    " r     ",
+    "       ",
+    "       ",
+])]
+#[case::right_with_all_borders(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::ALL, [
+    " ┌───┐ ",
+    " │   │ ",
+    " │   │ ",
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    " │   │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    " └───┘ ",
+])]
+#[case::right_without_top_border(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " │   │ ",
+    " │   │ ",
+    " │   │ ",
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    " │   │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    " └───┘ ",
+])]
+#[case::right_without_left_border(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ────┐ ",
+    "     │ ",
+    "     │ ",
+    " f   │ ",
+    " o   │ ",
+    " o   │ ",
+    "     │ ",
+    " b   │ ",
+    " a   │ ",
+    " r   │ ",
+    " ────┘ ",
+])]
+#[case::right_without_right_border(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──── ",
+    " │     ",
+    " │     ",
+    " f     ",
+    " o     ",
+    " o     ",
+    " │     ",
+    " b     ",
+    " a     ",
+    " r     ",
+    " └──── ",
+])]
+#[case::right_without_borders(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::NONE, [
+    "       ",
+    "       ",
+    "       ",
+    "       ",
+    " f     ",
+    " o     ",
+    " o     ",
+    "       ",
+    " b     ",
+    " a     ",
+    " r     ",
+])]
+fn widgets_block_multiple_titles_vartical<'line, Lines>(
+    #[case] title_a: Line,
+    #[case] title_b: Line,
+    #[case] borders: Borders,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<ratatui::text::Line<'line>>,
+{
+    let backend = TestBackend::new(7, 11);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let block = Block::default()
+        .title_left(title_a)
+        .title_left(title_b)
+        .borders(borders);
+    let area = Rect::new(1, 0, 5, 11);
     terminal
         .draw(|f| {
             f.render_widget(block, area);
