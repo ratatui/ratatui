@@ -308,6 +308,15 @@ impl<'a> Span<'a> {
         base_style: S,
     ) -> impl Iterator<Item = StyledGrapheme<'a>> {
         let style = base_style.into().patch(self.style);
+        if self.content.len() <= 4 {
+            return [
+                StyledGrapheme {
+                    symbol: self.content.as_ref(),
+                    style,
+                }
+            ].into_iter();
+        }
+
         self.content
             .as_ref()
             .graphemes(true)
