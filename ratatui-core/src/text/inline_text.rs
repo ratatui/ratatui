@@ -673,11 +673,13 @@ impl Widget for &InlineText<'_> {
             return;
         }
         buf.set_style(area, self.style);
+        // The total inline width.
+        let inline_width = area.width.saturating_mul(area.height);
         // If `alignment` is not set, each `Line`'s own alignment is used to group, reorder, and
         // align individually.
         let Some(alignment) = self.alignment else {
             // Computes the rendering range with skip width for each alignment within the given
-            // `area.width`.
+            // `inline_width`.
             let (left, center, right) = self.alignment_widths();
             let (left, center, right) = [
                 (left, Alignment::Left),
@@ -686,7 +688,7 @@ impl Widget for &InlineText<'_> {
             ]
             .map(|(width, alignment)| {
                 let width = u16::try_from(width).unwrap_or(u16::MAX);
-                InlineText::alignment_bounds(width, area.width, alignment)
+                InlineText::alignment_bounds(width, inline_width, alignment)
             })
             .into();
             let mut position = area.as_position();
@@ -762,12 +764,12 @@ impl Widget for &InlineText<'_> {
         if width == 0 {
             return;
         }
-        if let Some(((indent_width, area_width), skip_width)) =
-            InlineText::alignment_bounds(width, area.width, alignment)
+        if let Some(((indent_width, rendering_width), skip_width)) =
+            InlineText::alignment_bounds(width, inline_width, alignment)
         {
             let mut position = area.as_position();
             position.step_wrapping_mut(indent_width, area);
-            self.render_fragments(&mut position, area, buf, skip_width, area_width, None);
+            self.render_fragments(&mut position, area, buf, skip_width, rendering_width, None);
         }
     }
 }
@@ -1139,30 +1141,30 @@ impl InlineText<'_> {
         .into()
     }
 
-    // Returns ([start_index, end_index), skip_width) for the given alignment within `area_width`.
+    // Returns ([start_index, end_index), skip_width) for the given alignment within `inline_width`.
     fn alignment_bounds(
         width: u16,
-        area_width: u16,
+        inline_width: u16,
         alignment: Alignment,
     ) -> Option<((u16, u16), u16)> {
         (width > 0).then(|| match alignment {
-            Alignment::Left => ((0, width.min(area_width)), 0),
+            Alignment::Left => ((0, width.min(inline_width)), 0),
             Alignment::Center => {
-                if width > area_width {
-                    let overflow = width.saturating_sub(area_width);
+                if width > inline_width {
+                    let overflow = width.saturating_sub(inline_width);
                     let skip_width = overflow / 2;
-                    ((0, area_width), skip_width)
+                    ((0, inline_width), skip_width)
                 } else {
-                    let space = area_width.saturating_sub(width);
+                    let space = inline_width.saturating_sub(width);
                     let indent_width = space / 2;
                     ((indent_width, indent_width.saturating_add(width)), 0)
                 }
             }
             Alignment::Right => {
-                if width > area_width {
-                    ((0, area_width), width.saturating_sub(area_width))
+                if width > inline_width {
+                    ((0, inline_width), width.saturating_sub(inline_width))
                 } else {
-                    ((area_width.saturating_sub(width), area_width), 0)
+                    ((inline_width.saturating_sub(width), inline_width), 0)
                 }
             }
         })
@@ -2190,6 +2192,344 @@ mod tests {
             let mut buf = Buffer::empty(area);
             inline.render(area, &mut buf);
             assert_eq!(buf, Buffer::with_lines(["lo, wo"]));
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_center() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello, world!").alignment(Alignment::Left),
+                Line::from("Hello, Rustaceans!").alignment(Alignment::Center),
+            ]);
+            let area = Rect::new(0, 0, 100, 1);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "Hello, world!                            Hello, Rustaceans!                                         "
+                ])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_right() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello, world!").alignment(Alignment::Left),
+                Line::from("Greetings, fellow developers!").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 100, 1);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "Hello, world!                                                          Greetings, fellow developers!"
+                ])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_center_and_right() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello, Rustaceans!").alignment(Alignment::Center),
+                Line::from("Greetings, fellow developers!").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 100, 1);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "                                         Hello, Rustaceans!            Greetings, fellow developers!"
+                ])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_center_and_right() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello, world!").alignment(Alignment::Left),
+                Line::from("Hello, Rustaceans!").alignment(Alignment::Center),
+                Line::from("Greetings, fellow developers!").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 100, 1);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "Hello, world!                            Hello, Rustaceans!            Greetings, fellow developers!"
+                ])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_center_with_truncation() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello, world!").alignment(Alignment::Left),
+                Line::from("Hello, Rustaceans!").alignment(Alignment::Center),
+            ]);
+            let area = Rect::new(0, 0, 30, 1);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Hello, wolo, Rustaceans!      "]));
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_right_with_truncation() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello, world!").alignment(Alignment::Left),
+                Line::from("Greetings, fellow developers!").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 30, 1);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Hello, ngs, fellow developers!"]));
+        }
+
+        #[test]
+        fn render_multiple_aligned_center_and_right_with_truncation() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello, Rustaceans!").alignment(Alignment::Center),
+                Line::from("Greetings, fellow developers!").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 30, 1);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["      Hello, Rulow developers!"]));
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_center_and_right_with_truncation() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello, world!").alignment(Alignment::Left),
+                Line::from("Hello, Rustaceans!").alignment(Alignment::Center),
+                Line::from("Greetings, fellow developers!").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 30, 1);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Hello, wolo, Rulow developers!"]));
+        }
+
+        #[test]
+        fn render_render_left_aligned_vertical() {
+            let inline = InlineText::from(vec!["Hello, world!"]).alignment(Alignment::Left);
+            let area = Rect::new(0, 0, 1, 15);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "H", "e", "l", "l", "o", ",", " ", "w", "o", "r", "l", "d", "!", " ", " ",
+                ])
+            );
+        }
+
+        #[test]
+        fn render_right_aligned_vertical() {
+            let inline = InlineText::from("Hello, world!").alignment(Alignment::Right);
+            let area = Rect::new(0, 0, 1, 15);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    " ", " ", "H", "e", "l", "l", "o", ",", " ", "w", "o", "r", "l", "d", "!",
+                ])
+            );
+        }
+
+        #[test]
+        fn render_centered_odd_vertical() {
+            let inline = InlineText::from("Hello, world!").alignment(Alignment::Center);
+            let area = Rect::new(0, 0, 1, 15);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    " ", "H", "e", "l", "l", "o", ",", " ", "w", "o", "r", "l", "d", "!", " ",
+                ])
+            );
+        }
+
+        #[test]
+        fn render_centered_even_vertical() {
+            let inline = InlineText::from("Hello, world!").alignment(Alignment::Center);
+            let area = Rect::new(0, 0, 1, 16);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    " ", "H", "e", "l", "l", "o", ",", " ", "w", "o", "r", "l", "d", "!", " ", " ",
+                ])
+            );
+        }
+
+        #[test]
+        fn render_left_aligned_with_truncation_vertical() {
+            let inline = InlineText::from("Hello, world!").alignment(Alignment::Left);
+            let area = Rect::new(0, 0, 1, 7);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["H", "e", "l", "l", "o", ",", " ",])
+            );
+        }
+
+        #[test]
+        fn render_right_aligned_with_truncation_vertical() {
+            let inline = InlineText::from("Hello, world!").alignment(Alignment::Right);
+            let area = Rect::new(0, 0, 1, 7);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([" ", "w", "o", "r", "l", "d", "!",])
+            );
+        }
+
+        #[test]
+        fn render_centered_odd_with_truncation_vertical() {
+            let inline = InlineText::from("Hello, world!").alignment(Alignment::Center);
+            let area = Rect::new(0, 0, 1, 7);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["l", "o", ",", " ", "w", "o", "r",])
+            );
+        }
+
+        #[test]
+        fn render_centered_even_with_truncation_vertical() {
+            let inline = InlineText::from("Hello, world!").alignment(Alignment::Center);
+            let area = Rect::new(0, 0, 1, 6);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["l", "o", ",", " ", "w", "o",]));
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_center_vertical() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello").alignment(Alignment::Left),
+                Line::from("World").alignment(Alignment::Center),
+            ]);
+            let area = Rect::new(0, 0, 1, 30);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "H", "e", "l", "l", "o", " ", " ", " ", " ", " ", " ", " ", "W", "o", "r", "l",
+                    "d", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",
+                ])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_right_vertical() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello").alignment(Alignment::Left),
+                Line::from("Greetings").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 1, 30);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "H", "e", "l", "l", "o", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",
+                    " ", " ", " ", " ", " ", "G", "r", "e", "e", "t", "i", "n", "g", "s",
+                ])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_center_and_right_vertical() {
+            let inline = InlineText::from(vec![
+                Line::from("World").alignment(Alignment::Center),
+                Line::from("Greetings").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 1, 30);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "W", "o", "r", "l",
+                    "d", " ", " ", " ", " ", "G", "r", "e", "e", "t", "i", "n", "g", "s",
+                ])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_center_and_right_vertical() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello").alignment(Alignment::Left),
+                Line::from("World").alignment(Alignment::Center),
+                Line::from("Greetings").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 1, 30);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "H", "e", "l", "l", "o", " ", " ", " ", " ", " ", " ", " ", "W", "o", "r", "l",
+                    "d", " ", " ", " ", " ", "G", "r", "e", "e", "t", "i", "n", "g", "s",
+                ])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_center_vertical_with_truncation() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello").alignment(Alignment::Left),
+                Line::from("World").alignment(Alignment::Center),
+            ]);
+            let area = Rect::new(0, 0, 1, 10);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["H", "e", "l", "o", "r", "l", "d", " ", " ", " ",])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_center_and_right_vertical_with_truncation() {
+            let inline = InlineText::from(vec![
+                Line::from("World").alignment(Alignment::Center),
+                Line::from("Greetings").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 1, 10);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines([" ", " ", "W", "o", "e", "t", "i", "n", "g", "s",])
+            );
+        }
+
+        #[test]
+        fn render_multiple_aligned_left_and_center_and_right_vertical_with_truncation() {
+            let inline = InlineText::from(vec![
+                Line::from("Hello").alignment(Alignment::Left),
+                Line::from("World").alignment(Alignment::Center),
+                Line::from("Greetings").alignment(Alignment::Right),
+            ]);
+            let area = Rect::new(0, 0, 1, 10);
+            let mut buf = Buffer::empty(area);
+            inline.render(area, &mut buf);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["H", "e", "l", "o", "e", "t", "i", "n", "g", "s",])
+            );
         }
     }
 }
