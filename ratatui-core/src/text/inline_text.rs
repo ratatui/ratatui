@@ -6,7 +6,6 @@ use alloc::vec::Vec;
 use core::option::Option;
 use core::{fmt, iter};
 
-use either::Either;
 use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
 
@@ -464,6 +463,36 @@ impl<'a> InlineText<'a> {
             last.push_span(span);
         } else {
             self.lines.push(Line::from(span));
+        }
+    }
+}
+
+// A lightweight `Either` type for use in `no_std` environments used to unify iterators of
+// different types.
+#[derive(Debug, Clone)]
+enum Either<L, R> {
+    Left(L),
+    Right(R),
+}
+
+impl<L, R> Iterator for Either<L, R>
+where
+    L: Iterator,
+    R: Iterator<Item = L::Item>,
+{
+    type Item = L::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Left(l) => l.next(),
+            Self::Right(r) => r.next(),
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            Self::Left(l) => l.size_hint(),
+            Self::Right(r) => r.size_hint(),
         }
     }
 }

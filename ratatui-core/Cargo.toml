@@ -63,7 +63,6 @@ anstyle = { workspace = true, optional = true }
 bitflags.workspace = true
 compact_str.workspace = true
 document-features = { workspace = true, optional = true }
-either.workspace = true
 hashbrown.workspace = true
 indoc.workspace = true
 itertools.workspace = true

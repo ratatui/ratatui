@@ -36,7 +36,6 @@ compact_str = { version = "0.9", default-features = false }
 criterion = { version = "0.7", features = ["html_reports"] }
 crossterm = "0.29"
 document-features = "0.2"
-either = "1.15.0"
 fakeit = "1"
 futures = "0.3"
 hashbrown = "0.16"
