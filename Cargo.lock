@@ -2504,6 +2504,7 @@ dependencies = [
  "bitflags 2.9.4",
  "compact_str",
  "document-features",
+ "either",
  "hashbrown 0.16.0",
  "indoc",
  "itertools 0.14.0",

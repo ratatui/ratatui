@@ -1,12 +1,12 @@
 #![warn(clippy::pedantic, clippy::nursery, clippy::arithmetic_side_effects)]
 use alloc::borrow::{Cow, ToOwned};
-use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
 use core::option::Option;
 use core::{fmt, iter};
 
+use either::Either;
 use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
 
@@ -509,12 +509,11 @@ impl<'a> InlineText<'a> {
                     .spans
                     .iter()
                     .map(move |span| SpanOrSpace::Span(span, &line.style));
-                if i < self.lines.len().saturating_sub(1) {
-                    Box::new(iter.chain(iter::once(SpanOrSpace::Space(self.space, &line.style))))
-                        as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
+                iter.chain(if i < self.lines.len().saturating_sub(1) {
+                    Either::Left(iter::once(SpanOrSpace::Space(self.space, &line.style)))
                 } else {
-                    Box::new(iter) as Box<dyn Iterator<Item = SpanOrSpace<'a>>>
-                }
+                    Either::Right(iter::empty())
+                })
             })
     }
 }
@@ -819,8 +818,8 @@ impl InlineText<'_> {
                 Fragment::Space(space, line_style) => {
                     // NOTE: Should be the style reset here instead?
                     let space = u16::try_from(space).unwrap_or(u16::MAX);
-                    for spaced_position in &mut *position
-                        .iter_wrapping_to(*position.step_wrapping_mut(space, area), area)
+                    for spaced_position in
+                        position.iter_wrapping_to(*position.step_wrapping_mut(space, area), area)
                     {
                         buf[(spaced_position.x, spaced_position.y)].set_style(*line_style);
                     }
@@ -1033,6 +1032,42 @@ impl Span<'_> {
     }
 }
 
+// Iterates over positions from a start position (inclusive) to an end position (exclusive),
+// wrapping within a rectangular `area` if needed. Each position is represented as an index
+// within the flattened 2D area.
+struct PositionWrappingIter {
+    // The current position index of the iterator.
+    current: u16,
+
+    // The index at which iteration stops (exclusive).
+    end: u16,
+
+    // The bounding rectangle within which positions wrap.
+    area: Rect,
+}
+
+impl Iterator for PositionWrappingIter {
+    type Item = Position;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current >= self.end {
+            return None;
+        }
+        let i = self.current;
+        let dx = i
+            .checked_rem(self.area.width)
+            .expect("division by zero while computing remainder for wrapped position");
+        let dy = i
+            .checked_div(self.area.width)
+            .expect("division by zero while computing wrapped line count");
+        self.current = self.current.saturating_add(1);
+        Some(Self::Item {
+            x: self.area.x.saturating_add(dx),
+            y: self.area.y.saturating_add(dy),
+        })
+    }
+}
+
 impl Position {
     // Calculates the linear index of `position` within `area`.
     // Validation (e.g., ensuring `position` is inside `area`) is the caller's responsibility.
@@ -1105,28 +1140,25 @@ impl Position {
 
     // Iterates from self (inclusive) to `end` (exclusive) coordinate-wise, wrapping within `area`
     // if needed.
-    fn iter_wrapping_to(self, other: Self, area: Rect) -> Box<dyn Iterator<Item = Self>> {
-        if area.is_empty() || !area.contains(self) || self.index(area) >= other.index(area) {
-            return Box::new(core::iter::empty());
+    fn iter_wrapping_to(self, other: Self, area: Rect) -> PositionWrappingIter {
+        if area.is_empty()
+            || !area.contains(self)
+            || !area.contains(other)
+            || self.index(area) >= other.index(area)
+        {
+            return PositionWrappingIter {
+                current: 0,
+                end: 0,
+                area,
+            };
         }
-        Box::new(
-            (self.index(area)
-                ..other
-                    .index(area)
-                    .min(area.width.saturating_mul(area.height)))
-                .map(move |i| {
-                    let dx = i
-                        .checked_rem(area.width)
-                        .expect("division by zero while computing remainder for wrapped position");
-                    let dy = i
-                        .checked_div(area.width)
-                        .expect("division by zero while computing wrapped line count");
-                    Self {
-                        x: area.x.saturating_add(dx),
-                        y: area.y.saturating_add(dy),
-                    }
-                }),
-        )
+        PositionWrappingIter {
+            current: self.index(area),
+            end: other
+                .index(area)
+                .min(area.width.saturating_mul(area.height)),
+            area,
+        }
     }
 }
 
@@ -1927,9 +1959,7 @@ mod tests {
             Position { x: 4, y: 2 },
             Position { x: 3, y: 3 },
             Rect::new(0, 0, 5, 3),
-            vec![
-                Position { x: 4, y: 2 },
-            ]
+            vec![]
         )]
         #[case(
             Position { x: 0, y: 0 },
