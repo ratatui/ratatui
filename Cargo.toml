@@ -74,7 +74,7 @@ trybuild = "1"
 unicode-segmentation = "1"
 unicode-truncate = { version = "2", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
-unicode-width = ">=0.2.0, <=0.2.1"
+unicode-width = ">=0.2.0, <=0.2.2"
 
 # Improve benchmark consistency
 [profile.bench]
