@@ -148,6 +148,12 @@ Shows how to use the inlined viewport to render in a specific area of the screen
 
 ![Inline demo][inline.gif]
 
+## Inline Resizable
+
+Shows how to create an inline viewport that can be resized dynamically. [Source](./apps/inline-resizable/).
+
+![Inline Resizable demo][inline-resizable.gif]
+
 ## Input Form
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
@@ -256,14 +262,11 @@ vhs/generate.bash
 [constraint-explorer.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraint-explorer.gif?raw=true
 [constraints.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraints.gif?raw=true
 [custom-widget.gif]: https://github.com/ratatui/ratatui/blob/images/examples/custom-widget.gif?raw=true
-[demo2-destroy.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2-destroy.gif?raw=true
-[demo2-social.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2-social.gif?raw=true
-[demo2.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true
-[demo.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true
 [flex.gif]: https://github.com/ratatui/ratatui/blob/images/examples/flex.gif?raw=true
 [hello-world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello-world.gif?raw=true
 [hyperlink.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hyperlink.gif?raw=true
 [inline.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline.gif?raw=true
+[inline-resizable.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline-resizable.gif?raw=true
 [minimal.gif]: https://github.com/ratatui/ratatui/blob/images/examples/minimal.gif?raw=true
 [modifiers.gif]: https://github.com/ratatui/ratatui/blob/images/examples/modifiers.gif?raw=true
 [panic.gif]: https://github.com/ratatui/ratatui/blob/images/examples/panic.gif?raw=true
