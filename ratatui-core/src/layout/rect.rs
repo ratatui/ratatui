@@ -667,6 +667,7 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+    use crate::buffer::{Buffer, Cell};
     use crate::layout::{Constraint, Layout};
 
     #[test]
@@ -728,6 +729,32 @@ mod tests {
     }
 
     #[test]
+    fn inner_buffer() {
+        let base = Rect::new(2, 2, 10, 6);
+        let inner = base.inner(Margin::new(2, 1));
+
+        let mut buf = Buffer::filled(Rect::new(0, 0, 15, 10), Cell::default());
+        let base_buf = Buffer::filled(base, Cell::new("█"));
+        buf.merge(&base_buf);
+        let inner_buf = Buffer::filled(inner, Cell::new("░"));
+        buf.merge(&inner_buf);
+
+        let expected = Buffer::with_lines([
+            "               ",
+            "               ",
+            "  ██████████   ",
+            "  ██░░░░░░██   ",
+            "  ██░░░░░░██   ",
+            "  ██░░░░░░██   ",
+            "  ██░░░░░░██   ",
+            "  ██████████   ",
+            "               ",
+            "               ",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
     fn outer() {
         // enough space to grow on all sides
         assert_eq!(
@@ -746,6 +773,34 @@ mod tests {
             Rect::new(u16::MAX - 20, u16::MAX - 40, 10, 20).outer(Margin::new(20, 30)),
             Rect::new(u16::MAX - 40, u16::MAX - 70, 40, 70),
         );
+    }
+
+    #[test]
+    fn outer_buffer() {
+        let base = Rect::new(4, 3, 6, 4);
+        let base_buf = Buffer::filled(base, Cell::new("█"));
+
+        let outer = base.outer(Margin::new(2, 1));
+        let outer_buf = Buffer::filled(outer, Cell::new("░"));
+
+        let mut buf = Buffer::filled(Rect::new(0, 0, 15, 10), Cell::default());
+        buf.merge(&outer_buf);
+        buf.merge(&base_buf);
+
+        let expected = Buffer::with_lines([
+            "               ",
+            "               ",
+            "  ░░░░░░░░░░   ",
+            "  ░░██████░░   ",
+            "  ░░██████░░   ",
+            "  ░░██████░░   ",
+            "  ░░██████░░   ",
+            "  ░░░░░░░░░░   ",
+            "               ",
+            "               ",
+        ]);
+
+        assert_eq!(buf, expected);
     }
 
     #[test]
@@ -782,6 +837,33 @@ mod tests {
     }
 
     #[test]
+    fn offset_buffer() {
+        let base = Rect::new(2, 2, 5, 3);
+        let base_buf = Buffer::filled(base, Cell::new("░"));
+
+        let moved = base.offset(Offset { x: 4, y: 2 });
+        let moved_buf = Buffer::filled(moved, Cell::new("█"));
+
+        let mut buf = Buffer::filled(Rect::new(0, 0, 15, 10), Cell::default());
+        buf.merge(&base_buf);
+        buf.merge(&moved_buf);
+
+        let expected = Buffer::with_lines([
+            "               ",
+            "               ",
+            "  ░░░░░        ",
+            "  ░░░░░        ",
+            "  ░░░░█████    ",
+            "      █████    ",
+            "      █████    ",
+            "               ",
+            "               ",
+            "               ",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
     fn union() {
         assert_eq!(
             Rect::new(1, 2, 3, 4).union(Rect::new(2, 3, 4, 5)),
@@ -809,6 +891,37 @@ mod tests {
     fn intersects() {
         assert!(Rect::new(1, 2, 3, 4).intersects(Rect::new(2, 3, 4, 5)));
         assert!(!Rect::new(1, 2, 3, 4).intersects(Rect::new(5, 6, 7, 8)));
+    }
+
+    #[test]
+    fn intersection_buffer() {
+        let a = Rect::new(2, 2, 6, 4);
+        let a_buf = Buffer::filled(a, Cell::new("░"));
+
+        let b = Rect::new(5, 3, 6, 4);
+        let b_buf = Buffer::filled(b, Cell::new("▒"));
+
+        let inter = a.intersection(b);
+        let i_buf = Buffer::filled(inter, Cell::new("█"));
+
+        let mut buf = Buffer::filled(Rect::new(0, 0, 15, 10), Cell::default());
+        buf.merge(&a_buf);
+        buf.merge(&b_buf);
+        buf.merge(&i_buf);
+
+        let expected = Buffer::with_lines([
+            "               ",
+            "               ",
+            "  ░░░░░░       ",
+            "  ░░░███▒▒▒    ",
+            "  ░░░███▒▒▒    ",
+            "  ░░░███▒▒▒    ",
+            "     ▒▒▒▒▒▒    ",
+            "               ",
+            "               ",
+            "               ",
+        ]);
+        assert_eq!(buf, expected);
     }
 
     // the bounds of this rect are x: [1..=3], y: [2..=5]
@@ -904,6 +1017,39 @@ mod tests {
     fn clamp(#[case] rect: Rect, #[case] expected: Rect) {
         let other = Rect::new(10, 10, 100, 100);
         assert_eq!(rect.clamp(other), expected);
+    }
+
+    #[test]
+    fn clamp_buffer() {
+        let area = Rect::new(2, 2, 10, 6);
+        let area_buf = Buffer::filled(area, Cell::new("░"));
+
+        let rect = Rect::new(8, 5, 8, 4);
+        let rect_buf = Buffer::filled(rect, Cell::new("▒"));
+
+        let clamped = rect.clamp(area);
+        let clamp_buf = Buffer::filled(clamped, Cell::new("█"));
+
+        let mut buf = Buffer::filled(Rect::new(0, 0, 20, 12), Cell::default());
+        buf.merge(&area_buf);
+        buf.merge(&rect_buf);
+        buf.merge(&clamp_buf);
+
+        let expected = Buffer::with_lines([
+            "                    ",
+            "                    ",
+            "  ░░░░░░░░░░        ",
+            "  ░░░░░░░░░░        ",
+            "  ░░████████        ",
+            "  ░░████████▒▒▒▒    ",
+            "  ░░████████▒▒▒▒    ",
+            "  ░░████████▒▒▒▒    ",
+            "        ▒▒▒▒▒▒▒▒    ",
+            "                    ",
+            "                    ",
+            "                    ",
+        ]);
+        assert_eq!(buf, expected);
     }
 
     #[test]
