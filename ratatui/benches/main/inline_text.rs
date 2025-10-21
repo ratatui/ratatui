@@ -9,25 +9,38 @@ use ratatui::widgets::Widget;
 fn inline_text(c: &mut Criterion) {
     let mut group = c.benchmark_group("inline_text");
     for (width, height) in [
-        (1, 256),   // Heavily vertically skewed
-        (256, 1),   // Heavily horizontally skewed
-        (50, 50),   // Typical rendering area
-        (100, 50),  // Vertically split screen
-        (200, 50),  // 1080p fullscreen with medium font
-        (256, 256), // Max sized area
+        (200, 50),     // 1080p fullscreen area with medium font.
+        (1, u16::MAX), // Heavily vertically skewed area.
+        (u16::MAX, 1), // Heavily horizontally skewed area.
+        (4096, 4096),  // Max sized area for benchmarking (~sqrt(u16::MAX) * 16, ~768 MB buffer).
     ] {
         let buffer_size = Rect::new(0, 0, width, height);
+
+        // Generates sample inline text content scaled to the given rendering area.
+        // The number of repeated text blocks is roughly proportional to the area size.
+        //  - Small areas produce a few lines (at least 5 x 1 lines).
+        //  - Large areas produce many lines (up to ~5 x 1000 lines).
+        let make_inline_text = |height: u16| {
+            let repeat = (height as usize / 5).clamp(1, 1000);
+            InlineText::from(
+                (0..repeat)
+                    .flat_map(|_| {
+                        vec![
+                            Line::from("The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs."),
+                            Line::from("🦀 Rustaceans unite! 東京・İstanbul・Sydney・San Francisco・Warsaw 🌏 RustConf連携中！").bold(),
+                            Line::from("naïve cafés ☕ serve résumé-ready developers 👩‍💻🧑🏾‍💻 testing text rendering engines.").green(),
+                            Line::from("ゼロ幅スペース\u{200B}、結合絵文字👨‍👩‍👧‍👦、全角文字ＡＢＣ、半角abcが混在。").blue(),
+                            Line::from("Emoji test: 🙂😇🤖👩🏻‍🎨🧑‍🚀 — wrapped in a buffer for layout & clipping check.").italic(),
+                        ]
+                    })
+                    .collect::<Vec<_>>(),
+            )
+        };
+
         group.bench_with_input(
             format!("render/{width}x{height}"),
-            &InlineText::from(vec![
-                Line::from("The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs."),
-                Line::from("🦀 Rustaceans unite! 東京・İstanbul・Sydney・San Francisco・Warsaw 🌏 RustConf連携中！").bold(),
-                Line::from("naïve cafés ☕ serve résumé-ready developers 👩‍💻🧑🏾‍💻 testing text rendering engines.").green(),
-                Line::from("ゼロ幅スペース\u{200B}、結合絵文字👨‍👩‍👧‍👦、全角文字ＡＢＣ、半角abcが混在。").blue(),
-                Line::from("Emoji test: 🙂😇🤖👩🏻‍🎨🧑‍🚀 — wrapped in a 50x50 buffer for layout & clipping check.").italic(),
-            ])
-            .space(1),
-            |b, inline| render(b, inline, buffer_size),
+            &make_inline_text(height),
+            |b, text| render(b, text, buffer_size),
         );
     }
     group.finish();
@@ -40,8 +53,8 @@ fn render(bencher: &mut Bencher, inline: &InlineText, size: Rect) {
     // See https://github.com/ratatui/ratatui/pull/377.
     bencher.iter_batched(
         || inline.to_owned(),
-        |bench_inline| {
-            bench_inline.render(buffer.area, &mut buffer);
+        |bench_inline_text| {
+            bench_inline_text.render(buffer.area, &mut buffer);
         },
         BatchSize::SmallInput,
     );
