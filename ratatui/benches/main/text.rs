@@ -11,8 +11,6 @@ fn text(c: &mut Criterion) {
     for (width, height) in [
         (1, 256),   // Heavily vertically skewed
         (256, 1),   // Heavily horizontally skewed
-        (50, 50),   // Typical rendering area
-        (100, 50),  // Vertically split screen
         (200, 50),  // 1080p fullscreen with medium font
         (256, 256), // Max sized area
     ] {
