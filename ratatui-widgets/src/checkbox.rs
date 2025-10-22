@@ -351,8 +351,7 @@ impl Checkbox<'_> {
 
         let line = Line::from(spans);
 
-        // Render the line
-        buf.set_line(area.x, area.y, &line, area.width);
+        line.render(area, buf);
     }
 }
 
