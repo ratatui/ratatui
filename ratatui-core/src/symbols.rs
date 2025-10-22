@@ -6,6 +6,7 @@ pub mod bar;
 pub mod block;
 pub mod border;
 pub mod braille;
+pub mod checkbox;
 pub mod half_block;
 pub mod line;
 pub mod marker;

@@ -38,6 +38,7 @@
 //! - [`calendar::Monthly`]: displays a single month.
 //! - [`Canvas`]: draws arbitrary shapes using drawing characters.
 //! - [`Chart`]: displays multiple datasets as lines or scatter graphs.
+//! - [`Checkbox`]: displays a checkbox with a label that can be checked or unchecked.
 //! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
 //! - [`Gauge`]: displays progress percentage using block characters.
 //! - [`LineGauge`]: displays progress as a line.
@@ -55,6 +56,7 @@
 //! [`calendar::Monthly`]: crate::calendar::Monthly
 //! [`Canvas`]: crate::canvas::Canvas
 //! [`Chart`]: crate::chart::Chart
+//! [`Checkbox`]: crate::checkbox::Checkbox
 //! [`Clear`]: crate::clear::Clear
 //! [`Gauge`]: crate::gauge::Gauge
 //! [`LineGauge`]: crate::gauge::LineGauge
@@ -115,6 +117,7 @@ pub mod block;
 pub mod borders;
 pub mod canvas;
 pub mod chart;
+pub mod checkbox;
 pub mod clear;
 pub mod gauge;
 pub mod list;

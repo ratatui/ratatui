@@ -48,6 +48,7 @@
 //! - [`calendar::Monthly`]: displays a single month.
 //! - [`Canvas`]: draws arbitrary shapes using drawing characters.
 //! - [`Chart`]: displays multiple datasets as a lines or scatter graph.
+//! - [`Checkbox`]: displays a checkbox with a label that can be checked or unchecked.
 //! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
 //! - [`Gauge`]: displays progress percentage using block characters.
 //! - [`LineGauge`]: display progress as a line.
@@ -667,6 +668,7 @@ pub use ratatui_widgets::borders::{BorderType, Borders};
 pub use ratatui_widgets::calendar;
 pub use ratatui_widgets::canvas;
 pub use ratatui_widgets::chart::{Axis, Chart, Dataset, GraphType, LegendPosition};
+pub use ratatui_widgets::checkbox::Checkbox;
 pub use ratatui_widgets::clear::Clear;
 pub use ratatui_widgets::gauge::{Gauge, LineGauge};
 pub use ratatui_widgets::list::{List, ListDirection, ListItem, ListState};

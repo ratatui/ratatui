@@ -16,7 +16,10 @@ rust-version.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+# Temporarily disabled due to rustdoc ICE (Internal Compiler Error) that causes CI to fail.
+# The -Zrustdoc-scrape-examples feature triggers a compiler panic when building docs.
+# This can be re-enabled once the rustdoc bug is fixed in nightly.
+# cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]

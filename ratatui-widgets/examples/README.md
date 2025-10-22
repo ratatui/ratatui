@@ -43,6 +43,10 @@ cargo run -p ratatui-widgets --example example-name
 
 ![Chart][chart.gif]
 
+## Checkbox
+
+![Checkbox][checkbox.gif]
+
 ## Collapsed Borders
 
 ![Collapsed Borders][collapsed-borders.gif]
@@ -89,6 +93,7 @@ cargo run -p ratatui-widgets --example example-name
 [calendar.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/calendar.gif?raw=true
 [canvas.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/canvas.gif?raw=true
 [chart.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/chart.gif?raw=true
+[checkbox.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/checkbox.gif?raw=true
 [collapsed-borders.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/collapsed-borders.gif?raw=true
 [gauge.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/gauge.gif?raw=true
 [line-gauge.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/line-gauge.gif?raw=true
