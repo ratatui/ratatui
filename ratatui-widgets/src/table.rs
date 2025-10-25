@@ -863,11 +863,50 @@ impl Table<'_> {
                 buf.set_style(selection_area, row.style);
                 (&self.highlight_symbol).render(selection_area, buf);
             }
-            for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
-                cell.render(
-                    Rect::new(row_area.x + x, row_area.y, *width, row_area.height),
-                    buf,
-                );
+            let mut column_widths_iter = columns_widths.iter();
+            let mut row_cells_iter = row.cells.iter();
+            let mut current_cell = row_cells_iter.next();
+            loop {
+                let mut final_column_widths: Option<(u16, u16)> = None;
+                match current_cell {
+                    None => break,
+                    Some(cell) => {
+                        for _ in 0..cell.get_colspan() {
+                            let x;
+                            let width;
+                            match column_widths_iter.next() {
+                                Some((next_x, next_width)) => {
+                                    x = next_x;
+                                    width = next_width;
+                                }
+                                None => {
+                                    break;
+                                }
+                            }
+                            match final_column_widths {
+                                None => final_column_widths = Some((*x, *width)),
+                                Some((old_x, old_width)) => {
+                                    final_column_widths = Some((old_x, old_width + width + 1));
+                                }
+                            }
+                        }
+                        match final_column_widths {
+                            None => break,
+                            Some((final_x, final_width)) => {
+                                cell.render(
+                                    Rect::new(
+                                        row_area.x + final_x,
+                                        row_area.y,
+                                        final_width,
+                                        row_area.height,
+                                    ),
+                                    buf,
+                                );
+                                current_cell = row_cells_iter.next();
+                            }
+                        }
+                    }
+                }
             }
             if is_selected {
                 selected_row_area = Some(row_area);
@@ -1348,6 +1387,173 @@ mod tests {
                 "┌Block────────┐",
                 "│Cell1 Cell2  │",
                 "└─────────────┘",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_colspan_1() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(1),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2]);
+            Widget::render(table, Rect::new(0, 0, 15, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1 Cell2    ",
+                "Cell3 Cell4    ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_colspan_0() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(0),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2]);
+            Widget::render(table, Rect::new(0, 0, 15, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell2          ",
+                "Cell3 Cell4    ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_colspan_2() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(2),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2]);
+            Widget::render(table, Rect::new(0, 0, 15, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1          ",
+                "Cell3 Cell4    ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_3_col_colspan_2() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(2),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4").colspan(1),
+                    Cell::new("Cell5").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3]);
+            Widget::render(table, Rect::new(0, 0, 17, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1       Cell2",
+                "Cell3 Cell4 Cell5",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_3_col_colspan_1_2() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(1),
+                    Cell::new("Cell2").colspan(2),
+                    Cell::new("Cell3").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell4").colspan(1),
+                    Cell::new("Cell5").colspan(1),
+                    Cell::new("Cell6").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3]);
+            Widget::render(table, Rect::new(0, 0, 17, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1 Cell2      ",
+                "Cell4 Cell5 Cell6",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_4_col_colspan_2_1_1() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(2),
+                    Cell::new("Cell2").colspan(1),
+                    Cell::new("Cell3").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell4").colspan(1),
+                    Cell::new("Cell5").colspan(1),
+                    Cell::new("Cell6").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3]);
+            Widget::render(table, Rect::new(0, 0, 17, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1       Cell2",
+                "Cell4 Cell5 Cell6",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_3_col_colspan_long_text() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1Cell1Cell1").colspan(2),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4Cell4Cell4").colspan(2),
+                    Cell::new("Cell5").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3]);
+            Widget::render(table, Rect::new(0, 0, 17, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1Cell1C Cell2",
+                "Cell3 Cell4Cell4C",
             ]);
             assert_eq!(buf, expected);
         }
