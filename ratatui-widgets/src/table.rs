@@ -824,6 +824,48 @@ impl Table<'_> {
         }
     }
 
+    /// Return the space that a Cell should occupy, taking into account its colspans
+    ///
+    /// Returns `None` when there are no more columns for the Cell to occupy; in this case,
+    /// rendering of the rest of the row can safely be skipped.
+    /// Otherwise, returns a pair `Some((x, width))`, representing the start x-coordinate and width
+    /// of the Cell.
+    fn get_widths_for_cell<'a, T>(column_widths_iterator: &mut T, cell: &Cell) -> Option<(u16, u16)>
+    where
+        T: Iterator<Item = &'a (u16, u16)>,
+    {
+        let mut ret = None;
+        for _ in 0..cell.get_colspan() {
+            let x: u16;
+            let width: u16;
+            match column_widths_iterator.next() {
+                None => break,
+                Some((next_x, next_width)) => {
+                    x = *next_x;
+                    width = *next_width;
+                }
+            }
+            match ret {
+                None => ret = Some((x, width)),
+                Some((old_x, old_width)) => {
+                    ret = Some((
+                        // Initial start of column span
+                        old_x,
+                        (
+                            // Space taken by previous columns and gaps
+                            old_width
+                        // Space taken by column on this iteration
+                        + width
+                        // Gap between columns
+                        + 1
+                        ),
+                    ));
+                }
+            }
+        }
+        ret
+    }
+
     fn render_rows(
         &self,
         area: Rect,
@@ -863,11 +905,17 @@ impl Table<'_> {
                 buf.set_style(selection_area, row.style);
                 (&self.highlight_symbol).render(selection_area, buf);
             }
-            for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
-                cell.render(
-                    Rect::new(row_area.x + x, row_area.y, *width, row_area.height),
-                    buf,
-                );
+            let mut column_widths_iter = columns_widths.iter();
+            for current_cell in &row.cells {
+                match Self::get_widths_for_cell(&mut column_widths_iter, current_cell) {
+                    None => {}
+                    Some((x, width)) => {
+                        current_cell.render(
+                            Rect::new(row_area.x + x, row_area.y, width, row_area.height),
+                            buf,
+                        );
+                    }
+                }
             }
             if is_selected {
                 selected_row_area = Some(row_area);
@@ -1348,6 +1396,148 @@ mod tests {
                 "┌Block────────┐",
                 "│Cell1 Cell2  │",
                 "└─────────────┘",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_colspan_1_single_column_each() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(1),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2]);
+            Widget::render(table, Rect::new(0, 0, 15, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1 Cell2    ",
+                "Cell3 Cell4    ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_colspan_0_cell_should_not_render() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(0),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2]);
+            Widget::render(table, Rect::new(0, 0, 15, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell2          ",
+                "Cell3 Cell4    ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_cell1_takes_up_two_columns_cell2_does_not_appear() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(2),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2]);
+            Widget::render(table, Rect::new(0, 0, 15, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1          ",
+                "Cell3 Cell4    ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_cell1_takes_up_two_columns_cell2_appears_after() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(2),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4").colspan(1),
+                    Cell::new("Cell5").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3]);
+            Widget::render(table, Rect::new(0, 0, 17, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1       Cell2",
+                "Cell3 Cell4 Cell5",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_cell2_takes_up_two_columns() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1").colspan(1),
+                    Cell::new("Cell2").colspan(2),
+                    Cell::new("Cell3").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell4").colspan(1),
+                    Cell::new("Cell5").colspan(1),
+                    Cell::new("Cell6").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3]);
+            Widget::render(table, Rect::new(0, 0, 17, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1 Cell2      ",
+                "Cell4 Cell5 Cell6",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_long_text_covers_gap_and_subsequent_column() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
+            let rows = vec![
+                Row::new(vec![
+                    Cell::new("Cell1Cell1Cell1").colspan(2),
+                    Cell::new("Cell2").colspan(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell4Cell4Cell4").colspan(2),
+                    Cell::new("Cell5").colspan(1),
+                ]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 3]);
+            Widget::render(table, Rect::new(0, 0, 17, 2), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "Cell1Cell1C Cell2",
+                "Cell3 Cell4Cell4C",
             ]);
             assert_eq!(buf, expected);
         }

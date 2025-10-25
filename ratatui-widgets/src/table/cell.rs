@@ -51,6 +51,7 @@ use ratatui_core::widgets::Widget;
 pub struct Cell<'a> {
     content: Text<'a>,
     style: Style,
+    colspan: u16,
 }
 
 impl<'a> Cell<'a> {
@@ -80,6 +81,7 @@ impl<'a> Cell<'a> {
         Self {
             content: content.into(),
             style: Style::default(),
+            colspan: 1,
         }
     }
 
@@ -111,6 +113,46 @@ impl<'a> Cell<'a> {
     {
         self.content = content.into();
         self
+    }
+
+    /// Set the `colspan` of this cell
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui::widgets::{Cell, Row};
+    ///
+    /// let rows = vec![
+    ///     Row::new(vec![
+    ///         Cell::new("Cell1Cell1Cell1").colspan(2),
+    ///         Cell::new("Cell2"),
+    ///     ]),
+    ///     Row::new(vec![
+    ///         Cell::new("Cell3Cell3Cell3"),
+    ///         Cell::new("Cell4Cell4Cell4").colspan(2),
+    ///         Cell::new("Cell5"),
+    ///     ]),
+    ///     Row::new(vec![
+    ///         Cell::new("Cell6").colspan(1),
+    ///         Cell::new("Cell7").colspan(1),
+    ///         Cell::new("Cell8"), // colspan(1) is the default
+    ///     ]),
+    /// ];
+    /// // "Cell1Cell1C Cell2",
+    /// // "Cell3 Cell4Cell4C",
+    /// // "Cell6 Cell7 Cell8",
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn colspan(mut self, colspan: u16) -> Self {
+        self.colspan = colspan;
+        self
+    }
+
+    /// Return the `colspan` of this cell
+    pub const fn get_colspan(&self) -> u16 {
+        self.colspan
     }
 
     /// Set the `Style` of this cell
@@ -167,6 +209,7 @@ where
         Self {
             content: content.into(),
             style: Style::default(),
+            colspan: 1,
         }
     }
 }
