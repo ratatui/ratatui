@@ -43,6 +43,9 @@ calendar = ["dep:time"]
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info"]
 
+## enables use of instability crate
+use-instability = ["dep:instability"]
+
 ## Enables the [`Paragraph::line_count`](paragraph::Paragraph::line_count)
 ## [`Paragraph::line_width`](paragraph::Paragraph::line_width) methods
 ## which are experimental and may change in the future.
@@ -53,7 +56,7 @@ unstable-rendered-line-info = []
 bitflags.workspace = true
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
-instability.workspace = true
+instability = { workspace = true, optional = true }
 itertools.workspace = true
 line-clipping.workspace = true
 ratatui-core = { workspace = true }

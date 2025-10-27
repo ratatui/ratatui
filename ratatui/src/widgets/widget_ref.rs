@@ -85,7 +85,10 @@ use crate::style::Style;
 /// # }
 /// # }
 /// ```
-#[instability::unstable(feature = "widget-ref")]
+#[cfg_attr(
+    feature = "use-instability",
+    instability::unstable(feature = "widget-ref")
+)]
 pub trait WidgetRef {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.

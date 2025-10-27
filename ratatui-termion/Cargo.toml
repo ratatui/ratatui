@@ -29,10 +29,12 @@ scrolling-regions = ["ratatui-core/scrolling-regions"]
 unstable = ["unstable-backend-writer"]
 ## Enables getting access to backends' writer.
 unstable-backend-writer = []
+## enables use of instability crate
+use-instability = ["dep:instability"]
 
 [dependencies]
 document-features = { workspace = true, optional = true }
-instability.workspace = true
+instability = { workspace = true, optional = true }
 ratatui-core = { workspace = true }
 termion.workspace = true
 

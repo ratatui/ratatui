@@ -58,7 +58,10 @@ use crate::layout::Rect;
 /// }
 /// # }
 /// ```
-#[instability::unstable(feature = "widget-ref")]
+#[cfg_attr(
+    feature = "use-instability",
+    instability::unstable(feature = "widget-ref")
+)]
 pub trait StatefulWidgetRef {
     /// State associated with the stateful widget.
     ///
