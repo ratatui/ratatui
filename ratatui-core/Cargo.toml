@@ -64,7 +64,6 @@ bitflags.workspace = true
 compact_str.workspace = true
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
-indoc.workspace = true
 itertools.workspace = true
 kasuari = { workspace = true, default-features = false }
 lru.workspace = true
@@ -77,6 +76,7 @@ unicode-truncate = { workspace = true, default-features = false }
 unicode-width.workspace = true
 
 [dev-dependencies]
+indoc.workspace = true
 pretty_assertions.workspace = true
 rstest.workspace = true
 serde_json.workspace = true
