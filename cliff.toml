@@ -111,6 +111,8 @@ commit_preprocessors = [
   { pattern = '\<[f]eatuers\>', replace = "features" },
   { pattern = '\<[s]pecically\>', replace = "specially" },
   { pattern = '\<[g]ague\>', replace = "gauge" },
+  { pattern = '\<[i]ntructions\>', replace = "instructions" },
+  { pattern = '\<[i]mplementated\>', replace = "implemented" },
 ]
 # regex for parsing and grouping commits
 commit_parsers = [
