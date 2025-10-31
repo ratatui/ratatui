@@ -838,29 +838,27 @@ impl Table<'_> {
         for _ in 0..cell.get_colspan() {
             let x: u16;
             let width: u16;
-            match column_widths_iterator.next() {
-                None => break,
-                Some((next_x, next_width)) => {
-                    x = *next_x;
-                    width = *next_width;
-                }
+            if let Some((next_x, next_width)) = column_widths_iterator.next() {
+                x = *next_x;
+                width = *next_width;
+            } else {
+                break;
             }
-            match ret {
-                None => ret = Some((x, width)),
-                Some((old_x, old_width)) => {
-                    ret = Some((
-                        // Initial start of column span
-                        old_x,
-                        (
-                            // Space taken by previous columns and gaps
-                            old_width
-                        // Space taken by column on this iteration
-                        + width
-                        // Gap between columns
-                        + 1
-                        ),
-                    ));
-                }
+            if let Some((old_x, old_width)) = ret {
+                ret = Some((
+                    // Initial start of column span
+                    old_x,
+                    (
+                        // Space taken by previous columns and gaps
+                        old_width
+                    // Space taken by column on this iteration
+                    + width
+                    // Gap between columns
+                    + 1
+                    ),
+                ));
+            } else {
+                ret = Some((x, width));
             }
         }
         ret
@@ -907,14 +905,13 @@ impl Table<'_> {
             }
             let mut column_widths_iter = columns_widths.iter();
             for current_cell in &row.cells {
-                match Self::get_widths_for_cell(&mut column_widths_iter, current_cell) {
-                    None => {}
-                    Some((x, width)) => {
-                        current_cell.render(
-                            Rect::new(row_area.x + x, row_area.y, width, row_area.height),
-                            buf,
-                        );
-                    }
+                if let Some((x, width)) =
+                    Self::get_widths_for_cell(&mut column_widths_iter, current_cell)
+                {
+                    current_cell.render(
+                        Rect::new(row_area.x + x, row_area.y, width, row_area.height),
+                        buf,
+                    );
                 }
             }
             if is_selected {
