@@ -4,427 +4,66 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+## [v0.30.0-beta.0](https://github.com/ratatui/ratatui/releases/tag/v0.30.0-beta.0) - 2025-10-28
 
-## ratatui - [0.30.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.4...ratatui-v0.30.0-alpha.5) - 2025-06-30
+> _"Rats don't just survive; they discover; they create. ... I mean, just look at what they do with
+the terminal!" – Remy & Orhun_
 
-### Features
+We are excited to announce the biggest release of `ratatui` so far - a Rust library that's all about cooking up TUIs 👨‍🍳🐀
 
-- [1399d95](https://github.com/ratatui/ratatui/commit/1399d95ae0c93b0f802e500022853e32fa604cf9) *(no_std)* Make palette and serde features depends on std by @j-g00da in [#1919](https://github.com/ratatui/ratatui/pull/1919)
+📢 Please note that this is a beta release, and we encourage you to try it out and provide feedback!
 
-- [7bc78bc](https://github.com/ratatui/ratatui/commit/7bc78bca1b8ce9aac0cab3831a0c9c864ab02b02) *(uncategorized)* Add ratatui::run() method by @joshka in [#1707](https://github.com/ratatui/ratatui/pull/1707)
+✨ **WIP Release highlights**: <https://ratatui-0-30.ratatui.pages.dev/highlights/v030/>
 
-  > This introduces a new `ratatui::run()` method which runs a closure with
-  > a terminal initialized with reasonable defaults for most applications.
-  > This calls `ratatui::init()` before running the closure and
-  > `ratatui::restore()` after the closure completes, and returns the result
-  > of the closure.
-  >
-  > A minimal hello world example using the new `ratatui::run()` method:
-  >
-  > ```rust
-  > fn main() -> Result<(), Box<dyn std::error::Error>> {
-  >     ratatui::run(|terminal| {
-  >         loop {
-  >             terminal.draw(|frame| frame.render_widget("Hello World!", frame.area()))?;
-  >             if crossterm::event::read()?.is_key_press() {
-  >                 break Ok(());
-  >             }
-  >         }
-  >     })
-  > }
-  > ```
-  >
-  > Of course, this also works both with apps that use free methods and
-  > structs:
-  >
-  > ```rust
-  > fn run(terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
-  >
-  > ratatui::run(run)?;
-  > ```
-  >
-  > ```rust
-  > struct App { ... }
-  >
-  > impl App {
-  >     fn new() -> Self { ... }
-  >     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
-  > }
-  >
-  > ratatui::run(|terminal| App::new().run(terminal))?;
-  > ```
-
-### Bug Fixes
-
-- [80bc818](https://github.com/ratatui/ratatui/commit/80bc8187233f4d98659b552d85520cd0e24ec8ad) *(uncategorized)* Fix truncation of left aligned block titles by @joshka in [#1931](https://github.com/ratatui/ratatui/pull/1931)
-
-  > truncate the right side of left aligned titles rather than the left side
-  > of right aligned titles. This is more obvious as the left side of text
-  > often contains more important information. And we generally read
-  > left to right.
-  >
-  > This change makes centered titles overwrite left aligned titles and
-  > right aligned titles overwrite centered or left aligned titles.
-  >
-  > Fixes:https://github.com/ratatui/ratatui/issues/358
-
-### Documentation
-
-- [68b9f67](https://github.com/ratatui/ratatui/commit/68b9f67f59ce7b46649fe3c96c558f4b88cd1007) *(readme)* Add `Built with Ratatui` badge for downstream projects by @harilvfs in [#1905](https://github.com/ratatui/ratatui/pull/1905)
-
-- [055522e](https://github.com/ratatui/ratatui/commit/055522ef7bafa5ed2a9370b9907f647f616cbfb0) *(uncategorized)* Add docs for authoring widget crates by @j-g00da in [#1955](https://github.com/ratatui/ratatui/pull/1955)
-
-  > - added Authoring Widget Libraries sub-section
-  > - moved built-in and third-party widgets sections higher
-
-- [4c708dd](https://github.com/ratatui/ratatui/commit/4c708ddf8a4dfcc7e31435cc9269fce62ef48212) *(uncategorized)* Improve docs for run/init/restore etc. by @joshka in [#1947](https://github.com/ratatui/ratatui/pull/1947)
-
-  > - **docs: document the init module**
-  > - **docs: use the ratatui::run() methods in the main doc**
-  > - **docs: add more intradoc / website links and historical perspective
-  > on Terminal / backend**
-  > - **docs: add notes about new run/init/restore methods and the
-  > defaultterminal type to terminal docs**
-
-- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
-
-  > Adds summary-level crate organization documentation to all crates
-  > explaining the modular workspace structure and when to use each crate.
-  > Links to ARCHITECTURE.md for detailed information.
-
-- [cfb65e6](https://github.com/ratatui/ratatui/commit/cfb65e64ba9e9758e44c5bfe54adc331a9084932) *(uncategorized)* Add examples for handling state by @joshka in [#1849](https://github.com/ratatui/ratatui/pull/1849)
-
-  > Added comprehensive state management examples covering both immutable
-  > and mutable patterns and documentation to help developers choose the
-  > right approach for their applications.
-
-- [3de41a8](https://github.com/ratatui/ratatui/commit/3de41a8249d221d603ce9f294cac81df62fffc3c) *(uncategorized)* Document widgets module by @joshka in [#1932](https://github.com/ratatui/ratatui/pull/1932)
-
-  > Adds a good overview of the use and implementation of widget traits.
-  >
-  > Goals with the doc rewrite:
-  > - document the rationale for the ratatui-widgets crate with info for app
-  > builders and widget makers.
-  > - Show how to use the widgets for rendering as well as implement the
-  > traits- document the differences and reasons for each trait
-  > - document the historical perspective (to make it easy to understand
-  > older Ratatui apps as well as migrate to newer approaches
-  > - give recommended approaches to implementing traits
-  > - explain the differences between Consuming and Shared / Mutable
-  > Reference implementations of Widget
-  > - explain the differences between using StatefulWidget and Mutable
-  > References
-  > - Explain the use case for WidgetRef and StatefulWidgetRef
-  > - Link out to third part widget lists
-  >
-  > Fixes:https://github.com/ratatui/ratatui/issues/366
-  >
-  > ---------
-
-### Miscellaneous Tasks
-
-- [4c86513](https://github.com/ratatui/ratatui/commit/4c86513790a12d7a4d9e38959430395a3a7dc868) *(uncategorized)* Remove block::Title by @joshka in [#1926](https://github.com/ratatui/ratatui/pull/1926)
-
-  > The title alignment is better expressed in the `Line` as this fits more
-  > coherently with the rest of the library.
-  >
-  > BREAKING CHANGES:
-  > - `widgets::block` is no longer exported
-  > - `widgets::block::Title` no longer exists
-  > - `widgets::block::Position` is now `widgets::TitlePosition`
-  > - `Block::title()` now accepts `Into::<Line>` instead of `Into<Title>`
-  > - `BlockExt` is now exported at widgets::`BlockExt`
-  >
-  > Closes:https://github.com/ratatui/ratatui/issues/738
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.4...ratatui-v0.30.0-alpha.5
-
-
-
-## ratatui-termion - [0.1.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.4...ratatui-termion-v0.1.0-alpha.5) - 2025-06-30
-
-### Documentation
-
-- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
-
-  > Adds summary-level crate organization documentation to all crates
-  > explaining the modular workspace structure and when to use each crate.
-  > Links to ARCHITECTURE.md for detailed information.
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.4...ratatui-termion-v0.1.0-alpha.5
-
-
-
-## ratatui-termwiz - [0.1.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.4...ratatui-termwiz-v0.1.0-alpha.5) - 2025-06-30
-
-### Documentation
-
-- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
-
-  > Adds summary-level crate organization documentation to all crates
-  > explaining the modular workspace structure and when to use each crate.
-  > Links to ARCHITECTURE.md for detailed information.
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.4...ratatui-termwiz-v0.1.0-alpha.5
-
-
-
-## ratatui-macros - [0.7.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.3...ratatui-macros-v0.7.0-alpha.4) - 2025-06-30
+⚠️ List of breaking changes can be found [here](https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md).
 
 ### Features
 
-- [b32f781](https://github.com/ratatui/ratatui/commit/b32f78195bfa4b131e091d64f02676fa1ba0a360) *(no_std)* Make `ratatui-macros` no-std by @j-g00da in [#1865](https://github.com/ratatui/ratatui/pull/1865)
+- [56d5e05](https://github.com/ratatui/ratatui/commit/56d5e057625378f1bdf732dabb57208453fb84d6) _(bar)_ Update label and text_value to accept Into<> by @Emivvvvv in [#1471](https://github.com/ratatui/ratatui/pull/1471) [**breaking**]
 
-### Documentation
-
-- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
-
-  > Adds summary-level crate organization documentation to all crates
-  > explaining the modular workspace structure and when to use each crate.
-  > Links to ARCHITECTURE.md for detailed information.
-
-- [ca2ad4a](https://github.com/ratatui/ratatui/commit/ca2ad4a1f93432f81a87ca1e3766f510723d3652) *(uncategorized)* Simplify ratatui-macro docs by @joshka in [#1923](https://github.com/ratatui/ratatui/pull/1923)
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.3...ratatui-macros-v0.7.0-alpha.4
-
-
-
-## ratatui-widgets - [0.3.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.4...ratatui-widgets-v0.3.0-alpha.5) - 2025-06-30
-
-### Features
-
-- [89b7421](https://github.com/ratatui/ratatui/commit/89b74214d9d09343743c8601d9401c0139a887a4) *(serde)* Derive Serialize/Deserialize for additional structs/enums by @aurreland in [#1883](https://github.com/ratatui/ratatui/pull/1883)
-
-  > This PR adds `#[derive(Serialize, Deserialize)]` to the following
-  > structs:
-  > - `Constraint`
-  > - `Direction`
-  > - `Spacing`
-  > - `Layout`
-  > - `AccentedPalette`
-  > - `NonAccentedPalette`
-  > - `Palette`
-  > - `Padding`
-  > - `Borders`
-  > - `BorderType`
-  > - `ListDirection`
-  > - `ScrollbarOrientation`
-  > - `ScrollDirection`
-  > - `RenderDirection`
-  > - `HighlightSpacing`
+  > BREAKING CHANGE:label and text_value now accept `Into<>` types, which
+  > breaks type inference.
   >
-  > Fixes #1877
-
-- [6dcd53b](https://github.com/ratatui/ratatui/commit/6dcd53bc6ba172d4b96d02809c6a46105e67d85a) *(uncategorized)* Add ergonomic methods for layouting Rects by @joshka in [#1909](https://github.com/ratatui/ratatui/pull/1909)
-
-  > This commit introduces new methods for the `Rect` struct that simplify
-  > the process of splitting a `Rect` into sub-rects according to a given
-  > `Layout`. By putting these methods on the `Rect` struct, we make it a
-  > bit more natural that a layout is applied to the `Rect` itself, rather
-  > than passing a `Rect` to the `Layout` struct to be split.
-  >
-  > Adds:- `Rect::layout` and `Rect::try_layout` methods that allow splitting a
-  >   `Rect` into an array of sub-rects according to a given `Layout`.
-  > - `Rect::layout_vec` method that returns a `Vec` of sub-rects.
-  > - `Layout::try_areas` method that returns an array of sub-rects, with
-  >   compile-time checks for the number of constraints. This is added
-  >   mainly for consistency with the new `Rect` methods.
-  >
-  > ```rust
-  > use ratatui_core::layout::{Layout, Constraint, Rect};
-  > let area = Rect::new(0, 0, 10, 10);
-  > let layout = Layout::vertical([Constraint::Fill(1); 2]);
-  >
-  > // Rect::layout() infers the number of constraints at compile time:
-  > let [top, main] = area.layout(&layout);
-  >
-  > // Rect::try_layout() and Layout::try_areas() do the same, but return a
-  > // Result:
-  > let [top, main] = area.try_layout(&layout)?;
-  > let [top, main] = layout.try_areas(area)?;
-  >
-  > // Rect::layout_vec() returns a Vec of sub-rects:
-  > let areas_vec = area.layout_vec(&layout);
-  >
-  > // you can also explicitly specify the number of constraints:
-  > let areas = area.layout::<2>(&layout);
-  > let areas = area.try_layout::<2>(&layout)?;
-  > let areas = layout.try_areas::<2>(area)?;
-  > ```
-
-- [7bc78bc](https://github.com/ratatui/ratatui/commit/7bc78bca1b8ce9aac0cab3831a0c9c864ab02b02) *(uncategorized)* Add ratatui::run() method by @joshka in [#1707](https://github.com/ratatui/ratatui/pull/1707)
-
-  > This introduces a new `ratatui::run()` method which runs a closure with
-  > a terminal initialized with reasonable defaults for most applications.
-  > This calls `ratatui::init()` before running the closure and
-  > `ratatui::restore()` after the closure completes, and returns the result
-  > of the closure.
-  >
-  > A minimal hello world example using the new `ratatui::run()` method:
-  >
-  > ```rust
-  > fn main() -> Result<(), Box<dyn std::error::Error>> {
-  >     ratatui::run(|terminal| {
-  >         loop {
-  >             terminal.draw(|frame| frame.render_widget("Hello World!", frame.area()))?;
-  >             if crossterm::event::read()?.is_key_press() {
-  >                 break Ok(());
-  >             }
-  >         }
-  >     })
-  > }
+  > ```diff
+  > - Bar::default().label("foo".into());
+  > + Bar::default().label("foo");
   > ```
   >
-  > Of course, this also works both with apps that use free methods and
-  > structs:
-  >
-  > ```rust
-  > fn run(terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
-  >
-  > ratatui::run(run)?;
-  > ```
-  >
-  > ```rust
-  > struct App { ... }
-  >
-  > impl App {
-  >     fn new() -> Self { ... }
-  >     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
-  > }
-  >
-  > ratatui::run(|terminal| App::new().run(terminal))?;
+  > ```diff
+  > - Bar::default().text_value("bar".into());
+  > + Bar::default().text_value("bar");
   > ```
 
-- [b6fbfcd](https://github.com/ratatui/ratatui/commit/b6fbfcdd1cf1813879af523a52fb8c5a496a685b) *(uncategorized)* Add lifetime to symbol sets by @joshka in [#1935](https://github.com/ratatui/ratatui/pull/1935)
+- [b76ad3b](https://github.com/ratatui/ratatui/commit/b76ad3b02ea1c3381b6434c40e620f28d642948e) _(bar)_ Impl Styled for Bar by @Emivvvvv in [#1476](https://github.com/ratatui/ratatui/pull/1476)
 
-  > This makes it possible to create symbol sets at runtime with non-static
-  > lifetimes.
+  > Related:https://github.com/ratatui/ratatui/issues/683
+
+- [e15fefa](https://github.com/ratatui/ratatui/commit/e15fefa922f9519fa789ffecea8e55d887701acf) _(barchar)_ Add BarChart::grouped constructor by @joshka in [#1513](https://github.com/ratatui/ratatui/pull/1513)
+
+  > Add a new constructor to the `BarChart` widget that allows creating a
+  > grouped barchart with multiple groups of bars.
   >
-  > Fixes:https://github.com/ratatui/ratatui/issues/1722
+  > Also add a new constructor to the `BarGroup` widget that allows creating
+  > a group of bars with a label.
 
-- [488e5f0](https://github.com/ratatui/ratatui/commit/488e5f020f7a1b4c120d8b074c62a97abac0a4b6) *(uncategorized)* Make `border!` work without importing `Borders` by @j-g00da in [#1918](https://github.com/ratatui/ratatui/pull/1918)
+- [369b18e](https://github.com/ratatui/ratatui/commit/369b18eef2e4220147e7c7264ad7f8e023a1d2dd) _(barchart)_ Reduce barchart creation verbosity by @Emivvvvv in [#1453](https://github.com/ratatui/ratatui/pull/1453)
 
-  > Currently using `border!` macro requires explicit import of `Borders`
-  > which is unnecessary.
+  > Adds constructor methods for BarChart, BarGroup, and Bar
 
-- [671c2b4](https://github.com/ratatui/ratatui/commit/671c2b4fd4ee277ba0dc36d152d66c40cfa1f030) *(uncategorized)* Support merging the borders of blocks by @j-g00da
+- [2d713d7](https://github.com/ratatui/ratatui/commit/2d713d723d40a05fc09439f3d77fbca8cbbcc51a) _(crossterm)_ Allow multiple crossterm versions by @joshka in [#1841](https://github.com/ratatui/ratatui/pull/1841)
 
-  > When two borders overlap, they will automatically merge into a single,
-  > clean border instead of overlapping.
+  > This commit introduces feature flags to make it possible for widget
+  > library authors to depend on a specific version of crossterm without
+  > causing version conflicts. This should make it easier for libraries and
+  > apps to update crossterm versions more easily.
   >
-  > This improves visual clarity and reduces rendering glitches around corners.
-  >
-  > For example:
-  >
-  > ```
-  > assert_eq!(Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact).symbol(), "╆");
-  > ```
+  > The available feature flags are `crossterm_0_28` and `crossterm_0_29`.
+  > By default, the latest version is enabled. If a multiple features are
+  > enabled we choose the latest version. We will in general support at
+  > least the last two major (0.x) versions of crossterm, and will only
+  > remove versions in a major version bump.
 
-### Bug Fixes
-
-- [80bc818](https://github.com/ratatui/ratatui/commit/80bc8187233f4d98659b552d85520cd0e24ec8ad) *(uncategorized)* Fix truncation of left aligned block titles by @joshka in [#1931](https://github.com/ratatui/ratatui/pull/1931)
-
-  > truncate the right side of left aligned titles rather than the left side
-  > of right aligned titles. This is more obvious as the left side of text
-  > often contains more important information. And we generally read
-  > left to right.
-  >
-  > This change makes centered titles overwrite left aligned titles and
-  > right aligned titles overwrite centered or left aligned titles.
-  >
-  > Fixes:https://github.com/ratatui/ratatui/issues/358
-
-- [21e3b59](https://github.com/ratatui/ratatui/commit/21e3b598ce00300e9c7363139be73bba27f6e3c5) *(uncategorized)* Fix handling of multi-byte chars in bar chart by @joshka in [#1934](https://github.com/ratatui/ratatui/pull/1934)
-
-  > The split_at method requires that the split point is at a valid utf8
-  > character boundary.
-  >
-  > Fixes:https://github.com/ratatui/ratatui/issues/1928
-
-- [e1e4004](https://github.com/ratatui/ratatui/commit/e1e400406c531fe6a81e731242dffe19b1199f23) *(uncategorized)* Derive copy for list state by @janTatesa in [#1921](https://github.com/ratatui/ratatui/pull/1921)
-
-- [12cb5a2](https://github.com/ratatui/ratatui/commit/12cb5a28fe8e6c4526e70465a52c0d223140b8a1) *(uncategorized)* Allow canvas area to exceed u16::MAX by @Daksh14 in [#1891](https://github.com/ratatui/ratatui/pull/1891)
-
-  > This allows Canvas grids where the width * height exceeds u16::MAX by
-  > converting values to usize earlier in several methods.
-  >
-  > Fixes:https://github.com/ratatui/ratatui/issues/1449
-
-### Documentation
-
-- [617d318](https://github.com/ratatui/ratatui/commit/617d31851a30cfe751af421c8c438692c43fff4d) *(uncategorized)* Improve Block docs by @joshka in [#1953](https://github.com/ratatui/ratatui/pull/1953)
-
-- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
-
-  > Adds summary-level crate organization documentation to all crates
-  > explaining the modular workspace structure and when to use each crate.
-  > Links to ARCHITECTURE.md for detailed information.
-
-- [92b6a16](https://github.com/ratatui/ratatui/commit/92b6a16bdedb7fd14bafd1f4cbab6ee7b98295e8) *(uncategorized)* Fix grammar in ratatui-widgets README by @sevki in [#1885](https://github.com/ratatui/ratatui/pull/1885)
-
-### Miscellaneous Tasks
-
-- [92bb9b2](https://github.com/ratatui/ratatui/commit/92bb9b22198ac06439d14b4c6d4d0c4882e55eb1) *(uncategorized)* Remove `Title` references by @j-g00da in [#1943](https://github.com/ratatui/ratatui/pull/1943)
-
-- [4c86513](https://github.com/ratatui/ratatui/commit/4c86513790a12d7a4d9e38959430395a3a7dc868) *(uncategorized)* Remove block::Title by @joshka in [#1926](https://github.com/ratatui/ratatui/pull/1926)
-
-  > The title alignment is better expressed in the `Line` as this fits more
-  > coherently with the rest of the library.
-  >
-  > BREAKING CHANGES:
-  > - `widgets::block` is no longer exported
-  > - `widgets::block::Title` no longer exists
-  > - `widgets::block::Position` is now `widgets::TitlePosition`
-  > - `Block::title()` now accepts `Into::<Line>` instead of `Into<Title>`
-  > - `BlockExt` is now exported at widgets::`BlockExt`
-  >
-  > Closes:https://github.com/ratatui/ratatui/issues/738
-
-- [272f5c0](https://github.com/ratatui/ratatui/commit/272f5c05dc4399389c011d8693bae073523aebfb) *(uncategorized)* Fix new lints by @joshka in [#1922](https://github.com/ratatui/ratatui/pull/1922)
-
-- [770cb7c](https://github.com/ratatui/ratatui/commit/770cb7c3c31fd23b3ecc48c1f267e40f9f98b583) *(uncategorized)* Add tests for combining list styles by @joshka in [#1884](https://github.com/ratatui/ratatui/pull/1884)
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.4...ratatui-widgets-v0.3.0-alpha.5
-
-
-
-## ratatui-crossterm - [0.1.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.4...ratatui-crossterm-v0.1.0-alpha.5) - 2025-06-30
-
-### Documentation
-
-- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
-
-  > Adds summary-level crate organization documentation to all crates
-  > explaining the modular workspace structure and when to use each crate.
-  > Links to ARCHITECTURE.md for detailed information.
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.4...ratatui-crossterm-v0.1.0-alpha.5
-
-
-
-## ratatui-core - [0.1.0-alpha.6](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.5...ratatui-core-v0.1.0-alpha.6) - 2025-06-30
-
-### Features
-
-- [d99984f](https://github.com/ratatui/ratatui/commit/d99984f1e9143243cfbdd818ac17853300de5645) *(layout)* Add `Flex::SpaceEvenly` by @kdheepak in [#1952](https://github.com/ratatui/ratatui/pull/1952) [**breaking**]
+- [d99984f](https://github.com/ratatui/ratatui/commit/d99984f1e9143243cfbdd818ac17853300de5645) _(layout)_ Add `Flex::SpaceEvenly` by @kdheepak in [#1952](https://github.com/ratatui/ratatui/pull/1952) [**breaking**]
 
   > Resolves https://github.com/ratatui/ratatui/issues/1951
   >
@@ -434,23 +73,23 @@ All notable changes to this project will be documented in this file.
   >
   > `Flex::SpaceAround` now distributes space evenly around each element
   > except the middle spacers
-  >     are twice the size of first and last elements
+  > are twice the size of first and last elements
   >
   > With this change, the following variants of `Flex` are supported:
   >
   > - `Flex::Start`: Aligns items to the start; excess space appears at the
-  > end.
+  >   end.
   > - `Flex::End`: Aligns items to the end; excess space appears at the
-  > start.
+  >   start.
   > - `Flex::Center`: Centers items with equal space on both sides.
   > - `Flex::SpaceAround` (**new**): Distributes space _around_ items; space
-  > between items is _twice_ the edge spacing.
+  >   between items is _twice_ the edge spacing.
   > - `Flex::SpaceBetween`: Distributes space _evenly between_ items except
-  > no space at the edges.
+  >   no space at the edges.
   > - `Flex::SpaceEvenly` (**previously `Flex::SpaceAround`**): Distributes
-  > space _evenly between_ items and edges.
+  >   space _evenly between_ items and edges.
   > - `Flex::Legacy`: Preserves legacy behavior, placing all excess space at
-  > the end.
+  >   the end.
   >
   > This aligns behavior of `Flex` with CSS flexbox more closely.
   >
@@ -461,796 +100,25 @@ All notable changes to this project will be documented in this file.
   > src="https://github.com/user-attachments/assets/2c7cd797-27bd-4242-a824-4565d369227b"
   > />
   >
-  > ---------
+  > ***
 
-- [1399d95](https://github.com/ratatui/ratatui/commit/1399d95ae0c93b0f802e500022853e32fa604cf9) *(no_std)* Make palette and serde features depends on std by @j-g00da in [#1919](https://github.com/ratatui/ratatui/pull/1919)
+- [9275d34](https://github.com/ratatui/ratatui/commit/9275d3421c088174bcf9de0832340bcbea76367a) _(layout)_ Add Offset::new() constructor by @joshka in [#1547](https://github.com/ratatui/ratatui/pull/1547)
 
-- [b9da192](https://github.com/ratatui/ratatui/commit/b9da1926a0c102d97a552487fc9963590bea80ff) *(serde)* Derive Serialize/Deserialize for alignment enums by @j-g00da in [#1957](https://github.com/ratatui/ratatui/pull/1957)
-  >
-  > Resolves #1954
-
-- [89b7421](https://github.com/ratatui/ratatui/commit/89b74214d9d09343743c8601d9401c0139a887a4) *(serde)* Derive Serialize/Deserialize for additional structs/enums by @aurreland in [#1883](https://github.com/ratatui/ratatui/pull/1883)
-
-  > This PR adds `#[derive(Serialize, Deserialize)]` to the following
-  > structs:
-  > - `Constraint`
-  > - `Direction`
-  > - `Spacing`
-  > - `Layout`
-  > - `AccentedPalette`
-  > - `NonAccentedPalette`
-  > - `Palette`
-  > - `Padding`
-  > - `Borders`
-  > - `BorderType`
-  > - `ListDirection`
-  > - `ScrollbarOrientation`
-  > - `ScrollDirection`
-  > - `RenderDirection`
-  > - `HighlightSpacing`
-  >
-  > Fixes #1877
-
-- [4c301e8](https://github.com/ratatui/ratatui/commit/4c301e891d9704fd3578af96d63a3b068252ec6a) *(text)* Implement `AddAssign` for `Text` by @acuteenvy in [#1956](https://github.com/ratatui/ratatui/pull/1956)
-
-  > This makes it possible to add a second `Text` instance to a first one using the += operator.
-  >
-  > ```rust
-  > let mut text = Text::from("line 1");
-  > text += Text::from("line 2");
-  > ```
-  >
-  > Style and alignment applied to the second text is ignored (though styles and alignment of lines and spans are copied).
-
-- [6dcd53b](https://github.com/ratatui/ratatui/commit/6dcd53bc6ba172d4b96d02809c6a46105e67d85a) *(uncategorized)* Add ergonomic methods for layouting Rects by @joshka in [#1909](https://github.com/ratatui/ratatui/pull/1909)
-
-  > This commit introduces new methods for the `Rect` struct that simplify
-  > the process of splitting a `Rect` into sub-rects according to a given
-  > `Layout`. By putting these methods on the `Rect` struct, we make it a
-  > bit more natural that a layout is applied to the `Rect` itself, rather
-  > than passing a `Rect` to the `Layout` struct to be split.
-  >
-  > Adds:- `Rect::layout` and `Rect::try_layout` methods that allow splitting a
-  >   `Rect` into an array of sub-rects according to a given `Layout`.
-  > - `Rect::layout_vec` method that returns a `Vec` of sub-rects.
-  > - `Layout::try_areas` method that returns an array of sub-rects, with
-  >   compile-time checks for the number of constraints. This is added
-  >   mainly for consistency with the new `Rect` methods.
-  >
-  > ```rust
-  > use ratatui_core::layout::{Layout, Constraint, Rect};
-  > let area = Rect::new(0, 0, 10, 10);
-  > let layout = Layout::vertical([Constraint::Fill(1); 2]);
-  >
-  > // Rect::layout() infers the number of constraints at compile time:
-  > let [top, main] = area.layout(&layout);
-  >
-  > // Rect::try_layout() and Layout::try_areas() do the same, but return a
-  > // Result:
-  > let [top, main] = area.try_layout(&layout)?;
-  > let [top, main] = layout.try_areas(area)?;
-  >
-  > // Rect::layout_vec() returns a Vec of sub-rects:
-  > let areas_vec = area.layout_vec(&layout);
-  >
-  > // you can also explicitly specify the number of constraints:
-  > let areas = area.layout::<2>(&layout);
-  > let areas = area.try_layout::<2>(&layout)?;
-  > let areas = layout.try_areas::<2>(area)?;
-  > ```
-
-- [0c3872f](https://github.com/ratatui/ratatui/commit/0c3872f1c5105153ebb0368e83e8b72cb68b8b34) *(uncategorized)* Add Rect::outer() by @joshka in [#1929](https://github.com/ratatui/ratatui/pull/1929)
-  >
-  > Fixes:https://github.com/ratatui/ratatui/issues/211
-
-- [b6fbfcd](https://github.com/ratatui/ratatui/commit/b6fbfcdd1cf1813879af523a52fb8c5a496a685b) *(uncategorized)* Add lifetime to symbol sets by @joshka in [#1935](https://github.com/ratatui/ratatui/pull/1935)
-
-  > This makes it possible to create symbol sets at runtime with non-static
-  > lifetimes.
-  >
-  > Fixes:https://github.com/ratatui/ratatui/issues/1722
-
-- [671c2b4](https://github.com/ratatui/ratatui/commit/671c2b4fd4ee277ba0dc36d152d66c40cfa1f030) *(uncategorized)* Support merging the borders of blocks by @j-g00da
-
-  > When two borders overlap, they will automatically merge into a single,
-  > clean border instead of overlapping.
-  >
-  > This improves visual clarity and reduces rendering glitches around corners.
-  >
-  > For example:
-  >
-  > ```
-  > assert_eq!(Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact).symbol(), "╆");
-  > ```
-
-### Documentation
-
-- [8e2d568](https://github.com/ratatui/ratatui/commit/8e2d568428047994f57886d64d9925d6eace130a) *(uncategorized)* Improve layout related docs by @joshka in [#1948](https://github.com/ratatui/ratatui/pull/1948)
-
-  > Adds module level docs and more comprehensive docs on all the types in
-  > the layout module
-  >
-  > Fixes #1937
-
-- [4c708dd](https://github.com/ratatui/ratatui/commit/4c708ddf8a4dfcc7e31435cc9269fce62ef48212) *(uncategorized)* Improve docs for run/init/restore etc. by @joshka in [#1947](https://github.com/ratatui/ratatui/pull/1947)
-
-  > - **docs: document the init module**
-  > - **docs: use the ratatui::run() methods in the main doc**
-  > - **docs: add more intradoc / website links and historical perspective
-  > on Terminal / backend**
-  > - **docs: add notes about new run/init/restore methods and the
-  > defaultterminal type to terminal docs**
-
-- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) *(uncategorized)* Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
-
-  > Adds summary-level crate organization documentation to all crates
-  > explaining the modular workspace structure and when to use each crate.
-  > Links to ARCHITECTURE.md for detailed information.
-
-- [3de41a8](https://github.com/ratatui/ratatui/commit/3de41a8249d221d603ce9f294cac81df62fffc3c) *(uncategorized)* Document widgets module by @joshka in [#1932](https://github.com/ratatui/ratatui/pull/1932)
-
-  > Adds a good overview of the use and implementation of widget traits.
-  >
-  > Goals with the doc rewrite:
-  > - document the rationale for the ratatui-widgets crate with info for app
-  > builders and widget makers.
-  > - Show how to use the widgets for rendering as well as implement the
-  > traits- document the differences and reasons for each trait
-  > - document the historical perspective (to make it easy to understand
-  > older Ratatui apps as well as migrate to newer approaches
-  > - give recommended approaches to implementing traits
-  > - explain the differences between Consuming and Shared / Mutable
-  > Reference implementations of Widget
-  > - explain the differences between using StatefulWidget and Mutable
-  > References
-  > - Explain the use case for WidgetRef and StatefulWidgetRef
-  > - Link out to third part widget lists
-  >
-  > Fixes:https://github.com/ratatui/ratatui/issues/366
-  >
-  > ---------
-
-### Miscellaneous Tasks
-
-- [d6647db](https://github.com/ratatui/ratatui/commit/d6647db74486117affb20104c25b0645f32ce684) *(uncategorized)* Remove some allow attributes for fixed clippy bugs by @joshka in [#1944](https://github.com/ratatui/ratatui/pull/1944)
-
-- [272f5c0](https://github.com/ratatui/ratatui/commit/272f5c05dc4399389c011d8693bae073523aebfb) *(uncategorized)* Fix new lints by @joshka in [#1922](https://github.com/ratatui/ratatui/pull/1922)
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.5...ratatui-core-v0.1.0-alpha.6
-
-
-
-## ratatui - [0.30.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.3...ratatui-v0.30.0-alpha.4) - 2025-05-19
-
-### Features
-
-- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
-
-  > This makes it possible to create constants using the shorthand methods.
-  >
-  > ```rust
-  > const MY_STYLE: Style = Style::new().blue().on_black();
-  > ```
-  >
-  > Rather than implementing Styled for Style and then adding extension
-  > methods that implement the Stylize shorthands, this implements the
-  > methods as const functions directly on Style.
-  >
-  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
-  > methods implemented by the blanket implementation of Stylize are now
-  > defined directly on Style. Remove the Stylize import if it is no longer
-  > used by your code.
-  >
-  > The `reset()` method does not have a direct replacement, as it clashes
-  > with the existing `reset()` method. Use `Style::reset()` rather than
-  > `some_style.reset()`
-  >
-  > Fixes:#1158
-
-### Miscellaneous Tasks
-
-- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
-  >
-  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
-  >
-  > Fixes #1727
-
-- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) *(uncategorized)* Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
-
-  > Move all dependency management to the workspace level. This makes it
-  > easier to manage dependencies across multiple crates in the workspace.
-  >
-  > This also changes the versions of each dependency to track based on the
-  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
-  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
-  > files and to communicate that Ratatui will still generally work with
-  > versions of the dependencies that are not the fully latest version. The
-  > exact version of the dependencies is still tracked in the Cargo.lock
-  > file.
-  >
-  > Several dependencies that are fairly stable are changed to track a less
-  > specific version (e.g. serde 1 instead of 1.0.x).
-  >
-  > The following dependencies are updated to their latest versions:
-  > - bitflags (2.3 -> 2.9)
-  > - strum (0.26 -> 0.27)
-  > - strum_macros (0.26 -> 0.27)
-  > - all other semver compatible updates
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.3...ratatui-v0.30.0-alpha.4
-
-
-
-## ratatui-termion - [0.1.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.3...ratatui-termion-v0.1.0-alpha.4) - 2025-05-19
-
-### Features
-
-- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
-
-  > This makes it possible to create constants using the shorthand methods.
-  >
-  > ```rust
-  > const MY_STYLE: Style = Style::new().blue().on_black();
-  > ```
-  >
-  > Rather than implementing Styled for Style and then adding extension
-  > methods that implement the Stylize shorthands, this implements the
-  > methods as const functions directly on Style.
-  >
-  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
-  > methods implemented by the blanket implementation of Stylize are now
-  > defined directly on Style. Remove the Stylize import if it is no longer
-  > used by your code.
-  >
-  > The `reset()` method does not have a direct replacement, as it clashes
-  > with the existing `reset()` method. Use `Style::reset()` rather than
-  > `some_style.reset()`
-  >
-  > Fixes:#1158
-
-### Miscellaneous Tasks
-
-- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
-  >
-  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
-  >
-  > Fixes #1727
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.3...ratatui-termion-v0.1.0-alpha.4
-
-
-
-## ratatui-termwiz - [0.1.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.3...ratatui-termwiz-v0.1.0-alpha.4) - 2025-05-19
-
-### Features
-
-- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
-
-  > This makes it possible to create constants using the shorthand methods.
-  >
-  > ```rust
-  > const MY_STYLE: Style = Style::new().blue().on_black();
-  > ```
-  >
-  > Rather than implementing Styled for Style and then adding extension
-  > methods that implement the Stylize shorthands, this implements the
-  > methods as const functions directly on Style.
-  >
-  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
-  > methods implemented by the blanket implementation of Stylize are now
-  > defined directly on Style. Remove the Stylize import if it is no longer
-  > used by your code.
-  >
-  > The `reset()` method does not have a direct replacement, as it clashes
-  > with the existing `reset()` method. Use `Style::reset()` rather than
-  > `some_style.reset()`
-  >
-  > Fixes:#1158
-
-### Miscellaneous Tasks
-
-- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
-  >
-  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
-  >
-  > Fixes #1727
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.3...ratatui-termwiz-v0.1.0-alpha.4
-
-
-
-## ratatui-macros - [0.7.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.2...ratatui-macros-v0.7.0-alpha.3) - 2025-05-19
-
-### Features
-
-- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
-
-  > This makes it possible to create constants using the shorthand methods.
-  >
-  > ```rust
-  > const MY_STYLE: Style = Style::new().blue().on_black();
-  > ```
-  >
-  > Rather than implementing Styled for Style and then adding extension
-  > methods that implement the Stylize shorthands, this implements the
-  > methods as const functions directly on Style.
-  >
-  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
-  > methods implemented by the blanket implementation of Stylize are now
-  > defined directly on Style. Remove the Stylize import if it is no longer
-  > used by your code.
-  >
-  > The `reset()` method does not have a direct replacement, as it clashes
-  > with the existing `reset()` method. Use `Style::reset()` rather than
-  > `some_style.reset()`
-  >
-  > Fixes:#1158
-
-### Miscellaneous Tasks
-
-- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
-  >
-  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
-  >
-  > Fixes #1727
-
-- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) *(uncategorized)* Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
-
-  > Move all dependency management to the workspace level. This makes it
-  > easier to manage dependencies across multiple crates in the workspace.
-  >
-  > This also changes the versions of each dependency to track based on the
-  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
-  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
-  > files and to communicate that Ratatui will still generally work with
-  > versions of the dependencies that are not the fully latest version. The
-  > exact version of the dependencies is still tracked in the Cargo.lock
-  > file.
-  >
-  > Several dependencies that are fairly stable are changed to track a less
-  > specific version (e.g. serde 1 instead of 1.0.x).
-  >
-  > The following dependencies are updated to their latest versions:
-  > - bitflags (2.3 -> 2.9)
-  > - strum (0.26 -> 0.27)
-  > - strum_macros (0.26 -> 0.27)
-  > - all other semver compatible updates
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.2...ratatui-macros-v0.7.0-alpha.3
-
-
-
-## ratatui-widgets - [0.3.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.3...ratatui-widgets-v0.3.0-alpha.4) - 2025-05-19
-
-### Features
-
-- [e15fefa](https://github.com/ratatui/ratatui/commit/e15fefa922f9519fa789ffecea8e55d887701acf) *(barchar)* Add BarChart::grouped constructor by @joshka in [#1513](https://github.com/ratatui/ratatui/pull/1513)
-
-  > Add a new constructor to the `BarChart` widget that allows creating a
-  > grouped barchart with multiple groups of bars.
-  >
-  > Also add a new constructor to the `BarGroup` widget that allows creating
-  > a group of bars with a label.
-
-- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
-
-  > This makes it possible to create constants using the shorthand methods.
-  >
-  > ```rust
-  > const MY_STYLE: Style = Style::new().blue().on_black();
-  > ```
-  >
-  > Rather than implementing Styled for Style and then adding extension
-  > methods that implement the Stylize shorthands, this implements the
-  > methods as const functions directly on Style.
-  >
-  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
-  > methods implemented by the blanket implementation of Stylize are now
-  > defined directly on Style. Remove the Stylize import if it is no longer
-  > used by your code.
-  >
-  > The `reset()` method does not have a direct replacement, as it clashes
-  > with the existing `reset()` method. Use `Style::reset()` rather than
-  > `some_style.reset()`
-  >
-  > Fixes:#1158
-
-### Miscellaneous Tasks
+- [7ad9c29](https://github.com/ratatui/ratatui/commit/7ad9c29eac6f70cab270dfbd84dc66c05f1e1307) _(linegauge)_ Customized symbols by @sectore in [#1601](https://github.com/ratatui/ratatui/pull/1601)
 
-- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+  > With this PR any symbol (`&str`) can be used to render `filled` and
+  > `unfilled` parts of `LineGauge` now. Before that change, only
+  > [`symbols::line::Set`](https://docs.rs/ratatui/latest/ratatui/symbols/line/struct.Set.html)
+  > was accepted.
   >
-  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  > Note:New methods are introduced to define those symbols:
+  > `filled_symbol` and `unfilled_symbol`. The method
+  > [`line_set`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.LineGauge.html#method.line_set)
+  > is still there, but marked as `deprecated`.
   >
-  > Fixes #1727
-
-- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) *(uncategorized)* Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
-
-  > Move all dependency management to the workspace level. This makes it
-  > easier to manage dependencies across multiple crates in the workspace.
-  >
-  > This also changes the versions of each dependency to track based on the
-  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
-  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
-  > files and to communicate that Ratatui will still generally work with
-  > versions of the dependencies that are not the fully latest version. The
-  > exact version of the dependencies is still tracked in the Cargo.lock
-  > file.
-  >
-  > Several dependencies that are fairly stable are changed to track a less
-  > specific version (e.g. serde 1 instead of 1.0.x).
-  >
-  > The following dependencies are updated to their latest versions:
-  > - bitflags (2.3 -> 2.9)
-  > - strum (0.26 -> 0.27)
-  > - strum_macros (0.26 -> 0.27)
-  > - all other semver compatible updates
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.3...ratatui-widgets-v0.3.0-alpha.4
-
-
-
-## ratatui-crossterm - [0.1.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.3...ratatui-crossterm-v0.1.0-alpha.4) - 2025-05-19
-
-### Miscellaneous Tasks
-
-- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
-  >
-  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
-  >
-  > Fixes #1727
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.3...ratatui-crossterm-v0.1.0-alpha.4
-
-
-
-## ratatui-core - [0.1.0-alpha.5](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.4...ratatui-core-v0.1.0-alpha.5) - 2025-05-19
-
-### Features
-
-- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) *(uncategorized)* Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
-
-  > This makes it possible to create constants using the shorthand methods.
-  >
-  > ```rust
-  > const MY_STYLE: Style = Style::new().blue().on_black();
-  > ```
-  >
-  > Rather than implementing Styled for Style and then adding extension
-  > methods that implement the Stylize shorthands, this implements the
-  > methods as const functions directly on Style.
-  >
-  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
-  > methods implemented by the blanket implementation of Stylize are now
-  > defined directly on Style. Remove the Stylize import if it is no longer
-  > used by your code.
-  >
-  > The `reset()` method does not have a direct replacement, as it clashes
-  > with the existing `reset()` method. Use `Style::reset()` rather than
-  > `some_style.reset()`
-  >
-  > Fixes:#1158
-
-### Miscellaneous Tasks
-
-- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) *(uncategorized)* Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
-  >
-  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
-  >
-  > Fixes #1727
-
-- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) *(uncategorized)* Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
-
-  > Move all dependency management to the workspace level. This makes it
-  > easier to manage dependencies across multiple crates in the workspace.
-  >
-  > This also changes the versions of each dependency to track based on the
-  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
-  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
-  > files and to communicate that Ratatui will still generally work with
-  > versions of the dependencies that are not the fully latest version. The
-  > exact version of the dependencies is still tracked in the Cargo.lock
-  > file.
-  >
-  > Several dependencies that are fairly stable are changed to track a less
-  > specific version (e.g. serde 1 instead of 1.0.x).
-  >
-  > The following dependencies are updated to their latest versions:
-  > - bitflags (2.3 -> 2.9)
-  > - strum (0.26 -> 0.27)
-  > - strum_macros (0.26 -> 0.27)
-  > - all other semver compatible updates
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.4...ratatui-core-v0.1.0-alpha.5
-
-
-
-## ratatui - [0.30.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.2...ratatui-v0.30.0-alpha.3) - 2025-05-13
-
-### Features
-
-- [3e1c72f](https://github.com/ratatui/ratatui/commit/3e1c72fb27cae132bc8b5f24a4ae875921dfb00d) *(no_std)* Make ratatui compatible with `#![no_std]` by @j-g00da in [#1794](https://github.com/ratatui/ratatui/pull/1794) [**breaking**]
-  >
-  > Resolves #1781
-  >
-  > This PR makes it possible to compile ratatui with `#![no_std]`.
-  > Also makes me answer "We Are So Embedded" to "Are We Embedded Yet?"
-
-- [ab48c06](https://github.com/ratatui/ratatui/commit/ab48c06171724ae58d98687d90e999b76890c2e7) *(no_std)* Option to disable layout cache for `no_std` compatibility by @j-g00da in [#1795](https://github.com/ratatui/ratatui/pull/1795) [**breaking**]
-  >
-  > Resolves #1780
-  >
-  > BREAKING CHANGE:Disabling `default-features` will now disable layout
-  > cache, which can have a negative impact on performance.
-  >
-  > `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only
-  > available if `layout-cache` feature is enabled.
-
-- [09173d1](https://github.com/ratatui/ratatui/commit/09173d182912ab92e67b8aa7a4cb51862b05cb25) *(no_std)* Make `TestBackend::Error` `Infallible` by @j-g00da in [#1823](https://github.com/ratatui/ratatui/pull/1823) [**breaking**]
-  >
-  > BREAKING CHANGE:`TestBackend` now uses `core::convert::Infallible` for
-  > error handling instead of `std::io::Error`
-
-- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) *(uncategorized)* Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
-
-  > This PR propagates the serde feature from the main ratatui crate to the
-  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
-
-- [fcb47d6](https://github.com/ratatui/ratatui/commit/fcb47d60f3df205c18f5fa9459e9ba2c8d0c9649) *(uncategorized)* Rename Alignment to HorizontalAlignment and add VerticalAlignment by @joshka in [#1735](https://github.com/ratatui/ratatui/pull/1735) [**breaking**]
-
-  > We don't anticipate removing or deprecating the type alias in the near
-  > future, but it is recommended to update your imports to use the new
-  > name.
-  >
-  > Added a VerticalAlignment enum to make the API more consistent. We don't
-  > have a specific use case for it yet, but it's better to add it now and
-  > be able to use it in the future.
-  >
-  > BREAKING-CHANGE:The `Alignment` enum has been renamed to
-  > `HorizontalAlignment` to better reflect its purpose. A type alias has
-  > been added to maintain backwards compatibility, however there are some
-  > cases where type aliases are not enough to maintain backwards
-  > compatibility. E.g. when using glob imports to import all the enum
-  > variants. This should not affect most users, but it is recommended to
-  > update your imports to use the new name.
-  >
-  > ```diff
-  > - use ratatui::layout::Alignment;
-  > + use ratatui::layout::HorizontalAlignment;
-  >
-  > - use Alignment::*;
-  > + use HorizontalAlignment::*;
-  > ```
-
-### Bug Fixes
-
-- [00da8c6](https://github.com/ratatui/ratatui/commit/00da8c620345397c6815267e6d8e19c1eacfe1c2) *(no_std)* Provide `f64` polyfills for `no_std` compatibility by @j-g00da in [#1840](https://github.com/ratatui/ratatui/pull/1840)
-  >
-  > Related:https://github.com/rust-lang/rust/issues/137578
-
-### Styling
-
-- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
-
-  > I was swayed by the arguments about this made by the compiler team In
-  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
-  > look at how this organization affects ratatui. I found this reduces the
-  > number of lines across the codebase by about 350 and makes the imports
-  > more readable and definitely more greppable as you usually only have
-  > to read a single line. I've found in the past that maintaining imports
-  > regularly leads to merge conflicts which have to be resolved by hand
-  > and this change should reduce the likelihood of that happening.
-  >
-  > Main change is in rustfmt.toml, and the rest is just the result of
-  > running `cargo xtask format`.
-  >
-  > While implementing this, cargo machete brings up that the various
-  > backend crates are unused by the example crates.
-  >
-  > The re-export of each backend crate under ratatui is to make it possible
-  > for libs that rely on a specific version of ratatui to use the same
-  > version of the backend crate. Apps in general should use the backend
-  > crate directly rather than through ratatui as this is less confusing.
-  >
-  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
-  >   examples.
-  > - Adds the backend crate to the dependencies of the examples that use
-  >   the backend crate directly.
-
-### Miscellaneous Tasks
-
-- [1874b9d](https://github.com/ratatui/ratatui/commit/1874b9dd55284952931d58646904f0437e48ce76) *(uncategorized)* Move time to dev-dependencies by @j-g00da in [#1835](https://github.com/ratatui/ratatui/pull/1835)
-
-- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
-
-  > The Clippy check for this (missing_const_for_fn) is already enabled, but
-  > catches more cases in upcoming toolchain versions.
-  >
-  > This is part of the work to unblock #1727
-
-- [0f80c5e](https://github.com/ratatui/ratatui/commit/0f80c5e87eb4e47c818a6bd8b0002971920c65a0) *(uncategorized)* Use expect() instead of allow() for lint overrides by @cgzones in [#1786](https://github.com/ratatui/ratatui/pull/1786) [**breaking**]
-  >
-  > BREAKING CHANGE:MSRV is now 1.81
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.2...ratatui-v0.30.0-alpha.3
-
-## ratatui-termion - [0.1.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.2...ratatui-termion-v0.1.0-alpha.3) - 2025-05-13
-
-### Features
-
-- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) *(no_std)* Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
-  >
-  > Resolves #1775
-  >
-  > BREAKING CHANGE:Custom backends now have to implement `Backend::Error`
-  > and `Backend::clear_region`. Additionally some generic `Backend` usage
-  > will have to explicitly set trait bounds for `Backend::Error`.
-
-- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) *(uncategorized)* Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
-
-  > This PR propagates the serde feature from the main ratatui crate to the
-  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
-
-### Bug Fixes
-
-- [416ebdf](https://github.com/ratatui/ratatui/commit/416ebdf8c86d1a7a98385908f7c8c560e86770ac) *(uncategorized)* Correct clippy errors introduced by rust 1.86.0 update by @j-g00da in [#1755](https://github.com/ratatui/ratatui/pull/1755)
-
-  > New version of rust (1.86.0) caused CI to fail.
-
-### Styling
-
-- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
-
-  > I was swayed by the arguments about this made by the compiler team In
-  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
-  > look at how this organization affects ratatui. I found this reduces the
-  > number of lines across the codebase by about 350 and makes the imports
-  > more readable and definitely more greppable as you usually only have
-  > to read a single line. I've found in the past that maintaining imports
-  > regularly leads to merge conflicts which have to be resolved by hand
-  > and this change should reduce the likelihood of that happening.
-  >
-  > Main change is in rustfmt.toml, and the rest is just the result of
-  > running `cargo xtask format`.
-  >
-  > While implementing this, cargo machete brings up that the various
-  > backend crates are unused by the example crates.
-  >
-  > The re-export of each backend crate under ratatui is to make it possible
-  > for libs that rely on a specific version of ratatui to use the same
-  > version of the backend crate. Apps in general should use the backend
-  > crate directly rather than through ratatui as this is less confusing.
-  >
-  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
-  >   examples.
-  > - Adds the backend crate to the dependencies of the examples that use
-  >   the backend crate directly.
-
-### Miscellaneous Tasks
-
-- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
-
-  > The Clippy check for this (missing_const_for_fn) is already enabled, but
-  > catches more cases in upcoming toolchain versions.
-  >
-  > This is part of the work to unblock #1727
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.2...ratatui-termion-v0.1.0-alpha.3
-
-
-
-## ratatui-termwiz - [0.1.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.2...ratatui-termwiz-v0.1.0-alpha.3) - 2025-05-13
-
-### Features
-
-- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) *(no_std)* Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
-  >
-  > Resolves #1775
-  >
-  > BREAKING CHANGE:Custom backends now have to implement `Backend::Error`
-  > and `Backend::clear_region`. Additionally some generic `Backend` usage
-  > will have to explicitly set trait bounds for `Backend::Error`.
-
-- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) *(uncategorized)* Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
-
-  > This PR propagates the serde feature from the main ratatui crate to the
-  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
-
-### Styling
-
-- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
-
-  > I was swayed by the arguments about this made by the compiler team In
-  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
-  > look at how this organization affects ratatui. I found this reduces the
-  > number of lines across the codebase by about 350 and makes the imports
-  > more readable and definitely more greppable as you usually only have
-  > to read a single line. I've found in the past that maintaining imports
-  > regularly leads to merge conflicts which have to be resolved by hand
-  > and this change should reduce the likelihood of that happening.
-  >
-  > Main change is in rustfmt.toml, and the rest is just the result of
-  > running `cargo xtask format`.
-  >
-  > While implementing this, cargo machete brings up that the various
-  > backend crates are unused by the example crates.
-  >
-  > The re-export of each backend crate under ratatui is to make it possible
-  > for libs that rely on a specific version of ratatui to use the same
-  > version of the backend crate. Apps in general should use the backend
-  > crate directly rather than through ratatui as this is less confusing.
-  >
-  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
-  >   examples.
-  > - Adds the backend crate to the dependencies of the examples that use
-  >   the backend crate directly.
-
-### Miscellaneous Tasks
-
-- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
-
-  > The Clippy check for this (missing_const_for_fn) is already enabled, but
-  > catches more cases in upcoming toolchain versions.
-  >
-  > This is part of the work to unblock #1727
-
-- [bb06889](https://github.com/ratatui/ratatui/commit/bb068892c93713befbc8dab04577cbc2a59cedec) *(uncategorized)* Fix io_other_error clippy lints by @joshka in [#1756](https://github.com/ratatui/ratatui/pull/1756)
-
-  > Pre-emptive fix for new lint to be added in 1.87 (currently in beta).
-  >
-  > https://rust-lang.github.io/rust-clippy/master/index.html\#io_other_error
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.2...ratatui-termwiz-v0.1.0-alpha.3
-
-
-
-## ratatui-macros - [0.7.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.1...ratatui-macros-v0.7.0-alpha.2) - 2025-05-13
-
-### Bug Fixes
-
-- [2e54d5e](https://github.com/ratatui/ratatui/commit/2e54d5e22c80b7ecbe7227b1d2df232374820e38) *(macros)* Use $crate re-export in text macro by @airblast-dev in [#1832](https://github.com/ratatui/ratatui/pull/1832)
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.1...ratatui-macros-v0.7.0-alpha.2
-
-
-
-## ratatui-widgets - [0.3.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.2...ratatui-widgets-v0.3.0-alpha.3) - 2025-05-13
-
-### Features
+  > ![line_gauge](https://github.com/user-attachments/assets/cae308b8-151b-461d-8af6-9a20012adf2f)
 
-- [92a19cb](https://github.com/ratatui/ratatui/commit/92a19cb6040dfced50ba384891ab0063a22b445d) *(list)* Highlight symbol styling by @airblast-dev in [#1595](https://github.com/ratatui/ratatui/pull/1595) [**breaking**]
+- [92a19cb](https://github.com/ratatui/ratatui/commit/92a19cb6040dfced50ba384891ab0063a22b445d) _(list)_ Highlight symbol styling by @airblast-dev in [#1595](https://github.com/ratatui/ratatui/pull/1595) [**breaking**]
 
   > Allow styling for `List`'s highlight symbol
   >
@@ -1266,229 +134,43 @@ All notable changes to this project will be documented in this file.
   >
   > closes:https://github.com/ratatui/ratatui/issues/1443
   >
-  > ---------
+  > ***
 
-- [3e1c72f](https://github.com/ratatui/ratatui/commit/3e1c72fb27cae132bc8b5f24a4ae875921dfb00d) *(no_std)* Make ratatui compatible with `#![no_std]` by @j-g00da in [#1794](https://github.com/ratatui/ratatui/pull/1794) [**breaking**]
+- [e89a526](https://github.com/ratatui/ratatui/commit/e89a526aabc7990ac54e90ca9f9e9a85c67a130c) _(no_std)_ Portable-atomic integration for targets with no atomic types by @j-g00da in [#2076](https://github.com/ratatui/ratatui/pull/2076)
+
+  > Improves compatibility with no-std targets that don't support atomic
+  > types.
   >
+  > We support three different scenarios depending on the target:
+  >
+  > 1. Terminal applications and other std targets (e.g. espidf):
+  >
+  > - `std` enabled, `portable-atomic` disabled
+  >
+  > 2. Embedded targets with atomic types, bare metal x86, etc.:
+  >
+  > - `std` disabled `portable-atomic` disabled
+  >
+  > 3. Embedded targets without atomic types (e.g. single-core MCUs):
+  >
+  > - `std` disabled, `portable-atomic` enabled
+  >
+  > Turning on `portable-atomic` together with `std` will fall back to `std`
+  > atomic.
+
+- [1399d95](https://github.com/ratatui/ratatui/commit/1399d95ae0c93b0f802e500022853e32fa604cf9) _(no_std)_ Make palette and serde features depends on std by @j-g00da in [#1919](https://github.com/ratatui/ratatui/pull/1919)
+
+- [b32f781](https://github.com/ratatui/ratatui/commit/b32f78195bfa4b131e091d64f02676fa1ba0a360) _(no_std)_ Make `ratatui-macros` no-std by @j-g00da in [#1865](https://github.com/ratatui/ratatui/pull/1865)
+
+- [3e1c72f](https://github.com/ratatui/ratatui/commit/3e1c72fb27cae132bc8b5f24a4ae875921dfb00d) _(no_std)_ Make ratatui compatible with `#![no_std]` by @j-g00da in [#1794](https://github.com/ratatui/ratatui/pull/1794) [**breaking**]
+
   > Resolves #1781
   >
   > This PR makes it possible to compile ratatui with `#![no_std]`.
   > Also makes me answer "We Are So Embedded" to "Are We Embedded Yet?"
 
-- [a42a17e](https://github.com/ratatui/ratatui/commit/a42a17e1847c350c4909295d98f3c37af97e1e31) *(no_std)* Make `ratatui-widgets` `no_std` by @j-g00da in [#1779](https://github.com/ratatui/ratatui/pull/1779)
-  >
-  > Resolves #1776
+- [ab48c06](https://github.com/ratatui/ratatui/commit/ab48c06171724ae58d98687d90e999b76890c2e7) _(no_std)_ Option to disable layout cache for `no_std` compatibility by @j-g00da in [#1795](https://github.com/ratatui/ratatui/pull/1795) [**breaking**]
 
-- [5a232a3](https://github.com/ratatui/ratatui/commit/5a232a31153b147dbde85ba13a11c11b62994a86) *(no_std)* Remove redundant `std` usages in `ratatui-widgets` by @j-g00da in [#1762](https://github.com/ratatui/ratatui/pull/1762)
-
-- [4fcd238](https://github.com/ratatui/ratatui/commit/4fcd238e1e981fb48a7c4cb9845a72c8960f19d5) *(uncategorized)* Support no-std for calendar widget by @joshka in [#1852](https://github.com/ratatui/ratatui/pull/1852)
-
-  > Removes the CalendarEventStore::today() function in no-std environments
-
-- [fcb47d6](https://github.com/ratatui/ratatui/commit/fcb47d60f3df205c18f5fa9459e9ba2c8d0c9649) *(uncategorized)* Rename Alignment to HorizontalAlignment and add VerticalAlignment by @joshka in [#1735](https://github.com/ratatui/ratatui/pull/1735) [**breaking**]
-
-  > We don't anticipate removing or deprecating the type alias in the near
-  > future, but it is recommended to update your imports to use the new
-  > name.
-  >
-  > Added a VerticalAlignment enum to make the API more consistent. We don't
-  > have a specific use case for it yet, but it's better to add it now and
-  > be able to use it in the future.
-  >
-  > BREAKING-CHANGE:The `Alignment` enum has been renamed to
-  > `HorizontalAlignment` to better reflect its purpose. A type alias has
-  > been added to maintain backwards compatibility, however there are some
-  > cases where type aliases are not enough to maintain backwards
-  > compatibility. E.g. when using glob imports to import all the enum
-  > variants. This should not affect most users, but it is recommended to
-  > update your imports to use the new name.
-  >
-  > ```diff
-  > - use ratatui::layout::Alignment;
-  > + use ratatui::layout::HorizontalAlignment;
-  >
-  > - use Alignment::*;
-  > + use HorizontalAlignment::*;
-  > ```
-
-### Bug Fixes
-
-- [00da8c6](https://github.com/ratatui/ratatui/commit/00da8c620345397c6815267e6d8e19c1eacfe1c2) *(no_std)* Provide `f64` polyfills for `no_std` compatibility by @j-g00da in [#1840](https://github.com/ratatui/ratatui/pull/1840)
-  >
-  > Related:https://github.com/rust-lang/rust/issues/137578
-
-- [c238aca](https://github.com/ratatui/ratatui/commit/c238aca83a1b171d2ba7b38942fd5352f5a7e554) *(uncategorized)* `padding_right()` should set right padding instead of left by @sxyazi in [#1837](https://github.com/ratatui/ratatui/pull/1837)
-
-  > Fixes https://github.com/ratatui/ratatui/issues/1836
-
-- [416ebdf](https://github.com/ratatui/ratatui/commit/416ebdf8c86d1a7a98385908f7c8c560e86770ac) *(uncategorized)* Correct clippy errors introduced by rust 1.86.0 update by @j-g00da in [#1755](https://github.com/ratatui/ratatui/pull/1755)
-
-  > New version of rust (1.86.0) caused CI to fail.
-
-- [4eac5b2](https://github.com/ratatui/ratatui/commit/4eac5b2849f7807c59e8164786e467137e17df86) *(uncategorized)* Make deprecation notes more helpful by @joshka in [#1702](https://github.com/ratatui/ratatui/pull/1702)
-
-  > AI coding assistants use the deprecation notes to automatically suggest
-  > fixes. This commit updates the deprecation notes to push those tools to
-  > suggest the correct replacement methods and types.
-  >
-  > Specifically, AI tools often suggest using `Buffer::get(x, y)`, because
-  > of their training data where this was prevalent. When fixing these
-  > deprecations, they often incorrectly suggest using `Buffer::get(x, y)`
-  > instead of `Buffer[(x, y)]`.
-
-### Refactor
-
-- [8d60e96](https://github.com/ratatui/ratatui/commit/8d60e96b2bfcdc0a7f9b6d17d79dbf36f61182b6) *(examples)* Use crossterm event methods by @joshka in [#1792](https://github.com/ratatui/ratatui/pull/1792)
-
-  > Crossterm 0.29 introduced methods to easily check / extract the event
-  > type. E.g. as_key_press_event() and is_key_press(). This commit
-  > updates the examples to use these methods instead of matching on
-  > the event type. This makes the code cleaner and easier to read.
-  >
-  > Also does a general cleanup of the event handling code in the examples.
-
-- [02e53de](https://github.com/ratatui/ratatui/commit/02e53de0f82bc2364f2ba4345cc5a635347e3eb4) *(uncategorized)* Make use of iter::repeat_n() by @cgzones in [#1788](https://github.com/ratatui/ratatui/pull/1788)
-
-  > Applied via clippy --fix.
-  > Available since 1.82.0.
-
-### Performance
-
-- [ba9eed7](https://github.com/ratatui/ratatui/commit/ba9eed774230d160016605048762cd73944c36e6) *(table)* Replace while loop with simple min operation by @EdJoPaTo in [#1747](https://github.com/ratatui/ratatui/pull/1747)
-
-### Styling
-
-- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
-
-  > I was swayed by the arguments about this made by the compiler team In
-  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
-  > look at how this organization affects ratatui. I found this reduces the
-  > number of lines across the codebase by about 350 and makes the imports
-  > more readable and definitely more greppable as you usually only have
-  > to read a single line. I've found in the past that maintaining imports
-  > regularly leads to merge conflicts which have to be resolved by hand
-  > and this change should reduce the likelihood of that happening.
-  >
-  > Main change is in rustfmt.toml, and the rest is just the result of
-  > running `cargo xtask format`.
-  >
-  > While implementing this, cargo machete brings up that the various
-  > backend crates are unused by the example crates.
-  >
-  > The re-export of each backend crate under ratatui is to make it possible
-  > for libs that rely on a specific version of ratatui to use the same
-  > version of the backend crate. Apps in general should use the backend
-  > crate directly rather than through ratatui as this is less confusing.
-  >
-  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
-  >   examples.
-  > - Adds the backend crate to the dependencies of the examples that use
-  >   the backend crate directly.
-
-### Miscellaneous Tasks
-
-- [b4a71e5](https://github.com/ratatui/ratatui/commit/b4a71e5fd5c5a77efff4a48920e29171face1e79) *(lint)* Add `std` instead of `core`/`alloc` lints to `ratatui-widgets` by @j-g00da in [#1763](https://github.com/ratatui/ratatui/pull/1763)
-  >
-  > Resolves #1761
-
-- [60a8191](https://github.com/ratatui/ratatui/commit/60a81913ede6ebc23b53b3e4e3a54ee0171d9447) *(widgets)* Move crossterm to dev-dependencies by @j-g00da in [#1834](https://github.com/ratatui/ratatui/pull/1834)
-
-  > Crossterm in widgets is used only in tests.
-
-- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
-
-  > The Clippy check for this (missing_const_for_fn) is already enabled, but
-  > catches more cases in upcoming toolchain versions.
-  >
-  > This is part of the work to unblock #1727
-
-- [0f80c5e](https://github.com/ratatui/ratatui/commit/0f80c5e87eb4e47c818a6bd8b0002971920c65a0) *(uncategorized)* Use expect() instead of allow() for lint overrides by @cgzones in [#1786](https://github.com/ratatui/ratatui/pull/1786) [**breaking**]
-  >
-  > BREAKING CHANGE:MSRV is now 1.81
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.2...ratatui-widgets-v0.3.0-alpha.3
-
-## ratatui-crossterm - [0.1.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.2...ratatui-crossterm-v0.1.0-alpha.3) - 2025-05-13
-
-### Features
-
-- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) *(no_std)* Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
-  >
-  > Resolves #1775
-  >
-  > BREAKING CHANGE:Custom backends now have to implement `Backend::Error`
-  > and `Backend::clear_region`. Additionally some generic `Backend` usage
-  > will have to explicitly set trait bounds for `Backend::Error`.
-
-- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) *(uncategorized)* Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
-
-  > This PR propagates the serde feature from the main ratatui crate to the
-  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
-
-### Styling
-
-- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
-
-  > I was swayed by the arguments about this made by the compiler team In
-  > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
-  > look at how this organization affects ratatui. I found this reduces the
-  > number of lines across the codebase by about 350 and makes the imports
-  > more readable and definitely more greppable as you usually only have
-  > to read a single line. I've found in the past that maintaining imports
-  > regularly leads to merge conflicts which have to be resolved by hand
-  > and this change should reduce the likelihood of that happening.
-  >
-  > Main change is in rustfmt.toml, and the rest is just the result of
-  > running `cargo xtask format`.
-  >
-  > While implementing this, cargo machete brings up that the various
-  > backend crates are unused by the example crates.
-  >
-  > The re-export of each backend crate under ratatui is to make it possible
-  > for libs that rely on a specific version of ratatui to use the same
-  > version of the backend crate. Apps in general should use the backend
-  > crate directly rather than through ratatui as this is less confusing.
-  >
-  > - Removes all usages of `ratatui::{crossterm, termion, termwiz}`` in the
-  >   examples.
-  > - Adds the backend crate to the dependencies of the examples that use
-  >   the backend crate directly.
-
-### Miscellaneous Tasks
-
-- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
-
-  > The Clippy check for this (missing_const_for_fn) is already enabled, but
-  > catches more cases in upcoming toolchain versions.
-  >
-  > This is part of the work to unblock #1727
-
-- [bb06889](https://github.com/ratatui/ratatui/commit/bb068892c93713befbc8dab04577cbc2a59cedec) *(uncategorized)* Fix io_other_error clippy lints by @joshka in [#1756](https://github.com/ratatui/ratatui/pull/1756)
-
-  > Pre-emptive fix for new lint to be added in 1.87 (currently in beta).
-  >
-  > https://rust-lang.github.io/rust-clippy/master/index.html\#io_other_error
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.2...ratatui-crossterm-v0.1.0-alpha.3
-
-
-
-## ratatui-core - [0.1.0-alpha.4](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.3...ratatui-core-v0.1.0-alpha.4) - 2025-05-13
-
-### Features
-
-- [3e1c72f](https://github.com/ratatui/ratatui/commit/3e1c72fb27cae132bc8b5f24a4ae875921dfb00d) *(no_std)* Make ratatui compatible with `#![no_std]` by @j-g00da in [#1794](https://github.com/ratatui/ratatui/pull/1794) [**breaking**]
-  >
-  > Resolves #1781
-  >
-  > This PR makes it possible to compile ratatui with `#![no_std]`.
-  > Also makes me answer "We Are So Embedded" to "Are We Embedded Yet?"
-
-- [ab48c06](https://github.com/ratatui/ratatui/commit/ab48c06171724ae58d98687d90e999b76890c2e7) *(no_std)* Option to disable layout cache for `no_std` compatibility by @j-g00da in [#1795](https://github.com/ratatui/ratatui/pull/1795) [**breaking**]
-  >
   > Resolves #1780
   >
   > BREAKING CHANGE:Disabling `default-features` will now disable layout
@@ -1497,30 +179,294 @@ All notable changes to this project will be documented in this file.
   > `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only
   > available if `layout-cache` feature is enabled.
 
-- [09173d1](https://github.com/ratatui/ratatui/commit/09173d182912ab92e67b8aa7a4cb51862b05cb25) *(no_std)* Make `TestBackend::Error` `Infallible` by @j-g00da in [#1823](https://github.com/ratatui/ratatui/pull/1823) [**breaking**]
-  >
+- [09173d1](https://github.com/ratatui/ratatui/commit/09173d182912ab92e67b8aa7a4cb51862b05cb25) _(no_std)_ Make `TestBackend::Error` `Infallible` by @j-g00da in [#1823](https://github.com/ratatui/ratatui/pull/1823) [**breaking**]
+
   > BREAKING CHANGE:`TestBackend` now uses `core::convert::Infallible` for
   > error handling instead of `std::io::Error`
 
-- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) *(no_std)* Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
-  >
+- [007713e](https://github.com/ratatui/ratatui/commit/007713e50a083d5e7a4963ca829b4622d56828b1) _(no_std)_ Replace `Backend`'s `io::Error` usages with associated `Error` type by @j-g00da in [#1778](https://github.com/ratatui/ratatui/pull/1778) [**breaking**]
+
   > Resolves #1775
   >
   > BREAKING CHANGE:Custom backends now have to implement `Backend::Error`
   > and `Backend::clear_region`. Additionally some generic `Backend` usage
   > will have to explicitly set trait bounds for `Backend::Error`.
 
-- [ebe10cd](https://github.com/ratatui/ratatui/commit/ebe10cd81fc7392d26e6b93ae8d512175404f7a7) *(no_std)* Remove redundant `std` usages in `ratatui-core` by @j-g00da in [#1753](https://github.com/ratatui/ratatui/pull/1753)
+- [a42a17e](https://github.com/ratatui/ratatui/commit/a42a17e1847c350c4909295d98f3c37af97e1e31) _(no_std)_ Make `ratatui-widgets` `no_std` by @j-g00da in [#1779](https://github.com/ratatui/ratatui/pull/1779)
+
+  > Resolves #1776
+
+- [5a232a3](https://github.com/ratatui/ratatui/commit/5a232a31153b147dbde85ba13a11c11b62994a86) _(no_std)_ Remove redundant `std` usages in `ratatui-widgets` by @j-g00da in [#1762](https://github.com/ratatui/ratatui/pull/1762)
+
+- [ebe10cd](https://github.com/ratatui/ratatui/commit/ebe10cd81fc7392d26e6b93ae8d512175404f7a7) _(no_std)_ Remove redundant `std` usages in `ratatui-core` by @j-g00da in [#1753](https://github.com/ratatui/ratatui/pull/1753)
 
   > Resolves https://github.com/ratatui/ratatui/issues/1751
 
-- [08b08cc](https://github.com/ratatui/ratatui/commit/08b08cc45b60274a48824d488127a014e083d95a) *(rect)* Centering by @TadoTheMiner in [#1814](https://github.com/ratatui/ratatui/pull/1814)
-  >
+- [08b08cc](https://github.com/ratatui/ratatui/commit/08b08cc45b60274a48824d488127a014e083d95a) _(rect)_ Centering by @janTatesa in [#1814](https://github.com/ratatui/ratatui/pull/1814)
+
   > Resolves #617
 
-- [6836a69](https://github.com/ratatui/ratatui/commit/6836a6903e7832d0c9f39d57fc9c30a80fa7f4e9) *(uncategorized)* Implement styled for other primitives by @aschey in [#1684](https://github.com/ratatui/ratatui/pull/1684)
+- [ff729b7](https://github.com/ratatui/ratatui/commit/ff729b7607e0099a155f10dfe0ce42320641b74d) _(scrollbar)_ Support retrieving the current position of state by @orhun in [#1552](https://github.com/ratatui/ratatui/pull/1552)
 
-- [fcb47d6](https://github.com/ratatui/ratatui/commit/fcb47d60f3df205c18f5fa9459e9ba2c8d0c9649) *(uncategorized)* Rename Alignment to HorizontalAlignment and add VerticalAlignment by @joshka in [#1735](https://github.com/ratatui/ratatui/pull/1735) [**breaking**]
+  > As of now it is possible to change the position of the Scrollbar but not
+  > possible to retrieve the position for further use. e.g.
+  >
+  > ```rust
+  > let mut state = ScrollbarState::default();
+  > state.next();
+  > ```
+  >
+  > This commit adds a new method "`current_position`" (since `position` is
+  > already taken by the fluent setter) for that purpose:
+  >
+  > ```rust
+  > let index = state.get_position(); // yay
+  > ```
+  >
+  > See #1545 for the concrete usage of this.
+
+- [b9da192](https://github.com/ratatui/ratatui/commit/b9da1926a0c102d97a552487fc9963590bea80ff) _(serde)_ Derive Serialize/Deserialize for alignment enums by @j-g00da in [#1957](https://github.com/ratatui/ratatui/pull/1957)
+
+  > Resolves #1954
+
+- [89b7421](https://github.com/ratatui/ratatui/commit/89b74214d9d09343743c8601d9401c0139a887a4) _(serde)_ Derive Serialize/Deserialize for additional structs/enums by @aurreland in [#1883](https://github.com/ratatui/ratatui/pull/1883)
+
+  > This PR adds `#[derive(Serialize, Deserialize)]` to the following
+  > structs:
+  >
+  > - `Constraint`
+  > - `Direction`
+  > - `Spacing`
+  > - `Layout`
+  > - `AccentedPalette`
+  > - `NonAccentedPalette`
+  > - `Palette`
+  > - `Padding`
+  > - `Borders`
+  > - `BorderType`
+  > - `ListDirection`
+  > - `ScrollbarOrientation`
+  > - `ScrollDirection`
+  > - `RenderDirection`
+  > - `HighlightSpacing`
+  >
+  > Fixes #1877
+
+- [03f3f6d](https://github.com/ratatui/ratatui/commit/03f3f6df350b30599d3b9765100e810dbd21c12e) _(style)_ Allow add/sub modifiers to be omitted in Style serialization. by @rcorre in [#2057](https://github.com/ratatui/ratatui/pull/2057)
+
+  > It's really useful that Style supports Deserialize, this allows TUI
+  > apps to have configurable theming without much extra code.
+  >
+  > However, deserializing a style currently fails if `add_modifier` and
+  > `sub_modifier` are
+  > not specified. That means the following TOML config:
+  >
+  > ```toml
+  > [theme.highlight]
+  > fg = "white"
+  > bg = "black"
+  > ```
+  >
+  > Will fail to deserialize with "missing field `add_modifier`". It should
+  > be possible
+  > to omit modifiers and have them default to "none".
+
+- [985cd05](https://github.com/ratatui/ratatui/commit/985cd05573b71cf0caed0537714fb005ad219894) _(symbols)_ Add dashed borders by @theotchlx in [#1573](https://github.com/ratatui/ratatui/pull/1573)
+
+  > Adds several new border sets:
+  >
+  > - ratatui::symbols::border::LIGHT_DOUBLE_DASHED
+  > - ratatui::symbols::border::HEAVY_DOUBLE_DASHED
+  > - ratatui::symbols::border::LIGHT_TRIPLE_DASHED
+  > - ratatui::symbols::border::HEAVY_TRIPLE_DASHED
+  > - ratatui::symbols::border::LIGHT_QUADRUPLE_DASHED
+  > - ratatui::symbols::border::HEAVY_QUADRUPLE_DASHED
+  >
+  > And corresponding variants to the ratatui::widgets::BorderType enum
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1355
+
+- [4c301e8](https://github.com/ratatui/ratatui/commit/4c301e891d9704fd3578af96d63a3b068252ec6a) _(text)_ Implement `AddAssign` for `Text` by @acuteenvy in [#1956](https://github.com/ratatui/ratatui/pull/1956)
+
+  > This makes it possible to add a second `Text` instance to a first one using the += operator.
+  >
+  > ```rust
+  > let mut text = Text::from("line 1");
+  > text += Text::from("line 2");
+  > ```
+  >
+  > Style and alignment applied to the second text is ignored (though styles and alignment of lines and spans are copied).
+
+- [ce4856a](https://github.com/ratatui/ratatui/commit/ce4856a65f3c76db714a45338ba3be9b638c6c35) _(widgets)_ Add the missing constructor to canvas types by @orhun in [#1538](https://github.com/ratatui/ratatui/pull/1538)
+
+  > Allows constructing `Rectangle`, `Points` and `Circle` using the `new`
+  > method instead of initializing with the public fields directly.
+
+- [75b78be](https://github.com/ratatui/ratatui/commit/75b78be09f076d0de3223f37c3cab25a36fe2fb3) _(uncategorized)_ Add width() impl for tabs by @joshka in [#2049](https://github.com/ratatui/ratatui/pull/2049)
+
+  > The purpose of this is to make it easy for apps to easily calculate the
+  > total tab width including all dividers and padding.
+
+- [8188ed3](https://github.com/ratatui/ratatui/commit/8188ed3950b61aa580343964ca8a2f2cbfdab62c) _(uncategorized)_ Implement UnicodeWidthStr for Text/Line/Span by @joshka in [#2030](https://github.com/ratatui/ratatui/pull/2030)
+
+  > You can now calculate the width of any Text/Line/Span using the
+  > UnicodeWidthStr trait instead of the width method on the type. This also
+  > makes it possible to use the width_cjk() method if needed.
+
+- [c845fec](https://github.com/ratatui/ratatui/commit/c845fec765c53648d599111f59d20e7b2ebe62dc) _(uncategorized)_ Add conversion from Size to Rect by @joshka in [#2028](https://github.com/ratatui/ratatui/pull/2028)
+
+  > `Rect::from(size)` returns a new Rect at the origin (0, 0) with the
+  > specified `Size`
+
+- [017af11](https://github.com/ratatui/ratatui/commit/017af11b2bce9cb01d29993526dbd455668be190) _(uncategorized)_ Preserve block titles when merging borders by @j-g00da in [#1977](https://github.com/ratatui/ratatui/pull/1977)
+
+  > Resolves #1939
+
+- [6dcd53b](https://github.com/ratatui/ratatui/commit/6dcd53bc6ba172d4b96d02809c6a46105e67d85a) _(uncategorized)_ Add ergonomic methods for layouting Rects by @joshka in [#1909](https://github.com/ratatui/ratatui/pull/1909)
+
+  > This commit introduces new methods for the `Rect` struct that simplify
+  > the process of splitting a `Rect` into sub-rects according to a given
+  > `Layout`. By putting these methods on the `Rect` struct, we make it a
+  > bit more natural that a layout is applied to the `Rect` itself, rather
+  > than passing a `Rect` to the `Layout` struct to be split.
+  >
+  > Adds:- `Rect::layout` and `Rect::try_layout` methods that allow splitting a
+  > `Rect` into an array of sub-rects according to a given `Layout`.
+  >
+  > - `Rect::layout_vec` method that returns a `Vec` of sub-rects.
+  > - `Layout::try_areas` method that returns an array of sub-rects, with
+  >   compile-time checks for the number of constraints. This is added
+  >   mainly for consistency with the new `Rect` methods.
+  >
+  > ```rust
+  > use ratatui_core::layout::{Layout, Constraint, Rect};
+  > let area = Rect::new(0, 0, 10, 10);
+  > let layout = Layout::vertical([Constraint::Fill(1); 2]);
+  >
+  > // Rect::layout() infers the number of constraints at compile time:
+  > let [top, main] = area.layout(&layout);
+  >
+  > // Rect::try_layout() and Layout::try_areas() do the same, but return a
+  > // Result:
+  > let [top, main] = area.try_layout(&layout)?;
+  > let [top, main] = layout.try_areas(area)?;
+  >
+  > // Rect::layout_vec() returns a Vec of sub-rects:
+  > let areas_vec = area.layout_vec(&layout);
+  >
+  > // you can also explicitly specify the number of constraints:
+  > let areas = area.layout::<2>(&layout);
+  > let areas = area.try_layout::<2>(&layout)?;
+  > let areas = layout.try_areas::<2>(area)?;
+  > ```
+
+- [0c3872f](https://github.com/ratatui/ratatui/commit/0c3872f1c5105153ebb0368e83e8b72cb68b8b34) _(uncategorized)_ Add Rect::outer() by @joshka in [#1929](https://github.com/ratatui/ratatui/pull/1929)
+
+  > Fixes:https://github.com/ratatui/ratatui/issues/211
+
+- [7bc78bc](https://github.com/ratatui/ratatui/commit/7bc78bca1b8ce9aac0cab3831a0c9c864ab02b02) _(uncategorized)_ Add ratatui::run() method by @joshka in [#1707](https://github.com/ratatui/ratatui/pull/1707)
+
+  > This introduces a new `ratatui::run()` method which runs a closure with
+  > a terminal initialized with reasonable defaults for most applications.
+  > This calls `ratatui::init()` before running the closure and
+  > `ratatui::restore()` after the closure completes, and returns the result
+  > of the closure.
+  >
+  > A minimal hello world example using the new `ratatui::run()` method:
+  >
+  > ```rust
+  > fn main() -> Result<(), Box<dyn std::error::Error>> {
+  >     ratatui::run(|terminal| {
+  >         loop {
+  >             terminal.draw(|frame| frame.render_widget("Hello World!", frame.area()))?;
+  >             if crossterm::event::read()?.is_key_press() {
+  >                 break Ok(());
+  >             }
+  >         }
+  >     })
+  > }
+  > ```
+  >
+  > Of course, this also works both with apps that use free methods and
+  > structs:
+  >
+  > ```rust
+  > fn run(terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
+  >
+  > ratatui::run(run)?;
+  > ```
+  >
+  > ```rust
+  > struct App { ... }
+  >
+  > impl App {
+  >     fn new() -> Self { ... }
+  >     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), AppError> { ... }
+  > }
+  >
+  > ratatui::run(|terminal| App::new().run(terminal))?;
+  > ```
+
+- [b6fbfcd](https://github.com/ratatui/ratatui/commit/b6fbfcdd1cf1813879af523a52fb8c5a496a685b) _(uncategorized)_ Add lifetime to symbol sets by @joshka in [#1935](https://github.com/ratatui/ratatui/pull/1935)
+
+  > This makes it possible to create symbol sets at runtime with non-static
+  > lifetimes.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1722
+
+- [488e5f0](https://github.com/ratatui/ratatui/commit/488e5f020f7a1b4c120d8b074c62a97abac0a4b6) _(uncategorized)_ Make `border!` work without importing `Borders` by @j-g00da in [#1918](https://github.com/ratatui/ratatui/pull/1918)
+
+  > Currently using `border!` macro requires explicit import of `Borders`
+  > which is unnecessary.
+
+- [671c2b4](https://github.com/ratatui/ratatui/commit/671c2b4fd4ee277ba0dc36d152d66c40cfa1f030) _(uncategorized)_ Support merging the borders of blocks by @j-g00da
+
+  > When two borders overlap, they will automatically merge into a single,
+  > clean border instead of overlapping.
+  >
+  > This improves visual clarity and reduces rendering glitches around corners.
+  >
+  > For example:
+  >
+  > ```
+  > assert_eq!(Cell::new("┘").merge_symbol("┏", MergeStrategy::Exact).symbol(), "╆");
+  > ```
+
+- [702fff5](https://github.com/ratatui/ratatui/commit/702fff501ce093f333610b1d3c9c02f114268698) _(uncategorized)_ Implement stylize methods directly on Style by @joshka in [#1572](https://github.com/ratatui/ratatui/pull/1572) [**breaking**]
+
+  > This makes it possible to create constants using the shorthand methods.
+  >
+  > ```rust
+  > const MY_STYLE: Style = Style::new().blue().on_black();
+  > ```
+  >
+  > Rather than implementing Styled for Style and then adding extension
+  > methods that implement the Stylize shorthands, this implements the
+  > methods as const functions directly on Style.
+  >
+  > BREAKING CHANGE:`Style` no longer implements `Styled`. Any calls to
+  > methods implemented by the blanket implementation of Stylize are now
+  > defined directly on Style. Remove the Stylize import if it is no longer
+  > used by your code.
+  >
+  > The `reset()` method does not have a direct replacement, as it clashes
+  > with the existing `reset()` method. Use `Style::reset()` rather than
+  > `some_style.reset()`
+  >
+  > Fixes:#1158
+
+- [4fcd238](https://github.com/ratatui/ratatui/commit/4fcd238e1e981fb48a7c4cb9845a72c8960f19d5) _(uncategorized)_ Support no-std for calendar widget by @joshka in [#1852](https://github.com/ratatui/ratatui/pull/1852)
+
+  > Removes the CalendarEventStore::today() function in no-std environments
+
+- [53cdbbc](https://github.com/ratatui/ratatui/commit/53cdbbccd5d3522c004e483433a02ef6d64fab01) _(uncategorized)_ Enable serde propagation to backend crates (crossterm, termion) by @ArjunKrish7356 in [#1812](https://github.com/ratatui/ratatui/pull/1812)
+
+  > This PR propagates the serde feature from the main ratatui crate to the
+  > ratatui-crossterm and ratatui-termion backend crates. Solves #1805
+
+- [6836a69](https://github.com/ratatui/ratatui/commit/6836a6903e7832d0c9f39d57fc9c30a80fa7f4e9) _(uncategorized)_ Implement styled for other primitives by @aschey in [#1684](https://github.com/ratatui/ratatui/pull/1684)
+
+- [fcb47d6](https://github.com/ratatui/ratatui/commit/fcb47d60f3df205c18f5fa9459e9ba2c8d0c9649) _(uncategorized)_ Rename Alignment to HorizontalAlignment and add VerticalAlignment by @joshka in [#1735](https://github.com/ratatui/ratatui/pull/1735) [**breaking**]
 
   > We don't anticipate removing or deprecating the type alias in the near
   > future, but it is recommended to update your imports to use the new
@@ -1546,7 +492,7 @@ All notable changes to this project will be documented in this file.
   > + use HorizontalAlignment::*;
   > ```
 
-- [2714d6b](https://github.com/ratatui/ratatui/commit/2714d6b9c3d2dab1537c9ced6cdb4571429bd1a5) *(uncategorized)* Add array and tuple RGB color conversion methods by @joshka in [#1703](https://github.com/ratatui/ratatui/pull/1703)
+- [2714d6b](https://github.com/ratatui/ratatui/commit/2714d6b9c3d2dab1537c9ced6cdb4571429bd1a5) _(uncategorized)_ Add array and tuple RGB color conversion methods by @joshka in [#1703](https://github.com/ratatui/ratatui/pull/1703)
 
   > Other crates (e.g. colorgrad) that deal with colors can convert colors
   > to a tuple of 3 or 4 u8 values. This commit adds conversion methods from
@@ -1559,34 +505,200 @@ All notable changes to this project will be documented in this file.
   > Color::from((255, 0, 0, 255));
   > ```
 
+- [50ba965](https://github.com/ratatui/ratatui/commit/50ba96518f01454cff185784a1e9676093ce06cf) _(uncategorized)_ Add a new RatatuiMascot widget by @Its-Just-Nans in [#1584](https://github.com/ratatui/ratatui/pull/1584)
+
+  > Move the Mascot from Demo2 into a new widget.
+  > Make the Rat grey and adjust the other colors.
+  >
+  > ```rust
+  > frame.render_widget(RatatuiMascot::default(), frame.area());
+  > ```
+
+- [1d28c89](https://github.com/ratatui/ratatui/commit/1d28c89fe50f1a11cf1719233acca1a12d5e2d7b) _(uncategorized)_ Add conversions for anstyle by @joshka in [#1581](https://github.com/ratatui/ratatui/pull/1581)
+  > https://crates.io/crates/anstyle makes it possible to define colors in
+  > an interoperable way. This makes it possible for applications to easily
+  > load colors from a variety of formats.
+  >
+  > This is gated by the anstyle feature flag which is disabled by default.
+  >
+  > ***
+
 ### Bug Fixes
 
-- [9314312](https://github.com/ratatui/ratatui/commit/93143126b3dc70f437a6f05f17bba5d71e13083e) *(layout)* Feature flag cache related types by @joshka in [#1842](https://github.com/ratatui/ratatui/pull/1842)
+- [a89d3d6](https://github.com/ratatui/ratatui/commit/a89d3d62ffc3d38e6967a3b1a7a2ac975338c48c) _(buffer)_ Clear behavior with VS16 wide emojis by @nornagon in [#2063](https://github.com/ratatui/ratatui/pull/2063)
 
-- [2dd1977](https://github.com/ratatui/ratatui/commit/2dd1977c594a5f276493ca63ecb82e5a4a5f0dc2) *(layout-cache)* Import `NonZeroUsize` only when `layout-cache` is enabled by @j-g00da in [#1839](https://github.com/ratatui/ratatui/pull/1839)
+  > This fixes a bug where certain emojis like ⌨️ would sometimes be
+  > "overlaid" onto existing content from the buffer, instead of properly
+  > clearing.
+  >
+  > [example demonstrating
+  > bug](https://gist.github.com/nornagon/11a79d7a1f2e98aa129fedb4abccc530)
+  >
+  > This PR was generated by Codex, and validated by me:
+  >
+  > 1. Behavior of the above example code was buggy before this fix (showed
+  >    overlaying "b" on top of the keyboard emoji), and fixed after.
+  > 2. The U+FE0F check is not strictly required, but I did note that emoji
+  >    without this char don't exhibit the buggy behavior, even without the
+  >    fix.
+  >
+  > ***
+
+- [ec30390](https://github.com/ratatui/ratatui/commit/ec30390446b998cba97a25db63b2e3d27db7a12d) _(canvas)_ Round coordinates to nearest grid cell by @joshka in [#1507](https://github.com/ratatui/ratatui/pull/1507)
+
+  > Previously the canvas coordinates were rounded towards zero, which
+  > causes the rendering to be off by one pixel in some cases. It also meant
+  > that pixels at the extreme edges of the canvas can only be drawn if the
+  > point was exactly on the edge of the canvas. This commit rounds the
+  > coordinates to the nearest integer instead. This may change the output
+  > for some apps using Canvas / Charts.
+
+- [afd1ce1](https://github.com/ratatui/ratatui/commit/afd1ce179b74f10ea786ed6f9b2999288bc94e7a) _(canvas)_ Lines that start outside the visible grid are now drawn by @renesat in [#1501](https://github.com/ratatui/ratatui/pull/1501)
+
+  > Previously lines with points that were outside the canvas bounds were
+  > not drawn at all. Now they are clipped to the bounds of the canvas so
+  > that the portion of the line within the canvas is draw.
+  >
+  > To facilitate this, a new `Painter::bounds()` method which returns the
+  > bounds of the canvas is added.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1489
+
+- [2b0a044](https://github.com/ratatui/ratatui/commit/2b0a044cedfc3f58c99ef8ac21f83d20432c2144) _(ci)_ Add contents write permission to release-plz PR by @marcoieni in [#2119](https://github.com/ratatui/ratatui/pull/2119)
+
+  > https://release-plz.dev/docs/github/quickstart#3-setup-the-workflow
+  >
+  > Fixes https://github.com/release-plz/release-plz/issues/2439
+
+- [18e70d3](https://github.com/ratatui/ratatui/commit/18e70d3d51b654bb895843224edf0c21a3114dc9) _(crossterm)_ Terminal should keep Bold when removing Dim by @MarSik in [#1541](https://github.com/ratatui/ratatui/pull/1541)
+
+  > The Dim removal should behave the same as the logic for Bold removal
+  > that sends NormalIntensity sequence and then restores Dim when needed.
+
+- [dca331c](https://github.com/ratatui/ratatui/commit/dca331c748837e94957ada85a5bcb9080889a240) _(demo)_ Support tab key in demo2 example by @orhun in [#1726](https://github.com/ratatui/ratatui/pull/1726)
+
+  > see #1721
+  >
+  > Not sure what caused this - it's been there for a while probably and we
+  > didn't realize it since we used `demo2-destroy` mostly.
+
+- [0fd4753](https://github.com/ratatui/ratatui/commit/0fd4753e6bca72deff16bf080cfefc23b6cb85c1) _(examples)_ Run the correct example for chart by @orhun in [#1679](https://github.com/ratatui/ratatui/pull/1679)
+
+  > fixes #1678
+
+- [39479e2](https://github.com/ratatui/ratatui/commit/39479e298c35700afc36584b3c5d522cd5b24a0b) _(examples)_ Ensure that example projects are not published by @orhun in [#1672](https://github.com/ratatui/ratatui/pull/1672)
+
+- [9314312](https://github.com/ratatui/ratatui/commit/93143126b3dc70f437a6f05f17bba5d71e13083e) _(layout)_ Feature flag cache related types by @joshka in [#1842](https://github.com/ratatui/ratatui/pull/1842)
+
+- [2dd1977](https://github.com/ratatui/ratatui/commit/2dd1977c594a5f276493ca63ecb82e5a4a5f0dc2) _(layout-cache)_ Import `NonZeroUsize` only when `layout-cache` is enabled by @j-g00da in [#1839](https://github.com/ratatui/ratatui/pull/1839)
 
   > This silences unused import warning, when `layout-cache` is disabled.
 
-- [79d5165](https://github.com/ratatui/ratatui/commit/79d5165caed81db292073c18337fa69e83a20cf1) *(no_std)* Propagate `std` feature flag to dependencies by @j-g00da in [#1838](https://github.com/ratatui/ratatui/pull/1838)
+- [564a9d7](https://github.com/ratatui/ratatui/commit/564a9d76fc9d49e046915b95c518a9cfbcd5ecc2) _(line-gauge)_ Pad default label to display 3 numbers by @martinetd in [#2053](https://github.com/ratatui/ratatui/pull/2053)
+
+  > Display the default label of the LineGauge widget padded to fill 3 cells.
+  > This makes it so that the label doesn't shift around when going from a
+  > single digit to double / triple digits.
+  >
+  > To maintain the existing behavior, use a custom label by calling `.label()`
+  > on the LineGauge.
+
+- [a692a6e](https://github.com/ratatui/ratatui/commit/a692a6e37114f39a3eb15b0cdc486dee8a7e91ff) _(lint)_ Apply rust 1.84 clippy suggestions by @joshka in [#1612](https://github.com/ratatui/ratatui/pull/1612)
+
+  > The canvas map constants are now statics instead.
+  > Fixes
+  > https://rust-lang.github.io/rust-clippy/master/index.html\#large_const_arrays
+
+- [2e54d5e](https://github.com/ratatui/ratatui/commit/2e54d5e22c80b7ecbe7227b1d2df232374820e38) _(macros)_ Use $crate re-export in text macro by @airblast-dev in [#1832](https://github.com/ratatui/ratatui/pull/1832)
+
+- [79d5165](https://github.com/ratatui/ratatui/commit/79d5165caed81db292073c18337fa69e83a20cf1) _(no_std)_ Propagate `std` feature flag to dependencies by @j-g00da in [#1838](https://github.com/ratatui/ratatui/pull/1838)
 
   > Disables `std` feature flags in dependencies and only enables them with
   > `ratatui` and `ratatui-core`'s `std` feature flag. This partially fixes the
   > issue of still depending on `std`, when `std` feature flag is disabled.
 
-- [00da8c6](https://github.com/ratatui/ratatui/commit/00da8c620345397c6815267e6d8e19c1eacfe1c2) *(no_std)* Provide `f64` polyfills for `no_std` compatibility by @j-g00da in [#1840](https://github.com/ratatui/ratatui/pull/1840)
-  >
+- [00da8c6](https://github.com/ratatui/ratatui/commit/00da8c620345397c6815267e6d8e19c1eacfe1c2) _(no_std)_ Provide `f64` polyfills for `no_std` compatibility by @j-g00da in [#1840](https://github.com/ratatui/ratatui/pull/1840)
+
   > Related:https://github.com/rust-lang/rust/issues/137578
 
-- [c90ba97](https://github.com/ratatui/ratatui/commit/c90ba9781e5f4b6d061cafcb44ee7b4138f0b991) *(uncategorized)* Avoid unnecessary imports in minimal build by @cgzones in [#1787](https://github.com/ratatui/ratatui/pull/1787)
+- [3b13240](https://github.com/ratatui/ratatui/commit/3b13240728597a8c459c4bb5f913372185e9df91) _(scrollbar)_ Check for area.is_empty() before rendering by @farmeroy in [#1529](https://github.com/ratatui/ratatui/pull/1529)
+
+  > This adds the `area.is_empty()` back into the scrollbar render method.
+  > Without it, the widget panics if the height is 0.
+
+- [f57b696](https://github.com/ratatui/ratatui/commit/f57b696fdc3bac381bccda0414400453f5abecf2) _(span)_ Dont render control characters by @EdJoPaTo in [#1312](https://github.com/ratatui/ratatui/pull/1312)
+
+- [2ce958e](https://github.com/ratatui/ratatui/commit/2ce958e38cf1ebab49b1817b669631dc349a0ebb) _(table)_ Allow display of additional table row, if row height > 1 by @Lunderberg in [#1452](https://github.com/ratatui/ratatui/pull/1452)
+
+- [0a25bc1](https://github.com/ratatui/ratatui/commit/0a25bc166dad8cd72479183b5525e44fb14e9888) _(tests)_ Update the stderr snapshot for ratatui-macros by @orhun in [#2161](https://github.com/ratatui/ratatui/pull/2161)
+
+  > New 🦀 broke the CI
+
+- [5fa342c](https://github.com/ratatui/ratatui/commit/5fa342cc52fc15d5d7198efaeb3e1537f7fee615) _(widgets)_ Fix centered block title truncation by @ognis1205 in [#1973](https://github.com/ratatui/ratatui/pull/1973)
+
+  > Previously block titles that were aligned center were
+  > truncated poorly (aligned to the left, and the last
+  > non-fitting title would be truncated on the left and right.
+  > This now truncates the titles more obviously centered.
+
+- [1fe64de](https://github.com/ratatui/ratatui/commit/1fe64de09ab4b1572005b45beb8395fb5827e1fc) _(uncategorized)_ Include underline color in anstyle conversion by @aschey in [#2004](https://github.com/ratatui/ratatui/pull/2004)
+
+  > Underline color wasn't included in the style conversion logic.
+
+- [c1b8528](https://github.com/ratatui/ratatui/commit/c1b8528b69342060871046de9280139605749890) _(uncategorized)_ Panic when rendering widgets on too small buffer by @j-g00da in [#1996](https://github.com/ratatui/ratatui/pull/1996)
+
+  > Fixes panic on overflow on horizontal `Barchart` and `RatatuiMascot` and adds proper tests to all widgets.
   >
+  > ***
+
+- [08b21fa](https://github.com/ratatui/ratatui/commit/08b21fa55c286ffb28b3e26340f34b644fd1ce36) _(uncategorized)_ Fix panic when rendering a `Paragraph` out of bounds by @jwodder in [#1670](https://github.com/ratatui/ratatui/pull/1670)
+
+  > Fixes #1667.
+
+- [80bc818](https://github.com/ratatui/ratatui/commit/80bc8187233f4d98659b552d85520cd0e24ec8ad) _(uncategorized)_ Fix truncation of left aligned block titles by @joshka in [#1931](https://github.com/ratatui/ratatui/pull/1931)
+
+  > truncate the right side of left aligned titles rather than the left side
+  > of right aligned titles. This is more obvious as the left side of text
+  > often contains more important information. And we generally read
+  > left to right.
+  >
+  > This change makes centered titles overwrite left aligned titles and
+  > right aligned titles overwrite centered or left aligned titles.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/358
+
+- [21e3b59](https://github.com/ratatui/ratatui/commit/21e3b598ce00300e9c7363139be73bba27f6e3c5) _(uncategorized)_ Fix handling of multi-byte chars in bar chart by @joshka in [#1934](https://github.com/ratatui/ratatui/pull/1934)
+
+  > The split_at method requires that the split point is at a valid utf8
+  > character boundary.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1928
+
+- [e1e4004](https://github.com/ratatui/ratatui/commit/e1e400406c531fe6a81e731242dffe19b1199f23) _(uncategorized)_ Derive copy for list state by @janTatesa in [#1921](https://github.com/ratatui/ratatui/pull/1921)
+
+- [12cb5a2](https://github.com/ratatui/ratatui/commit/12cb5a28fe8e6c4526e70465a52c0d223140b8a1) _(uncategorized)_ Allow canvas area to exceed u16::MAX by @Daksh14 in [#1891](https://github.com/ratatui/ratatui/pull/1891)
+
+  > This allows Canvas grids where the width \* height exceeds u16::MAX by
+  > converting values to usize earlier in several methods.
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/1449
+
+- [09cc9ef](https://github.com/ratatui/ratatui/commit/09cc9ef57dec9b4a144cb5ea9938279997491f2e) _(uncategorized)_ Typo in changelog by @joshka in [#1857](https://github.com/ratatui/ratatui/pull/1857)
+
+- [c238aca](https://github.com/ratatui/ratatui/commit/c238aca83a1b171d2ba7b38942fd5352f5a7e554) _(uncategorized)_ `padding_right()` should set right padding instead of left by @sxyazi in [#1837](https://github.com/ratatui/ratatui/pull/1837)
+
+  > Fixes https://github.com/ratatui/ratatui/issues/1836
+
+- [c90ba97](https://github.com/ratatui/ratatui/commit/c90ba9781e5f4b6d061cafcb44ee7b4138f0b991) _(uncategorized)_ Avoid unnecessary imports in minimal build by @cgzones in [#1787](https://github.com/ratatui/ratatui/pull/1787)
+
   > core::ops::Range is only used with the feature `scrolling-regions`.
   > Ensure a minimal `cargo check` reports no warnings.
 
-- [416ebdf](https://github.com/ratatui/ratatui/commit/416ebdf8c86d1a7a98385908f7c8c560e86770ac) *(uncategorized)* Correct clippy errors introduced by rust 1.86.0 update by @j-g00da in [#1755](https://github.com/ratatui/ratatui/pull/1755)
+- [416ebdf](https://github.com/ratatui/ratatui/commit/416ebdf8c86d1a7a98385908f7c8c560e86770ac) _(uncategorized)_ Correct clippy errors introduced by rust 1.86.0 update by @j-g00da in [#1755](https://github.com/ratatui/ratatui/pull/1755)
 
   > New version of rust (1.86.0) caused CI to fail.
 
-- [4eac5b2](https://github.com/ratatui/ratatui/commit/4eac5b2849f7807c59e8164786e467137e17df86) *(uncategorized)* Make deprecation notes more helpful by @joshka in [#1702](https://github.com/ratatui/ratatui/pull/1702)
+- [4eac5b2](https://github.com/ratatui/ratatui/commit/4eac5b2849f7807c59e8164786e467137e17df86) _(uncategorized)_ Make deprecation notes more helpful by @joshka in [#1702](https://github.com/ratatui/ratatui/pull/1702)
 
   > AI coding assistants use the deprecation notes to automatically suggest
   > fixes. This commit updates the deprecation notes to push those tools to
@@ -1597,9 +709,46 @@ All notable changes to this project will be documented in this file.
   > deprecations, they often incorrectly suggest using `Buffer::get(x, y)`
   > instead of `Buffer[(x, y)]`.
 
+- [35a8642](https://github.com/ratatui/ratatui/commit/35a86427abd30393fc4759c8b164cf422333feee) _(uncategorized)_ `Rect::positions()` should be empty when width is 0 and height is nonzero by @jwodder in [#1669](https://github.com/ratatui/ratatui/pull/1669)
+
+  > Fixes #1666.
+
+- [f5fc819](https://github.com/ratatui/ratatui/commit/f5fc8197ffd0cdc17432e4f8c0cc9368ccef692b) _(uncategorized)_ Avoid extra line break on whitespace only lines when wrapping paragraphs by @dotdash in [#1636](https://github.com/ratatui/ratatui/pull/1636)
+
+  > Currently whitespace only lines produces an extra line break when
+  > trimming is disabled, because both the trimmed as well as the
+  > non-trimmed line get inserted. Fix this by only inserting the
+  > non-trimmed one.
+
+- [2892bdd](https://github.com/ratatui/ratatui/commit/2892bddce66daf0b285a6d9f6fb3fdb2581cda2b) _(uncategorized)_ Rust 1.83 clippy lints by @joshka in [#1527](https://github.com/ratatui/ratatui/pull/1527)
+
+  > https://rust-lang.github.io/rust-clippy/master/index.html#needless_lifetimes
+
+- [36e2d1b](https://github.com/ratatui/ratatui/commit/36e2d1bda1d8b4e1d0fbd09ba2894d56bd7eeeca) _(uncategorized)_ Add feature(doc_cfg) when generating docs by @joshka in [#1506](https://github.com/ratatui/ratatui/pull/1506)
+
+- [4d7704f](https://github.com/ratatui/ratatui/commit/4d7704fba5dcebda34c8c04bf4b5ac48e3a22008) _(uncategorized)_ Make StatefulWidget and Ref work with unsized State by @thscharler in [#1505](https://github.com/ratatui/ratatui/pull/1505)
+
+  > StatefulWidget::State and StatefulWidgetRef::State are now ?Sized.
+  >
+  > This allows implementations of the traits to use unsized types for the
+  > State associated type. This is turn is useful when doing things like
+  > boxing different stateful widget types with State which implements
+  > `Any`, are slices or any other dynamically sized type.
+
+- [7b87509](https://github.com/ratatui/ratatui/commit/7b875091e18b894f53af6331a8ad5b7101a75d1e) _(uncategorized)_ Typo by @marcoieni in [#1480](https://github.com/ratatui/ratatui/pull/1480)
+
 ### Refactor
 
-- [07bec55](https://github.com/ratatui/ratatui/commit/07bec55b7d55fab338f9ab8571a80277d4890753) *(no_std)* Make usages of std explicit in ratatui-core. by @ed-2100 in [#1782](https://github.com/ratatui/ratatui/pull/1782)
+- [8d60e96](https://github.com/ratatui/ratatui/commit/8d60e96b2bfcdc0a7f9b6d17d79dbf36f61182b6) _(examples)_ Use crossterm event methods by @joshka in [#1792](https://github.com/ratatui/ratatui/pull/1792)
+
+  > Crossterm 0.29 introduced methods to easily check / extract the event
+  > type. E.g. as_key_press_event() and is_key_press(). This commit
+  > updates the examples to use these methods instead of matching on
+  > the event type. This makes the code cleaner and easier to read.
+  >
+  > Also does a general cleanup of the event handling code in the examples.
+
+- [07bec55](https://github.com/ratatui/ratatui/commit/07bec55b7d55fab338f9ab8571a80277d4890753) _(no_std)_ Make usages of std explicit in ratatui-core. by @ed-2100 in [#1782](https://github.com/ratatui/ratatui/pull/1782)
 
   > ### This commit does the following:
   >
@@ -1616,20 +765,431 @@ All notable changes to this project will be documented in this file.
   > Eventually, when `std` is to be feature gated, the associated commit
   > will be much cleaner.
 
-- [02e53de](https://github.com/ratatui/ratatui/commit/02e53de0f82bc2364f2ba4345cc5a635347e3eb4) *(uncategorized)* Make use of iter::repeat_n() by @cgzones in [#1788](https://github.com/ratatui/ratatui/pull/1788)
+- [f132fa1](https://github.com/ratatui/ratatui/commit/f132fa1715ea0893c52e35c65d505abadb75cec6) _(table)_ Small readability improvements by @joshka in [#1510](https://github.com/ratatui/ratatui/pull/1510)
+
+- [02e53de](https://github.com/ratatui/ratatui/commit/02e53de0f82bc2364f2ba4345cc5a635347e3eb4) _(uncategorized)_ Make use of iter::repeat_n() by @cgzones in [#1788](https://github.com/ratatui/ratatui/pull/1788)
 
   > Applied via clippy --fix.
   > Available since 1.82.0.
 
+- [a195d59](https://github.com/ratatui/ratatui/commit/a195d59a47663dae1722afa92d9f913317a1e2e9) _(uncategorized)_ Move xtask commands to small modules by @joshka in [#1620](https://github.com/ratatui/ratatui/pull/1620)
+
+- [904b0aa](https://github.com/ratatui/ratatui/commit/904b0aa723e63d3fb68802b797949619506bf3a9) _(uncategorized)_ Move symbols to modules by @joshka in [#1594](https://github.com/ratatui/ratatui/pull/1594)
+
+- [7c8573f](https://github.com/ratatui/ratatui/commit/7c8573f5750ea8cf87101f81314803c834ea4942) _(uncategorized)_ Rearrange selection_spacing code by @raylu in [#1540](https://github.com/ratatui/ratatui/pull/1540)
+
+- [217c57c](https://github.com/ratatui/ratatui/commit/217c57cd60628abde1ca2f0c39b014e22c9edc4e) _(uncategorized)_ Modularize backends by @orhun in [#1508](https://github.com/ratatui/ratatui/pull/1508)
+
+  > Backend code is now moved to `ratatui-crossterm`, `ratatui-termion` and
+  > `ratatui-termwiz`. This should be backwards compatible with existing code.
+
+- [e461b72](https://github.com/ratatui/ratatui/commit/e461b724a6b010fe242f9bd6d9746007cbf24219) _(uncategorized)_ Move {Stateful,}Widget{,Ref} types into individual files by @joshka in [#1479](https://github.com/ratatui/ratatui/pull/1479)
+
+  > This is a preparatory refactoring for modularization. No user visible
+  > changes.
+
 ### Documentation
 
-- [2be9ccb](https://github.com/ratatui/ratatui/commit/2be9ccb120d80cf2f98e434bb7b9da5613dfe180) *(layout)* Remove unnecessary path prefix by @j-g00da in [#1766](https://github.com/ratatui/ratatui/pull/1766)
+- [40e96a2](https://github.com/ratatui/ratatui/commit/40e96a2a0430d4ff5bb5d032d23b7c29969550fd) _(block)_ Add collapsed border example by @joshka in [#1899](https://github.com/ratatui/ratatui/pull/1899)
 
-- [b669ceb](https://github.com/ratatui/ratatui/commit/b669cebcaf51cdf8585c48aec0f7282bf492df6c) *(layout)* Change `cassowary` to `kasuari` crate reference by @j-g00da in [#1765](https://github.com/ratatui/ratatui/pull/1765)
+- [d291042](https://github.com/ratatui/ratatui/commit/d291042e69ad930ae0d3c5d1f991d9e68320c00e) _(block)_ Revise the block example by @orhun in [#1520](https://github.com/ratatui/ratatui/pull/1520)
+
+  > - Moves the block example from `ratatui` to `ratatui-widgets`
+  > - Simplifies the example (bordered, styled, custom borders)
+  >
+  > see #1512
+
+- [0951da5](https://github.com/ratatui/ratatui/commit/0951da52f9dc1628d5dd02c4ceb792a93ce56c27) _(breaking-changes)_ Improve migration guide for `Backend::Error` by @j-g00da in [#1908](https://github.com/ratatui/ratatui/pull/1908)
+
+  > Related:https://github.com/fujiapple852/trippy/pull/1588
+
+- [bbe1cf9](https://github.com/ratatui/ratatui/commit/bbe1cf9497c8efa5566cb71840b2894792772f4b) _(breaking-changes)_ Change MSRV to 1.85 by @j-g00da in [#1896](https://github.com/ratatui/ratatui/pull/1896)
+
+  > The minimum supported Rust version is now for `ratatui` v0.30 is 1.85
+
+- [c7912f3](https://github.com/ratatui/ratatui/commit/c7912f3990c8827b51b0b74f506f1a232e5e7a32) _(breaking-changes)_ Fix header level by @j-g00da in [#1825](https://github.com/ratatui/ratatui/pull/1825)
+
+- [eb24938](https://github.com/ratatui/ratatui/commit/eb249382c98799fc293efaf8f5fc6ff62950d182) _(changelog)_ Add note to ratatui-macros' changelog
+
+- [fcde9cb](https://github.com/ratatui/ratatui/commit/fcde9cb9c3c5e9752fefbcc7cdeac95e2db9d684) _(changelog)_ Fix typo by @orhun in [#1463](https://github.com/ratatui/ratatui/pull/1463)
+
+- [73488ab](https://github.com/ratatui/ratatui/commit/73488abb45dc003bc26d49188812f481244bec60) _(contributing)_ Fix link to `widgets_block_renders` test by @ognis1205 in [#2101](https://github.com/ratatui/ratatui/pull/2101)
+
+  > The `CONTRIBUTING.md` referenced `tests/widgets_block.rs`, but the
+  > correct path is `ratatui/tests/widgets_block.rs`. Updated the link so
+  > that readers can navigate to the test example without 404 error.
+  >
+  > ***
+
+- [0b025db](https://github.com/ratatui/ratatui/commit/0b025db72b1ba4bd38d458cf15cf6cffcfbc1a32) _(contributing)_ Fix grammar by @j-g00da in [#1958](https://github.com/ratatui/ratatui/pull/1958)
+
+- [1197b2a](https://github.com/ratatui/ratatui/commit/1197b2a02c8db06f0cb303d6ffb62f8999518f28) _(contributing)_ Add note about using nightly for formatting by @joshka in [#1816](https://github.com/ratatui/ratatui/pull/1816)
+
+- [3ae6bf1](https://github.com/ratatui/ratatui/commit/3ae6bf1d6f24407de400024dcb5924d841a2e1ba) _(contributing)_ Use cargo-xtask for instructions by @orhun in [#1509](https://github.com/ratatui/ratatui/pull/1509)
+
+  > - Updates `CONTRIBUTING.md` about the usage of `xtask`
+  > - Removes `Makefile.toml`
+
+- [22e3e84](https://github.com/ratatui/ratatui/commit/22e3e84de8d26fd938220bdf3d00f8ec3ca7e597) _(core)_ Remove link to Paragraph widget by @orhun in [#1683](https://github.com/ratatui/ratatui/pull/1683)
+
+- [200b217](https://github.com/ratatui/ratatui/commit/200b21772203d79c00f41f91eb4b966c0d6950ff) _(examples)_ Add VHS tapes and docs for widget examples by @orhun in [#2114](https://github.com/ratatui/ratatui/pull/2114)
+
+  > fixes #1982
+  >
+  > Later on I'll figure out an easy way to regenerate this in the CI and
+  > possibly do the same for the app examples' VHS tapes. That's why I
+  > haven't added a script or mentioned anything in the docs yet (hint:
+  > #1721)
+  >
+  > ***
+
+- [861fbdf](https://github.com/ratatui/ratatui/commit/861fbdf5cf5f0ffdc943f7614e48fa3f40cdd8d6) _(examples)_ Fix a typo by @j-g00da in [#1890](https://github.com/ratatui/ratatui/pull/1890)
+
+  > Makes CI typos check pass again
+
+- [882cc3c](https://github.com/ratatui/ratatui/commit/882cc3c6c63e6470b634787d097f5fd99e0463bf) _(examples)_ Update app examples with tapes by @orhun in [#1673](https://github.com/ratatui/ratatui/pull/1673)
+
+- [4393fae](https://github.com/ratatui/ratatui/commit/4393fae54c18c148e7c24206350f0b9e235e5d69) _(examples)_ Move scrollbar example to examples folder by @orhun in [#1665](https://github.com/ratatui/ratatui/pull/1665)
+
+- [9ea70e2](https://github.com/ratatui/ratatui/commit/9ea70e28c639d967f361a35e851fc450d0b797d7) _(examples)_ Move widget-impl example to examples folder by @orhun in [#1663](https://github.com/ratatui/ratatui/pull/1663)
+
+- [774ab78](https://github.com/ratatui/ratatui/commit/774ab788d4fcdf4862710573dd519b3999044a4b) _(examples)_ Move widget-ref-container example to examples folder by @orhun in [#1664](https://github.com/ratatui/ratatui/pull/1664)
+
+  > see #1512
+
+- [910d16e](https://github.com/ratatui/ratatui/commit/910d16e63af92844ad4d2bed061fb2eec5ac75e3) _(examples)_ Move user-input example to examples folder by @orhun in [#1659](https://github.com/ratatui/ratatui/pull/1659)
+
+- [dbfb7da](https://github.com/ratatui/ratatui/commit/dbfb7da9e36ccf9f89da40e98519e1056f8ab882) _(examples)_ Move table example to examples folder by @orhun in [#1657](https://github.com/ratatui/ratatui/pull/1657)
+
+- [cb2a58a](https://github.com/ratatui/ratatui/commit/cb2a58aaa01d6829f24f7766ad064d7f3c5242ab) _(examples)_ Move tracing example to examples folder by @orhun in [#1658](https://github.com/ratatui/ratatui/pull/1658)
+
+- [7e00b64](https://github.com/ratatui/ratatui/commit/7e00b646fcca58d00ec5b142f71d2b46acb43819) _(examples)_ Move panic example to examples folder by @orhun in [#1655](https://github.com/ratatui/ratatui/pull/1655)
+
+- [8127590](https://github.com/ratatui/ratatui/commit/8127590812ee46231a13ad4279af773bca4daefe) _(examples)_ Move modifiers example to examples folder by @orhun in [#1654](https://github.com/ratatui/ratatui/pull/1654)
+
+- [7c40c0b](https://github.com/ratatui/ratatui/commit/7c40c0bbddca0276523ac717d9df3d2b49594bb6) _(examples)_ Move popup example to examples folder by @orhun in [#1656](https://github.com/ratatui/ratatui/pull/1656)
+
+  > see #1512
+
+- [d87354f](https://github.com/ratatui/ratatui/commit/d87354f4001f501ed9693073a7afcf10d8c6c7a4) _(examples)_ Move list example to examples folder by @orhun in [#1653](https://github.com/ratatui/ratatui/pull/1653)
+
+  > see #1512
+  >
+  > also renames it to todo-list
+
+- [621226f](https://github.com/ratatui/ratatui/commit/621226f2e21816263b45ca3be29804559f98b218) _(examples)_ Move inline example to examples folder by @orhun in [#1651](https://github.com/ratatui/ratatui/pull/1651)
+
+- [9ba7d25](https://github.com/ratatui/ratatui/commit/9ba7d25b71f2a28e658d0f5205484f706bc296b9) _(examples)_ Move hyperlink example to examples folder by @orhun in [#1650](https://github.com/ratatui/ratatui/pull/1650)
+
+- [bb94d1c](https://github.com/ratatui/ratatui/commit/bb94d1c0fad69606d3d7a8323d4a7dff76a00123) _(examples)_ Move minimal example to examples folder by @orhun in [#1649](https://github.com/ratatui/ratatui/pull/1649)
+
+- [9f399ac](https://github.com/ratatui/ratatui/commit/9f399ac7a62357644c1fb79f357667b0e36dfef0) _(examples)_ Move gauge example to examples folder by @orhun in [#1646](https://github.com/ratatui/ratatui/pull/1646)
+
+- [104d6a6](https://github.com/ratatui/ratatui/commit/104d6a6c2b2a06afb076dd339ee6a7900b65f365) _(examples)_ Move custom-widget example to examples folder by @orhun in [#1644](https://github.com/ratatui/ratatui/pull/1644)
+
+- [fa8ca01](https://github.com/ratatui/ratatui/commit/fa8ca0121aec1a46a444dc0ab0ad0cf2f6a9f9bb) _(examples)_ Move flex example to examples folder by @orhun in [#1642](https://github.com/ratatui/ratatui/pull/1642)
+
+- [f5fde0e](https://github.com/ratatui/ratatui/commit/f5fde0ef53c51d5bd5256360625c414e7f9428fd) _(examples)_ Move constraints example to examples folder by @orhun in [#1641](https://github.com/ratatui/ratatui/pull/1641)
+
+- [fc70288](https://github.com/ratatui/ratatui/commit/fc702889549bcf242a2750075234e785f325a3c3) _(examples)_ Move constraint-explorer example to examples folder by @orhun in [#1640](https://github.com/ratatui/ratatui/pull/1640)
+
+- [325f961](https://github.com/ratatui/ratatui/commit/325f96102a2a798353154430db4c1e9b12e254d9) _(examples)_ Move hello-world example to examples folder by @orhun in [#1647](https://github.com/ratatui/ratatui/pull/1647)
+
+- [867c4bc](https://github.com/ratatui/ratatui/commit/867c4bc4e9201356f1394c1520e2855c23462de6) _(examples)_ Move colors-rgb example to examples folder by @joshka in [#1582](https://github.com/ratatui/ratatui/pull/1582)
+
+  > - **docs: move colors-rgb example to examples folder**
+  > - **docs: update main examples README**
+  >
+  > ***
+
+- [72334ed](https://github.com/ratatui/ratatui/commit/72334ed61cc0ae2936b772b2b035ba9c34149c30) _(layout)_ Update documentation to point to `kasuari` solver by @a-kenji in [#2003](https://github.com/ratatui/ratatui/pull/2003)
+
+- [2be9ccb](https://github.com/ratatui/ratatui/commit/2be9ccb120d80cf2f98e434bb7b9da5613dfe180) _(layout)_ Remove unnecessary path prefix by @j-g00da in [#1766](https://github.com/ratatui/ratatui/pull/1766)
+
+- [b669ceb](https://github.com/ratatui/ratatui/commit/b669cebcaf51cdf8585c48aec0f7282bf492df6c) _(layout)_ Change `cassowary` to `kasuari` crate reference by @j-g00da in [#1765](https://github.com/ratatui/ratatui/pull/1765)
+
+- [f907c74](https://github.com/ratatui/ratatui/commit/f907c74bb31e133d47e08684f9199870d1870dbd) _(license)_ Update copyright years by @LVivona in [#1639](https://github.com/ratatui/ratatui/pull/1639)
+
+  > Update MIT Licence to copyright year 2025
+
+- [68b9f67](https://github.com/ratatui/ratatui/commit/68b9f67f59ce7b46649fe3c96c558f4b88cd1007) _(readme)_ Add `Built with Ratatui` badge for downstream projects by @harilvfs in [#1905](https://github.com/ratatui/ratatui/pull/1905)
+
+- [088aac1](https://github.com/ratatui/ratatui/commit/088aac136d8b22557081ab4c657f5c9f5cde80d8) _(readme)_ Tweak links and badges by @joshka in [#1598](https://github.com/ratatui/ratatui/pull/1598)
+
+- [6e43672](https://github.com/ratatui/ratatui/commit/6e436725e4f8c58be527b07c464a0d8b5d306eb6) _(readme)_ Reimagine README.md by @orhun in [#1569](https://github.com/ratatui/ratatui/pull/1569)
+
+  > This is the result of the re-imagination of a more suitable README.md. It
+  > is simpler and shorter: not giving more information to the user than
+  > they actually need.
+  >
+  > Also updates the quickstart code with the up-to-date version and adds
+  > link to templates which was missing.
+  >
+  > ***
+
+- [8f28247](https://github.com/ratatui/ratatui/commit/8f282473b21d7693f20b5f0cdad2f12b9ed209ff) _(readme)_ Correct examples links by @HoKim98 in [#1484](https://github.com/ratatui/ratatui/pull/1484)
+
+- [9f90f74](https://github.com/ratatui/ratatui/commit/9f90f7495fd46b3b7ac34160f094bc1583f82b70) _(readme)_ Fix broken link by @nilsmartel in [#1485](https://github.com/ratatui/ratatui/pull/1485)
+
+- [260af68](https://github.com/ratatui/ratatui/commit/260af68a347b527281265f7bf259eb1336aa49b2) _(readme)_ Include iocraft as an alternative by @kdheepak in [#1483](https://github.com/ratatui/ratatui/pull/1483)
+
+- [8e5151f](https://github.com/ratatui/ratatui/commit/8e5151f83dbd2ec22d618adce4896a4e4466e67e) _(rect)_ Fix typo in the Rect::outer function comments by @orhun in [#2123](https://github.com/ratatui/ratatui/pull/2123)
+
+- [40f13c6](https://github.com/ratatui/ratatui/commit/40f13c6a6cff3dfd4f1b8a5fbfe58ca8d9bc450d) _(rect)_ Update the outdated comment for Rect::area() by @eqsdxr in [#2100](https://github.com/ratatui/ratatui/pull/2100)
+
+  > The return value of Rect.area() is no longer of u16 type, and the value
+  > is not being clumped anymore.
+
+- [ce16692](https://github.com/ratatui/ratatui/commit/ce16692b9ae6ca8e0fa0e16412cdcfbdbd6f3916) _(release)_ Fix typo by @j-g00da in [#1754](https://github.com/ratatui/ratatui/pull/1754)
+
+- [9a930a6](https://github.com/ratatui/ratatui/commit/9a930a6e997e8443a9bdb856097abed6c78290e0) _(terminal)_ Made usage of Terminal::get_frame() clearer by @Blaeriz in [#2071](https://github.com/ratatui/ratatui/pull/2071)
+
+  > Closes : https://github.com/ratatui/ratatui/issues/1200
+  >
+  > ***
+
+- [b08b4cb](https://github.com/ratatui/ratatui/commit/b08b4cbd5e74961066e1ca7cae6e7ccb3f84fe25) _(terminal)_ Add disclaimer about panics to Terminal::new by @lolbinarycat in [#2088](https://github.com/ratatui/ratatui/pull/2088)
+
+  > part of #2087
+  >
+  > cc @orhun
+  >
+  > ***
+
+- [dafb716](https://github.com/ratatui/ratatui/commit/dafb716f9d8acb5dda303dc1e155dc90eb54b926) _(widgets)_ Add example for grouped barchart by @orhun in [#1566](https://github.com/ratatui/ratatui/pull/1566)
+
+  > related #1512
+  >
+  > ***
+
+- [ed5dd73](https://github.com/ratatui/ratatui/commit/ed5dd73084e2c8ccf3d36bc23048d67755a90e6a) _(widgets)_ Add example for tabs by @orhun in [#1559](https://github.com/ratatui/ratatui/pull/1559)
+
+  > related #1512
+  >
+  > Also removes the tabs example from ratatui crate since it overlaps with
+  > this new example in terms of functionality and it was not following the
+  > general theme of other examples.
+
+- [fab5321](https://github.com/ratatui/ratatui/commit/fab532171d1c8e9639298550565e4eefb8737275) _(widgets)_ Add example for scrollbar by @orhun in [#1545](https://github.com/ratatui/ratatui/pull/1545)
+
+  > Related to: #1512
+
+- [898aef6](https://github.com/ratatui/ratatui/commit/898aef6e2f38655e58684a2d842f03bcde0ebf0c) _(widgets)_ Add example for list by @orhun in [#1542](https://github.com/ratatui/ratatui/pull/1542)
+
+  > Related to: #1512
+
+- [452366a](https://github.com/ratatui/ratatui/commit/452366aa9e666f26946ebccf6046a0bed393f5c1) _(widgets)_ Add example for sparkline by @orhun in [#1556](https://github.com/ratatui/ratatui/pull/1556)
+
+  > related #1512
+  >
+  > Also removes the sparkline example from ratatui crate since this example
+  > is a simplified and easier to understand version of that
+
+- [6ddde0e](https://github.com/ratatui/ratatui/commit/6ddde0e8a84b0909ba5631afac2dfc7878764786) _(widgets)_ Add example for table by @orhun in [#1557](https://github.com/ratatui/ratatui/pull/1557)
+
+  > related #1512
+
+- [93ad6b8](https://github.com/ratatui/ratatui/commit/93ad6b828c3a34be982447390d17b7953a9c328e) _(widgets)_ Update values in chart example by @orhun in [#1558](https://github.com/ratatui/ratatui/pull/1558)
+
+  > better stonks
+
+- [15f442a](https://github.com/ratatui/ratatui/commit/15f442a71ed4ce3faeaac3b2a3a7798940eb1846) _(widgets)_ Add example for paragraph by @orhun in [#1544](https://github.com/ratatui/ratatui/pull/1544)
+
+  > related #1512
+  >
+  > Also removes the paragraph example from `ratatui` since these examples
+  > are more or less the same.
+
+- [17bba14](https://github.com/ratatui/ratatui/commit/17bba14540449ae584a9cafbe2a39cc7fa451ef4) _(widgets)_ Move the logo example to widgets by @orhun in [#1543](https://github.com/ratatui/ratatui/pull/1543)
+
+  > related #1512
+  >
+  > Also updates the code to make it consistent with the other examples
+
+- [f2451e7](https://github.com/ratatui/ratatui/commit/f2451e7f1ed1d5bd38e8901f139bc2916a4b005e) _(widgets)_ Add example for gauge by @orhun in [#1539](https://github.com/ratatui/ratatui/pull/1539)
+
+  > related #1512
+
+- [4f0a8b2](https://github.com/ratatui/ratatui/commit/4f0a8b21af49b825debb13695f8c1f368f4f56b5) _(widgets)_ Add example for canvas by @orhun in [#1533](https://github.com/ratatui/ratatui/pull/1533)
+
+  > related #1512
+
+- [91147c4](https://github.com/ratatui/ratatui/commit/91147c4d75bee207052b06a7dca4b610df321de1) _(widgets)_ Add example for chart by @orhun in [#1536](https://github.com/ratatui/ratatui/pull/1536)
+
+  > stonks
+
+- [6dd25a3](https://github.com/ratatui/ratatui/commit/6dd25a311152abf3e0938c9a59e54c98e2a327a6) _(widgets)_ Add example for calendar by @orhun in [#1532](https://github.com/ratatui/ratatui/pull/1532)
+
+  > related #1512
+
+- [99ac005](https://github.com/ratatui/ratatui/commit/99ac005b06f807c79060dba43b33ec9b1f7c1a3a) _(widgets)_ Add simple barchart example by @joshka in [#1511](https://github.com/ratatui/ratatui/pull/1511)
+
+- [f8b0594](https://github.com/ratatui/ratatui/commit/f8b0594363ca758e6ec00e3d4ab8aebe86e6ec56) _(uncategorized)_ Fix: fix typos by @j-g00da in [#2129](https://github.com/ratatui/ratatui/pull/2129)
+
+  > This fixes the pipeline after bumping typos.
+
+- [9998000](https://github.com/ratatui/ratatui/commit/9998000e36d126b408aade980f78865da1359e61) _(uncategorized)_ Use shields.io badge by @LitoMore in [#2040](https://github.com/ratatui/ratatui/pull/2040)
+
+  > Related to:
+  >
+  > - https://github.com/simple-icons/simple-icons/pull/13593
+  > - https://github.com/ratatui/ratatui/pull/1967
+  >
+  > The Ratatui icon is available on shields.io now :v:
+  >
+  > And it's customizable. There are more configurations at
+  > https://shields.io/badges.
+  >
+  > Here are some examples:
+  >
+  > ```markdown
+  > ![](https://img.shields.io/badge/Ratatui-000?logo=ratatui&logoColor=fff)
+  > ![](https://img.shields.io/badge/Ratatui-fff?logo=ratatui&logoColor=000)
+  > ![](https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff)
+  > ![](https://img.shields.io/badge/Ratatui-000?logo=ratatui&logoColor=fff&style=flat-square)
+  > ![](https://img.shields.io/badge/Ratatui-000?logo=ratatui&logoColor=fff&style=for-the-badge)
+  > ```
+  >
+  > ![](https://img.shields.io/badge/Ratatui-000?logo=ratatui&logoColor=fff) > ![](https://img.shields.io/badge/Ratatui-fff?logo=ratatui&logoColor=000)
+  >
+  > ![](https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff)
+  >
+  > ![](https://img.shields.io/badge/Ratatui-000?logo=ratatui&logoColor=fff&style=flat-square)
+  >
+  > ![](https://img.shields.io/badge/Ratatui-000?logo=ratatui&logoColor=fff&style=for-the-badge)
+  >
+  > I also created a PR to the ratatui-website project to update the badge.
+  > Here is the PR:
+  >
+  > - https://github.com/ratatui/ratatui-website/pull/924
+
+- [71ef65b](https://github.com/ratatui/ratatui/commit/71ef65b6248bd8b22fe775125447948071868cbe) _(uncategorized)_ Add section on collaborative development to contributing doc by @joshka in [#2029](https://github.com/ratatui/ratatui/pull/2029)
+
+- [cba5cca](https://github.com/ratatui/ratatui/commit/cba5cca2bd3fcb12d98d174cf648c87bed0f2ab7) _(uncategorized)_ Update heading image for Ratatui 0.30.0 release 🎉 by @j-g00da in [#2000](https://github.com/ratatui/ratatui/pull/2000)
+
+- [9836f07](https://github.com/ratatui/ratatui/commit/9836f0760d4a053d9d1eba78171be89cb22dc850) _(uncategorized)_ Add AI contribution guidelines by @joshka in [#2013](https://github.com/ratatui/ratatui/pull/2013)
+
+- [98f85b8](https://github.com/ratatui/ratatui/commit/98f85b86502fca754ec25698298684e9acbda746) _(uncategorized)_ Update link to scrollable widgets RFC by @MatrixFrog in [#1994](https://github.com/ratatui/ratatui/pull/1994)
+
+- [055522e](https://github.com/ratatui/ratatui/commit/055522ef7bafa5ed2a9370b9907f647f616cbfb0) _(uncategorized)_ Add docs for authoring widget crates by @j-g00da in [#1955](https://github.com/ratatui/ratatui/pull/1955)
+
+  > - added Authoring Widget Libraries sub-section
+  > - moved built-in and third-party widgets sections higher
+
+- [617d318](https://github.com/ratatui/ratatui/commit/617d31851a30cfe751af421c8c438692c43fff4d) _(uncategorized)_ Improve Block docs by @joshka in [#1953](https://github.com/ratatui/ratatui/pull/1953)
+
+- [8e2d568](https://github.com/ratatui/ratatui/commit/8e2d568428047994f57886d64d9925d6eace130a) _(uncategorized)_ Improve layout related docs by @joshka in [#1948](https://github.com/ratatui/ratatui/pull/1948)
+
+  > Adds module level docs and more comprehensive docs on all the types in
+  > the layout module
+  >
+  > Fixes #1937
+
+- [4c708dd](https://github.com/ratatui/ratatui/commit/4c708ddf8a4dfcc7e31435cc9269fce62ef48212) _(uncategorized)_ Improve docs for run/init/restore etc. by @joshka in [#1947](https://github.com/ratatui/ratatui/pull/1947)
+
+  > - **docs: document the init module**
+  > - **docs: use the ratatui::run() methods in the main doc**
+  > - **docs: add more intradoc / website links and historical perspective
+  >   on Terminal / backend**
+  > - **docs: add notes about new run/init/restore methods and the
+  >   defaultterminal type to terminal docs**
+
+- [5620e06](https://github.com/ratatui/ratatui/commit/5620e06b1a52a08684db583c3f543594b58de7fb) _(uncategorized)_ Add crate organization sections to workspace by @joshka in [#1946](https://github.com/ratatui/ratatui/pull/1946)
+
+  > Adds summary-level crate organization documentation to all crates
+  > explaining the modular workspace structure and when to use each crate.
+  > Links to ARCHITECTURE.md for detailed information.
+
+- [cfb65e6](https://github.com/ratatui/ratatui/commit/cfb65e64ba9e9758e44c5bfe54adc331a9084932) _(uncategorized)_ Add examples for handling state by @joshka in [#1849](https://github.com/ratatui/ratatui/pull/1849)
+
+  > Added comprehensive state management examples covering both immutable
+  > and mutable patterns and documentation to help developers choose the
+  > right approach for their applications.
+
+- [3de41a8](https://github.com/ratatui/ratatui/commit/3de41a8249d221d603ce9f294cac81df62fffc3c) _(uncategorized)_ Document widgets module by @joshka in [#1932](https://github.com/ratatui/ratatui/pull/1932)
+
+  > Adds a good overview of the use and implementation of widget traits.
+  >
+  > Goals with the doc rewrite:
+  >
+  > - document the rationale for the ratatui-widgets crate with info for app
+  >   builders and widget makers.
+  > - Show how to use the widgets for rendering as well as implement the
+  >   traits- document the differences and reasons for each trait
+  > - document the historical perspective (to make it easy to understand
+  >   older Ratatui apps as well as migrate to newer approaches
+  > - give recommended approaches to implementing traits
+  > - explain the differences between Consuming and Shared / Mutable
+  >   Reference implementations of Widget
+  > - explain the differences between using StatefulWidget and Mutable
+  >   References
+  > - Explain the use case for WidgetRef and StatefulWidgetRef
+  > - Link out to third part widget lists
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/366
+  >
+  > ***
+
+- [ca2ad4a](https://github.com/ratatui/ratatui/commit/ca2ad4a1f93432f81a87ca1e3766f510723d3652) _(uncategorized)_ Simplify ratatui-macro docs by @joshka in [#1923](https://github.com/ratatui/ratatui/pull/1923)
+
+- [92b6a16](https://github.com/ratatui/ratatui/commit/92b6a16bdedb7fd14bafd1f4cbab6ee7b98295e8) _(uncategorized)_ Fix grammar in ratatui-widgets README by @sevki in [#1885](https://github.com/ratatui/ratatui/pull/1885)
+
+- [da05957](https://github.com/ratatui/ratatui/commit/da05957fa01fcc420519400d82ef9df6acace0e8) _(uncategorized)_ Add widget-ref-container example by @joshka in [#1603](https://github.com/ratatui/ratatui/pull/1603)
+
+  > Implements ideas alluded to by
+  > <https://discord.com/channels/1070692720437383208/1072907135664529508/1323061053990637640>
+  > and followup conversations.
+
+- [1798512](https://github.com/ratatui/ratatui/commit/1798512e94b277fdfafeddb4043f7174ce2ac64a) _(uncategorized)_ Fix wording in user_input example by @dawedawe in [#1611](https://github.com/ratatui/ratatui/pull/1611)
+
+  > Fix wording in `user_input.rs` example.
+
+- [03066d8](https://github.com/ratatui/ratatui/commit/03066d81bfc7fb4356e8d188f3d6a15b45509c15) _(uncategorized)_ Fix punctuation in canvas.rs documentation by @dawedawe in [#1583](https://github.com/ratatui/ratatui/pull/1583)
+
+  > Fix end of sentence punctuation in canvas.rs docs.
+
+- [e411d9e](https://github.com/ratatui/ratatui/commit/e411d9ec3e921e812b7e8d2836c2ad0b60a0e6f8) _(uncategorized)_ Add input form example by @joshka in [#1551](https://github.com/ratatui/ratatui/pull/1551)
+
+  > Demonstrates how to manage the cursor and input focus with a simple
+  > form. Uses an enum to track the current input field and passes the
+  > input events to the active field.
+  >
+  > This is similar to the json tutorial on the website, but a bit simpler
+
+- [ed071f3](https://github.com/ratatui/ratatui/commit/ed071f37232fae47a2193235d57934cc5c678baa) _(uncategorized)_ Add mouse-drawing example by @joshka in [#1546](https://github.com/ratatui/ratatui/pull/1546)
+
+  > Demonstrates how to handle mouse events
+
+- [46902f5](https://github.com/ratatui/ratatui/commit/46902f5587efe2b27c39b5e3c39109c62a636ba3) _(uncategorized)_ Improve docs for workspace crates by @orhun in [#1490](https://github.com/ratatui/ratatui/pull/1490)
+
+  > Overall makes improvements in the documentation of the workspace crates and checking them.
+
+- [a6b5792](https://github.com/ratatui/ratatui/commit/a6b579223fd83c36e024428df49a3027cd1c21bc) _(uncategorized)_ Fix example link in readme by @thomas-tacquet in [#1462](https://github.com/ratatui/ratatui/pull/1462)
+
+### Performance
+
+- [1f41a61](https://github.com/ratatui/ratatui/commit/1f41a610083bb941024bd0116df1f0ac37e9cf33) _(paragraph)_ Avoid unnecessary work when rendering by @alexpasmantier in [#1622](https://github.com/ratatui/ratatui/pull/1622)
+
+  > Improve render times for paragraphs that are scrolled.
+  >
+  > Currently all `LineComposer`s are considered to be state machines which
+  > means rendering a paragraph with a given Y offset requires computing the
+  > entire state up to Y before being able to render from Y onwards.
+  >
+  > While this makes sense for Composers such as the `WordWrapper` (where
+  > one needs to consider all previous lines to determine where a given line
+  > will end up), it means it also penalizes Composers which can render a
+  > given line "statelessely" (such as the `LineTruncator`) which actually
+  > end up doing a lot of unnecessary work (and on the critical rendering
+  > path) when the offset gets high.
+
+- [ba9eed7](https://github.com/ratatui/ratatui/commit/ba9eed774230d160016605048762cd73944c36e6) _(table)_ Replace while loop with simple min operation by @EdJoPaTo in [#1747](https://github.com/ratatui/ratatui/pull/1747)
 
 ### Styling
 
-- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) *(uncategorized)* Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
+- [ac60de3](https://github.com/ratatui/ratatui/commit/ac60de3960c9d65b71224ed8a628cda171fe29f5) _(uncategorized)_ Fix wrapping in doc comment by @joshka in [#2104](https://github.com/ratatui/ratatui/pull/2104)
+
+- [2739391](https://github.com/ratatui/ratatui/commit/2739391950eddd129c25cd4ffddb28b99eed8cf5) _(uncategorized)_ Use Module imports_granularity by @joshka in [#1728](https://github.com/ratatui/ratatui/pull/1728)
 
   > I was swayed by the arguments about this made by the compiler team In
   > <https://github.com/rust-lang/compiler-team/issues/750> and decided to
@@ -1658,32 +1218,450 @@ All notable changes to this project will be documented in this file.
 
 ### Testing
 
-- [deb1b8e](https://github.com/ratatui/ratatui/commit/deb1b8ec43d8c9e5b1a5469dc4fa4c7e86d86d9b) *(uncategorized)* Ensure Style::new() and Style::default() are equivalent by @cgzones in [#1789](https://github.com/ratatui/ratatui/pull/1789)
+- [db65aa0](https://github.com/ratatui/ratatui/commit/db65aa0ef707c282b3292739f3d6d7c20559c2a7) _(bench)_ Add benchmark for text by @orhun in [#2160](https://github.com/ratatui/ratatui/pull/2160)
+
+  > #2138
+  >
+  > ***
+
+- [a21501f](https://github.com/ratatui/ratatui/commit/a21501f7f4373e32cf00f76a6d3f453f110b2761) _(bench)_ Added a benchmark for constraints by @kashregister in [#2043](https://github.com/ratatui/ratatui/pull/2043)
+
+  > I've added a new benchmark for constraints, which only takes into
+  > account the time it takes to generate a full layout using a single type
+  > of constraints only. Avoided rendering here as it resulted in more
+  > inaccurate benchmarks, and i believe it should be separated nonetheless.
+
+- [39cd313](https://github.com/ratatui/ratatui/commit/39cd313b3b70eb2dcf4ea465079fa8a4043b8e9e) _(layout)_ Add visual buffer tests for Rect methods by @orhun in [#2124](https://github.com/ratatui/ratatui/pull/2124)
+
+- [8aefc06](https://github.com/ratatui/ratatui/commit/8aefc06a90be113b733a570348cb82f251cea01e) _(macros)_ Regenerate trybuild stderr by @ognis1205 in [#2093](https://github.com/ratatui/ratatui/pull/2093)
+
+  > ### Overview
+  >
+  > Updated the `.stderr` file corresponding to the
+  > `ratatui-macros/tests/ui/fails.rs` compile-fail test.
+  >
+  > ### Changes
+  >
+  > - Updated `tests/ui/fails.stderr` to match the new compiler output.
+  >
+  > ### Impact
+  >
+  > - Affects only the trybuild UI tests
+  > - No impact on production code
+  >
+  > ### Notes
+  >
+  > - The `.stderr` was generated using `TRYBUILD=overwrite cargo test`.
+  >
+  > Closes https://github.com/ratatui/ratatui/issues/2094
+
+- [deb1b8e](https://github.com/ratatui/ratatui/commit/deb1b8ec43d8c9e5b1a5469dc4fa4c7e86d86d9b) _(uncategorized)_ Ensure Style::new() and Style::default() are equivalent by @cgzones in [#1789](https://github.com/ratatui/ratatui/pull/1789)
 
 ### Miscellaneous Tasks
 
-- [cef617c](https://github.com/ratatui/ratatui/commit/cef617cc35b9ddba97bb435a8f70f6b8d71ab810) *(lint)* Add `std` instead of `core`/`alloc` lints to `ratatui-core` by @j-g00da in [#1759](https://github.com/ratatui/ratatui/pull/1759)
+- [abe2f27](https://github.com/ratatui/ratatui/commit/abe2f273289d3798968a645a38a7a38571530065) _(backend)_ Change From<T> impls to new backend specific IntoBackend and FromBackend traits by @joshka in [#1464](https://github.com/ratatui/ratatui/pull/1464) [**breaking**]
+
+  > Adds two traits `IntoCrossterm` and `FromCrossterm` for converting
+  > between ratatui and crossterm types. This is necessary in order to avoid
+  > the orphan rule when implementing `From` for crossterm types once the
+  > crossterm types are moved to a separate crate.
   >
+  > Similarly Termwiz and Termwiz gain FromTermion, IntoTermion, FromTermwiz
+  > and IntoTermwiz traits.
+  >
+  > BREAKING CHANGE:The `From` and `Into` impls for backend types are now
+  > replaced
+  > with specific backend traits.
+  >
+  > ```diff
+  > + use ratatui::backend::{FromCrossterm, IntoCrossterm};
+  >
+  > let crossterm_color = crossterm::style::Color::Black;
+  > - let ratatui_color = crossterm_color.into();
+  > - let ratatui_color = ratatui::style::Color::from(crossterm_color);
+  > + let ratatui_color = ratatui::style::Color::from_crossterm(crossterm_color);
+  > - let crossterm_color = ratatui_color.into();
+  > - let crossterm_color = crossterm::style::Color::from(ratatui_color);
+  > + let crossterm_color = ratatui_color.into_crossterm();
+  >
+  > let crossterm_attribute = crossterm::style::types::Attribute::Bold;
+  > - let ratatui_modifier = crossterm_attribute.into();
+  > - let ratatui_modifier = ratatui::style::Modifier::from(crossterm_attribute);
+  > + let ratatui_modifier = ratatui::style::Modifier::from_crossterm(crossterm_attribute);
+  > - let crossterm_attribute = ratatui_modifier.into();
+  > - let crossterm_attribute = crossterm::style::types::Attribute::from(ratatui_modifier);
+  > + let crossterm_attribute = ratatui_modifier.into_crossterm();
+  > ```
+  >
+  > Similar conversions for `ContentStyle` -> `Style` and `Attributes` ->
+  > `Modifier` exist for Crossterm,
+  > and all the Termion and Termwiz types.
+  >
+  > ***
+
+- [0a47ebd](https://github.com/ratatui/ratatui/commit/0a47ebd94bbc7a89c9e2aa893cf13a988756ec19) _(bencher)_ Update bencher CLI usage by @epompeii in [#1470](https://github.com/ratatui/ratatui/pull/1470)
+
+- [b46778d](https://github.com/ratatui/ratatui/commit/b46778dd1dbb3de344a491d4cff629b1339eeaa4) _(breaking-changes)_ Add details to `no_std`-related breaking changes by @j-g00da in [#1828](https://github.com/ratatui/ratatui/pull/1828)
+
+  > Some corrections and added details to BREAKING-CHANGES.md.
+  >
+  > I decided to remove:
+  >
+  > - `Backend` now uses `Self::Error` for error handling instead of
+  >   `std::io::Error`
+  > - `Terminal<B>` now uses `B::Error` for error handling instead of
+  >   `std::io::Error`
+  >
+  > ...as we are still using `std::io::Error` in built-in backends, so this
+  > will only be breaking if a third-party backend decides to use a custom
+  > error other than `std::io::Error`, which would be a breaking change in
+  > downstream and not `ratatui`.
+  >
+  > The exception to that is `TestBackend`, which uses `Infallible`, but
+  > this already has its own breaking changes entry.
+
+- [a0979d6](https://github.com/ratatui/ratatui/commit/a0979d68715b2c67b32b8909189bc103f0e81f6e) _(build)_ Remove cargo lint by @joshka in [#1549](https://github.com/ratatui/ratatui/pull/1549)
+
+  > Duplicate crate lint is too noisy and sensitive to upstream changes
+
+- [ae43ea7](https://github.com/ratatui/ratatui/commit/ae43ea796a770330d82a3e0687c0a0057b6b07ca) _(cell)_ Use Option instead of space (" ") for symbol by @joshka
+
+  > This change makes the `Cell::symbol` field an `Option<CompactString>`,
+  > allowing it to represent an empty cell as `None` instead of an empty
+  > string. The rationale for this is to later allow the merge symbol
+  > functionality to act differently based on whether a cell has previously
+  > held a symbol or not, rather than always merging with an empty string.
+  > This will help make it possible to merge borders with titles with spaces
+  > and other symbols, without assuming that an empty string is always
+  > equivalent to no symbol.
+  >
+  > - Default is now derived as `Option::None` works correctly.
+  > - PartialEq and Eq implementations are updated to treat `None` the same
+  >   as an empty string.
+  > - merge_symbol against an empty cell will now just set the symbol
+  >   rather than calling MergeStrategy::merge with an empty string.
+  > - PartialEq, and Hash are manually implemented instead of being
+  >   derived, and are updated to treat `None` equal to an empty string.
+
+- [887a636](https://github.com/ratatui/ratatui/commit/887a6366e5deee79597f674a25bd45f21357a3c6) _(ci)_ Override RUSTUP_TOOLCHAIN for the check step by @ognis1205 in [#2116](https://github.com/ratatui/ratatui/pull/2116)
+
+  > Summary
+  > Fixes an issue where the "check" CI jobs for MSRV and stable were
+  > unintentionally using the stable toolchain from `rust-toolchain.toml`
+  > instead of the matrix-specified toolchain.
+  >
+  > Details
+  >
+  > - Added `RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}` to the "check" job
+  >   in CI configuration.
+  >
+  > Additional Context
+  >
+  > - https://github.com/ratatui/ratatui/pull/2106
+  > - https://discord.com/channels/1070692720437383208/1072879985762762812/1422345357131780177
+  > - https://rust-lang.github.io/rustup/overrides.html#overrides
+
+- [34baaf1](https://github.com/ratatui/ratatui/commit/34baaf11376ececf8b8e0370d25a017f3e86f862) _(ci)_ Override the toolchain for CI runs by @ognis1205 in [#2106](https://github.com/ratatui/ratatui/pull/2106)
+
+  > ### Summary
+  >
+  > Fixes an issue where the beta CI jobs were unintentionally using the
+  > stable
+  > toolchain from `rust-toolchain.toml` instead of the matrix-specified
+  > toolchain.
+  > This caused clippy to run against the wrong version.
+  >
+  > ### Details
+  >
+  > - Added `RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}` to the CI
+  >   configuration
+  >
+  > ### Additional Context
+  >
+  > - https://discord.com/channels/1070692720437383208/1072879985762762812/1421990770482745415
+  > - https://rust-lang.github.io/rustup/overrides.html#overrides
+
+- [e48aa9e](https://github.com/ratatui/ratatui/commit/e48aa9ec0983d3578d97b58d6c262ed508d8627e) _(ci)_ Stop publish-alpha from running on forks by @j-g00da in [#1916](https://github.com/ratatui/ratatui/pull/1916)
+
+  > I can't sleep because every Saturday alpha release fails on my ratatui
+  > fork. This should fix my insomnia.
+
+- [b3f3c9b](https://github.com/ratatui/ratatui/commit/b3f3c9bfd5c0169bf854b422cea7091a9ebcfa39) _(ci)_ Disable running release-plz on forked repositories by @orhun in [#1730](https://github.com/ratatui/ratatui/pull/1730)
+
+  > See https://github.com/jdssl/ratatui/pull/1#issuecomment-2739366609
+
+- [eaa4038](https://github.com/ratatui/ratatui/commit/eaa403856ecb60338619e2e727a0388187ae017c) _(ci)_ Install pre-built binaries for cargo-rdme by @orhun in [#1477](https://github.com/ratatui/ratatui/pull/1477)
+
+  > `install-action` uses `cargo-binstall` to install the pre-built binaries
+  > of `cargo-rdme` (which was released in
+  > https://github.com/orium/cargo-rdme/releases/tag/v1.4.7).
+  >
+  > This will make the `check-readme` step faster in CI (now takes only 10
+  > seconds).
+
+- [e5e2316](https://github.com/ratatui/ratatui/commit/e5e2316451fb4c085f205b4884cc82ba8a4930e6) _(ci)_ Add check for keeping README.md up-to-date by @orhun in [#1473](https://github.com/ratatui/ratatui/pull/1473)
+
+- [2ef3583](https://github.com/ratatui/ratatui/commit/2ef3583effdeb6492d76d977177b4363129a8c8c) _(ci)_ Replace cargo-make with a custom cargo-xtask by @joshka in [#1461](https://github.com/ratatui/ratatui/pull/1461)
+
+  > This removes the need for cargo-make and replaces it with a custom xtask
+  > binary. See <https://github.com/matklad/cargo-xtask> for info.
+  >
+  > Rearranges the CI workflow to use the new xtask and simplify which
+  > workflows that run.
+  >
+  > ***
+
+- [98df774](https://github.com/ratatui/ratatui/commit/98df774d7f9b69a2a474d25adf38e38a428f1b77) _(core)_ Move core types to ratatui-core by @joshka in [#1460](https://github.com/ratatui/ratatui/pull/1460)
+
+  > The buffer, layout, style, symbols, text, and the top level of widgets
+  > modules are moved to ratatui-core. This is the first step in
+  > modularizing the library so that the core types can be used in other
+  > projects without the need for the backend / widgets types.
+  >
+  > This helps reduce the need for updating other crates as often due to
+  > semver changes outside of the core types.
+  >
+  > ***
+
+- [35eba76](https://github.com/ratatui/ratatui/commit/35eba76b4dff047dde2d1e01bc427eb1b992b490) _(example)_ Move demo2 to top level folder by @joshka in [#1524](https://github.com/ratatui/ratatui/pull/1524)
+
+- [5f57d35](https://github.com/ratatui/ratatui/commit/5f57d3523436e944b60ccc7a937d69336c9f82b8) _(examples)_ Add colors explorer demo app by @orhun in [#1580](https://github.com/ratatui/ratatui/pull/1580)
+
+  > related #1512
+  >
+  > Moves the colors examples to apps
+
+- [5c021bf](https://github.com/ratatui/ratatui/commit/5c021bf344b17fc4075e9663dfb270bead180e25) _(examples)_ Add chart demo app by @orhun in [#1579](https://github.com/ratatui/ratatui/pull/1579)
+
+  > related #1512
+  >
+  > Moves the chart example to apps
+
+- [9721300](https://github.com/ratatui/ratatui/commit/9721300a473096daf6b34f6cc7c13643d61a4e00) _(examples)_ Add canvas demo app by @orhun in [#1578](https://github.com/ratatui/ratatui/pull/1578)
+
+  > related #1512
+  >
+  > This moves the canvas example to the apps and adds some interactivity
+  > via changing the marker by pressing enter.
+
+- [a6a1368](https://github.com/ratatui/ratatui/commit/a6a13682507846320a79538ffad673a58c1143f0) _(examples)_ Add calendar explorer demo app by @orhun in [#1571](https://github.com/ratatui/ratatui/pull/1571)
+
+  > Related to #1512
+  >
+  > As discussed, this moves the calendar example from ratatui to app
+  > examples as an "explorer" example. It also adds interactivity where you
+  > can press s to toggle between different styles of calendars.
+  >
+  > ***
+
+- [819e92c](https://github.com/ratatui/ratatui/commit/819e92cd44b6bee7d21115ff465c2f3f8c82ed9b) _(examples)_ Add weather demo app by @orhun in [#1567](https://github.com/ratatui/ratatui/pull/1567)
+
+  > related to #1512
+
+- [b5f7e44](https://github.com/ratatui/ratatui/commit/b5f7e4418364c9710d14567c73122af67e0a63ae) _(examples)_ Move async example to apps by @joshka in [#1503](https://github.com/ratatui/ratatui/pull/1503)
+
+  > Move async example to examples/apps/async as full project.
+  > Simplify a little by removing the need for the github api token.
+
+- [17316ec](https://github.com/ratatui/ratatui/commit/17316ec5d0a4807600dd116736d66938b985e718) _(github)_ Enable sponsorship button by @orhun in [#1478](https://github.com/ratatui/ratatui/pull/1478)
+
+- [d02995f](https://github.com/ratatui/ratatui/commit/d02995fda106fa6c88bb086c5def995a584b4496) _(gitignore)_ Add `.env` to `.gitignore` by @j-g00da in [#1949](https://github.com/ratatui/ratatui/pull/1949)
+
+- [b4a71e5](https://github.com/ratatui/ratatui/commit/b4a71e5fd5c5a77efff4a48920e29171face1e79) _(lint)_ Add `std` instead of `core`/`alloc` lints to `ratatui-widgets` by @j-g00da in [#1763](https://github.com/ratatui/ratatui/pull/1763)
+
+  > Resolves #1761
+
+- [cef617c](https://github.com/ratatui/ratatui/commit/cef617cc35b9ddba97bb435a8f70f6b8d71ab810) _(lint)_ Add `std` instead of `core`/`alloc` lints to `ratatui-core` by @j-g00da in [#1759](https://github.com/ratatui/ratatui/pull/1759)
+
   > Resolves #1752
 
-- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) *(uncategorized)* Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
+- [d3f01eb](https://github.com/ratatui/ratatui/commit/d3f01ebf6ea97e71bcda8c84b054943e1f24cd4e) _(lint)_ Ensure lint config is correct by @joshka in [#1528](https://github.com/ratatui/ratatui/pull/1528)
+
+  > - Move lints to workspace manifest
+  > - Add lint config to backend crates
+  > - Fix one small lint error
+
+- [9fb0544](https://github.com/ratatui/ratatui/commit/9fb054453dba7af8f99c1c3dc658120f64fbd796) _(release)_ Initialize release-plz by @orhun in [#1550](https://github.com/ratatui/ratatui/pull/1550)
+
+  > See https://github.com/ratatui/ratatui/pull/1550
+
+- [60a8191](https://github.com/ratatui/ratatui/commit/60a81913ede6ebc23b53b3e4e3a54ee0171d9447) _(widgets)_ Move crossterm to dev-dependencies by @j-g00da in [#1834](https://github.com/ratatui/ratatui/pull/1834)
+
+  > Crossterm in widgets is used only in tests.
+
+- [2b7ec5c](https://github.com/ratatui/ratatui/commit/2b7ec5cb7f34edb65fc81d362d3b512b98d246ac) _(widgets)_ Enable calendar widget as default by @orhun in [#1521](https://github.com/ratatui/ratatui/pull/1521)
+
+  > We now expect that you disable the default features if you want less
+  > dependencies
+
+- [d201b8e](https://github.com/ratatui/ratatui/commit/d201b8e5ddd98a1887252179dec8f09e1f342b0c) _(xtask)_ Check lints for only library targets by @orhun in [#1531](https://github.com/ratatui/ratatui/pull/1531)
+
+  > Makes it possible to filter workspace packages by their targets.
+  > (e.g. when we want to retrieve all the binary targets / examples, etc.)
+
+- [297d264](https://github.com/ratatui/ratatui/commit/297d264c6be3ed8fd701c33daf263e32df127177) _(uncategorized)_ Update maintainers by @orhun in [#2122](https://github.com/ratatui/ratatui/pull/2122)
+
+- [91fa249](https://github.com/ratatui/ratatui/commit/91fa249cd49aa3ad29ff4ee70b8fc6fe8bdad382) _(uncategorized)_ Remove obsolete doc_auto_cfg feature by @ognis1205 in [#2103](https://github.com/ratatui/ratatui/pull/2103)
+
+  > The doc_auto_cfg feature was incorporated into the doc_cfg feature
+  > in https://github.com/rust-lang/rust/pull/138907
+  >
+  > Closes #2102
+
+- [46e7c6c](https://github.com/ratatui/ratatui/commit/46e7c6cbbfbe697c224005822191e95ff5b3da3d) _(uncategorized)_ Document rustfmt options by @joshka in [#2055](https://github.com/ratatui/ratatui/pull/2055)
+
+- [719badb](https://github.com/ratatui/ratatui/commit/719badb5b8e9ae1b7350a7bf59e5b4be513097c5) _(uncategorized)_ Skip `alpha` and `beta` tags in `cliff.toml` by @j-g00da in [#2026](https://github.com/ratatui/ratatui/pull/2026)
+
+  > https://github.com/ratatui/ratatui/pull/2025#issuecomment-3135177683
+
+- [0afb1a9](https://github.com/ratatui/ratatui/commit/0afb1a99af8310c29c738bd092e4d08c668955bf) _(uncategorized)_ Ignore `beta` and `rc` tags in `cliff.toml` by @j-g00da in [#2025](https://github.com/ratatui/ratatui/pull/2025)
+
+- [5ae224b](https://github.com/ratatui/ratatui/commit/5ae224b244a61d9d1460d7e1b0c448dd7cf72933) _(uncategorized)_ Prepare for beta release by @j-g00da in [#2022](https://github.com/ratatui/ratatui/pull/2022)
+
+- [cfebd68](https://github.com/ratatui/ratatui/commit/cfebd68e18847f55f54f3610c863c8cfa4b4e49c) _(uncategorized)_ Fix typo in CONTRIBUTING.md by @kdheepak in [#2001](https://github.com/ratatui/ratatui/pull/2001)
+
+  > Removes a hanging opening code block:
+  >
+  > ````
+  > ```suggestion
+  > ````
+
+- [572749f](https://github.com/ratatui/ratatui/commit/572749f3884fb07d91fa89a74a56b7d1937c8024) _(uncategorized)_ Update contributing guidelines and add copilot-instructions by @joshka in [#1998](https://github.com/ratatui/ratatui/pull/1998)
+
+  > See
+  > https://docs.github.com/en/copilot/how-tos/agents/copilot-code-review/using-copilot-code-review
+  >
+  > These instructions will be used by copilot when it performs automated PR
+  > reviews, and helps provide guardrails for our standards. Over time we
+  > might grow these to capture any consistent problems that we start seeing
+  > when reviewing.
+  >
+  > ***
+
+- [0148b62](https://github.com/ratatui/ratatui/commit/0148b62f0c7e3929804ba16160bd28411e1cad87) _(uncategorized)_ Remove cargo_metadata dep from xtask by @joshka in [#1993](https://github.com/ratatui/ratatui/pull/1993)
+
+  > Removed due to hard N-2 MSRV requirement, whereas we use a soft N-2
+  > (only update when necessary). This makes it painful to be able to test
+  > our actual msrv (as the xtask has to be built with the version that its
+  > deps support, while still wanting to check the msrv version, so we'd end
+  > up with 2 versions in the one CI task and this would get annoying to
+  > check).
+  >
+  > See https://github.com/rust-lang/cargo/issues/15746 for more details.
+  >
+  > Partially implements #1820 - mainly as a problem solution rather than a
+  > specific goal to use cargo-hack
+
+- [9bc5739](https://github.com/ratatui/ratatui/commit/9bc573931c187dbfae04d8c9d8ca2aee4d1991f0) _(uncategorized)_ Remove clap-cargo from xtask by @joshka in [#1992](https://github.com/ratatui/ratatui/pull/1992)
+
+  > Removed to avoid needing to bump our msrv. See
+  > https://github.com/rust-lang/cargo/issues/15746\#issuecomment-3071774343
+  > for more details.
+
+- [0e10170](https://github.com/ratatui/ratatui/commit/0e10170e197b152bfe250a81804d8a782c7b492f) _(uncategorized)_ Change Borders::NONE to a proper const by @joshka in [#1985](https://github.com/ratatui/ratatui/pull/1985)
+
+  > https://docs.rs/bitflags/latest/bitflags/#zero-bit-flags
+  >
+  > > Flags with no bits set should be avoided because they interact
+  > > strangely with
+  >
+  > [Flags::contains](https://docs.rs/bitflags/latest/bitflags/trait.Flags.html#method.contains)
+  > and
+  >
+  > [Flags::intersects](https://docs.rs/bitflags/latest/bitflags/trait.Flags.html#method.intersects).
+  > A zero-bit flag is always contained, but is never intersected. The names
+  > of zero-bit flags can be parsed, but are never formatted.
+  >
+  > Removing this simplifies the manual Debug impl that previously had to
+  > check for Borders::NONE and now does not.
+
+- [8e3bd11](https://github.com/ratatui/ratatui/commit/8e3bd11d60472734cfe0b5221cd3472acb435317) _(uncategorized)_ Add svg logo asset by @LitoMore in [#1967](https://github.com/ratatui/ratatui/pull/1967)
+
+  > Added a shields.io style svg logo and a nicer version of the original logo.
+  > The simplified icon will be added and available directly from shields.io via:
+  >
+  > - https://github.com/simple-icons/simple-icons/pull/13593
+
+- [92bb9b2](https://github.com/ratatui/ratatui/commit/92bb9b22198ac06439d14b4c6d4d0c4882e55eb1) _(uncategorized)_ Remove `Title` references by @j-g00da in [#1943](https://github.com/ratatui/ratatui/pull/1943)
+
+- [d6647db](https://github.com/ratatui/ratatui/commit/d6647db74486117affb20104c25b0645f32ce684) _(uncategorized)_ Remove some allow attributes for fixed clippy bugs by @joshka in [#1944](https://github.com/ratatui/ratatui/pull/1944)
+
+- [3f48bde](https://github.com/ratatui/ratatui/commit/3f48bde3c6a39dd309bc101a830aaecc553b8f93) _(uncategorized)_ Remove OpenSSL license by @joshka in [#1942](https://github.com/ratatui/ratatui/pull/1942)
+
+  > Only keep licenses in the allow list that are actually used
+
+- [4c86513](https://github.com/ratatui/ratatui/commit/4c86513790a12d7a4d9e38959430395a3a7dc868) _(uncategorized)_ Remove block::Title by @joshka in [#1926](https://github.com/ratatui/ratatui/pull/1926)
+
+  > The title alignment is better expressed in the `Line` as this fits more
+  > coherently with the rest of the library.
+  >
+  > BREAKING CHANGES:
+  >
+  > - `widgets::block` is no longer exported
+  > - `widgets::block::Title` no longer exists
+  > - `widgets::block::Position` is now `widgets::TitlePosition`
+  > - `Block::title()` now accepts `Into::<Line>` instead of `Into<Title>`
+  > - `BlockExt` is now exported at widgets::`BlockExt`
+  >
+  > Closes:https://github.com/ratatui/ratatui/issues/738
+
+- [272f5c0](https://github.com/ratatui/ratatui/commit/272f5c05dc4399389c011d8693bae073523aebfb) _(uncategorized)_ Fix new lints by @joshka in [#1922](https://github.com/ratatui/ratatui/pull/1922)
+
+- [770cb7c](https://github.com/ratatui/ratatui/commit/770cb7c3c31fd23b3ecc48c1f267e40f9f98b583) _(uncategorized)_ Add tests for combining list styles by @joshka in [#1884](https://github.com/ratatui/ratatui/pull/1884)
+
+- [dbfb2c3](https://github.com/ratatui/ratatui/commit/dbfb2c3399a4dee59d4e3154798df792b551a344) _(uncategorized)_ Upgrade to Rust Edition 2024 by @MatrixFrog in [#1863](https://github.com/ratatui/ratatui/pull/1863)
+
+  > https://doc.rust-lang.org/edition-guide/rust-2024/index.html
+  >
+  > Fixes #1727
+
+- [7cb35d4](https://github.com/ratatui/ratatui/commit/7cb35d4be14c1bbb4e5cb9aa51d9120517fa3a3e) _(uncategorized)_ Update to Rust version 1.85.0 by @MatrixFrog in [#1860](https://github.com/ratatui/ratatui/pull/1860)
+
+  > This is a small step toward fixing #1727
+
+- [a07f5be](https://github.com/ratatui/ratatui/commit/a07f5bec2058872218c973f56e7f7a05ffa565a0) _(uncategorized)_ Move dependency management to workspace by @joshka in [#1858](https://github.com/ratatui/ratatui/pull/1858)
+
+  > Move all dependency management to the workspace level. This makes it
+  > easier to manage dependencies across multiple crates in the workspace.
+  >
+  > This also changes the versions of each dependency to track based on the
+  > semver compatible version of the dependency (e.g. 0.1 instead of 0.1.0
+  > or 2.9 instead of 2.9.0 to avoid having to regularly update the toml
+  > files and to communicate that Ratatui will still generally work with
+  > versions of the dependencies that are not the fully latest version. The
+  > exact version of the dependencies is still tracked in the Cargo.lock
+  > file.
+  >
+  > Several dependencies that are fairly stable are changed to track a less
+  > specific version (e.g. serde 1 instead of 1.0.x).
+  >
+  > The following dependencies are updated to their latest versions:
+  >
+  > - bitflags (2.3 -> 2.9)
+  > - strum (0.26 -> 0.27)
+  > - strum_macros (0.26 -> 0.27)
+  > - all other semver compatible updates
+
+- [1874b9d](https://github.com/ratatui/ratatui/commit/1874b9dd55284952931d58646904f0437e48ce76) _(uncategorized)_ Move time to dev-dependencies by @j-g00da in [#1835](https://github.com/ratatui/ratatui/pull/1835)
+
+- [d88cd29](https://github.com/ratatui/ratatui/commit/d88cd2907906e38d73ac4359ece36527436d686a) _(uncategorized)_ Add 'const' to functions where possible. by @MatrixFrog in [#1802](https://github.com/ratatui/ratatui/pull/1802)
 
   > The Clippy check for this (missing_const_for_fn) is already enabled, but
   > catches more cases in upcoming toolchain versions.
   >
   > This is part of the work to unblock #1727
 
-- [bb06889](https://github.com/ratatui/ratatui/commit/bb068892c93713befbc8dab04577cbc2a59cedec) *(uncategorized)* Fix io_other_error clippy lints by @joshka in [#1756](https://github.com/ratatui/ratatui/pull/1756)
+- [bb06889](https://github.com/ratatui/ratatui/commit/bb068892c93713befbc8dab04577cbc2a59cedec) _(uncategorized)_ Fix io_other_error clippy lints by @joshka in [#1756](https://github.com/ratatui/ratatui/pull/1756)
 
   > Pre-emptive fix for new lint to be added in 1.87 (currently in beta).
   >
   > https://rust-lang.github.io/rust-clippy/master/index.html\#io_other_error
 
-- [0f80c5e](https://github.com/ratatui/ratatui/commit/0f80c5e87eb4e47c818a6bd8b0002971920c65a0) *(uncategorized)* Use expect() instead of allow() for lint overrides by @cgzones in [#1786](https://github.com/ratatui/ratatui/pull/1786) [**breaking**]
-  >
+- [0f80c5e](https://github.com/ratatui/ratatui/commit/0f80c5e87eb4e47c818a6bd8b0002971920c65a0) _(uncategorized)_ Use expect() instead of allow() for lint overrides by @cgzones in [#1786](https://github.com/ratatui/ratatui/pull/1786) [**breaking**]
+
   > BREAKING CHANGE:MSRV is now 1.81
 
-- [fe8577c](https://github.com/ratatui/ratatui/commit/fe8577c0704495c0a98705bc1b036b1a60123f02) *(uncategorized)* Remove paste dependency by @joshka in [#1713](https://github.com/ratatui/ratatui/pull/1713)
+- [fe8577c](https://github.com/ratatui/ratatui/commit/fe8577c0704495c0a98705bc1b036b1a60123f02) _(uncategorized)_ Remove paste dependency by @joshka in [#1713](https://github.com/ratatui/ratatui/pull/1713)
 
   > The paste crate is no longer maintained. Replaces the usages of this in
   > the Stylize declarative macros with hard coded values. These macros are
@@ -1692,448 +1670,170 @@ All notable changes to this project will be documented in this file.
   >
   > Fixes:https://github.com/ratatui/ratatui/issues/1712
 
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.3...ratatui-core-v0.1.0-alpha.4
+- [255e466](https://github.com/ratatui/ratatui/commit/255e4661a8432993a40e20382c290d37aabc5ad3) _(uncategorized)_ Cargo update - pull in fixed version of ring crate by @joshka in [#1710](https://github.com/ratatui/ratatui/pull/1710)
+
+- [f05feac](https://github.com/ratatui/ratatui/commit/f05feac337d459e6e1fbebef519d4f1845de5d8d) _(uncategorized)_ Sort dependencies in Cargo.toml by @canac in [#1662](https://github.com/ratatui/ratatui/pull/1662)
+
+- [7eab88f](https://github.com/ratatui/ratatui/commit/7eab88fe9ab207f6df02581a873b6cb2c2b0a9d5) _(uncategorized)_ Remove unused deps by @joshka in [#1661](https://github.com/ratatui/ratatui/pull/1661)
+
+- [37a1c6f](https://github.com/ratatui/ratatui/commit/37a1c6f89b284254460702a87118ec9358987980) _(uncategorized)_ Remove some examples by @orhun in [#1645](https://github.com/ratatui/ratatui/pull/1645)
+
+- [6f21319](https://github.com/ratatui/ratatui/commit/6f213191efd528fd7e0d5c99fda3e6d028ee0f98) _(uncategorized)_ Rename examples with clashing names by @joshka in [#1597](https://github.com/ratatui/ratatui/pull/1597)
+
+  > These will eventually be moved / consolidated elsewhere, but this clears
+  > the warnings while building for now.
+
+- [11cbb2b](https://github.com/ratatui/ratatui/commit/11cbb2ba87e557a04674973a39d59124d8683ed1) _(uncategorized)_ Use cargo xtask for bacon clippy command by @joshka in [#1592](https://github.com/ratatui/ratatui/pull/1592)
+
+- [b544e39](https://github.com/ratatui/ratatui/commit/b544e394c97fffdeddaccd44bea2214ebffa1616) _(uncategorized)_ Use clap instead of argh for demo example by @joshka in [#1591](https://github.com/ratatui/ratatui/pull/1591)
+
+- [9a54198](https://github.com/ratatui/ratatui/commit/9a541981b8accd9efe17c0893d18b520bc569b15) _(uncategorized)_ Make source files non-executable by @orhun in [#1577](https://github.com/ratatui/ratatui/pull/1577)
+
+  > ```bash
+  > find . -type f -not -path './.git/*' -not -name '*.bash' -exec chmod 644 {} +
+  > ```
+  >
+  > fixes #1576
+
+- [357ae7e](https://github.com/ratatui/ratatui/commit/357ae7e251721f2e7fcb539de5e6fc60eaa30e29) _(uncategorized)_ Move terminal types to ratatui-core by @joshka in [#1530](https://github.com/ratatui/ratatui/pull/1530) [**breaking**]
+
+  > - Move Terminal, TerminalOptions, ViewPort, CompletedFrame, Frame to
+  >   ratatui-core crate
+  > - Move render_widget_ref() and render_stateful_widget_ref() to extension
+  >   trait (FrameExt) due as the Ref types are unstable and kept in the
+  >   main lib instead of -core
+  > - Fix rustdoc errors / feature config issues
+  >
+  > BREAKING CHANGE:to call `Frame::render_widget_ref()` or
+  >
+  > `Frame::render_stateful_widget_ref()` you now need to import the
+  > FrameExt trait from `ratatui::widgets` and enable the
+  > `unstable-widget-ref` feature.
+
+- [21e62d8](https://github.com/ratatui/ratatui/commit/21e62d84c2d2fa2d5563caf0c0974c2514e56ee5) _(uncategorized)_ Move the demo example to main folder by @joshka in [#1523](https://github.com/ratatui/ratatui/pull/1523)
+
+  > Add a top level examples folder for more app-ish examples
+  > Move the demo example into the top level folder.
+  >
+  > ***
+
+- [fbf6050](https://github.com/ratatui/ratatui/commit/fbf6050c867b63276ae3d6f5bca4d741c2ce355c) _(uncategorized)_ Prepare alpha modularization release by @joshka in [#1525](https://github.com/ratatui/ratatui/pull/1525)
+
+  > This is the first modularization -alpha release. It captures the changes
+  > necessary to manual publish. And ensures all the crates are properly
+  > setup and to set a baseline for comparison in future release checks etc.
+  >
+  > This does not update / check the git-cliff setup / changelog
+  >
+  > Part of: #1388
+
+- [e4e95bc](https://github.com/ratatui/ratatui/commit/e4e95bcecf15deb09416a0e53193d261f012222a) _(uncategorized)_ Remove --color always flags from bacon.toml by @joshka in [#1502](https://github.com/ratatui/ratatui/pull/1502)
+
+  > No longer necessary as of bacon 3.3
+
+- [a41c97b](https://github.com/ratatui/ratatui/commit/a41c97b413b28d0db6d1ea09dcc1d5b8556148b1) _(uncategorized)_ Move unstable widget refs to ratatui by @joshka in [#1491](https://github.com/ratatui/ratatui/pull/1491) [**breaking**]
+
+  > These are less stable than the non-ref traits as we have not yet
+  > committed to the exact API. This change moves them to ratatui from
+  > ratatui-core.
+  >
+  > To facilitate this:
+  >
+  > - implementations of WidgetRef for all internal widgets are removed and
+  >   replaced with implementations of Widget for references to those
+  >   widgets.
+  > - Widget is now implemented for Option<W> where W: Widget, allowing for
+  >   rendering of optional widgets.
+  > - The blanket implementation of Widget for WidgetRef is reversed, to be
+  >   a blanket implementation of WidgetRef for all &W where W: Widget.
+  >
+  > BREAKING CHANGE:implementations of WidgetRef no longer have a blanket
+  > implementation of Widget, so Widgets should generally implement the
+  > Widget trait on a reference to the widget rather than implementing
+  > WidgetRef directly. This has the advantage of not requiring unstable
+  > features to be enabled.
+  >
+  > Part of: https://github.com/ratatui/ratatui/issues/1388
+
+- [e7085e3](https://github.com/ratatui/ratatui/commit/e7085e3a3ec4b3b90a4e69d49add96e7ba65616c) _(uncategorized)_ Move widgets into ratatui-widgets crate by @joshka in [#1474](https://github.com/ratatui/ratatui/pull/1474)
+
+  > All the widgets now live in their own ratatui-widgets crate, but are re-exported in the main ratatui crate.
+  > This makes it easier to use portions of the ratatui library and is part of the effort to modularize
+  >
+  > Part of: #1388
+  >
+  > ***
+
+- [f1d0a18](https://github.com/ratatui/ratatui/commit/f1d0a1837564d69f00e4b5d9eb94cc001cd3a3a7) _(uncategorized)_ Move ratatui crate into workspace folder by @joshka in [#1459](https://github.com/ratatui/ratatui/pull/1459)
+
+  > This is the first step towards modularization. Handling the move
+  > as a separate step rather than combining it should make it easier
+  > to rebase other PRs when necessary.
+  >
+  > ***
 
-## ratatui - [0.30.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.1...ratatui-v0.30.0-alpha.2) - 2025-03-01
-
-### Features
-
-- [be8def9](https://github.com/ratatui/ratatui/commit/be8def963956c605bca28bcd8df673bd7ec3740b) *(layout)* Use *= instead of =* (#45) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652) [**breaking**]
-
-- [f33d51e](https://github.com/ratatui/ratatui/commit/f33d51e7d9ccf9fe52ec3289d04d97c722d9ee17) *(text)* Add raw! and styled! macros (#4) by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [d441520](https://github.com/ratatui/ratatui/commit/d4415204e1eb3aed2a74a722aeaaa274975dd2d7) *(uncategorized)* Add ratatui-macros crate by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [3855c3a](https://github.com/ratatui/ratatui/commit/3855c3a84a77037aeee40dbe9e52454fb1f9afee) *(uncategorized)* Add text! macro (#36) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [8ecdd89](https://github.com/ratatui/ratatui/commit/8ecdd892f53d7db95bbb53a61700d36e3fcefdd4) *(uncategorized)* Add fill constraint (#34) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [a0c35f1](https://github.com/ratatui/ratatui/commit/a0c35f1d7bcce10e092582b95f5b0a3f20ad7bf3) *(uncategorized)* Replace raw! and styled! with span! macro (#30) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [9a7467b](https://github.com/ratatui/ratatui/commit/9a7467b30576d5cb7491ea6e09efcae97eadf9bb) *(uncategorized)* Add `line!` attribute macro (#29) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [39bd72b](https://github.com/ratatui/ratatui/commit/39bd72b1f702dadb1ebbaf4e77ad2fada166ac49) *(uncategorized)* Add pub visibility to color ✨ by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [29edc3a](https://github.com/ratatui/ratatui/commit/29edc3a7a38c512611a80cf5d8d42027558419b2) *(uncategorized)* Add color palette based on tailwindcss ✨ by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-### Documentation
-
-- [4393fae](https://github.com/ratatui/ratatui/commit/4393fae54c18c148e7c24206350f0b9e235e5d69) *(examples)* Move scrollbar example to examples folder (#1665) by @orhun in [#1665](https://github.com/ratatui/ratatui/pull/1665)
-
-- [9ea70e2](https://github.com/ratatui/ratatui/commit/9ea70e28c639d967f361a35e851fc450d0b797d7) *(examples)* Move widget-impl example to examples folder (#1663) by @orhun in [#1663](https://github.com/ratatui/ratatui/pull/1663)
-
-- [774ab78](https://github.com/ratatui/ratatui/commit/774ab788d4fcdf4862710573dd519b3999044a4b) *(examples)* Move widget-ref-container example to examples folder (#1664) by @orhun in [#1664](https://github.com/ratatui/ratatui/pull/1664)
-
-- [910d16e](https://github.com/ratatui/ratatui/commit/910d16e63af92844ad4d2bed061fb2eec5ac75e3) *(examples)* Move user-input example to examples folder (#1659) by @orhun in [#1659](https://github.com/ratatui/ratatui/pull/1659)
-
-- [dbfb7da](https://github.com/ratatui/ratatui/commit/dbfb7da9e36ccf9f89da40e98519e1056f8ab882) *(examples)* Move table example to examples folder (#1657) by @orhun in [#1657](https://github.com/ratatui/ratatui/pull/1657)
-
-- [cb2a58a](https://github.com/ratatui/ratatui/commit/cb2a58aaa01d6829f24f7766ad064d7f3c5242ab) *(examples)* Move tracing example to examples folder (#1658) by @orhun in [#1658](https://github.com/ratatui/ratatui/pull/1658)
-
-- [7e00b64](https://github.com/ratatui/ratatui/commit/7e00b646fcca58d00ec5b142f71d2b46acb43819) *(examples)* Move panic example to examples folder (#1655) by @orhun in [#1655](https://github.com/ratatui/ratatui/pull/1655)
-
-- [8127590](https://github.com/ratatui/ratatui/commit/8127590812ee46231a13ad4279af773bca4daefe) *(examples)* Move modifiers example to examples folder (#1654) by @orhun in [#1654](https://github.com/ratatui/ratatui/pull/1654)
-
-- [7c40c0b](https://github.com/ratatui/ratatui/commit/7c40c0bbddca0276523ac717d9df3d2b49594bb6) *(examples)* Move popup example to examples folder (#1656) by @orhun in [#1656](https://github.com/ratatui/ratatui/pull/1656)
-
-- [d87354f](https://github.com/ratatui/ratatui/commit/d87354f4001f501ed9693073a7afcf10d8c6c7a4) *(examples)* Move list example to examples folder (#1653) by @orhun in [#1653](https://github.com/ratatui/ratatui/pull/1653)
-
-- [89d7dd4](https://github.com/ratatui/ratatui/commit/89d7dd46031511f0556b2d29ab34035f42e3a24c) *(uncategorized)* Update README with row! documentation (#56) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [570c358](https://github.com/ratatui/ratatui/commit/570c35868147a2400a13331e85d562d1ef96a011) *(uncategorized)* Use `.areas(area)` instead of `.split(area).to_vec().try_into().unwrap()` (#37) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [8060f7b](https://github.com/ratatui/ratatui/commit/8060f7bc578b29dde6ca0c4c64569f9c73218f46) *(uncategorized)* Update README.md with short description of span and line macros (#33) by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [2c02a56](https://github.com/ratatui/ratatui/commit/2c02a56bce31519386303571e0b66b7d4beb378e) *(uncategorized)* Readme tweaks (#5) by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [7d23bd2](https://github.com/ratatui/ratatui/commit/7d23bd2ceaf96e81972b5f746fdcba0d17f6391f) *(uncategorized)* Update README.md by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [778f2f5](https://github.com/ratatui/ratatui/commit/778f2f5ec511bef431b54157242b91d083ea9840) *(uncategorized)* Update README.md by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [0a09977](https://github.com/ratatui/ratatui/commit/0a0997702dd4cf2217160f5652f5c39cbd4a1010) *(uncategorized)* Update README.md by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [5cee13a](https://github.com/ratatui/ratatui/commit/5cee13ab6d9c49751cf9283d9099e37f0cc3632c) *(uncategorized)* Update README.md by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [903bb0a](https://github.com/ratatui/ratatui/commit/903bb0ae32d22393783edfda96db900739864f0a) *(uncategorized)* Add link to ratatui by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [38b2f27](https://github.com/ratatui/ratatui/commit/38b2f27efe0e1829bc503df7fd64b94b7bb80d97) *(uncategorized)* Update README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [7419475](https://github.com/ratatui/ratatui/commit/74194759756bb111b4da3e9a5cdb968275a2fab0) *(uncategorized)* Update README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [b820c0c](https://github.com/ratatui/ratatui/commit/b820c0c7e4c576c1e39b5e482a8aac08076a039c) *(uncategorized)* Update README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [92540b2](https://github.com/ratatui/ratatui/commit/92540b2f6ab25f3a5400aebb28af3c498ac793a4) *(uncategorized)* Improved documentation 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [20e41f1](https://github.com/ratatui/ratatui/commit/20e41f1d1da6db8abbc2504814531d4d97bdf94b) *(uncategorized)* Update README 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [2dc8183](https://github.com/ratatui/ratatui/commit/2dc81833c60951d16f9bd60f3da003edfc9a11f5) *(uncategorized)* Improve README examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [12aa586](https://github.com/ratatui/ratatui/commit/12aa58601ddd0704256c56019bd2c7139d41f7a2) *(uncategorized)* Improve README examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [57a0a34](https://github.com/ratatui/ratatui/commit/57a0a34f924e0d488c9e9f917900e677c3488dc4) *(uncategorized)* Improve README examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [76d1e5b](https://github.com/ratatui/ratatui/commit/76d1e5b1733d47a7f05acf563db26cb1a66b540d) *(uncategorized)* Improve README examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [8b32f82](https://github.com/ratatui/ratatui/commit/8b32f82b4dd526580d00fa13f053bf507e8ea933) *(uncategorized)* Update README with better tests 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [131b9ec](https://github.com/ratatui/ratatui/commit/131b9ec41751163d43d94564363247b60f031486) *(uncategorized)* Update README with better tests 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [57b681b](https://github.com/ratatui/ratatui/commit/57b681b053c019b66e0ed92959638997fea731b1) *(uncategorized)* Update README with better tests 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [31a2c45](https://github.com/ratatui/ratatui/commit/31a2c4548c304270a8c852f19baa7a4eaac5e75c) *(uncategorized)* Update README with better examples 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [7148024](https://github.com/ratatui/ratatui/commit/71480242a926f98e9081ed6e2dc8c381757b3a42) *(uncategorized)* Better README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [8339cce](https://github.com/ratatui/ratatui/commit/8339cce10a51c9c951b3c9750d527d80168626eb) *(uncategorized)* Update README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [250c222](https://github.com/ratatui/ratatui/commit/250c222cc4aaab09184a28efc68f75ca03133794) *(uncategorized)* README.md update 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [adc8fdc](https://github.com/ratatui/ratatui/commit/adc8fdc35aa57d6dad2ae8dd30ec2e9256576c09) *(uncategorized)* Add README.md 📚 by @kdheepak in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-### Miscellaneous Tasks
-
-- [7eab88f](https://github.com/ratatui/ratatui/commit/7eab88fe9ab207f6df02581a873b6cb2c2b0a9d5) *(uncategorized)* Remove unused deps (#1661) by @joshka in [#1661](https://github.com/ratatui/ratatui/pull/1661)
-
-- [92c4078](https://github.com/ratatui/ratatui/commit/92c4078413fc79fcc83f5d3d8708abb58696ff1a) *(uncategorized)* Prep for merge with ratatui by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-- [16ba867](https://github.com/ratatui/ratatui/commit/16ba867c5877d8c97968987ecb5f8bff966d0a82) *(uncategorized)* Use modularized ratatui crates (#75) by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0-alpha.1...ratatui-v0.30.0-alpha.2
-
-
-<!-- generated by git-cliff -->
-
-
-## ratatui-termion - [0.1.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.1...ratatui-termion-v0.1.0-alpha.2) - 2025-03-01
-
-### Miscellaneous Tasks
-
-- [0000000](https://github.com/ratatui/ratatui/commit/0000000) *(uncategorized)* Update Cargo.toml dependencies
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0-alpha.1...ratatui-termion-v0.1.0-alpha.2
-
-
-<!-- generated by git-cliff -->
-
-
-## ratatui-termwiz - [0.1.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.1...ratatui-termwiz-v0.1.0-alpha.2) - 2025-03-01
-
-### Miscellaneous Tasks
-
-- [0000000](https://github.com/ratatui/ratatui/commit/0000000) *(uncategorized)* Update Cargo.toml dependencies
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0-alpha.1...ratatui-termwiz-v0.1.0-alpha.2
-
-
-<!-- generated by git-cliff -->
-
-
-## ratatui-macros - [0.7.0-alpha.1](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.0...ratatui-macros-v0.7.0-alpha.1) - 2025-03-01
-
-### Features
-
-- [d441520](https://github.com/ratatui/ratatui/commit/d4415204e1eb3aed2a74a722aeaaa274975dd2d7) *(uncategorized)* Add ratatui-macros crate by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-### Bug Fixes
-
-- [e48bcf5](https://github.com/ratatui/ratatui/commit/e48bcf5f21f14acb27996fdc02231c140f5b817c) *(uncategorized)* Ratatui-macros readme and doc links by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-### Miscellaneous Tasks
-
-- [92c4078](https://github.com/ratatui/ratatui/commit/92c4078413fc79fcc83f5d3d8708abb58696ff1a) *(uncategorized)* Prep for merge with ratatui by @joshka in [#1652](https://github.com/ratatui/ratatui/pull/1652)
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0-alpha.0...ratatui-macros-v0.7.0-alpha.1
-
-
-<!-- generated by git-cliff -->
-
-
-## ratatui-widgets - [0.3.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.1...ratatui-widgets-v0.3.0-alpha.2) - 2025-03-01
-
-### Features
-
-- [7ad9c29](https://github.com/ratatui/ratatui/commit/7ad9c29eac6f70cab270dfbd84dc66c05f1e1307) *(linegauge)* Customized symbols (#1601) by @sectore in [#1601](https://github.com/ratatui/ratatui/pull/1601)
-
-- [985cd05](https://github.com/ratatui/ratatui/commit/985cd05573b71cf0caed0537714fb005ad219894) *(symbols)* Add dashed borders (#1573) by @theotchlx in [#1573](https://github.com/ratatui/ratatui/pull/1573)
-
-### Bug Fixes
-
-- [f5fc819](https://github.com/ratatui/ratatui/commit/f5fc8197ffd0cdc17432e4f8c0cc9368ccef692b) *(uncategorized)* Avoid extra line break on whitespace only lines when wrapping paragraphs (#1636) by @dotdash in [#1636](https://github.com/ratatui/ratatui/pull/1636)
-
-### Documentation
-
-- [bb94d1c](https://github.com/ratatui/ratatui/commit/bb94d1c0fad69606d3d7a8323d4a7dff76a00123) *(examples)* Move minimal example to examples folder (#1649) by @orhun in [#1649](https://github.com/ratatui/ratatui/pull/1649)
-
-### Performance
-
-- [1f41a61](https://github.com/ratatui/ratatui/commit/1f41a610083bb941024bd0116df1f0ac37e9cf33) *(paragraph)* Avoid unnecessary work when rendering (#1622) by @alexpasmantier in [#1622](https://github.com/ratatui/ratatui/pull/1622)
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.0-alpha.1...ratatui-widgets-v0.3.0-alpha.2
-
-
-<!-- generated by git-cliff -->
-
-
-## ratatui-crossterm - [0.1.0-alpha.2](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.1...ratatui-crossterm-v0.1.0-alpha.2) - 2025-03-01
-
-### Miscellaneous Tasks
-
-- [0000000](https://github.com/ratatui/ratatui/commit/0000000) *(uncategorized)* Update Cargo.toml dependencies
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.0-alpha.1...ratatui-crossterm-v0.1.0-alpha.2
-
-
-<!-- generated by git-cliff -->
-
-
-## ratatui-core - [0.1.0-alpha.3](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.2...ratatui-core-v0.1.0-alpha.3) - 2025-03-01
-
-### Features
-
-- [985cd05](https://github.com/ratatui/ratatui/commit/985cd05573b71cf0caed0537714fb005ad219894) *(symbols)* Add dashed borders (#1573) by @theotchlx in [#1573](https://github.com/ratatui/ratatui/pull/1573)
-
-### Bug Fixes
-
-- [35a8642](https://github.com/ratatui/ratatui/commit/35a86427abd30393fc4759c8b164cf422333feee) *(uncategorized)* `Rect::positions()` should be empty when width is 0 and height is nonzero (#1669) by @jwodder in [#1669](https://github.com/ratatui/ratatui/pull/1669)
-
-### Documentation
-
-- [22e3e84](https://github.com/ratatui/ratatui/commit/22e3e84de8d26fd938220bdf3d00f8ec3ca7e597) *(core)* Remove link to Paragraph widget (#1683) by @orhun in [#1683](https://github.com/ratatui/ratatui/pull/1683)
-
-
-
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.0-alpha.2...ratatui-core-v0.1.0-alpha.3
-
-
-<!-- generated by git-cliff -->
-
-
-## [0.30.0-alpha.1](https://github.com/ratatui/ratatui/releases/tag/0.30.0-alpha.1) - 2025-01-14
-
-0.30.0-alpha.1 is a pre-release of the upcoming 0.30.0 release. It is intended for testing and
-feedback. Please report any issues you encounter. The primary change is that we've split the crate
-into multiple crates. The main crate is now `ratatui-core` and the widgets are in `ratatui-widgets`.
-This allows for widget crates to depend on a stable core crate, and for the core crate to be used
-without widgets.
-
-### Features
-
-- [56d5e05](https://github.com/ratatui/ratatui/commit/56d5e057625378f1bdf732dabb57208453fb84d6) *(bar)* Update label and text_value to accept Into<> by @Emivvvvv in [#1471](https://github.com/ratatui/ratatui/pull/1471) [**breaking**]
-
-- [b76ad3b](https://github.com/ratatui/ratatui/commit/b76ad3b02ea1c3381b6434c40e620f28d642948e) *(bar)* Impl Styled for Bar by @Emivvvvv in [#1476](https://github.com/ratatui/ratatui/pull/1476)
-
-- [369b18e](https://github.com/ratatui/ratatui/commit/369b18eef2e4220147e7c7264ad7f8e023a1d2dd) *(barchart)* Reduce barchart creation verbosity by @Emivvvvv in [#1453](https://github.com/ratatui/ratatui/pull/1453)
-
-- [9275d34](https://github.com/ratatui/ratatui/commit/9275d3421c088174bcf9de0832340bcbea76367a) *(layout)* Add Offset::new() constructor by @joshka in [#1547](https://github.com/ratatui/ratatui/pull/1547)
-
-- [ff729b7](https://github.com/ratatui/ratatui/commit/ff729b7607e0099a155f10dfe0ce42320641b74d) *(scrollbar)* Support retrieving the current position of state by @orhun in [#1552](https://github.com/ratatui/ratatui/pull/1552)
-
-- [ce4856a](https://github.com/ratatui/ratatui/commit/ce4856a65f3c76db714a45338ba3be9b638c6c35) *(widgets)* Add the missing constructor to canvas types by @orhun in [#1538](https://github.com/ratatui/ratatui/pull/1538)
-
-- [50ba965](https://github.com/ratatui/ratatui/commit/50ba96518f01454cff185784a1e9676093ce06cf) *(uncategorized)* Add a new RatatuiMascot widget by @Its-Just-Nans in [#1584](https://github.com/ratatui/ratatui/pull/1584)
-
-- [1d28c89](https://github.com/ratatui/ratatui/commit/1d28c89fe50f1a11cf1719233acca1a12d5e2d7b) *(uncategorized)* Add conversions for anstyle by @joshka in [#1581](https://github.com/ratatui/ratatui/pull/1581)
-
-### Bug Fixes
-
-- [860e48b](https://github.com/ratatui/ratatui/commit/860e48b0f0ec51c8596bc12985a8b37bad4fba00) *(buffer)* Buffer::get_pos() now correctly handles index > u16::MAX by @joshka in [#1447](https://github.com/ratatui/ratatui/pull/1447)
-
-- [ec30390](https://github.com/ratatui/ratatui/commit/ec30390446b998cba97a25db63b2e3d27db7a12d) *(canvas)* Round coordinates to nearest grid cell by @joshka in [#1507](https://github.com/ratatui/ratatui/pull/1507)
-
-- [afd1ce1](https://github.com/ratatui/ratatui/commit/afd1ce179b74f10ea786ed6f9b2999288bc94e7a) *(canvas)* Lines that start outside the visible grid are now drawn by @renesat in [#1501](https://github.com/ratatui/ratatui/pull/1501)
-
-- [18e70d3](https://github.com/ratatui/ratatui/commit/18e70d3d51b654bb895843224edf0c21a3114dc9) *(crossterm)* Terminal should keep Bold when removing Dim by @MarSik in [#1541](https://github.com/ratatui/ratatui/pull/1541)
-
-- [a692a6e](https://github.com/ratatui/ratatui/commit/a692a6e37114f39a3eb15b0cdc486dee8a7e91ff) *(lint)* Apply rust 1.84 clippy suggestions by @joshka in [#1612](https://github.com/ratatui/ratatui/pull/1612)
-
-- [3b13240](https://github.com/ratatui/ratatui/commit/3b13240728597a8c459c4bb5f913372185e9df91) *(scrollbar)* Check for area.is_empty() before rendering by @farmeroy in [#1529](https://github.com/ratatui/ratatui/pull/1529)
-
-- [f57b696](https://github.com/ratatui/ratatui/commit/f57b696fdc3bac381bccda0414400453f5abecf2) *(span)* Dont render control characters by @EdJoPaTo in [#1312](https://github.com/ratatui/ratatui/pull/1312)
-
-- [2ce958e](https://github.com/ratatui/ratatui/commit/2ce958e38cf1ebab49b1817b669631dc349a0ebb) *(table)* Allow display of additional table row, if row height > 1 by @Lunderberg in [#1452](https://github.com/ratatui/ratatui/pull/1452)
-
-- [2892bdd](https://github.com/ratatui/ratatui/commit/2892bddce66daf0b285a6d9f6fb3fdb2581cda2b) *(uncategorized)* Rust 1.83 clippy lints by @joshka in [#1527](https://github.com/ratatui/ratatui/pull/1527)
-
-- [36e2d1b](https://github.com/ratatui/ratatui/commit/36e2d1bda1d8b4e1d0fbd09ba2894d56bd7eeeca) *(uncategorized)* Add feature(doc_cfg) when generating docs by @joshka in [#1506](https://github.com/ratatui/ratatui/pull/1506)
-
-- [4d7704f](https://github.com/ratatui/ratatui/commit/4d7704fba5dcebda34c8c04bf4b5ac48e3a22008) *(uncategorized)* Make StatefulWidget and Ref work with unsized State by @thscharler in [#1505](https://github.com/ratatui/ratatui/pull/1505)
-
-- [7b87509](https://github.com/ratatui/ratatui/commit/7b875091e18b894f53af6331a8ad5b7101a75d1e) *(uncategorized)* Typo by @marcoieni in [#1480](https://github.com/ratatui/ratatui/pull/1480)
-
-### Refactor
-
-- [f132fa1](https://github.com/ratatui/ratatui/commit/f132fa1715ea0893c52e35c65d505abadb75cec6) *(table)* Small readability improvements by @joshka in [#1510](https://github.com/ratatui/ratatui/pull/1510)
-
-- [904b0aa](https://github.com/ratatui/ratatui/commit/904b0aa723e63d3fb68802b797949619506bf3a9) *(uncategorized)* Move symbols to modules by @joshka in [#1594](https://github.com/ratatui/ratatui/pull/1594)
-
-- [7c8573f](https://github.com/ratatui/ratatui/commit/7c8573f5750ea8cf87101f81314803c834ea4942) *(uncategorized)* Rearrange selection_spacing code by @raylu in [#1540](https://github.com/ratatui/ratatui/pull/1540)
-
-- [217c57c](https://github.com/ratatui/ratatui/commit/217c57cd60628abde1ca2f0c39b014e22c9edc4e) *(uncategorized)* Modularize backends by @orhun in [#1508](https://github.com/ratatui/ratatui/pull/1508)
-
-- [e461b72](https://github.com/ratatui/ratatui/commit/e461b724a6b010fe242f9bd6d9746007cbf24219) *(uncategorized)* Move {Stateful,}Widget{,Ref} types into individual files by @joshka in [#1479](https://github.com/ratatui/ratatui/pull/1479)
-
-### Documentation
-
-- [d291042](https://github.com/ratatui/ratatui/commit/d291042e69ad930ae0d3c5d1f991d9e68320c00e) *(block)* Revise the block example by @orhun in [#1520](https://github.com/ratatui/ratatui/pull/1520)
-
-- [fcde9cb](https://github.com/ratatui/ratatui/commit/fcde9cb9c3c5e9752fefbcc7cdeac95e2db9d684) *(changelog)* Fix typo by @orhun in [#1463](https://github.com/ratatui/ratatui/pull/1463)
-
-- [3ae6bf1](https://github.com/ratatui/ratatui/commit/3ae6bf1d6f24407de400024dcb5924d841a2e1ba) *(contributing)* Use cargo-xtask for instructions by @orhun in [#1509](https://github.com/ratatui/ratatui/pull/1509)
-
-- [04e1b32](https://github.com/ratatui/ratatui/commit/04e1b32cd2e77653266fa8e7269a2e08d774220e) *(layout)* Rename cassowary-rs references to cassowary by @miroim in [#1448](https://github.com/ratatui/ratatui/pull/1448)
-
-- [088aac1](https://github.com/ratatui/ratatui/commit/088aac136d8b22557081ab4c657f5c9f5cde80d8) *(readme)* Tweak links and badges by @joshka in [#1598](https://github.com/ratatui/ratatui/pull/1598)
-
-- [6e43672](https://github.com/ratatui/ratatui/commit/6e436725e4f8c58be527b07c464a0d8b5d306eb6) *(readme)* Reimagine README.md by @orhun in [#1569](https://github.com/ratatui/ratatui/pull/1569)
-
-- [8f28247](https://github.com/ratatui/ratatui/commit/8f282473b21d7693f20b5f0cdad2f12b9ed209ff) *(readme)* Correct examples links by @HoKim98 in [#1484](https://github.com/ratatui/ratatui/pull/1484)
-
-- [9f90f74](https://github.com/ratatui/ratatui/commit/9f90f7495fd46b3b7ac34160f094bc1583f82b70) *(readme)* Fix broken link by @nilsmartel in [#1485](https://github.com/ratatui/ratatui/pull/1485)
-
-- [260af68](https://github.com/ratatui/ratatui/commit/260af68a347b527281265f7bf259eb1336aa49b2) *(readme)* Include iocraft as an alternative by @kdheepak in [#1483](https://github.com/ratatui/ratatui/pull/1483)
-
-- [dafb716](https://github.com/ratatui/ratatui/commit/dafb716f9d8acb5dda303dc1e155dc90eb54b926) *(widgets)* Add example for grouped barchart by @orhun in [#1566](https://github.com/ratatui/ratatui/pull/1566)
-
-- [ed5dd73](https://github.com/ratatui/ratatui/commit/ed5dd73084e2c8ccf3d36bc23048d67755a90e6a) *(widgets)* Add example for tabs by @orhun in [#1559](https://github.com/ratatui/ratatui/pull/1559)
-
-- [fab5321](https://github.com/ratatui/ratatui/commit/fab532171d1c8e9639298550565e4eefb8737275) *(widgets)* Add example for scrollbar by @orhun in [#1545](https://github.com/ratatui/ratatui/pull/1545)
-
-- [898aef6](https://github.com/ratatui/ratatui/commit/898aef6e2f38655e58684a2d842f03bcde0ebf0c) *(widgets)* Add example for list by @orhun in [#1542](https://github.com/ratatui/ratatui/pull/1542)
-
-- [452366a](https://github.com/ratatui/ratatui/commit/452366aa9e666f26946ebccf6046a0bed393f5c1) *(widgets)* Add example for sparkline by @orhun in [#1556](https://github.com/ratatui/ratatui/pull/1556)
-
-- [6ddde0e](https://github.com/ratatui/ratatui/commit/6ddde0e8a84b0909ba5631afac2dfc7878764786) *(widgets)* Add example for table by @orhun in [#1557](https://github.com/ratatui/ratatui/pull/1557)
-
-- [93ad6b8](https://github.com/ratatui/ratatui/commit/93ad6b828c3a34be982447390d17b7953a9c328e) *(widgets)* Update values in chart example by @orhun in [#1558](https://github.com/ratatui/ratatui/pull/1558)
-
-- [15f442a](https://github.com/ratatui/ratatui/commit/15f442a71ed4ce3faeaac3b2a3a7798940eb1846) *(widgets)* Add example for paragraph by @orhun in [#1544](https://github.com/ratatui/ratatui/pull/1544)
-
-- [17bba14](https://github.com/ratatui/ratatui/commit/17bba14540449ae584a9cafbe2a39cc7fa451ef4) *(widgets)* Move the logo example to widgets by @orhun in [#1543](https://github.com/ratatui/ratatui/pull/1543)
-
-- [f2451e7](https://github.com/ratatui/ratatui/commit/f2451e7f1ed1d5bd38e8901f139bc2916a4b005e) *(widgets)* Add example for gauge by @orhun in [#1539](https://github.com/ratatui/ratatui/pull/1539)
-
-- [4f0a8b2](https://github.com/ratatui/ratatui/commit/4f0a8b21af49b825debb13695f8c1f368f4f56b5) *(widgets)* Add example for canvas by @orhun in [#1533](https://github.com/ratatui/ratatui/pull/1533)
-
-- [91147c4](https://github.com/ratatui/ratatui/commit/91147c4d75bee207052b06a7dca4b610df321de1) *(widgets)* Add example for chart by @orhun in [#1536](https://github.com/ratatui/ratatui/pull/1536)
-
-- [6dd25a3](https://github.com/ratatui/ratatui/commit/6dd25a311152abf3e0938c9a59e54c98e2a327a6) *(widgets)* Add example for calendar by @orhun in [#1532](https://github.com/ratatui/ratatui/pull/1532)
-
-- [99ac005](https://github.com/ratatui/ratatui/commit/99ac005b06f807c79060dba43b33ec9b1f7c1a3a) *(widgets)* Add simple barchart example by @joshka in [#1511](https://github.com/ratatui/ratatui/pull/1511)
-
-- [da05957](https://github.com/ratatui/ratatui/commit/da05957fa01fcc420519400d82ef9df6acace0e8) *(uncategorized)* Add widget-ref-container example by @joshka in [#1603](https://github.com/ratatui/ratatui/pull/1603)
-
-- [1798512](https://github.com/ratatui/ratatui/commit/1798512e94b277fdfafeddb4043f7174ce2ac64a) *(uncategorized)* Fix wording in user_input example by @dawedawe in [#1611](https://github.com/ratatui/ratatui/pull/1611)
-
-- [03066d8](https://github.com/ratatui/ratatui/commit/03066d81bfc7fb4356e8d188f3d6a15b45509c15) *(uncategorized)* Fix punctuation in canvas.rs documentation by @dawedawe in [#1583](https://github.com/ratatui/ratatui/pull/1583)
-
-- [e411d9e](https://github.com/ratatui/ratatui/commit/e411d9ec3e921e812b7e8d2836c2ad0b60a0e6f8) *(uncategorized)* Add input form example by @joshka in [#1551](https://github.com/ratatui/ratatui/pull/1551)
-
-- [ed071f3](https://github.com/ratatui/ratatui/commit/ed071f37232fae47a2193235d57934cc5c678baa) *(uncategorized)* Add mouse-drawing example by @joshka in [#1546](https://github.com/ratatui/ratatui/pull/1546)
-
-- [46902f5](https://github.com/ratatui/ratatui/commit/46902f5587efe2b27c39b5e3c39109c62a636ba3) *(uncategorized)* Improve docs for workspace crates by @orhun in [#1490](https://github.com/ratatui/ratatui/pull/1490)
-
-- [a6b5792](https://github.com/ratatui/ratatui/commit/a6b579223fd83c36e024428df49a3027cd1c21bc) *(uncategorized)* Fix example link in readme by @thomas-tacquet in [#1462](https://github.com/ratatui/ratatui/pull/1462)
-
-### Miscellaneous Tasks
-
-- [abe2f27](https://github.com/ratatui/ratatui/commit/abe2f273289d3798968a645a38a7a38571530065) *(backend)* Change From<T> impls to new backend specific IntoBackend and FromBackend traits by @joshka in [#1464](https://github.com/ratatui/ratatui/pull/1464) [**breaking**]
-
-- [0a47ebd](https://github.com/ratatui/ratatui/commit/0a47ebd94bbc7a89c9e2aa893cf13a988756ec19) *(bencher)* Update bencher CLI usage by @epompeii in [#1470](https://github.com/ratatui/ratatui/pull/1470)
-
-- [a0979d6](https://github.com/ratatui/ratatui/commit/a0979d68715b2c67b32b8909189bc103f0e81f6e) *(build)* Remove cargo lint by @joshka in [#1549](https://github.com/ratatui/ratatui/pull/1549)
-
-- [eaa4038](https://github.com/ratatui/ratatui/commit/eaa403856ecb60338619e2e727a0388187ae017c) *(ci)* Install pre-built binaries for cargo-rdme by @orhun in [#1477](https://github.com/ratatui/ratatui/pull/1477)
-
-- [e5e2316](https://github.com/ratatui/ratatui/commit/e5e2316451fb4c085f205b4884cc82ba8a4930e6) *(ci)* Add check for keeping README.md up-to-date by @orhun in [#1473](https://github.com/ratatui/ratatui/pull/1473)
-
-- [2ef3583](https://github.com/ratatui/ratatui/commit/2ef3583effdeb6492d76d977177b4363129a8c8c) *(ci)* Replace cargo-make with a custom cargo-xtask by @joshka in [#1461](https://github.com/ratatui/ratatui/pull/1461)
-
-- [98df774](https://github.com/ratatui/ratatui/commit/98df774d7f9b69a2a474d25adf38e38a428f1b77) *(core)* Move core types to ratatui-core by @joshka in [#1460](https://github.com/ratatui/ratatui/pull/1460)
-
-- [35eba76](https://github.com/ratatui/ratatui/commit/35eba76b4dff047dde2d1e01bc427eb1b992b490) *(example)* Move demo2 to top level folder by @joshka in [#1524](https://github.com/ratatui/ratatui/pull/1524)
-
-- [5f57d35](https://github.com/ratatui/ratatui/commit/5f57d3523436e944b60ccc7a937d69336c9f82b8) *(examples)* Add colors explorer demo app by @orhun in [#1580](https://github.com/ratatui/ratatui/pull/1580)
-
-- [5c021bf](https://github.com/ratatui/ratatui/commit/5c021bf344b17fc4075e9663dfb270bead180e25) *(examples)* Add chart demo app by @orhun in [#1579](https://github.com/ratatui/ratatui/pull/1579)
-
-- [9721300](https://github.com/ratatui/ratatui/commit/9721300a473096daf6b34f6cc7c13643d61a4e00) *(examples)* Add canvas demo app by @orhun in [#1578](https://github.com/ratatui/ratatui/pull/1578)
-
-- [a6a1368](https://github.com/ratatui/ratatui/commit/a6a13682507846320a79538ffad673a58c1143f0) *(examples)* Add calendar explorer demo app by @orhun in [#1571](https://github.com/ratatui/ratatui/pull/1571)
-
-- [819e92c](https://github.com/ratatui/ratatui/commit/819e92cd44b6bee7d21115ff465c2f3f8c82ed9b) *(examples)* Add weather demo app by @orhun in [#1567](https://github.com/ratatui/ratatui/pull/1567)
-
-- [b5f7e44](https://github.com/ratatui/ratatui/commit/b5f7e4418364c9710d14567c73122af67e0a63ae) *(examples)* Move async example to apps by @joshka in [#1503](https://github.com/ratatui/ratatui/pull/1503)
-
-- [17316ec](https://github.com/ratatui/ratatui/commit/17316ec5d0a4807600dd116736d66938b985e718) *(github)* Enable sponsorship button by @orhun in [#1478](https://github.com/ratatui/ratatui/pull/1478)
-
-- [d3f01eb](https://github.com/ratatui/ratatui/commit/d3f01ebf6ea97e71bcda8c84b054943e1f24cd4e) *(lint)* Ensure lint config is correct by @joshka in [#1528](https://github.com/ratatui/ratatui/pull/1528)
-
-- [2b7ec5c](https://github.com/ratatui/ratatui/commit/2b7ec5cb7f34edb65fc81d362d3b512b98d246ac) *(widgets)* Enable calendar widget as default by @orhun in [#1521](https://github.com/ratatui/ratatui/pull/1521)
-
-- [d201b8e](https://github.com/ratatui/ratatui/commit/d201b8e5ddd98a1887252179dec8f09e1f342b0c) *(xtask)* Check lints for only library targets by @orhun in [#1531](https://github.com/ratatui/ratatui/pull/1531)
-
-- [6f21319](https://github.com/ratatui/ratatui/commit/6f213191efd528fd7e0d5c99fda3e6d028ee0f98) *(uncategorized)* Rename examples with clashing names by @joshka in [#1597](https://github.com/ratatui/ratatui/pull/1597)
-
-- [11cbb2b](https://github.com/ratatui/ratatui/commit/11cbb2ba87e557a04674973a39d59124d8683ed1) *(uncategorized)* Use cargo xtask for bacon clippy command by @joshka in [#1592](https://github.com/ratatui/ratatui/pull/1592)
-
-- [b544e39](https://github.com/ratatui/ratatui/commit/b544e394c97fffdeddaccd44bea2214ebffa1616) *(uncategorized)* Use clap instead of argh for demo example by @joshka in [#1591](https://github.com/ratatui/ratatui/pull/1591)
-
-- [9a54198](https://github.com/ratatui/ratatui/commit/9a541981b8accd9efe17c0893d18b520bc569b15) *(uncategorized)* Make source files non-executable by @orhun in [#1577](https://github.com/ratatui/ratatui/pull/1577)
-
-- [357ae7e](https://github.com/ratatui/ratatui/commit/357ae7e251721f2e7fcb539de5e6fc60eaa30e29) *(uncategorized)* Move terminal types to ratatui-core by @joshka in [#1530](https://github.com/ratatui/ratatui/pull/1530) [**breaking**]
-
-- [21e62d8](https://github.com/ratatui/ratatui/commit/21e62d84c2d2fa2d5563caf0c0974c2514e56ee5) *(uncategorized)* Move the demo example to main folder by @joshka in [#1523](https://github.com/ratatui/ratatui/pull/1523)
-
-- [fbf6050](https://github.com/ratatui/ratatui/commit/fbf6050c867b63276ae3d6f5bca4d741c2ce355c) *(uncategorized)* Prepare alpha modularization release by @joshka in [#1525](https://github.com/ratatui/ratatui/pull/1525)
-
-- [e4e95bc](https://github.com/ratatui/ratatui/commit/e4e95bcecf15deb09416a0e53193d261f012222a) *(uncategorized)* Remove --color always flags from bacon.toml by @joshka in [#1502](https://github.com/ratatui/ratatui/pull/1502)
-
-- [a41c97b](https://github.com/ratatui/ratatui/commit/a41c97b413b28d0db6d1ea09dcc1d5b8556148b1) *(uncategorized)* Move unstable widget refs to ratatui by @joshka in [#1491](https://github.com/ratatui/ratatui/pull/1491) [**breaking**]
-
-- [e7085e3](https://github.com/ratatui/ratatui/commit/e7085e3a3ec4b3b90a4e69d49add96e7ba65616c) *(uncategorized)* Move widgets into ratatui-widgets crate by @joshka in [#1474](https://github.com/ratatui/ratatui/pull/1474)
-
-- [f1d0a18](https://github.com/ratatui/ratatui/commit/f1d0a1837564d69f00e4b5d9eb94cc001cd3a3a7) *(uncategorized)* Move ratatui crate into workspace folder by @joshka in [#1459](https://github.com/ratatui/ratatui/pull/1459)
-
-- [55fb2d2](https://github.com/ratatui/ratatui/commit/55fb2d2e56b492f0f4131fde9d44951b504cf50c) *(uncategorized)* Update repo links to ratatui instead of ratatui-org by @joshka in [#1458](https://github.com/ratatui/ratatui/pull/1458)
+- [55fb2d2](https://github.com/ratatui/ratatui/commit/55fb2d2e56b492f0f4131fde9d44951b504cf50c) _(uncategorized)_ Update repo links to ratatui instead of ratatui-org by @joshka in [#1458](https://github.com/ratatui/ratatui/pull/1458)
 
 ### Continuous Integration
 
-- [4a871f9](https://github.com/ratatui/ratatui/commit/4a871f993ea38069da513660707a072be299b791) *(uncategorized)* Refactor xtask / toml formatting by @joshka in [#1602](https://github.com/ratatui/ratatui/pull/1602)
+- [c01b7d4](https://github.com/ratatui/ratatui/commit/c01b7d43eaf0bd6bed8e1dc64043aa76cbd8026a) _(uncategorized)_ Remove old release workflows by @joshka in [#2015](https://github.com/ratatui/ratatui/pull/2015)
 
-### New Contributors
+- [02ca587](https://github.com/ratatui/ratatui/commit/02ca5870c58de3dfa192609837a3dbbbdc15c177) _(uncategorized)_ Add environment to release workflow by @joshka in [#1983](https://github.com/ratatui/ratatui/pull/1983)
 
-* @dawedawe made their first contribution in [#1611](https://github.com/ratatui/ratatui/pull/1611)
-* @Its-Just-Nans made their first contribution in [#1584](https://github.com/ratatui/ratatui/pull/1584)
-* @MarSik made their first contribution in [#1541](https://github.com/ratatui/ratatui/pull/1541)
-* @raylu made their first contribution in [#1540](https://github.com/ratatui/ratatui/pull/1540)
-* @renesat made their first contribution in [#1501](https://github.com/ratatui/ratatui/pull/1501)
-* @HoKim98 made their first contribution in [#1484](https://github.com/ratatui/ratatui/pull/1484)
-* @nilsmartel made their first contribution in [#1485](https://github.com/ratatui/ratatui/pull/1485)
-* @marcoieni made their first contribution in [#1480](https://github.com/ratatui/ratatui/pull/1480)
-* @epompeii made their first contribution in [#1470](https://github.com/ratatui/ratatui/pull/1470)
-* @thomas-tacquet made their first contribution in [#1462](https://github.com/ratatui/ratatui/pull/1462)
-* @miroim made their first contribution in [#1448](https://github.com/ratatui/ratatui/pull/1448)
+  > https://github.com/rust-lang/crates.io/issues/11564#issuecomment-3066696820
 
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/v0.29.0...0.30.0-alpha.1
+- [821611f](https://github.com/ratatui/ratatui/commit/821611f76f4c54efd77bf40bf3c23d1e370d8287) _(uncategorized)_ Use trusted publishing by @joshka in [#1981](https://github.com/ratatui/ratatui/pull/1981)
+
+  > https://blog.rust-lang.org/2025/07/11/crates-io-development-update-2025-07/
+  >
+  > https://crates.io/docs/trusted-publishing
+
+- [1f0c2ee](https://github.com/ratatui/ratatui/commit/1f0c2ee18e3b73e5ba672a197e6ed15a0a2dd220) _(uncategorized)_ Audit github workflows with zizmor by @joshka in [#1961](https://github.com/ratatui/ratatui/pull/1961)
+
+  > Fixes https://github.com/ratatui/ratatui/issues/1950
+
+- [a0746ba](https://github.com/ratatui/ratatui/commit/a0746bad7ebf13fd0c34b37ca3013b9ca6f1ce3a) _(uncategorized)_ Add job to check no-std build by @joshka in [#1851](https://github.com/ratatui/ratatui/pull/1851)
+
+  > Uses x86_64-unknown-none as an arbitrary target that does not support
+  > the std library
+  >
+  > Resolves:https://github.com/ratatui/ratatui/issues/1843
+
+- [5a3be12](https://github.com/ratatui/ratatui/commit/5a3be12ebd4e49ccea809bc65a16f05a168f4242) _(uncategorized)_ Run clippy using rust stable and beta by @joshka in [#1757](https://github.com/ratatui/ratatui/pull/1757)
+
+  > This makes it possible to pre-emptively catch upcoming clippy issues. We
+  > should not block PRs on these generally (unless the PR introduces a
+  > valid clippy warning), so the workflow is set up to not fail on beta.
+
+- [e7defb3](https://github.com/ratatui/ratatui/commit/e7defb36decf925dab49dd046959a4b6a2b10d5e) _(uncategorized)_ Remove bencher workflows by @joshka in [#1719](https://github.com/ratatui/ratatui/pull/1719)
+
+  > These actions are currently unused as we haven't
+  > invested the time necessary to understand how best
+  > to use them. We can always re-add them later if we
+  > find them useful.
+
+- [9398a25](https://github.com/ratatui/ratatui/commit/9398a2550ada1cc8a7a26ee97381e760fe91aaeb) _(uncategorized)_ Add workflow_dispatch trigger for release-plz by @joshka in [#1693](https://github.com/ratatui/ratatui/pull/1693)
+
+- [57c2326](https://github.com/ratatui/ratatui/commit/57c2326574d939c7b8a1aab2e7c35bbba480e771) _(uncategorized)_ Run cargo-deny directly rather than via action by @joshka in [#1621](https://github.com/ratatui/ratatui/pull/1621)
+
+  > Improves CI time
+
+- [4a871f9](https://github.com/ratatui/ratatui/commit/4a871f993ea38069da513660707a072be299b791) _(uncategorized)_ Refactor xtask / toml formatting by @joshka in [#1602](https://github.com/ratatui/ratatui/pull/1602)
+
+  > - format toml files using taplo
+  > - add toml formatting check to CI
+  > - use xtask consistently from bacon
+  > - refactor xtask commands to take params instead of multiple commands
+
+### Reverted Commits
+
+- [cace1e0](https://github.com/ratatui/ratatui/commit/cace1e099c338a30535e66e6e6e3696dd0ec98b2) _(release)_ Prepare for beta release by @orhun in [#2117](https://github.com/ratatui/ratatui/pull/2117)
+
+  > This reverts commit 5ae224b244a61d9d1460d7e1b0c448dd7cf72933 so that
+  > `release-plz` is being triggered again.
+  >
+  > See https://github.com/ratatui/ratatui/pull/2022#issuecomment-3349094310
+  > for rationale.
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0) - 2024-10-21
 
