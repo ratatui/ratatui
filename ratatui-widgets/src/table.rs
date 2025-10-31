@@ -851,10 +851,10 @@ impl Table<'_> {
                     (
                         // Space taken by previous columns and gaps
                         old_width
-                    // Space taken by column on this iteration
-                    + width
-                    // Gap between columns
-                    + 1
+                        // Space taken by column on this iteration
+                        + width
+                        // Gap between columns
+                        + 1
                     ),
                 ));
             } else {
