@@ -10,38 +10,31 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::{error::Error, iter::once, result};
 
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event;
 use itertools::Itertools;
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
-use ratatui::{DefaultTerminal, Frame};
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = run(terminal);
-    ratatui::restore();
-    app_result
-}
-
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(draw)?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                return Ok(());
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(render)?;
+            if event::read()?.is_key_press() {
+                break Ok(());
             }
         }
-    }
+    })
 }
 
-fn draw(frame: &mut Frame) {
-    let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    let [text_area, main_area] = vertical.areas(frame.area());
+fn render(frame: &mut Frame) {
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    let [text_area, main_area] = frame.area().layout(&layout);
     frame.render_widget(
         Paragraph::new("Note: not all terminals support all modifiers")
             .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),

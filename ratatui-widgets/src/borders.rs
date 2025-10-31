@@ -8,9 +8,8 @@ use strum::{Display, EnumString};
 bitflags! {
     /// Bitflags that can be composed to set the visible borders essentially on the block widget.
     #[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
     pub struct Borders: u8 {
-        /// Show no border (default)
-        const NONE   = 0b0000;
         /// Show the top border
         const TOP    = 0b0001;
         /// Show the right border
@@ -24,10 +23,16 @@ bitflags! {
     }
 }
 
+impl Borders {
+    /// Show no border (default)
+    pub const NONE: Self = Self::empty();
+}
+
 /// The type of border of a [`Block`](crate::block::Block).
 ///
 /// See the [`borders`](crate::block::Block::borders) method of `Block` to configure its borders.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum BorderType {
     /// A plain, simple border.
     ///
@@ -147,7 +152,7 @@ pub enum BorderType {
 
 impl BorderType {
     /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn border_symbols(border_type: Self) -> border::Set {
+    pub const fn border_symbols<'a>(border_type: Self) -> border::Set<'a> {
         match border_type {
             Self::Plain => border::PLAIN,
             Self::Rounded => border::ROUNDED,
@@ -165,18 +170,16 @@ impl BorderType {
     }
 
     /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn to_border_set(self) -> border::Set {
+    pub const fn to_border_set<'a>(self) -> border::Set<'a> {
         Self::border_symbols(self)
     }
 }
 
-/// Implement the `Debug` trait for the `Borders` bitflags. This is a manual implementation to
-/// display the flags in a more readable way. The default implementation would display the
-/// flags as 'Border(0x0)' for `Borders::NONE` for example.
 impl fmt::Debug for Borders {
-    /// Display the Borders bitflags as a list of names. For example, `Borders::NONE` will be
-    /// displayed as `NONE` and `Borders::ALL` will be displayed as `ALL`. If multiple flags are
-    /// set, they will be displayed separated by a pipe character.
+    /// Display the Borders bitflags as a list of names.
+    ///
+    /// `Borders::NONE` is displayed as `NONE` and `Borders::ALL` is displayed as `ALL`. If multiple
+    /// flags are set, they are otherwise displayed separated by a pipe character.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
             return write!(f, "NONE");
@@ -184,17 +187,12 @@ impl fmt::Debug for Borders {
         if self.is_all() {
             return write!(f, "ALL");
         }
-        let mut first = true;
-        for (name, border) in self.iter_names() {
-            if border == Self::NONE {
-                continue;
-            }
-            if first {
-                write!(f, "{name}")?;
-                first = false;
-            } else {
-                write!(f, " | {name}")?;
-            }
+        let mut names = self.iter_names().map(|(name, _)| name);
+        if let Some(first) = names.next() {
+            write!(f, "{first}")?;
+        }
+        for name in names {
+            write!(f, " | {name}")?;
         }
         Ok(())
     }
@@ -210,7 +208,7 @@ impl fmt::Debug for Borders {
 ///
 /// ```
 /// use ratatui::border;
-/// use ratatui::widgets::{Block, Borders};
+/// use ratatui::widgets::Block;
 ///
 /// Block::new()
 ///     .title("Construct Borders and use them in place")
@@ -239,15 +237,15 @@ impl fmt::Debug for Borders {
 #[macro_export]
 macro_rules! border {
     () => {
-        Borders::NONE
+        $crate::borders::Borders::NONE
     };
     ($b:ident) => {
-        Borders::$b
+        $crate::borders::Borders::$b
     };
     ($first:ident,$($other:ident),*) => {
-        Borders::$first
+        $crate::borders::Borders::$first
         $(
-            .union(Borders::$other)
+            .union($crate::borders::Borders::$other)
         )*
     };
 }

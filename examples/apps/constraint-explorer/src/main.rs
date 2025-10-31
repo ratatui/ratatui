@@ -9,8 +9,9 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use itertools::Itertools;
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
 use ratatui::layout::{Flex, Layout, Rect};
@@ -19,15 +20,11 @@ use ratatui::style::{Color, Style, Stylize};
 use ratatui::symbols::{self, line};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Block, Paragraph, Widget, Wrap};
-use ratatui::DefaultTerminal;
 use strum::{Display, EnumIter, FromRepr};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 #[derive(Default)]
@@ -82,7 +79,7 @@ struct SpacerBlock;
 
 // App behaviour
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         self.insert_test_defaults();
 
         while self.is_running() {
@@ -107,8 +104,8 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        match event::read()? {
-            Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => self.exit(),
                 KeyCode::Char('1') => self.swap_constraint(ConstraintName::Min),
                 KeyCode::Char('2') => self.swap_constraint(ConstraintName::Max),
@@ -125,8 +122,7 @@ impl App {
                 KeyCode::Char('h') | KeyCode::Left => self.prev_block(),
                 KeyCode::Char('l') | KeyCode::Right => self.next_block(),
                 _ => {}
-            },
-            _ => {}
+            }
         }
         Ok(())
     }
@@ -197,15 +193,15 @@ impl App {
         self.selected_index = index;
     }
 
-    fn increment_spacing(&mut self) {
+    const fn increment_spacing(&mut self) {
         self.spacing = self.spacing.saturating_add(1);
     }
 
-    fn decrement_spacing(&mut self) {
+    const fn decrement_spacing(&mut self) {
         self.spacing = self.spacing.saturating_sub(1);
     }
 
-    fn exit(&mut self) {
+    const fn exit(&mut self) {
         self.mode = AppMode::Quit;
     }
 
@@ -240,15 +236,19 @@ impl From<Constraint> for ConstraintName {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [header_area, instructions_area, swap_legend_area, _, blocks_area] =
-            Layout::vertical([
-                Length(2), // header
-                Length(2), // instructions
-                Length(1), // swap key legend
-                Length(1), // gap
-                Fill(1),   // blocks
-            ])
-            .areas(area);
+        let [
+            header_area,
+            instructions_area,
+            swap_legend_area,
+            _,
+            blocks_area,
+        ] = area.layout(&Layout::vertical([
+            Length(2), // header
+            Length(2), // instructions
+            Length(1), // swap key legend
+            Length(1), // gap
+            Fill(1),   // blocks
+        ]));
 
         App::header().render(header_area, buf);
         App::instructions().render(instructions_area, buf);
@@ -318,20 +318,26 @@ impl App {
     }
 
     fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
-        let [user_constraints, area] = Layout::vertical([Length(3), Fill(1)])
-            .spacing(1)
-            .areas(area);
+        let main_layout = Layout::vertical([Length(3), Fill(1)]).spacing(1);
+        let [user_constraints, area] = area.layout(&main_layout);
 
         self.render_user_constraints_legend(user_constraints, buf);
 
-        let [start, center, end, space_around, space_between] =
-            Layout::vertical([Length(7); 5]).areas(area);
+        let [
+            start,
+            center,
+            end,
+            space_between,
+            space_around,
+            space_evenly,
+        ] = area.layout(&Layout::vertical([Length(7); 6]));
 
         self.render_layout_block(Flex::Start, start, buf);
         self.render_layout_block(Flex::Center, center, buf);
         self.render_layout_block(Flex::End, end, buf);
-        self.render_layout_block(Flex::SpaceAround, space_around, buf);
         self.render_layout_block(Flex::SpaceBetween, space_between, buf);
+        self.render_layout_block(Flex::SpaceAround, space_around, buf);
+        self.render_layout_block(Flex::SpaceEvenly, space_evenly, buf);
     }
 
     fn render_user_constraints_legend(&self, area: Rect, buf: &mut Buffer) {
@@ -345,8 +351,8 @@ impl App {
     }
 
     fn render_layout_block(&self, flex: Flex, area: Rect, buf: &mut Buffer) {
-        let [label_area, axis_area, blocks_area] =
-            Layout::vertical([Length(1), Max(1), Length(4)]).areas(area);
+        let layout = Layout::vertical([Length(1), Max(1), Length(4)]);
+        let [label_area, axis_area, blocks_area] = area.layout(&layout);
 
         if label_area.height > 0 {
             format!("Flex::{flex:?}").bold().render(label_area, buf);

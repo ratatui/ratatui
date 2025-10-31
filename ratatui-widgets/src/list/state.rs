@@ -20,9 +20,9 @@
 /// # Example
 ///
 /// ```rust
+/// use ratatui::Frame;
 /// use ratatui::layout::Rect;
 /// use ratatui::widgets::{List, ListState};
-/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
@@ -40,7 +40,7 @@
 /// ```
 ///
 /// [`List`]: super::List
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListState {
     pub(crate) offset: usize,
@@ -106,7 +106,7 @@ impl ListState {
     /// let mut state = ListState::default();
     /// *state.offset_mut() = 1;
     /// ```
-    pub fn offset_mut(&mut self) -> &mut usize {
+    pub const fn offset_mut(&mut self) -> &mut usize {
         &mut self.offset
     }
 
@@ -138,7 +138,7 @@ impl ListState {
     /// let mut state = ListState::default();
     /// *state.selected_mut() = Some(1);
     /// ```
-    pub fn selected_mut(&mut self) -> &mut Option<usize> {
+    pub const fn selected_mut(&mut self) -> &mut Option<usize> {
         &mut self.selected
     }
 
@@ -154,7 +154,7 @@ impl ListState {
     /// let mut state = ListState::default();
     /// state.select(Some(1));
     /// ```
-    pub fn select(&mut self, index: Option<usize>) {
+    pub const fn select(&mut self, index: Option<usize>) {
         self.selected = index;
         if index.is_none() {
             self.offset = 0;
@@ -210,7 +210,7 @@ impl ListState {
     /// let mut state = ListState::default();
     /// state.select_first();
     /// ```
-    pub fn select_first(&mut self) {
+    pub const fn select_first(&mut self) {
         self.select(Some(0));
     }
 
@@ -227,7 +227,7 @@ impl ListState {
     /// let mut state = ListState::default();
     /// state.select_last();
     /// ```
-    pub fn select_last(&mut self) {
+    pub const fn select_last(&mut self) {
         self.select(Some(usize::MAX));
     }
 

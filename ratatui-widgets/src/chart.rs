@@ -1929,10 +1929,12 @@ mod tests {
             (8.0, 9.0),
             (10.0, 10.0),
         ];
-        let chart = Chart::new(vec![Dataset::default()
-            .data(&data)
-            .marker(symbols::Marker::Dot)
-            .graph_type(GraphType::Bar)])
+        let chart = Chart::new(vec![
+            Dataset::default()
+                .data(&data)
+                .marker(symbols::Marker::Dot)
+                .graph_type(GraphType::Bar),
+        ])
         .x_axis(Axis::default().bounds([0.0, 10.0]))
         .y_axis(Axis::default().bounds([0.0, 10.0]));
         let area = Rect::new(0, 0, 11, 11);
@@ -1952,5 +1954,26 @@ mod tests {
             "• • • • • •",
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let chart = Chart::new(vec![Dataset::default().data(&[(0.0, 0.0), (1.0, 1.0)])])
+            .x_axis(Axis::default().bounds([0.0, 1.0]))
+            .y_axis(Axis::default().bounds([0.0, 1.0]));
+        // This should not panic, even if the buffer is too small to render the chart.
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["•"]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let chart = Chart::new(vec![Dataset::default().data(&[(0.0, 0.0), (1.0, 1.0)])])
+            .x_axis(Axis::default().bounds([0.0, 1.0]))
+            .y_axis(Axis::default().bounds([0.0, 1.0]));
+        // This should not panic, even if the buffer has zero size.
+        chart.render(buffer.area, &mut buffer);
     }
 }

@@ -7,6 +7,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use unicode_truncate::UnicodeTruncateStr;
+use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
@@ -435,8 +436,9 @@ impl<'a> Line<'a> {
     /// let line = Line::from(vec!["Hello".blue(), " world!".green()]);
     /// assert_eq!(12, line.width());
     /// ```
+    #[must_use]
     pub fn width(&self) -> usize {
-        self.spans.iter().map(Span::width).sum()
+        UnicodeWidthStr::width(self)
     }
 
     /// Returns an iterator over the graphemes held by this line.
@@ -534,12 +536,12 @@ impl<'a> Line<'a> {
     }
 
     /// Returns an iterator over the spans of this line.
-    pub fn iter(&self) -> core::slice::Iter<Span<'a>> {
+    pub fn iter(&self) -> core::slice::Iter<'_, Span<'a>> {
         self.spans.iter()
     }
 
     /// Returns a mutable iterator over the spans of this line.
-    pub fn iter_mut(&mut self) -> core::slice::IterMut<Span<'a>> {
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<'_, Span<'a>> {
         self.spans.iter_mut()
     }
 
@@ -559,6 +561,16 @@ impl<'a> Line<'a> {
     /// ```
     pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
         self.spans.push(span.into());
+    }
+}
+
+impl UnicodeWidthStr for Line<'_> {
+    fn width(&self) -> usize {
+        self.spans.iter().map(UnicodeWidthStr::width).sum()
+    }
+
+    fn width_cjk(&self) -> usize {
+        self.spans.iter().map(UnicodeWidthStr::width_cjk).sum()
     }
 }
 
@@ -1106,12 +1118,12 @@ mod tests {
 
     #[test]
     fn styled_graphemes() {
-        const RED: Style = Style::new().fg(Color::Red);
-        const GREEN: Style = Style::new().fg(Color::Green);
-        const BLUE: Style = Style::new().fg(Color::Blue);
-        const RED_ON_WHITE: Style = Style::new().fg(Color::Red).bg(Color::White);
-        const GREEN_ON_WHITE: Style = Style::new().fg(Color::Green).bg(Color::White);
-        const BLUE_ON_WHITE: Style = Style::new().fg(Color::Blue).bg(Color::White);
+        const RED: Style = Style::new().red();
+        const GREEN: Style = Style::new().green();
+        const BLUE: Style = Style::new().blue();
+        const RED_ON_WHITE: Style = Style::new().red().on_white();
+        const GREEN_ON_WHITE: Style = Style::new().green().on_white();
+        const BLUE_ON_WHITE: Style = Style::new().blue().on_white();
 
         let line = Line::from(vec![
             Span::styled("He", RED),
@@ -1192,9 +1204,9 @@ mod tests {
         use super::*;
         use crate::buffer::Cell;
 
-        const BLUE: Style = Style::new().fg(Color::Blue);
-        const GREEN: Style = Style::new().fg(Color::Green);
-        const ITALIC: Style = Style::new().add_modifier(Modifier::ITALIC);
+        const BLUE: Style = Style::new().blue();
+        const GREEN: Style = Style::new().green();
+        const ITALIC: Style = Style::new().italic();
 
         #[fixture]
         fn hello_world() -> Line<'static> {
@@ -1308,13 +1320,16 @@ mod tests {
         #[test]
         fn regression_1032() {
             let line = Line::from(
-                "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得する"
+                "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得する",
             );
             let mut buf = Buffer::empty(Rect::new(0, 0, 83, 1));
             line.render(buf.area, &mut buf);
-            assert_eq!(buf, Buffer::with_lines([
-                "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得 "
-            ]));
+            assert_eq!(
+                buf,
+                Buffer::with_lines([
+                    "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得 "
+                ])
+            );
         }
 
         /// Documentary test to highlight the crab emoji width / length discrepancy

@@ -1,4 +1,6 @@
-use criterion::{black_box, criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
+use std::hint::black_box;
+
+use criterion::{BatchSize, Bencher, BenchmarkId, Criterion, criterion_group};
 use ratatui::layout::Rect;
 
 fn rect_iters_benchmark(c: &mut Criterion) {

@@ -15,43 +15,36 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Alignment, Constraint, Layout, Offset, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph, Tabs};
-use ratatui::{symbols, DefaultTerminal, Frame};
+use ratatui::{Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    let mut selected_tab = 0;
-    loop {
-        terminal.draw(|frame| draw(frame, selected_tab))?;
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Right | KeyCode::Char('l') | KeyCode::Tab => {
-                    selected_tab = (selected_tab + 1) % 3;
+    let mut selection = 0;
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(|frame| render(frame, selection))?;
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => break Ok(()),
+                    KeyCode::Char('l') | KeyCode::Right => selection = (selection + 1) % 3,
+                    KeyCode::Char('h') | KeyCode::Left => selection = (selection + 2) % 3,
+                    _ => {}
                 }
-                KeyCode::Left | KeyCode::Char('h') => selected_tab = (selected_tab + 2) % 3,
-                _ => {}
             }
         }
-    }
+    })
 }
 
-/// Draw the UI with tabs.
-fn draw(frame: &mut Frame, selected_tab: usize) {
-    let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
-    let [top, main] = vertical.areas(frame.area());
+/// Render the UI with tabs.
+fn render(frame: &mut Frame, selected_tab: usize) {
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
+    let [top, main] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Tabs Widget").bold(),

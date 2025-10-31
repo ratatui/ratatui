@@ -24,9 +24,9 @@
 /// # Example
 ///
 /// ```rust
+/// use ratatui::Frame;
 /// use ratatui::layout::{Constraint, Rect};
 /// use ratatui::widgets::{Row, Table, TableState};
-/// use ratatui::Frame;
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
@@ -50,7 +50,7 @@
 ///
 /// [`Table`]: super::Table
 /// [`Table::widths`]: crate::table::Table::widths
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TableState {
     pub(crate) offset: usize,
@@ -182,7 +182,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// *state.offset_mut() = 1;
     /// ```
-    pub fn offset_mut(&mut self) -> &mut usize {
+    pub const fn offset_mut(&mut self) -> &mut usize {
         &mut self.offset
     }
 
@@ -247,7 +247,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// *state.selected_mut() = Some(1);
     /// ```
-    pub fn selected_mut(&mut self) -> &mut Option<usize> {
+    pub const fn selected_mut(&mut self) -> &mut Option<usize> {
         &mut self.selected
     }
 
@@ -262,7 +262,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// *state.selected_column_mut() = Some(1);
     /// ```
-    pub fn selected_column_mut(&mut self) -> &mut Option<usize> {
+    pub const fn selected_column_mut(&mut self) -> &mut Option<usize> {
         &mut self.selected_column
     }
 
@@ -278,7 +278,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// state.select(Some(1));
     /// ```
-    pub fn select(&mut self, index: Option<usize>) {
+    pub const fn select(&mut self, index: Option<usize>) {
         self.selected = index;
         if index.is_none() {
             self.offset = 0;
@@ -294,7 +294,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// state.select_column(Some(1));
     /// ```
-    pub fn select_column(&mut self, index: Option<usize>) {
+    pub const fn select_column(&mut self, index: Option<usize>) {
         self.selected_column = index;
     }
 
@@ -309,7 +309,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// state.select_cell(Some((1, 5)));
     /// ```
-    pub fn select_cell(&mut self, indexes: Option<(usize, usize)>) {
+    pub const fn select_cell(&mut self, indexes: Option<(usize, usize)>) {
         if let Some((r, c)) = indexes {
             self.selected = Some(r);
             self.selected_column = Some(c);
@@ -405,7 +405,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// state.select_first();
     /// ```
-    pub fn select_first(&mut self) {
+    pub const fn select_first(&mut self) {
         self.select(Some(0));
     }
 
@@ -421,7 +421,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// state.select_first_column();
     /// ```
-    pub fn select_first_column(&mut self) {
+    pub const fn select_first_column(&mut self) {
         self.select_column(Some(0));
     }
 
@@ -438,7 +438,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// state.select_last();
     /// ```
-    pub fn select_last(&mut self) {
+    pub const fn select_last(&mut self) {
         self.select(Some(usize::MAX));
     }
 
@@ -454,7 +454,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// state.select_last();
     /// ```
-    pub fn select_last_column(&mut self) {
+    pub const fn select_last_column(&mut self) {
         self.select_column(Some(usize::MAX));
     }
 

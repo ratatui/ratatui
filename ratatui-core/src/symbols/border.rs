@@ -1,25 +1,25 @@
 use crate::symbols::{block, line};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub struct Set {
-    pub top_left: &'static str,
-    pub top_right: &'static str,
-    pub bottom_left: &'static str,
-    pub bottom_right: &'static str,
-    pub vertical_left: &'static str,
-    pub vertical_right: &'static str,
-    pub horizontal_top: &'static str,
-    pub horizontal_bottom: &'static str,
+pub struct Set<'a> {
+    pub top_left: &'a str,
+    pub top_right: &'a str,
+    pub bottom_left: &'a str,
+    pub bottom_right: &'a str,
+    pub vertical_left: &'a str,
+    pub vertical_right: &'a str,
+    pub horizontal_top: &'a str,
+    pub horizontal_bottom: &'a str,
 }
 
-impl Default for Set {
+impl Default for Set<'_> {
     fn default() -> Self {
         PLAIN
     }
 }
 
 // Helper function to convert a line set to a border set
-const fn from_line_set(line_set: line::Set) -> Set {
+const fn from_line_set(line_set: line::Set<'_>) -> Set<'_> {
     Set {
         top_left: line_set.top_left,
         top_right: line_set.top_right,

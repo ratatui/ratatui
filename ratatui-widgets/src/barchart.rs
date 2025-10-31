@@ -90,7 +90,7 @@ pub struct BarChart<'a> {
     /// The gap between each group
     group_gap: u16,
     /// Set of symbols used to display the data
-    bar_set: symbols::bar::Set,
+    bar_set: symbols::bar::Set<'a>,
     /// Style of the bars
     bar_style: Style,
     /// Style of the values printed at the bottom of each bar
@@ -168,6 +168,31 @@ impl<'a> BarChart<'a> {
         Self {
             data: vec![BarGroup::new(bars.into())],
             direction: Direction::Horizontal,
+            ..Default::default()
+        }
+    }
+
+    /// Creates a new `BarChart` widget with a group of bars.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::{Bar, BarChart, BarGroup};
+    ///
+    /// BarChart::grouped(vec![
+    ///     BarGroup::with_label(
+    ///         "Group 1",
+    ///         vec![Bar::with_label("A", 10), Bar::with_label("B", 20)],
+    ///     ),
+    ///     BarGroup::with_label(
+    ///         "Group 2",
+    ///         [Bar::with_label("C", 30), Bar::with_label("D", 40)],
+    ///     ),
+    /// ]);
+    /// ```
+    pub fn grouped<T: Into<Vec<BarGroup<'a>>>>(groups: T) -> Self {
+        Self {
+            data: groups.into(),
             ..Default::default()
         }
     }
@@ -298,7 +323,7 @@ impl<'a> BarChart<'a> {
     ///
     /// If not set, the default is [`bar::NINE_LEVELS`](ratatui_core::symbols::bar::NINE_LEVELS).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> Self {
+    pub const fn bar_set(mut self, bar_set: symbols::bar::Set<'a>) -> Self {
         self.bar_set = bar_set;
         self
     }
@@ -490,7 +515,7 @@ impl BarChart<'_> {
             let margin = u16::from(label_size != 0);
             Rect {
                 x: area.x + label_size + margin,
-                width: area.width - label_size - margin,
+                width: area.width.saturating_sub(label_size).saturating_sub(margin),
                 ..area
             }
         };
@@ -554,10 +579,10 @@ impl BarChart<'_> {
     }
 
     fn render_vertical(&self, buf: &mut Buffer, area: Rect) {
-        let label_info = self.label_info(area.height - 1);
+        let label_info = self.label_info(area.height.saturating_sub(1));
 
         let bars_area = Rect {
-            height: area.height - label_info.height,
+            height: area.height.saturating_sub(label_info.height),
             ..area
         };
 
@@ -697,6 +722,7 @@ mod tests {
     use ratatui_core::layout::Alignment;
     use ratatui_core::style::{Color, Modifier, Stylize};
     use ratatui_core::text::Span;
+    use rstest::rstest;
 
     use super::*;
     use crate::borders::BorderType;
@@ -1415,5 +1441,67 @@ mod tests {
         let updated_chart = chart.data(&bars2);
         assert_eq!(updated_chart.data.len(), 2);
         assert_eq!(updated_chart.data[1].bars, [Bar::with_label("Blue", 3)]);
+    }
+
+    /// Regression test for issue <https://github.com/ratatui/ratatui/issues/1928>
+    ///
+    /// This test ensures that the `BarChart` doesn't panic when rendering text labels with
+    /// multi-byte characters in the bar labels.
+    #[test]
+    fn regression_1928() {
+        let text_value = "\u{202f}"; // Narrow No-Break Space
+        let bars = [
+            Bar::default().text_value(text_value).value(0),
+            Bar::default().text_value(text_value).value(1),
+            Bar::default().text_value(text_value).value(2),
+            Bar::default().text_value(text_value).value(3),
+            Bar::default().text_value(text_value).value(4),
+        ];
+        let chart = BarChart::default()
+            .data(BarGroup::default().bars(&bars))
+            .bar_gap(0)
+            .direction(Direction::Horizontal);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 5));
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "\u{202f}   ",
+            "\u{202f}   ",
+            "\u{202f}█  ",
+            "\u{202f}██ ",
+            "\u{202f}███",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::horizontal(Direction::Horizontal)]
+    #[case::vertical(Direction::Vertical)]
+    fn render_in_minimal_buffer(#[case] direction: Direction) {
+        let chart = BarChart::default()
+            .data(&[("A", 1), ("B", 2)])
+            .bar_width(3)
+            .bar_gap(1)
+            .direction(direction);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        // This should not panic, even if the buffer is too small to render the chart.
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[rstest]
+    #[case::horizontal(Direction::Horizontal)]
+    #[case::vertical(Direction::Vertical)]
+    fn render_in_zero_size_buffer(#[case] direction: Direction) {
+        let chart = BarChart::default()
+            .data(&[("A", 1), ("B", 2)])
+            .bar_width(3)
+            .bar_gap(1)
+            .direction(direction);
+
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        // This should not panic, even if the buffer has zero size.
+        chart.render(buffer.area, &mut buffer);
     }
 }

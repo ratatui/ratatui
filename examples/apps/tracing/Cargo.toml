@@ -9,9 +9,9 @@ rust-version.workspace = true
 color-eyre.workspace = true
 crossterm.workspace = true
 ratatui.workspace = true
-tracing = "0.1.40"
-tracing-appender = "0.2.3"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing.workspace = true
+tracing-appender.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [lints]
 workspace = true

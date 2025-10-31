@@ -4,7 +4,6 @@
 //!
 //! In its simplest form, a `Block` is a [border](Borders) around another widget. It can have a
 //! [title](Block::title) and [padding](Block::padding).
-#![allow(deprecated)] // to avoid having to add `#[deprecated]` to every use of `Title`
 
 use alloc::vec::Vec;
 
@@ -13,119 +12,252 @@ use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols::border;
+use ratatui_core::symbols::merge::MergeStrategy;
 use ratatui_core::text::Line;
 use ratatui_core::widgets::Widget;
+use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
-pub use self::title::{Position, Title};
 use crate::borders::{BorderType, Borders};
 
 mod padding;
-pub mod title;
 
-/// Base widget to be used to display a box border around all other built-in widgets.
+/// A widget that renders borders, titles, and padding around other widgets.
 ///
-/// The borders can be configured with [`Block::borders`] and others. A block can have multiple
-/// [`Title`] using [`Block::title`]. It can also be [styled](Block::style) and
-/// [padded](Block::padding).
+/// A `Block` is a foundational widget that creates visual containers by drawing borders around an
+/// area. It serves as a wrapper or frame for other widgets, providing structure and visual
+/// separation in terminal UIs. Most built-in widgets in Ratatui use a pattern where they accept an
+/// optional `Block` parameter that wraps the widget's content.
 ///
-/// You can call the title methods multiple times to add multiple titles. Each title will be
-/// rendered with a single space separating titles that are in the same position or alignment. When
-/// both centered and non-centered titles are rendered, the centered space is calculated based on
-/// the full width of the block, rather than the leftover width.
+/// When a widget renders with a block, the widget's style is applied first, then the block's style,
+/// and finally the widget's content is rendered within the inner area calculated by the block. This
+/// layered approach allows for flexible styling where the block can provide background colors,
+/// borders, and padding while the inner widget handles its own content styling.
 ///
-/// Titles are not rendered in the corners of the block unless there is no border on that edge. If
-/// the block is too small and multiple titles overlap, the border may get cut off at a corner.
+/// Multiple blocks can be nested within each other. The [`Block::inner`] method calculates the area
+/// available for content after accounting for borders, titles, and padding, making it easy to nest
+/// blocks or position widgets within a block's boundaries.
+///
+/// # Constructor Methods
+///
+/// - [`Block::new`] - Creates a block with no borders or padding
+/// - [`Block::bordered`] - Creates a block with all borders enabled
+///
+/// # Border Configuration
+///
+/// - [`Block::borders`] - Specifies which borders to display
+/// - [`Block::border_style`] - Sets the style of the borders
+/// - [`Block::border_type`] - Sets border symbols (single, double, thick, rounded, etc.)
+/// - [`Block::border_set`] - Sets custom border symbols as a [`border::Set`]
+/// - [`Block::merge_borders`] - Controls how borders merge with adjacent blocks
+///
+/// # Title Configuration
+///
+/// - [`Block::title`] - Adds a title to the block
+/// - [`Block::title_top`] - Adds a title to the top of the block
+/// - [`Block::title_bottom`] - Adds a title to the bottom of the block
+/// - [`Block::title_alignment`] - Sets default alignment for all titles
+/// - [`Block::title_style`] - Sets the style for all titles
+/// - [`Block::title_position`] - Sets default position for titles
+///
+/// # Styling and Layout
+///
+/// - [`Block::style`] - Sets the base style of the block
+/// - [`Block::padding`] - Adds internal padding within the borders
+/// - [`Block::inner`] - Calculates the inner area available for content
+///
+/// # Title Behavior
+///
+/// You can add multiple titles to a block, and they will be rendered with spaces separating titles
+/// that share the same position or alignment. When both centered and non-centered titles exist, the
+/// centered space is calculated based on the full width of the block.
+///
+/// Titles are set using the `.title`, `.title_top`, and `.title_bottom` methods. These methods
+/// accept a string or any type that can be converted into a [`Line`], such as a string slice,
+/// `String`, or a vector of [`Span`]s. To control the alignment of a title (left, center, right),
+/// pass a `Line` with the desired alignment, e.g. `Line::from("Title").centered()`.
+///
+/// By default, `.title` places the title at the top of the block, but you can use `.title_top` or
+/// `.title_bottom` to explicitly set the position. The default alignment for all titles can be set
+/// with [`Block::title_alignment`], and the default position for all titles can be set with
+/// [`Block::title_position`].
+///
+/// Note that prior to `v0.30.0`, the `block::Title` struct was used to create titles. This struct
+/// has been removed. The new recommended approach is to use [`Line`] with a specific alignment for
+/// the title's content and the [`Block::title_top`] and [`Block::title_bottom`] methods for
+/// positioning.
+///
+/// Titles avoid being rendered in corners when borders are present, but will align to edges when no
+/// border exists on that side:
 ///
 /// ```plain
 /// ┌With at least a left border───
 ///
 /// Without left border───
 /// ```
-/// # Constructor methods
 ///
-/// - [`Block::new`] creates a new [`Block`] with no border or paddings.
-/// - [`Block::bordered`] Create a new block with all borders shown.
+/// # Nesting Widgets with `inner`
 ///
-/// # Setter methods
+/// The [`Block::inner`] method computes the area inside the block after accounting for borders,
+/// titles, and padding. This allows you to nest widgets inside a block by rendering the block
+/// first, then rendering other widgets in the returned inner area.
 ///
-/// These methods are fluent setters. They return a new [`Block`] with the specified property set.
+/// For example, you can nest a block inside another block:
 ///
-/// - [`Block::borders`] Defines which borders to display.
-/// - [`Block::border_style`] Defines the style of the borders.
-/// - [`Block::border_type`] Sets the symbols used to display the border (e.g. single line, double
-///   line, thick or rounded borders).
-/// - [`Block::padding`] Defines the padding inside a [`Block`].
-/// - [`Block::style`] Sets the base style of the widget.
-/// - [`Block::title`] Adds a title to the block.
-/// - [`Block::title_alignment`] Sets the default [`Alignment`] for all block titles.
-/// - [`Block::title_style`] Applies the style to all titles.
-/// - [`Block::title_top`] Adds a title to the top of the block.
-/// - [`Block::title_bottom`] Adds a title to the bottom of the block.
-/// - [`Block::title_position`] Adds a title to the block.
+/// ```
+/// use ratatui::Frame;
+/// use ratatui::widgets::Block;
 ///
-/// # Other Methods
-/// - [`Block::inner`] Compute the inner area of a block based on its border visibility rules.
+/// # fn render_nested_block(frame: &mut Frame) {
+/// let outer_block = Block::bordered().title("Outer");
+/// let inner_block = Block::bordered().title("Inner");
 ///
-/// [`Style`]s are applied first to the entire block, then to the borders, and finally to the
-/// titles. If the block is used as a container for another widget, the inner widget can also be
-/// styled. See [`Style`] for more information on how merging styles works.
+/// let outer_area = frame.area();
+/// let inner_area = outer_block.inner(outer_area);
+///
+/// frame.render_widget(outer_block, outer_area);
+/// frame.render_widget(inner_block, inner_area);
+/// # }
+/// ```
+///
+/// You can also use the standard [`Layout`] functionality to further subdivide the inner area and
+/// lay out multiple widgets inside a block.
+///
+/// # Integration with Other Widgets
+///
+/// Most widgets in Ratatui accept a block parameter. For example, [`Paragraph`], [`List`],
+/// [`Table`], and other widgets can be wrapped with a block:
+///
+/// ```
+/// use ratatui::widgets::{Block, Paragraph};
+///
+/// let paragraph = Paragraph::new("Hello, world!").block(Block::bordered().title("My Paragraph"));
+/// ```
+///
+/// This pattern allows widgets to focus on their content while blocks handle the visual framing.
+///
+/// # Styling
+///
+/// Styles are applied in a specific order: first the block's base style, then border styles, then
+/// title styles, and finally any content widget styles. This layered approach allows for flexible
+/// styling where outer styles provide defaults that inner styles can override.
+///
+/// `Block` implements [`Stylize`](ratatui_core::style::Stylize), allowing you to use style
+/// shorthand methods:
+///
+/// ```
+/// use ratatui::style::Stylize;
+/// use ratatui::widgets::Block;
+///
+/// let block = Block::bordered().red().on_white().bold();
+/// ```
 ///
 /// # Examples
 ///
-/// ```
-/// use ratatui::style::{Color, Style};
-/// use ratatui::widgets::{Block, BorderType, Borders};
+/// Create a simple bordered block:
 ///
-/// Block::new()
-///     .border_type(BorderType::Rounded)
-///     .borders(Borders::LEFT | Borders::RIGHT)
-///     .border_style(Style::default().fg(Color::White))
-///     .style(Style::default().bg(Color::Black))
-///     .title("Block");
 /// ```
-///
-/// You may also use multiple titles like in the following:
-/// ```
-/// use ratatui::widgets::block::{Position, Title};
 /// use ratatui::widgets::Block;
 ///
-/// Block::new()
-///     .title("Title 1")
-///     .title(Title::from("Title 2").position(Position::Bottom));
+/// let block = Block::bordered().title("My Block");
 /// ```
 ///
-/// You can also pass it as parameters of another widget so that the block surrounds them:
-/// ```
-/// use ratatui::widgets::{Block, Borders, List};
+/// Create a block with custom border styling:
 ///
-/// let surrounding_block = Block::default()
-///     .borders(Borders::ALL)
-///     .title("Here is a list of items");
-/// let items = ["Item 1", "Item 2", "Item 3"];
-/// let list = List::new(items).block(surrounding_block);
 /// ```
+/// use ratatui::style::{Color, Style, Stylize};
+/// use ratatui::widgets::{Block, BorderType};
+///
+/// let block = Block::bordered()
+///     .title("Styled Block")
+///     .border_type(BorderType::Rounded)
+///     .border_style(Style::new().cyan())
+///     .style(Style::new().on_black());
+/// ```
+///
+/// Use a block to wrap another widget:
+///
+/// ```
+/// use ratatui::widgets::{Block, Paragraph};
+///
+/// let paragraph = Paragraph::new("Hello, world!").block(Block::bordered().title("Greeting"));
+/// ```
+///
+/// Add multiple titles with different alignments:
+///
+/// ```
+/// use ratatui::text::Line;
+/// use ratatui::widgets::Block;
+///
+/// let block = Block::bordered()
+///     .title_top(Line::from("Left").left_aligned())
+///     .title_top(Line::from("Center").centered())
+///     .title_top(Line::from("Right").right_aligned())
+///     .title_bottom("Status: OK");
+/// ```
+///
+/// # See Also
+///
+/// - [Block recipe] - Visual examples and common patterns (on the ratatui website)
+/// - [Collapse borders recipe] - Techniques for creating seamless layouts (on the ratatui website)
+/// - [`MergeStrategy`] - Controls how borders merge with adjacent elements
+///
+/// [Block recipe]: https://ratatui.rs/recipes/widgets/block/
+/// [Collapse borders recipe]: https://ratatui.rs/recipes/layout/collapse-borders/
+/// [`Paragraph`]: crate::paragraph::Paragraph
+/// [`Span`]: ratatui_core::text::Span
+/// [`Table`]: crate::table::Table
+/// [`Stylize`]: ratatui_core::style::Stylize
+/// [`List`]: crate::list::List
+/// [`Layout`]: ratatui_core::layout::Layout
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
     /// List of titles
-    titles: Vec<(Option<Position>, Line<'a>)>,
+    titles: Vec<(Option<TitlePosition>, Line<'a>)>,
     /// The style to be patched to all titles of the block
     titles_style: Style,
     /// The default alignment of the titles that don't have one
     titles_alignment: Alignment,
     /// The default position of the titles that don't have one
-    titles_position: Position,
+    titles_position: TitlePosition,
     /// Visible borders
     borders: Borders,
     /// Border style
     border_style: Style,
     /// The symbols used to render the border. The default is plain lines but one can choose to
     /// have rounded or doubled lines instead or a custom set of symbols
-    border_set: border::Set,
+    border_set: border::Set<'a>,
     /// Widget style
     style: Style,
     /// Block padding
     padding: Padding,
+    /// Border merging strategy
+    merge_borders: MergeStrategy,
+}
+
+/// Defines the position of the title.
+///
+/// The title can be positioned on top or at the bottom of the block.
+///
+/// # Example
+///
+/// ```
+/// use ratatui::widgets::{Block, TitlePosition};
+///
+/// Block::bordered()
+///     .title_position(TitlePosition::Top)
+///     .title("Top Title");
+/// Block::bordered()
+///     .title_position(TitlePosition::Bottom)
+///     .title("Bottom Title");
+/// ```
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TitlePosition {
+    /// Position the title at the top of the block.
+    #[default]
+    Top,
+    /// Position the title at the bottom of the block.
+    Bottom,
 }
 
 impl<'a> Block<'a> {
@@ -135,12 +267,13 @@ impl<'a> Block<'a> {
             titles: Vec::new(),
             titles_style: Style::new(),
             titles_alignment: Alignment::Left,
-            titles_position: Position::Top,
+            titles_position: TitlePosition::Top,
             borders: Borders::NONE,
             border_style: Style::new(),
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
             padding: Padding::ZERO,
+            merge_borders: MergeStrategy::Replace,
         }
     }
 
@@ -157,7 +290,11 @@ impl<'a> Block<'a> {
         block
     }
 
-    /// Adds a title to the block.
+    /// Adds a title to the block using the default position.
+    ///
+    /// The position of the title is determined by the `title_position` field of the block, which
+    /// defaults to `Top`. This can be changed using the [`Block::title_position`] method. For
+    /// explicit positioning, use [`Block::title_top`] or [`Block::title_bottom`].
     ///
     /// The `title` function allows you to add a title to the block. You can call this function
     /// multiple times to add multiple titles.
@@ -166,7 +303,7 @@ impl<'a> Block<'a> {
     /// position or alignment. When both centered and non-centered titles are rendered, the centered
     /// space is calculated based on the full width of the block, rather than the leftover width.
     ///
-    /// You can provide any type that can be converted into [`Title`] including: strings, string
+    /// You can provide any type that can be converted into [`Line`] including: strings, string
     /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](ratatui_core::text::Span), or
     /// vectors of [spans](ratatui_core::text::Span) (`Vec<Span>`).
     ///
@@ -196,15 +333,13 @@ impl<'a> Block<'a> {
     /// - Two titles with the same alignment (notice the left titles are separated)
     /// ```
     /// use ratatui::text::Line;
-    /// use ratatui::widgets::{Block, Borders};
+    /// use ratatui::widgets::Block;
     ///
-    /// Block::new()
-    ///     .title("Title") // By default in the top left corner
-    ///     .title(Line::from("Left").left_aligned()) // also on the left
+    /// Block::bordered()
+    ///     .title("Title")
+    ///     .title(Line::from("Left").left_aligned())
     ///     .title(Line::from("Right").right_aligned())
     ///     .title(Line::from("Center").centered());
-    /// // Renders
-    /// // ┌Title─Left────Center─────────Right┐
     /// ```
     ///
     /// # See also
@@ -212,28 +347,21 @@ impl<'a> Block<'a> {
     /// Titles attached to a block can have default behaviors. See
     /// - [`Block::title_style`]
     /// - [`Block::title_alignment`]
-    /// - [`Block::title_position`]
     ///
-    /// # Future improvements
+    /// # History
     ///
-    /// In a future release of Ratatui this method will be changed to accept `Into<Line>` instead of
-    /// `Into<Title>`. This allows us to remove the unnecessary `Title` struct and store the
-    /// position in the block itself. For more information see
-    /// <https://github.com/ratatui/ratatui/issues/738>.
+    /// In previous releases of Ratatui this method accepted `Into<Title>` instead of
+    /// [`Into<Line>`]. We found that storing the position in the block and the alignment in the
+    /// line better reflects the intended use of the block and its titles. See
+    /// <https://github.com/ratatui/ratatui/issues/738> for more information.
     ///
     /// [Block example]: https://github.com/ratatui/ratatui/blob/main/examples/README.md#block
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title<T>(mut self, title: T) -> Self
     where
-        T: Into<Title<'a>>,
+        T: Into<Line<'a>>,
     {
-        let title = title.into();
-        let position = title.position;
-        let mut content = title.content;
-        if let Some(alignment) = title.alignment {
-            content = content.alignment(alignment);
-        }
-        self.titles.push((position, content));
+        self.titles.push((None, title.into()));
         self
     }
 
@@ -262,7 +390,7 @@ impl<'a> Block<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_top<T: Into<Line<'a>>>(mut self, title: T) -> Self {
         let line = title.into();
-        self.titles.push((Some(Position::Top), line));
+        self.titles.push((Some(TitlePosition::Top), line));
         self
     }
 
@@ -291,7 +419,7 @@ impl<'a> Block<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
         let line = title.into();
-        self.titles.push((Some(Position::Bottom), line));
+        self.titles.push((Some(TitlePosition::Bottom), line));
         self
     }
 
@@ -326,7 +454,7 @@ impl<'a> Block<'a> {
     /// use ratatui::text::Line;
     /// use ratatui::widgets::Block;
     ///
-    /// Block::new()
+    /// Block::bordered()
     ///     .title_alignment(Alignment::Center)
     ///     // This title won't be aligned in the center
     ///     .title(Line::from("right").right_aligned())
@@ -339,27 +467,25 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// Sets the default [`Position`] for all block [titles](Title).
-    ///
-    /// Titles that explicitly set a [`Position`] will ignore this.
+    /// Sets the default [`TitlePosition`] for all block titles.
     ///
     /// # Example
     ///
-    /// This example positions all titles on the bottom except the "top" title which explicitly sets
-    /// [`Position::Top`].
-    /// ```
-    /// use ratatui::widgets::block::Position;
-    /// use ratatui::widgets::Block;
+    /// This example positions all titles on the bottom by default. The "top" title explicitly sets
+    /// its position to `Top`, so it is not affected. The "foo" and "bar" titles will be positioned
+    /// at the bottom.
     ///
-    /// Block::new()
-    ///     .title_position(Position::Bottom)
-    ///     // This title won't be aligned in the center
-    ///     .title_top("top")
-    ///     .title("foo")
-    ///     .title("bar");
+    /// ```
+    /// use ratatui::widgets::{Block, TitlePosition};
+    ///
+    /// Block::bordered()
+    ///     .title_position(TitlePosition::Bottom)
+    ///     .title("foo") // will be at the bottom
+    ///     .title_top("top") // will be at the top
+    ///     .title("bar"); // will be at the bottom
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn title_position(mut self, position: Position) -> Self {
+    pub const fn title_position(mut self, position: TitlePosition) -> Self {
         self.titles_position = position;
         self
     }
@@ -491,7 +617,7 @@ impl<'a> Block<'a> {
     /// // ║     ║
     /// // ╚═════╝
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_set(mut self, border_set: border::Set) -> Self {
+    pub const fn border_set(mut self, border_set: border::Set<'a>) -> Self {
         self.border_set = border_set;
         self
     }
@@ -530,14 +656,61 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// Compute the inner area of a block based on its border visibility rules.
+    /// Sets the block's [`MergeStrategy`] for overlapping characters, defaulting to [`Replace`].
+    ///
+    /// Changing the strategy to [`Exact`] or [`Fuzzy`] collapses border characters that intersect
+    /// with any previously rendered borders.
+    ///
+    /// For more information and examples, see the [collapse borders recipe] and [`MergeStrategy`]
+    /// docs.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::symbols::merge::MergeStrategy;
+    /// # use ratatui::widgets::{Block, BorderType};
+    ///
+    /// // Given several blocks with plain borders (1)
+    /// Block::bordered();
+    /// // and other blocks with thick borders (2) which are rendered on top of the first
+    /// Block::bordered()
+    ///     .border_type(BorderType::Thick)
+    ///     .merge_borders(MergeStrategy::Exact);
+    /// ```
+    ///
+    /// Rendering these blocks with `MergeStrategy::Exact` or `MergeStrategy::Fuzzy` will collapse
+    /// the borders, resulting in a clean layout without connected borders.
+    ///
+    /// ```plain
+    /// ┌───┐    ┌───┐  ┌───┲━━━┓┌───┐
+    /// │   │    │ 1 │  │   ┃   ┃│   │
+    /// │ 1 │    │ ┏━┿━┓│ 1 ┃ 2 ┃│ 1 │
+    /// │   │    │ ┃ │ ┃│   ┃   ┃│   │
+    /// └───╆━━━┓└─╂─┘ ┃└───┺━━━┛┢━━━┪
+    ///     ┃   ┃  ┃ 2 ┃         ┃   ┃
+    ///     ┃ 2 ┃  ┗━━━┛         ┃ 2 ┃
+    ///     ┃   ┃                ┃   ┃
+    ///     ┗━━━┛                ┗━━━┛
+    /// ```
+    ///
+    /// [collapse borders recipe]: https://ratatui.rs/recipes/layout/collapse-borders/
+    /// [`Replace`]: MergeStrategy::Replace
+    /// [`Exact`]: MergeStrategy::Exact
+    /// [`Fuzzy`]: MergeStrategy::Fuzzy
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn merge_borders(mut self, strategy: MergeStrategy) -> Self {
+        self.merge_borders = strategy;
+        self
+    }
+
+    /// Computes the inner area of a block after subtracting space for borders, titles, and padding.
     ///
     /// # Examples
     ///
     /// Draw a block nested within another block
     /// ```
-    /// use ratatui::widgets::Block;
     /// use ratatui::Frame;
+    /// use ratatui::widgets::Block;
     ///
     /// # fn render_nested_block(frame: &mut Frame) {
     /// let outer_block = Block::bordered().title("Outer");
@@ -562,14 +735,15 @@ impl<'a> Block<'a> {
             inner.x = inner.x.saturating_add(1).min(inner.right());
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::TOP) || self.has_title_at_position(Position::Top) {
+        if self.borders.intersects(Borders::TOP) || self.has_title_at_position(TitlePosition::Top) {
             inner.y = inner.y.saturating_add(1).min(inner.bottom());
             inner.height = inner.height.saturating_sub(1);
         }
         if self.borders.intersects(Borders::RIGHT) {
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::BOTTOM) || self.has_title_at_position(Position::Bottom)
+        if self.borders.intersects(Borders::BOTTOM)
+            || self.has_title_at_position(TitlePosition::Bottom)
         {
             inner.height = inner.height.saturating_sub(1);
         }
@@ -587,7 +761,7 @@ impl<'a> Block<'a> {
         inner
     }
 
-    fn has_title_at_position(&self, position: Position) -> bool {
+    fn has_title_at_position(&self, position: TitlePosition) -> bool {
         self.titles
             .iter()
             .any(|(pos, _)| pos.unwrap_or(self.titles_position) == position)
@@ -614,101 +788,112 @@ impl Widget for &Block<'_> {
 
 impl Block<'_> {
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
-        self.render_left_side(area, buf);
-        self.render_top_side(area, buf);
-        self.render_right_side(area, buf);
-        self.render_bottom_side(area, buf);
-
-        self.render_bottom_right_corner(buf, area);
-        self.render_top_right_corner(buf, area);
-        self.render_bottom_left_corner(buf, area);
-        self.render_top_left_corner(buf, area);
+        self.render_sides(area, buf);
+        self.render_corners(area, buf);
     }
 
+    fn render_sides(&self, area: Rect, buf: &mut Buffer) {
+        let left = area.left();
+        let top = area.top();
+        // area.right() and area.bottom() are outside the rect, subtract 1 to get the last row/col
+        let right = area.right() - 1;
+        let bottom = area.bottom() - 1;
+
+        // The first and last element of each line are not drawn when there is an adjacent line as
+        // this would cause the corner to initially be merged with a side character and then a
+        // corner character to be drawn on top of it. Some merge strategies would not produce a
+        // correct character in that case.
+        let is_replace = self.merge_borders != MergeStrategy::Replace;
+        let left_inset = left + u16::from(is_replace && self.borders.contains(Borders::LEFT));
+        let top_inset = top + u16::from(is_replace && self.borders.contains(Borders::TOP));
+        let right_inset = right - u16::from(is_replace && self.borders.contains(Borders::RIGHT));
+        let bottom_inset = bottom - u16::from(is_replace && self.borders.contains(Borders::BOTTOM));
+
+        let sides = [
+            (
+                Borders::LEFT,
+                left..=left,
+                top_inset..=bottom_inset,
+                self.border_set.vertical_left,
+            ),
+            (
+                Borders::TOP,
+                left_inset..=right_inset,
+                top..=top,
+                self.border_set.horizontal_top,
+            ),
+            (
+                Borders::RIGHT,
+                right..=right,
+                top_inset..=bottom_inset,
+                self.border_set.vertical_right,
+            ),
+            (
+                Borders::BOTTOM,
+                left_inset..=right_inset,
+                bottom..=bottom,
+                self.border_set.horizontal_bottom,
+            ),
+        ];
+        for (border, x_range, y_range, symbol) in sides {
+            if self.borders.contains(border) {
+                for x in x_range {
+                    for y in y_range.clone() {
+                        buf[(x, y)]
+                            .merge_symbol(symbol, self.merge_borders)
+                            .set_style(self.border_style);
+                    }
+                }
+            }
+        }
+    }
+
+    fn render_corners(&self, area: Rect, buf: &mut Buffer) {
+        let corners = [
+            (
+                Borders::RIGHT | Borders::BOTTOM,
+                area.right() - 1,
+                area.bottom() - 1,
+                self.border_set.bottom_right,
+            ),
+            (
+                Borders::RIGHT | Borders::TOP,
+                area.right() - 1,
+                area.top(),
+                self.border_set.top_right,
+            ),
+            (
+                Borders::LEFT | Borders::BOTTOM,
+                area.left(),
+                area.bottom() - 1,
+                self.border_set.bottom_left,
+            ),
+            (
+                Borders::LEFT | Borders::TOP,
+                area.left(),
+                area.top(),
+                self.border_set.top_left,
+            ),
+        ];
+
+        for (border, x, y, symbol) in corners {
+            if self.borders.contains(border) {
+                buf[(x, y)]
+                    .merge_symbol(symbol, self.merge_borders)
+                    .set_style(self.border_style);
+            }
+        }
+    }
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
-        self.render_title_position(Position::Top, area, buf);
-        self.render_title_position(Position::Bottom, area, buf);
+        self.render_title_position(TitlePosition::Top, area, buf);
+        self.render_title_position(TitlePosition::Bottom, area, buf);
     }
 
-    fn render_title_position(&self, position: Position, area: Rect, buf: &mut Buffer) {
+    fn render_title_position(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         // NOTE: the order in which these functions are called defines the overlapping behavior
-        self.render_right_titles(position, area, buf);
-        self.render_center_titles(position, area, buf);
         self.render_left_titles(position, area, buf);
-    }
-
-    fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::LEFT) {
-            for y in area.top()..area.bottom() {
-                buf[(area.left(), y)]
-                    .set_symbol(self.border_set.vertical_left)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_top_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::TOP) {
-            for x in area.left()..area.right() {
-                buf[(x, area.top())]
-                    .set_symbol(self.border_set.horizontal_top)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_right_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::RIGHT) {
-            let x = area.right() - 1;
-            for y in area.top()..area.bottom() {
-                buf[(x, y)]
-                    .set_symbol(self.border_set.vertical_right)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_bottom_side(&self, area: Rect, buf: &mut Buffer) {
-        if self.borders.contains(Borders::BOTTOM) {
-            let y = area.bottom() - 1;
-            for x in area.left()..area.right() {
-                buf[(x, y)]
-                    .set_symbol(self.border_set.horizontal_bottom)
-                    .set_style(self.border_style);
-            }
-        }
-    }
-
-    fn render_bottom_right_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
-            buf[(area.right() - 1, area.bottom() - 1)]
-                .set_symbol(self.border_set.bottom_right)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_top_right_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::RIGHT | Borders::TOP) {
-            buf[(area.right() - 1, area.top())]
-                .set_symbol(self.border_set.top_right)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_bottom_left_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
-            buf[(area.left(), area.bottom() - 1)]
-                .set_symbol(self.border_set.bottom_left)
-                .set_style(self.border_style);
-        }
-    }
-
-    fn render_top_left_corner(&self, buf: &mut Buffer, area: Rect) {
-        if self.borders.contains(Borders::LEFT | Borders::TOP) {
-            buf[(area.left(), area.top())]
-                .set_symbol(self.border_set.top_left)
-                .set_style(self.border_style);
-        }
+        self.render_center_titles(position, area, buf);
+        self.render_right_titles(position, area, buf);
     }
 
     /// Render titles aligned to the right of the block
@@ -718,7 +903,7 @@ impl Block<'_> {
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
     /// incorrectly. See <https://github.com/ratatui/ratatui/issues/932>
     #[expect(clippy::similar_names)]
-    fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+    fn render_right_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Right);
         let mut titles_area = self.titles_area(area, position);
 
@@ -748,47 +933,80 @@ impl Block<'_> {
     }
 
     /// Render titles in the center of the block
-    ///
-    /// Currently this method aligns the titles to the left inside a centered area. This is not
-    /// ideal and should be fixed in the future to align the titles to the center of the block and
-    /// truncate both sides of the titles if the block is too small to fit all titles.
-    #[expect(clippy::similar_names)]
-    fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+    fn render_center_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
+        let area = self.titles_area(area, position);
         let titles = self
             .filtered_titles(position, Alignment::Center)
             .collect_vec();
+        // titles are rendered with a space after each title except the last one
         let total_width = titles
             .iter()
-            .map(|title| title.width() as u16 + 1) // space between titles
+            .map(|title| title.width() as u16 + 1)
             .sum::<u16>()
-            .saturating_sub(1); // no space for the last title
+            .saturating_sub(1);
 
-        let titles_area = self.titles_area(area, position);
-        let mut titles_area = Rect {
-            x: titles_area.left() + (titles_area.width.saturating_sub(total_width) / 2),
-            ..titles_area
-        };
+        if total_width <= area.width {
+            self.render_centered_titles_without_truncation(titles, total_width, area, buf);
+        } else {
+            self.render_centered_titles_with_truncation(titles, total_width, area, buf);
+        }
+    }
+
+    fn render_centered_titles_without_truncation(
+        &self,
+        titles: Vec<&Line<'_>>,
+        total_width: u16,
+        area: Rect,
+        buf: &mut Buffer,
+    ) {
+        // titles fit in the area, center them
+        let x = area.left() + area.width.saturating_sub(total_width) / 2;
+        let mut area = Rect { x, ..area };
         for title in titles {
-            if titles_area.is_empty() {
-                break;
-            }
-            let title_width = title.width() as u16;
-            let title_area = Rect {
-                width: title_width.min(titles_area.width),
-                ..titles_area
-            };
+            let width = title.width() as u16;
+            let title_area = Rect { width, ..area };
             buf.set_style(title_area, self.titles_style);
             title.render(title_area, buf);
+            // Move the rendering cursor to the right, leaving 1 column space.
+            area.x = area.x.saturating_add(width + 1);
+            area.width = area.width.saturating_sub(width + 1);
+        }
+    }
 
-            // bump the titles area to the right and reduce its width
-            titles_area.x = titles_area.x.saturating_add(title_width + 1);
-            titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+    fn render_centered_titles_with_truncation(
+        &self,
+        titles: Vec<&Line<'_>>,
+        total_width: u16,
+        mut area: Rect,
+        buf: &mut Buffer,
+    ) {
+        // titles do not fit in the area, truncate the left side using an offset. The right side
+        // is truncated by the area width.
+        let mut offset = total_width.saturating_sub(area.width) / 2;
+        for title in titles {
+            if area.is_empty() {
+                break;
+            }
+            let width = area.width.min(title.width() as u16).saturating_sub(offset);
+            let title_area = Rect { width, ..area };
+            buf.set_style(title_area, self.titles_style);
+            if offset > 0 {
+                // truncate the left side of the title to fit the area
+                title.clone().right_aligned().render(title_area, buf);
+                offset = offset.saturating_sub(width).saturating_sub(1);
+            } else {
+                // truncate the right side of the title to fit the area if needed
+                title.clone().left_aligned().render(title_area, buf);
+            }
+            // Leave 1 column of spacing between titles.
+            area.x = area.x.saturating_add(width + 1);
+            area.width = area.width.saturating_sub(width + 1);
         }
     }
 
     /// Render titles aligned to the left of the block
     #[expect(clippy::similar_names)]
-    fn render_left_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+    fn render_left_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Left);
         let mut titles_area = self.titles_area(area, position);
         for title in titles {
@@ -812,9 +1030,9 @@ impl Block<'_> {
     /// An iterator over the titles that match the position and alignment
     fn filtered_titles(
         &self,
-        position: Position,
+        position: TitlePosition,
         alignment: Alignment,
-    ) -> impl DoubleEndedIterator<Item = &Line> {
+    ) -> impl DoubleEndedIterator<Item = &Line<'_>> {
         self.titles
             .iter()
             .filter(move |(pos, _)| pos.unwrap_or(self.titles_position) == position)
@@ -824,14 +1042,14 @@ impl Block<'_> {
 
     /// An area that is one line tall and spans the width of the block excluding the borders and
     /// is positioned at the top or bottom of the block.
-    fn titles_area(&self, area: Rect, position: Position) -> Rect {
+    fn titles_area(&self, area: Rect, position: TitlePosition) -> Rect {
         let left_border = u16::from(self.borders.contains(Borders::LEFT));
         let right_border = u16::from(self.borders.contains(Borders::RIGHT));
         Rect {
             x: area.left() + left_border,
             y: match position {
-                Position::Top => area.top(),
-                Position::Bottom => area.bottom() - 1,
+                TitlePosition::Top => area.top(),
+                TitlePosition::Bottom => area.bottom() - 1,
             },
             width: area
                 .width
@@ -858,14 +1076,14 @@ impl Block<'_> {
 
     /// Calculate the top, and bottom space that the [`Block`] will take up.
     ///
-    /// Takes the [`Padding`], [`Title`]'s position, and the [`Borders`] that are selected into
+    /// Takes the [`Padding`], [`TitlePosition`], and the [`Borders`] that are selected into
     /// account when calculating the result.
     pub(crate) fn vertical_space(&self) -> (u16, u16) {
         let has_top =
-            self.borders.contains(Borders::TOP) || self.has_title_at_position(Position::Top);
+            self.borders.contains(Borders::TOP) || self.has_title_at_position(TitlePosition::Top);
         let top = self.padding.top + u16::from(has_top);
-        let has_bottom =
-            self.borders.contains(Borders::BOTTOM) || self.has_title_at_position(Position::Bottom);
+        let has_bottom = self.borders.contains(Borders::BOTTOM)
+            || self.has_title_at_position(TitlePosition::Bottom);
         let bottom = self.padding.bottom + u16::from(has_bottom);
         (top, bottom)
     }
@@ -904,7 +1122,8 @@ impl Styled for Block<'_> {
 mod tests {
     use alloc::{format, vec};
 
-    use ratatui_core::layout::HorizontalAlignment;
+    use itertools::iproduct;
+    use ratatui_core::layout::Offset;
     use ratatui_core::style::{Color, Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;
@@ -974,50 +1193,20 @@ mod tests {
     #[test]
     fn has_title_at_position_takes_into_account_all_positioning_declarations() {
         let block = Block::new();
-        assert!(!block.has_title_at_position(Position::Top));
-        assert!(!block.has_title_at_position(Position::Bottom));
+        assert!(!block.has_title_at_position(TitlePosition::Top));
+        assert!(!block.has_title_at_position(TitlePosition::Bottom));
 
         let block = Block::new().title_top("test");
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(!block.has_title_at_position(Position::Bottom));
+        assert!(block.has_title_at_position(TitlePosition::Top));
+        assert!(!block.has_title_at_position(TitlePosition::Bottom));
 
         let block = Block::new().title_bottom("test");
-        assert!(!block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
-
-        #[expect(deprecated)] // until Title is removed
-        let block = Block::new()
-            .title(Title::from("Test").position(Position::Top))
-            .title_position(Position::Bottom);
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(!block.has_title_at_position(Position::Bottom));
-
-        #[expect(deprecated)] // until Title is removed
-        let block = Block::new()
-            .title(Title::from("Test").position(Position::Bottom))
-            .title_position(Position::Top);
-        assert!(!block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
+        assert!(!block.has_title_at_position(TitlePosition::Top));
+        assert!(block.has_title_at_position(TitlePosition::Bottom));
 
         let block = Block::new().title_top("test").title_bottom("test");
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
-
-        #[expect(deprecated)] // until Title is removed
-        let block = Block::new()
-            .title(Title::from("Test").position(Position::Top))
-            .title(Title::from("Test"))
-            .title_position(Position::Bottom);
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
-
-        #[expect(deprecated)] // until Title is removed
-        let block = Block::new()
-            .title(Title::from("Test"))
-            .title(Title::from("Test").position(Position::Bottom))
-            .title_position(Position::Top);
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
+        assert!(block.has_title_at_position(TitlePosition::Top));
+        assert!(block.has_title_at_position(TitlePosition::Bottom));
     }
 
     #[rstest]
@@ -1067,18 +1256,18 @@ mod tests {
     }
 
     #[rstest]
-    #[case::top_border_top_title(Block::new(), Borders::TOP, Position::Top, (1, 0))]
-    #[case::right_border_top_title(Block::new(), Borders::RIGHT, Position::Top, (1, 0))]
-    #[case::bottom_border_top_title(Block::new(), Borders::BOTTOM, Position::Top, (1, 1))]
-    #[case::left_border_top_title(Block::new(), Borders::LEFT, Position::Top, (1, 0))]
-    #[case::top_border_top_title(Block::new(), Borders::TOP, Position::Bottom, (1, 1))]
-    #[case::right_border_top_title(Block::new(), Borders::RIGHT, Position::Bottom, (0, 1))]
-    #[case::bottom_border_top_title(Block::new(), Borders::BOTTOM, Position::Bottom, (0, 1))]
-    #[case::left_border_top_title(Block::new(), Borders::LEFT, Position::Bottom, (0, 1))]
+    #[case::top_border_top_title(Block::new(), Borders::TOP, TitlePosition::Top, (1, 0))]
+    #[case::right_border_top_title(Block::new(), Borders::RIGHT, TitlePosition::Top, (1, 0))]
+    #[case::bottom_border_top_title(Block::new(), Borders::BOTTOM, TitlePosition::Top, (1, 1))]
+    #[case::left_border_top_title(Block::new(), Borders::LEFT, TitlePosition::Top, (1, 0))]
+    #[case::top_border_top_title(Block::new(), Borders::TOP, TitlePosition::Bottom, (1, 1))]
+    #[case::right_border_top_title(Block::new(), Borders::RIGHT, TitlePosition::Bottom, (0, 1))]
+    #[case::bottom_border_top_title(Block::new(), Borders::BOTTOM, TitlePosition::Bottom, (0, 1))]
+    #[case::left_border_top_title(Block::new(), Borders::LEFT, TitlePosition::Bottom, (0, 1))]
     fn vertical_space_takes_into_account_borders_and_title(
         #[case] block: Block,
         #[case] borders: Borders,
-        #[case] pos: Position,
+        #[case] pos: TitlePosition,
         #[case] vertical_space: (u16, u16),
     ) {
         let block = block.borders(borders).title_position(pos).title("Test");
@@ -1144,12 +1333,13 @@ mod tests {
                 titles: Vec::new(),
                 titles_style: Style::new(),
                 titles_alignment: Alignment::Left,
-                titles_position: Position::Top,
+                titles_position: TitlePosition::Top,
                 borders: Borders::NONE,
                 border_style: Style::new(),
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
                 padding: Padding::ZERO,
+                merge_borders: MergeStrategy::Replace,
             }
         );
     }
@@ -1164,7 +1354,7 @@ mod tests {
             // .border_style(_DEFAULT_STYLE)    // no longer const
             // .title_style(_DEFAULT_STYLE)     // no longer const
             .title_alignment(Alignment::Left)
-            .title_position(Position::Top)
+            .title_position(TitlePosition::Top)
             .padding(_DEFAULT_PADDING);
     }
 
@@ -1223,29 +1413,6 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
         );
-    }
-
-    #[test]
-    fn title() {
-        use HorizontalAlignment::*;
-        use Position::*;
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
-        #[expect(deprecated)] // until Title is removed
-        Block::bordered()
-            .title(Title::from("A").position(Top).alignment(Left))
-            .title(Title::from("B").position(Top).alignment(Center))
-            .title(Title::from("C").position(Top).alignment(Right))
-            .title(Title::from("D").position(Bottom).alignment(Left))
-            .title(Title::from("E").position(Bottom).alignment(Center))
-            .title(Title::from("F").position(Bottom).alignment(Right))
-            .render(buffer.area, &mut buffer);
-        #[rustfmt::skip]
-        let expected = Buffer::with_lines([
-            "┌A───B───C┐",
-            "│         │",
-            "└D───E───F┘",
-        ]);
-        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1317,7 +1484,7 @@ mod tests {
     fn title_position() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
         Block::new()
-            .title_position(Position::Bottom)
+            .title_position(TitlePosition::Bottom)
             .title("test")
             .render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["    ", "test"]));
@@ -1646,5 +1813,346 @@ mod tests {
             "3BBBBBBBB4",
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace)]
+    #[case::exact(MergeStrategy::Exact)]
+    #[case::fuzzy(MergeStrategy::Fuzzy)]
+    fn render_partial_borders(#[case] strategy: MergeStrategy) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌────────┐",
+            "│        │",
+            "└────────┘",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::LEFT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌─────────",
+            "│         ",
+            "│         ",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::RIGHT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "─────────┐",
+            "         │",
+            "         │",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::BOTTOM | Borders::LEFT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "│         ",
+            "│         ",
+            "└─────────",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::BOTTOM | Borders::RIGHT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "         │",
+            "         │",
+            "─────────┘",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::TOP | Borders::BOTTOM)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "──────────",
+            "          ",
+            "──────────",
+        ]);
+        assert_eq!(buffer, expected);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::new()
+            .borders(Borders::LEFT | Borders::RIGHT)
+            .merge_borders(strategy)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "│        │",
+            "│        │",
+            "│        │",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    /// Renders a series of blocks with all the possible border types and merges them according to
+    /// the specified strategy. The resulting buffer is compared against the expected output for
+    /// each merge strategy.
+    ///
+    /// At some point, it might be convenient to replace the manual `include_str!` calls with
+    /// [insta](https://crates.io/crates/insta)
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, include_str!("../tests/block/merge_replace.txt"))]
+    #[case::exact(MergeStrategy::Exact, include_str!("../tests/block/merge_exact.txt"))]
+    #[case::fuzzy(MergeStrategy::Fuzzy, include_str!("../tests/block/merge_fuzzy.txt"))]
+    fn render_merged_borders(#[case] strategy: MergeStrategy, #[case] expected: &'static str) {
+        let border_types = [
+            BorderType::Plain,
+            BorderType::Rounded,
+            BorderType::Thick,
+            BorderType::Double,
+            BorderType::LightDoubleDashed,
+            BorderType::HeavyDoubleDashed,
+            BorderType::LightTripleDashed,
+            BorderType::HeavyTripleDashed,
+            BorderType::LightQuadrupleDashed,
+            BorderType::HeavyQuadrupleDashed,
+        ];
+        let rects = [
+            // touching at corners
+            (Rect::new(0, 0, 5, 5), Rect::new(4, 4, 5, 5)),
+            // overlapping
+            (Rect::new(10, 0, 5, 5), Rect::new(12, 2, 5, 5)),
+            // touching vertical edges
+            (Rect::new(18, 0, 5, 5), Rect::new(22, 0, 5, 5)),
+            // touching horizontal edges
+            (Rect::new(28, 0, 5, 5), Rect::new(28, 4, 5, 5)),
+        ];
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 43, 1000));
+
+        let mut offset = Offset::ZERO;
+        for (border_type_1, border_type_2) in iproduct!(border_types, border_types) {
+            let title = format!("{border_type_1} + {border_type_2}");
+            let title_area = Rect::new(0, 0, 43, 1).offset(offset);
+            title.render(title_area, &mut buffer);
+            offset.y += 1;
+            for (rect_1, rect_2) in rects {
+                Block::bordered()
+                    .border_type(border_type_1)
+                    .merge_borders(strategy)
+                    .render(rect_1.offset(offset), &mut buffer);
+                Block::bordered()
+                    .border_type(border_type_2)
+                    .merge_borders(strategy)
+                    .render(rect_2.offset(offset), &mut buffer);
+            }
+            offset.y += 9;
+        }
+        pretty_assertions::assert_eq!(Buffer::with_lines(expected.lines()), buffer);
+    }
+
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┗━━━━━━━━━━━┛",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Exact, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┡block btm━━┩",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Fuzzy, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┡block btm━━┩",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    fn merged_titles_bottom_first(#[case] strategy: MergeStrategy, #[case] expected: Buffer) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 13, 5));
+        Block::bordered()
+            .title("block btm")
+            .render(Rect::new(0, 2, 13, 3), &mut buffer);
+        Block::bordered()
+            .title("block top")
+            .border_type(BorderType::Thick)
+            .merge_borders(strategy)
+            .render(Rect::new(0, 0, 13, 3), &mut buffer);
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::replace(MergeStrategy::Replace, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┌block btm──┐",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Exact, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┞block btm──┦",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    #[case::replace(MergeStrategy::Fuzzy, Buffer::with_lines([
+            "┏block top━━┓",
+            "┃           ┃",
+            "┞block btm──┦",
+            "│           │",
+            "└───────────┘",
+        ])
+    )]
+    fn merged_titles_top_first(#[case] strategy: MergeStrategy, #[case] expected: Buffer) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 13, 5));
+        Block::bordered()
+            .title("block top")
+            .border_type(BorderType::Thick)
+            .render(Rect::new(0, 0, 13, 3), &mut buffer);
+        Block::bordered()
+            .title("block btm")
+            .merge_borders(strategy)
+            .render(Rect::new(0, 2, 13, 3), &mut buffer);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn left_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L12")
+            .title("L34")
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L12 L34   "]));
+    }
+
+    #[test]
+    fn left_titles_truncated() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L12345")
+            .title("L67890")
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L12345 L67"]));
+    }
+
+    #[test]
+    fn center_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("C12").centered())
+            .title(Line::from("C34").centered())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" C12 C34  "]));
+    }
+
+    #[test]
+    fn center_titles_truncated() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("C12345").centered())
+            .title(Line::from("C67890").centered())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["12345 C678"]));
+    }
+
+    #[test]
+    fn right_titles() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("R12").right_aligned())
+            .title(Line::from("R34").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["   R12 R34"]));
+    }
+
+    #[test]
+    fn right_titles_truncated() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("R12345").right_aligned())
+            .title(Line::from("R67890").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["345 R67890"]));
+    }
+
+    #[test]
+    fn center_title_truncates_left_title() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L1234")
+            .title(Line::from("C5678").centered())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L1C5678   "]));
+    }
+
+    #[test]
+    fn right_title_truncates_left_title() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title("L12345")
+            .title(Line::from("R67890").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["L123R67890"]));
+    }
+
+    #[test]
+    fn right_title_truncates_center_title() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        Block::new()
+            .title(Line::from("C12345").centered())
+            .title(Line::from("R67890").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["  C1R67890"]));
+    }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        // This should not panic, even if the buffer is too small to render the block.
+        Block::bordered()
+            .title("I'm too big for this buffer")
+            .padding(Padding::uniform(10))
+            .render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["┌"]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        // This should not panic, even if the buffer has zero size.
+        Block::bordered()
+            .title("I'm too big for this buffer")
+            .padding(Padding::uniform(10))
+            .render(buffer.area, &mut buffer);
     }
 }

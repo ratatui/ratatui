@@ -3,3 +3,4 @@ target
 *.rs.rustfmt
 .gdb_history
 .idea/
+.env

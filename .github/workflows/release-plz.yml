@@ -1,8 +1,8 @@
 name: Release-plz
 
-permissions:
-  pull-requests: write
-  contents: write
+# Set the permissions of the github token to the minimum and only enable what is needed
+# See https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions
+permissions: {}
 
 on:
   push:
@@ -14,26 +14,39 @@ jobs:
   # Release unpublished packages.
   release-plz-release:
     name: Release-plz release
+    environment: release
+    permissions:
+      pull-requests: write
+      contents: write
+      id-token: write
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'ratatui' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # master
+        with:
+          toolchain: stable
+      - uses: rust-lang/crates-io-auth-action@041cce5b4b821e6b0ebc9c9c38b58cac4e34dcc2 # v1
+        id: auth
       - name: Run release-plz
-        uses: release-plz/action@v0.5
+        uses: release-plz/action@d529f731ae3e89610ada96eda34e5c6ba3b12214 # v0.5
         with:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
   # Create a PR with the new versions and changelog, preparing the next release.
   release-plz-pr:
     name: Release-plz PR
+    permissions:
+      pull-requests: write
+      contents: write
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'ratatui' }}
     concurrency:
@@ -41,13 +54,16 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6d653acede28d24f02e3cd41383119e8b1b35921 # master
+        with:
+          toolchain: stable
       - name: Run release-plz
-        uses: release-plz/action@v0.5
+        uses: release-plz/action@d529f731ae3e89610ada96eda34e5c6ba3b12214 # v0.5
         with:
           command: release-pr
         env:

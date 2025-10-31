@@ -1,4 +1,4 @@
-use line_clipping::{cohen_sutherland, LineSegment, Point, Window};
+use line_clipping::{LineSegment, Point, Window, cohen_sutherland};
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape};
@@ -143,7 +143,7 @@ fn draw_line_high(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: us
 mod tests {
     use ratatui_core::buffer::Buffer;
     use ratatui_core::layout::Rect;
-    use ratatui_core::style::{Style, Stylize};
+    use ratatui_core::style::Style;
     use ratatui_core::symbols::Marker;
     use ratatui_core::widgets::Widget;
     use rstest::rstest;

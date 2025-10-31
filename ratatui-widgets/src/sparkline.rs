@@ -78,7 +78,7 @@ pub struct Sparkline<'a> {
     /// widget uses the max of the dataset)
     max: Option<u64>,
     /// A set of bar symbols used to represent the give data
-    bar_set: symbols::bar::Set,
+    bar_set: symbols::bar::Set<'a>,
     /// The direction to render the sparkline, either from left to right, or from right to left
     direction: RenderDirection,
 }
@@ -87,6 +87,7 @@ pub struct Sparkline<'a> {
 ///
 /// See [`Sparkline::direction`].
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum RenderDirection {
     /// The first value is on the left, going to the right
     #[default]
@@ -166,9 +167,9 @@ impl<'a> Sparkline<'a> {
     /// Create a `Sparkline` from a slice of `u64`:
     ///
     /// ```
+    /// use ratatui::Frame;
     /// use ratatui::layout::Rect;
     /// use ratatui::widgets::Sparkline;
-    /// use ratatui::Frame;
     ///
     /// # fn ui(frame: &mut Frame) {
     /// # let area = Rect::default();
@@ -229,7 +230,7 @@ impl<'a> Sparkline<'a> {
     /// Can be [`symbols::bar::THREE_LEVELS`], [`symbols::bar::NINE_LEVELS`] (default) or a custom
     /// [`Set`](symbols::bar::Set).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> Self {
+    pub const fn bar_set(mut self, bar_set: symbols::bar::Set<'a>) -> Self {
         self.bar_set = bar_set;
         self
     }
@@ -697,5 +698,26 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
         );
+    }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let sparkline = Sparkline::default()
+            .data([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+            .max(10);
+        // This should not panic, even if the buffer is too small to render the sparkline.
+        sparkline.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let sparkline = Sparkline::default()
+            .data([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+            .max(10);
+        // This should not panic, even if the buffer has zero size.
+        sparkline.render(buffer.area, &mut buffer);
     }
 }

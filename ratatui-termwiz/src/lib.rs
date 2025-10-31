@@ -1,6 +1,5 @@
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
@@ -11,13 +10,35 @@
 //!
 //! [`Backend`]: trait.Backend.html
 //! [Termwiz]: https://crates.io/crates/termwiz
+//!
+//! # Crate Organization
+//!
+//! `ratatui-termwiz` is part of the Ratatui workspace that was modularized in version 0.30.0.
+//! This crate provides the [Termwiz] backend implementation for Ratatui.
+//!
+//! **When to use `ratatui-termwiz`:**
+//!
+//! - You need fine-grained control over dependencies
+//! - Building a widget library that needs backend functionality
+//! - You want to use only the Termwiz backend without other backends
+//! - You need Termwiz's advanced terminal capabilities
+//!
+//! **When to use the main [`ratatui`] crate:**
+//!
+//! - Building applications (recommended - includes termwiz backend when enabled)
+//! - You want the convenience of having everything available
+//!
+//! For detailed information about the workspace organization, see [ARCHITECTURE.md].
+//!
+//! [`ratatui`]: https://crates.io/crates/ratatui
+//! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
 use std::error::Error;
 use std::io;
 
-use ratatui_core::backend::{Backend, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -46,8 +67,8 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// # Example
 ///
 /// ```rust,no_run
-/// use ratatui::backend::TermwizBackend;
 /// use ratatui::Terminal;
+/// use ratatui::backend::TermwizBackend;
 ///
 /// let backend = TermwizBackend::new()?;
 /// let mut terminal = Terminal::new(backend)?;
@@ -113,12 +134,14 @@ impl TermwizBackend {
     }
 
     /// Returns a mutable reference to the buffered terminal used by the backend.
-    pub fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
+    pub const fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
         &mut self.buffered_terminal
     }
 }
 
 impl Backend for TermwizBackend {
+    type Error = io::Error;
+
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -220,6 +243,18 @@ impl Backend for TermwizBackend {
         self.buffered_terminal
             .add_change(Change::ClearScreen(termwiz::color::ColorAttribute::Default));
         Ok(())
+    }
+
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
+        match clear_type {
+            ClearType::All => self.clear(),
+            ClearType::AfterCursor
+            | ClearType::BeforeCursor
+            | ClearType::CurrentLine
+            | ClearType::UntilNewLine => Err(io::Error::other(format!(
+                "clear_type [{clear_type:?}] not supported with this backend"
+            ))),
+        }
     }
 
     fn size(&self) -> io::Result<Size> {
@@ -766,8 +801,6 @@ mod tests {
 
     #[test]
     fn from_cell_attribute_for_style() {
-        use ratatui_core::style::Stylize;
-
         #[cfg(feature = "underline-color")]
         const STYLE: Style = Style::new()
             .underline_color(Color::Reset)

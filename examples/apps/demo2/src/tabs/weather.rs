@@ -2,13 +2,13 @@ use itertools::Itertools;
 use palette::Okhsv;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Direction, Layout, Margin, Rect};
-use ratatui::style::{Color, Style, Stylize};
+use ratatui::style::{Color, Style};
 use ratatui::symbols;
 use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
 use ratatui::widgets::{Bar, BarChart, BarGroup, Block, Clear, LineGauge, Padding, Widget};
 use time::OffsetDateTime;
 
-use crate::{color_from_oklab, RgbSwatch, THEME};
+use crate::{RgbSwatch, THEME, color_from_oklab};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct WeatherTab {
@@ -41,16 +41,16 @@ impl Widget for WeatherTab {
             horizontal: 2,
             vertical: 1,
         });
-        let [main, _, gauges] = Layout::vertical([
+        let tab_layout = Layout::vertical([
             Constraint::Min(0),
             Constraint::Length(1),
             Constraint::Length(1),
-        ])
-        .areas(area);
-        let [calendar, charts] =
-            Layout::horizontal([Constraint::Length(23), Constraint::Min(0)]).areas(main);
-        let [simple, horizontal] =
-            Layout::vertical([Constraint::Length(29), Constraint::Min(0)]).areas(charts);
+        ]);
+        let [main, _, gauges] = area.layout(&tab_layout);
+        let main_layout = Layout::horizontal([Constraint::Length(23), Constraint::Min(0)]);
+        let [calendar, charts] = main.layout(&main_layout);
+        let charts_layout = Layout::vertical([Constraint::Length(29), Constraint::Min(0)]);
+        let [simple, horizontal] = charts.layout(&charts_layout);
 
         render_calendar(calendar, buf);
         render_simple_barchart(simple, buf);

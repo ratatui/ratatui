@@ -10,14 +10,26 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [Unreleased](#unreleased)
+- [v0.30.0 Unreleased](#v0300-unreleased)
+  - `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps
+    are twice the size of first and last elements
+  - `block::Title` no longer exists
   - The `From` impls for backend types are now replaced with more specific traits
   - `FrameExt` trait for `unstable-widget-ref` feature
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
-  - The MSRV is now 1.81.0
+  - The MSRV is now 1.85.0
+  - `Backend` now requires an associated `Error` type and `clear_region` method
+  - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
+  - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
+  - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache`
+    feature is enabled
+  - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
+    `Terminal`
+  - Support a broader range for `unicode-width` version
 - [v0.29.0](#v0290)
-  - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
+  - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
+    const
   - Removed public fields from `Rect` iterators
   - `Line` now implements `From<Cow<str>`
   - `Table::highlight_style` is now `Table::row_highlight_style`
@@ -78,14 +90,156 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## Unreleased (0.30.0)
+## v0.30.0 Unreleased
 
-## The MSRV is now 1.81.0 ([#1786])
+### `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps ([#1952])
 
-[#1786]: https://github.com/ratatui/ratatui/pull/1786
+[#1952]: https://github.com/ratatui/ratatui/pull/1952
 
-The minimum supported Rust version (MSRV) is now 1.81.0. This is due to the use of `#[expect]` in
-the codebase, which is only available in Rust 1.81.0 and later.
+The old `Flex::SpaceAround` behavior has been changed to distribute space evenly around each
+element, with the middle spacers being twice the size of the first and last one. The old
+behavior can be achieved by using `Flex::SpaceEvenly` instead.
+
+```diff
+- let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::SpaceAround).split(area);
++ let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::SpaceEvenly).split(area);
+```
+
+### `block::Title` no longer exists ([#1926])
+
+[#1926]: https://github.com/ratatui/ratatui/pull/1926
+
+The title alignment is better expressed in the `Line` as this fits more coherently with the rest of
+the library.
+
+- `widgets::block` is no longer exported
+- `widgets::block::Title` no longer exists
+- `widgets::block::Position` is now `widgets::TitlePosition`
+- `Block::title()` now accepts `Into::<Line>` instead of `Into<Title>`
+- `BlockExt` is now exported at widgets::`BlockExt` instead of `widgets::block::BlockExt`
+
+```diff
+- use ratatui::widgets::{Block, block::{Title, Position}};
++ use ratatui::widgets::{Block, TitlePosition};
+
+let block = Block::default()
+-    .title(Title::from("Hello"))
+-    .title(Title::from("Hello").position(Position::Bottom).alignment(Alignment::Center))
+-    .title_position(Position::Bottom);
++    .title(Line::from("Hello"))
++    .title_bottom(Line::from("Hello").centered());
++    .title_position(TitlePosition::Bottom);
+
+- use ratatui::widgets::block::BlockExt;
++ use ratatui::widgets::BlockExt;
+
+struct MyWidget {
+    block: Option<Block>,
+}
+
+impl Widget for &MyWidget {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.as_ref().render(area, buf);
+        let area = self.block.inner_if_some();
+        // ...
+    }
+}
+```
+
+### `Style` no longer implements `Styled` ([#1572])
+
+[#1572]: https://github.com/ratatui/ratatui/pull/1572
+
+Any calls to methods implemented by the blanket implementation of `Stylize` are now defined directly
+on `Style`. Remove the `Stylize` import if it is no longer used by your code.
+
+```diff
+- use ratatui::style::Stylize;
+
+let style = Style::new().red();
+```
+
+The `reset()` method does not have a direct replacement, as it clashes with the existing `reset()`
+method. Use the `Style::reset()` method instead.
+
+```diff
+- some_style.reset();
++ Style::reset();
+```
+
+### Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping `Terminal` ([#1794])
+
+[#1794]: https://github.com/ratatui/ratatui/pull/1794
+
+Since disabling `default-features` disables `std`, printing to stderr is not possible. It is
+recommended to re-enable `std` when not using Ratatui in `no_std` environment.
+
+### `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache` feature is enabled ([#1795])
+
+[#1795]: https://github.com/ratatui/ratatui/pull/1795
+
+Previously, `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` were available independently of
+enabled feature flags.
+
+### Disabling `default-features` will now disable layout cache, which can have a negative impact on performance ([#1795])
+
+Layout cache is now opt-in in `ratatui-core` and enabled by default in `ratatui`. If app doesn't
+make use of `no_std`-compatibility, and disables `default-feature`, it is recommended to explicitly
+re-enable layout cache. Not doing so may impact performance.
+
+```diff
+- ratatui = { version = "0.29.0", default-features = false }
++ ratatui = { version = "0.30.0", default-features = false, features = ["layout-cache"] }
+```
+
+### `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error` ([#1823])
+
+[#1823]: https://github.com/ratatui/ratatui/pull/1823
+
+Since `TestBackend` never fails, it now uses `Infallible` as associated `Error`. This may require
+changes in test cases that use `TestBackend`.
+
+### `Backend` now requires an associated `Error` type and `clear_region` method ([#1778])
+
+[#1778]: https://github.com/ratatui/ratatui/pull/1778
+
+Custom `Backend` implementations must now define an associated `Error` type for method `Result`s
+and implement the `clear_region` method, which no longer has a default implementation.
+
+This change was made to provide greater flexibility for custom backends, particularly to remove the
+explicit dependency on `std::io` for backends that want to support `no_std` targets.
+
+If your app or library uses the `Backend` trait directly - for example, by providing a generic
+implementation for many backends - you may need to update the referenced error type.
+
+```diff
+- fn run<B: Backend>(mut terminal: Terminal<B>) -> io::Result<()> {
++ fn run<B: Backend>(mut terminal: Terminal<B>) -> Result<(), B::Error> {
+```
+
+Alternatively, you can explicitly require the associated error to be `std::io::Error`. This approach
+may require fewer changes in user code but is generally not recommended, as it limits compatibility
+with third-party backends. Additionally, the error type used by built-in backends may or may not
+change in the future, making this approach less future-proof compared to the previous one.
+
+```diff
+- fn run<B: Backend>(mut terminal: Terminal<B>) -> io::Result<()> {
++ fn run<B: Backend<Error = io::Error>>(mut terminal: Terminal<B>) -> io::Result<()> {
+```
+
+If your application uses a concrete backend implementation, prefer specifying it explicitly
+instead.
+
+```diff
+- fn run<B: Backend>(mut terminal: Terminal<B>) -> io::Result<()> {
++ fn run(mut terminal: DefaultTerminal) -> io::Result<()> {
+```
+
+### The MSRV is now 1.85.0 ([#1860])
+
+[#1860]: https://github.com/ratatui/ratatui/pull/1860
+
+The minimum supported Rust version (MSRV) is now 1.85.0.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 
@@ -223,6 +377,17 @@ The `termwiz` backend is upgraded from 0.22.0 to 0.23.0.
 
 This release has a few fixes for hyperlinks and input handling, plus some dependency updates.
 See the [commits](https://github.com/wezterm/wezterm/commits/main/termwiz) for more details.
+
+### Support a broader range for `unicode-width` version ([#1999])
+
+[#1999]: https://github.com/ratatui/ratatui/pull/1999
+
+Ratatui's dependency on `unicode-width`, previously pinned to 0.2.0, has
+expanded to allow version 0.2.1. This comes with 2 behavior changes described in
+[unicode-width#61] and [unicode-width#74].
+
+[unicode-width#61]: https://github.com/unicode-rs/unicode-width/pull/61
+[unicode-width#74]: https://github.com/unicode-rs/unicode-width/pull/74
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 

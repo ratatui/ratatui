@@ -22,7 +22,7 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget};
-use ratatui::{symbols, Frame, Terminal, TerminalOptions, Viewport};
+use ratatui::{Frame, Terminal, TerminalOptions, Viewport, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -158,16 +158,19 @@ fn downloads() -> Downloads {
 }
 
 #[expect(clippy::needless_pass_by_value)]
-fn run(
-    terminal: &mut Terminal<impl Backend>,
+fn run<B: Backend>(
+    terminal: &mut Terminal<B>,
     workers: Vec<Worker>,
     mut downloads: Downloads,
     rx: mpsc::Receiver<Event>,
-) -> Result<()> {
+) -> Result<()>
+where
+    B::Error: Send + Sync + 'static,
+{
     let mut redraw = true;
     loop {
         if redraw {
-            terminal.draw(|frame| draw(frame, &downloads))?;
+            terminal.draw(|frame| render(frame, &downloads))?;
         }
         redraw = true;
 
@@ -219,7 +222,7 @@ fn run(
     Ok(())
 }
 
-fn draw(frame: &mut Frame, downloads: &Downloads) {
+fn render(frame: &mut Frame, downloads: &Downloads) {
     let area = frame.area();
 
     let block = Block::new().title(Line::from("Progress").centered());
@@ -227,8 +230,8 @@ fn draw(frame: &mut Frame, downloads: &Downloads) {
 
     let vertical = Layout::vertical([Constraint::Length(2), Constraint::Length(4)]).margin(1);
     let horizontal = Layout::horizontal([Constraint::Percentage(20), Constraint::Percentage(80)]);
-    let [progress_area, main] = vertical.areas(area);
-    let [list_area, gauge_area] = horizontal.areas(main);
+    let [progress_area, main] = area.layout(&vertical);
+    let [list_area, gauge_area] = main.layout(&horizontal);
 
     // total progress
     let done = NUM_DOWNLOADS - downloads.pending.len() - downloads.in_progress.len();

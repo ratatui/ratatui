@@ -1,10 +1,10 @@
+use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders};
-use ratatui::Terminal;
 use rstest::rstest;
 
 #[test]
@@ -50,27 +50,28 @@ fn widgets_block_titles_overlap() {
         terminal.backend().assert_buffer_lines(expected);
     }
 
-    // Left overrides the center
+    // Center overrides left titles
     test_case(
         Block::new()
             .title(Line::from("aaaaa").left_aligned())
             .title(Line::from("bbb").centered())
             .title(Line::from("ccc").right_aligned()),
         Rect::new(0, 0, 10, 1),
-        ["aaaaab ccc"],
+        ["aaabbb ccc"],
     );
 
-    // Left alignment overrides the center alignment which overrides the right alignment
+    // Right alignment overrides the center alignment which overrides the left alignment
     test_case(
         Block::new()
             .title(Line::from("aaaaa").left_aligned())
             .title(Line::from("bbbbb").centered())
             .title(Line::from("ccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
-        ["aaaaabbbccc"],
+        ["aaabbbccccc"],
     );
 
-    // Multiple left alignment overrides the center alignment and the right alignment
+    // Center alignment overwrites multiple left alignment, right alignment overwrites center
+    // alignment
     test_case(
         Block::new()
             .title(Line::from("aaaaa").left_aligned())
@@ -78,16 +79,16 @@ fn widgets_block_titles_overlap() {
             .title(Line::from("bbbbb").centered())
             .title(Line::from("ccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
-        ["aaaaabaaaaa"],
+        ["aaabbbccccc"],
     );
 
-    // The right alignment doesn't override the center alignment, but pierces through it
+    // Right alignment overrides the center alignment
     test_case(
         Block::new()
             .title(Line::from("bbbbb").centered())
             .title(Line::from("ccccccccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
-        ["cccbbbbbccc"],
+        ["ccccccccccc"],
     );
 }
 

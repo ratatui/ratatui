@@ -2,8 +2,8 @@
 use std::error::Error;
 use std::time::{Duration, Instant};
 
-use ratatui::backend::TermwizBackend;
 use ratatui::Terminal;
+use ratatui::backend::TermwizBackend;
 use termwiz::input::{InputEvent, KeyCode};
 use termwiz::terminal::Terminal as TermwizTerminal;
 
@@ -36,7 +36,7 @@ fn run_app(
 ) -> Result<(), Box<dyn Error>> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|frame| ui::draw(frame, &mut app))?;
+        terminal.draw(|frame| ui::render(frame, &mut app))?;
 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if let Some(input) = terminal

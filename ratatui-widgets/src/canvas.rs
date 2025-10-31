@@ -34,6 +34,8 @@ pub use self::map::{Map, MapResolution};
 pub use self::points::Points;
 pub use self::rectangle::Rectangle;
 use crate::block::{Block, BlockExt};
+#[cfg(not(feature = "std"))]
+use crate::polyfills::F64Polyfills;
 
 mod circle;
 mod line;
@@ -126,7 +128,7 @@ impl BrailleGrid {
     /// Create a new `BrailleGrid` with the given width and height measured in terminal columns and
     /// rows respectively.
     fn new(width: u16, height: u16) -> Self {
-        let length = usize::from(width * height);
+        let length = usize::from(width) * usize::from(height);
         Self {
             width,
             height,
@@ -154,7 +156,10 @@ impl Grid for BrailleGrid {
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
-        let index = y / 4 * self.width as usize + x / 2;
+        let index = y
+            .saturating_div(4)
+            .saturating_mul(self.width as usize)
+            .saturating_add(x.saturating_div(2));
         // using get_mut here because we are indexing the vector with usize values
         // and we want to make sure we don't panic if the index is out of bounds
         if let Some(c) = self.utf16_code_points.get_mut(index) {
@@ -188,7 +193,7 @@ impl CharGrid {
     /// Create a new `CharGrid` with the given width and height measured in terminal columns and
     /// rows respectively.
     fn new(width: u16, height: u16, cell_char: char) -> Self {
-        let length = usize::from(width * height);
+        let length = usize::from(width) * usize::from(height);
         Self {
             width,
             height,
@@ -217,7 +222,7 @@ impl Grid for CharGrid {
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
-        let index = y * self.width as usize + x;
+        let index = y.saturating_mul(self.width as usize).saturating_add(x);
         // using get_mut here because we are indexing the vector with usize values
         // and we want to make sure we don't panic if the index is out of bounds
         if let Some(c) = self.cells.get_mut(index) {
@@ -259,7 +264,7 @@ impl HalfBlockGrid {
         Self {
             width,
             height,
-            pixels: vec![vec![Color::Reset; width as usize]; height as usize * 2],
+            pixels: vec![vec![Color::Reset; width as usize]; (height as usize) * 2],
         }
     }
 }
@@ -436,7 +441,7 @@ impl Painter<'_, '_> {
     /// let mut painter = Painter::from(&mut ctx);
     /// assert_eq!(painter.bounds(), (&[0.0, 2.0], &[0.0, 2.0]));
     /// ```
-    pub fn bounds(&self) -> (&[f64; 2], &[f64; 2]) {
+    pub const fn bounds(&self) -> (&[f64; 2], &[f64; 2]) {
         (&self.context.x_bounds, &self.context.y_bounds)
     }
 }
@@ -594,8 +599,8 @@ impl<'a> Context<'a> {
 ///
 /// ```
 /// use ratatui::style::Color;
-/// use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
 /// use ratatui::widgets::Block;
+/// use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
 ///
 /// Canvas::default()
 ///     .block(Block::bordered().title("Canvas"))
@@ -934,5 +939,64 @@ mod tests {
                 •••••"
             ),
         );
+    }
+
+    // The canvas methods work a lot with arithmetic so here we enter various width and height
+    // values to check if there are any integer overflows we just initialize the canvas painters
+    #[test]
+    fn check_canvas_paint_max() {
+        let mut b_grid = BrailleGrid::new(u16::MAX, 2);
+        let mut c_grid = CharGrid::new(u16::MAX, 2, 'd');
+
+        let max = u16::MAX as usize;
+
+        b_grid.paint(0, 0, Color::Red);
+        b_grid.paint(0, max, Color::Red);
+        b_grid.paint(max, 0, Color::Red);
+        b_grid.paint(max, max, Color::Red);
+
+        c_grid.paint(0, 0, Color::Red);
+        c_grid.paint(0, max, Color::Red);
+        c_grid.paint(max, 0, Color::Red);
+        c_grid.paint(max, max, Color::Red);
+    }
+
+    // We delibately cause integer overflow to check if we don't panic and don't get weird behavior
+    #[test]
+    fn check_canvas_paint_overflow() {
+        let mut b_grid = BrailleGrid::new(u16::MAX, 3);
+        let mut c_grid = CharGrid::new(u16::MAX, 3, 'd');
+
+        let max = u16::MAX as usize + 10;
+
+        // see if we can paint outside bounds
+        b_grid.paint(max, max, Color::Red);
+        c_grid.paint(max, max, Color::Red);
+        // see if we can paint usize max bounds
+        b_grid.paint(usize::MAX, usize::MAX, Color::Red);
+        c_grid.paint(usize::MAX, usize::MAX, Color::Red);
+    }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let canvas = Canvas::default()
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .paint(|_ctx| {});
+        // This should not panic, even if the buffer is too small to render the canvas.
+        canvas.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let canvas = Canvas::default()
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .paint(|_ctx| {});
+        // This should not panic, even if the buffer has zero size.
+        canvas.render(buffer.area, &mut buffer);
     }
 }

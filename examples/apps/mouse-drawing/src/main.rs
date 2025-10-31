@@ -17,14 +17,11 @@ use crossterm::execute;
 use ratatui::layout::{Position, Rect, Size};
 use ratatui::style::{Color, Stylize};
 use ratatui::text::Line;
-use ratatui::{symbols, DefaultTerminal, Frame};
+use ratatui::{DefaultTerminal, Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = MouseDrawingApp::default().run(terminal);
-    ratatui::restore();
-    result
+    ratatui::run(|terminal| MouseDrawingApp::default().run(terminal))
 }
 
 #[derive(Default)]
@@ -40,7 +37,7 @@ struct MouseDrawingApp {
 }
 
 impl MouseDrawingApp {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         execute!(std::io::stdout(), EnableMouseCapture)?;
         while !self.should_exit {
             terminal.draw(|frame| self.render(frame))?;
@@ -60,8 +57,11 @@ impl MouseDrawingApp {
     }
 
     /// Quit the app if the user presses 'q' or 'Esc'
-    fn on_key_event(&mut self, event: KeyEvent) {
-        match event.code {
+    fn on_key_event(&mut self, key: KeyEvent) {
+        if !key.is_press() {
+            return;
+        }
+        match key.code {
             KeyCode::Char(' ') => {
                 self.current_color = Color::Rgb(rand::random(), rand::random(), rand::random());
             }

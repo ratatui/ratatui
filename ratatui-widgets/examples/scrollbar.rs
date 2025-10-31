@@ -15,45 +15,40 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{Color, Stylize};
 use ratatui::symbols::scrollbar::Set;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState};
-use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut vertical = ScrollbarState::new(100);
     let mut horizontal = ScrollbarState::new(100);
-    loop {
-        terminal.draw(|frame| draw(frame, &mut vertical, &mut horizontal))?;
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Down | KeyCode::Char('j') => vertical.next(),
-                KeyCode::Up | KeyCode::Char('k') => vertical.prev(),
-                KeyCode::Right | KeyCode::Char('l') => horizontal.next(),
-                KeyCode::Left | KeyCode::Char('h') => horizontal.prev(),
-                _ => {}
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(|frame| render(frame, &mut vertical, &mut horizontal))?;
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => break Ok(()),
+                    KeyCode::Char('j') | KeyCode::Down => vertical.next(),
+                    KeyCode::Char('k') | KeyCode::Up => vertical.prev(),
+                    KeyCode::Char('l') | KeyCode::Right => horizontal.next(),
+                    KeyCode::Char('h') | KeyCode::Left => horizontal.prev(),
+                    _ => {}
+                }
             }
         }
-    }
+    })
 }
 
-/// Draw the UI with vertical/horizontal scrollbars.
-fn draw(frame: &mut Frame, vertical: &mut ScrollbarState, horizontal: &mut ScrollbarState) {
-    let vertical_layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
-    let [top, main] = vertical_layout.areas(frame.area());
+/// Render the UI with vertical/horizontal scrollbars.
+fn render(frame: &mut Frame, vertical: &mut ScrollbarState, horizontal: &mut ScrollbarState) {
+    let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
+    let [top, main] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Scrollbar Widget").bold(),

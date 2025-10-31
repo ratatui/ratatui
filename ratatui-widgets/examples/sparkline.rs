@@ -17,41 +17,36 @@
 use core::time::Duration;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event};
+use crossterm::event;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{RenderDirection, Sparkline};
-use ratatui::{symbols, DefaultTerminal, Frame};
+use ratatui::{Frame, symbols};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
-
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(draw)?;
-        if event::poll(Duration::from_millis(16))? && matches!(event::read()?, Event::Key(_)) {
-            break Ok(());
+    let frame_timeout = Duration::from_secs_f64(1.0 / 60.0); // run at 60 FPS
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(render)?;
+            if event::poll(frame_timeout)? && event::read()?.is_key_press() {
+                break Ok(());
+            }
         }
-    }
+    })
 }
 
-/// Draw the UI with various sparklines.
-fn draw(frame: &mut Frame) {
-    let vertical = Layout::vertical([
+/// Render the UI with various sparklines.
+fn render(frame: &mut Frame) {
+    let constraints = [
         Constraint::Length(1),
         Constraint::Max(2),
         Constraint::Fill(1),
         Constraint::Fill(1),
-    ])
-    .spacing(1);
-    let [top, first, second, _] = vertical.areas(frame.area());
+    ];
+    let layout = Layout::vertical(constraints).spacing(1);
+    let [top, first, second, _] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Sparkline Widget").bold(),

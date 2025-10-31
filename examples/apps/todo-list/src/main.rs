@@ -6,7 +6,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, KeyCode, KeyEvent};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::palette::tailwind::{BLUE, GREEN, SLATE};
@@ -16,7 +16,7 @@ use ratatui::widgets::{
     Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
     StatefulWidget, Widget, Wrap,
 };
-use ratatui::{symbols, DefaultTerminal};
+use ratatui::{DefaultTerminal, symbols};
 
 const TODO_HEADER_STYLE: Style = Style::new().fg(SLATE.c100).bg(BLUE.c800);
 const NORMAL_ROW_BG: Color = SLATE.c950;
@@ -27,10 +27,7 @@ const COMPLETED_TEXT_FG_COLOR: Color = GREEN.c500;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 /// This struct holds the current state of the app. In particular, it has the `todo_list` field
@@ -67,12 +64,36 @@ impl Default for App {
         Self {
             should_exit: false,
             todo_list: TodoList::from_iter([
-                (Status::Todo, "Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust"),
-                (Status::Completed, "Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui."),
-                (Status::Todo, "Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!"),
-                (Status::Todo, "Walk with your dog", "Max is bored, go walk with him!"),
-                (Status::Completed, "Pay the bills", "Pay the train subscription!!!"),
-                (Status::Completed, "Refactor list example", "If you see this info that means I completed this task!"),
+                (
+                    Status::Todo,
+                    "Rewrite everything with Rust!",
+                    "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust",
+                ),
+                (
+                    Status::Completed,
+                    "Rewrite all of your tui apps with Ratatui",
+                    "Yes, you heard that right. Go and replace your tui with Ratatui.",
+                ),
+                (
+                    Status::Todo,
+                    "Pet your cat",
+                    "Minnak loves to be pet by you! Don't forget to pet and give some treats!",
+                ),
+                (
+                    Status::Todo,
+                    "Walk with your dog",
+                    "Max is bored, go walk with him!",
+                ),
+                (
+                    Status::Completed,
+                    "Pay the bills",
+                    "Pay the train subscription!!!",
+                ),
+                (
+                    Status::Completed,
+                    "Refactor list example",
+                    "If you see this info that means I completed this task!",
+                ),
             ]),
         }
     }
@@ -100,10 +121,10 @@ impl TodoItem {
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while !self.should_exit {
             terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
-            if let Event::Key(key) = event::read()? {
+            if let Some(key) = event::read()?.as_key_press_event() {
                 self.handle_key(key);
             }
         }
@@ -111,9 +132,6 @@ impl App {
     }
 
     fn handle_key(&mut self, key: KeyEvent) {
-        if key.kind != KeyEventKind::Press {
-            return;
-        }
         match key.code {
             KeyCode::Char('q') | KeyCode::Esc => self.should_exit = true,
             KeyCode::Char('h') | KeyCode::Left => self.select_none(),
@@ -128,7 +146,7 @@ impl App {
         }
     }
 
-    fn select_none(&mut self) {
+    const fn select_none(&mut self) {
         self.todo_list.state.select(None);
     }
 
@@ -139,11 +157,11 @@ impl App {
         self.todo_list.state.select_previous();
     }
 
-    fn select_first(&mut self) {
+    const fn select_first(&mut self) {
         self.todo_list.state.select_first();
     }
 
-    fn select_last(&mut self) {
+    const fn select_last(&mut self) {
         self.todo_list.state.select_last();
     }
 
@@ -160,15 +178,15 @@ impl App {
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [header_area, main_area, footer_area] = Layout::vertical([
+        let main_layout = Layout::vertical([
             Constraint::Length(2),
             Constraint::Fill(1),
             Constraint::Length(1),
-        ])
-        .areas(area);
+        ]);
+        let [header_area, content_area, footer_area] = area.layout(&main_layout);
 
-        let [list_area, item_area] =
-            Layout::vertical([Constraint::Fill(1), Constraint::Fill(1)]).areas(main_area);
+        let content_layout = Layout::vertical([Constraint::Fill(1), Constraint::Fill(1)]);
+        let [list_area, item_area] = content_area.layout(&content_layout);
 
         App::render_header(header_area, buf);
         App::render_footer(footer_area, buf);

@@ -7,45 +7,28 @@
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 /// [OSC 8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event;
 use itertools::Itertools;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Stylize;
 use ratatui::text::{Line, Text};
 use ratatui::widgets::Widget;
-use ratatui::DefaultTerminal;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::new().run(terminal);
-    ratatui::restore();
-    app_result
-}
 
-struct App {
-    hyperlink: Hyperlink<'static>,
-}
+    let text = Line::from(vec!["Example ".into(), "hyperlink".blue()]);
+    let hyperlink = Hyperlink::new(text, "https://example.com");
 
-impl App {
-    fn new() -> Self {
-        let text = Line::from(vec!["Example ".into(), "hyperlink".blue()]);
-        let hyperlink = Hyperlink::new(text, "https://example.com");
-        Self { hyperlink }
-    }
-
-    fn run(self, mut terminal: DefaultTerminal) -> Result<()> {
+    ratatui::run(|terminal| {
         loop {
-            terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.area()))?;
-            if let Event::Key(key) = event::read()? {
-                if matches!(key.code, KeyCode::Char('q') | KeyCode::Esc) {
-                    break;
-                }
+            terminal.draw(|frame| frame.render_widget(&hyperlink, frame.area()))?;
+            if event::read()?.is_key_press() {
+                break Ok(());
             }
         }
-        Ok(())
-    }
+    })
 }
 
 /// A hyperlink widget that renders a hyperlink in the terminal using [OSC 8].

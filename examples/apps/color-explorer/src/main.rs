@@ -9,44 +9,37 @@
 //! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event;
 use itertools::Itertools;
+use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = run(terminal);
-    ratatui::restore();
-    app_result
-}
-
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    loop {
-        terminal.draw(draw)?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(render)?;
+            if event::read()?.is_key_press() {
                 return Ok(());
             }
         }
-    }
+    })
 }
 
-fn draw(frame: &mut Frame) {
-    let layout = Layout::vertical([
+fn render(frame: &mut Frame) {
+    let [named, indexed_colors, indexed_greys] = Layout::vertical([
         Constraint::Length(30),
         Constraint::Length(17),
         Constraint::Length(2),
     ])
-    .split(frame.area());
+    .areas(frame.area());
 
-    render_named_colors(frame, layout[0]);
-    render_indexed_colors(frame, layout[1]);
-    render_indexed_grayscale(frame, layout[2]);
+    render_named_colors(frame, named);
+    render_indexed_colors(frame, indexed_colors);
+    render_indexed_grayscale(frame, indexed_greys);
 }
 
 const NAMED_COLORS: [Color; 16] = [
@@ -89,12 +82,12 @@ fn render_fg_named_colors(frame: &mut Frame, bg: Color, area: Rect) {
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
-    let vertical = Layout::vertical([Constraint::Length(1); 2]).split(inner);
-    let areas = vertical.iter().flat_map(|area| {
-        Layout::horizontal([Constraint::Ratio(1, 8); 8])
-            .split(*area)
-            .to_vec()
-    });
+    let vertical = Layout::vertical([Constraint::Length(1); 2]);
+    let horizontal = Layout::horizontal([Constraint::Ratio(1, 8); 8]);
+    let areas = inner
+        .layout_vec(&vertical)
+        .into_iter()
+        .flat_map(|area| area.layout_vec(&horizontal));
     for (fg, area) in NAMED_COLORS.into_iter().zip(areas) {
         let color_name = fg.to_string();
         let paragraph = Paragraph::new(color_name).fg(fg).bg(bg);
@@ -107,12 +100,12 @@ fn render_bg_named_colors(frame: &mut Frame, fg: Color, area: Rect) {
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
-    let vertical = Layout::vertical([Constraint::Length(1); 2]).split(inner);
-    let areas = vertical.iter().flat_map(|area| {
-        Layout::horizontal([Constraint::Ratio(1, 8); 8])
-            .split(*area)
-            .to_vec()
-    });
+    let vertical = Layout::vertical([Constraint::Length(1); 2]);
+    let horizontal = Layout::horizontal([Constraint::Ratio(1, 8); 8]);
+    let areas = inner
+        .layout_vec(&vertical)
+        .into_iter()
+        .flat_map(|area| area.layout_vec(&horizontal));
     for (bg, area) in NAMED_COLORS.into_iter().zip(areas) {
         let color_name = bg.to_string();
         let paragraph = Paragraph::new(color_name).fg(fg).bg(bg);
@@ -204,7 +197,7 @@ fn title_block(title: String) -> Block<'static> {
         .borders(Borders::TOP)
         .title_alignment(Alignment::Center)
         .border_style(Style::new().dark_gray())
-        .title_style(Style::new().reset())
+        .title_style(Style::reset())
         .title(title)
 }
 

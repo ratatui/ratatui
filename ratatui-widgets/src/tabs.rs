@@ -4,14 +4,15 @@ use alloc::vec::Vec;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
-use ratatui_core::style::{Modifier, Style, Styled};
+use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols;
 use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
+use unicode_width::UnicodeWidthStr;
 
 use crate::block::{Block, BlockExt};
 
-const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVERSED);
+const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().reversed();
 
 /// A widget that displays a horizontal set of Tabs with a single tab selected.
 ///
@@ -125,6 +126,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
     /// [`String`]: alloc::string::String
+    /// [`Modifier::REVERSED`]: ratatui_core::style::Modifier
     pub fn new<Iter>(titles: Iter) -> Self
     where
         Iter: IntoIterator,
@@ -347,7 +349,7 @@ impl<'a> Tabs<'a> {
     where
         T: Into<Line<'a>>,
     {
-        self.padding_left = padding.into();
+        self.padding_right = padding.into();
         self
     }
 }
@@ -442,6 +444,64 @@ where
 {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
         Self::new(iter)
+    }
+}
+
+impl UnicodeWidthStr for Tabs<'_> {
+    /// Returns the width of the rendered tabs.
+    ///
+    /// The width includes the titles, dividers, and padding. It does not include any borders added
+    /// by the optional block.
+    ///
+    /// Characters in the Ambiguous category are considered single-width.
+    ///
+    /// ```
+    /// use ratatui::widgets::Tabs;
+    /// use unicode_width::UnicodeWidthStr;
+    ///
+    /// let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3"]);
+    /// assert_eq!(tabs.width(), 20); // " Tab1 │ Tab2 │ Tab3 "
+    /// ```
+    fn width(&self) -> usize {
+        let titles_width = self.titles.iter().map(Line::width).sum::<usize>();
+        let title_count = self.titles.len();
+        let divider_count = title_count.saturating_sub(1);
+        let divider_width = divider_count.saturating_mul(self.divider.width());
+        let left_padding_width = title_count.saturating_mul(self.padding_left.width());
+        let right_padding_width = title_count.saturating_mul(self.padding_right.width());
+        titles_width + divider_width + left_padding_width + right_padding_width
+    }
+
+    /// Returns the width of the rendered tabs, accounting for CJK characters.
+    ///
+    /// This is probably the wrong method to use in most contexts that Ratatui applications care
+    /// about as it doesn't correlate with the visual representation of most terminals. Consider
+    /// using [`Tabs::width`] instead.
+    ///
+    /// The width includes the titles, dividers, and padding. It does not include any borders added
+    /// by the optional block.
+    ///
+    /// Characters in the Ambiguous category are considered double-width.
+    ///
+    /// ```
+    /// use ratatui::widgets::Tabs;
+    /// use unicode_width::UnicodeWidthStr;
+    ///
+    /// let tabs = Tabs::new(vec!["你", "好", "世界"]);
+    /// assert_eq!("你".width_cjk(), 2);
+    /// assert_eq!("好".width_cjk(), 2);
+    /// assert_eq!("世界".width_cjk(), 4);
+    /// assert_eq!("│".width_cjk(), 2); // this is correct for cjk
+    /// assert_eq!(tabs.width_cjk(), 18); // " 你 │ 好 │ 世界 "
+    /// ```
+    fn width_cjk(&self) -> usize {
+        let titles_width = self.titles.iter().map(Line::width_cjk).sum::<usize>();
+        let title_count = self.titles.len();
+        let divider_count = title_count.saturating_sub(1);
+        let divider_width = divider_count.saturating_mul(self.divider.width_cjk());
+        let left_padding_width = title_count.saturating_mul(self.padding_left.width_cjk());
+        let right_padding_width = title_count.saturating_mul(self.padding_right.width_cjk());
+        titles_width + divider_width + left_padding_width + right_padding_width
     }
 }
 
@@ -554,6 +614,24 @@ mod tests {
     }
 
     #[test]
+    fn render_left_padding() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding_left("---");
+        let mut expected = Buffer::with_lines(["---Tab1 │---Tab2 │---Tab3 │---Tab4      "]);
+        // first tab selected
+        expected.set_style(Rect::new(3, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        test_case(tabs, Rect::new(0, 0, 40, 1), &expected);
+    }
+
+    #[test]
+    fn render_right_padding() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding_right("++");
+        let mut expected = Buffer::with_lines([" Tab1++│ Tab2++│ Tab3++│ Tab4++         "]);
+        // first tab selected
+        expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        test_case(tabs, Rect::new(0, 0, 40, 1), &expected);
+    }
+
+    #[test]
     fn render_more_padding() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("---", "++");
         let mut expected = Buffer::with_lines(["---Tab1++│---Tab2++│---Tab3++│"]);
@@ -654,11 +732,74 @@ mod tests {
                 .bold()
                 .not_italic()
                 .style,
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::White)
-                .add_modifier(Modifier::BOLD)
-                .remove_modifier(Modifier::ITALIC)
+            Style::default().black().on_white().bold().not_italic()
         );
+    }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
+            .select(1)
+            .divider("|");
+        // This should not panic, even if the buffer is too small to render the tabs.
+        tabs.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
+            .select(1)
+            .divider("|");
+        // This should not panic, even if the buffer has zero size.
+        tabs.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn unicode_width_basic() {
+        let tabs = Tabs::new(vec!["A", "BB", "CCC"]);
+        let rendered = " A │ BB │ CCC ";
+        assert_eq!(tabs.width(), rendered.width());
+    }
+
+    #[test]
+    fn unicode_width_no_padding() {
+        let tabs = Tabs::new(vec!["A", "BB", "CCC"]).padding("", "");
+        let rendered = "A│BB│CCC";
+        assert_eq!(tabs.width(), rendered.width());
+    }
+
+    #[test]
+    fn unicode_width_custom_divider_and_padding() {
+        let tabs = Tabs::new(vec!["A", "BB", "CCC"])
+            .divider("--")
+            .padding("X", "YY");
+        let rendered = "XAYY--XBBYY--XCCCYY";
+        assert_eq!(tabs.width(), rendered.width());
+    }
+
+    #[test]
+    fn unicode_width_empty_titles() {
+        let tabs = Tabs::new(Vec::<&str>::new());
+        let rendered = "";
+        assert_eq!(tabs.width(), rendered.width());
+    }
+
+    #[test]
+    fn unicode_width_cjk() {
+        let tabs = Tabs::new(vec!["你", "好", "世界"]);
+        let rendered = " 你 │ 好 │ 世界 ";
+        assert_eq!(tabs.width_cjk(), UnicodeWidthStr::width_cjk(rendered));
+    }
+
+    #[test]
+    fn unicode_width_cjk_custom_padding_and_divider() {
+        let tabs = Tabs::new(vec!["你", "好", "世界"])
+            .divider("分")
+            .padding("左", "右");
+        let rendered = "左你右分左好右分左世界右";
+        assert_eq!(tabs.width_cjk(), UnicodeWidthStr::width_cjk(rendered));
     }
 }

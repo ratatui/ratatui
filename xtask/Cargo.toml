@@ -1,16 +1,13 @@
 [package]
 name = "xtask"
-edition = "2021"
+edition.workspace = true
 publish = false
 license.workspace = true
 
 [dependencies]
-cargo_metadata = "0.19.2"
-clap = { version = "4.5.36", features = ["derive"] }
-clap-cargo = { version = "0.15.1", features = ["cargo_metadata"] }
-clap-verbosity-flag = { version = "3.0.2", default-features = false, features = ["tracing"] }
-color-eyre = "0.6.3"
-duct = "0.13.7"
-itertools.workspace = true
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18" }
+clap.workspace = true
+clap-verbosity-flag = { version = "3", default-features = false, features = ["tracing"] }
+color-eyre.workspace = true
+duct = "1"
+tracing.workspace = true
+tracing-subscriber.workspace = true

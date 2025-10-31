@@ -19,22 +19,19 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event;
 use palette::convert::FromColorUnclamped;
 use palette::{Okhsv, Srgb};
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::style::Color;
 use ratatui::text::Text;
 use ratatui::widgets::Widget;
-use ratatui::DefaultTerminal;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 #[derive(Debug, Default)]
@@ -91,7 +88,7 @@ impl App {
     /// Run the app
     ///
     /// This is the main event loop for the app.
-    pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while self.is_running() {
             terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             self.handle_events()?;
@@ -104,19 +101,16 @@ impl App {
     }
 
     /// Handle any events that have occurred since the last time the app was rendered.
-    ///
-    /// Currently, this only handles the q key to quit the app.
     fn handle_events(&mut self) -> Result<()> {
         // Ensure that the app only blocks for a period that allows the app to render at
         // approximately 60 FPS (this doesn't account for the time to render the frame, and will
         // also update the app immediately any time an event occurs)
         let timeout = Duration::from_secs_f32(1.0 / 60.0);
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                    self.state = AppState::Quit;
-                }
-            }
+        if !event::poll(timeout)? {
+            return Ok(());
+        }
+        if event::read()?.is_key_press() {
+            self.state = AppState::Quit;
         }
         Ok(())
     }
@@ -130,8 +124,8 @@ impl App {
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::{Length, Min};
-        let [top, colors] = Layout::vertical([Length(1), Min(0)]).areas(area);
-        let [title, fps] = Layout::horizontal([Min(0), Length(8)]).areas(top);
+        let [top, colors] = area.layout(&Layout::vertical([Length(1), Min(0)]));
+        let [title, fps] = top.layout(&Layout::horizontal([Min(0), Length(8)]));
         Text::from("colors_rgb example. Press q to quit")
             .centered()
             .render(title, buf);

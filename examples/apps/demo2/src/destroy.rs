@@ -1,11 +1,11 @@
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Flex, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::Text;
 use ratatui::widgets::Widget;
-use ratatui::Frame;
 
 /// delay the start of the animation so it doesn't start immediately
 const DELAY: usize = 120;
@@ -134,7 +134,7 @@ fn blend(mask_color: Color, cell_color: Color, percentage: f64) -> Color {
 fn centered_rect(area: Rect, width: u16, height: u16) -> Rect {
     let horizontal = Layout::horizontal([width]).flex(Flex::Center);
     let vertical = Layout::vertical([height]).flex(Flex::Center);
-    let [area] = vertical.areas(area);
-    let [area] = horizontal.areas(area);
+    let [area] = area.layout(&vertical);
+    let [area] = area.layout(&horizontal);
     area
 }

@@ -17,7 +17,7 @@ use ratatui_core::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui_core::style::Style;
 use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
-use time::{Date, Duration, OffsetDateTime};
+use time::{Date, Duration};
 
 use crate::block::{Block, BlockExt};
 
@@ -113,7 +113,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     }
 
     /// All logic to style a date goes here.
-    fn format_date(&self, date: Date) -> Span {
+    fn format_date(&self, date: Date) -> Span<'_> {
         if date.month() == self.display_date.month() {
             Span::styled(
                 format!("{:2?}", date.day()),
@@ -218,7 +218,9 @@ impl CalendarEventStore {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// [`Color`]: ratatui_core::style::Color
+    #[cfg(feature = "std")]
     pub fn today<S: Into<Style>>(style: S) -> Self {
+        use time::OffsetDateTime;
         let mut res = Self::default();
         res.add(
             OffsetDateTime::now_local()
@@ -299,5 +301,28 @@ mod tests {
     #[test]
     fn test_today() {
         CalendarEventStore::today(Style::default());
+    }
+
+    #[test]
+    fn render_in_minimal_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let calendar = Monthly::new(
+            Date::from_calendar_date(1984, Month::January, 1).unwrap(),
+            CalendarEventStore::default(),
+        );
+        // This should not panic, even if the buffer is too small to render the calendar.
+        calendar.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines([" "]));
+    }
+
+    #[test]
+    fn render_in_zero_size_buffer() {
+        let mut buffer = Buffer::empty(Rect::ZERO);
+        let calendar = Monthly::new(
+            Date::from_calendar_date(1984, Month::January, 1).unwrap(),
+            CalendarEventStore::default(),
+        );
+        // This should not panic, even if the buffer has zero size.
+        calendar.render(buffer.area, &mut buffer);
     }
 }

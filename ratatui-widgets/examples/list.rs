@@ -14,48 +14,41 @@
 //! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{List, ListDirection, ListState};
-use ratatui::{DefaultTerminal, Frame};
 
-fn main() -> Result<()> {
+fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = run(terminal);
-    ratatui::restore();
-    result
-}
 
-/// Run the application.
-fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    let mut list_state = ListState::default();
-    list_state.select_first();
-    loop {
-        terminal.draw(|frame| draw(frame, &mut list_state))?;
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Down | KeyCode::Char('j') => list_state.select_next(),
-                KeyCode::Up | KeyCode::Char('k') => list_state.select_previous(),
-                _ => {}
+    let mut list_state = ListState::default().with_selected(Some(0));
+    ratatui::run(|terminal| {
+        loop {
+            terminal.draw(|frame| render(frame, &mut list_state))?;
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('j') | KeyCode::Down => list_state.select_next(),
+                    KeyCode::Char('k') | KeyCode::Up => list_state.select_previous(),
+                    KeyCode::Char('q') | KeyCode::Esc => break Ok(()),
+                    _ => {}
+                }
             }
         }
-    }
+    })
 }
 
-/// Draw the UI with various lists.
-fn draw(frame: &mut Frame, list_state: &mut ListState) {
-    let vertical = Layout::vertical([
+/// Render the UI with various lists.
+fn render(frame: &mut Frame, list_state: &mut ListState) {
+    let constraints = [
         Constraint::Length(1),
         Constraint::Fill(1),
         Constraint::Fill(1),
-    ])
-    .spacing(1);
-    let [top, first, second] = vertical.areas(frame.area());
+    ];
+    let layout = Layout::vertical(constraints).spacing(1);
+    let [top, first, second] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("List Widget").bold(),

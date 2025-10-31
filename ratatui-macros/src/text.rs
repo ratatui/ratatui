@@ -35,16 +35,17 @@
 /// [`Text`]: ratatui_core::text::Text
 /// [`Line`]: ratatui_core::text::Line
 /// [`Span`]: ratatui_core::text::Span
+/// [`vec!`]: alloc::vec!
 #[macro_export]
 macro_rules! text {
     () => {
-        ratatui_core::text::Text::default()
+        $crate::ratatui_core::text::Text::default()
     };
     ($line:expr; $n:expr) => {
-        ratatui_core::text::Text::from(vec![$line.into(); $n])
+        $crate::ratatui_core::text::Text::from($crate::vec![$line.into(); $n])
     };
     ($($line:expr),+ $(,)?) => {{
-        ratatui_core::text::Text::from(vec![
+        $crate::ratatui_core::text::Text::from($crate::vec![
         $(
             $line.into(),
         )+
@@ -54,6 +55,7 @@ macro_rules! text {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use ratatui_core::text::Text;
 
     #[test]

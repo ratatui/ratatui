@@ -59,21 +59,21 @@ pub const DOUBLE_CROSS: &str = "╬";
 pub const THICK_CROSS: &str = "╋";
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub struct Set {
-    pub vertical: &'static str,
-    pub horizontal: &'static str,
-    pub top_right: &'static str,
-    pub top_left: &'static str,
-    pub bottom_right: &'static str,
-    pub bottom_left: &'static str,
-    pub vertical_left: &'static str,
-    pub vertical_right: &'static str,
-    pub horizontal_down: &'static str,
-    pub horizontal_up: &'static str,
-    pub cross: &'static str,
+pub struct Set<'a> {
+    pub vertical: &'a str,
+    pub horizontal: &'a str,
+    pub top_right: &'a str,
+    pub top_left: &'a str,
+    pub bottom_right: &'a str,
+    pub bottom_left: &'a str,
+    pub vertical_left: &'a str,
+    pub vertical_right: &'a str,
+    pub horizontal_down: &'a str,
+    pub horizontal_up: &'a str,
+    pub cross: &'a str,
 }
 
-impl Default for Set {
+impl Default for Set<'_> {
     fn default() -> Self {
         NORMAL
     }

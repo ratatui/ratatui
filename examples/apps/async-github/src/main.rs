@@ -31,10 +31,10 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 use color_eyre::Result;
-use crossterm::event::{Event, EventStream, KeyCode, KeyEventKind};
-use octocrab::params::pulls::Sort;
-use octocrab::params::Direction;
+use crossterm::event::{Event, EventStream, KeyCode};
 use octocrab::Page;
+use octocrab::params::Direction;
+use octocrab::params::pulls::Sort;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Style, Stylize};
@@ -70,30 +70,28 @@ impl App {
 
         while !self.should_quit {
             tokio::select! {
-                _ = interval.tick() => { terminal.draw(|frame| self.draw(frame))?; },
+                _ = interval.tick() => { terminal.draw(|frame| self.render(frame))?; },
                 Some(Ok(event)) = events.next() => self.handle_event(&event),
             }
         }
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
-        let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
-        let [title_area, body_area] = vertical.areas(frame.area());
+    fn render(&self, frame: &mut Frame) {
+        let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
+        let [title_area, body_area] = frame.area().layout(&layout);
         let title = Line::from("Ratatui async example").centered().bold();
         frame.render_widget(title, title_area);
         frame.render_widget(&self.pull_requests, body_area);
     }
 
     fn handle_event(&mut self, event: &Event) {
-        if let Event::Key(key) = event {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
-                    KeyCode::Char('j') | KeyCode::Down => self.pull_requests.scroll_down(),
-                    KeyCode::Char('k') | KeyCode::Up => self.pull_requests.scroll_up(),
-                    _ => {}
-                }
+        if let Some(key) = event.as_key_press_event() {
+            match key.code {
+                KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
+                KeyCode::Char('j') | KeyCode::Down => self.pull_requests.scroll_down(),
+                KeyCode::Char('k') | KeyCode::Up => self.pull_requests.scroll_up(),
+                _ => {}
             }
         }
     }

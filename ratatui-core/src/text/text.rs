@@ -5,6 +5,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+use unicode_width::UnicodeWidthStr;
+
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
 use crate::style::{Style, Styled};
@@ -284,7 +286,7 @@ impl<'a> Text<'a> {
     /// assert_eq!(15, text.width());
     /// ```
     pub fn width(&self) -> usize {
-        self.iter().map(Line::width).max().unwrap_or_default()
+        UnicodeWidthStr::width(self)
     }
 
     /// Returns the height.
@@ -507,12 +509,12 @@ impl<'a> Text<'a> {
     }
 
     /// Returns an iterator over the lines of the text.
-    pub fn iter(&self) -> core::slice::Iter<Line<'a>> {
+    pub fn iter(&self) -> core::slice::Iter<'_, Line<'a>> {
         self.lines.iter()
     }
 
     /// Returns an iterator that allows modifying each line.
-    pub fn iter_mut(&mut self) -> core::slice::IterMut<Line<'a>> {
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<'_, Line<'a>> {
         self.lines.iter_mut()
     }
 
@@ -556,6 +558,25 @@ impl<'a> Text<'a> {
         } else {
             self.lines.push(Line::from(span));
         }
+    }
+}
+
+impl UnicodeWidthStr for Text<'_> {
+    /// Returns the max width of all the lines.
+    fn width(&self) -> usize {
+        self.lines
+            .iter()
+            .map(UnicodeWidthStr::width)
+            .max()
+            .unwrap_or_default()
+    }
+
+    fn width_cjk(&self) -> usize {
+        self.lines
+            .iter()
+            .map(UnicodeWidthStr::width_cjk)
+            .max()
+            .unwrap_or_default()
     }
 }
 
@@ -665,6 +686,15 @@ impl core::ops::Add<Self> for Text<'_> {
     }
 }
 
+/// Adds two `Text` together.
+///
+/// This ignores the style and alignment of the second `Text`.
+impl core::ops::AddAssign for Text<'_> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.lines.extend(rhs.lines);
+    }
+}
+
 impl<'a> core::ops::AddAssign<Line<'a>> for Text<'a> {
     fn add_assign(&mut self, line: Line<'a>) {
         self.push_line(line);
@@ -699,7 +729,7 @@ pub trait ToText {
 /// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
 /// returns an error itself.
 impl<T: fmt::Display> ToText for T {
-    fn to_text(&self) -> Text {
+    fn to_text(&self) -> Text<'_> {
         Text::raw(self.to_string())
     }
 }
@@ -932,6 +962,20 @@ mod tests {
     fn add_text() {
         assert_eq!(
             Text::raw("Red").red() + Text::raw("Blue").blue(),
+            Text {
+                lines: vec![Line::raw("Red"), Line::raw("Blue")],
+                style: Style::new().red(),
+                alignment: None,
+            }
+        );
+    }
+
+    #[test]
+    fn add_assign_text() {
+        let mut text = Text::raw("Red").red();
+        text += Text::raw("Blue").blue();
+        assert_eq!(
+            text,
             Text {
                 lines: vec![Line::raw("Red"), Line::raw("Blue")],
                 style: Style::new().red(),

@@ -1,4 +1,6 @@
-use criterion::{black_box, BenchmarkId, Criterion};
+use std::hint::black_box;
+
+use criterion::{BenchmarkId, Criterion};
 use ratatui::buffer::{Buffer, Cell};
 use ratatui::layout::Rect;
 use ratatui::text::Line;

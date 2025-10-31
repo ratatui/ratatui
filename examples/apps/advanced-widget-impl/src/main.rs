@@ -12,19 +12,16 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event;
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Position, Rect, Size};
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Widget, WidgetRef};
-use ratatui::DefaultTerminal;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = App::default().run(terminal);
-    ratatui::restore();
-    result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 #[derive(Default)]
@@ -36,15 +33,15 @@ struct App {
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while !self.should_quit {
-            self.draw(&mut terminal)?;
+            self.render(terminal)?;
             self.handle_events()?;
         }
         Ok(())
     }
 
-    fn draw(&mut self, tui: &mut DefaultTerminal) -> Result<()> {
+    fn render(&mut self, tui: &mut DefaultTerminal) -> Result<()> {
         tui.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
@@ -55,11 +52,8 @@ impl App {
         if !event::poll(timeout)? {
             return Ok(());
         }
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
-                _ => {}
-            }
+        if event::read()?.is_key_press() {
+            self.should_quit = true;
         }
         Ok(())
     }
@@ -74,7 +68,7 @@ impl App {
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let constraints = Constraint::from_lengths([1, 1, 2, 1]);
-        let [greeting, timer, squares, position] = Layout::vertical(constraints).areas(area);
+        let [greeting, timer, squares, position] = area.layout(&Layout::vertical(constraints));
 
         // render an ephemeral greeting widget
         Greeting::new("Ratatui!").render(greeting, buf);
@@ -180,9 +174,9 @@ struct BlueSquare;
 impl Widget for &BoxedSquares {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let constraints = vec![Constraint::Length(4); self.squares.len()];
-        let areas = Layout::horizontal(constraints).split(area);
-        for (widget, area) in self.squares.iter().zip(areas.iter()) {
-            widget.render_ref(*area, buf);
+        let areas = area.layout_vec(&Layout::horizontal(constraints));
+        for (widget, area) in self.squares.iter().zip(areas) {
+            widget.render_ref(area, buf);
         }
     }
 }

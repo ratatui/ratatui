@@ -1,7 +1,7 @@
 [package]
 name = "ratatui-macros"
-version = "0.7.0-alpha.1"
-edition = "2021"
+version = "0.7.0-alpha.4"
+edition.workspace = true
 authors = ["The Ratatui Developers"]
 description = "Macros for Ratatui"
 license = "MIT"
@@ -15,4 +15,4 @@ ratatui-core.workspace = true
 ratatui-widgets.workspace = true
 
 [dev-dependencies]
-trybuild = { version = "1.0.103", features = ["diff"] }
+trybuild = { workspace = true, features = ["diff"] }

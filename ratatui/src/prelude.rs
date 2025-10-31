@@ -43,6 +43,5 @@ pub use crate::layout::{
 };
 pub use crate::style::{self, Color, Modifier, Style, Stylize};
 pub use crate::text::{self, Line, Masked, Span, Text};
-pub use crate::widgets::block::BlockExt;
-pub use crate::widgets::{StatefulWidget, Widget};
-pub use crate::{symbols, Frame, Terminal};
+pub use crate::widgets::{BlockExt, StatefulWidget, Widget};
+pub use crate::{Frame, Terminal, symbols};

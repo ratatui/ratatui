@@ -15,7 +15,7 @@
 //! [`tui-textarea`]: https://crates.io/crates/tui-textarea
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, KeyCode, KeyEvent};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Offset, Rect};
 use ratatui::style::Stylize;
@@ -26,12 +26,8 @@ use serde::Serialize;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = App::default().run(terminal);
-    ratatui::restore();
-
     // serialize the form to JSON if the user submitted it, otherwise print "Canceled"
-    match result {
+    match ratatui::run(|terminal| App::default().run(terminal)) {
         Ok(Some(form)) => println!("{}", serde_json::to_string_pretty(&form)?),
         Ok(None) => println!("Canceled"),
         Err(err) => eprintln!("{err}"),
@@ -54,7 +50,7 @@ enum AppState {
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<Option<InputForm>> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<Option<InputForm>> {
         while self.state == AppState::Running {
             terminal.draw(|frame| self.render(frame))?;
             self.handle_events()?;
@@ -71,13 +67,12 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        match event::read()? {
-            Event::Key(event) if event.kind == KeyEventKind::Press => match event.code {
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
                 KeyCode::Esc => self.state = AppState::Cancelled,
                 KeyCode::Enter => self.state = AppState::Submitted,
-                _ => self.form.on_key_press(event),
-            },
-            _ => {}
+                _ => self.form.on_key_press(key),
+            }
         }
         Ok(())
     }
@@ -120,8 +115,8 @@ impl InputForm {
     ///
     /// The cursor is placed at the end of the focused field.
     fn render(&self, frame: &mut Frame) {
-        let [first_name_area, last_name_area, age_area] =
-            Layout::vertical(Constraint::from_lengths([1, 1, 1])).areas(frame.area());
+        let layout = Layout::vertical(Constraint::from_lengths([1, 1, 1]));
+        let [first_name_area, last_name_area, age_area] = frame.area().layout(&layout);
 
         frame.render_widget(&self.first_name, first_name_area);
         frame.render_widget(&self.last_name, last_name_area);
@@ -190,11 +185,11 @@ impl StringField {
 
 impl Widget for &StringField {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let constraints = [
+        let layout = Layout::horizontal([
             Constraint::Length(self.label.len() as u16 + 2),
             Constraint::Fill(1),
-        ];
-        let [label_area, value_area] = Layout::horizontal(constraints).areas(area);
+        ]);
+        let [label_area, value_area] = area.layout(&layout);
         let label = Line::from_iter([self.label, ": "]).bold();
         label.render(label_area, buf);
         self.value.clone().render(value_area, buf);
@@ -243,7 +238,7 @@ impl AgeField {
         self.value = self.value.saturating_add(1).min(Self::MAX);
     }
 
-    fn decrement(&mut self) {
+    const fn decrement(&mut self) {
         self.value = self.value.saturating_sub(1);
     }
 
@@ -255,11 +250,11 @@ impl AgeField {
 
 impl Widget for &AgeField {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let constraints = [
+        let layout = Layout::horizontal([
             Constraint::Length(self.label.len() as u16 + 2),
             Constraint::Fill(1),
-        ];
-        let [label_area, value_area] = Layout::horizontal(constraints).areas(area);
+        ]);
+        let [label_area, value_area] = area.layout(&layout);
         let label = Line::from_iter([self.label, ": "]).bold();
         let value = self.value.to_string();
         label.render(label_area, buf);

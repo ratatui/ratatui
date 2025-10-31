@@ -1,6 +1,5 @@
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
@@ -11,6 +10,28 @@
 //!
 //! [`Backend`]: ratatui_core::backend::Backend
 //! [Termion]: https://docs.rs/termion
+//!
+//! # Crate Organization
+//!
+//! `ratatui-termion` is part of the Ratatui workspace that was modularized in version 0.30.0.
+//! This crate provides the [Termion] backend implementation for Ratatui.
+//!
+//! **When to use `ratatui-termion`:**
+//!
+//! - You need fine-grained control over dependencies
+//! - Building a widget library that needs backend functionality
+//! - You want to use only the Termion backend without other backends
+//! - You prefer Termion's Unix-focused approach
+//!
+//! **When to use the main [`ratatui`] crate:**
+//!
+//! - Building applications (recommended - includes termion backend when enabled)
+//! - You want the convenience of having everything available
+//!
+//! For detailed information about the workspace organization, see [ARCHITECTURE.md].
+//!
+//! [`ratatui`]: https://crates.io/crates/ratatui
+//! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 
@@ -44,13 +65,13 @@ use termion::{color as tcolor, style as tstyle};
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use std::io::{stderr, stdout};
 ///
+/// use ratatui::Terminal;
 /// use ratatui::backend::TermionBackend;
 /// use ratatui::termion::raw::IntoRawMode;
 /// use ratatui::termion::screen::IntoAlternateScreen;
-/// use ratatui::Terminal;
 ///
 /// let writer = stdout().into_raw_mode()?.into_alternate_screen()?;
 /// let mut backend = TermionBackend::new(writer);
@@ -91,7 +112,7 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use std::io::stdout;
     ///
     /// use ratatui::backend::TermionBackend;
@@ -118,7 +139,7 @@ where
         feature = "backend-writer",
         issue = "https://github.com/ratatui/ratatui/pull/991"
     )]
-    pub fn writer_mut(&mut self) -> &mut W {
+    pub const fn writer_mut(&mut self) -> &mut W {
         &mut self.writer
     }
 }
@@ -140,6 +161,8 @@ impl<W> Backend for TermionBackend<W>
 where
     W: Write,
 {
+    type Error = io::Error;
+
     fn clear(&mut self) -> io::Result<()> {
         self.clear_region(ClearType::All)
     }
@@ -400,13 +423,13 @@ impl FromTermion<tcolor::AnsiValue> for Color {
 
 impl FromTermion<tcolor::Bg<tcolor::AnsiValue>> for Style {
     fn from_termion(value: tcolor::Bg<tcolor::AnsiValue>) -> Self {
-        Self::default().bg(Color::Indexed(value.0 .0))
+        Self::default().bg(Color::Indexed(value.0.0))
     }
 }
 
 impl FromTermion<tcolor::Fg<tcolor::AnsiValue>> for Style {
     fn from_termion(value: tcolor::Fg<tcolor::AnsiValue>) -> Self {
-        Self::default().fg(Color::Indexed(value.0 .0))
+        Self::default().fg(Color::Indexed(value.0.0))
     }
 }
 
@@ -418,13 +441,13 @@ impl FromTermion<tcolor::Rgb> for Color {
 
 impl FromTermion<tcolor::Bg<tcolor::Rgb>> for Style {
     fn from_termion(value: tcolor::Bg<tcolor::Rgb>) -> Self {
-        Self::default().bg(Color::Rgb(value.0 .0, value.0 .1, value.0 .2))
+        Self::default().bg(Color::Rgb(value.0.0, value.0.1, value.0.2))
     }
 }
 
 impl FromTermion<tcolor::Fg<tcolor::Rgb>> for Style {
     fn from_termion(value: tcolor::Fg<tcolor::Rgb>) -> Self {
-        Self::default().fg(Color::Rgb(value.0 .0, value.0 .1, value.0 .2))
+        Self::default().fg(Color::Rgb(value.0.0, value.0.1, value.0.2))
     }
 }
 
@@ -539,8 +562,6 @@ impl fmt::Display for ResetRegion {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::style::Stylize;
-
     use super::*;
 
     #[test]

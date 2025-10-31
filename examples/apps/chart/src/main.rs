@@ -11,7 +11,7 @@
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::symbols::{self, Marker};
@@ -21,10 +21,7 @@ use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::new().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::new().run(terminal))
 }
 
 struct App {
@@ -78,23 +75,23 @@ impl App {
         }
     }
 
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         let tick_rate = Duration::from_millis(250);
         let mut last_tick = Instant::now();
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
 
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-            if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
-                    if key.code == KeyCode::Char('q') {
-                        return Ok(());
-                    }
-                }
-            }
-            if last_tick.elapsed() >= tick_rate {
+            if !event::poll(timeout)? {
                 self.on_tick();
                 last_tick = Instant::now();
+                continue;
+            }
+            if event::read()?
+                .as_key_press_event()
+                .is_some_and(|key| key.code == KeyCode::Char('q'))
+            {
+                return Ok(());
             }
         }
     }
@@ -110,11 +107,12 @@ impl App {
         self.window[1] += 1.0;
     }
 
-    fn draw(&self, frame: &mut Frame) {
-        let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
-        let [animated_chart, bar_chart] =
-            Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]).areas(top);
-        let [line_chart, scatter] = Layout::horizontal([Constraint::Fill(1); 2]).areas(bottom);
+    fn render(&self, frame: &mut Frame) {
+        let vertical = Layout::vertical([Constraint::Fill(1); 2]);
+        let [top, bottom] = frame.area().layout(&vertical);
+        let horizontal = Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]);
+        let [animated_chart, bar_chart] = top.layout(&horizontal);
+        let [line_chart, scatter] = bottom.layout(&Layout::horizontal([Constraint::Fill(1); 2]));
 
         self.render_animated_chart(frame, animated_chart);
         render_barchart(frame, bar_chart);
@@ -128,7 +126,7 @@ impl App {
                 format!("{}", self.window[0]),
                 Style::default().add_modifier(Modifier::BOLD),
             ),
-            Span::raw(format!("{}", (self.window[0] + self.window[1]) / 2.0)),
+            Span::raw(format!("{}", f64::midpoint(self.window[0], self.window[1]))),
             Span::styled(
                 format!("{}", self.window[1]),
                 Style::default().add_modifier(Modifier::BOLD),
@@ -208,12 +206,14 @@ fn render_barchart(frame: &mut Frame, bar_chart: Rect) {
 }
 
 fn render_line_chart(frame: &mut Frame, area: Rect) {
-    let datasets = vec![Dataset::default()
-        .name("Line from only 2 points".italic())
-        .marker(symbols::Marker::Braille)
-        .style(Style::default().fg(Color::Yellow))
-        .graph_type(GraphType::Line)
-        .data(&[(1., 1.), (4., 4.)])];
+    let datasets = vec![
+        Dataset::default()
+            .name("Line from only 2 points".italic())
+            .marker(symbols::Marker::Braille)
+            .style(Style::default().fg(Color::Yellow))
+            .graph_type(GraphType::Line)
+            .data(&[(1., 1.), (4., 4.)]),
+    ];
 
     let chart = Chart::new(datasets)
         .block(Block::bordered().title(Line::from("Line chart").cyan().bold().centered()))

@@ -8,14 +8,14 @@
 use std::time::Duration;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::palette::tailwind;
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Gauge, Padding, Paragraph, Widget};
-use ratatui::DefaultTerminal;
 
 const GAUGE1_COLOR: Color = tailwind::RED.c800;
 const GAUGE2_COLOR: Color = tailwind::GREEN.c800;
@@ -43,14 +43,11 @@ enum AppState {
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while self.state != AppState::Quitting {
             terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
             self.handle_events()?;
@@ -79,25 +76,24 @@ impl App {
 
     fn handle_events(&mut self) -> Result<()> {
         let timeout = Duration::from_secs_f32(1.0 / 20.0);
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char(' ') | KeyCode::Enter => self.start(),
-                        KeyCode::Char('q') | KeyCode::Esc => self.quit(),
-                        _ => {}
-                    }
-                }
+        if !event::poll(timeout)? {
+            return Ok(());
+        }
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
+                KeyCode::Char(' ') | KeyCode::Enter => self.start(),
+                KeyCode::Char('q') | KeyCode::Esc => self.quit(),
+                _ => {}
             }
         }
         Ok(())
     }
 
-    fn start(&mut self) {
+    const fn start(&mut self) {
         self.state = AppState::Started;
     }
 
-    fn quit(&mut self) {
+    const fn quit(&mut self) {
         self.state = AppState::Quitting;
     }
 }
@@ -107,10 +103,10 @@ impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::{Length, Min, Ratio};
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
-        let [header_area, gauge_area, footer_area] = layout.areas(area);
+        let [header_area, gauge_area, footer_area] = area.layout(&layout);
 
         let layout = Layout::vertical([Ratio(1, 4); 4]);
-        let [gauge1_area, gauge2_area, gauge3_area, gauge4_area] = layout.areas(gauge_area);
+        let [gauge1_area, gauge2_area, gauge3_area, gauge4_area] = gauge_area.layout(&layout);
 
         render_header(header_area, buf);
         render_footer(footer_area, buf);
@@ -186,7 +182,7 @@ impl App {
     }
 }
 
-fn title_block(title: &str) -> Block {
+fn title_block(title: &str) -> Block<'_> {
     let title = Line::from(title).centered();
     Block::new()
         .borders(Borders::NONE)

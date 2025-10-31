@@ -1,3 +1,5 @@
+use alloc::string::String;
+
 use super::Widget;
 use crate::buffer::Buffer;
 use crate::layout::Rect;
@@ -21,6 +23,11 @@ use crate::style::Style;
 /// A blanket implementation of `WidgetRef` for `Option<W>` where `W` implements `WidgetRef` is
 /// provided. This is a convenience approach to make it easier to attach child widgets to parent
 /// widgets. It allows you to render an optional widget by reference.
+///
+/// For comprehensive information about widget implementation patterns, rendering, and usage,
+/// see the [`widgets`] module documentation.
+///
+/// [`widgets`]: crate::widgets
 ///
 /// # Examples
 ///
@@ -166,6 +173,10 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::boxed::Box;
+    use alloc::vec;
+    use alloc::vec::Vec;
+
     use rstest::{fixture, rstest};
 
     use super::*;

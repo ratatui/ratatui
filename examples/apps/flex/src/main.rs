@@ -11,7 +11,8 @@
 use std::num::NonZeroUsize;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
+use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio};
 use ratatui::layout::{Alignment, Flex, Layout, Rect};
@@ -22,21 +23,17 @@ use ratatui::text::{Line, Text};
 use ratatui::widgets::{
     Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Tabs, Widget,
 };
-use ratatui::DefaultTerminal;
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::default().run(terminal))
 }
 
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     (
         "Min(u16) takes any excess space always",
-        &[Length(10), Min(10), Max(10), Percentage(10), Ratio(1,10)],
+        &[Length(10), Min(10), Max(10), Percentage(10), Ratio(1, 10)],
     ),
     (
         "Fill(u16) takes any excess space always",
@@ -44,20 +41,18 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     ),
     (
         "Here's all constraints in one line",
-        &[Length(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Fill(1)],
+        &[
+            Length(10),
+            Min(10),
+            Max(10),
+            Percentage(10),
+            Ratio(1, 10),
+            Fill(1),
+        ],
     ),
-    (
-        "",
-        &[Max(50), Min(50)],
-    ),
-    (
-        "",
-        &[Max(20), Length(10)],
-    ),
-    (
-        "",
-        &[Max(20), Length(10)],
-    ),
+    ("", &[Max(50), Min(50)]),
+    ("", &[Max(20), Length(10)]),
+    ("", &[Max(20), Length(10)]),
     (
         "Min grows always but also allows Fill to grow",
         &[Percentage(50), Fill(1), Fill(2), Min(50)],
@@ -67,44 +62,58 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
         &[Length(20), Length(20), Percentage(20)],
     ),
     ("", &[Length(20), Percentage(20), Length(20)]),
-    ("A lowest priority constraint will be broken before a high priority constraint", &[Ratio(1,4), Percentage(20)]),
-    ("`Length` is higher priority than `Percentage`", &[Percentage(20), Length(10)]),
-    ("`Min/Max` is higher priority than `Length`", &[Length(10), Max(20)]),
+    (
+        "A lowest priority constraint will be broken before a high priority constraint",
+        &[Ratio(1, 4), Percentage(20)],
+    ),
+    (
+        "`Length` is higher priority than `Percentage`",
+        &[Percentage(20), Length(10)],
+    ),
+    (
+        "`Min/Max` is higher priority than `Length`",
+        &[Length(10), Max(20)],
+    ),
     ("", &[Length(100), Min(20)]),
-    ("`Length` is higher priority than `Min/Max`", &[Max(20), Length(10)]),
+    (
+        "`Length` is higher priority than `Min/Max`",
+        &[Max(20), Length(10)],
+    ),
     ("", &[Min(20), Length(90)]),
-    ("Fill is the lowest priority and will fill any excess space", &[Fill(1), Ratio(1, 4)]),
-    ("Fill can be used to scale proportionally with other Fill blocks", &[Fill(1), Percentage(20), Fill(2)]),
+    (
+        "Fill is the lowest priority and will fill any excess space",
+        &[Fill(1), Ratio(1, 4)],
+    ),
+    (
+        "Fill can be used to scale proportionally with other Fill blocks",
+        &[Fill(1), Percentage(20), Fill(2)],
+    ),
     ("", &[Ratio(1, 3), Percentage(20), Ratio(2, 3)]),
-    ("Legacy will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints", &[Length(20), Length(15)]),
+    (
+        "Legacy will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints",
+        &[Length(20), Length(15)],
+    ),
     ("", &[Percentage(20), Length(15)]),
-    ("`Fill(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Fill will only have widths in Flex::Stretch and Flex::Legacy", &[Fill(1), Fill(1)]),
+    (
+        "`Fill(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Fill will only have widths in Flex::Stretch and Flex::Legacy",
+        &[Fill(1), Fill(1)],
+    ),
     ("", &[Length(20), Length(20)]),
     (
         "When not using `Flex::Stretch` or `Flex::Legacy`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
         &[Min(20), Max(20)],
     ),
-    (
-        "",
-        &[Max(20)],
-    ),
+    ("", &[Max(20)]),
     ("", &[Min(20), Max(20), Length(20), Length(20)]),
     ("", &[Fill(0), Fill(0)]),
     (
         "`Fill(1)` can be to scale with respect to other `Fill(2)`",
         &[Fill(1), Fill(2)],
     ),
-    (
-        "",
-        &[Fill(1), Min(10), Max(10), Fill(2)],
-    ),
+    ("", &[Fill(1), Min(10), Max(10), Fill(2)]),
     (
         "`Fill(0)` collapses if there are other non-zero `Fill(_)`\nconstraints. e.g. `[Fill(0), Fill(0), Fill(1)]`:",
-        &[
-            Fill(0),
-            Fill(0),
-            Fill(1),
-        ],
+        &[Fill(0), Fill(0), Fill(1)],
     ),
 ];
 
@@ -144,11 +153,12 @@ enum SelectedTab {
     Center,
     End,
     SpaceAround,
+    SpaceEvenly,
     SpaceBetween,
 }
 
 impl App {
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         // increase the layout cache to account for the number of layout events. This ensures that
         // layout is not generally reprocessed on every frame (which would lead to possible janky
         // results when there are more than one possible solution to the requested layout). This
@@ -168,8 +178,8 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        match event::read()? {
-            Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                 KeyCode::Char('l') | KeyCode::Right => self.next(),
                 KeyCode::Char('h') | KeyCode::Left => self.previous(),
@@ -180,8 +190,7 @@ impl App {
                 KeyCode::Char('+') => self.increment_spacing(),
                 KeyCode::Char('-') => self.decrement_spacing(),
                 _ => (),
-            },
-            _ => {}
+            }
         }
         Ok(())
     }
@@ -194,7 +203,7 @@ impl App {
         self.selected_tab = self.selected_tab.previous();
     }
 
-    fn up(&mut self) {
+    const fn up(&mut self) {
         self.scroll_offset = self.scroll_offset.saturating_sub(1);
     }
 
@@ -205,7 +214,7 @@ impl App {
             .min(max_scroll_offset());
     }
 
-    fn top(&mut self) {
+    const fn top(&mut self) {
         self.scroll_offset = 0;
     }
 
@@ -213,15 +222,15 @@ impl App {
         self.scroll_offset = max_scroll_offset();
     }
 
-    fn increment_spacing(&mut self) {
+    const fn increment_spacing(&mut self) {
         self.spacing = self.spacing.saturating_add(1);
     }
 
-    fn decrement_spacing(&mut self) {
+    const fn decrement_spacing(&mut self) {
         self.spacing = self.spacing.saturating_sub(1);
     }
 
-    fn quit(&mut self) {
+    const fn quit(&mut self) {
         self.state = AppState::Quit;
     }
 }
@@ -247,7 +256,7 @@ fn example_height() -> u16 {
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::vertical([Length(3), Length(1), Fill(0)]);
-        let [tabs, axis, demo] = layout.areas(area);
+        let [tabs, axis, demo] = area.layout(&layout);
         self.tabs().render(tabs, buf);
         let scroll_needed = self.render_demo(demo, buf);
         let axis_width = if scroll_needed {
@@ -361,8 +370,9 @@ impl SelectedTab {
             Self::Start => SKY.c400,
             Self::Center => SKY.c300,
             Self::End => SKY.c200,
-            Self::SpaceAround => INDIGO.c400,
+            Self::SpaceEvenly => INDIGO.c400,
             Self::SpaceBetween => INDIGO.c300,
+            Self::SpaceAround => INDIGO.c500,
         };
         format!(" {text} ").fg(color).bg(Color::Black).into()
     }
@@ -377,8 +387,9 @@ impl StatefulWidget for SelectedTab {
             Self::Start => Self::render_examples(area, buf, Flex::Start, spacing),
             Self::Center => Self::render_examples(area, buf, Flex::Center, spacing),
             Self::End => Self::render_examples(area, buf, Flex::End, spacing),
-            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
+            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing),
             Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing),
+            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
         }
     }
 }
@@ -410,7 +421,7 @@ impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title_height = get_description_height(&self.description);
         let layout = Layout::vertical([Length(title_height), Fill(0)]);
-        let [title, illustrations] = layout.areas(area);
+        let [title, illustrations] = area.layout(&layout);
 
         let (blocks, spacers) = Layout::horizontal(&self.constraints)
             .flex(self.flex)

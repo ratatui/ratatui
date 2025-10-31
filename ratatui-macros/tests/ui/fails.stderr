@@ -9,9 +9,9 @@ error: No rules expected the token `,` while trying to match the end of the macr
 error: unexpected end of macro invocation
   --> tests/ui/fails.rs:8:18
    |
-8  |       let [a, b] = constraints![
+ 8 |       let [a, b] = constraints![
    |  __________________^
-9  | |       == 1/2,
+ 9 | |       == 1/2,
 10 | |       == 2,
 11 | |     ];
    | |_____^ missing tokens in macro arguments
@@ -50,9 +50,8 @@ error: argument never used
    |                   -------  ^^^^^^^^^^^^^ argument never used
    |                   |
    |                   formatting specifier missing
-
-error[E0527]: pattern requires 2 elements but array has 3
- --> tests/ui/fails.rs:8:9
-  |
-8 |     let [a, b] = constraints![
-  |         ^^^^^^ expected 3 elements
+   |
+help: format specifiers use curly braces, consider adding a format specifier
+   |
+19 |     let _ = span!("hello{}", "hello world");
+   |                         ++

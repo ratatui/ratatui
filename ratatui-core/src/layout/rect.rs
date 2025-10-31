@@ -1,4 +1,5 @@
 #![warn(missing_docs)]
+use core::array::TryFromSliceError;
 use core::cmp::{max, min};
 use core::fmt;
 
@@ -7,10 +8,79 @@ use crate::layout::{Margin, Position, Size};
 mod iter;
 pub use iter::*;
 
-/// A Rectangular area.
+use super::{Constraint, Flex, Layout};
+
+/// A rectangular area in the terminal.
 ///
-/// A simple rectangle used in the computation of the layout and to give widgets a hint about the
-/// area they are supposed to render to.
+/// A `Rect` represents a rectangular region in the terminal coordinate system, defined by its
+/// top-left corner position and dimensions. This is the fundamental building block for all layout
+/// operations and widget rendering in Ratatui.
+///
+/// Rectangles are used throughout the layout system to define areas where widgets can be rendered.
+/// They are typically created by [`Layout`] operations that divide terminal space, but can also be
+/// manually constructed for specific positioning needs.
+///
+/// The coordinate system uses the top-left corner as the origin (0, 0), with x increasing to the
+/// right and y increasing downward. All measurements are in character cells.
+///
+/// # Construction and Conversion
+///
+/// - [`new`](Self::new) - Create a new rectangle from coordinates and dimensions
+/// - [`as_position`](Self::as_position) - Convert to a position at the top-left corner
+/// - [`as_size`](Self::as_size) - Convert to a size representing the dimensions
+/// - [`from((Position, Size))`](Self::from) - Create from `(Position, Size)` tuple
+/// - [`from(((u16, u16), (u16, u16)))`](Self::from) - Create from `((u16, u16), (u16, u16))`
+///   coordinate and dimension tuples
+/// - [`into((Position, Size))`] - Convert to `(Position, Size)` tuple
+/// - [`default`](Self::default) - Create a zero-sized rectangle at origin
+///
+/// # Geometry and Properties
+///
+/// - [`area`](Self::area) - Calculate the total area in character cells
+/// - [`is_empty`](Self::is_empty) - Check if the rectangle has zero area
+/// - [`left`](Self::left), [`right`](Self::right), [`top`](Self::top), [`bottom`](Self::bottom) -
+///   Get edge coordinates
+///
+/// # Spatial Operations
+///
+/// - [`inner`](Self::inner), [`outer`](Self::outer) - Apply margins to shrink or expand
+/// - [`offset`](Self::offset) - Move the rectangle by a relative amount
+/// - [`union`](Self::union) - Combine with another rectangle to create a bounding box
+/// - [`intersection`](Self::intersection) - Find the overlapping area with another rectangle
+/// - [`clamp`](Self::clamp) - Constrain the rectangle to fit within another
+///
+/// # Positioning and Centering
+///
+/// - [`centered_horizontally`](Self::centered_horizontally) - Center horizontally within a
+///   constraint
+/// - [`centered_vertically`](Self::centered_vertically) - Center vertically within a constraint
+/// - [`centered`](Self::centered) - Center both horizontally and vertically
+///
+/// # Testing and Iteration
+///
+/// - [`contains`](Self::contains) - Check if a position is within the rectangle
+/// - [`intersects`](Self::intersects) - Check if it overlaps with another rectangle
+/// - [`rows`](Self::rows) - Iterate over horizontal rows within the rectangle
+/// - [`columns`](Self::columns) - Iterate over vertical columns within the rectangle
+/// - [`positions`](Self::positions) - Iterate over all positions within the rectangle
+///
+/// # Examples
+///
+/// ```rust
+/// use ratatui_core::layout::{Position, Rect, Size};
+///
+/// // Create a rectangle manually
+/// let rect = Rect::new(10, 5, 80, 20);
+/// assert_eq!(rect.x, 10);
+/// assert_eq!(rect.y, 5);
+/// assert_eq!(rect.width, 80);
+/// assert_eq!(rect.height, 20);
+///
+/// // Create from position and size
+/// let rect = Rect::from((Position::new(10, 5), Size::new(80, 20)));
+/// ```
+///
+/// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rect {
@@ -94,8 +164,7 @@ impl Rect {
         }
     }
 
-    /// The area of the `Rect`. If the area is larger than the maximum value of `u16`, it will be
-    /// clamped to `u16::MAX`.
+    /// The area of the `Rect`.
     pub const fn area(self) -> u32 {
         (self.width as u32) * (self.height as u32)
     }
@@ -150,6 +219,34 @@ impl Rect {
                 width: self.width.saturating_sub(doubled_margin_horizontal),
                 height: self.height.saturating_sub(doubled_margin_vertical),
             }
+        }
+    }
+
+    /// Returns a new `Rect` outside the current one, with the given margin applied on each side.
+    ///
+    /// If the margin causes the `Rect`'s bounds to be outside the range of a `u16`, the `Rect` will
+    /// be truncated to keep the bounds within `u16`. This will cause the size of the `Rect` to
+    /// change.
+    ///
+    /// The generated `Rect` may not fit inside the buffer or containing area, so it consider
+    /// constraining the resulting `Rect` with [`Rect::clamp`] before using it.
+    #[must_use = "method returns the modified value"]
+    pub const fn outer(self, margin: Margin) -> Self {
+        let x = self.x.saturating_sub(margin.horizontal);
+        let y = self.y.saturating_sub(margin.vertical);
+        let width = self
+            .right()
+            .saturating_add(margin.horizontal)
+            .saturating_sub(x);
+        let height = self
+            .bottom()
+            .saturating_add(margin.vertical)
+            .saturating_sub(y);
+        Self {
+            x,
+            y,
+            width,
+            height,
         }
     }
 
@@ -268,17 +365,31 @@ impl Rect {
 
     /// An iterator over rows within the `Rect`.
     ///
+    /// Each row is a full `Rect` region with height 1 that can be used for rendering widgets
+    /// or as input to further layout methods.
+    ///
     /// # Example
     ///
     /// ```
     /// use ratatui_core::buffer::Buffer;
-    /// use ratatui_core::layout::Rect;
-    /// use ratatui_core::text::Line;
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
     /// use ratatui_core::widgets::Widget;
     ///
-    /// fn render(area: Rect, buf: &mut Buffer) {
-    ///     for row in area.rows() {
-    ///         Line::raw("Hello, world!").render(row, buf);
+    /// fn render_list(area: Rect, buf: &mut Buffer) {
+    ///     // Renders "Item 0", "Item 1", etc. in each row
+    ///     for (i, row) in area.rows().enumerate() {
+    ///         format!("Item {i}").render(row, buf);
+    ///     }
+    /// }
+    ///
+    /// fn render_with_nested_layout(area: Rect, buf: &mut Buffer) {
+    ///     // Splits each row into left/right areas and renders labels and content
+    ///     for (i, row) in area.rows().take(3).enumerate() {
+    ///         let [left, right] =
+    ///             Layout::horizontal([Constraint::Percentage(30), Constraint::Fill(1)]).areas(row);
+    ///
+    ///         format!("{i}:").render(left, buf);
+    ///         "Content".render(right, buf);
     ///     }
     /// }
     /// ```
@@ -288,17 +399,20 @@ impl Rect {
 
     /// An iterator over columns within the `Rect`.
     ///
+    /// Each column is a full `Rect` region with width 1 that can be used for rendering widgets
+    /// or as input to further layout methods.
+    ///
     /// # Example
     ///
     /// ```
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_core::text::Text;
     /// use ratatui_core::widgets::Widget;
     ///
-    /// fn render(area: Rect, buf: &mut Buffer) {
+    /// fn render_columns(area: Rect, buf: &mut Buffer) {
+    ///     // Renders column indices (0-9 repeating) in each column
     ///     for (i, column) in area.columns().enumerate() {
-    ///         Text::from(format!("{}", i)).render(column, buf);
+    ///         format!("{}", i % 10).render(column, buf);
     ///     }
     /// }
     /// ```
@@ -309,16 +423,19 @@ impl Rect {
     /// An iterator over the positions within the `Rect`.
     ///
     /// The positions are returned in a row-major order (left-to-right, top-to-bottom).
+    /// Each position is a `Position` that represents a single cell coordinate.
     ///
     /// # Example
     ///
     /// ```
     /// use ratatui_core::buffer::Buffer;
-    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::layout::{Position, Rect};
+    /// use ratatui_core::widgets::Widget;
     ///
-    /// fn render(area: Rect, buf: &mut Buffer) {
-    ///     for position in area.positions() {
-    ///         buf[(position.x, position.y)].set_symbol("x");
+    /// fn render_positions(area: Rect, buf: &mut Buffer) {
+    ///     // Renders position indices (0-9 repeating) at each cell position
+    ///     for (i, position) in area.positions().enumerate() {
+    ///         buf[position].set_symbol(&format!("{}", i % 10));
     ///     }
     /// }
     /// ```
@@ -351,6 +468,159 @@ impl Rect {
         }
     }
 
+    /// Returns a new Rect, centered horizontally based on the provided constraint.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    ///
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().centered_horizontally(Constraint::Ratio(1, 2));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn centered_horizontally(self, constraint: Constraint) -> Self {
+        let [area] = self.layout(&Layout::horizontal([constraint]).flex(Flex::Center));
+        area
+    }
+
+    /// Returns a new Rect, centered vertically based on the provided constraint.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    ///
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame.area().centered_vertically(Constraint::Ratio(1, 2));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn centered_vertically(self, constraint: Constraint) -> Self {
+        let [area] = self.layout(&Layout::vertical([constraint]).flex(Flex::Center));
+        area
+    }
+
+    /// Returns a new Rect, centered horizontally and vertically based on the provided constraints.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::Constraint;
+    /// use ratatui_core::terminal::Frame;
+    ///
+    /// fn render(frame: &mut Frame) {
+    ///     let area = frame
+    ///         .area()
+    ///         .centered(Constraint::Ratio(1, 2), Constraint::Ratio(1, 3));
+    /// }
+    /// ```
+    #[must_use]
+    pub fn centered(
+        self,
+        horizontal_constraint: Constraint,
+        vertical_constraint: Constraint,
+    ) -> Self {
+        self.centered_horizontally(horizontal_constraint)
+            .centered_vertically(vertical_constraint)
+    }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`].
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split`] instead.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of constraints is not equal to the length of the returned array.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 10);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = area.layout(&layout);
+    /// assert_eq!(top, Rect::new(0, 0, 10, 1));
+    /// assert_eq!(main, Rect::new(0, 1, 10, 9));
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let areas = area.layout::<2>(&layout);
+    /// assert_eq!(areas, [Rect::new(0, 0, 10, 1), Rect::new(0, 1, 10, 9),]);
+    /// ```
+    #[must_use]
+    pub fn layout<const N: usize>(self, layout: &Layout) -> [Self; N] {
+        let areas = layout.split(self);
+        areas.as_ref().try_into().unwrap_or_else(|_| {
+            panic!(
+                "invalid number of rects: expected {N}, found {}",
+                areas.len()
+            )
+        })
+    }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`].
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns a [`Vec`] of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 10);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let areas = area.layout_vec(&layout);
+    /// assert_eq!(areas, vec![Rect::new(0, 0, 10, 1), Rect::new(0, 1, 10, 9),]);
+    /// ```
+    ///
+    /// [`Vec`]: alloc::vec::Vec
+    #[must_use]
+    pub fn layout_vec(self, layout: &Layout) -> alloc::vec::Vec<Self> {
+        layout.split(self).as_ref().to_vec()
+    }
+
+    /// Try to split the rect into a number of sub-rects according to the given [`Layout`].
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the number of constraints is not equal to the length of the returned
+    /// array.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::{Constraint, Layout, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 10);
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = area.try_layout(&layout)?;
+    /// assert_eq!(top, Rect::new(0, 0, 10, 1));
+    /// assert_eq!(main, Rect::new(0, 1, 10, 9));
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let areas = area.try_layout::<2>(&layout)?;
+    /// assert_eq!(areas, [Rect::new(0, 0, 10, 1), Rect::new(0, 1, 10, 9),]);
+    /// # Ok::<(), core::array::TryFromSliceError>(())
+    /// ``````
+    pub fn try_layout<const N: usize>(
+        self,
+        layout: &Layout,
+    ) -> Result<[Self; N], TryFromSliceError> {
+        layout.split(self).as_ref().try_into()
+    }
+
     /// indents the x value of the `Rect` by a given `offset`
     ///
     /// This is pub(crate) for now as we need to stabilize the naming / design of this API.
@@ -375,12 +645,25 @@ impl From<(Position, Size)> for Rect {
     }
 }
 
+impl From<Size> for Rect {
+    /// Creates a new `Rect` with the given size at [`Position::ORIGIN`] (0, 0).
+    fn from(size: Size) -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            width: size.width,
+            height: size.height,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;
     use alloc::vec;
     use alloc::vec::Vec;
 
+    use pretty_assertions::assert_eq;
     use rstest::rstest;
 
     use super::*;
@@ -441,6 +724,27 @@ mod tests {
         assert_eq!(
             Rect::new(1, 2, 3, 4).inner(Margin::new(1, 2)),
             Rect::new(2, 4, 1, 0)
+        );
+    }
+
+    #[test]
+    fn outer() {
+        // enough space to grow on all sides
+        assert_eq!(
+            Rect::new(100, 200, 10, 20).outer(Margin::new(20, 30)),
+            Rect::new(80, 170, 50, 80)
+        );
+
+        // left / top saturation should truncate the size (10 less on left / top)
+        assert_eq!(
+            Rect::new(10, 20, 10, 20).outer(Margin::new(20, 30)),
+            Rect::new(0, 0, 40, 70),
+        );
+
+        // right / bottom saturation should truncate the size (10 less on bottom / right)
+        assert_eq!(
+            Rect::new(u16::MAX - 20, u16::MAX - 40, 10, 20).outer(Margin::new(20, 30)),
+            Rect::new(u16::MAX - 40, u16::MAX - 70, 40, 70),
         );
     }
 
@@ -661,5 +965,99 @@ mod tests {
                 height: 4
             }
         );
+    }
+
+    #[test]
+    fn from_size() {
+        let size = Size {
+            width: 3,
+            height: 4,
+        };
+        assert_eq!(
+            Rect::from(size),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 3,
+                height: 4
+            }
+        );
+    }
+
+    #[test]
+    fn centered_horizontally() {
+        let rect = Rect::new(0, 0, 5, 5);
+        assert_eq!(
+            rect.centered_horizontally(Constraint::Length(3)),
+            Rect::new(1, 0, 3, 5)
+        );
+    }
+
+    #[test]
+    fn centered_vertically() {
+        let rect = Rect::new(0, 0, 5, 5);
+        assert_eq!(
+            rect.centered_vertically(Constraint::Length(1)),
+            Rect::new(0, 2, 5, 1)
+        );
+    }
+
+    #[test]
+    fn centered() {
+        let rect = Rect::new(0, 0, 5, 5);
+        assert_eq!(
+            rect.centered(Constraint::Length(3), Constraint::Length(1)),
+            Rect::new(1, 2, 3, 1)
+        );
+    }
+
+    #[test]
+    fn layout() {
+        let layout = Layout::horizontal([Constraint::Length(3), Constraint::Min(0)]);
+
+        let [a, b] = Rect::new(0, 0, 10, 10).layout(&layout);
+        assert_eq!(a, Rect::new(0, 0, 3, 10));
+        assert_eq!(b, Rect::new(3, 0, 7, 10));
+
+        let areas = Rect::new(0, 0, 10, 10).layout::<2>(&layout);
+        assert_eq!(areas[0], Rect::new(0, 0, 3, 10));
+        assert_eq!(areas[1], Rect::new(3, 0, 7, 10));
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid number of rects: expected 3, found 1")]
+    fn layout_invalid_number_of_rects() {
+        let layout = Layout::horizontal([Constraint::Length(1)]);
+        let [_, _, _] = Rect::new(0, 0, 10, 10).layout(&layout);
+    }
+
+    #[test]
+    fn layout_vec() {
+        let layout = Layout::horizontal([Constraint::Length(3), Constraint::Min(0)]);
+
+        let areas = Rect::new(0, 0, 10, 10).layout_vec(&layout);
+        assert_eq!(areas[0], Rect::new(0, 0, 3, 10));
+        assert_eq!(areas[1], Rect::new(3, 0, 7, 10));
+    }
+
+    #[test]
+    fn try_layout() {
+        let layout = Layout::horizontal([Constraint::Length(3), Constraint::Min(0)]);
+
+        let [a, b] = Rect::new(0, 0, 10, 10).try_layout(&layout).unwrap();
+        assert_eq!(a, Rect::new(0, 0, 3, 10));
+        assert_eq!(b, Rect::new(3, 0, 7, 10));
+
+        let areas = Rect::new(0, 0, 10, 10).try_layout::<2>(&layout).unwrap();
+        assert_eq!(areas[0], Rect::new(0, 0, 3, 10));
+        assert_eq!(areas[1], Rect::new(3, 0, 7, 10));
+    }
+
+    #[test]
+    fn try_layout_invalid_number_of_rects() {
+        let layout = Layout::horizontal([Constraint::Length(1)]);
+        Rect::new(0, 0, 10, 10)
+            .try_layout::<3>(&layout)
+            .unwrap_err();
     }
 }

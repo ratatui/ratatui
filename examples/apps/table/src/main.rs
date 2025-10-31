@@ -6,7 +6,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::event::{self, KeyCode, KeyModifiers};
 use itertools::Itertools;
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{self, Color, Modifier, Style, Stylize};
@@ -34,10 +34,7 @@ const ITEM_HEIGHT: usize = 4;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::new().run(terminal);
-    ratatui::restore();
-    app_result
+    ratatui::run(|terminal| App::new().run(terminal))
 }
 struct TableColors {
     buffer_bg: Color,
@@ -80,20 +77,14 @@ impl Data {
         [&self.name, &self.address, &self.email]
     }
 
-    // https://github.com/rust-lang/rust/issues/139338
-    #[allow(clippy::missing_const_for_fn)]
     fn name(&self) -> &str {
         &self.name
     }
 
-    // https://github.com/rust-lang/rust/issues/139338
-    #[allow(clippy::missing_const_for_fn)]
     fn address(&self) -> &str {
         &self.address
     }
 
-    // https://github.com/rust-lang/rust/issues/139338
-    #[allow(clippy::missing_const_for_fn)]
     fn email(&self) -> &str {
         &self.email
     }
@@ -120,6 +111,7 @@ impl App {
             items: data_vec,
         }
     }
+
     pub fn next_row(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
@@ -158,46 +150,44 @@ impl App {
         self.state.select_previous_column();
     }
 
-    pub fn next_color(&mut self) {
+    pub const fn next_color(&mut self) {
         self.color_index = (self.color_index + 1) % PALETTES.len();
     }
 
-    pub fn previous_color(&mut self) {
+    pub const fn previous_color(&mut self) {
         let count = PALETTES.len();
         self.color_index = (self.color_index + count - 1) % count;
     }
 
-    pub fn set_colors(&mut self) {
+    pub const fn set_colors(&mut self) {
         self.colors = TableColors::new(&PALETTES[self.color_index]);
     }
 
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         loop {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.render(frame))?;
 
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    let shift_pressed = key.modifiers.contains(KeyModifiers::SHIFT);
-                    match key.code {
-                        KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                        KeyCode::Char('j') | KeyCode::Down => self.next_row(),
-                        KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
-                        KeyCode::Char('l') | KeyCode::Right if shift_pressed => self.next_color(),
-                        KeyCode::Char('h') | KeyCode::Left if shift_pressed => {
-                            self.previous_color();
-                        }
-                        KeyCode::Char('l') | KeyCode::Right => self.next_column(),
-                        KeyCode::Char('h') | KeyCode::Left => self.previous_column(),
-                        _ => {}
+            if let Some(key) = event::read()?.as_key_press_event() {
+                let shift_pressed = key.modifiers.contains(KeyModifiers::SHIFT);
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                    KeyCode::Char('j') | KeyCode::Down => self.next_row(),
+                    KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
+                    KeyCode::Char('l') | KeyCode::Right if shift_pressed => self.next_color(),
+                    KeyCode::Char('h') | KeyCode::Left if shift_pressed => {
+                        self.previous_color();
                     }
+                    KeyCode::Char('l') | KeyCode::Right => self.next_column(),
+                    KeyCode::Char('h') | KeyCode::Left => self.previous_column(),
+                    _ => {}
                 }
             }
         }
     }
 
-    fn draw(&mut self, frame: &mut Frame) {
-        let vertical = &Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
-        let rects = vertical.split(frame.area());
+    fn render(&mut self, frame: &mut Frame) {
+        let layout = Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
+        let rects = frame.area().layout_vec(&layout);
 
         self.set_colors();
 
