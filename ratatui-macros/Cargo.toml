@@ -1,9 +1,9 @@
 [package]
 name = "ratatui-macros"
 version = "0.7.0-beta.0"
+description = "Macros for Ratatui"
 edition.workspace = true
 authors = ["The Ratatui Developers"]
-description = "Macros for Ratatui"
 license = "MIT"
 repository = "https://github.com/ratatui/ratatui"
 documentation = "https://docs.rs/ratatui-macros"

@@ -2,7 +2,7 @@
 name = "ratatui-termion"
 version = "0.1.0-beta.0"
 description = "Termion backend for the Ratatui Terminal UI library."
-documentation = "https://docs.rs/ratatui-termion/"
+documentation = "https://docs.rs/ratatui-termion"
 readme = "README.md"
 authors.workspace = true
 repository.workspace = true
