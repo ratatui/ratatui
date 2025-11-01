@@ -73,12 +73,10 @@ struct Layer {
 
 /// A cell within a layer.
 ///
-/// If a Context contains multiple layers, then the symbol,
-/// foreground, and background colors for a character will be
-/// determined by the top-most layer that provides a value for that
-/// character.  For example, a chart drawn with [`Marker::Block`] may
-/// provide the background color, and a later chart drawn with
-/// [`Marker::Braille`] may provide the symbol and foreground color.
+/// If a Context contains multiple layers, then the symbol, foreground, and background colors for a
+/// character will be determined by the top-most layer that provides a value for that character.
+/// For example, a chart drawn with [`Marker::Block`] may provide the background color, and a later
+/// chart drawn with [`Marker::Braille`] may provide the symbol and foreground color.
 #[derive(Debug)]
 struct LayerCell {
     symbol: Option<char>,
@@ -159,15 +157,18 @@ impl Grid for BrailleGrid {
             .iter()
             .zip(&self.colors)
             .map(|(&code_point, &color)| {
-                let symbol = if code_point == symbols::braille::BLANK {
-                    None
-                } else {
-                    Some(char::from_u32(code_point.into()).unwrap())
+                let symbol = match code_point {
+                    // Skip rendering blank braille patterns to allow layers underneath
+                    // to show through.
+                    symbols::braille::BLANK => None,
+                    _ => Some(char::from_u32(code_point.into()).unwrap()),
                 };
 
                 LayerCell {
                     symbol,
                     fg: color,
+                    // Braille patterns only affect foreground.
+                    // This way we can have braille layered with block.
                     bg: None,
                 }
             })
@@ -213,11 +214,9 @@ struct CharGrid {
     /// The character to use for every cell - e.g. a block, dot, etc.
     cell_char: char,
 
-    /// If true, apply the color to the background as well as the
-    /// foreground.  This is used for [`Marker::Block`], so that it will
-    /// overwrite any previous foreground character, but also leave a
-    /// background that can be overlaid with an additional foreground
-    /// character.
+    /// If true, apply the color to the background as well as the foreground. This is used for
+    /// [`Marker::Block`], so that it will overwrite any previous foreground character, but also
+    /// leave a background that can be overlaid with an additional foreground character.
     apply_color_to_bg: bool,
 }
 
@@ -344,35 +343,22 @@ impl Grid for HalfBlockGrid {
             .tuples()
             .flat_map(|(upper_row, lower_row)| zip(upper_row, lower_row));
 
-        // Then we determine the character to print for each pair,
-        // along with the color of the foreground and background.
+        // Then we determine the character to print for each pair, along with the color of the
+        // foreground and background.
         let contents = vertical_color_pairs
-            .map(|(upper, lower)| match (upper, lower) {
-                (None, None) => LayerCell {
-                    symbol: None,
-                    fg: None,
-                    bg: None,
-                },
-                (None, Some(lower)) => LayerCell {
-                    symbol: Some(symbols::half_block::LOWER),
-                    fg: Some(*lower),
-                    bg: None,
-                },
-                (Some(upper), None) => LayerCell {
-                    symbol: Some(symbols::half_block::UPPER),
-                    fg: Some(*upper),
-                    bg: None,
-                },
-                (Some(upper), Some(lower)) if lower == upper => LayerCell {
-                    symbol: Some(symbols::half_block::FULL),
-                    fg: Some(*upper),
-                    bg: Some(*lower),
-                },
-                (Some(upper), Some(lower)) => LayerCell {
-                    symbol: Some(symbols::half_block::UPPER),
-                    fg: Some(*upper),
-                    bg: Some(*lower),
-                },
+            .map(|(upper, lower)| {
+                let (symbol, fg, bg) = match (upper, lower) {
+                    (None, None) => (None, None, None),
+                    (None, Some(lower)) => (Some(symbols::half_block::LOWER), Some(*lower), None),
+                    (Some(upper), None) => (Some(symbols::half_block::UPPER), Some(*upper), None),
+                    (Some(upper), Some(lower)) if lower == upper => {
+                        (Some(symbols::half_block::FULL), Some(*upper), Some(*lower))
+                    }
+                    (Some(upper), Some(lower)) => {
+                        (Some(symbols::half_block::UPPER), Some(*upper), Some(*lower))
+                    }
+                };
+                LayerCell { symbol, fg, bg }
             })
             .collect();
 
@@ -506,9 +492,17 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
 /// this as similar to the `Frame` struct that is used to draw widgets on the terminal.
 #[derive(Debug)]
 pub struct Context<'a> {
+    // Width of the canvas in cells.
+    //
+    // This is NOT the resolution in dots/pixels as this varies by marker type.
     width: u16,
+    // Height of the canvas in cells.
+    //
+    // This is NOT the resolution in dots/pixels as this varies by marker type.
     height: u16,
+    // Canvas coordinate system width
     x_bounds: [f64; 2],
+    // Canvas coordinate system height
     y_bounds: [f64; 2],
     grid: Box<dyn Grid>,
     dirty: bool,
@@ -573,7 +567,9 @@ impl<'a> Context<'a> {
         }
     }
 
-    /// Change the marker being used in this context
+    /// Change the marker being used in this context.
+    ///
+    /// This will save the last layer if necessary and reset the grid to use the new marker.
     pub fn marker(&mut self, marker: Marker) {
         self.finish();
         self.grid = Self::marker_to_grid(self.width, self.height, marker);
