@@ -250,15 +250,39 @@ pub struct Style {
     /// The modifiers to add.
     #[cfg_attr(
         feature = "serde",
-        serde(default, skip_serializing_if = "Modifier::is_empty")
+        serde(
+            default,
+            skip_serializing_if = "Modifier::is_empty",
+            deserialize_with = "deserialize_modifier"
+        )
     )]
     pub add_modifier: Modifier,
     /// The modifiers to remove.
     #[cfg_attr(
         feature = "serde",
-        serde(default, skip_serializing_if = "Modifier::is_empty")
+        serde(
+            default,
+            skip_serializing_if = "Modifier::is_empty",
+            deserialize_with = "deserialize_modifier"
+        )
     )]
     pub sub_modifier: Modifier,
+}
+
+#[cfg(feature = "serde")]
+/// Deserialize a [`Modifier`] while treating missing or `null` values as empty.
+///
+/// This helper is used with serde to coerce absent or `null` modifier fields to
+/// [`Modifier::empty`], allowing configuration files to omit these fields
+/// without triggering deserialization errors.
+fn deserialize_modifier<'de, D>(deserializer: D) -> Result<Modifier, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+
+    Option::<Modifier>::deserialize(deserializer)
+        .map(|modifier| modifier.unwrap_or_else(Modifier::empty))
 }
 
 /// A custom debug implementation that prints only the fields that are not the default, and unwraps
@@ -988,5 +1012,20 @@ mod tests {
 
         let deserialized: Style = serde_json::from_str(&json_str).unwrap();
         assert_eq!(deserialized, style);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialize_null_modifiers() {
+        let json_value = serde_json::json!({
+            "add_modifier": serde_json::Value::Null,
+            "sub_modifier": serde_json::Value::Null
+        });
+        let json_str = serde_json::to_string(&json_value).unwrap();
+
+        let style: Style = serde_json::from_str(&json_str).unwrap();
+
+        assert!(style.add_modifier.is_empty());
+        assert!(style.sub_modifier.is_empty());
     }
 }
