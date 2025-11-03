@@ -847,7 +847,7 @@ impl Table<'_> {
         }
     }
 
-    /// Return the space that a Cell should occupy, taking into account its colspans
+    /// Return the space that a Cell should occupy, taking into account its column span
     ///
     /// Returns `None` when there are no more columns for the Cell to occupy; in this case,
     /// rendering of the rest of the row can safely be skipped.
@@ -858,7 +858,7 @@ impl Table<'_> {
         T: Iterator<Item = &'a ColumnSpan>,
     {
         let mut ret = None;
-        for _ in 0..cell.get_colspan() {
+        for _ in 0..cell.get_column_span() {
             let x: u16;
             let width: u16;
             if let Some(cell_span) = column_widths_iterator.next() {
@@ -1427,16 +1427,16 @@ mod tests {
         }
 
         #[test]
-        fn render_colspan_1_single_column_each() {
+        fn render_column_span_1_single_column_each() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
             let rows = vec![
                 Row::new(vec![
-                    Cell::new("Cell1").colspan(1),
-                    Cell::new("Cell2").colspan(1),
+                    Cell::new("Cell1").column_span(1),
+                    Cell::new("Cell2").column_span(1),
                 ]),
                 Row::new(vec![
-                    Cell::new("Cell3").colspan(1),
-                    Cell::new("Cell4").colspan(1),
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
                 ]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2]);
@@ -1450,16 +1450,16 @@ mod tests {
         }
 
         #[test]
-        fn render_with_colspan_0_cell_should_not_render() {
+        fn render_with_column_span_0_cell_should_not_render() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
             let rows = vec![
                 Row::new(vec![
-                    Cell::new("Cell1").colspan(0),
-                    Cell::new("Cell2").colspan(1),
+                    Cell::new("Cell1").column_span(0),
+                    Cell::new("Cell2").column_span(1),
                 ]),
                 Row::new(vec![
-                    Cell::new("Cell3").colspan(1),
-                    Cell::new("Cell4").colspan(1),
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
                 ]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2]);
@@ -1477,12 +1477,12 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 2));
             let rows = vec![
                 Row::new(vec![
-                    Cell::new("Cell1").colspan(2),
-                    Cell::new("Cell2").colspan(1),
+                    Cell::new("Cell1").column_span(2),
+                    Cell::new("Cell2").column_span(1),
                 ]),
                 Row::new(vec![
-                    Cell::new("Cell3").colspan(1),
-                    Cell::new("Cell4").colspan(1),
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
                 ]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2]);
@@ -1500,13 +1500,13 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
             let rows = vec![
                 Row::new(vec![
-                    Cell::new("Cell1").colspan(2),
-                    Cell::new("Cell2").colspan(1),
+                    Cell::new("Cell1").column_span(2),
+                    Cell::new("Cell2").column_span(1),
                 ]),
                 Row::new(vec![
-                    Cell::new("Cell3").colspan(1),
-                    Cell::new("Cell4").colspan(1),
-                    Cell::new("Cell5").colspan(1),
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                    Cell::new("Cell5").column_span(1),
                 ]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 3]);
@@ -1524,14 +1524,14 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
             let rows = vec![
                 Row::new(vec![
-                    Cell::new("Cell1").colspan(1),
-                    Cell::new("Cell2").colspan(2),
-                    Cell::new("Cell3").colspan(1),
+                    Cell::new("Cell1").column_span(1),
+                    Cell::new("Cell2").column_span(2),
+                    Cell::new("Cell3").column_span(1),
                 ]),
                 Row::new(vec![
-                    Cell::new("Cell4").colspan(1),
-                    Cell::new("Cell5").colspan(1),
-                    Cell::new("Cell6").colspan(1),
+                    Cell::new("Cell4").column_span(1),
+                    Cell::new("Cell5").column_span(1),
+                    Cell::new("Cell6").column_span(1),
                 ]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 3]);
@@ -1549,13 +1549,13 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
             let rows = vec![
                 Row::new(vec![
-                    Cell::new("Cell1Cell1Cell1").colspan(2),
-                    Cell::new("Cell2").colspan(1),
+                    Cell::new("Cell1Cell1Cell1").column_span(2),
+                    Cell::new("Cell2").column_span(1),
                 ]),
                 Row::new(vec![
-                    Cell::new("Cell3").colspan(1),
-                    Cell::new("Cell4Cell4Cell4").colspan(2),
-                    Cell::new("Cell5").colspan(1),
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4Cell4Cell4").column_span(2),
+                    Cell::new("Cell5").column_span(1),
                 ]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 3]);
