@@ -288,6 +288,33 @@ impl From<(u16, u16)> for ColumnSpan {
     }
 }
 
+impl ColumnSpan {
+    /// Extends the width of this `ColumnSpan` to take up `column_span` columns taken from
+    /// `columns_list`
+    ///
+    /// This `ColumnSpan`'s x-coordinate will remain unchanged, but the width will increase to fill
+    /// the widths of the columns passed in, plus the gaps between the columns. This function
+    /// removes columns from `column_list` each time a width is added to this `ColumnSpan`.
+    ///
+    /// The default for `Cell::column_span` is 1, so passing 1 as the value for `column_span` to
+    /// this function returns an unchanged `ColumnSpan` and does not change `column_list`.
+    ///
+    /// If the columns in `columns_list` are fewer or equal to `column_span`, the returned width
+    /// will not include a gap at the end of the last column; gaps are added only between columns.
+    fn extend<T>(mut self, column_span: u16, mut columns_list: T) -> (Self, T)
+        where T: IntoIterator<Item = Self> + FromIterator<Self> {
+        let mut columns_list = columns_list.into_iter();
+        for _ in 0..column_span - 1 {
+            if let Some(column) = columns_list.next() {
+                self.width += column.width + 1;
+            } else {
+                break;
+            }
+        }
+        (self, columns_list.collect())
+    }
+}
+
 impl Default for Table<'_> {
     fn default() -> Self {
         Self {
@@ -2607,5 +2634,75 @@ mod tests {
             .footer(Row::new(vec!["Footer1", "Footer2", "Footer3"]));
         // This should not panic, even if the buffer has zero size.
         Widget::render(table, buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn extend_to_one_column_extra_column_remaining()
+    {
+        let mut span = ColumnSpan::from((1, 2));
+        let mut columns = vec![ColumnSpan::from((3, 2)), ColumnSpan::from((3, 2))];
+        (span, columns) = span.extend(1, columns);
+        assert_eq!(span.width, 2);
+        assert_eq!(columns.len(), 2);
+    }
+
+    #[test]
+    fn extend_to_one_column_to_last_column()
+    {
+        let mut span = ColumnSpan::from((1, 2));
+        let mut columns = vec![ColumnSpan::from((3, 2))];
+        (span, columns) = span.extend(1, columns);
+        assert_eq!(span.width, 2);
+        assert_eq!(columns.len(), 1);
+    }
+
+    #[test]
+    fn extend_to_two_columns_extra_column_remaining()
+    {
+        let mut span = ColumnSpan::from((1, 2));
+        let mut columns = vec![ColumnSpan::from((3, 2)), ColumnSpan::from((3, 2))];
+        (span, columns) = span.extend(2, columns);
+        assert_eq!(span.width, 5);
+        assert_eq!(columns.len(), 1);
+    }
+
+    #[test]
+    fn extend_to_two_columns_to_last_column()
+    {
+        let mut span = ColumnSpan::from((1, 2));
+        let mut columns = vec![ColumnSpan::from((3, 2))];
+        (span, columns) = span.extend(2, columns);
+        assert_eq!(span.width, 5);
+        assert_eq!(columns.len(), 0);
+    }
+
+    #[test]
+    fn extend_to_two_columns_past_last_column()
+    {
+        let mut span = ColumnSpan::from((1, 2));
+        let mut columns = vec![];
+        (span, columns) = span.extend(2, columns);
+        assert_eq!(span.width, 2);
+        assert_eq!(columns.len(), 0);
+    }
+
+    #[test]
+    fn extend_to_three_columns_past_last_column()
+    {
+        let mut span = ColumnSpan::from((1, 2));
+        let mut columns = vec![ColumnSpan::from((3, 2))];
+        (span, columns) = span.extend(3, columns);
+        assert_eq!(span.width, 5);
+        assert_eq!(columns.len(), 0);
+    }
+
+    #[test]
+    fn extend_to_three_columns_to_last_column()
+    {
+        let mut span = ColumnSpan::from((1, 2));
+        let mut columns = vec![ColumnSpan::from((3, 2)), ColumnSpan::from((3, 2))];
+        (span, columns) = span.extend(3, columns);
+        assert_eq!(span.width, 8);
+        assert_eq!(columns.len(), 0);
     }
 }
