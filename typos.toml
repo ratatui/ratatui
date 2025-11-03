@@ -2,6 +2,7 @@
 
 [default.extend-words]
 ratatui = "ratatui"
+sectore = "sectore" # https://github.com/sectore
 
 [type.md]
 extend-ignore-re = [
