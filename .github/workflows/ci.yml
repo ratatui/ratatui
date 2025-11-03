@@ -201,7 +201,7 @@ jobs:
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2
       - uses: taiki-e/install-action@c5b1b6f479c32f356cc6f4ba672a47f63853b13b # v2
         with:
-          tool: cargo-rdme
+          tool: cargo-hack,cargo-rdme
       - run: cargo xtask readme --check
 
   # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account the
