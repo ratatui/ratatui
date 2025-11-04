@@ -89,7 +89,7 @@ cfg_if::cfg_if! {
         );
     }
 }
-use ratatui_core::backend::{Backend, ClearType, ScrollingMethod, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -149,23 +149,10 @@ use ratatui_core::style::{Color, Modifier, Style};
 /// [`backend`]: ratatui_core::backend
 /// [Crossterm]: https://crates.io/crates/crossterm
 /// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct CrosstermBackend<W: Write> {
     /// The writer used to send commands to the terminal.
     writer: W,
-    scrolling_method: ScrollingMethod,
-}
-
-impl<W> Default for CrosstermBackend<W>
-where
-    W: Write + Default,
-{
-    fn default() -> Self {
-        Self {
-            writer: W::default(),
-            scrolling_method: ScrollingMethod::Regions,
-        }
-    }
 }
 
 impl<W> CrosstermBackend<W>
@@ -189,22 +176,7 @@ where
     /// let backend = CrosstermBackend::new(stdout());
     /// ```
     pub const fn new(writer: W) -> Self {
-        Self {
-            writer,
-            scrolling_method: ScrollingMethod::Regions,
-        }
-    }
-
-    /// Sets the [`ScrollingMethod`] used by the terminal.
-    ///
-    /// By default, this backend uses [scrolling regions] to prevent flickering when scrolling the
-    /// terminal.
-    ///
-    /// [scrolling regions]: ScrollingMethod::Regions
-    #[must_use]
-    pub const fn scrolling_method(mut self, scrolling_method: ScrollingMethod) -> Self {
-        self.scrolling_method = scrolling_method;
-        self
+        Self { writer }
     }
 
     /// Gets the writer.
@@ -379,11 +351,12 @@ where
     fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
+}
 
-    fn get_scrolling_method(&self) -> ScrollingMethod {
-        self.scrolling_method
-    }
-
+impl<W> ScrollByRegion for CrosstermBackend<W>
+where
+    W: Write,
+{
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         queue!(
             self.writer,

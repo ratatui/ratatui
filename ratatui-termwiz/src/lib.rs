@@ -38,7 +38,7 @@
 use std::error::Error;
 use std::io;
 
-use ratatui_core::backend::{Backend, ClearType, ScrollingMethod, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -90,7 +90,6 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
-    scrolling_method: ScrollingMethod,
 }
 
 impl TermwizBackend {
@@ -119,30 +118,14 @@ impl TermwizBackend {
             BufferedTerminal::new(SystemTerminal::new(Capabilities::new_from_env()?)?)?;
         buffered_terminal.terminal().set_raw_mode()?;
         buffered_terminal.terminal().enter_alternate_screen()?;
-        Ok(Self {
-            buffered_terminal,
-            scrolling_method: ScrollingMethod::Regions,
-        })
+        Ok(Self { buffered_terminal })
     }
 
     /// Creates a new Termwiz backend instance with the given buffered terminal.
     pub const fn with_buffered_terminal(instance: BufferedTerminal<SystemTerminal>) -> Self {
         Self {
             buffered_terminal: instance,
-            scrolling_method: ScrollingMethod::Regions,
         }
-    }
-
-    /// Sets the [`ScrollingMethod`] used by the terminal.
-    ///
-    /// By default, this backend uses [scrolling regions] to prevent flickering when scrolling the
-    /// terminal.
-    ///
-    /// [scrolling regions]: ScrollingMethod::Regions
-    #[must_use]
-    pub const fn scrolling_method(mut self, scrolling_method: ScrollingMethod) -> Self {
-        self.scrolling_method = scrolling_method;
-        self
     }
 
     /// Returns a reference to the buffered terminal used by the backend.
@@ -306,11 +289,9 @@ impl Backend for TermwizBackend {
         self.buffered_terminal.flush().map_err(io::Error::other)?;
         Ok(())
     }
+}
 
-    fn get_scrolling_method(&self) -> ratatui_core::backend::ScrollingMethod {
-        self.scrolling_method
-    }
-
+impl ScrollByRegion for TermwizBackend {
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         // termwiz doesn't have a command to just set the scrolling region. Instead, setting the
         // scrolling region and scrolling are combined. However, this has the side-effect of

@@ -138,16 +138,6 @@ pub struct WindowSize {
     pub pixels: Size,
 }
 
-/// The method used by the backend to scroll the terminal.
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum ScrollingMethod {
-    /// Scrolls the terminal by moving the cursor
-    Cursor,
-    /// Scrolls the terminal by moving a region of the screen
-    Regions,
-}
-
 /// The `Backend` trait provides an abstraction over different terminal libraries. It defines the
 /// methods required to draw content, manipulate the cursor, and clear the terminal screen.
 ///
@@ -311,30 +301,13 @@ pub trait Backend {
 
     /// Flush any buffered content to the terminal screen.
     fn flush(&mut self) -> Result<(), Self::Error>;
+}
 
-    /// Get the [`ScrollingMethod`] used to scroll the terminal.
-    ///
-    /// [Scrolling regions] are used by terminals to scroll a region of
-    /// the screen without causing it to flicker. If this backend does not support this technique,
-    /// this method should return [`ScrollingMethod::Cursor`].
-    ///
-    /// If this method returns [`ScrollingMethod::Regions`], the
-    /// [`scroll_region_up`] and [`scroll_region_down`] methods must be implemented.
-    ///
-    /// This is only relevant for inline viewports.
-    ///
-    /// [scrolling regions]: ScrollingMethod::Regions
-    /// [`scroll_region_up`]: Backend::scroll_region_up
-    /// [`scroll_region_down`]: Backend::scroll_region_down
-    fn get_scrolling_method(&self) -> ScrollingMethod {
-        ScrollingMethod::Cursor
-    }
-
-    /// This method is only called if [`get_scrolling_method`]
-    /// returns [`ScrollingMethod::Regions`]. If this backend does not support scrolling regions,
-    /// [`get_scrolling_method`] should return [`ScrollingMethod::Cursor`] and this method should
-    /// either be a no-op or return an error indicating this functionality is unsupported.
-    ///
+/// [`ScrollByRegion`] is a superset of the [`Backend`] trait that supports the scrolling
+/// methods needed for [`insert_before`].
+///
+/// [`insert_before`]: crate::terminal::Terminal::insert_before
+pub trait ScrollByRegion: Backend {
     /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range
     /// of rows.
     ///
@@ -364,22 +337,13 @@ pub trait Backend {
     ///
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_up`].
-    ///
-    /// [`get_scrolling_method`]: Backend::get_scrolling_method
     #[allow(unused_variables)]
     fn scroll_region_up(
         &mut self,
         region: core::ops::Range<u16>,
         line_count: u16,
-    ) -> Result<(), Self::Error> {
-        Ok(())
-    }
+    ) -> Result<(), Self::Error>;
 
-    /// This method is only called if [`get_scrolling_method`]
-    /// returns [`ScrollingMethod::Regions`]. If this backend does not support scrolling regions,
-    /// [`get_scrolling_method`] should return [`ScrollingMethod::Cursor`] and this method should
-    /// either be a no-op or return an error indicating this functionality is unsupported.
-    ///
     /// Scroll a region of the screen downwards, where a region is specified by a (half-open) range
     /// of rows.
     ///
@@ -389,7 +353,7 @@ pub trait Backend {
     ///
     /// The position of the cursor afterwards is undefined.
     ///
-    /// See the documentation for [`scroll_region_down`] for more information about how this
+    /// See the documentation for [`Self::scroll_region_down`] for more information about how this
     /// is expected to be implemented for ANSI terminals. All of that applies, except the ANSI
     /// sequence to scroll down is "^[[NT".
     ///
@@ -398,17 +362,12 @@ pub trait Backend {
     ///
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_down`].
-    ///
-    /// [`get_scrolling_method`]: Backend::get_scrolling_method
-    /// [`scroll_region_down`]: Backend::scroll_region_down
     #[allow(unused_variables)]
     fn scroll_region_down(
         &mut self,
         region: core::ops::Range<u16>,
         line_count: u16,
-    ) -> Result<(), Self::Error> {
-        Ok(())
-    }
+    ) -> Result<(), Self::Error>;
 }
 
 #[cfg(test)]

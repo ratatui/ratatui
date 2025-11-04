@@ -8,7 +8,7 @@ use core::iter;
 
 use unicode_width::UnicodeWidthStr;
 
-use crate::backend::{Backend, ClearType, ScrollingMethod, WindowSize};
+use crate::backend::{Backend, ClearType, ScrollByRegion, WindowSize};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
 
@@ -36,7 +36,6 @@ pub struct TestBackend {
     scrollback: Buffer,
     cursor: bool,
     pos: (u16, u16),
-    scrolling_method: ScrollingMethod,
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
@@ -76,7 +75,6 @@ impl TestBackend {
             scrollback: Buffer::empty(Rect::new(0, 0, width, 0)),
             cursor: false,
             pos: (0, 0),
-            scrolling_method: ScrollingMethod::Cursor,
         }
     }
 
@@ -99,17 +97,7 @@ impl TestBackend {
             scrollback,
             cursor: false,
             pos: (0, 0),
-            scrolling_method: ScrollingMethod::Cursor,
         }
-    }
-
-    /// Sets the [`ScrollingMethod`] used by the backend.
-    ///
-    /// This may be useful to test how something behaves with different scrolling methods enabled.
-    #[must_use]
-    pub const fn scrolling_method(mut self, scrolling_method: ScrollingMethod) -> Self {
-        self.scrolling_method = scrolling_method;
-        self
     }
 
     /// Returns a reference to the internal buffer of the `TestBackend`.
@@ -379,11 +367,9 @@ impl Backend for TestBackend {
     fn flush(&mut self) -> Result<()> {
         Ok(())
     }
+}
 
-    fn get_scrolling_method(&self) -> ScrollingMethod {
-        self.scrolling_method
-    }
-
+impl ScrollByRegion for TestBackend {
     fn scroll_region_up(&mut self, region: core::ops::Range<u16>, scroll_by: u16) -> Result<()> {
         let width: usize = self.buffer.area.width.into();
         let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
@@ -483,7 +469,6 @@ mod tests {
                 scrollback: Buffer::empty(Rect::new(0, 0, 10, 0)),
                 cursor: false,
                 pos: (0, 0),
-                scrolling_method: ScrollingMethod::Cursor
             }
         );
     }

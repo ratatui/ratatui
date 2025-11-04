@@ -17,7 +17,7 @@ use std::{
 use color_eyre::Result;
 use crossterm::event;
 use rand::distr::{Distribution, Uniform};
-use ratatui::backend::Backend;
+use ratatui::backend::ScrollByRegion;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
@@ -158,7 +158,7 @@ fn downloads() -> Downloads {
 }
 
 #[expect(clippy::needless_pass_by_value)]
-fn run<B: Backend>(
+fn run<B: ScrollByRegion>(
     terminal: &mut Terminal<B>,
     workers: Vec<Worker>,
     mut downloads: Downloads,

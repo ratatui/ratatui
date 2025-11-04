@@ -4,7 +4,6 @@ use ratatui::backend::TestBackend;
 use ratatui::layout::Rect;
 use ratatui::widgets::{Block, Paragraph, Widget};
 use ratatui::{Terminal, TerminalOptions, Viewport};
-use ratatui_core::backend::ScrollingMethod;
 
 #[test]
 fn swap_buffer_clears_prev_buffer() {
@@ -111,7 +110,7 @@ fn terminal_insert_before_moves_viewport_does_not_clobber() -> Result<(), Box<dy
     // insert_before, and doesn't draw again afterwards. When using scrolling regions, we
     // shouldn't clobber the viewport.
 
-    let backend = TestBackend::new(20, 5).scrolling_method(ScrollingMethod::Regions);
+    let backend = TestBackend::new(20, 5);
     let mut terminal = Terminal::with_options(
         backend,
         TerminalOptions {
@@ -195,7 +194,7 @@ fn terminal_insert_before_scrolls_on_large_input_does_not_clobber() -> Result<()
     // insert_before, and doesn't draw again afterwards. When using scrolling regions, we
     // shouldn't clobber the viewport.
 
-    let backend = TestBackend::new(20, 5).scrolling_method(ScrollingMethod::Regions);
+    let backend = TestBackend::new(20, 5);
     let mut terminal = Terminal::with_options(
         backend,
         TerminalOptions {
@@ -294,7 +293,7 @@ fn terminal_insert_before_scrolls_on_many_inserts_does_not_clobber() -> Result<(
     // calling insert_before, and doesn't draw again afterwards. When using scrolling regions, we
     // shouldn't clobber the viewport.
 
-    let backend = TestBackend::new(20, 5).scrolling_method(ScrollingMethod::Regions);
+    let backend = TestBackend::new(20, 5);
     let mut terminal = Terminal::with_options(
         backend,
         TerminalOptions {
@@ -415,7 +414,7 @@ fn terminal_insert_before_large_viewport_does_not_clobber() -> Result<(), Box<dy
     // insert_before, and doesn't draw again afterwards. When using scrolling regions, we shouldn't
     // clobber the viewport.
 
-    let backend = TestBackend::new(20, 3).scrolling_method(ScrollingMethod::Regions);
+    let backend = TestBackend::new(20, 3);
     let mut terminal = Terminal::with_options(
         backend,
         TerminalOptions {
