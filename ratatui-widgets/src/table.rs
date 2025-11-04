@@ -841,7 +841,7 @@ impl Table<'_> {
     ///
     /// Returns `None` when there are no more columns for the Cell to occupy.
     ///
-    /// Otherwise, returns a pair `Some(CellArea{x, width})`, representing the start x-coordinate
+    /// Otherwise, returns `Some(CellArea{x, width})`, representing the start x-coordinate
     /// and width of the Cell.
     fn get_final_column_span<'a, T>(
         column_widths_iterator: &mut T,
@@ -860,13 +860,13 @@ impl Table<'_> {
             } else {
                 break;
             }
-            if let Some(cell_area) = ret {
+            if let Some(area_so_far) = ret {
                 ret = Some(CellArea {
-                    // Initial start of column span
-                    x: cell_area.x,
+                    // Initial start of cell area
+                    x: area_so_far.x,
                     width: (
                         // Space taken by previous columns and gaps
-                        cell_area.width
+                        area_so_far.width
                         // Space taken by column on this iteration
                         + next_width
                         // Gap between columns
