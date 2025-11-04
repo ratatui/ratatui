@@ -2618,20 +2618,25 @@ mod tests {
         assert!(column_span.is_none());
     }
 
+    #[track_caller]
+    fn test_colspan_width(columns: &[CellArea], column_span: u16, expected_column_width: u16) {
+        let column_span = Table::get_final_column_span(&mut columns.iter(), column_span);
+        assert!(column_span.is_some());
+        assert_eq!(column_span.unwrap().width, expected_column_width);
+    }
+
     #[test]
     fn get_area_for_column_span_one_extra_column_remaining() {
-        let columns = [CellArea { x: 3, width: 2 }, CellArea { x: 3, width: 2 }];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 1);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, 2);
+        test_colspan_width(
+            &[CellArea { x: 3, width: 2 }, CellArea { x: 3, width: 2 }],
+            1,
+            2,
+        );
     }
 
     #[test]
     fn get_area_for_column_span_one_to_last_column() {
-        let columns = [CellArea { x: 3, width: 2 }];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 1);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, 2);
+        test_colspan_width(&[CellArea { x: 3, width: 2 }], 1, 2);
     }
 
     #[test]
@@ -2643,62 +2648,64 @@ mod tests {
 
     #[test]
     fn get_area_for_column_span_two_extra_column_remaining() {
-        let columns = [
-            CellArea { x: 3, width: 2 },
-            CellArea { x: 3, width: 2 },
-            CellArea { x: 3, width: 2 },
-        ];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 2);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, 5);
+        test_colspan_width(
+            &[
+                CellArea { x: 3, width: 2 },
+                CellArea { x: 3, width: 2 },
+                CellArea { x: 3, width: 2 },
+            ],
+            2,
+            5,
+        );
     }
 
     #[test]
     fn get_area_for_column_span_two_to_last_column() {
-        let columns = [CellArea { x: 3, width: 2 }, CellArea { x: 3, width: 2 }];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 2);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, 5);
+        test_colspan_width(
+            &[CellArea { x: 3, width: 2 }, CellArea { x: 3, width: 2 }],
+            2,
+            5,
+        );
     }
 
     #[test]
     fn get_area_for_column_span_two_past_last_column() {
-        let columns = [CellArea { x: 3, width: 2 }];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 2);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, 2);
+        test_colspan_width(&[CellArea { x: 3, width: 2 }], 2, 2);
     }
 
     #[test]
     fn get_area_for_column_span_three_extra_column_remaining() {
-        let columns = [
-            CellArea { x: 3, width: 2 },
-            CellArea { x: 3, width: 2 },
-            CellArea { x: 3, width: 2 },
-            CellArea { x: 3, width: 2 },
-        ];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 3);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, 8);
+        test_colspan_width(
+            &[
+                CellArea { x: 3, width: 2 },
+                CellArea { x: 3, width: 2 },
+                CellArea { x: 3, width: 2 },
+                CellArea { x: 3, width: 2 },
+            ],
+            3,
+            8,
+        );
     }
 
     #[test]
     fn get_area_for_columnspan_three_to_last_column() {
-        let columns = [
-            CellArea { x: 3, width: 2 },
-            CellArea { x: 3, width: 2 },
-            CellArea { x: 3, width: 2 },
-        ];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 3);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, 8);
+        test_colspan_width(
+            &[
+                CellArea { x: 3, width: 2 },
+                CellArea { x: 3, width: 2 },
+                CellArea { x: 3, width: 2 },
+            ],
+            3,
+            8,
+        );
     }
 
     #[test]
     fn get_area_for_column_span_three_past_last_column() {
-        let columns = [CellArea { x: 3, width: 2 }, CellArea { x: 3, width: 2 }];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 3);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, 5);
+        test_colspan_width(
+            &[CellArea { x: 3, width: 2 }, CellArea { x: 3, width: 2 }],
+            3,
+            5,
+        );
     }
 }
