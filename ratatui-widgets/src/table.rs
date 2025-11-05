@@ -2688,7 +2688,7 @@ mod tests {
     }
 
     #[test]
-    fn get_area_for_columnspan_three_to_last_column() {
+    fn get_area_for_column_span_three_to_last_column() {
         test_colspan_width(
             &[
                 CellArea { x: 3, width: 2 },
@@ -2706,6 +2706,112 @@ mod tests {
             &[CellArea { x: 3, width: 2 }, CellArea { x: 3, width: 2 }],
             3,
             5,
+        );
+    }
+
+    #[track_caller]
+    fn test_table_with_selection_and_column_spans<'line, 'cell, Lines, Cells>(
+        highlight_spacing: HighlightSpacing,
+        columns: u16,
+        spacing: u16,
+        selection: Option<usize>,
+        cells: Cells,
+        expected: Lines,
+    ) where
+        Cells: IntoIterator,
+        Cells::Item: Into<Cell<'cell>>,
+        Lines: IntoIterator,
+        Lines::Item: Into<Line<'line>>,
+    {
+        let table = Table::default()
+            .rows(vec![Row::new(cells)])
+            .highlight_spacing(highlight_spacing)
+            .highlight_symbol(">>>")
+            .column_spacing(spacing);
+        let area = Rect::new(0, 0, columns, 3);
+        let mut buf = Buffer::empty(area);
+        let mut state = TableState::default().with_selected(selection);
+        StatefulWidget::render(table, area, &mut buf, &mut state);
+        assert_eq!(buf, Buffer::with_lines(expected));
+    }
+
+    #[test]
+    fn test_table_column_spans_with_nothing_selected_highlight_always() {
+        test_table_with_selection_and_column_spans(
+            HighlightSpacing::Always,
+            15,   // width
+            1,    // spacing
+            None, // selection
+            [
+                Cell::new("ABCDEFGHIJK").column_span(2),
+                Cell::new("12345678901"),
+                Cell::new("XYZXYZXYZXY"),
+            ],
+            [
+                "   ABCDEFGH 123",
+                "               ", // row 2
+                "               ", // row 3
+            ],
+        );
+    }
+
+    #[test]
+    fn test_table_column_spans_with_row_0_selected_highlight_always() {
+        test_table_with_selection_and_column_spans(
+            HighlightSpacing::Always,
+            15,      // width
+            1,       // spacing
+            Some(0), // selection
+            [
+                Cell::new("ABCDEFGHIJK").column_span(2),
+                Cell::new("12345678901"),
+                Cell::new("XYZXYZXYZXY"),
+            ],
+            [
+                ">>>ABCDEFGH 123",
+                "               ", // row 2
+                "               ", // row 3
+            ],
+        );
+    }
+
+    #[test]
+    fn test_table_column_spans_with_nothing_selected_highlight_when_selected() {
+        test_table_with_selection_and_column_spans(
+            HighlightSpacing::WhenSelected,
+            15,   // width
+            1,    // spacing
+            None, // selection
+            [
+                Cell::new("ABCDEFGHIJK").column_span(2),
+                Cell::new("12345678901"),
+                Cell::new("XYZXYZXYZXY"),
+            ],
+            [
+                "ABCDEFGHIJ 1234",
+                "               ", // row 2
+                "               ", // row 3
+            ],
+        );
+    }
+
+    #[test]
+    fn test_table_column_spans_with_row_0_selected_highlight_when_selected() {
+        test_table_with_selection_and_column_spans(
+            HighlightSpacing::WhenSelected,
+            15,      // width
+            1,       // spacing
+            Some(0), // selection
+            [
+                Cell::new("ABCDEFGHIJK").column_span(2),
+                Cell::new("12345678901"),
+                Cell::new("XYZXYZXYZXY"),
+            ],
+            [
+                ">>>ABCDEFGH 123",
+                "               ", // row 2
+                "               ", // row 3
+            ],
         );
     }
 }
