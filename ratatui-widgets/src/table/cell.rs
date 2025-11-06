@@ -127,23 +127,23 @@ impl<'a> Cell<'a> {
     ///
     /// let rows = vec![
     ///     Row::new(vec![
-    ///         Cell::new("Cell1Cell1Cell1").column_span(2),
-    ///         Cell::new("Cell2"),
+    ///         Cell::new("111111111111111").column_span(2),
+    ///         Cell::new("22222"),
     ///     ]),
     ///     Row::new(vec![
-    ///         Cell::new("Cell3Cell3Cell3"),
-    ///         Cell::new("Cell4Cell4Cell4").column_span(2),
-    ///         Cell::new("Cell5"),
+    ///         Cell::new("333333333333333"),
+    ///         Cell::new("444444444444444").column_span(2),
+    ///         Cell::new("55555"),
     ///     ]),
     ///     Row::new(vec![
-    ///         Cell::new("Cell6").column_span(1),
-    ///         Cell::new("Cell7").column_span(1),
-    ///         Cell::new("Cell8"), // column_span(1) is the default
+    ///         Cell::new("66666").column_span(1),
+    ///         Cell::new("77777").column_span(1),
+    ///         Cell::new("88888"), // column_span(1) is the default
     ///     ]),
     /// ];
-    /// // "Cell1Cell1C Cell2",
-    /// // "Cell3 Cell4Cell4C",
-    /// // "Cell6 Cell7 Cell8",
+    /// // "11111111111 22222",
+    /// // "33333 44444444444",
+    /// // "66666 77777 88888",
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn column_span(mut self, column_span: u16) -> Self {
