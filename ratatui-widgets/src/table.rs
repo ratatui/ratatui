@@ -271,7 +271,7 @@ pub struct Table<'a> {
     flex: Flex,
 }
 
-/// The area taken up by a single `Cell`
+/// The horizontal area taken up by a single `Cell`.
 #[derive(PartialEq, Debug)]
 struct CellArea {
     x: u16,
