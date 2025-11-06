@@ -851,7 +851,7 @@ impl Table<'_> {
     where
         T: Iterator<Item = &'a CellArea>,
     {
-        let mut ret: Option<CellArea> = None;
+        let mut cell_area: Option<CellArea> = None;
         for _ in 0..cell_column_span {
             let next_x: u16;
             let next_width: u16;
@@ -861,20 +861,20 @@ impl Table<'_> {
             } else {
                 break;
             }
-            if let Some(area_so_far) = ret {
-                ret = Some(CellArea {
+            if let Some(area_so_far) = cell_area {
+                cell_area = Some(CellArea {
                     // Initial start of cell area
                     x: area_so_far.x,
                     width: (area_so_far.width + next_width + column_spacing),
                 });
             } else {
-                ret = Some(CellArea {
+                cell_area = Some(CellArea {
                     x: next_x,
                     width: next_width,
                 });
             }
         }
-        ret
+        cell_area
     }
 
     fn render_rows(
