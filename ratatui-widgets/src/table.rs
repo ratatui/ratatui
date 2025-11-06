@@ -1546,21 +1546,21 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 17, 2));
             let rows = vec![
                 Row::new(vec![
-                    Cell::new("Cell1Cell1Cell1").column_span(2),
-                    Cell::new("Cell2").column_span(1),
+                    Cell::new("11111111111111111111").column_span(2),
+                    Cell::new("22222222222222222222").column_span(1),
                 ]),
                 Row::new(vec![
-                    Cell::new("Cell3").column_span(1),
-                    Cell::new("Cell4Cell4Cell4").column_span(2),
-                    Cell::new("Cell5").column_span(1),
+                    Cell::new("33333333333333333333").column_span(1),
+                    Cell::new("44444444444444444444").column_span(2),
+                    Cell::new("55555555555555555555").column_span(1),
                 ]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 3]);
             Widget::render(table, Rect::new(0, 0, 17, 2), &mut buf);
             #[rustfmt::skip]
             let expected = Buffer::with_lines([
-                "Cell1Cell1C Cell2",
-                "Cell3 Cell4Cell4C",
+                "11111111111 22222",
+                "33333 44444444444",
             ]);
             assert_eq!(buf, expected);
         }
