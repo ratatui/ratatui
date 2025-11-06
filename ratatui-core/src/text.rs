@@ -48,7 +48,7 @@
 //! ]);
 //! ```
 
-mod grapheme;
+pub mod grapheme;
 pub use grapheme::StyledGrapheme;
 
 mod line;

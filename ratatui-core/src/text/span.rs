@@ -8,6 +8,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::buffer::Buffer;
 use crate::layout::Rect;
 use crate::style::{Style, Styled};
+use crate::text::grapheme::terminal_width;
 use crate::text::{Line, StyledGrapheme};
 use crate::widgets::Widget;
 
@@ -429,7 +430,7 @@ impl Widget for &Span<'_> {
         }
         let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
-            let symbol_width = grapheme.symbol.width();
+            let symbol_width = terminal_width(grapheme.symbol);
             let next_x = x.saturating_add(symbol_width as u16);
             if next_x > area.right() {
                 break;

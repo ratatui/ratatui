@@ -6,8 +6,8 @@ use core::mem;
 
 use ratatui_core::layout::Alignment;
 use ratatui_core::text::StyledGrapheme;
+use ratatui_core::text::grapheme::terminal_width;
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
 /// A state machine to pack styled symbols into lines.
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
@@ -87,7 +87,7 @@ where
 
         for grapheme in line_symbols {
             let is_whitespace = grapheme.is_whitespace();
-            let symbol_width = grapheme.symbol.width() as u16;
+            let symbol_width = terminal_width(grapheme.symbol) as u16;
 
             // ignore symbols wider than line limit
             if symbol_width > self.max_line_width {
@@ -138,7 +138,7 @@ where
 
                 // remove whitespace up to the end of line
                 while let Some(grapheme) = self.pending_whitespace.front() {
-                    let width = grapheme.symbol.width() as u16;
+                    let width = terminal_width(grapheme.symbol) as u16;
 
                     if width > remaining_width {
                         break;
@@ -214,7 +214,7 @@ where
             if let Some(line) = self.wrapped_lines.pop_front() {
                 let line_width = line
                     .iter()
-                    .map(|grapheme| grapheme.symbol.width() as u16)
+                    .map(|grapheme| terminal_width(grapheme.symbol) as u16)
                     .sum();
 
                 self.replace_current_line(line);
@@ -294,11 +294,11 @@ where
 
             for StyledGrapheme { symbol, style } in current_line {
                 // Ignore characters wider that the total max width.
-                if symbol.width() as u16 > self.max_line_width {
+                if terminal_width(symbol) as u16 > self.max_line_width {
                     continue;
                 }
 
-                if current_line_width + symbol.width() as u16 > self.max_line_width {
+                if current_line_width + terminal_width(symbol) as u16 > self.max_line_width {
                     // Truncate line
                     break;
                 }
@@ -306,7 +306,7 @@ where
                 let symbol = if horizontal_offset == 0 || Alignment::Left != *alignment {
                     symbol
                 } else {
-                    let w = symbol.width();
+                    let w = terminal_width(symbol);
                     if w > horizontal_offset {
                         let t = trim_offset(symbol, horizontal_offset);
                         horizontal_offset = 0;
@@ -316,7 +316,7 @@ where
                         ""
                     }
                 };
-                current_line_width += symbol.width() as u16;
+                current_line_width += terminal_width(symbol) as u16;
                 self.current_line.push(StyledGrapheme { symbol, style });
             }
         }
@@ -338,7 +338,7 @@ where
 fn trim_offset(src: &str, mut offset: usize) -> &str {
     let mut start = 0;
     for c in UnicodeSegmentation::graphemes(src, true) {
-        let w = c.width();
+        let w = terminal_width(c);
         if w <= offset {
             offset -= w;
             start += c.len();

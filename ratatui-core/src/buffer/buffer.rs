@@ -9,6 +9,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::buffer::Cell;
 use crate::layout::{Position, Rect};
 use crate::style::Style;
+use crate::text::grapheme::terminal_width;
 use crate::text::{Line, Span};
 
 /// A buffer that maps to the desired content of the terminal after the draw call
@@ -342,7 +343,7 @@ impl Buffer {
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
-            .map(|symbol| (symbol, symbol.width() as u16))
+            .map(|symbol| (symbol, terminal_width(symbol) as u16))
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
                 remaining_width = remaining_width.checked_sub(width)?;
@@ -936,6 +937,77 @@ mod tests {
         // Only 1 space left.
         buffer.set_string(0, 0, "コンピ", Style::default());
         assert_eq!(buffer, Buffer::with_lines(["コン "]));
+    }
+
+    #[test]
+    fn set_string_halfwidth_katakana_with_dakuten() {
+        let area = Rect::new(0, 0, 5, 1);
+
+        // Fullwidth katakana: 2 cells
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ガ", Style::default());
+        let mut expected = Buffer::empty(area);
+        expected.set_string(0, 0, "ガ", Style::default());
+        assert_eq!(buffer, expected);
+
+        // Halfwidth katakana (no dakuten): 1 cell
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ｶ", Style::default());
+        assert_eq!(buffer.content[0].symbol(), "ｶ");
+        assert_eq!(buffer.content[1].symbol(), " ");
+
+        // Halfwidth katakana + non-combining dakuten (U+FF9E): grapheme cluster takes 2 cells
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ｶﾞ", Style::default());
+        // The whole grapheme cluster "ｶﾞ" is placed in cell[0], and cell[1] is reset (width=2)
+        assert_eq!(buffer.content[0].symbol(), "ｶﾞ");
+        assert_eq!(buffer.content[1].symbol(), " "); // reset cell
+        assert_eq!(buffer.content[2].symbol(), " ");
+
+        // Halfwidth katakana + non-combining handakuten (U+FF9F): grapheme cluster takes 2 cells
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ﾊﾟ", Style::default());
+        assert_eq!(buffer.content[0].symbol(), "ﾊﾟ");
+        assert_eq!(buffer.content[1].symbol(), " "); // reset cell
+        assert_eq!(buffer.content[2].symbol(), " ");
+
+        // Multiple halfwidth katakana with dakuten: each cluster takes 2 cells (4 total)
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ｶﾞｷﾞ", Style::default());
+        assert_eq!(buffer.content[0].symbol(), "ｶﾞ"); // first cluster: width 2
+        assert_eq!(buffer.content[1].symbol(), " "); // reset by first cluster
+        assert_eq!(buffer.content[2].symbol(), "ｷﾞ"); // second cluster: width 2
+        assert_eq!(buffer.content[3].symbol(), " "); // reset by second cluster
+        assert_eq!(buffer.content[4].symbol(), " ");
+
+        // Overflow: only first 2 grapheme clusters fit (4 cells out of 5)
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ｶﾞｷﾞｸﾞ", Style::default());
+        assert_eq!(buffer.content[0].symbol(), "ｶﾞ");
+        assert_eq!(buffer.content[1].symbol(), " ");
+        assert_eq!(buffer.content[2].symbol(), "ｷﾞ");
+        assert_eq!(buffer.content[3].symbol(), " ");
+        assert_eq!(buffer.content[4].symbol(), " ");
+    }
+
+    #[test]
+    fn set_string_combining_vs_halfwidth_dakuten() {
+        let area = Rect::new(0, 0, 5, 1);
+
+        // Combining dakuten (U+3099): forms 1-cell grapheme cluster with width 1
+        let mut buffer1 = Buffer::empty(area);
+        buffer1.set_string(0, 0, "ｶ゙", Style::default());
+        // The combining dakuten merges with ｶ into a single cell (width 1)
+        assert_eq!(buffer1.content[0].symbol(), "ｶ゙");
+        assert_eq!(buffer1.content[1].symbol(), " ");
+
+        // Non-combining halfwidth dakuten (U+FF9E): grapheme cluster with width 2
+        let mut buffer2 = Buffer::empty(area);
+        buffer2.set_string(0, 0, "ｶﾞ", Style::default());
+        // The grapheme cluster "ｶﾞ" is stored in cell[0], but takes 2 cells width
+        assert_eq!(buffer2.content[0].symbol(), "ｶﾞ");
+        assert_eq!(buffer2.content[1].symbol(), " "); // reset cell (hidden by width 2)
+        assert_eq!(buffer2.content[2].symbol(), " ");
     }
 
     #[fixture]
