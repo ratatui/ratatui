@@ -837,13 +837,13 @@ impl Table<'_> {
         }
     }
 
-    /// Return the area that a `Cell` should occupy, taking into account its `Cell::column_spans`.
+    /// Return the area that a `Cell` should occupy, taking into account its [`Cell::column_span`]s.
     ///
     /// Returns `None` when there are no more columns for the Cell to occupy.
     ///
     /// Otherwise, returns `Some(CellArea{x, width})`, representing the start x-coordinate
     /// and width of the Cell.
-    fn get_final_column_span<'a, T>(
+    fn get_cell_area<'a, T>(
         column_widths_iterator: &mut T,
         cell_column_span: u16,
         column_spacing: u16,
@@ -918,7 +918,7 @@ impl Table<'_> {
             }
             let mut column_widths_iter = columns_widths.iter();
             for current_cell in &row.cells {
-                if let Some(cell_area) = Self::get_final_column_span(
+                if let Some(cell_area) = Self::get_cell_area(
                     &mut column_widths_iter,
                     current_cell.column_span,
                     self.column_spacing,
@@ -2609,7 +2609,7 @@ mod tests {
     #[test]
     fn get_area_for_column_span_one_no_more_columns() {
         let columns = [];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 1, 1);
+        let column_span = Table::get_cell_area(&mut columns.iter(), 1, 1);
         assert!(column_span.is_none());
     }
 
@@ -2619,7 +2619,7 @@ mod tests {
         column_span: u16,
         expected_column_width: u16,
     ) {
-        let column_span = Table::get_final_column_span(&mut columns.iter(), column_span, 1);
+        let column_span = Table::get_cell_area(&mut columns.iter(), column_span, 1);
         assert!(column_span.is_some());
         assert_eq!(column_span.unwrap().width, expected_column_width);
     }
@@ -2641,7 +2641,7 @@ mod tests {
     #[test]
     fn get_area_for_column_span_two_no_more_columns() {
         let columns = [];
-        let column_span = Table::get_final_column_span(&mut columns.iter(), 2, 1);
+        let column_span = Table::get_cell_area(&mut columns.iter(), 2, 1);
         assert!(column_span.is_none());
     }
 
@@ -2714,7 +2714,7 @@ mod tests {
         column_span: u16,
         expected_column_width: u16,
     ) {
-        let column_span = Table::get_final_column_span(&mut columns.iter(), column_span, 2);
+        let column_span = Table::get_cell_area(&mut columns.iter(), column_span, 2);
         assert!(column_span.is_some());
         assert_eq!(column_span.unwrap().width, expected_column_width);
     }
