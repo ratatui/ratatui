@@ -51,7 +51,8 @@ use ratatui_core::widgets::Widget;
 pub struct Cell<'a> {
     content: Text<'a>,
     style: Style,
-    column_span: u16,
+    /// The number of columns this cell will extend over
+    pub column_span: u16,
 }
 
 impl<'a> Cell<'a> {
@@ -148,11 +149,6 @@ impl<'a> Cell<'a> {
     pub const fn column_span(mut self, column_span: u16) -> Self {
         self.column_span = column_span;
         self
-    }
-
-    /// Return the `column_span` of this cell
-    pub const fn get_column_span(&self) -> u16 {
-        self.column_span
     }
 
     /// Set the `Style` of this cell

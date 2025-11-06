@@ -920,7 +920,7 @@ impl Table<'_> {
             for current_cell in &row.cells {
                 if let Some(cell_area) = Self::get_final_column_span(
                     &mut column_widths_iter,
-                    current_cell.get_column_span(),
+                    current_cell.column_span,
                     self.column_spacing,
                 ) {
                     current_cell.render(
