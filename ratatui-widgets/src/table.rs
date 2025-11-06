@@ -837,12 +837,12 @@ impl Table<'_> {
         }
     }
 
-    /// Return the area that a `Cell` should occupy, taking into account its [`Cell::column_span`]s.
+    /// Return the area that a [`Cell`] should occupy, taking into account its [`Cell::column_span`]s.
     ///
-    /// Returns `None` when there are no more columns for the Cell to occupy.
+    /// Returns `None` when there are no more columns for the [`Cell`] to occupy.
     ///
     /// Otherwise, returns `Some(CellArea{x, width})`, representing the start x-coordinate
-    /// and width of the Cell.
+    /// and width of the [`Cell`].
     fn get_cell_area<'a, T>(
         column_widths_iterator: &mut T,
         cell_column_span: u16,
