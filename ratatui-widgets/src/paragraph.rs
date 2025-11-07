@@ -998,7 +998,7 @@ mod tests {
 
         // If all cells have green background, the test passes
         for x in 0..10 {
-            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {} should have green bg", x);
+            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {x} should have green bg");
         }
     }
 
@@ -1022,7 +1022,7 @@ mod tests {
         // Check background - all cells should have green background from set_style
         // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't matter
         for x in 0..10 {
-            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {} should have green bg", x);
+            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {x} should have green bg");
         }
     }
 
@@ -1047,7 +1047,7 @@ mod tests {
         // Check background - all cells should have green background from set_style
         // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't matter
         for x in 0..10 {
-            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {} should have green bg", x);
+            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {x} should have green bg");
         }
     }
 
