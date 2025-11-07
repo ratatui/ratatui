@@ -8,8 +8,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use crate::buffer::Cell;
 use crate::layout::{Position, Rect};
 use crate::style::Style;
-use crate::text::TerminalWidthStr;
-use crate::text::{Line, Span};
+use crate::text::{Line, Span, TerminalWidthStr};
 
 /// A buffer that maps to the desired content of the terminal after the draw call
 ///

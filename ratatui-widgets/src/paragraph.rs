@@ -1036,7 +1036,8 @@ mod tests {
         );
 
         // Check background - all cells should have green background from set_style
-        // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't matter
+        // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't
+        // matter
         for x in 0..10 {
             assert_eq!(
                 buffer[(x, 0)].bg,
@@ -1077,7 +1078,8 @@ mod tests {
         );
 
         // Check background - all cells should have green background from set_style
-        // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't matter
+        // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't
+        // matter
         for x in 0..10 {
             assert_eq!(
                 buffer[(x, 0)].bg,
