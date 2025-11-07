@@ -15,7 +15,7 @@ use ratatui_core::style::Style;
 use ratatui_core::symbols::scrollbar::{DOUBLE_HORIZONTAL, DOUBLE_VERTICAL, Set};
 use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
-use unicode_width::UnicodeWidthStr;
+use ratatui_core::text::TerminalWidthStr;
 
 #[cfg(not(feature = "std"))]
 use crate::polyfills::F64Polyfills;
@@ -604,8 +604,8 @@ impl Scrollbar<'_> {
     /// <═══█████═══════>
     /// ```
     fn track_length_excluding_arrow_heads(&self, area: Rect) -> u16 {
-        let start_len = self.begin_symbol.map_or(0, |s| s.width() as u16);
-        let end_len = self.end_symbol.map_or(0, |s| s.width() as u16);
+        let start_len = self.begin_symbol.map_or(0, |s| s.terminal_width() as u16);
+        let end_len = self.end_symbol.map_or(0, |s| s.terminal_width() as u16);
         let arrows_len = start_len.saturating_add(end_len);
         if self.orientation.is_vertical() {
             area.height.saturating_sub(arrows_len)
@@ -645,7 +645,7 @@ mod tests {
     use alloc::string::ToString;
     use core::str::FromStr;
 
-    use ratatui_core::text::Text;
+    use ratatui_core::text::{TerminalWidthStr, Text};
     use ratatui_core::widgets::Widget;
     use rstest::{fixture, rstest};
     use strum::ParseError;
@@ -708,7 +708,7 @@ mod tests {
         #[case] content_length: usize,
         scrollbar_no_arrows: Scrollbar,
     ) {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, expected.terminal_width() as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
@@ -731,7 +731,7 @@ mod tests {
         #[case] content_length: usize,
         scrollbar_no_arrows: Scrollbar,
     ) {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, expected.terminal_width() as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
@@ -745,7 +745,7 @@ mod tests {
         #[case] content_length: usize,
         scrollbar_no_arrows: Scrollbar,
     ) {
-        let size = expected.width();
+        let size = expected.terminal_width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
@@ -762,7 +762,7 @@ mod tests {
         #[case] content_length: usize,
         scrollbar_no_arrows: Scrollbar,
     ) {
-        let size = expected.width();
+        let size = expected.terminal_width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
@@ -778,7 +778,7 @@ mod tests {
         #[case] content_length: usize,
         scrollbar_no_arrows: Scrollbar,
     ) {
-        let size = expected.width();
+        let size = expected.terminal_width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
@@ -802,7 +802,7 @@ mod tests {
         #[case] position: usize,
         #[case] content_length: usize,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
@@ -829,7 +829,7 @@ mod tests {
         #[case] position: usize,
         #[case] content_length: usize,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
@@ -857,7 +857,7 @@ mod tests {
         #[case] position: usize,
         #[case] content_length: usize,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
         let width = buffer.area.width as usize;
         let s = "";
@@ -890,7 +890,7 @@ mod tests {
         #[case] position: usize,
         #[case] content_length: usize,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         Scrollbar::new(ScrollbarOrientation::HorizontalTop)
@@ -919,7 +919,7 @@ mod tests {
         #[case] position: usize,
         #[case] content_length: usize,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 2));
         let mut state = ScrollbarState::new(content_length).position(position);
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
@@ -947,7 +947,7 @@ mod tests {
         #[case] position: usize,
         #[case] content_length: usize,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 2));
         let mut state = ScrollbarState::new(content_length).position(position);
         Scrollbar::new(ScrollbarOrientation::HorizontalTop)
@@ -977,7 +977,7 @@ mod tests {
         #[case] position: usize,
         #[case] content_length: usize,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, size));
         let mut state = ScrollbarState::new(content_length).position(position);
         Scrollbar::new(ScrollbarOrientation::VerticalLeft)
@@ -1009,7 +1009,7 @@ mod tests {
         #[case] position: usize,
         #[case] content_length: usize,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, size));
         let mut state = ScrollbarState::new(content_length).position(position);
         Scrollbar::new(ScrollbarOrientation::VerticalRight)
@@ -1040,7 +1040,7 @@ mod tests {
         #[case] content_length: usize,
         scrollbar_no_arrows: Scrollbar,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
         let mut state = ScrollbarState::new(content_length)
             .position(position)
@@ -1069,7 +1069,7 @@ mod tests {
         #[case] content_length: usize,
         scrollbar_no_arrows: Scrollbar,
     ) {
-        let size = expected.width() as u16;
+        let size = expected.terminal_width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
         let mut state = ScrollbarState::new(content_length)
             .position(position)
