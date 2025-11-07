@@ -1432,14 +1432,14 @@ mod tests {
             width: u16,
             column_width: u16,
             rows: Rows,
-            expected: Buffer,
+            expected: &Buffer,
         ) where
             Rows: IntoIterator<Item = Row<'rows>>,
         {
             let mut buf = Buffer::empty(Rect::new(0, 0, width, 2));
             let table = Table::new(rows, [Constraint::Length(column_width); 3]);
             Widget::render(table, Rect::new(0, 0, width, 2), &mut buf);
-            assert_eq!(buf, expected);
+            assert_eq!(buf, *expected);
         }
 
         #[track_caller]
@@ -1447,14 +1447,14 @@ mod tests {
             width: u16,
             column_width: u16,
             rows: Rows,
-            expected: Buffer,
+            expected: &Buffer,
         ) where
             Rows: IntoIterator<Item = Row<'rows>>,
         {
             let mut buf = Buffer::empty(Rect::new(0, 0, width, 2));
             let table = Table::new(rows, [Constraint::Length(column_width); 2]);
             Widget::render(table, Rect::new(0, 0, width, 2), &mut buf);
-            assert_eq!(buf, expected);
+            assert_eq!(buf, *expected);
         }
 
         #[test]
@@ -1472,7 +1472,7 @@ mod tests {
                         Cell::new("Cell4").column_span(1),
                     ]),
                 ],
-                Buffer::with_lines(["Cell1 Cell2    ", "Cell3 Cell4    "]),
+                &Buffer::with_lines(["Cell1 Cell2    ", "Cell3 Cell4    "]),
             );
         }
 
@@ -1491,7 +1491,7 @@ mod tests {
                         Cell::new("Cell4").column_span(1),
                     ]),
                 ],
-                Buffer::with_lines(["Cell2          ", "Cell3 Cell4    "]),
+                &Buffer::with_lines(["Cell2          ", "Cell3 Cell4    "]),
             );
         }
 
@@ -1510,7 +1510,7 @@ mod tests {
                         Cell::new("Cell4").column_span(1),
                     ]),
                 ],
-                Buffer::with_lines(["Cell1          ", "Cell3 Cell4    "]),
+                &Buffer::with_lines(["Cell1          ", "Cell3 Cell4    "]),
             );
         }
 
@@ -1530,7 +1530,7 @@ mod tests {
                         Cell::new("Cell5").column_span(1),
                     ]),
                 ],
-                Buffer::with_lines(["Cell1       Cell2", "Cell3 Cell4 Cell5"]),
+                &Buffer::with_lines(["Cell1       Cell2", "Cell3 Cell4 Cell5"]),
             );
         }
 
@@ -1551,7 +1551,7 @@ mod tests {
                         Cell::new("Cell6").column_span(1),
                     ]),
                 ],
-                Buffer::with_lines(["Cell1 Cell2      ", "Cell4 Cell5 Cell6"]),
+                &Buffer::with_lines(["Cell1 Cell2      ", "Cell4 Cell5 Cell6"]),
             );
         }
 
@@ -1571,7 +1571,7 @@ mod tests {
                         Cell::new("55555555555555555555").column_span(1),
                     ]),
                 ],
-                Buffer::with_lines(["1111111111 2222", "3333 4444444444"]),
+                &Buffer::with_lines(["1111111111 2222", "3333 4444444444"]),
             );
         }
 
