@@ -998,7 +998,11 @@ mod tests {
 
         // If all cells have green background, the test passes
         for x in 0..10 {
-            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {x} should have green bg");
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
+            );
         }
     }
 
@@ -1013,16 +1017,32 @@ mod tests {
 
         // Check content - should have spaces for skip cells
         assert_eq!(buffer[(0, 0)].symbol(), "あ", "Cell 0 should be あ");
-        assert_eq!(buffer[(1, 0)].symbol(), " ", "Cell 1 should be space (skip cell)");
+        assert_eq!(
+            buffer[(1, 0)].symbol(),
+            " ",
+            "Cell 1 should be space (skip cell)"
+        );
         assert_eq!(buffer[(2, 0)].symbol(), "い", "Cell 2 should be い");
-        assert_eq!(buffer[(3, 0)].symbol(), " ", "Cell 3 should be space (skip cell)");
+        assert_eq!(
+            buffer[(3, 0)].symbol(),
+            " ",
+            "Cell 3 should be space (skip cell)"
+        );
         assert_eq!(buffer[(4, 0)].symbol(), "う", "Cell 4 should be う");
-        assert_eq!(buffer[(5, 0)].symbol(), " ", "Cell 5 should be space (skip cell)");
+        assert_eq!(
+            buffer[(5, 0)].symbol(),
+            " ",
+            "Cell 5 should be space (skip cell)"
+        );
 
         // Check background - all cells should have green background from set_style
         // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't matter
         for x in 0..10 {
-            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {x} should have green bg");
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
+            );
         }
     }
 
@@ -1038,16 +1058,32 @@ mod tests {
         // Check content - should have spaces for wide characters like "あいう"
         // Expected: "ｶﾞ ｷﾞ ｸﾞ     " (spaces at x=1, 3, 5)
         assert_eq!(buffer[(0, 0)].symbol(), "ｶﾞ", "Cell 0 should be ｶﾞ");
-        assert_eq!(buffer[(1, 0)].symbol(), " ", "Cell 1 should be space (skip cell)");
+        assert_eq!(
+            buffer[(1, 0)].symbol(),
+            " ",
+            "Cell 1 should be space (skip cell)"
+        );
         assert_eq!(buffer[(2, 0)].symbol(), "ｷﾞ", "Cell 2 should be ｷﾞ");
-        assert_eq!(buffer[(3, 0)].symbol(), " ", "Cell 3 should be space (skip cell)");
+        assert_eq!(
+            buffer[(3, 0)].symbol(),
+            " ",
+            "Cell 3 should be space (skip cell)"
+        );
         assert_eq!(buffer[(4, 0)].symbol(), "ｸﾞ", "Cell 4 should be ｸﾞ");
-        assert_eq!(buffer[(5, 0)].symbol(), " ", "Cell 5 should be space (skip cell)");
+        assert_eq!(
+            buffer[(5, 0)].symbol(),
+            " ",
+            "Cell 5 should be space (skip cell)"
+        );
 
         // Check background - all cells should have green background from set_style
         // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't matter
         for x in 0..10 {
-            assert_eq!(buffer[(x, 0)].bg, Color::Green, "Cell {x} should have green bg");
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
+            );
         }
     }
 

@@ -13,9 +13,9 @@ use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::Style;
 use ratatui_core::symbols::scrollbar::{DOUBLE_HORIZONTAL, DOUBLE_VERTICAL, Set};
+use ratatui_core::text::TerminalWidthStr;
 use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
-use ratatui_core::text::TerminalWidthStr;
 
 #[cfg(not(feature = "std"))]
 use crate::polyfills::F64Polyfills;

@@ -531,7 +531,10 @@ impl Buffer {
 
             to_skip = current.symbol().terminal_width().saturating_sub(1);
 
-            let affected_width = cmp::max(current.symbol().terminal_width(), previous.symbol().terminal_width());
+            let affected_width = cmp::max(
+                current.symbol().terminal_width(),
+                previous.symbol().terminal_width(),
+            );
             invalidated = cmp::max(affected_width, invalidated).saturating_sub(1);
         }
         updates
@@ -676,8 +679,8 @@ mod tests {
     use std::{dbg, println};
 
     use itertools::Itertools;
-    use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
     use rstest::{fixture, rstest};
+    use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
     use super::*;
     use crate::style::{Color, Modifier, Stylize};
