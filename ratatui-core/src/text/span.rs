@@ -378,7 +378,8 @@ impl<'a> Span<'a> {
 
 impl UnicodeWidthStr for Span<'_> {
     fn width(&self) -> usize {
-        self.content.width()
+        use crate::text::TerminalWidthStr;
+        self.content.terminal_width()
     }
 
     fn width_cjk(&self) -> usize {
@@ -429,7 +430,8 @@ impl Widget for &Span<'_> {
         }
         let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
-            let symbol_width = grapheme.symbol.width();
+            use crate::text::TerminalWidthStr;
+            let symbol_width = grapheme.symbol.terminal_width();
             let next_x = x.saturating_add(symbol_width as u16);
             if next_x > area.right() {
                 break;

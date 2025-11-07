@@ -510,6 +510,7 @@ mod tests {
     use alloc::{format, vec};
 
     use ratatui_core::style::{Color, Stylize};
+    use ratatui_core::text::TerminalWidthStr;
 
     use super::*;
 
@@ -761,14 +762,14 @@ mod tests {
     fn unicode_width_basic() {
         let tabs = Tabs::new(vec!["A", "BB", "CCC"]);
         let rendered = " A │ BB │ CCC ";
-        assert_eq!(tabs.width(), rendered.width());
+        assert_eq!(tabs.width(), rendered.terminal_width());
     }
 
     #[test]
     fn unicode_width_no_padding() {
         let tabs = Tabs::new(vec!["A", "BB", "CCC"]).padding("", "");
         let rendered = "A│BB│CCC";
-        assert_eq!(tabs.width(), rendered.width());
+        assert_eq!(tabs.width(), rendered.terminal_width());
     }
 
     #[test]
@@ -777,14 +778,14 @@ mod tests {
             .divider("--")
             .padding("X", "YY");
         let rendered = "XAYY--XBBYY--XCCCYY";
-        assert_eq!(tabs.width(), rendered.width());
+        assert_eq!(tabs.width(), rendered.terminal_width());
     }
 
     #[test]
     fn unicode_width_empty_titles() {
         let tabs = Tabs::new(Vec::<&str>::new());
         let rendered = "";
-        assert_eq!(tabs.width(), rendered.width());
+        assert_eq!(tabs.width(), rendered.terminal_width());
     }
 
     #[test]
