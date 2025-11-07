@@ -52,7 +52,7 @@ pub struct Cell<'a> {
     content: Text<'a>,
     style: Style,
     /// The number of columns this cell will extend over
-    pub column_span: u16,
+    pub(crate) column_span: u16,
 }
 
 impl<'a> Cell<'a> {
