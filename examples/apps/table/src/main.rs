@@ -222,6 +222,17 @@ impl App {
             let item = data.ref_array();
             item.into_iter()
                 .map(|content| Cell::from(Text::from(format!("\n{content}\n"))))
+                .enumerate()
+                .map(|(idx, cell)| {
+                    if i == 3 && idx == 1 {
+                        Cell::from(Text::from(
+                            "\n[no information is available for this person]\n".to_string(),
+                        ))
+                        .column_span(2)
+                    } else {
+                        cell
+                    }
+                })
                 .collect::<Row>()
                 .style(Style::new().fg(self.colors.row_fg).bg(color))
                 .height(4)
