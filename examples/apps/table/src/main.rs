@@ -226,7 +226,9 @@ impl App {
                 .map(|(idx, cell)| {
                     if i == 3 && idx == 1 {
                         Cell::from(Text::from(
-                            "\n[no information is available for this person]\n".to_string(),
+                            // Gratuitously long error message to demonstrate column_span(2)
+                            "\n[no address or email address is available for this person]\n"
+                                .to_string(),
                         ))
                         .column_span(2)
                     } else {
