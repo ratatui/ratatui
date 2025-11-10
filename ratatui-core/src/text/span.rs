@@ -6,7 +6,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::Buffer;
-use crate::layout::Rect;
+use crate::layout::{Rect, Size};
 use crate::style::{Style, Styled};
 use crate::text::{Line, StyledGrapheme};
 use crate::widgets::Widget;
@@ -270,6 +270,14 @@ impl<'a> Span<'a> {
     /// Returns the unicode width of the content held by this span.
     pub fn width(&self) -> usize {
         UnicodeWidthStr::width(self)
+    }
+
+    /// Returns the size of the content held by this span.
+    pub fn size(&self) -> Size {
+        Size::new(
+            u16::try_from(UnicodeWidthStr::width(self)).unwrap_or(u16::MAX),
+            1,
+        )
     }
 
     /// Returns an iterator over the graphemes held by this span.
@@ -629,6 +637,13 @@ mod tests {
         assert_eq!(Span::raw("test content").width(), 12);
         // Needs reconsideration: https://github.com/ratatui/ratatui/issues/1271
         assert_eq!(Span::raw("test\ncontent").width(), 12);
+    }
+
+    #[test]
+    fn size() {
+        assert_eq!(Span::raw("").size(), Size::new(0, 1));
+        assert_eq!(Span::raw("test").size(), Size::new(4, 1));
+        assert_eq!(Span::raw("test content").size(), Size::new(12, 1));
     }
 
     #[test]
