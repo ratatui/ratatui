@@ -6,11 +6,10 @@ use alloc::vec;
 use core::fmt::{self, Write};
 use core::iter;
 
-use unicode_width::UnicodeWidthStr;
-
 use crate::backend::{Backend, ClearType, WindowSize};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
+use crate::text::TerminalWidthStr;
 
 /// A [`Backend`] implementation used for integration testing that renders to an memory buffer.
 ///
@@ -56,7 +55,7 @@ fn buffer_view(buffer: &Buffer) -> String {
             } else {
                 overwritten.push((x, c.symbol()));
             }
-            skip = core::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+            skip = core::cmp::max(skip, c.symbol().terminal_width()).saturating_sub(1);
         }
         view.push('"');
         if !overwritten.is_empty() {
