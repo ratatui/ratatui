@@ -1766,22 +1766,34 @@ mod tests {
             // without selection, more than needed width
             // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
+            #[cfg(not(feature = "xlayout"))]
             assert_eq!(table.get_column_widths(20, 0, 0), [(0, 7), (8, 6)]);
+            #[cfg(feature = "xlayout")]
+            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 7), (8, 7)]);
 
             // with selection, more than needed width
             // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 6), (10, 5)]);
+            #[cfg(not(feature = "xlayout"))]
+            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 6), (10, 5)],);
+            #[cfg(feature = "xlayout")]
+            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 6), (10, 6)],);
 
             // without selection, less than needed width
             // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
+            #[cfg(not(feature = "xlayout"))]
             assert_eq!(table.get_column_widths(7, 0, 0), [(0, 2), (3, 3)]);
+            #[cfg(feature = "xlayout")]
+            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 2), (3, 2)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
+            #[cfg(not(feature = "xlayout"))]
             assert_eq!(table.get_column_widths(7, 3, 0), [(3, 1), (5, 2)]);
+            #[cfg(feature = "xlayout")]
+            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 1), (5, 1)]);
         }
 
         /// When more width is available than requested, the behavior is controlled by flex

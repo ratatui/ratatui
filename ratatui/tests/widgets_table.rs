@@ -291,7 +291,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints<'line, Lines>(
     "│                            │",
     "└────────────────────────────┘",
 ])]
-#[case::large_width_just_before_pushing_a_column_off(&[
+#[cfg_attr(not(feature="xlayout"), case::large_width_just_before_pushing_a_column_off(&[
     Constraint::Percentage(33),
     Constraint::Length(10),
     Constraint::Percentage(33),
@@ -306,8 +306,8 @@ fn widgets_table_columns_widths_can_use_percentage_constraints<'line, Lines>(
     "│                            │",
     "│                            │",
     "└────────────────────────────┘",
-])]
-#[case::more_than_100(&[
+]))]
+#[cfg_attr(not(feature="xlayout"), case::more_than_100(&[
     Constraint::Percentage(60),
     Constraint::Length(10),
     Constraint::Percentage(60),
@@ -322,7 +322,39 @@ fn widgets_table_columns_widths_can_use_percentage_constraints<'line, Lines>(
     "│                            │",
     "│                            │",
     "└────────────────────────────┘",
-])]
+]))]
+#[cfg_attr(feature="xlayout", case::large_width_just_before_pushing_a_column_off(&[
+    Constraint::Percentage(33),
+    Constraint::Length(10),
+    Constraint::Percentage(33),
+], [
+    "┌────────────────────────────┐",
+    "│Head1     Head2    Head3    │",
+    "│                            │",
+    "│Row11     Row12    Row13    │",
+    "│Row21     Row22    Row23    │",
+    "│Row31     Row32    Row33    │",
+    "│Row41     Row42    Row43    │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+]))]
+#[cfg_attr(feature="xlayout", case::more_than_100(&[
+    Constraint::Percentage(60),
+    Constraint::Length(10),
+    Constraint::Percentage(60),
+], [
+    "┌────────────────────────────┐",
+    "│Head1     Head2    Head3    │",
+    "│                            │",
+    "│Row11     Row12    Row13    │",
+    "│Row21     Row22    Row23    │",
+    "│Row31     Row32    Row33    │",
+    "│Row41     Row42    Row43    │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+]))]
 fn widgets_table_columns_widths_can_use_mixed_constraints<'line, Lines>(
     #[case] widths: &[Constraint],
     #[case] expected: Lines,
@@ -384,7 +416,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints<'line, Lines>(
     "│                            │",
     "└────────────────────────────┘",
 ])]
-#[case::three(&[Constraint::Ratio(1, 3), Constraint::Ratio(1, 3), Constraint::Ratio(1, 3)], [
+#[cfg_attr(not(feature="xlayout"), case::three(&[Constraint::Ratio(1, 3), Constraint::Ratio(1, 3), Constraint::Ratio(1, 3)], [
     "┌────────────────────────────┐",
     "│Head1    Head2     Head3    │",
     "│                            │",
@@ -395,7 +427,19 @@ fn widgets_table_columns_widths_can_use_mixed_constraints<'line, Lines>(
     "│                            │",
     "│                            │",
     "└────────────────────────────┘",
-])]
+]))]
+#[cfg_attr(feature="xlayout", case::three(&[Constraint::Ratio(1, 3), Constraint::Ratio(1, 3), Constraint::Ratio(1, 3)], [
+    "┌────────────────────────────┐",
+    "│Head1    Head2    Head3     │",
+    "│                            │",
+    "│Row11    Row12    Row13     │",
+    "│Row21    Row22    Row23     │",
+    "│Row31    Row32    Row33     │",
+    "│Row41    Row42    Row43     │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+]))]
 #[case::two(&[Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)], [
     "┌────────────────────────────┐",
     "│Head1         Head2         │",
