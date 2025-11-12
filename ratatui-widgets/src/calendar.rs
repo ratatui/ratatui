@@ -112,21 +112,19 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
         const DAY_WIDTH: u16 = 2;
 
         let mut width = DAYS_PER_WEEK * (GUTTER_WIDTH + DAY_WIDTH);
-
         if let Some(block) = &self.block {
             let (left, right) = block.horizontal_space();
             width = width.saturating_add(left).saturating_add(right);
         }
-
         width
     }
 
     /// Return the height required to render the calendar.
     #[must_use]
     pub fn height(&self) -> u16 {
-        let mut height = u16::from(sunday_based_weeks(self.display_date));
-        height = height.saturating_add(u16::from(self.show_month.is_some()));
-        height = height.saturating_add(u16::from(self.show_weekday.is_some()));
+        let mut height = u16::from(sunday_based_weeks(self.display_date))
+            .saturating_add(u16::from(self.show_month.is_some()))
+            .saturating_add(u16::from(self.show_weekday.is_some()));
 
         if let Some(block) = &self.block {
             let (top, bottom) = block.vertical_space();
@@ -237,10 +235,12 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 /// Mirrors the rendering logic by taking the difference between the first and last day
 /// Sunday-based week numbers (inclusive).
 fn sunday_based_weeks(display_date: Date) -> u8 {
-    let first_of_month = display_date.replace_day(1).unwrap();
+    let first_of_month = display_date
+        .replace_day(1)
+        .expect("valid first day of month");
     let last_of_month = first_of_month
         .replace_day(first_of_month.month().length(first_of_month.year()))
-        .unwrap();
+        .expect("valid last of month");
     let first_week = first_of_month.sunday_based_week();
     let last_week = last_of_month.sunday_based_week();
     last_week.saturating_sub(first_week) + 1
