@@ -38,7 +38,7 @@
 use std::fmt;
 use std::io::{self, Write};
 
-use ratatui_core::backend::{Backend, ClearType, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -269,8 +269,12 @@ where
     fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
+}
 
-    #[cfg(feature = "scrolling-regions")]
+impl<W> ScrollByRegion for TermionBackend<W>
+where
+    W: Write,
+{
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         write!(
             self.writer,
@@ -282,7 +286,6 @@ where
         self.writer.flush()
     }
 
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         write!(
             self.writer,
