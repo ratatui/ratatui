@@ -1428,27 +1428,43 @@ mod tests {
             assert_eq!(buf, expected);
         }
 
-        #[track_caller]
-        fn test_colspans_3_cols<'rows, Rows>(
-            width: u16,
-            column_width: u16,
-            rows: Rows,
-            expected: &Buffer,
-        ) where
-            Rows: IntoIterator<Item = Row<'rows>>,
-        {
-            let mut buf = Buffer::empty(Rect::new(0, 0, width, 2));
-            let table = Table::new(rows, [Constraint::Length(column_width); 3]);
-            Widget::render(table, Rect::new(0, 0, width, 2), &mut buf);
-            assert_eq!(buf, *expected);
-        }
-
-        #[track_caller]
+        #[rstest]
+        #[case(15, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(1),
+                    Cell::new("Cell2").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                ]),
+            ],
+            &Buffer::with_lines(["Cell1 Cell2    ", "Cell3 Cell4    "]))]
+        #[case(15, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(0),
+                    Cell::new("Cell2").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["Cell2          ", "Cell3 Cell4    "]))]
+        #[case(15, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(2),
+                    Cell::new("Cell2").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["Cell1          ", "Cell3 Cell4    "]))]
         fn test_colspans_2_cols<'rows, Rows>(
-            width: u16,
-            column_width: u16,
-            rows: Rows,
-            expected: &Buffer,
+            #[case] width: u16,
+            #[case] column_width: u16,
+            #[case] rows: Rows,
+            #[case] expected: &Buffer,
         ) where
             Rows: IntoIterator<Item = Row<'rows>>,
         {
@@ -1458,122 +1474,53 @@ mod tests {
             assert_eq!(buf, *expected);
         }
 
-        #[test]
-        fn render_column_span_1_single_column_each() {
-            test_colspans_2_cols(
-                15,
-                5,
-                vec![
-                    Row::new(vec![
-                        Cell::new("Cell1").column_span(1),
-                        Cell::new("Cell2").column_span(1),
-                    ]),
-                    Row::new(vec![
-                        Cell::new("Cell3").column_span(1),
-                        Cell::new("Cell4").column_span(1),
-                    ]),
-                ],
-                &Buffer::with_lines(["Cell1 Cell2    ", "Cell3 Cell4    "]),
-            );
-        }
-
-        #[test]
-        fn render_with_column_span_0_cell_should_not_render() {
-            test_colspans_2_cols(
-                15,
-                5,
-                vec![
-                    Row::new(vec![
-                        Cell::new("Cell1").column_span(0),
-                        Cell::new("Cell2").column_span(1),
-                    ]),
-                    Row::new(vec![
-                        Cell::new("Cell3").column_span(1),
-                        Cell::new("Cell4").column_span(1),
-                    ]),
-                ],
-                &Buffer::with_lines(["Cell2          ", "Cell3 Cell4    "]),
-            );
-        }
-
-        #[test]
-        fn render_cell1_takes_up_two_columns_cell2_does_not_appear() {
-            test_colspans_2_cols(
-                15,
-                5,
-                vec![
-                    Row::new(vec![
-                        Cell::new("Cell1").column_span(2),
-                        Cell::new("Cell2").column_span(1),
-                    ]),
-                    Row::new(vec![
-                        Cell::new("Cell3").column_span(1),
-                        Cell::new("Cell4").column_span(1),
-                    ]),
-                ],
-                &Buffer::with_lines(["Cell1          ", "Cell3 Cell4    "]),
-            );
-        }
-
-        #[test]
-        fn render_cell1_takes_up_two_columns_cell2_appears_after() {
-            test_colspans_3_cols(
-                17,
-                5,
-                vec![
-                    Row::new(vec![
-                        Cell::new("Cell1").column_span(2),
-                        Cell::new("Cell2").column_span(1),
-                    ]),
-                    Row::new(vec![
-                        Cell::new("Cell3").column_span(1),
-                        Cell::new("Cell4").column_span(1),
-                        Cell::new("Cell5").column_span(1),
-                    ]),
-                ],
-                &Buffer::with_lines(["Cell1       Cell2", "Cell3 Cell4 Cell5"]),
-            );
-        }
-
-        #[test]
-        fn render_cell2_takes_up_two_columns() {
-            test_colspans_3_cols(
-                17,
-                5,
-                vec![
-                    Row::new(vec![
-                        Cell::new("Cell1").column_span(1),
-                        Cell::new("Cell2").column_span(2),
-                        Cell::new("Cell3").column_span(1),
-                    ]),
-                    Row::new(vec![
-                        Cell::new("Cell4").column_span(1),
-                        Cell::new("Cell5").column_span(1),
-                        Cell::new("Cell6").column_span(1),
-                    ]),
-                ],
-                &Buffer::with_lines(["Cell1 Cell2      ", "Cell4 Cell5 Cell6"]),
-            );
-        }
-
-        #[test]
-        fn render_long_text_covers_gap_and_subsequent_column() {
-            test_colspans_3_cols(
-                15,
-                5,
-                vec![
-                    Row::new(vec![
-                        Cell::new("11111111111111111111").column_span(2),
-                        Cell::new("22222222222222222222").column_span(1),
-                    ]),
-                    Row::new(vec![
-                        Cell::new("33333333333333333333").column_span(1),
-                        Cell::new("44444444444444444444").column_span(2),
-                        Cell::new("55555555555555555555").column_span(1),
-                    ]),
-                ],
-                &Buffer::with_lines(["1111111111 2222", "3333 4444444444"]),
-            );
+        #[rstest]
+        #[case(17, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(2),
+                    Cell::new("Cell2").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                    Cell::new("Cell5").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["Cell1       Cell2", "Cell3 Cell4 Cell5"]))]
+        #[case(17, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(1),
+                    Cell::new("Cell2").column_span(2),
+                    Cell::new("Cell3").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell4").column_span(1),
+                    Cell::new("Cell5").column_span(1),
+                    Cell::new("Cell6").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["Cell1 Cell2      ", "Cell4 Cell5 Cell6"]))]
+        #[case(15, 5, vec![
+                Row::new(vec![
+                    Cell::new("11111111111111111111").column_span(2),
+                    Cell::new("22222222222222222222").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("33333333333333333333").column_span(1),
+                    Cell::new("44444444444444444444").column_span(2),
+                    Cell::new("55555555555555555555").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["1111111111 2222", "3333 4444444444"]))]
+        fn test_colspans_3_cols<'rows, Rows>(
+            #[case] width: u16,
+            #[case] column_width: u16,
+            #[case] rows: Rows,
+            #[case] expected: &Buffer,
+        ) where
+            Rows: IntoIterator<Item = Row<'rows>>,
+        {
+            let mut buf = Buffer::empty(Rect::new(0, 0, width, 2));
+            let table = Table::new(rows, [Constraint::Length(column_width); 3]);
+            Widget::render(table, Rect::new(0, 0, width, 2), &mut buf);
+            assert_eq!(buf, *expected);
         }
 
         #[test]
@@ -2624,31 +2571,6 @@ mod tests {
         assert!(column_span.is_none());
     }
 
-    #[track_caller]
-    fn test_colspan_width_single_column_spacing(
-        columns: &[Rect],
-        column_span: u16,
-        expected_column_width: u16,
-    ) {
-        let column_span = Table::get_cell_area(&mut columns.iter(), column_span, 1);
-        assert!(column_span.is_some());
-        assert_eq!(column_span.unwrap().width, expected_column_width);
-    }
-
-    #[test]
-    fn get_area_for_column_span_one_extra_column_remaining() {
-        test_colspan_width_single_column_spacing(
-            &[create_cell_area(3, 2), create_cell_area(3, 2)],
-            1,
-            2,
-        );
-    }
-
-    #[test]
-    fn get_area_for_column_span_one_to_last_column() {
-        test_colspan_width_single_column_spacing(&[create_cell_area(3, 2)], 1, 2);
-    }
-
     #[test]
     fn get_area_for_column_span_two_no_more_columns() {
         let columns = [];
@@ -2656,106 +2578,115 @@ mod tests {
         assert!(column_span.is_none());
     }
 
-    #[test]
-    fn get_area_for_column_span_two_extra_column_remaining() {
-        test_colspan_width_single_column_spacing(
-            &[
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-            ],
-            2,
-            5,
-        );
+    #[rstest]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2), create_cell_area(3, 2)], 2, 5)]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 2, 5,)]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 1, 2)]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 3, 5)]
+    #[case(&[create_cell_area(3, 2)], 1, 2)]
+    #[case(&[create_cell_area(3, 2)], 2, 2)]
+    #[case(&[
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+            ], 3, 8)]
+    #[case(&[
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+            ], 3, 8)]
+    fn test_colspan_width_single_column_spacing(
+        #[case] columns: &[Rect],
+        #[case] column_span: u16,
+        #[case] expected_column_width: u16,
+    ) {
+        let column_span = Table::get_cell_area(&mut columns.iter(), column_span, 1);
+        assert!(column_span.is_some());
+        assert_eq!(column_span.unwrap().width, expected_column_width);
     }
 
-    #[test]
-    fn get_area_for_column_span_two_to_last_column() {
-        test_colspan_width_single_column_spacing(
-            &[create_cell_area(3, 2), create_cell_area(3, 2)],
-            2,
-            5,
-        );
-    }
-
-    #[test]
-    fn get_area_for_column_span_two_past_last_column() {
-        test_colspan_width_single_column_spacing(&[create_cell_area(3, 2)], 2, 2);
-    }
-
-    #[test]
-    fn get_area_for_column_span_three_extra_column_remaining() {
-        test_colspan_width_single_column_spacing(
-            &[
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-            ],
-            3,
-            8,
-        );
-    }
-
-    #[test]
-    fn get_area_for_column_span_three_to_last_column() {
-        test_colspan_width_single_column_spacing(
-            &[
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-            ],
-            3,
-            8,
-        );
-    }
-
-    #[test]
-    fn get_area_for_column_span_three_past_last_column() {
-        test_colspan_width_single_column_spacing(
-            &[create_cell_area(3, 2), create_cell_area(3, 2)],
-            3,
-            5,
-        );
-    }
-
-    #[track_caller]
+    #[rstest]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2), create_cell_area(3, 2)], 3, 10)]
+    #[case(&[create_cell_area(3, 2)], 3, 2)]
     fn test_colspan_width_two_column_spacing(
-        columns: &[Rect],
-        column_span: u16,
-        expected_column_width: u16,
+        #[case] columns: &[Rect],
+        #[case] column_span: u16,
+        #[case] expected_column_width: u16,
     ) {
         let column_span = Table::get_cell_area(&mut columns.iter(), column_span, 2);
         assert!(column_span.is_some());
         assert_eq!(column_span.unwrap().width, expected_column_width);
     }
 
-    #[test]
-    fn get_area_for_column_span_three_past_last_column_two_column_spacing() {
-        test_colspan_width_two_column_spacing(
-            &[
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-                create_cell_area(3, 2),
-            ],
-            3,
-            10,
-        );
-    }
-
-    #[test]
-    fn get_area_for_column_span_one_cell_two_column_spacing() {
-        test_colspan_width_two_column_spacing(&[create_cell_area(3, 2)], 3, 2);
-    }
-
-    #[track_caller]
+    #[rstest]
+    #[case(
+        HighlightSpacing::Always,
+        15,   // width
+        1,    // spacing
+        None, // selection
+        [
+            Cell::new("ABCDEFGHIJK").column_span(2),
+            Cell::new("12345678901"),
+            Cell::new("XYZXYZXYZXY"),
+        ],
+        [
+            "   ABCDEFGH 123",
+            "               ", // row 2
+            "               ", // row 3
+        ])]
+    #[case(
+        HighlightSpacing::Always,
+        15,      // width
+        1,       // spacing
+        Some(0), // selection
+        [
+            Cell::new("ABCDEFGHIJK").column_span(2),
+            Cell::new("12345678901"),
+            Cell::new("XYZXYZXYZXY"),
+        ],
+        [
+            ">>>ABCDEFGH 123",
+            "               ", // row 2
+            "               ", // row 3
+        ])]
+    #[case(
+        HighlightSpacing::WhenSelected,
+        15,   // width
+        1,    // spacing
+        None, // selection
+        [
+            Cell::new("ABCDEFGHIJK").column_span(2),
+            Cell::new("12345678901"),
+            Cell::new("XYZXYZXYZXY"),
+        ],
+        [
+            "ABCDEFGHIJ 1234",
+            "               ", // row 2
+            "               ", // row 3
+        ])]
+    #[case(
+        HighlightSpacing::WhenSelected,
+        15,      // width
+        1,       // spacing
+        Some(0), // selection
+        [
+            Cell::new("ABCDEFGHIJK").column_span(2),
+            Cell::new("12345678901"),
+            Cell::new("XYZXYZXYZXY"),
+        ],
+        [
+            ">>>ABCDEFGH 123",
+            "               ", // row 2
+            "               ", // row 3
+        ])]
     fn test_table_with_selection_and_column_spans<'line, 'cell, Lines, Cells>(
-        highlight_spacing: HighlightSpacing,
-        columns: u16,
-        spacing: u16,
-        selection: Option<usize>,
-        cells: Cells,
-        expected: Lines,
+        #[case] highlight_spacing: HighlightSpacing,
+        #[case] columns: u16,
+        #[case] spacing: u16,
+        #[case] selection: Option<usize>,
+        #[case] cells: Cells,
+        #[case] expected: Lines,
     ) where
         Cells: IntoIterator,
         Cells::Item: Into<Cell<'cell>>,
@@ -2772,85 +2703,5 @@ mod tests {
         let mut state = TableState::default().with_selected(selection);
         StatefulWidget::render(table, area, &mut buf, &mut state);
         assert_eq!(buf, Buffer::with_lines(expected));
-    }
-
-    #[test]
-    fn test_table_column_spans_with_nothing_selected_highlight_always() {
-        test_table_with_selection_and_column_spans(
-            HighlightSpacing::Always,
-            15,   // width
-            1,    // spacing
-            None, // selection
-            [
-                Cell::new("ABCDEFGHIJK").column_span(2),
-                Cell::new("12345678901"),
-                Cell::new("XYZXYZXYZXY"),
-            ],
-            [
-                "   ABCDEFGH 123",
-                "               ", // row 2
-                "               ", // row 3
-            ],
-        );
-    }
-
-    #[test]
-    fn test_table_column_spans_with_row_0_selected_highlight_always() {
-        test_table_with_selection_and_column_spans(
-            HighlightSpacing::Always,
-            15,      // width
-            1,       // spacing
-            Some(0), // selection
-            [
-                Cell::new("ABCDEFGHIJK").column_span(2),
-                Cell::new("12345678901"),
-                Cell::new("XYZXYZXYZXY"),
-            ],
-            [
-                ">>>ABCDEFGH 123",
-                "               ", // row 2
-                "               ", // row 3
-            ],
-        );
-    }
-
-    #[test]
-    fn test_table_column_spans_with_nothing_selected_highlight_when_selected() {
-        test_table_with_selection_and_column_spans(
-            HighlightSpacing::WhenSelected,
-            15,   // width
-            1,    // spacing
-            None, // selection
-            [
-                Cell::new("ABCDEFGHIJK").column_span(2),
-                Cell::new("12345678901"),
-                Cell::new("XYZXYZXYZXY"),
-            ],
-            [
-                "ABCDEFGHIJ 1234",
-                "               ", // row 2
-                "               ", // row 3
-            ],
-        );
-    }
-
-    #[test]
-    fn test_table_column_spans_with_row_0_selected_highlight_when_selected() {
-        test_table_with_selection_and_column_spans(
-            HighlightSpacing::WhenSelected,
-            15,      // width
-            1,       // spacing
-            Some(0), // selection
-            [
-                Cell::new("ABCDEFGHIJK").column_span(2),
-                Cell::new("12345678901"),
-                Cell::new("XYZXYZXYZXY"),
-            ],
-            [
-                ">>>ABCDEFGH 123",
-                "               ", // row 2
-                "               ", // row 3
-            ],
-        );
     }
 }
