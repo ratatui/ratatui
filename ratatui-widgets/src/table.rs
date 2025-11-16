@@ -271,6 +271,23 @@ pub struct Table<'a> {
     flex: Flex,
 }
 
+/// Return a `Rect` that represents the area that a `Cell` extends over
+///
+/// Currently, `Cell`s may extend over multiple columns but not multiple rows. This function
+/// returns a `Rect` that spans over a single row and possibly multiple columns, with the `x` field
+/// representing the `Cell`'s start coordinate.
+///
+/// Future extensions that allow a `Cell` to span multiple rows can replace all calls to this
+/// function with an initializer for all four fields of `Rect`.
+const fn create_cell_area(x: u16, width: u16) -> Rect {
+    Rect {
+        x,
+        y: 0,
+        width,
+        height: 0,
+    }
+}
+
 impl Default for Table<'_> {
     fn default() -> Self {
         Self {
@@ -806,22 +823,66 @@ impl Table<'_> {
         (header_area, rows_area, footer_area)
     }
 
-    fn render_header(&self, area: Rect, buf: &mut Buffer, column_widths: &[(u16, u16)]) {
+    fn render_header(&self, area: Rect, buf: &mut Buffer, column_widths: &[Rect]) {
         if let Some(ref header) = self.header {
             buf.set_style(area, header.style);
-            for ((x, width), cell) in column_widths.iter().zip(header.cells.iter()) {
-                cell.render(Rect::new(area.x + x, area.y, *width, area.height), buf);
+            for (cell_area, cell) in column_widths.iter().zip(header.cells.iter()) {
+                cell.render(
+                    Rect::new(area.x + cell_area.x, area.y, cell_area.width, area.height),
+                    buf,
+                );
             }
         }
     }
 
-    fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: &[(u16, u16)]) {
+    fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: &[Rect]) {
         if let Some(ref footer) = self.footer {
             buf.set_style(area, footer.style);
-            for ((x, width), cell) in column_widths.iter().zip(footer.cells.iter()) {
-                cell.render(Rect::new(area.x + x, area.y, *width, area.height), buf);
+            for (cell_area, cell) in column_widths.iter().zip(footer.cells.iter()) {
+                cell.render(
+                    Rect::new(area.x + cell_area.x, area.y, cell_area.width, area.height),
+                    buf,
+                );
             }
         }
+    }
+
+    /// Return the area that a [`Cell`] should occupy, taking into account its
+    /// [`Cell::column_span`]s.
+    ///
+    /// Returns `None` when there are no more columns for the [`Cell`] to occupy.
+    ///
+    /// Otherwise, returns `Some(Rect{x, y = 0, width, height = 0})`, representing the start
+    /// x-coordinate and width of the [`Cell`].
+    fn get_cell_area<'a, T>(
+        column_widths_iterator: &mut T,
+        cell_column_span: u16,
+        column_spacing: u16,
+    ) -> Option<Rect>
+    where
+        T: Iterator<Item = &'a Rect>,
+    {
+        let mut cell_area: Option<Rect> = None;
+        for _ in 0..cell_column_span {
+            let next_x: u16;
+            let next_width: u16;
+            if let Some(cell_area) = column_widths_iterator.next() {
+                next_x = cell_area.x;
+                next_width = cell_area.width;
+            } else {
+                break;
+            }
+            if let Some(area_so_far) = cell_area {
+                cell_area = Some(create_cell_area(
+                    // Initial start of cell area
+                    area_so_far.x,
+                    area_so_far.width + next_width + column_spacing,
+                ));
+            } else {
+                cell_area = Some(create_cell_area(next_x, next_width));
+            }
+        }
+        cell_area
     }
 
     fn render_rows(
@@ -830,7 +891,7 @@ impl Table<'_> {
         buf: &mut Buffer,
         state: &mut TableState,
         selection_width: u16,
-        columns_widths: &[(u16, u16)],
+        columns_widths: &[Rect],
     ) {
         if self.rows.is_empty() {
             return;
@@ -863,11 +924,23 @@ impl Table<'_> {
                 buf.set_style(selection_area, row.style);
                 (&self.highlight_symbol).render(selection_area, buf);
             }
-            for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
-                cell.render(
-                    Rect::new(row_area.x + x, row_area.y, *width, row_area.height),
-                    buf,
-                );
+            let mut column_widths_iter = columns_widths.iter();
+            for current_cell in &row.cells {
+                if let Some(cell_area) = Self::get_cell_area(
+                    &mut column_widths_iter,
+                    current_cell.column_span,
+                    self.column_spacing,
+                ) {
+                    current_cell.render(
+                        Rect::new(
+                            row_area.x + cell_area.x,
+                            row_area.y,
+                            cell_area.width,
+                            row_area.height,
+                        ),
+                        buf,
+                    );
+                }
             }
             if is_selected {
                 selected_row_area = Some(row_area);
@@ -878,9 +951,9 @@ impl Table<'_> {
         let selected_column_area = state.selected_column.and_then(|s| {
             // The selection is clamped by the column count. Since a user can manually specify an
             // incorrect number of widths, we should use panic free methods.
-            columns_widths.get(s).map(|(x, width)| Rect {
-                x: x + area.x,
-                width: *width,
+            columns_widths.get(s).map(|cell_area| Rect {
+                x: cell_area.x + area.x,
+                width: cell_area.width,
                 ..area
             })
         });
@@ -960,7 +1033,7 @@ impl Table<'_> {
         max_width: u16,
         selection_width: u16,
         col_count: usize,
-    ) -> Vec<(u16, u16)> {
+    ) -> Vec<Rect> {
         let widths = if self.widths.is_empty() {
             // Divide the space between each column equally
             vec![Constraint::Length(max_width / col_count.max(1) as u16); col_count]
@@ -975,7 +1048,10 @@ impl Table<'_> {
             .flex(self.flex)
             .spacing(self.column_spacing)
             .split(columns_area);
-        rects.iter().map(|c| (c.x, c.width)).collect()
+        rects
+            .iter()
+            .map(|c| create_cell_area(c.x, c.width))
+            .collect()
     }
 
     fn column_count(&self) -> usize {
@@ -1352,6 +1428,101 @@ mod tests {
             assert_eq!(buf, expected);
         }
 
+        #[rstest]
+        #[case(15, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(1),
+                    Cell::new("Cell2").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                ]),
+            ],
+            &Buffer::with_lines(["Cell1 Cell2    ", "Cell3 Cell4    "]))]
+        #[case(15, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(0),
+                    Cell::new("Cell2").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["Cell2          ", "Cell3 Cell4    "]))]
+        #[case(15, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(2),
+                    Cell::new("Cell2").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["Cell1          ", "Cell3 Cell4    "]))]
+        fn test_colspans_2_cols<'rows, Rows>(
+            #[case] width: u16,
+            #[case] column_width: u16,
+            #[case] rows: Rows,
+            #[case] expected: &Buffer,
+        ) where
+            Rows: IntoIterator<Item = Row<'rows>>,
+        {
+            let mut buf = Buffer::empty(Rect::new(0, 0, width, 2));
+            let table = Table::new(rows, [Constraint::Length(column_width); 2]);
+            Widget::render(table, Rect::new(0, 0, width, 2), &mut buf);
+            assert_eq!(buf, *expected);
+        }
+
+        #[rstest]
+        #[case(17, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(2),
+                    Cell::new("Cell2").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell3").column_span(1),
+                    Cell::new("Cell4").column_span(1),
+                    Cell::new("Cell5").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["Cell1       Cell2", "Cell3 Cell4 Cell5"]))]
+        #[case(17, 5, vec![
+                Row::new(vec![
+                    Cell::new("Cell1").column_span(1),
+                    Cell::new("Cell2").column_span(2),
+                    Cell::new("Cell3").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("Cell4").column_span(1),
+                    Cell::new("Cell5").column_span(1),
+                    Cell::new("Cell6").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["Cell1 Cell2      ", "Cell4 Cell5 Cell6"]))]
+        #[case(15, 5, vec![
+                Row::new(vec![
+                    Cell::new("11111111111111111111").column_span(2),
+                    Cell::new("22222222222222222222").column_span(1),
+                ]),
+                Row::new(vec![
+                    Cell::new("33333333333333333333").column_span(1),
+                    Cell::new("44444444444444444444").column_span(2),
+                    Cell::new("55555555555555555555").column_span(1),
+                ]),
+            ], &Buffer::with_lines(["1111111111 2222", "3333 4444444444"]))]
+        fn test_colspans_3_cols<'rows, Rows>(
+            #[case] width: u16,
+            #[case] column_width: u16,
+            #[case] rows: Rows,
+            #[case] expected: &Buffer,
+        ) where
+            Rows: IntoIterator<Item = Row<'rows>>,
+        {
+            let mut buf = Buffer::empty(Rect::new(0, 0, width, 2));
+            let table = Table::new(rows, [Constraint::Length(column_width); 3]);
+            Widget::render(table, Rect::new(0, 0, width, 2), &mut buf);
+            assert_eq!(buf, *expected);
+        }
+
         #[test]
         fn render_with_header() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
@@ -1676,15 +1847,24 @@ mod tests {
         fn length_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 4), (5, 4)]);
+            assert_eq!(
+                table.get_column_widths(20, 0, 0),
+                [create_cell_area(0, 4), create_cell_area(5, 4)]
+            );
 
             // with selection, more than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 4), (8, 4)]);
+            assert_eq!(
+                table.get_column_widths(20, 3, 0),
+                [create_cell_area(3, 4), create_cell_area(8, 4)]
+            );
 
             // without selection, less than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 3), (4, 3)]);
+            assert_eq!(
+                table.get_column_widths(7, 0, 0),
+                [create_cell_area(0, 3), create_cell_area(4, 3)]
+            );
 
             // with selection, less than needed width
             // <--------7px-------->
@@ -1693,26 +1873,41 @@ mod tests {
             // └────────┘x└────────┘
             // column spacing (i.e. `x`) is always prioritized
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 2), (6, 1)]);
+            assert_eq!(
+                table.get_column_widths(7, 3, 0),
+                [create_cell_area(3, 2), create_cell_area(6, 1)]
+            );
         }
 
         #[test]
         fn max_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 4), (5, 4)]);
+            assert_eq!(
+                table.get_column_widths(20, 0, 0),
+                [create_cell_area(0, 4), create_cell_area(5, 4)]
+            );
 
             // with selection, more than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 4), (8, 4)]);
+            assert_eq!(
+                table.get_column_widths(20, 3, 0),
+                [create_cell_area(3, 4), create_cell_area(8, 4)]
+            );
 
             // without selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 3), (4, 3)]);
+            assert_eq!(
+                table.get_column_widths(7, 0, 0),
+                [create_cell_area(0, 3), create_cell_area(4, 3)]
+            );
 
             // with selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 2), (6, 1)]);
+            assert_eq!(
+                table.get_column_widths(7, 3, 0),
+                [create_cell_area(3, 2), create_cell_area(6, 1)]
+            );
         }
 
         #[test]
@@ -1723,42 +1918,66 @@ mod tests {
 
             // without selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 10), (11, 9)]);
+            assert_eq!(
+                table.get_column_widths(20, 0, 0),
+                [create_cell_area(0, 10), create_cell_area(11, 9)]
+            );
 
             // with selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 8), (12, 8)]);
+            assert_eq!(
+                table.get_column_widths(20, 3, 0),
+                [create_cell_area(3, 8), create_cell_area(12, 8)]
+            );
 
             // without selection, less than needed width
             // allocates spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 3), (4, 3)]);
+            assert_eq!(
+                table.get_column_widths(7, 0, 0),
+                [create_cell_area(0, 3), create_cell_area(4, 3)]
+            );
 
             // with selection, less than needed width
             // always allocates selection and spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 2), (6, 1)]);
+            assert_eq!(
+                table.get_column_widths(7, 3, 0),
+                [create_cell_area(3, 2), create_cell_area(6, 1)]
+            );
         }
 
         #[test]
         fn percentage_constraint() {
             // without selection, more than needed width
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 6), (7, 6)]);
+            assert_eq!(
+                table.get_column_widths(20, 0, 0),
+                [create_cell_area(0, 6), create_cell_area(7, 6)]
+            );
 
             // with selection, more than needed width
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 5), (9, 5)]);
+            assert_eq!(
+                table.get_column_widths(20, 3, 0),
+                [create_cell_area(3, 5), create_cell_area(9, 5)]
+            );
 
             // without selection, less than needed width
             // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 2), (3, 2)]);
+            assert_eq!(
+                table.get_column_widths(7, 0, 0),
+                [create_cell_area(0, 2), create_cell_area(3, 2)]
+            );
 
             // with selection, less than needed width
             // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
-            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 1), (5, 1)]);
+            assert_eq!(
+                table.get_column_widths(7, 3, 0),
+                [create_cell_area(3, 1), create_cell_area(5, 1)]
+            );
         }
 
         #[test]
@@ -1766,22 +1985,34 @@ mod tests {
             // without selection, more than needed width
             // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_column_widths(20, 0, 0), [(0, 7), (8, 6)]);
+            assert_eq!(
+                table.get_column_widths(20, 0, 0),
+                [create_cell_area(0, 7), create_cell_area(8, 6)]
+            );
 
             // with selection, more than needed width
             // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_column_widths(20, 3, 0), [(3, 6), (10, 5)]);
+            assert_eq!(
+                table.get_column_widths(20, 3, 0),
+                [create_cell_area(3, 6), create_cell_area(10, 5)]
+            );
 
             // without selection, less than needed width
             // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_column_widths(7, 0, 0), [(0, 2), (3, 3)]);
+            assert_eq!(
+                table.get_column_widths(7, 0, 0),
+                [create_cell_area(0, 2), create_cell_area(3, 3)]
+            );
 
             // with selection, less than needed width
             // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
-            assert_eq!(table.get_column_widths(7, 3, 0), [(3, 1), (5, 2)]);
+            assert_eq!(
+                table.get_column_widths(7, 3, 0),
+                [create_cell_area(3, 1), create_cell_area(5, 2)]
+            );
         }
 
         /// When more width is available than requested, the behavior is controlled by flex
@@ -1790,7 +2021,11 @@ mod tests {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
-                &[(0, 20), (21, 20), (42, 20)]
+                &[
+                    create_cell_area(0, 20),
+                    create_cell_area(21, 20),
+                    create_cell_area(42, 20)
+                ]
             );
 
             let table = Table::default()
@@ -1798,7 +2033,11 @@ mod tests {
                 .flex(Flex::Legacy);
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
-                &[(0, 10), (11, 10), (22, 40)]
+                &[
+                    create_cell_area(0, 10),
+                    create_cell_area(11, 10),
+                    create_cell_area(22, 40)
+                ]
             );
 
             let table = Table::default()
@@ -1806,7 +2045,11 @@ mod tests {
                 .flex(Flex::SpaceBetween);
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
-                &[(0, 20), (21, 20), (42, 20)]
+                &[
+                    create_cell_area(0, 20),
+                    create_cell_area(21, 20),
+                    create_cell_area(42, 20)
+                ]
             );
         }
 
@@ -1815,7 +2058,11 @@ mod tests {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
-                &[(0, 20), (21, 20), (42, 20)]
+                &[
+                    create_cell_area(0, 20),
+                    create_cell_area(21, 20),
+                    create_cell_area(42, 20)
+                ]
             );
 
             let table = Table::default()
@@ -1823,7 +2070,11 @@ mod tests {
                 .flex(Flex::Legacy);
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
-                &[(0, 10), (11, 10), (22, 40)]
+                &[
+                    create_cell_area(0, 10),
+                    create_cell_area(11, 10),
+                    create_cell_area(22, 40)
+                ]
             );
         }
 
@@ -1840,7 +2091,11 @@ mod tests {
                 .column_spacing(0);
             assert_eq!(
                 table.get_column_widths(30, 0, 3),
-                &[(0, 10), (10, 10), (20, 10)]
+                &[
+                    create_cell_area(0, 10),
+                    create_cell_area(10, 10),
+                    create_cell_area(20, 10)
+                ]
             );
         }
 
@@ -1850,7 +2105,10 @@ mod tests {
                 .rows(vec![])
                 .header(Row::new(vec!["f", "g"]))
                 .column_spacing(0);
-            assert_eq!(table.get_column_widths(10, 0, 2), [(0, 5), (5, 5)]);
+            assert_eq!(
+                table.get_column_widths(10, 0, 2),
+                [create_cell_area(0, 5), create_cell_area(5, 5)]
+            );
         }
 
         #[test]
@@ -1859,7 +2117,10 @@ mod tests {
                 .rows(vec![])
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
-            assert_eq!(table.get_column_widths(10, 0, 2), [(0, 5), (5, 5)]);
+            assert_eq!(
+                table.get_column_widths(10, 0, 2),
+                [create_cell_area(0, 5), create_cell_area(5, 5)]
+            );
         }
 
         #[track_caller]
@@ -2301,5 +2562,146 @@ mod tests {
             .footer(Row::new(vec!["Footer1", "Footer2", "Footer3"]));
         // This should not panic, even if the buffer has zero size.
         Widget::render(table, buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn get_area_for_column_span_one_no_more_columns() {
+        let columns = [];
+        let column_span = Table::get_cell_area(&mut columns.iter(), 1, 1);
+        assert!(column_span.is_none());
+    }
+
+    #[test]
+    fn get_area_for_column_span_two_no_more_columns() {
+        let columns = [];
+        let column_span = Table::get_cell_area(&mut columns.iter(), 2, 1);
+        assert!(column_span.is_none());
+    }
+
+    #[rstest]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2), create_cell_area(3, 2)], 2, 5)]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 2, 5,)]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 1, 2)]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 3, 5)]
+    #[case(&[create_cell_area(3, 2)], 1, 2)]
+    #[case(&[create_cell_area(3, 2)], 2, 2)]
+    #[case(&[
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+            ], 3, 8)]
+    #[case(&[
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+        create_cell_area(3, 2),
+            ], 3, 8)]
+    fn test_colspan_width_single_column_spacing(
+        #[case] columns: &[Rect],
+        #[case] column_span: u16,
+        #[case] expected_column_width: u16,
+    ) {
+        let column_span = Table::get_cell_area(&mut columns.iter(), column_span, 1);
+        assert!(column_span.is_some());
+        assert_eq!(column_span.unwrap().width, expected_column_width);
+    }
+
+    #[rstest]
+    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2), create_cell_area(3, 2)], 3, 10)]
+    #[case(&[create_cell_area(3, 2)], 3, 2)]
+    fn test_colspan_width_two_column_spacing(
+        #[case] columns: &[Rect],
+        #[case] column_span: u16,
+        #[case] expected_column_width: u16,
+    ) {
+        let column_span = Table::get_cell_area(&mut columns.iter(), column_span, 2);
+        assert!(column_span.is_some());
+        assert_eq!(column_span.unwrap().width, expected_column_width);
+    }
+
+    #[rstest]
+    #[case(
+        HighlightSpacing::Always,
+        15,   // width
+        1,    // spacing
+        None, // selection
+        [
+            Cell::new("ABCDEFGHIJK").column_span(2),
+            Cell::new("12345678901"),
+            Cell::new("XYZXYZXYZXY"),
+        ],
+        [
+            "   ABCDEFGH 123",
+            "               ", // row 2
+            "               ", // row 3
+        ])]
+    #[case(
+        HighlightSpacing::Always,
+        15,      // width
+        1,       // spacing
+        Some(0), // selection
+        [
+            Cell::new("ABCDEFGHIJK").column_span(2),
+            Cell::new("12345678901"),
+            Cell::new("XYZXYZXYZXY"),
+        ],
+        [
+            ">>>ABCDEFGH 123",
+            "               ", // row 2
+            "               ", // row 3
+        ])]
+    #[case(
+        HighlightSpacing::WhenSelected,
+        15,   // width
+        1,    // spacing
+        None, // selection
+        [
+            Cell::new("ABCDEFGHIJK").column_span(2),
+            Cell::new("12345678901"),
+            Cell::new("XYZXYZXYZXY"),
+        ],
+        [
+            "ABCDEFGHIJ 1234",
+            "               ", // row 2
+            "               ", // row 3
+        ])]
+    #[case(
+        HighlightSpacing::WhenSelected,
+        15,      // width
+        1,       // spacing
+        Some(0), // selection
+        [
+            Cell::new("ABCDEFGHIJK").column_span(2),
+            Cell::new("12345678901"),
+            Cell::new("XYZXYZXYZXY"),
+        ],
+        [
+            ">>>ABCDEFGH 123",
+            "               ", // row 2
+            "               ", // row 3
+        ])]
+    fn test_table_with_selection_and_column_spans<'line, 'cell, Lines, Cells>(
+        #[case] highlight_spacing: HighlightSpacing,
+        #[case] columns: u16,
+        #[case] spacing: u16,
+        #[case] selection: Option<usize>,
+        #[case] cells: Cells,
+        #[case] expected: Lines,
+    ) where
+        Cells: IntoIterator,
+        Cells::Item: Into<Cell<'cell>>,
+        Lines: IntoIterator,
+        Lines::Item: Into<Line<'line>>,
+    {
+        let table = Table::default()
+            .rows(vec![Row::new(cells)])
+            .highlight_spacing(highlight_spacing)
+            .highlight_symbol(">>>")
+            .column_spacing(spacing);
+        let area = Rect::new(0, 0, columns, 3);
+        let mut buf = Buffer::empty(area);
+        let mut state = TableState::default().with_selected(selection);
+        StatefulWidget::render(table, area, &mut buf, &mut state);
+        assert_eq!(buf, Buffer::with_lines(expected));
     }
 }
