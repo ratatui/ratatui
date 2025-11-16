@@ -19,6 +19,7 @@ use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
 use crate::borders::{BorderType, Borders};
+use crate::clear::Clear;
 
 mod padding;
 
@@ -766,6 +767,11 @@ impl<'a> Block<'a> {
             .iter()
             .any(|(pos, _)| pos.unwrap_or(self.titles_position) == position)
     }
+    pub fn clear_first(self, area: Rect, buf: &mut Buffer) -> Self {
+        let clear = Clear;
+        clear.render(area, buf);
+        self
+    }
 }
 
 impl Widget for Block<'_> {
@@ -1121,6 +1127,7 @@ impl Styled for Block<'_> {
 #[cfg(test)]
 mod tests {
     use alloc::{format, vec};
+    use std::println;
 
     use itertools::iproduct;
     use ratatui_core::layout::Offset;
@@ -1129,7 +1136,55 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
+    #[test]
+    fn clear_first_with_borders() {
+        let mut buffer = Buffer::with_lines(["xxxxxxxxxx"; 3]);
 
+        Block::bordered()
+            .border_type(BorderType::LightDoubleDashed)
+            .clear_first(buffer.area, &mut buffer)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌╌╌╌╌╌╌╌╌┐",
+            "╎        ╎",
+            "└╌╌╌╌╌╌╌╌┘",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+    #[test]
+    fn clear_first_with_empty_buffer() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
+            .border_type(BorderType::LightDoubleDashed)
+            .clear_first(buffer.area, &mut buffer)
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+    let expected = Buffer::with_lines([
+        "┌╌╌╌╌╌╌╌╌┐",
+        "╎        ╎",
+        "└╌╌╌╌╌╌╌╌┘",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+    #[test]
+    fn clear_first_with_smaller_rect() {
+        let mut buffer = Buffer::with_lines(["----------"; 5]);
+        let block_area = Rect::new(5, 2, 5, 3);
+        Block::bordered()
+            .border_type(BorderType::LightDoubleDashed)
+            .clear_first(block_area, &mut buffer)
+            .render(block_area, &mut buffer);
+        #[rustfmt::skip]
+    let expected = Buffer::with_lines([
+        "----------",
+        "----------",
+        "-----┌╌╌╌┐",
+        "-----╎   ╎",
+        "-----└╌╌╌┘"
+        ]);
+        assert_eq!(buffer, expected);
+    }
     #[test]
     fn create_with_all_borders() {
         let block = Block::bordered();
