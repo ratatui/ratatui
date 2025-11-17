@@ -67,7 +67,7 @@ impl StatefulWidget for &List<'_> {
         let empty_symbol = " ".repeat(highlight_symbol_width as usize);
         let empty_symbol = empty_symbol.to_line();
 
-        let mut current_height = 0;
+        let mut current_height: usize = 0;
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
         for (i, item) in self
             .items
@@ -76,16 +76,22 @@ impl StatefulWidget for &List<'_> {
             .skip(state.offset)
             .take(last_visible_index - first_visible_index)
         {
-            let (x, y) = if self.direction == ListDirection::BottomToTop {
-                current_height += item.height() as u16;
-                (list_area.left(), list_area.bottom() - current_height)
+            let item_height = if self.truncate {
+                item.height().min(list_height - current_height)
             } else {
-                let pos = (list_area.left(), list_area.top() + current_height);
-                current_height += item.height() as u16;
+                item.height()
+            };
+
+            let (x, y) = if self.direction == ListDirection::BottomToTop {
+                current_height += item_height;
+                (list_area.left(), list_area.bottom().saturating_sub(current_height as u16))
+            } else {
+                let pos = (list_area.left(), list_area.top() + current_height as u16);
+                current_height += item_height;
                 pos
             };
 
-            let row_area = Rect::new(x, y, list_area.width, item.height() as u16);
+            let row_area = Rect::new(x, y, list_area.width, item_height as u16);
 
             let item_style = self.style.patch(item.style);
             buf.set_style(row_area, item_style);
@@ -107,7 +113,7 @@ impl StatefulWidget for &List<'_> {
                 buf.set_style(row_area, self.highlight_style);
             }
             if selection_spacing {
-                for j in 0..item.content.height() {
+                for j in 0..item_height {
                     // if the item is selected, we need to display the highlight symbol:
                     // - either for the first line of the item only,
                     // - or for each line of the item if the appropriate option is set
