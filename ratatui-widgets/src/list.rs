@@ -420,12 +420,12 @@ impl<'a> List<'a> {
     }
 
     /// Indicates whether the last item should be truncated if it is too long to fit in the frame.
-    /// 
+    ///
     /// This is `false` by default.
-    /// 
+    ///
     /// The direction of the list will determine which side gets truncated.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn truncate(mut self, truncate: bool) -> List<'a> {
+    pub const fn truncate(mut self, truncate: bool) -> Self {
         self.truncate = truncate;
         self
     }

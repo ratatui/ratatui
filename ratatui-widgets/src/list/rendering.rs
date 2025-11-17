@@ -84,7 +84,10 @@ impl StatefulWidget for &List<'_> {
 
             let (x, y) = if self.direction == ListDirection::BottomToTop {
                 current_height += item_height;
-                (list_area.left(), list_area.bottom().saturating_sub(current_height as u16))
+                (
+                    list_area.left(),
+                    list_area.bottom().saturating_sub(current_height as u16),
+                )
             } else {
                 let pos = (list_area.left(), list_area.top() + current_height as u16);
                 current_height += item_height;
@@ -219,9 +222,7 @@ impl List<'_> {
         }
 
         // Include the next overflowing item if truncating
-        if self.truncate
-            && last_visible_index < self.items.len()
-            && height_from_offset < max_height
+        if self.truncate && last_visible_index < self.items.len() && height_from_offset < max_height
         {
             last_visible_index += 1;
         }
