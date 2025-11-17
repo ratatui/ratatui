@@ -203,6 +203,23 @@ impl List<'_> {
             }
         }
 
+        // After ensuring the selected item is visible we may have left a gap, greedily include
+        // more items at the bottom as long as they fully fit into `max_height`
+        while last_visible_index < self.items.len()
+            && height_from_offset + self.items[last_visible_index].height() <= max_height
+        {
+            height_from_offset += self.items[last_visible_index].height();
+            last_visible_index += 1;
+        }
+
+        // Include the next overflowing item if truncating
+        if self.truncate
+            && last_visible_index < self.items.len()
+            && height_from_offset < max_height
+        {
+            last_visible_index += 1;
+        }
+
         (first_visible_index, last_visible_index)
     }
 
