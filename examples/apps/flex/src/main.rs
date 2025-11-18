@@ -27,7 +27,7 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    ratatui::run(|terminal| App::default().run(terminal))
+    ratatui::run(|terminal| App::new().run(terminal))
 }
 
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
@@ -123,6 +123,7 @@ struct App {
     scroll_offset: u16,
     spacing: u16,
     state: AppState,
+    theme: Theme,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -138,6 +139,7 @@ struct Example {
     description: String,
     flex: Flex,
     spacing: u16,
+    theme: Theme,
 }
 
 /// Tabs for the different layouts
@@ -158,6 +160,16 @@ enum SelectedTab {
 }
 
 impl App {
+    fn new() -> Self {
+        let cs = Theme::new();
+        Self {
+            selected_tab: SelectedTab::default(),
+            scroll_offset: 0,
+            spacing: 0,
+            state: AppState::default(),
+            theme: cs,
+        }
+    }
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         // increase the layout cache to account for the number of layout events. This ensures that
         // layout is not generally reprocessed on every frame (which would lead to possible janky
@@ -270,7 +282,7 @@ impl Widget for App {
 
 impl App {
     fn tabs(self) -> impl Widget {
-        let tab_titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
+        let tab_titles = SelectedTab::iter().map(|tab| SelectedTab::to_tab_title(tab, self.theme));
         let block = Block::new()
             .title("Flex Layouts ".bold())
             .title(" Use ◄ ► to change tab, ▲ ▼  to scroll, - + to change spacing ");
@@ -362,17 +374,16 @@ impl SelectedTab {
     }
 
     /// Convert a `SelectedTab` into a `Line` to display it by the `Tabs` widget.
-    fn to_tab_title(value: Self) -> Line<'static> {
-        use tailwind::{INDIGO, ORANGE, SKY};
+    fn to_tab_title(value: Self, cs: Theme) -> Line<'static> {
         let text = value.to_string();
         let color = match value {
-            Self::Legacy => ORANGE.c400,
-            Self::Start => SKY.c400,
-            Self::Center => SKY.c300,
-            Self::End => SKY.c200,
-            Self::SpaceEvenly => INDIGO.c400,
-            Self::SpaceBetween => INDIGO.c300,
-            Self::SpaceAround => INDIGO.c500,
+            Self::Legacy => cs.legacy_tab,
+            Self::Start => cs.start_tab,
+            Self::Center => cs.center_tab,
+            Self::End => cs.end_tab,
+            Self::SpaceEvenly => cs.space_evenly_tab,
+            Self::SpaceBetween => cs.space_between_tab,
+            Self::SpaceAround => cs.space_around_tab,
         };
         format!(" {text} ").fg(color).bg(Color::Black).into()
     }
@@ -382,37 +393,45 @@ impl StatefulWidget for SelectedTab {
     type State = u16;
     fn render(self, area: Rect, buf: &mut Buffer, spacing: &mut Self::State) {
         let spacing = *spacing;
+        let cs = Theme::new();
         match self {
-            Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing),
-            Self::Start => Self::render_examples(area, buf, Flex::Start, spacing),
-            Self::Center => Self::render_examples(area, buf, Flex::Center, spacing),
-            Self::End => Self::render_examples(area, buf, Flex::End, spacing),
-            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing),
-            Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing),
-            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
+            Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing, cs),
+            Self::Start => Self::render_examples(area, buf, Flex::Start, spacing, cs),
+            Self::Center => Self::render_examples(area, buf, Flex::Center, spacing, cs),
+            Self::End => Self::render_examples(area, buf, Flex::End, spacing, cs),
+            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing, cs),
+            Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing, cs),
+            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing, cs),
         }
     }
 }
 
 impl SelectedTab {
-    fn render_examples(area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16) {
+    fn render_examples(area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16, cs: Theme) {
         let heights = EXAMPLE_DATA
             .iter()
             .map(|(desc, _)| get_description_height(desc) + 4);
         let areas = Layout::vertical(heights).flex(Flex::Start).split(area);
         for (area, (description, constraints)) in areas.iter().zip(EXAMPLE_DATA.iter()) {
-            Example::new(constraints, description, flex, spacing).render(*area, buf);
+            Example::new(constraints, description, flex, spacing, cs).render(*area, buf);
         }
     }
 }
 
 impl Example {
-    fn new(constraints: &[Constraint], description: &str, flex: Flex, spacing: u16) -> Self {
+    fn new(
+        constraints: &[Constraint],
+        description: &str,
+        flex: Flex,
+        spacing: u16,
+        theme: Theme,
+    ) -> Self {
         Self {
             constraints: constraints.into(),
             description: description.into(),
             flex,
             spacing,
+            theme,
         }
     }
 }
@@ -432,7 +451,7 @@ impl Widget for Example {
             Paragraph::new(
                 self.description
                     .split('\n')
-                    .map(|s| format!("// {s}").italic().fg(tailwind::SLATE.c400))
+                    .map(|s| format!("// {s}").italic().fg(self.theme.description_fg))
                     .map(Line::from)
                     .collect::<Vec<Line>>(),
             )
@@ -440,7 +459,7 @@ impl Widget for Example {
         }
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
-            Self::illustration(*constraint, block.width).render(*block, buf);
+            Self::illustration(*constraint, block.width, self.theme).render(*block, buf);
         }
 
         for spacer in spacers.iter() {
@@ -495,8 +514,8 @@ impl Example {
             .render(spacer, buf);
     }
 
-    fn illustration(constraint: Constraint, width: u16) -> impl Widget {
-        let main_color = color_for_constraint(constraint);
+    fn illustration(constraint: Constraint, width: u16, cs: Theme) -> impl Widget {
+        let main_color = color_for_constraint(constraint, cs);
         let fg_color = Color::White;
         let title = format!("{constraint}");
         let content = format!("{width} px");
@@ -508,16 +527,14 @@ impl Example {
         Paragraph::new(text).centered().block(block)
     }
 }
-
-const fn color_for_constraint(constraint: Constraint) -> Color {
-    use tailwind::{BLUE, SLATE};
+const fn color_for_constraint(constraint: Constraint, cs: Theme) -> Color {
     match constraint {
-        Constraint::Min(_) => BLUE.c900,
-        Constraint::Max(_) => BLUE.c800,
-        Constraint::Length(_) => SLATE.c700,
-        Constraint::Percentage(_) => SLATE.c800,
-        Constraint::Ratio(_, _) => SLATE.c900,
-        Constraint::Fill(_) => SLATE.c950,
+        Constraint::Min(_) => cs.min_bg,
+        Constraint::Max(_) => cs.max_bg,
+        Constraint::Length(_) => cs.length_bg,
+        Constraint::Percentage(_) => cs.percentage_bg,
+        Constraint::Ratio(_, _) => cs.ratio_bg,
+        Constraint::Fill(_) => cs.fill_bg,
     }
 }
 
@@ -527,5 +544,79 @@ fn get_description_height(s: &str) -> u16 {
         0
     } else {
         s.split('\n').count() as u16
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+struct Theme {
+    min_bg: Color,
+    max_bg: Color,
+    length_bg: Color,
+    percentage_bg: Color,
+    ratio_bg: Color,
+    fill_bg: Color,
+    legacy_tab: Color,
+    start_tab: Color,
+    center_tab: Color,
+    end_tab: Color,
+    space_evenly_tab: Color,
+    space_between_tab: Color,
+    space_around_tab: Color,
+    description_fg: Color,
+}
+
+impl Theme {
+    pub fn new() -> Self {
+        use tailwind::{BLUE, INDIGO, ORANGE, SKY, SLATE};
+
+        if Self::is_true_color_supported() {
+            Self {
+                min_bg: BLUE.c900,
+                max_bg: BLUE.c800,
+                length_bg: SLATE.c700,
+                percentage_bg: SLATE.c800,
+                ratio_bg: SLATE.c900,
+                fill_bg: SLATE.c950,
+                legacy_tab: ORANGE.c400,
+                start_tab: SKY.c400,
+                center_tab: SKY.c300,
+                end_tab: SKY.c200,
+                space_evenly_tab: INDIGO.c400,
+                space_between_tab: INDIGO.c300,
+                space_around_tab: INDIGO.c500,
+                description_fg: SLATE.c400,
+            }
+        } else {
+            Self {
+                min_bg: Color::Indexed(33),
+                max_bg: Color::Indexed(32),
+                length_bg: Color::Indexed(110),
+                percentage_bg: Color::Indexed(25),
+                ratio_bg: Color::Indexed(20),
+                fill_bg: Color::Black,
+                legacy_tab: Color::Indexed(216),
+                start_tab: Color::Indexed(33),
+                center_tab: Color::Indexed(39),
+                end_tab: Color::Indexed(45),
+                space_evenly_tab: Color::Indexed(99),
+                space_between_tab: Color::Indexed(105),
+                space_around_tab: Color::Indexed(111),
+                description_fg: Color::Indexed(111),
+            }
+        }
+    }
+
+    fn is_true_color_supported() -> bool {
+        let term = std::env::var("TERM_PROGRAM").unwrap_or_default();
+        if term == "Apple_Terminal" {
+            let term_v = std::env::var("TERM_PROGRAM_VERSION")
+                .unwrap_or_default()
+                .parse()
+                .unwrap_or(0);
+            if term_v < 460 {
+                return false;
+            }
+        }
+        true
     }
 }
