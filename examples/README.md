@@ -206,7 +206,7 @@ Shows how to use the [tracing](https://crates.io/crates/tracing) crate to log to
 
 ## User Input
 
-Shows how to handle user input. [Source](./apps/user-input/). [Source](./apps/user-input/).
+Shows how to handle user input. [Source](./apps/user-input/).
 
 ![User input demo][user-input.gif]
 
