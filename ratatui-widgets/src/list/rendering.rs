@@ -1,6 +1,6 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
-use ratatui_core::text::{Line, Text, ToLine};
+use ratatui_core::text::{Line, ToLine};
 use ratatui_core::widgets::{StatefulWidget, Widget};
 
 use crate::block::BlockExt;
@@ -286,7 +286,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use ratatui_core::layout::{Alignment, Rect};
     use ratatui_core::style::{Color, Modifier, Style, Stylize};
-    use ratatui_core::text::Line;
+    use ratatui_core::text::{Line, Text};
     use ratatui_core::widgets::{StatefulWidget, Widget};
     use rstest::{fixture, rstest};
 
