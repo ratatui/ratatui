@@ -1,8 +1,11 @@
 //! The [`Chart`] widget is used to plot one or more [`Dataset`] in a cartesian coordinate system.
+use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp::max;
-use core::ops::Not;
+use core::ops::{Not, Range};
 
+use line_clipping::cohen_sutherland::clip_line;
+use line_clipping::{LineSegment, Point, Window};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Flex, Layout, Position, Rect};
 use ratatui_core::style::{Color, Style, Styled};
@@ -170,6 +173,368 @@ pub enum GraphType {
     Bar,
 }
 
+/// Used in `MultiColorChart` to specify which axis the `ColorRange`'s are supposed to apply to
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+enum MultiColorAxis {
+    X,
+    #[default]
+    Y,
+}
+
+/// Used to specify a range of values that will be drawn in the specified color. If the line/point
+/// does not fall inside any range specified the color will fallback to the style foreground color.
+///
+/// # Note
+///
+/// Ordering matters, ranges added first take precedence. In practice this means that range
+/// `0.0..1.0` followed by `0.0..5.0` is equivalent to range `0.0..1.0` followed by `1.0..5.0`
+///
+/// # Example
+///
+/// ```rust
+/// use ratatui::style::{Color, Style, Stylize};
+/// use ratatui::widgets::{Dataset, GraphType, MultiColorChart};
+///
+/// let dataset = Dataset::default()
+///     .graph_type(GraphType::Line)
+///     .multi_color_chart(
+///         MultiColorChart::default()
+///             .add_color_range(0.0..1.0, Color::Green)
+///             .add_color_range(0.0..5.0, Color::Red), // equivalent to 1.0..5.0
+///     )
+///     .style(Style::default().cyan())
+///     .data(&[(0.0, 0.0), (1.0, 10.0)]);
+/// ```
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct MultiColorChart {
+    ranges: Vec<ColorRange>,
+    axis: MultiColorAxis,
+}
+
+impl MultiColorChart {
+    /// Add a range of values to be set to a specified Color
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn add_color_range(mut self, range: Range<f64>, color: Color) -> Self {
+        self.ranges.push(ColorRange { range, color });
+        self
+    }
+
+    /// Sets ranges to be calculated based on X Axis.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn x_axis(mut self) -> Self {
+        self.axis = MultiColorAxis::X;
+        self
+    }
+
+    /// Sets ranges to be calculated based on Y Axis.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn y_axis(mut self) -> Self {
+        self.axis = MultiColorAxis::Y;
+        self
+    }
+
+    /// A direct clone of `f64::next_down` from core
+    /// Available in rust MSRV 1.86.0, using our own internal copy until MSRV is bumped.
+    const fn internal_f64_next_down(value: f64) -> f64 {
+        // The only part of our functions that differ is the need to assign these consts as the ones
+        // used by the original function are private to the f64 module
+        const F64_SIGN_MASK: u64 = 0x8000_0000_0000_0000;
+        const F64_TINY_BITS: u64 = 0x1;
+        const F64_NEG_TINY_BITS: u64 = F64_TINY_BITS | F64_SIGN_MASK;
+        // Some targets violate Rust's assumption of IEEE semantics, e.g. by flushing
+        // denormals to zero. This is in general unsound and unsupported, but here
+        // we do our best to still produce the correct result on such targets.
+        let bits = value.to_bits();
+        if value.is_nan() || bits == f64::NEG_INFINITY.to_bits() {
+            return value;
+        }
+
+        let abs = bits & !F64_SIGN_MASK;
+        let next_bits = if abs == 0 {
+            F64_NEG_TINY_BITS
+        } else if bits == abs {
+            bits - 1
+        } else {
+            bits + 1
+        };
+        f64::from_bits(next_bits)
+    }
+
+    /// A direct clone of `f64::next_up` from core
+    /// Available in rust MSRV 1.86.0, using our own internal copy until MSRV is bumped.
+    const fn internal_f64_next_up(value: f64) -> f64 {
+        // The only part of our functions that differ is the need to assign these consts as the ones
+        // used by the original function are private to the f64 module
+        const F64_SIGN_MASK: u64 = 0x8000_0000_0000_0000;
+        const F64_TINY_BITS: u64 = 0x1;
+        // Some targets violate Rust's assumption of IEEE semantics, e.g. by flushing
+        // denormals to zero. This is in general unsound and unsupported, but here
+        // we do our best to still produce the correct result on such targets.
+        let bits = value.to_bits();
+        if value.is_nan() || bits == f64::INFINITY.to_bits() {
+            return value;
+        }
+
+        let abs = bits & !F64_SIGN_MASK;
+        let next_bits = if abs == 0 {
+            F64_TINY_BITS
+        } else if bits == abs {
+            bits + 1
+        } else {
+            bits - 1
+        };
+        f64::from_bits(next_bits)
+    }
+
+    /// Helper function to create points slightly outside the window boundary.
+    /// The direction we need to move the point depends on the direction of the point outside.
+    ///
+    /// Say we have a line segment with points A F
+    ///
+    /// Then assume we run the `clip_line` function on that line, clipping from a Window with W1
+    /// to W2. In this example we will assume a 1 dimensional plane our line and window lives on.
+    ///
+    /// The new line segment that exists inside the window will be a line with points C D. This will
+    /// be the line drawn in the color of the associated range/window color.
+    ///
+    /// We still need to draw the rest of the lines outside of the window, this means we need to
+    /// calculate the pre-window line with Points A B and post-window line with points E F
+    ///
+    /// However it is important when creating points B and E that they do not equal points C and D,
+    /// but are instead the next available value outside the window. This is because if this is
+    /// not done, on the next pass of the window clipping the line will still count as "inside" the
+    /// clipping window, causing an infinite loop.
+    ///
+    /// # 2D Diagram
+    ///
+    /// ```txt
+    /// A-----------------------------------F    <- Original Line Segment
+    ///           W1------------W2               <- Clipping Window
+    ///            C------------D                <- Inside Line Segment
+    /// A---------B              E----------F    <- Line Segments outside window
+    /// ```
+    ///
+    /// # Function Parameters and Output
+    ///
+    /// Given this example, the `outside` point will always be equal to either point A or F, used to
+    /// determine the direction we need to move the `inside` point, which will always be C or D
+    ///
+    /// The output of this function will be the points B or E respectively. This means
+    /// `create_point_outside_window(A,C) == B`
+    ///
+    /// # Note
+    ///
+    /// 1. This function returns an `Option::None` in the case of an Infinite or NAN value being
+    ///    passed, again to avoid an infinite loop
+    /// 2. This function is only called if point A != C or D != F, this is used to determine if
+    ///    there is a section of the line outside the window at all
+    fn create_point_outside_window(outside: Point, inside: Point) -> Option<Point> {
+        let new_x = match inside.x.partial_cmp(&outside.x) {
+            Some(cmp) => match cmp {
+                core::cmp::Ordering::Greater => Some(Self::internal_f64_next_down(inside.x)),
+                core::cmp::Ordering::Equal => Some(inside.x),
+                core::cmp::Ordering::Less => Some(Self::internal_f64_next_up(inside.x)),
+            },
+            _ => None,
+        };
+
+        let new_y = match inside.y.partial_cmp(&outside.y) {
+            Some(cmp) => match cmp {
+                core::cmp::Ordering::Greater => Some(Self::internal_f64_next_down(inside.y)),
+                core::cmp::Ordering::Equal => Some(inside.y),
+                core::cmp::Ordering::Less => Some(Self::internal_f64_next_up(inside.y)),
+            },
+            _ => None,
+        };
+
+        if let (Some(new_x), Some(new_y)) = (new_x, new_y) {
+            let new_point = Point::new(new_x, new_y);
+            if inside == new_point {
+                None
+            } else {
+                Some(new_point)
+            }
+        } else {
+            None
+        }
+    }
+
+    /// Based on the `ColorRange`'s specified by self.ranges, draws the line segment in the color
+    /// specified by each range, falling back to the default color if the line is not inside any
+    /// range or if no ranges are specified. If a line segment crosses the boundary of a range, the
+    /// line will be split into multiple parts to ensure each section of the line is drawn in the
+    /// correct color. Details on the line splitting algorithm can be found in the helper function
+    /// `Self::create_point_outside_window`
+    ///
+    /// Used specifically in the drawing of the `GraphType::Bar` and `GraphType::Line` types.
+    fn draw_lines_on_canvas_based_on_values(
+        &self,
+        default: Color,
+        ctx: &mut crate::canvas::Context<'_>,
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+    ) {
+        let line = LineSegment::new(Point::new(x1, y1), Point::new(x2, y2));
+
+        // After looping through all `ColorRange`'s, if we don't break this must mean the line is
+        // not inside any user provided range. In this case we then draw the entire line
+        // segment in the default color. In the case no ranges were set, this then becomes
+        // the only range that is ever called, which means it will always draw then entire
+        // line on the first pass.
+        let default_range = ColorRange {
+            range: f64::MIN..f64::MAX,
+            color: default,
+        };
+
+        // In the case of a line crossing a window boundary, the resulting line segments outside the
+        // given window will need to be drawn in either a different user specified range, or in the
+        // default color if none match. We store a vec of line segments left to be drawn. In the
+        // simplest case where the entire line is covered by one range, it will be popped, drawn,
+        // and the while loop will have only run one time.
+        let mut lines_to_draw = vec![line];
+        while let Some(line) = lines_to_draw.pop() {
+            for range in self.ranges.iter().chain(core::iter::once(&default_range)) {
+                // Create the window based on the selected axis. We also use `f64::next_down` on the
+                // end of the range to match the semantics of the default `Range` type which is
+                // non-inclusive of the end value, where as by default the window treats the max
+                // value as inclusive.
+                let window = match self.axis {
+                    MultiColorAxis::X => Window::new(
+                        range.range.start,
+                        Self::internal_f64_next_down(range.range.end),
+                        f64::MIN,
+                        f64::MAX,
+                    ),
+                    MultiColorAxis::Y => Window::new(
+                        f64::MIN,
+                        f64::MAX,
+                        range.range.start,
+                        Self::internal_f64_next_down(range.range.end),
+                    ),
+                };
+                if let Some(line_within_window) = clip_line(line, window) {
+                    // if starting point changed, line must cross window boundary
+                    // documentation for create_point_outside_window explains in detail
+                    // both the why and what we are doing here
+                    if line_within_window.p1 != line.p1 {
+                        if let Some(new_p2) =
+                            Self::create_point_outside_window(line.p1, line_within_window.p1)
+                        {
+                            let new_start_line = LineSegment::new(line.p1, new_p2);
+                            lines_to_draw.push(new_start_line);
+                        }
+                    }
+
+                    // if ending point changed, line must cross window boundary
+                    // documentation for create_point_outside_window explains in detail
+                    // both the why and what we are doing here
+                    if line_within_window.p2 != line.p2 {
+                        if let Some(new_p1) =
+                            Self::create_point_outside_window(line.p2, line_within_window.p2)
+                        {
+                            let new_end_line = LineSegment::new(new_p1, line.p2);
+                            lines_to_draw.push(new_end_line);
+                        }
+                    }
+
+                    // finally draw only the line segment that is covered by the window. line
+                    // segments that exist outside the current window will be drawn in subsequent
+                    // passes of the loop
+                    ctx.draw(&CanvasLine {
+                        x1: line_within_window.p1.x,
+                        y1: line_within_window.p1.y,
+                        x2: line_within_window.p2.x,
+                        y2: line_within_window.p2.y,
+                        color: range.color,
+                    });
+                    break;
+                }
+            }
+        }
+    }
+
+    /// Based on the `ColorRange`'s specified by self.ranges, draws the list of points in the color
+    /// specified by each range, falling back to the default color if the point is not inside any
+    /// range or if no ranges are specified.
+    ///
+    /// Used specifically in the drawing of the `GraphType::Scatter` type.
+    fn draw_points_on_canvas_based_on_values(
+        &self,
+        default: Color,
+        ctx: &mut crate::canvas::Context<'_>,
+        points: &'_ [(f64, f64)],
+    ) {
+        // if no ranges set short circuit, draw all points in default color and exit, not needed but
+        // saves an unnecessary vec allocation.
+        if self.ranges.is_empty() {
+            ctx.draw(&Points {
+                coords: points,
+                color: default,
+            });
+            return;
+        }
+
+        let mut points = points.to_vec();
+        for range in &self.ranges {
+            //get all points inside range, remove from vec of points left to be drawn
+            let points_in_range = match self.axis {
+                //TODO: Replace this with std::vec::extract_if, only change will be the need to add
+                // a .collect::<Vec<_>>() call and add range argument ..
+                MultiColorAxis::X => Self::internal_vec_extract_if(&mut points, |point| {
+                    range.range.contains(&point.0)
+                }),
+                //TODO: Replace this with std::vec::extract_if, only change will be the need to add
+                // a .collect::<Vec<_>>() call and add range argument ..
+                MultiColorAxis::Y => Self::internal_vec_extract_if(&mut points, |point| {
+                    range.range.contains(&point.1)
+                }),
+            };
+
+            ctx.draw(&Points {
+                coords: &points_in_range,
+                color: range.color,
+            });
+        }
+
+        //the default case, draw all left over points in the default color
+        ctx.draw(&Points {
+            coords: &points,
+            color: default,
+        });
+    }
+
+    /// A semantic clone of `std::vec::extract_if`, stabilized in rust version 1.87.0. The version
+    /// in std is more performant both because it can backshift elements of the array in bulk
+    /// while we don't have access to the vec internals to do so. This should be replaced once
+    /// that function becomes available. We extract this out for our own internal use for inline
+    /// clarity.
+    fn internal_vec_extract_if<T, F>(vec: &mut Vec<T>, mut filter: F) -> Vec<T>
+    where
+        F: FnMut(&mut T) -> bool,
+    {
+        let mut i = 0;
+        let mut output = vec![];
+        while i < vec.len() {
+            if filter(&mut vec[i]) {
+                let val = vec.remove(i);
+                output.push(val);
+            } else {
+                i += 1;
+            }
+        }
+        output
+    }
+}
+
+/// A range of values to be drawn in the specified color
+#[derive(Debug, Default, Clone, PartialEq)]
+struct ColorRange {
+    range: Range<f64>,
+    color: Color,
+}
+
 /// Allow users to specify the position of a legend in a [`Chart`]
 ///
 /// See [`Chart::legend_position`]
@@ -328,6 +693,8 @@ pub struct Dataset<'a> {
     graph_type: GraphType,
     /// Style used to plot this dataset
     style: Style,
+    /// Used to specify color ranges where a color other then the default will be drawn
+    multi_color_chart: MultiColorChart,
 }
 
 impl<'a> Dataset<'a> {
@@ -392,6 +759,41 @@ impl<'a> Dataset<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn graph_type(mut self, graph_type: GraphType) -> Self {
         self.graph_type = graph_type;
+        self
+    }
+
+    /// Sets a list of value ranges that will modify the color of the line
+    ///
+    /// Used to specify a range of values that will be drawn in the specified color. If the
+    /// line/point does not fall inside any range specified the color will fallback to the style
+    /// foreground color.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Note
+    ///
+    /// Ordering matters, ranges added first take precedence. In practice this means that range
+    /// `0.0..1.0` followed by `0.0..5.0` is equivalent to range `0.0..1.0` followed by `1.0..5.0`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui::style::{Color, Style, Stylize};
+    /// use ratatui::widgets::{Dataset, GraphType, MultiColorChart};
+    ///
+    /// let dataset = Dataset::default()
+    ///     .graph_type(GraphType::Line)
+    ///     .multi_color_chart(
+    ///         MultiColorChart::default()
+    ///             .add_color_range(0.0..1.0, Color::Green)
+    ///             .add_color_range(0.0..5.0, Color::Red), // equivalent to 1.0..5.0
+    ///     )
+    ///     .style(Style::default().cyan())
+    ///     .data(&[(0.0, 0.0), (1.0, 10.0)]);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn multi_color_chart(mut self, multi_color_chart: MultiColorChart) -> Self {
+        self.multi_color_chart = multi_color_chart;
         self
     }
 
@@ -1023,36 +1425,42 @@ impl Widget for &Chart<'_> {
                 .x_bounds(self.x_axis.bounds)
                 .y_bounds(self.y_axis.bounds)
                 .marker(dataset.marker)
-                .paint(|ctx| {
-                    ctx.draw(&Points {
-                        coords: dataset.data,
-                        color: dataset.style.fg.unwrap_or(Color::Reset),
-                    });
-                    match dataset.graph_type {
-                        GraphType::Line => {
-                            for data in dataset.data.windows(2) {
-                                ctx.draw(&CanvasLine {
-                                    x1: data[0].0,
-                                    y1: data[0].1,
-                                    x2: data[1].0,
-                                    y2: data[1].1,
-                                    color: dataset.style.fg.unwrap_or(Color::Reset),
-                                });
-                            }
+                .paint(|ctx| match dataset.graph_type {
+                    GraphType::Line => {
+                        for data in dataset.data.windows(2) {
+                            dataset
+                                .multi_color_chart
+                                .draw_lines_on_canvas_based_on_values(
+                                    dataset.style.fg.unwrap_or(Color::Reset),
+                                    ctx,
+                                    data[0].0,
+                                    data[0].1,
+                                    data[1].0,
+                                    data[1].1,
+                                );
                         }
-                        GraphType::Bar => {
-                            for (x, y) in dataset.data {
-                                ctx.draw(&CanvasLine {
-                                    x1: *x,
-                                    y1: 0.0,
-                                    x2: *x,
-                                    y2: *y,
-                                    color: dataset.style.fg.unwrap_or(Color::Reset),
-                                });
-                            }
-                        }
-                        GraphType::Scatter => {}
                     }
+                    GraphType::Bar => {
+                        for (x, y) in dataset.data {
+                            dataset
+                                .multi_color_chart
+                                .draw_lines_on_canvas_based_on_values(
+                                    dataset.style.fg.unwrap_or(Color::Reset),
+                                    ctx,
+                                    *x,
+                                    0.0,
+                                    *x,
+                                    *y,
+                                );
+                        }
+                    }
+                    GraphType::Scatter => dataset
+                        .multi_color_chart
+                        .draw_points_on_canvas_based_on_values(
+                            dataset.style.fg.unwrap_or(Color::Reset),
+                            ctx,
+                            dataset.data,
+                        ),
                 })
                 .render(graph_area, buf);
         }
