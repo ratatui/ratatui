@@ -1,6 +1,6 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
-use ratatui_core::text::{Line, ToLine};
+use ratatui_core::text::{Line, Text, ToLine};
 use ratatui_core::widgets::{StatefulWidget, Widget};
 
 use crate::block::BlockExt;
@@ -965,6 +965,47 @@ mod tests {
             state.offset, 4,
             "did not scroll the selected item into view"
         );
+    }
+
+    #[test]
+    fn ensuring_selected_item_is_visible_fills_remaining_space() {
+        let list = List::new([
+            Text::from(vec!["Multiline".into(), "Item".into()]),
+            "Item 1".into(),
+            "Item 2".into(),
+        ]);
+        let mut state = ListState::default().with_offset(0).with_selected(Some(1));
+        let buffer = stateful_widget(list, &mut state, 9, 2);
+
+        let expected = Buffer::with_lines(["Item 1   ", "Item 2  "]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn show_last_item_truncated_when_enabled_and_overflowing() {
+        let list = List::new([
+            "Item 1".into(),
+            Text::from(vec!["Multiline".into(), "Item".into()]),
+        ])
+        .truncate(true);
+        let mut state = ListState::default();
+        let buffer = stateful_widget(list, &mut state, 9, 2);
+
+        let expected = Buffer::with_lines(["Item 1   ", "Multiline"]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn does_not_show_last_item_truncated_when_disabled_and_overflowing() {
+        let list = List::new([
+            "Item 1".into(),
+            Text::from(vec!["Multiline".into(), "Item".into()]),
+        ]);
+        let mut state = ListState::default();
+        let buffer = stateful_widget(list, &mut state, 9, 2);
+
+        let expected = Buffer::with_lines(["Item 1   ", "         "]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
