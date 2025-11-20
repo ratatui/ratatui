@@ -147,15 +147,8 @@ impl Rect {
     /// let rect = Rect::new(1, 2, 3, 4);
     /// ```
     pub const fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
-        // these calculations avoid using min so that this function can be const
-        let max_width = u16::MAX - x;
-        let max_height = u16::MAX - y;
-        let width = if width > max_width { max_width } else { width };
-        let height = if height > max_height {
-            max_height
-        } else {
-            height
-        };
+        let width = x.saturating_add(width) - x;
+        let height = y.saturating_add(height) - y;
         Self {
             x,
             y,
