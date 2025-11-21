@@ -305,12 +305,8 @@ impl Buffer {
             "Trying to get the coords of a cell outside the buffer: i={index} len={}",
             self.content.len()
         );
-        let x = index % self.area.width as usize + self.area.x as usize;
-        let y = index / self.area.width as usize + self.area.y as usize;
-        (
-            u16::try_from(x).expect("x overflow. This should never happen as area.width is u16"),
-            u16::try_from(y).expect("y overflow. This should never happen as area.height is u16"),
-        )
+
+        self.area.pos_of(index)
     }
 
     /// Print a string, starting at the position (x, y)

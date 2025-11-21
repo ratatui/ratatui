@@ -625,6 +625,47 @@ impl Rect {
             ..self
         }
     }
+
+    /// Returns the (global) coordinates of a cell given its index
+    ///
+    /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::Rect;
+    ///
+    /// let rect = Rect::new(200, 100, 10, 10); // 100 total cells
+    /// assert_eq!(rect.pos_of(0), (200, 100));
+    /// assert_eq!(rect.pos_of(14), (204, 101));
+    /// ``````
+    ///
+    /// # Panics
+    ///
+    /// Panics when given an index that is outside the boundaries of the Rect.
+    ///
+    /// ```should_panic
+    /// use ratatui_core::layout::Rect;
+    ///
+    /// let rect = Rect::new(0, 0, 10, 10); // 100 cells in total
+    /// // Index 100 is the 101st cell, which lies outside of the Rect.
+    /// rect.pos_of(100); // Panics
+    /// ```
+    #[must_use]
+    pub fn pos_of(self, index: usize) -> (u16, u16) {
+        let width = self.width as usize;
+
+        let len = width * self.height as usize;
+        assert!(
+            index < len,
+            "Trying to get the coords of a cell outside the Rect: i={index} len={len}",
+        );
+
+        (
+            self.x.saturating_add((index % width) as u16),
+            self.y.saturating_add((index / width) as u16),
+        )
+    }
 }
 
 impl From<(Position, Size)> for Rect {
@@ -1052,5 +1093,25 @@ mod tests {
         Rect::new(0, 0, 10, 10)
             .try_layout::<3>(&layout)
             .unwrap_err();
+    }
+
+    #[test]
+    fn index_to_coord() {
+        let rect = Rect::new(200, 100, 50, 80);
+
+        assert_eq!(rect.pos_of(0), (200, 100));
+        assert_eq!(rect.pos_of(50), (200, 101));
+        assert_eq!(rect.pos_of(50 * 80 - 1), (249, 179));
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Trying to get the coords of a cell outside the Rect: i=3000 len=3000"
+    )]
+    fn index_to_out_of_bounds_coord() {
+        let rect = Rect::new(30, 40, 50, 60);
+
+        // One index too many
+        let _ = rect.pos_of(50 * 60);
     }
 }
