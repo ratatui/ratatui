@@ -628,17 +628,17 @@ impl Rect {
 
     /// Returns the (global) coordinates of a cell given its index
     ///
-    /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+    /// Global coordinates are offset by the `Rect`'s offset (`x`/`y`).
     ///
     /// # Examples
     ///
     /// ```
-    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::layout::{Position, Rect};
     ///
     /// let rect = Rect::new(200, 100, 10, 10); // 100 total cells
-    /// assert_eq!(rect.pos_of(0), (200, 100));
-    /// assert_eq!(rect.pos_of(14), (204, 101));
-    /// ``````
+    /// assert_eq!(rect.pos_of(0), Position::new(200, 100));
+    /// assert_eq!(rect.pos_of(14), Position::new(204, 101));
+    /// ```
     ///
     /// # Panics
     ///
@@ -652,16 +652,16 @@ impl Rect {
     /// rect.pos_of(100); // Panics
     /// ```
     #[must_use]
-    pub fn pos_of(self, index: usize) -> (u16, u16) {
+    pub fn pos_of(self, index: usize) -> Position {
         let width = self.width as usize;
 
         let len = width * self.height as usize;
-        assert!(
+        debug_assert!(
             index < len,
             "Trying to get the coords of a cell outside the Rect: i={index} len={len}",
         );
 
-        (
+        Position::new(
             self.x.saturating_add((index % width) as u16),
             self.y.saturating_add((index / width) as u16),
         )
@@ -1095,13 +1095,13 @@ mod tests {
             .unwrap_err();
     }
 
-    #[test]
-    fn index_to_coord() {
+    #[rstest]
+    #[case(0, Position::new(200, 100))]
+    #[case(50, Position::new(200, 101))]
+    #[case(50 * 80 - 1, Position::new(249, 179))]
+    fn index_to_coord(#[case] index: usize, #[case] expected: Position) {
         let rect = Rect::new(200, 100, 50, 80);
-
-        assert_eq!(rect.pos_of(0), (200, 100));
-        assert_eq!(rect.pos_of(50), (200, 101));
-        assert_eq!(rect.pos_of(50 * 80 - 1), (249, 179));
+        assert_eq!(rect.pos_of(index), expected);
     }
 
     #[test]

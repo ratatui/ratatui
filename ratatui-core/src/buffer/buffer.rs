@@ -306,7 +306,7 @@ impl Buffer {
             self.content.len()
         );
 
-        self.area.pos_of(index)
+        <(u16, u16)>::from(self.area.pos_of(index))
     }
 
     /// Print a string, starting at the position (x, y)
