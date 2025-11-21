@@ -39,7 +39,7 @@ use crate::text::{Line, Span};
 ///
 /// // indexing using (x, y) tuple (which is converted to Position)
 /// buf[(0, 1)].set_symbol("B");
-/// assert_eq!(buf[(0, 1)].symbol(), "x");
+/// assert_eq!(buf[(0, 1)].symbol(), "B");
 ///
 /// // getting an Option instead of panicking if the position is outside the buffer
 /// let cell = buf.cell_mut(Position { x: 0, y: 2 })?;
