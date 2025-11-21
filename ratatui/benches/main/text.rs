@@ -46,7 +46,7 @@ fn text(c: &mut Criterion) {
     group.finish();
 }
 
-/// Renders the text into a buffer of the given `size`
+/// Render the text into a buffer of the given `size`.
 fn render(bencher: &mut Bencher, text: &Text, size: Rect) {
     let mut buffer = Buffer::empty(size);
     // We use `iter_batched` to clone the value in the setup function.

@@ -67,7 +67,7 @@ fn paragraph(c: &mut Criterion) {
     group.finish();
 }
 
-/// render the paragraph into a buffer with the given width
+/// Render the paragraph into a buffer with the given width.
 fn render(bencher: &mut Bencher, paragraph: &Paragraph, width: u16) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, width, PARAGRAPH_DEFAULT_HEIGHT));
     // We use `iter_batched` to clone the value in the setup function.
