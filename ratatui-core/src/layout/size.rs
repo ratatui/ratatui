@@ -60,6 +60,12 @@ impl From<(u16, u16)> for Size {
     }
 }
 
+impl From<Size> for (u16, u16) {
+    fn from(size: Size) -> Self {
+        (size.width, size.height)
+    }
+}
+
 impl From<Rect> for Size {
     fn from(rect: Rect) -> Self {
         rect.as_size()
@@ -90,6 +96,14 @@ mod tests {
         let size = Size::from((10, 20));
         assert_eq!(size.width, 10);
         assert_eq!(size.height, 20);
+    }
+
+    #[test]
+    fn to_tuple() {
+        let size = Size::from((10, 20));
+        let (width, height) = size.into();
+        assert_eq!(size.width, width);
+        assert_eq!(size.height, height);
     }
 
     #[test]
