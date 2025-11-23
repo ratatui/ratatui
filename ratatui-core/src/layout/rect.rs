@@ -666,6 +666,63 @@ impl Rect {
             self.y.saturating_add((index / width) as u16),
         )
     }
+
+    /// Returns the index in the `Rect` for the given global (x, y) `Position`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::{Position, Rect};
+    ///
+    /// let rect = Rect::new(200, 100, 10, 10);
+    /// // Global coordinates to the top corner of this buffer's area
+    /// assert_eq!(rect.index_of(Position::new(200, 100)), 0);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics when given an coordinate that is outside of the `Rect`'s area.
+    ///
+    /// ```should_panic
+    /// use ratatui_core::layout::{Position, Rect};
+    ///
+    /// let rect = Rect::new(200, 100, 10, 10);
+    /// // Position is outside of the rect in global coordinate space.
+    /// rect.index_of(Position::new(0, 0)); // Panics
+    /// ```
+    #[track_caller]
+    #[must_use]
+    pub fn index_of(&self, pos: Position) -> usize {
+        self.index_of_opt(pos)
+            .unwrap_or_else(|| panic!("position {pos} outside of rect {self}"))
+    }
+
+    /// Returns an [`Option`]al index in the `Rect` for the given global [`Position`].
+    ///
+    /// Returns [`None`] if the given coordinates are outside of the Buffer's area.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui_core::layout::{Position, Rect};
+    ///
+    /// let rect = Rect::new(200, 100, 10, 10);
+    /// assert_eq!(rect.index_of_opt(Position::new(200, 100)), Some(0));
+    /// assert_eq!(rect.index_of_opt(Position::new(201, 100)), Some(1));
+    /// assert_eq!(rect.index_of_opt(Position::new(200, 101)), Some(10));
+    /// assert_eq!(rect.index_of_opt(Position::new(0, 0)), None);
+    /// ```
+    #[must_use]
+    pub const fn index_of_opt(&self, position: Position) -> Option<usize> {
+        if !self.contains(position) {
+            return None;
+        }
+        // remove offset
+        let y = (position.y - self.y) as usize;
+        let x = (position.x - self.x) as usize;
+        let width = self.width as usize;
+        Some(y * width + x)
+    }
 }
 
 impl From<(Position, Size)> for Rect {
@@ -1099,7 +1156,7 @@ mod tests {
     #[case(0, Position::new(200, 100))]
     #[case(50, Position::new(200, 101))]
     #[case(50 * 80 - 1, Position::new(249, 179))]
-    fn index_to_coord(#[case] index: usize, #[case] expected: Position) {
+    fn index_to_pos(#[case] index: usize, #[case] expected: Position) {
         let rect = Rect::new(200, 100, 50, 80);
         assert_eq!(rect.pos_of(index), expected);
     }
@@ -1108,10 +1165,52 @@ mod tests {
     #[should_panic(
         expected = "Trying to get the coords of a cell outside the Rect: i=3000 len=3000"
     )]
-    fn index_to_out_of_bounds_coord() {
+    fn index_to_out_of_bounds_pos() {
         let rect = Rect::new(30, 40, 50, 60);
 
         // One index too many
         let _ = rect.pos_of(50 * 60);
+    }
+
+    #[rstest]
+    #[case(Rect::new(0, 0, 30, 40), Position::new(0, 0), Some(0))]
+    #[case(Rect::new(0, 0, 30, 40), Position::new(29, 39), Some(30 * 40 - 1))]
+    #[case(Rect::new(0, 0, 30, 40), Position::new(30, 39), None)]
+    #[case(Rect::new(0, 0, 30, 40), Position::new(29, 40), None)]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(9, 19), None)]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(10, 19), None)]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(9, 20), None)]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(10, 20), Some(0))]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(10, 22), Some(60))]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(39, 59), Some(30 * 40 - 1))]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(40, 60), None)]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(39, 60), None)]
+    #[case(Rect::new(10, 20, 30, 40), Position::new(40, 59), None)]
+    fn pos_to_index_opt(
+        #[case] rect: Rect,
+        #[case] pos: Position,
+        #[case] expected: Option<usize>,
+    ) {
+        assert_eq!(rect.index_of_opt(pos), expected);
+    }
+
+    #[rstest]
+    #[case::left(Position::new(9, 10))]
+    #[case::top(Position::new(10, 9))]
+    #[case::right(Position::new(20, 10))]
+    #[case::bottom(Position::new(10, 20))]
+    #[should_panic]
+    fn pos_to_index_out_of_bounds(#[case] pos: Position) {
+        let _ = Rect::new(10, 10, 10, 10).index_of(pos);
+    }
+
+    #[rstest]
+    #[case(Rect::new(0, 0, 30, 40), 0)]
+    #[case(Rect::new(0, 0, 30, 40), 30 * 40 - 1)]
+    #[case(Rect::new(10, 20, 30, 40), 0)]
+    #[case(Rect::new(10, 20, 30, 40), 60)]
+    #[case(Rect::new(10, 20, 30, 40), 30 * 40 - 1)]
+    fn index_to_pos_to_index(#[case] rect: Rect, #[case] index: usize) {
+        assert_eq!(index, rect.index_of(rect.pos_of(index)))
     }
 }

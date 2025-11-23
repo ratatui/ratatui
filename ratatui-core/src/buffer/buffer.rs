@@ -269,21 +269,8 @@ impl Buffer {
         Some(y * width + x)
     }
 
-    /// Returns the (global) coordinates of a cell given its index
-    ///
-    /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use ratatui_core::buffer::Buffer;
-    /// use ratatui_core::layout::Rect;
-    ///
-    /// let rect = Rect::new(200, 100, 10, 10);
-    /// let buffer = Buffer::empty(rect);
-    /// assert_eq!(buffer.pos_of(0), (200, 100));
-    /// assert_eq!(buffer.pos_of(14), (204, 101));
-    /// ```
+    /// Returns the (global) coordinates of a cell given its index. It
+    /// runs [`Rect::pos_of`] under the hood on `self.area`.
     ///
     /// # Panics
     ///
