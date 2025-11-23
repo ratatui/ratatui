@@ -393,7 +393,7 @@ impl StatefulWidget for SelectedTab {
     type State = u16;
     fn render(self, area: Rect, buf: &mut Buffer, spacing: &mut Self::State) {
         let spacing = *spacing;
-        let cs = Theme::new();
+        let theme = Theme::new();
         match self {
             Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing, cs),
             Self::Start => Self::render_examples(area, buf, Flex::Start, spacing, cs),
