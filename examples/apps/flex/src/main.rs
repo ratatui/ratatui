@@ -407,7 +407,7 @@ impl StatefulWidget for SelectedTab {
 }
 
 impl SelectedTab {
-    fn render_examples(area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16, cs: Theme) {
+    fn render_examples(area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16, theme: Theme) {
         let heights = EXAMPLE_DATA
             .iter()
             .map(|(desc, _)| get_description_height(desc) + 4);
