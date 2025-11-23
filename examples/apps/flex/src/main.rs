@@ -161,7 +161,7 @@ enum SelectedTab {
 
 impl App {
     fn new() -> Self {
-        let cs = Theme::new();
+        let theme = Theme::new();
         Self {
             selected_tab: SelectedTab::default(),
             scroll_offset: 0,
