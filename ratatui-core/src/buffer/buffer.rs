@@ -216,9 +216,8 @@ impl Buffer {
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
     ///
-    /// Usage discouraged, as it exposes `self.content` as a linearly
-    /// indexable array, which limits potential future abstractions. See
-    /// <https://github.com/ratatui/ratatui/issues/1122>.
+    /// Usage discouraged, as it exposes `self.content` as a linearly indexable array, which limits
+    /// potential future abstractions. See <https://github.com/ratatui/ratatui/issues/1122>.
     ///
     /// # Examples
     ///
@@ -277,9 +276,8 @@ impl Buffer {
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
     ///
-    /// Usage discouraged, as it exposes `self.content` as a linearly
-    /// indexable array, which limits potential future abstractions. See
-    /// <https://github.com/ratatui/ratatui/issues/1122>.
+    /// Usage discouraged, as it exposes `self.content` as a linearly indexable array, which limits
+    /// potential future abstractions. See <https://github.com/ratatui/ratatui/issues/1122>.
     ///
     /// # Examples
     ///
