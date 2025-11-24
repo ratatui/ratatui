@@ -24,14 +24,20 @@ use crate::layout::Rect;
 /// - [`from(Rect)`](Self::from) - Create from [`Rect`] (uses width and height)
 /// - [`into((u16, u16))`] - Convert to `(u16, u16)` tuple
 ///
+/// # Computation
+///
+/// - [`area`](Self::area) - Compute the total number of cells covered by the size
+///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::{Rect, Size};
 ///
 /// let size = Size::new(80, 24);
+/// assert_eq!(size.area(), 1920);
 /// let size = Size::from((80, 24));
 /// let size = Size::from(Rect::new(0, 0, 80, 24));
+/// assert_eq!(size.area(), 1920);
 /// ```
 ///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
@@ -51,6 +57,14 @@ impl Size {
     /// Create a new `Size` struct
     pub const fn new(width: u16, height: u16) -> Self {
         Self { width, height }
+    }
+
+    /// Compute the total area of the size as a `u32`.
+    ///
+    /// The multiplication uses `u32` to avoid overflow when the width and height are at their
+    /// `u16` maximum values.
+    pub const fn area(self) -> u32 {
+        self.width as u32 * self.height as u32
     }
 }
 
@@ -116,5 +130,12 @@ mod tests {
     #[test]
     fn display() {
         assert_eq!(Size::new(10, 20).to_string(), "10x20");
+    }
+
+    #[test]
+    fn area() {
+        assert_eq!(Size::new(10, 20).area(), 200);
+        assert_eq!(Size::new(0, 0).area(), 0);
+        assert_eq!(Size::new(u16::MAX, u16::MAX).area(), 4_294_836_225_u32);
     }
 }
