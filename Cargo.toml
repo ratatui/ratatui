@@ -45,7 +45,7 @@ itertools = { version = "0.14", default-features = false, features = ["use_alloc
 kasuari = { version = "0.4", default-features = false }
 line-clipping = "0.3"
 lru = "0.16"
-octocrab = "0.47"
+octocrab = "0.48"
 palette = "0.7"
 pretty_assertions = "1"
 rand = "0.9"
