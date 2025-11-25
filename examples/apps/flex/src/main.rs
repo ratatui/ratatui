@@ -399,9 +399,15 @@ impl StatefulWidget for SelectedTab {
             Self::Start => Self::render_examples(area, buf, Flex::Start, spacing, theme),
             Self::Center => Self::render_examples(area, buf, Flex::Center, spacing, theme),
             Self::End => Self::render_examples(area, buf, Flex::End, spacing, theme),
-            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing, theme),
-            Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing, theme),
-            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing, theme),
+            Self::SpaceEvenly => {
+                Self::render_examples(area, buf, Flex::SpaceEvenly, spacing, theme);
+            }
+            Self::SpaceBetween => {
+                Self::render_examples(area, buf, Flex::SpaceBetween, spacing, theme);
+            }
+            Self::SpaceAround => {
+                Self::render_examples(area, buf, Flex::SpaceAround, spacing, theme);
+            }
         }
     }
 }
@@ -604,7 +610,7 @@ impl Theme {
             }
         }
     }
-     
+
     // Checks whether truecolor (24-bit color) is supported in the current terminal.
     //
     // Terminals known *not* to support truecolor:
