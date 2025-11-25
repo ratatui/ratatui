@@ -3,6 +3,7 @@ pub mod main {
     pub mod block;
     pub mod buffer;
     pub mod constraints;
+    pub mod gauge;
     pub mod line;
     pub mod list;
     pub mod paragraph;
@@ -25,4 +26,5 @@ criterion::criterion_main!(
     table::benches,
     text::benches,
     constraints::benches,
+    gauge::benches,
 );

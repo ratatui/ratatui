@@ -216,6 +216,9 @@ impl Buffer {
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
     ///
+    /// Usage discouraged, as it exposes `self.content` as a linearly indexable array, which limits
+    /// potential future abstractions. See <https://github.com/ratatui/ratatui/issues/1122>.
+    ///
     /// # Examples
     ///
     /// ```
@@ -269,9 +272,12 @@ impl Buffer {
         Some(y * width + x)
     }
 
-    /// Returns the (global) coordinates of a cell given its index
+    /// Returns the (global) coordinates of a cell given its index.
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+    ///
+    /// Usage discouraged, as it exposes `self.content` as a linearly indexable array, which limits
+    /// potential future abstractions. See <https://github.com/ratatui/ratatui/issues/1122>.
     ///
     /// # Examples
     ///
