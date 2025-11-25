@@ -564,7 +564,6 @@ struct Theme {
     space_around_tab: Color,
     description_fg: Color,
 }
-
 impl Theme {
     pub fn new() -> Self {
         use tailwind::{BLUE, INDIGO, ORANGE, SKY, SLATE};
@@ -605,7 +604,15 @@ impl Theme {
             }
         }
     }
-
+     
+    // Checks whether truecolor (24-bit color) is supported in the current terminal.
+    //
+    // Terminals known *not* to support truecolor:
+    // - Apple Terminal.app: all versions before 2.15 (build 465)
+    //
+    // Environment variables used:
+    // - "TERM_PROGRAM": identifies the terminal application in use
+    // - "TERM_PROGRAM_VERSION": version number of that terminal application
     fn is_true_color_supported() -> bool {
         let term = std::env::var("TERM_PROGRAM").unwrap_or_default();
         if term == "Apple_Terminal" {
@@ -613,7 +620,7 @@ impl Theme {
                 .unwrap_or_default()
                 .parse()
                 .unwrap_or(0);
-            if term_v < 460 {
+            if term_v < 465 {
                 return false;
             }
         }
