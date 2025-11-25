@@ -167,7 +167,7 @@ impl App {
             scroll_offset: 0,
             spacing: 0,
             state: AppState::default(),
-            theme: cs,
+            theme,
         }
     }
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
@@ -374,16 +374,16 @@ impl SelectedTab {
     }
 
     /// Convert a `SelectedTab` into a `Line` to display it by the `Tabs` widget.
-    fn to_tab_title(value: Self, cs: Theme) -> Line<'static> {
+    fn to_tab_title(value: Self, theme: Theme) -> Line<'static> {
         let text = value.to_string();
         let color = match value {
-            Self::Legacy => cs.legacy_tab,
-            Self::Start => cs.start_tab,
-            Self::Center => cs.center_tab,
-            Self::End => cs.end_tab,
-            Self::SpaceEvenly => cs.space_evenly_tab,
-            Self::SpaceBetween => cs.space_between_tab,
-            Self::SpaceAround => cs.space_around_tab,
+            Self::Legacy => theme.legacy_tab,
+            Self::Start => theme.start_tab,
+            Self::Center => theme.center_tab,
+            Self::End => theme.end_tab,
+            Self::SpaceEvenly => theme.space_evenly_tab,
+            Self::SpaceBetween => theme.space_between_tab,
+            Self::SpaceAround => theme.space_around_tab,
         };
         format!(" {text} ").fg(color).bg(Color::Black).into()
     }
@@ -395,13 +395,13 @@ impl StatefulWidget for SelectedTab {
         let spacing = *spacing;
         let theme = Theme::new();
         match self {
-            Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing, cs),
-            Self::Start => Self::render_examples(area, buf, Flex::Start, spacing, cs),
-            Self::Center => Self::render_examples(area, buf, Flex::Center, spacing, cs),
-            Self::End => Self::render_examples(area, buf, Flex::End, spacing, cs),
-            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing, cs),
-            Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing, cs),
-            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing, cs),
+            Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing, theme),
+            Self::Start => Self::render_examples(area, buf, Flex::Start, spacing, theme),
+            Self::Center => Self::render_examples(area, buf, Flex::Center, spacing, theme),
+            Self::End => Self::render_examples(area, buf, Flex::End, spacing, theme),
+            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing, theme),
+            Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing, theme),
+            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing, theme),
         }
     }
 }
@@ -413,7 +413,7 @@ impl SelectedTab {
             .map(|(desc, _)| get_description_height(desc) + 4);
         let areas = Layout::vertical(heights).flex(Flex::Start).split(area);
         for (area, (description, constraints)) in areas.iter().zip(EXAMPLE_DATA.iter()) {
-            Example::new(constraints, description, flex, spacing, cs).render(*area, buf);
+            Example::new(constraints, description, flex, spacing, theme).render(*area, buf);
         }
     }
 }
@@ -514,8 +514,8 @@ impl Example {
             .render(spacer, buf);
     }
 
-    fn illustration(constraint: Constraint, width: u16, cs: Theme) -> impl Widget {
-        let main_color = color_for_constraint(constraint, cs);
+    fn illustration(constraint: Constraint, width: u16, theme: Theme) -> impl Widget {
+        let main_color = color_for_constraint(constraint, theme);
         let fg_color = Color::White;
         let title = format!("{constraint}");
         let content = format!("{width} px");
@@ -529,12 +529,12 @@ impl Example {
 }
 const fn color_for_constraint(constraint: Constraint, theme: Theme) -> Color {
     match constraint {
-        Constraint::Min(_) => cs.min_bg,
-        Constraint::Max(_) => cs.max_bg,
-        Constraint::Length(_) => cs.length_bg,
-        Constraint::Percentage(_) => cs.percentage_bg,
-        Constraint::Ratio(_, _) => cs.ratio_bg,
-        Constraint::Fill(_) => cs.fill_bg,
+        Constraint::Min(_) => theme.min_bg,
+        Constraint::Max(_) => theme.max_bg,
+        Constraint::Length(_) => theme.length_bg,
+        Constraint::Percentage(_) => theme.percentage_bg,
+        Constraint::Ratio(_, _) => theme.ratio_bg,
+        Constraint::Fill(_) => theme.fill_bg,
     }
 }
 
