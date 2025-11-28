@@ -22,6 +22,18 @@ pub enum Marker {
     /// Braille Patterns. If your terminal does not support this, you will see unicode replacement
     /// characters (`�`) instead of Braille dots (`⠓`, `⣇`, `⣿`).
     Braille,
+    /// Use the octant characters from the [Unicode Symbols for Legacy Computing
+    /// Supplement](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement)
+    /// as well as block, half block and quarter block characters to represent data points.
+    ///
+    /// Octant characters provide the same 2x4 resolution as Braille dots, but unlike the later are
+    /// displayed as densely packed and regularly spaced pseudo-pixels, without visible empty bands
+    /// between cell rows and columns.
+    ///
+    /// Note: the Symbols for Legacy Computing Supplement block is a relatively recent addition to
+    /// unicode that is less broadly supported than Braille dots. If your terminal does not support
+    /// this, you will see unicode replacement characters (`�`) instead of octants (`𜴇`, `𜷀`, `█`).
+    Octant,
     /// Use the unicode block and half block characters (`█`, `▄`, and `▀`) to represent points in
     /// a grid that is double the resolution of the terminal. Because each terminal cell is
     /// generally about twice as tall as it is wide, this allows for a square grid of pixels.

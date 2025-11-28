@@ -120,7 +120,8 @@ impl App {
     const fn cycle_marker(&mut self) {
         self.marker = match self.marker {
             Marker::Dot => Marker::Braille,
-            Marker::Braille => Marker::Block,
+            Marker::Braille => Marker::Octant,
+            Marker::Octant => Marker::Block,
             Marker::Block => Marker::HalfBlock,
             Marker::HalfBlock => Marker::Bar,
             Marker::Bar => Marker::Dot,
