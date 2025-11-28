@@ -559,11 +559,11 @@ impl<'a> Context<'a> {
         let block = symbols::block::FULL.chars().next().unwrap();
         let bar = symbols::bar::HALF.chars().next().unwrap();
         match marker {
-            Marker::Dot => Box::new(CharGrid::new(width, height, dot)),
             Marker::Block => Box::new(CharGrid::new(width, height, block).apply_color_to_bg()),
             Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
             Marker::Braille => Box::new(BrailleGrid::new(width, height)),
             Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
+            Marker::Dot | _ => Box::new(CharGrid::new(width, height, dot)),
         }
     }
 

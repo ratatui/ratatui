@@ -4,6 +4,7 @@ pub const DOT: &str = "•";
 
 /// Marker to use when plotting data points
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[non_exhaustive]
 pub enum Marker {
     /// One point per cell in shape of dot (`•`)
     #[default]
