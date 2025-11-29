@@ -124,6 +124,7 @@ impl App {
             Marker::Block => Marker::HalfBlock,
             Marker::HalfBlock => Marker::Bar,
             Marker::Bar => Marker::Dot,
+            _ => unreachable!(),
         };
     }
 
