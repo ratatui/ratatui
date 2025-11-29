@@ -124,9 +124,12 @@ where
     }
 
     /// Gets the writer.
-    #[instability::unstable(
-        feature = "backend-writer",
-        issue = "https://github.com/ratatui/ratatui/pull/991"
+    #[cfg_attr(
+        feature = "use-instability",
+        instability::unstable(
+            feature = "backend-writer",
+            issue = "https://github.com/ratatui/ratatui/pull/991"
+        )
     )]
     pub const fn writer(&self) -> &W {
         &self.writer
@@ -135,9 +138,12 @@ where
     /// Gets the writer as a mutable reference.
     /// Note: writing to the writer may cause incorrect output after the write. This is due to the
     /// way that the Terminal implements diffing Buffers.
-    #[instability::unstable(
-        feature = "backend-writer",
-        issue = "https://github.com/ratatui/ratatui/pull/991"
+    #[cfg_attr(
+        feature = "use-instability",
+        instability::unstable(
+            feature = "backend-writer",
+            issue = "https://github.com/ratatui/ratatui/pull/991"
+        )
     )]
     pub const fn writer_mut(&mut self) -> &mut W {
         &mut self.writer

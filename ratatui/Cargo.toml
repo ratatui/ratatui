@@ -28,7 +28,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 ## which allows you to set the underline color of text, the `macros` feature which provides
 ## some useful macros and `layout-cache` which speeds up layout cache calculations
 ## in `std`-enabled environments.
-default = ["crossterm", "underline-color", "all-widgets", "macros", "layout-cache"]
+default = ["crossterm", "underline-color", "all-widgets", "macros", "layout-cache", "use-instability"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["std", "dep:ratatui-crossterm"]
@@ -55,6 +55,14 @@ serde = [
 
 ## enables layout cache
 layout-cache = ["std", "ratatui-core/layout-cache"]
+
+## enables use of instability crate
+use-instability = [
+  "dep:instability",
+  "ratatui-widgets/use-instability",
+  "ratatui-crossterm?/use-instability",
+  "ratatui-termion?/use-instability",
+]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["std", "ratatui-core/palette", "dep:palette"]
@@ -120,7 +128,7 @@ unstable-backend-writer = [
 
 [dependencies]
 document-features = { workspace = true, optional = true }
-instability.workspace = true
+instability = { workspace = true, optional = true }
 palette = { workspace = true, optional = true }
 ratatui-core = { workspace = true }
 ratatui-crossterm = { workspace = true, optional = true }
