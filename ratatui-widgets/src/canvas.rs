@@ -23,6 +23,8 @@ use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Color, Style};
+use ratatui_core::symbols::braille::BRAILLE;
+use ratatui_core::symbols::pixel::{OCTANTS, QUADRANTS, SEXTANTS};
 use ratatui_core::symbols::{self, Marker};
 use ratatui_core::text::Line as TextLine;
 use ratatui_core::widgets::Widget;
@@ -108,62 +110,68 @@ trait Grid: fmt::Debug {
     fn reset(&mut self);
 }
 
-/// The `TwoByFourGrid` is a grid made up of cells each containing a 2x4 pattern characters.
+/// The `PatternGrid` is a grid made up of cells each containing a `W`x`H` pattern character.
 ///
-/// This makes it possible to draw shapes with a resolution of 2x4 dots (Braille) or pseudo-pixels
-/// (unicode octant) per cell. This is useful when you want to draw shapes with a high resolution.
-/// Font support for Braille or unicode octant patterns, as relevant, is required. If your terminal
-/// or font does not support the relevant unicode block, you will see unicode replacement characters
-/// (�) instead.
+/// This makes it possible to draw shapes with a resolution of e.g. 2x4 (Braille or unicode octant)
+/// per cell.
+/// Font support for the relevant pattern character is required. If your terminal or font does not
+/// support the relevant unicode block, you will see unicode replacement characters (�) instead.
 ///
-/// This grid type only supports a single foreground color for each 2x4 pattern character. There is
-/// no way to set the individual color of each octant.
-struct TwoByFourGrid<D>
-where
-    D: Fn(u8) -> char,
-{
+/// This grid type only supports a single foreground color for each `W`x`H` pattern character.
+/// There is no way to set the individual color of each octant.
+#[derive(Debug)]
+struct PatternGrid<const W: usize, const H: usize> {
     /// Width of the grid in number of terminal columns
     width: u16,
     /// Height of the grid in number of terminal rows
     height: u16,
-    /// Represents the pattern for each grid character, where bits 0 to 7 of a pattern follows the
-    /// following spatial encoding:
+    /// Represents the pattern for each grid character in row-major order. For instance, for a 2x4
+    /// pattern marker, bits 0 to 7 should represent the following pseudo-pixels:
     ///
     /// | 0 1 |
     /// | 2 3 |
     /// | 4 5 |
     /// | 6 7 |
-    pattern: Vec<u8>,
+    patterns: Vec<u8>,
     /// The color of each cell only supports foreground colors for now as there's no way to
     /// individually set the background color of each octant in a pattern character.
     colors: Vec<Option<Color>>,
-    /// A decoding function mapping patterns to characters.
-    decoder: D,
+    /// Lookup table mapping patterns to characters.
+    char_table: &'static [char],
 }
 
-impl<D: Fn(u8) -> char> TwoByFourGrid<D> {
-    /// Create a new `TwoByFourGrid` with the given width and height measured in terminal columns
+impl<const W: usize, const H: usize> PatternGrid<W, H> {
+    /// Statically check that the dimension of the pattern is supported.
+    const _PATTERN_DIMENSION_CHECK: usize = u8::BITS as usize - W * H;
+
+    /// Create a new `PatternGrid` with the given width and height measured in terminal columns
     /// and rows respectively.
-    fn new(width: u16, height: u16, decoder: D) -> Self {
+    fn new(width: u16, height: u16, char_table: &'static [char]) -> Self {
+        // Cause a static error if the pattern doesn't fit within 8 bits.
+        let _ = Self::_PATTERN_DIMENSION_CHECK;
+
         let length = usize::from(width) * usize::from(height);
         Self {
             width,
             height,
-            pattern: vec![0; length],
+            patterns: vec![0; length],
             colors: vec![None; length],
-            decoder,
+            char_table,
         }
     }
 }
 
-impl<D: Fn(u8) -> char> Grid for TwoByFourGrid<D> {
+impl<const W: usize, const H: usize> Grid for PatternGrid<W, H> {
     fn resolution(&self) -> (f64, f64) {
-        (f64::from(self.width) * 2.0, f64::from(self.height) * 4.0)
+        (
+            f64::from(self.width) * W as f64,
+            f64::from(self.height) * H as f64,
+        )
     }
 
     fn save(&self) -> Layer {
         let contents = self
-            .pattern
+            .patterns
             .iter()
             .zip(&self.colors)
             .map(|(&pattern, &color)| {
@@ -171,7 +179,7 @@ impl<D: Fn(u8) -> char> Grid for TwoByFourGrid<D> {
                     // Skip rendering blank patterns to allow layers underneath
                     // to show through.
                     0 => None,
-                    _ => Some((self.decoder)(pattern)),
+                    _ => Some(self.char_table[pattern as usize]),
                 };
 
                 LayerCell {
@@ -187,58 +195,24 @@ impl<D: Fn(u8) -> char> Grid for TwoByFourGrid<D> {
     }
 
     fn reset(&mut self) {
-        self.pattern.fill(0);
+        self.patterns.fill(0);
         self.colors.fill(None);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
         let index = y
-            .saturating_div(4)
+            .saturating_div(H)
             .saturating_mul(self.width as usize)
-            .saturating_add(x.saturating_div(2));
+            .saturating_add(x.saturating_div(W));
         // using get_mut here because we are indexing the vector with usize values
         // and we want to make sure we don't panic if the index is out of bounds
-        if let Some(c) = self.pattern.get_mut(index) {
-            *c |= 1u8 << ((x % 2) + 2 * (y % 4));
+        if let Some(c) = self.patterns.get_mut(index) {
+            *c |= 1u8 << ((x % W) + W * (y % H));
         }
         if let Some(c) = self.colors.get_mut(index) {
             *c = Some(color);
         }
     }
-}
-
-impl<D> fmt::Debug for TwoByFourGrid<D>
-where
-    D: Fn(u8) -> char,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut debug_struct = f.debug_struct("TwoByFourGrid");
-        debug_struct.field("width", &self.width);
-        debug_struct.field("height", &self.height);
-        debug_struct.field("pattern", &self.pattern);
-        debug_struct.field("colors", &self.colors);
-        debug_struct.field("decoder", &"<closure>");
-
-        debug_struct.finish()
-    }
-}
-
-/// A Braille decoder for `TwoByFourGrid`.
-fn braille_decoder(pattern: u8) -> char {
-    let b0567: u8 = pattern & 0b1110_0001;
-    let b1: u8 = (pattern & 0b0000_0100) >> 1;
-    let b2: u8 = (pattern & 0b0001_0000) >> 2;
-    let b3: u8 = (pattern & 0b0000_0010) << 2;
-    let b4: u8 = (pattern & 0b0000_1000) << 1;
-
-    let braille_offset: u8 = b0567 | b1 | b2 | b3 | b4;
-
-    char::from_u32(0x2800u32 + u32::from(braille_offset)).unwrap()
-}
-
-/// An octant character decoder for `TwoByFourGrid`.
-const fn octant_decoder(pattern: u8) -> char {
-    symbols::octant::OCTANTS[pattern as usize]
 }
 
 /// The `CharGrid` is a grid made up of cells each containing a single character.
@@ -328,7 +302,7 @@ impl Grid for CharGrid {
 /// and lower half of each cell. This allows us to draw shapes with a resolution of 1x2 "pixels" per
 /// cell.
 ///
-/// This allows for more flexibility than the `TwoByFourGrid` which only supports a single
+/// This allows for more flexibility than the `PatternGrid` which only supports a single
 /// foreground color for each 2x4 dots cell, and the `CharGrid` which only supports a single
 /// character for each cell.
 #[derive(Debug)]
@@ -604,9 +578,11 @@ impl<'a> Context<'a> {
         match marker {
             Marker::Block => Box::new(CharGrid::new(width, height, block).apply_color_to_bg()),
             Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
-            Marker::Braille => Box::new(TwoByFourGrid::new(width, height, braille_decoder)),
-            Marker::Octant => Box::new(TwoByFourGrid::new(width, height, octant_decoder)),
+            Marker::Braille => Box::new(PatternGrid::<2, 4>::new(width, height, &BRAILLE)),
             Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
+            Marker::Quadrant => Box::new(PatternGrid::<2, 2>::new(width, height, &QUADRANTS)),
+            Marker::Sextant => Box::new(PatternGrid::<2, 3>::new(width, height, &SEXTANTS)),
+            Marker::Octant => Box::new(PatternGrid::<2, 4>::new(width, height, &OCTANTS)),
             Marker::Dot | _ => Box::new(CharGrid::new(width, height, dot)),
         }
     }
@@ -679,13 +655,13 @@ impl<'a> Context<'a> {
 /// See [Unicode Braille Patterns](https://en.wikipedia.org/wiki/Braille_Patterns) for more info.
 ///
 /// The `Octant` marker is similar to the `Braille` marker but, instead of sparse dots, displays
-/// densely packed and regularly spaced pseudo-pixels, without visible empty bands between cell rows
-/// and columns. However, it uses characters that are not yet as widely supported as the Braille
+/// densely packed and regularly spaced pseudo-pixels, without visible bands between rows and
+/// columns. However, it uses characters that are not yet as widely supported as the Braille
 /// unicode block.
 ///
 /// The `HalfBlock` marker is useful when you want to draw shapes with a higher resolution than a
-/// `CharGrid` but lower than a `TwoByFourGrid`. This grid type supports a foreground and background
-/// color for each terminal cell. This allows for more flexibility than the `TwoByFourGrid` which
+/// `CharGrid` but lower than a `PatternGrid`. This grid type supports a foreground and background
+/// color for each terminal cell. This allows for more flexibility than the `PatternGrid` which
 /// only supports a single foreground color for each 2x4 dots cell.
 ///
 /// The Canvas widget is used by calling the [`Canvas::paint`] method and passing a closure that
@@ -827,7 +803,7 @@ where
     /// The [`HalfBlock`] marker is useful when you want to draw shapes with a higher resolution
     /// than with a grid of characters (e.g. with [`Block`] or [`Dot`]) but lower than with
     /// [`Braille`]. This grid type supports a foreground and background color for each terminal
-    /// cell. This allows for more flexibility than the `TwoByFourGrid` which only supports a single
+    /// cell. This allows for more flexibility than the `PatternGrid` which only supports a single
     /// foreground color for each 2x4 dots cell.
     ///
     /// [`Braille`]: ratatui_core::symbols::Marker::Braille
@@ -990,6 +966,22 @@ mod tests {
                 ⡇xxxx
                 ⣇⣀⣀⣀⣀"
             ))]
+    #[case::quadrant(Marker::Quadrant, indoc!(
+                "
+                ▌xxxx
+                ▌xxxx
+                ▌xxxx
+                ▌xxxx
+                ▙▄▄▄▄"
+            ))]
+    #[case::sextant(Marker::Sextant, indoc!(
+                "
+                ▌xxxx
+                ▌xxxx
+                ▌xxxx
+                ▌xxxx
+                🬲🬭🬭🬭🬭"
+            ))]
     #[case::octant(Marker::Octant, indoc!(
                 "
                 ▌xxxx
@@ -1067,6 +1059,22 @@ mod tests {
                 x⡜x⢣x
                 ⡜xxx⢣"
             ))]
+    #[case::quadrant(Marker::Quadrant, indoc!(
+                "
+                ▚xxx▞
+                x▚x▞x
+                xx█xx
+                x▞x▚x
+                ▞xxx▚"
+            ))]
+    #[case::sextant(Marker::Sextant, indoc!(
+                "
+                🬧xxx🬔
+                x🬧x🬔x
+                xx█xx
+                x🬘x🬣x
+                🬘xxx🬣"
+            ))]
     #[case::octant(Marker::Octant, indoc!(
                 "
                 ▚xxx▞
@@ -1116,7 +1124,7 @@ mod tests {
     // values to check if there are any integer overflows we just initialize the canvas painters
     #[test]
     fn check_canvas_paint_max() {
-        let mut b_grid = TwoByFourGrid::new(u16::MAX, 2, braille_decoder);
+        let mut b_grid = PatternGrid::<2, 4>::new(u16::MAX, 2, &OCTANTS);
         let mut c_grid = CharGrid::new(u16::MAX, 2, 'd');
 
         let max = u16::MAX as usize;
@@ -1135,7 +1143,7 @@ mod tests {
     // We delibately cause integer overflow to check if we don't panic and don't get weird behavior
     #[test]
     fn check_canvas_paint_overflow() {
-        let mut b_grid = TwoByFourGrid::new(u16::MAX, 3, braille_decoder);
+        let mut b_grid = PatternGrid::<2, 4>::new(u16::MAX, 3, &BRAILLE);
         let mut c_grid = CharGrid::new(u16::MAX, 3, 'd');
 
         let max = u16::MAX as usize + 10;
