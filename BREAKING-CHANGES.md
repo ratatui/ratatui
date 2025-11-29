@@ -28,6 +28,8 @@ This is a quick summary of the sections below:
     `Terminal`
   - Support a broader range for `unicode-width` version
   - `Marker` is now non-exhaustive
+  - `symbols::braille::BLANK` and `symbols::braille::DOTS` have been removed in favor of an ordered
+    array of all Braille characters
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
     const
@@ -1106,7 +1108,7 @@ previously did not need to use type annotations to fail to compile. To fix this,
 
 [#133]: https://github.com/ratatui/ratatui/issues/133
 
-Code using the `Block` marker that previously rendered using a half block character (`'▀'``) now
+Code using the `Block` marker that previously rendered using a half block character (`'▀'`) now
 renders using the full block character (`'█'`). A new marker variant`Bar` is introduced to replace
 the existing code.
 

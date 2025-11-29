@@ -122,7 +122,10 @@ impl App {
             Marker::Dot => Marker::Braille,
             Marker::Braille => Marker::Block,
             Marker::Block => Marker::HalfBlock,
-            Marker::HalfBlock => Marker::Bar,
+            Marker::HalfBlock => Marker::Quadrant,
+            Marker::Quadrant => Marker::Sextant,
+            Marker::Sextant => Marker::Octant,
+            Marker::Octant => Marker::Bar,
             Marker::Bar => Marker::Dot,
             _ => unreachable!(),
         };
