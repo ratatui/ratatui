@@ -110,6 +110,24 @@ trait Grid: fmt::Debug {
     fn reset(&mut self);
 }
 
+/// The pattern and color of a `PatternGrid` cell.
+#[derive(Copy, Clone, Debug, Default)]
+struct PatternCell {
+    /// The pattern of a grid character.
+    ///
+    /// The pattern is stored in the lower bits in a row-major order. For instance, for a 2x4
+    /// pattern marker, bits 0 to 7 of this field should represent the following pseudo-pixels:
+    ///
+    /// | 0 1 |
+    /// | 2 3 |
+    /// | 4 5 |
+    /// | 6 7 |
+    pattern: u8,
+    /// The color of a cell only supports foreground colors for now as there's no way to
+    /// individually set the background color of each pseudo-pixel in a pattern character.
+    color: Option<Color>,
+}
+
 /// The `PatternGrid` is a grid made up of cells each containing a `W`x`H` pattern character.
 ///
 /// This makes it possible to draw shapes with a resolution of e.g. 2x4 (Braille or unicode octant)
@@ -118,24 +136,15 @@ trait Grid: fmt::Debug {
 /// support the relevant unicode block, you will see unicode replacement characters (�) instead.
 ///
 /// This grid type only supports a single foreground color for each `W`x`H` pattern character.
-/// There is no way to set the individual color of each octant.
+/// There is no way to set the individual color of each pseudo-pixel.
 #[derive(Debug)]
 struct PatternGrid<const W: usize, const H: usize> {
     /// Width of the grid in number of terminal columns
     width: u16,
     /// Height of the grid in number of terminal rows
     height: u16,
-    /// Represents the pattern for each grid character in row-major order. For instance, for a 2x4
-    /// pattern marker, bits 0 to 7 should represent the following pseudo-pixels:
-    ///
-    /// | 0 1 |
-    /// | 2 3 |
-    /// | 4 5 |
-    /// | 6 7 |
-    patterns: Vec<u8>,
-    /// The color of each cell only supports foreground colors for now as there's no way to
-    /// individually set the background color of each octant in a pattern character.
-    colors: Vec<Option<Color>>,
+    /// Pattern and color of the cells.
+    cells: Vec<PatternCell>,
     /// Lookup table mapping patterns to characters.
     char_table: &'static [char],
 }
@@ -154,8 +163,7 @@ impl<const W: usize, const H: usize> PatternGrid<W, H> {
         Self {
             width,
             height,
-            patterns: vec![0; length],
-            colors: vec![None; length],
+            cells: vec![PatternCell::default(); length],
             char_table,
         }
     }
@@ -171,20 +179,19 @@ impl<const W: usize, const H: usize> Grid for PatternGrid<W, H> {
 
     fn save(&self) -> Layer {
         let contents = self
-            .patterns
+            .cells
             .iter()
-            .zip(&self.colors)
-            .map(|(&pattern, &color)| {
-                let symbol = match pattern {
+            .map(|&cell| {
+                let symbol = match cell.pattern {
                     // Skip rendering blank patterns to allow layers underneath
                     // to show through.
                     0 => None,
-                    _ => Some(self.char_table[pattern as usize]),
+                    idx => Some(self.char_table[idx as usize]),
                 };
 
                 LayerCell {
                     symbol,
-                    fg: color,
+                    fg: cell.color,
                     // Patterns only affect foreground.
                     bg: None,
                 }
@@ -195,8 +202,7 @@ impl<const W: usize, const H: usize> Grid for PatternGrid<W, H> {
     }
 
     fn reset(&mut self) {
-        self.patterns.fill(0);
-        self.colors.fill(None);
+        self.cells.fill_with(Default::default);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
@@ -206,11 +212,9 @@ impl<const W: usize, const H: usize> Grid for PatternGrid<W, H> {
             .saturating_add(x.saturating_div(W));
         // using get_mut here because we are indexing the vector with usize values
         // and we want to make sure we don't panic if the index is out of bounds
-        if let Some(c) = self.patterns.get_mut(index) {
-            *c |= 1u8 << ((x % W) + W * (y % H));
-        }
-        if let Some(c) = self.colors.get_mut(index) {
-            *c = Some(color);
+        if let Some(cell) = self.cells.get_mut(index) {
+            cell.pattern |= 1u8 << ((x % W) + W * (y % H));
+            cell.color = Some(color);
         }
     }
 }
@@ -658,6 +662,9 @@ impl<'a> Context<'a> {
 /// densely packed and regularly spaced pseudo-pixels, without visible bands between rows and
 /// columns. However, it uses characters that are not yet as widely supported as the Braille
 /// unicode block.
+///
+/// The `Quadrant` and `Sextant` markers are in turn akin to the `Octant` marker, but with a 2x2
+/// and 2x3 resolution, respectively.
 ///
 /// The `HalfBlock` marker is useful when you want to draw shapes with a higher resolution than a
 /// `CharGrid` but lower than a `PatternGrid`. This grid type supports a foreground and background
