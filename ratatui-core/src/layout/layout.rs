@@ -1,17 +1,23 @@
 use alloc::rc::Rc;
 use alloc::vec::Vec;
 use core::array::TryFromSliceError;
+#[cfg(not(feature = "xlayout"))]
 use core::iter;
 #[cfg(feature = "layout-cache")]
 use core::num::NonZeroUsize;
 
+#[cfg(not(feature = "xlayout"))]
 use hashbrown::HashMap;
+#[cfg(not(feature = "xlayout"))]
 use itertools::Itertools;
+#[cfg(not(feature = "xlayout"))]
 use kasuari::WeightedRelation::{EQ, GE, LE};
+#[cfg(not(feature = "xlayout"))]
 use kasuari::{AddConstraintError, Expression, Solver, Strength, Variable};
 #[cfg(feature = "layout-cache")]
 use lru::LruCache;
 
+#[cfg(not(feature = "xlayout"))]
 use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
     MIN_SIZE_GE, PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, SPACE_GROW, SPACER_SIZE_EQ,
@@ -19,8 +25,8 @@ use self::strengths::{
 use crate::layout::{Constraint, Direction, Flex, Margin, Rect};
 
 type Rects = Rc<[Rect]>;
-type Segments = Rects;
-type Spacers = Rects;
+pub(crate) type Segments = Rects;
+pub(crate) type Spacers = Rects;
 // The solution to a Layout solve contains two `Rects`, where `Rects` is effectively a `[Rect]`.
 //
 // 1. `[Rect]` that contains positions for the segments corresponding to user provided constraints
@@ -38,6 +44,7 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 // Multiplier that decides floating point precision when rounding.
 // The number of zeros in this number is the precision for the rounding of f64 to u16 in layout
 // calculations.
+#[cfg(not(feature = "xlayout"))]
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
 #[cfg(feature = "layout-cache")]
@@ -191,11 +198,11 @@ impl From<i16> for Spacing {
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Layout {
-    direction: Direction,
-    constraints: Vec<Constraint>,
-    margin: Margin,
-    flex: Flex,
-    spacing: Spacing,
+    pub(super) direction: Direction,
+    pub(super) constraints: Vec<Constraint>,
+    pub(super) margin: Margin,
+    pub(super) flex: Flex,
+    pub(super) spacing: Spacing,
 }
 
 impl Layout {
@@ -711,7 +718,10 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
+        #[cfg(not(feature = "xlayout"))]
         let split = || self.try_split(area).expect("failed to split");
+        #[cfg(feature = "xlayout")]
+        let split = || super::xlayout::XLayout::from(self.clone()).split_with_spacers(area);
 
         #[cfg(feature = "layout-cache")]
         {
@@ -725,6 +735,7 @@ impl Layout {
         split()
     }
 
+    #[cfg(not(feature = "xlayout"))]
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
         // To take advantage of all of [`kasuari`] features, we would want to store the `Solver` in
         // one of the fields of the Layout struct. And we would want to set it up such that we could
@@ -830,6 +841,7 @@ impl Layout {
     }
 }
 
+#[cfg(not(feature = "xlayout"))]
 fn configure_area(
     solver: &mut Solver,
     area: Element,
@@ -841,6 +853,7 @@ fn configure_area(
     Ok(())
 }
 
+#[cfg(not(feature = "xlayout"))]
 fn configure_variable_in_area_constraints(
     solver: &mut Solver,
     variables: &[Variable],
@@ -855,6 +868,7 @@ fn configure_variable_in_area_constraints(
     Ok(())
 }
 
+#[cfg(not(feature = "xlayout"))]
 fn configure_variable_constraints(
     solver: &mut Solver,
     variables: &[Variable],
@@ -874,6 +888,7 @@ fn configure_variable_constraints(
     Ok(())
 }
 
+#[cfg(not(feature = "xlayout"))]
 fn configure_constraints(
     solver: &mut Solver,
     area: Element,
@@ -916,6 +931,7 @@ fn configure_constraints(
     Ok(())
 }
 
+#[cfg(not(feature = "xlayout"))]
 fn configure_flex_constraints(
     solver: &mut Solver,
     area: Element,
@@ -1049,6 +1065,7 @@ fn configure_flex_constraints(
 /// └──────┘└────────────┘
 ///
 /// `size == base_element * scaling_factor`
+#[cfg(not(feature = "xlayout"))]
 fn configure_fill_constraints(
     solver: &mut Solver,
     segments: &[Element],
@@ -1081,6 +1098,7 @@ fn configure_fill_constraints(
 }
 
 // Used instead of `f64::round` directly, to provide fallback for `no_std`.
+#[cfg(not(feature = "xlayout"))]
 #[cfg(feature = "std")]
 #[inline]
 fn round(value: f64) -> f64 {
@@ -1088,12 +1106,14 @@ fn round(value: f64) -> f64 {
 }
 
 // A rounding fallback for `no_std` in pure rust.
+#[cfg(not(feature = "xlayout"))]
 #[cfg(not(feature = "std"))]
 #[inline]
 fn round(value: f64) -> f64 {
     (value + 0.5f64.copysign(value)) as i64 as f64
 }
 
+#[cfg(not(feature = "xlayout"))]
 fn changes_to_rects(
     changes: &HashMap<Variable, f64>,
     elements: &[Element],
@@ -1130,6 +1150,7 @@ fn changes_to_rects(
 /// please leave this here as it's useful for debugging unit tests when we make any changes to
 /// layout code - we should replace this with tracing in the future.
 #[expect(dead_code)]
+#[cfg(not(feature = "xlayout"))]
 #[cfg(feature = "std")]
 fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
     let variables = alloc::format!(
@@ -1146,18 +1167,21 @@ fn debug_elements(elements: &[Element], changes: &HashMap<Variable, f64>) {
 }
 
 /// A container used by the solver inside split
+#[cfg(not(feature = "xlayout"))]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 struct Element {
     start: Variable,
     end: Variable,
 }
 
+#[cfg(not(feature = "xlayout"))]
 impl From<(Variable, Variable)> for Element {
     fn from((start, end): (Variable, Variable)) -> Self {
         Self { start, end }
     }
 }
 
+#[cfg(not(feature = "xlayout"))]
 impl Element {
     #[expect(dead_code)]
     fn new() -> Self {
@@ -1201,6 +1225,7 @@ impl Element {
 }
 
 /// allow the element to represent its own size in expressions
+#[cfg(not(feature = "xlayout"))]
 impl From<Element> for Expression {
     fn from(element: Element) -> Self {
         element.size()
@@ -1208,12 +1233,14 @@ impl From<Element> for Expression {
 }
 
 /// allow the element to represent its own size in expressions
+#[cfg(not(feature = "xlayout"))]
 impl From<&Element> for Expression {
     fn from(element: &Element) -> Self {
         element.size()
     }
 }
 
+#[cfg(not(feature = "xlayout"))]
 mod strengths {
     use kasuari::Strength;
 
@@ -1307,9 +1334,11 @@ mod tests {
     use alloc::borrow::ToOwned;
     use alloc::vec;
     use alloc::vec::Vec;
+    use core::iter;
 
     use super::*;
 
+    #[cfg(not(feature = "xlayout"))]
     #[test]
     // The compiler will optimize out the comparisons, but this ensures that the constants are
     // defined in the correct order of priority.
@@ -1840,7 +1869,8 @@ mod tests {
         #[case(Flex::Start, 10, &[Percentage(10),  Percentage(100)], "abbbbbbbbb" )]
         #[case(Flex::Start, 10, &[Percentage(10),  Percentage(200)], "abbbbbbbbb" )]
         #[case(Flex::Start, 10, &[Percentage(25),  Percentage(0)],   "aaa       " )]
-        #[case(Flex::Start, 10, &[Percentage(25),  Percentage(25)],  "aaabb     " )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::Start, 10, &[Percentage(25),  Percentage(25)],  "aaabb     " ))]
+        #[cfg_attr(feature="xlayout", case(Flex::Start, 10, &[Percentage(25),  Percentage(25)],  "aaabbb    " ))]
         #[case(Flex::Start, 10, &[Percentage(25),  Percentage(50)],  "aaabbbbb  " )]
         #[case(Flex::Start, 10, &[Percentage(25),  Percentage(100)], "aaabbbbbbb" )]
         #[case(Flex::Start, 10, &[Percentage(25),  Percentage(200)], "aaabbbbbbb" )]
@@ -1867,22 +1897,26 @@ mod tests {
 
         #[rstest]
         #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(0)],   "          " )]
-        #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(25)],  "        bb" )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(25)],  "        bb" ))]
+        #[cfg_attr(feature="xlayout", case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(25)],  "       bbb" ))]
         #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(50)],  "     bbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(100)], "bbbbbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(200)], "bbbbbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(0)],   "a         " )]
-        #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(25)],  "a       bb" )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(25)],  "a       bb" ))]
+        #[cfg_attr(feature="xlayout", case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(25)],  "a      bbb" ))]
         #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(50)],  "a    bbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(100)], "abbbbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(200)], "abbbbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(0)],   "aaa       " )]
-        #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(25)],  "aaa     bb" )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(25)],  "aaa     bb" ))]
+        #[cfg_attr(feature="xlayout", case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(25)],  "aaa    bbb" ))]
         #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(50)],  "aaa  bbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(100)], "aaabbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(200)], "aaabbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(0)],   "aaa       " )]
-        #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(25)],  "aaa     bb" )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(25)],  "aaa     bb" ))]
+        #[cfg_attr(feature="xlayout", case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(25)],  "aaa    bbb" ))]
         #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(50)],  "aaa  bbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(100)], "aaabbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(200)], "aaabbbbbbb" )]
@@ -2017,7 +2051,8 @@ mod tests {
         #[case(Flex::Start, 10, &[Ratio(1, 10), Ratio(1, 1)], "abbbbbbbbb" )]
         #[case(Flex::Start, 10, &[Ratio(1, 10), Ratio(2, 1)], "abbbbbbbbb" )]
         #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(0, 1)],  "aaa       " )]
-        #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaabb     " )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::Start, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaabb     " ))]
+        #[cfg_attr(feature="xlayout", case(Flex::Start, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaabbb    " ))]
         #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(1, 2)],  "aaabbbbb  " )]
         #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(1, 1)],  "aaabbbbbbb" )]
         #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(2, 1)],  "aaabbbbbbb" )]
@@ -2044,22 +2079,26 @@ mod tests {
 
         #[rstest]
         #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(0, 1)],  "          " )]
-        #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(1, 4)],  "        bb" )]
+        #[cfg_attr(not(feature="xlayout"),case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(1, 4)],  "        bb" ))]
+        #[cfg_attr(feature="xlayout",case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(1, 4)],  "       bbb" ))]
         #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(1, 2)],  "     bbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(1, 1)],  "bbbbbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(2, 1)],  "bbbbbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(0, 1)], "a         " )]
-        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(1, 4)], "a       bb" )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(1, 4)], "a       bb" ))]
+        #[cfg_attr(feature="xlayout", case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(1, 4)], "a      bbb" ))]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(1, 2)], "a    bbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(1, 1)], "abbbbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(2, 1)], "abbbbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(0, 1)],  "aaa       " )]
-        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaa     bb" )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaa     bb" ))]
+        #[cfg_attr(feature="xlayout", case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaa    bbb" ))]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(1, 2)],  "aaa  bbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(1, 1)],  "aaabbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(2, 1)],  "aaabbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(0, 1)],  "aaa       " )]
-        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(1, 4)],  "aaa     bb" )]
+        #[cfg_attr(not(feature="xlayout"), case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(1, 4)],  "aaa     bb" ))]
+        #[cfg_attr(feature="xlayout", case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(1, 4)],  "aaa    bbb" ))]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(1, 2)],  "aaa  bbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(1, 1)],  "aaabbbbbbb" )]
         #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(2, 1)],  "aaabbbbbbb" )]
@@ -2154,10 +2193,12 @@ mod tests {
             );
 
             // This stretches the 2nd last length instead of the last min based on ranking
+            #[cfg(not(feature = "xlayout"))]
             let layout = Layout::default()
                 .constraints([Length(3), Min(4), Length(1), Min(4)])
                 .direction(Direction::Horizontal)
                 .split(Rect::new(0, 0, 7, 1));
+            #[cfg(not(feature = "xlayout"))]
             assert_eq!(
                 layout[..],
                 [
@@ -2237,8 +2278,8 @@ mod tests {
             #[case] expected: Vec<Range<u16>>,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
-            let ranges = Layout::horizontal(constraints)
-                .flex(Flex::Legacy)
+            let layout = Layout::horizontal(constraints).flex(Flex::Legacy);
+            let ranges = layout
                 .split(rect)
                 .iter()
                 .map(|r| r.left()..r.right())
@@ -2329,7 +2370,8 @@ mod tests {
         #[case::space_fill10(vec![Fill(0), Length(20)], vec![0..80, 80..100])]
         #[case::space_fill11(vec![Fill(0), Min(20)], vec![0..80, 80..100])]
         #[case::space_fill12(vec![Fill(0), Max(20)], vec![0..80, 80..100])]
-        #[case::fill_collapse1(vec![Fill(1), Fill(1), Fill(1), Min(30), Length(50)], vec![0..7, 7..13, 13..20, 20..50, 50..100])]
+        #[cfg_attr(not(feature="xlayout"), case::fill_collapse1(vec![Fill(1), Fill(1), Fill(1), Min(30), Length(50)], vec![0..7, 7..13, 13..20, 20..50, 50..100]))]
+        #[cfg_attr(feature="xlayout", case::fill_collapse1(vec![Fill(1), Fill(1), Fill(1), Min(30), Length(50)], vec![0..7, 7..14, 14..20, 20..50, 50..100]))]
         #[case::fill_collapse2(vec![Fill(1), Fill(1), Fill(1), Length(50), Length(50)], vec![0..0, 0..0, 0..0, 0..50, 50..100])]
         #[case::fill_collapse3(vec![Fill(1), Fill(1), Fill(1), Length(75), Length(50)], vec![0..0, 0..0, 0..0, 0..75, 75..100])]
         #[case::fill_collapse4(vec![Fill(1), Fill(1), Fill(1), Min(50), Max(50)], vec![0..0, 0..0, 0..0, 0..50, 50..100])]
@@ -2447,8 +2489,8 @@ mod tests {
             #[case] flex: Flex,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
-            let ranges = Layout::horizontal(constraints)
-                .flex(flex)
+            let layout = Layout::horizontal(constraints).flex(flex);
+            let ranges = layout
                 .split(rect)
                 .iter()
                 .map(|r| r.left()..r.right())
@@ -2534,8 +2576,8 @@ mod tests {
             #[case] constraints: Vec<Constraint>,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
-            let r = Layout::horizontal(constraints)
-                .flex(Flex::Legacy)
+            let layout = Layout::horizontal(constraints).flex(Flex::Legacy);
+            let r = layout
                 .split(rect)
                 .iter()
                 .map(|r| (r.x, r.width))
@@ -2630,10 +2672,8 @@ mod tests {
             #[case] spacing: i16,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
-            let r = Layout::horizontal(constraints)
-                .flex(flex)
-                .spacing(spacing)
-                .split(rect);
+            let layout = Layout::horizontal(constraints).flex(flex).spacing(spacing);
+            let r = layout.split(rect);
             let result = r
                 .iter()
                 .map(|r| (r.x, r.width))
@@ -2790,7 +2830,8 @@ mod tests {
         #[rstest]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
-        #[case::spacers(vec![(0, 33), (33, 34), (67, 33)], vec![Length(10), Length(10)], Flex::SpaceEvenly, 200)]
+        #[cfg_attr(not(feature="xlayout"), case::spacers(vec![(0, 33), (33, 34), (67, 33)], vec![Length(10), Length(10)], Flex::SpaceEvenly, 200))]
+        #[cfg_attr(feature="xlayout", case::spacers(vec![(0, 34), (34, 33), (67, 33)], vec![Length(10), Length(10)], Flex::SpaceEvenly, 200))]
         #[case::spacers(vec![(0, 25), (25, 50), (75, 25)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Start, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Center, 200)]

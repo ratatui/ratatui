@@ -10,7 +10,7 @@ use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::Buffer;
-use crate::layout::{Alignment, Rect};
+use crate::layout::{Alignment, Rect, Size};
 use crate::style::{Style, Styled};
 use crate::text::{Span, StyledGrapheme, Text};
 use crate::widgets::Widget;
@@ -441,6 +441,23 @@ impl<'a> Line<'a> {
         UnicodeWidthStr::width(self)
     }
 
+    /// Returns the width and height of the underlying string.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui_core::layout::Size;
+    /// use ratatui_core::style::Stylize;
+    /// use ratatui_core::text::Line;
+    ///
+    /// let line = Line::from(vec!["Hello".blue(), " world!".green()]);
+    /// assert_eq!(Size::new(12, 1), line.size());
+    /// ```
+    #[must_use]
+    pub fn size(&self) -> Size {
+        Size::new(u16::try_from(self.width()).unwrap_or(u16::MAX), 1)
+    }
+
     /// Returns an iterator over the graphemes held by this line.
     ///
     /// `base_style` is the [`Style`] that will be patched with each grapheme [`Style`] to get
@@ -846,6 +863,7 @@ impl Styled for Line<'_> {
 
 #[cfg(test)]
 mod tests {
+    extern crate std;
     use alloc::format;
     use core::iter;
     use std::dbg;
@@ -948,6 +966,18 @@ mod tests {
 
         let empty_line = Line::default();
         assert_eq!(0, empty_line.width());
+    }
+
+    #[test]
+    fn size() {
+        let line = Line::from(vec![
+            Span::styled("My", Style::default().fg(Color::Yellow)),
+            Span::raw(" text"),
+        ]);
+        assert_eq!(Size::new(7, 1), line.size());
+
+        let empty_line = Line::default();
+        assert_eq!(Size::new(0, 1), empty_line.size());
     }
 
     #[test]
