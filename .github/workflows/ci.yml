@@ -72,6 +72,7 @@ jobs:
         with:
           rust-toolchain: stable
           log-level: info
+          arguments: --all-features --exclude-unpublished
           command: check ${{ matrix.checks }}
 
   # Check for any unused dependencies in the codebase.
