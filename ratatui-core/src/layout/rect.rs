@@ -3,10 +3,11 @@ use core::array::TryFromSliceError;
 use core::cmp::{max, min};
 use core::fmt;
 
-use crate::layout::{Margin, Position, Size};
+pub use self::iter::{Columns, Positions, Rows};
+use crate::layout::{Margin, Offset, Position, Size};
 
 mod iter;
-pub use iter::*;
+mod ops;
 
 use super::{Constraint, Flex, Layout};
 
@@ -66,21 +67,57 @@ use super::{Constraint, Flex, Layout};
 ///
 /// # Examples
 ///
+/// To create a new `Rect`, use [`Rect::new`]. The size of the `Rect` will be clamped to keep the
+/// right and bottom coordinates within `u16`. Note that this clamping does not occur when creating
+/// a `Rect` directly.
+///
+/// ```rust
+/// use ratatui_core::layout::Rect;
+///
+/// let rect = Rect::new(1, 2, 3, 4);
+/// assert_eq!(
+///     rect,
+///     Rect {
+///         x: 1,
+///         y: 2,
+///         width: 3,
+///         height: 4
+///     }
+/// );
+/// ```
+///
+/// You can also create a `Rect` from a [`Position`] and a [`Size`].
+///
 /// ```rust
 /// use ratatui_core::layout::{Position, Rect, Size};
 ///
-/// // Create a rectangle manually
-/// let rect = Rect::new(10, 5, 80, 20);
-/// assert_eq!(rect.x, 10);
-/// assert_eq!(rect.y, 5);
-/// assert_eq!(rect.width, 80);
-/// assert_eq!(rect.height, 20);
+/// let position = Position::new(1, 2);
+/// let size = Size::new(3, 4);
+/// let rect = Rect::from((position, size));
+/// assert_eq!(
+///     rect,
+///     Rect {
+///         x: 1,
+///         y: 2,
+///         width: 3,
+///         height: 4
+///     }
+/// );
+/// ```
 ///
-/// // Create from position and size
-/// let rect = Rect::from((Position::new(10, 5), Size::new(80, 20)));
+/// To move a `Rect` without modifying its size, add or subtract an [`Offset`] to it.
+///
+/// ```rust
+/// use ratatui_core::layout::{Offset, Rect};
+///
+/// let rect = Rect::new(1, 2, 3, 4);
+/// let offset = Offset::new(5, 6);
+/// let moved_rect = rect + offset;
+/// assert_eq!(moved_rect, Rect::new(6, 8, 3, 4));
 /// ```
 ///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
+
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rect {
@@ -92,30 +129,6 @@ pub struct Rect {
     pub width: u16,
     /// The height of the `Rect`.
     pub height: u16,
-}
-
-/// Amounts by which to move a [`Rect`](crate::layout::Rect).
-///
-/// Positive numbers move to the right/bottom and negative to the left/top.
-///
-/// See [`Rect::offset`]
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Offset {
-    /// How much to move on the X axis
-    pub x: i32,
-    /// How much to move on the Y axis
-    pub y: i32,
-}
-
-impl Offset {
-    /// A zero offset
-    pub const ZERO: Self = Self { x: 0, y: 0 };
-
-    /// Creates a new `Offset` with the given values.
-    pub const fn new(x: i32, y: i32) -> Self {
-        Self { x, y }
-    }
 }
 
 impl fmt::Display for Rect {
@@ -132,6 +145,12 @@ impl Rect {
         width: 0,
         height: 0,
     };
+
+    /// The minimum possible Rect
+    pub const MIN: Self = Self::ZERO;
+
+    /// The maximum possible Rect
+    pub const MAX: Self = Self::new(0, 0, u16::MAX, u16::MAX);
 
     /// Creates a new `Rect`, with width and height limited to keep both bounds within `u16`.
     ///
@@ -253,15 +272,7 @@ impl Rect {
     /// See [`Offset`] for details.
     #[must_use = "method returns the modified value"]
     pub fn offset(self, offset: Offset) -> Self {
-        Self {
-            x: i32::from(self.x)
-                .saturating_add(offset.x)
-                .clamp(0, i32::from(u16::MAX - self.width)) as u16,
-            y: i32::from(self.y)
-                .saturating_add(offset.y)
-                .clamp(0, i32::from(u16::MAX - self.height)) as u16,
-            ..self
-        }
+        self + offset
     }
 
     /// Returns a new `Rect` that contains both the current one and the given one.
