@@ -27,6 +27,9 @@ This is a quick summary of the sections below:
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
     `Terminal`
   - Support a broader range for `unicode-width` version
+  - `Marker` is now non-exhaustive
+  - `symbols::braille::BLANK` and `symbols::braille::DOTS` have been removed in favor of an ordered
+    array of all Braille characters
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
     const
@@ -91,6 +94,24 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.30.0 Unreleased
+
+### `Marker` is now non-exhaustive ([#2236])
+
+[#2236]: https://github.com/ratatui/ratatui/pull/2236
+
+The `Marker` enum is now marked as `#[non_exhaustive]`, if you were matching on `Marker` exhaustively,
+you will need to add a wildcard arm:
+
+```diff
+  match marker {
+      Marker::Dot => { /* ... */ }
+      Marker::Block => { /* ... */ }
+      Marker::Bar => { /* ... */ }
+      Marker::Braille => { /* ... */ }
+      Marker::HalfBlock => { /* ... */ }
++     _ => { /* ... */ }
+  }
+```
 
 ### `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps ([#1952])
 
@@ -1087,7 +1108,7 @@ previously did not need to use type annotations to fail to compile. To fix this,
 
 [#133]: https://github.com/ratatui/ratatui/issues/133
 
-Code using the `Block` marker that previously rendered using a half block character (`'▀'``) now
+Code using the `Block` marker that previously rendered using a half block character (`'▀'`) now
 renders using the full block character (`'█'`). A new marker variant`Bar` is introduced to replace
 the existing code.
 
