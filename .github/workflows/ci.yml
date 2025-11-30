@@ -156,7 +156,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        toolchain: ["1.85.0", "stable"]
+        toolchain: ["1.86.0", "stable"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -257,7 +257,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolchain: ["1.85.0", "stable"]
+        toolchain: ["1.86.0", "stable"]
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
