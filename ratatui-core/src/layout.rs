@@ -62,6 +62,7 @@
 //! - [`Position`] - Represents a point in the terminal coordinate system
 //! - [`Size`] - Represents dimensions (width and height)
 //! - [`Margin`] - Defines spacing around rectangular areas
+//! - [`Inset`] - Defines side-specific spacing inside a rectangle
 //! - [`Offset`] - Represents relative movement in the coordinate system
 //! - [`Spacing`] - Controls spacing or overlap between layout segments
 //!
@@ -316,6 +317,7 @@ mod direction;
 mod flex;
 mod layout;
 mod margin;
+mod inset;
 mod offset;
 mod position;
 mod rect;
@@ -326,6 +328,7 @@ pub use constraint::Constraint;
 pub use direction::Direction;
 pub use flex::Flex;
 pub use layout::{Layout, Spacing};
+pub use inset::Inset;
 pub use margin::Margin;
 pub use offset::Offset;
 pub use position::Position;
