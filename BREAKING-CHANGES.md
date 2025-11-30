@@ -27,6 +27,8 @@ This is a quick summary of the sections below:
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
     `Terminal`
   - Support a broader range for `unicode-width` version
+  - The `scrolling-regions` feature flag is removed in favor of breaking this functionality out into
+    the `ScrollableBackend` trait
   - `Marker` is now non-exhaustive
   - `symbols::braille::BLANK` and `symbols::braille::DOTS` have been removed in favor of an ordered
     array of all Braille characters
@@ -409,6 +411,29 @@ expanded to allow version 0.2.1. This comes with 2 behavior changes described in
 
 [unicode-width#61]: https://github.com/unicode-rs/unicode-width/pull/61
 [unicode-width#74]: https://github.com/unicode-rs/unicode-width/pull/74
+
+### The `scrolling-regions` feature flag is removed in favor of breaking this functionality out into the `ScrollByRegion` trait ([#2121])
+
+[#2121]: https://github.com/ratatui/ratatui/pull/2121
+
+`scrolling-regions` should be removed from the feature flag list:
+
+```diff
++ ratatui = { version = "0.30" }
+- ratatui = {version = "0.30", features = ["scrolling-regions"] }
+```
+
+When using `terminal.insert_before`, any method that previously accepted `Backend` as
+input should accept `ScrollByRegion`.
+
+Note that third-party backends may not implement this trait.
+
+```diff
++ fn run<B: ScrollByRegion>(terminal: &mut Terminal<B>) {
+- fn run<B: Backend>(terminal: &mut Terminal<B>) {
+    terminal.insert_before(...);
+}
+```
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0)
 
