@@ -18,7 +18,7 @@ This is a quick summary of the sections below:
   - `FrameExt` trait for `unstable-widget-ref` feature
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
-  - The MSRV is now 1.85.0
+  - MSRV is now 1.86.0
   - `Backend` now requires an associated `Error` type and `clear_region` method
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
@@ -235,11 +235,11 @@ instead.
 + fn run(mut terminal: DefaultTerminal) -> io::Result<()> {
 ```
 
-### The MSRV is now 1.85.0 ([#1860])
+### MSRV is now 1.86.0 ([#2230])
 
-[#1860]: https://github.com/ratatui/ratatui/pull/1860
+[#2230]: https://github.com/ratatui/ratatui/pull/2230
 
-The minimum supported Rust version (MSRV) is now 1.85.0.
+The minimum supported Rust version (MSRV) is now 1.86.0.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 
