@@ -46,6 +46,7 @@ use super::{Constraint, Flex, Layout};
 ///
 /// - [`inner`](Self::inner), [`outer`](Self::outer) - Apply margins to shrink or expand
 /// - [`offset`](Self::offset) - Move the rectangle by a relative amount
+/// - [`resize`](Self::resize) - Change the rectangle size while keeping the bottom/right in range
 /// - [`union`](Self::union) - Combine with another rectangle to create a bounding box
 /// - [`intersection`](Self::intersection) - Find the overlapping area with another rectangle
 /// - [`clamp`](Self::clamp) - Constrain the rectangle to fit within another
@@ -114,6 +115,16 @@ use super::{Constraint, Flex, Layout};
 /// let offset = Offset::new(5, 6);
 /// let moved_rect = rect + offset;
 /// assert_eq!(moved_rect, Rect::new(6, 8, 3, 4));
+/// ```
+///
+/// To resize a `Rect` while ensuring it stays within bounds, use [`Rect::resize`]. The size is
+/// clamped so that `right()` and `bottom()` do not exceed `u16::MAX`.
+///
+/// ```rust
+/// use ratatui_core::layout::{Rect, Size};
+///
+/// let rect = Rect::new(u16::MAX - 1, u16::MAX - 1, 1, 1).resize(Size::new(10, 10));
+/// assert_eq!(rect, Rect::new(u16::MAX - 1, u16::MAX - 1, 1, 1));
 /// ```
 ///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
@@ -273,6 +284,20 @@ impl Rect {
     #[must_use = "method returns the modified value"]
     pub fn offset(self, offset: Offset) -> Self {
         self + offset
+    }
+
+    /// Resizes the `Rect`, clamping to keep the right and bottom within `u16::MAX`.
+    ///
+    /// The position is preserved. If the requested size would push the `Rect` beyond the bounds of
+    /// `u16`, the width or height is reduced so that [`right`](Self::right) and
+    /// [`bottom`](Self::bottom) remain within range.
+    #[must_use = "method returns the modified value"]
+    pub const fn resize(self, size: Size) -> Self {
+        Self {
+            width: self.x.saturating_add(size.width).saturating_sub(self.x),
+            height: self.y.saturating_add(size.height).saturating_sub(self.y),
+            ..self
+        }
     }
 
     /// Returns a new `Rect` that contains both the current one and the given one.
@@ -859,6 +884,18 @@ mod tests {
                 height: 1000
             }
         );
+    }
+
+    #[test]
+    fn resize_updates_size() {
+        let rect = Rect::new(10, 20, 5, 5).resize(Size::new(30, 40));
+        assert_eq!(rect, Rect::new(10, 20, 30, 40));
+    }
+
+    #[test]
+    fn resize_clamps_at_bounds() {
+        let rect = Rect::new(u16::MAX - 2, u16::MAX - 3, 1, 1).resize(Size::new(10, 10));
+        assert_eq!(rect, Rect::new(u16::MAX - 2, u16::MAX - 3, 2, 3));
     }
 
     #[test]
