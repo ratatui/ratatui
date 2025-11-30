@@ -19,7 +19,7 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{List, ListDirection, ListState};
+use ratatui::widgets::{List, ListDirection, ListState, list_items};
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -62,8 +62,8 @@ fn render(frame: &mut Frame, list_state: &mut ListState) {
 
 /// Render a list.
 pub fn render_list(frame: &mut Frame, area: Rect, list_state: &mut ListState) {
-    let items = ["Item 1", "Item 2", "Item 3", "Item 4"];
-    let list = List::new(items)
+    let items = list_items!["Item 1", "Item 2", "Item 3", "Item 4"];
+    let list = List::from(&items)
         .style(Color::White)
         .highlight_style(Modifier::REVERSED)
         .highlight_symbol("> ");
@@ -73,13 +73,13 @@ pub fn render_list(frame: &mut Frame, area: Rect, list_state: &mut ListState) {
 
 /// Render a bottom-to-top list.
 pub fn render_bottom_list(frame: &mut Frame, area: Rect) {
-    let items = [
+    let items = list_items![
         "[Remy]: I'm building one now.\nIt even supports multiline text!",
         "[Gusteau]: With enough passion, yes.",
         "[Remy]: But can anyone build a TUI in Rust?",
         "[Gusteau]: Anyone can cook!",
     ];
-    let list = List::new(items)
+    let list = List::from(&items)
         .style(Color::White)
         .highlight_style(Style::new().yellow().italic())
         .highlight_symbol("> ".red())
