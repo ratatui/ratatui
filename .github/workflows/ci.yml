@@ -55,20 +55,24 @@ jobs:
 
   # Check for any disallowed dependencies in the codebase due to license / security issues.
   # See <https://github.com/EmbarkStudios/cargo-deny>
-  dependencies:
-    name: Check Dependencies
+  cargo-deny:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
+    # Prevent sudden announcement of a new advisory from failing ci:
+    continue-on-error: ${{ matrix.checks == 'advisories' }}
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: EmbarkStudios/cargo-deny-action@76cd80eb775d7bbbd2d80292136d74d39e1b4918 # v2
         with:
-          toolchain: stable
-      - uses: taiki-e/install-action@763e3324d4fd026c9bd284c504378585777a87d5 # v2
-        with:
-          tool: cargo-deny
-      - run: cargo deny --log-level info --all-features check
+          rust-toolchain: stable
+          log-level: info
+          command: check ${{ matrix.checks }}
 
   # Check for any unused dependencies in the codebase.
   # See <https://github.com/bnjbvr/cargo-machete/>
