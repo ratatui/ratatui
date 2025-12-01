@@ -1764,9 +1764,9 @@ dependencies = [
 
 [[package]]
 name = "kasuari"
-version = "0.4.10"
+version = "0.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "012b421f57b19b6dca64a11f6703087faa71aaef81c6e7cae57dcf7cdf286303"
+checksum = "8fe90c1150662e858c7d5f945089b7517b0a80d8bf7ba4b1b5ffc984e7230a5b"
 dependencies = [
  "hashbrown 0.16.1",
  "portable-atomic",
