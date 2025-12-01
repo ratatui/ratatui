@@ -72,7 +72,7 @@ fn outer() {
 #[test]
 fn offset() {
     let base = Rect::new(2, 2, 5, 3);
-    let moved = base.offset(Offset { x: 4, y: 2 });
+    let moved = base + Offset::new(4, 2);
 
     let mut buf = Buffer::empty(Rect::new(0, 0, 15, 10));
     Filled { symbol: "░" }.render(base, &mut buf);
