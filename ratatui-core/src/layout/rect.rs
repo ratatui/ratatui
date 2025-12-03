@@ -840,6 +840,16 @@ mod tests {
         assert!(!Rect::new(1, 2, 3, 4).intersects(Rect::new(5, 6, 7, 8)));
     }
 
+    #[rstest]
+    #[case::corner(Rect::new(0, 0, 10, 10), Rect::new(10, 10, 20, 20))]
+    #[case::edge(Rect::new(0, 0, 10, 10), Rect::new(10, 0, 20, 10))]
+    #[case::no_intersect(Rect::new(0, 0, 10, 10), Rect::new(11, 11, 20, 20))]
+    #[case::contains(Rect::new(0, 0, 20, 20), Rect::new(5, 5, 10, 10))]
+    fn mutual_intersect(#[case] rect0: Rect, #[case] rect1: Rect) {
+        assert_eq!(rect0.intersection(rect1), rect1.intersection(rect0));
+        assert_eq!(rect0.intersects(rect1), rect1.intersects(rect0));
+    }
+
     // the bounds of this rect are x: [1..=3], y: [2..=5]
     #[rstest]
     #[case::inside_top_left(Rect::new(1, 2, 3, 4), Position { x: 1, y: 2 }, true)]
