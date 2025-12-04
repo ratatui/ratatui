@@ -24,7 +24,6 @@ mod commands;
 const CROSSTERM_COMMON_FEATURES: &[&str] = &[
     "serde",
     "underline-color",
-    "scrolling-regions",
     "unstable",
     "unstable-backend-writer",
 ];
