@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+
 ## [v0.30.0-beta.0](https://github.com/ratatui/ratatui/releases/tag/v0.30.0-beta.0) - 2025-10-28
 
 > _"Rats don't just survive; they discover; they create. ... I mean, just look at what they do with
