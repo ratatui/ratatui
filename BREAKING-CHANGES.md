@@ -18,7 +18,7 @@ This is a quick summary of the sections below:
   - `FrameExt` trait for `unstable-widget-ref` feature
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
-  - The MSRV is now 1.85.0
+  - MSRV is now 1.86.0
   - `Backend` now requires an associated `Error` type and `clear_region` method
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
@@ -27,6 +27,9 @@ This is a quick summary of the sections below:
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
     `Terminal`
   - Support a broader range for `unicode-width` version
+  - `Marker` is now non-exhaustive
+  - `symbols::braille::BLANK` and `symbols::braille::DOTS` have been removed in favor of an ordered
+    array of all Braille characters
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
     const
@@ -91,6 +94,24 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.30.0 Unreleased
+
+### `Marker` is now non-exhaustive ([#2236])
+
+[#2236]: https://github.com/ratatui/ratatui/pull/2236
+
+The `Marker` enum is now marked as `#[non_exhaustive]`, if you were matching on `Marker` exhaustively,
+you will need to add a wildcard arm:
+
+```diff
+  match marker {
+      Marker::Dot => { /* ... */ }
+      Marker::Block => { /* ... */ }
+      Marker::Bar => { /* ... */ }
+      Marker::Braille => { /* ... */ }
+      Marker::HalfBlock => { /* ... */ }
++     _ => { /* ... */ }
+  }
+```
 
 ### `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps ([#1952])
 
@@ -235,11 +256,11 @@ instead.
 + fn run(mut terminal: DefaultTerminal) -> io::Result<()> {
 ```
 
-### The MSRV is now 1.85.0 ([#1860])
+### MSRV is now 1.86.0 ([#2230])
 
-[#1860]: https://github.com/ratatui/ratatui/pull/1860
+[#2230]: https://github.com/ratatui/ratatui/pull/2230
 
-The minimum supported Rust version (MSRV) is now 1.85.0.
+The minimum supported Rust version (MSRV) is now 1.86.0.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 
@@ -1087,7 +1108,7 @@ previously did not need to use type annotations to fail to compile. To fix this,
 
 [#133]: https://github.com/ratatui/ratatui/issues/133
 
-Code using the `Block` marker that previously rendered using a half block character (`'▀'``) now
+Code using the `Block` marker that previously rendered using a half block character (`'▀'`) now
 renders using the full block character (`'█'`). A new marker variant`Bar` is introduced to replace
 the existing code.
 

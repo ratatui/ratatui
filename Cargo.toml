@@ -25,7 +25,7 @@ readme = "README.md"
 license = "MIT"
 exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.86.0"
 
 [workspace.dependencies]
 anstyle = "1"
@@ -33,7 +33,7 @@ bitflags = "2.10"
 clap = { version = "4.5", features = ["derive"] }
 color-eyre = "0.6"
 compact_str = { version = "0.9", default-features = false }
-criterion = { version = "0.7", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 crossterm = "0.29"
 document-features = "0.2"
 fakeit = "1"
@@ -45,7 +45,7 @@ itertools = { version = "0.14", default-features = false, features = ["use_alloc
 kasuari = { version = "0.4", default-features = false }
 line-clipping = "0.3"
 lru = "0.16"
-octocrab = "0.47"
+octocrab = "0.48"
 palette = "0.7"
 pretty_assertions = "1"
 rand = "0.9"
