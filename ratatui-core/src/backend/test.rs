@@ -177,11 +177,7 @@ fn buffer_view_colored(buffer: &Buffer) -> String {
         view.push('"');
 
         if !overwritten.is_empty() {
-            write!(
-                &mut view,
-                " Hidden by multi-width symbols: {overwritten:?}"
-            )
-            .unwrap();
+            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}").unwrap();
         }
 
         view.push('\n');
@@ -589,7 +585,7 @@ mod tests {
     use itertools::Itertools as _;
 
     use super::*;
-
+    use crate::layout::Rect;
     use crate::style::{Color, Modifier, Style};
 
     #[test]
@@ -650,6 +646,26 @@ mod tests {
         buffer.set_string(0, 0, "x", style);
         let colored = buffer_view_colored(&buffer);
         assert_eq!(colored, "\"{fg=Yellow,bg=Blue,mod=BOLD}x{/}\"\n");
+    }
+
+    #[test]
+    fn buffer_view_colored_matches_plain_view_for_multi_width_symbols() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 1));
+        buffer.set_string(0, 0, "界", Style::default());
+        let plain = buffer_view(&buffer);
+        let colored = buffer_view_colored(&buffer);
+        assert_eq!(colored, plain);
+    }
+
+    fn testbackend_buffer_view_colored_delegates_to_helper() {
+        let mut backend = TestBackend::new(3, 1);
+        let red_style = Style::default().fg(Color::Red);
+        backend.buffer.set_string(0, 0, "x", red_style);
+        backend.buffer.set_string(1, 0, "y", Style::default());
+        backend.buffer.set_string(2, 0, " ", Style::default());
+        let direct = buffer_view_colored(backend.buffer());
+        let via_backend = backend.buffer_view_colored();
+        assert_eq!(via_backend, direct);
     }
 
     #[test]
