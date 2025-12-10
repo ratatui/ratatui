@@ -438,7 +438,7 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// use ratatui::style::{Modifier, Style};
+    /// use ratatui_core::style::{Modifier, Style};
     ///
     /// let style = Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC);
     /// assert!(style.has_modifier(Modifier::BOLD));
@@ -826,6 +826,28 @@ mod tests {
                 .remove_modifier(Modifier::ITALIC)
         );
         assert_eq!(ALL, ALL_SHORT);
+    }
+
+    #[test]
+    fn has_modifier_checks() {
+        // basic presence
+        let style = Style::new().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+        assert!(style.has_modifier(Modifier::BOLD));
+        assert!(style.has_modifier(Modifier::ITALIC));
+        assert!(!style.has_modifier(Modifier::UNDERLINED));
+
+        // removal prevents the modifier from being reported as present
+        let style = Style::new()
+            .add_modifier(Modifier::BOLD | Modifier::ITALIC)
+            .remove_modifier(Modifier::ITALIC);
+        assert!(style.has_modifier(Modifier::BOLD));
+        assert!(!style.has_modifier(Modifier::ITALIC));
+
+        // patching with a style that removes a modifier clears it
+        let style = Style::new().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+        let patched = style.patch(Style::new().remove_modifier(Modifier::ITALIC));
+        assert!(patched.has_modifier(Modifier::BOLD));
+        assert!(!patched.has_modifier(Modifier::ITALIC));
     }
 
     #[rstest]
