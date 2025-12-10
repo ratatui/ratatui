@@ -657,6 +657,7 @@ mod tests {
         assert_eq!(colored, plain);
     }
 
+    #[test]
     fn testbackend_buffer_view_colored_delegates_to_helper() {
         let mut backend = TestBackend::new(3, 1);
         let red_style = Style::default().fg(Color::Red);
