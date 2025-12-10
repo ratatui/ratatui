@@ -679,8 +679,8 @@ mod tests {
     use alloc::format;
     //use alloc::string::ToString;
     use core::iter;
-    // use std::{dbg, println};
 
+    // use std::{dbg, println};
     use itertools::Itertools;
     use rstest::{fixture, rstest};
 
@@ -1290,7 +1290,6 @@ mod tests {
     // This should render as a single grapheme with width 2.
     #[case::keyboard_emoji("⌨️", "⌨️xxxxx")]
     fn renders_emoji(#[case] input: &str, #[case] expected: &str) {
-
         let mut buffer = Buffer::filled(Rect::new(0, 0, 7, 1), Cell::new("x"));
         buffer.set_string(0, 0, input, Style::new());
 
