@@ -433,6 +433,22 @@ impl Style {
         self
     }
 
+    /// Returns `true` if the style has the given modifier set.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use ratatui::style::{Modifier, Style};
+    ///
+    /// let style = Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+    /// assert!(style.has_modifier(Modifier::BOLD));
+    /// assert!(style.has_modifier(Modifier::ITALIC));
+    /// assert!(!style.has_modifier(Modifier::UNDERLINED));
+    /// ```
+    pub const fn has_modifier(self, modifier: Modifier) -> bool {
+        self.add_modifier.contains(modifier) && !self.sub_modifier.contains(modifier)
+    }
+
     /// Results in a combined style that is equivalent to applying the two individual styles to
     /// a style one after the other.
     ///
