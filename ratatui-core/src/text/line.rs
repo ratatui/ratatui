@@ -848,7 +848,7 @@ impl Styled for Line<'_> {
 mod tests {
     use alloc::format;
     use core::iter;
-    use std::dbg;
+    //use std::dbg;
 
     use rstest::{fixture, rstest};
 
@@ -1503,7 +1503,7 @@ mod tests {
 
             let line = Line::from(vec![Span::raw(part); factor]).alignment(alignment);
 
-            dbg!(line.width());
+            //dbg!(line.width());
             assert!(line.width() >= min_width);
 
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
@@ -1527,7 +1527,7 @@ mod tests {
 
             let line = Line::from(vec![Span::raw(part.repeat(factor))]).alignment(alignment);
 
-            dbg!(line.width());
+            //dbg!(line.width());
             assert!(line.width() >= min_width);
 
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
