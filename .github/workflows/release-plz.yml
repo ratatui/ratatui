@@ -23,18 +23,18 @@ jobs:
     if: ${{ github.repository_owner == 'ratatui' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@0f44b27771c32bda9f458f75a1e241b09791b331 # master
+        uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
         with:
           toolchain: stable
       - uses: rust-lang/crates-io-auth-action@b7e9a28eded4986ec6b1fa40eeee8f8f165559ec # v1
         id: auth
       - name: Run release-plz
-        uses: release-plz/action@d529f731ae3e89610ada96eda34e5c6ba3b12214 # v0.5
+        uses: release-plz/action@487eb7b5c085a664d5c5ca05f4159bd9b591182a # v0.5
         with:
           command: release
         env:
@@ -54,16 +54,16 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@0f44b27771c32bda9f458f75a1e241b09791b331 # master
+        uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
         with:
           toolchain: stable
       - name: Run release-plz
-        uses: release-plz/action@d529f731ae3e89610ada96eda34e5c6ba3b12214 # v0.5
+        uses: release-plz/action@487eb7b5c085a664d5c5ca05f4159bd9b591182a # v0.5
         with:
           command: release-pr
         env:
