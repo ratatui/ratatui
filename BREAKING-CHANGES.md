@@ -30,6 +30,8 @@ This is a quick summary of the sections below:
   - `Marker` is now non-exhaustive
   - `symbols::braille::BLANK` and `symbols::braille::DOTS` have been removed in favor of an ordered
     array of all Braille characters
+  - `widgets::HighlightSpacing` has been separated into `widgets::ListHighlightSpacing` and
+    `widgets::TableHighlightSpacing`
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
     const
