@@ -433,6 +433,22 @@ impl Style {
         self
     }
 
+    /// Returns `true` if the style has the given modifier set.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use ratatui_core::style::{Modifier, Style};
+    ///
+    /// let style = Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+    /// assert!(style.has_modifier(Modifier::BOLD));
+    /// assert!(style.has_modifier(Modifier::ITALIC));
+    /// assert!(!style.has_modifier(Modifier::UNDERLINED));
+    /// ```
+    pub const fn has_modifier(self, modifier: Modifier) -> bool {
+        self.add_modifier.contains(modifier) && !self.sub_modifier.contains(modifier)
+    }
+
     /// Results in a combined style that is equivalent to applying the two individual styles to
     /// a style one after the other.
     ///
@@ -810,6 +826,28 @@ mod tests {
                 .remove_modifier(Modifier::ITALIC)
         );
         assert_eq!(ALL, ALL_SHORT);
+    }
+
+    #[test]
+    fn has_modifier_checks() {
+        // basic presence
+        let style = Style::new().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+        assert!(style.has_modifier(Modifier::BOLD));
+        assert!(style.has_modifier(Modifier::ITALIC));
+        assert!(!style.has_modifier(Modifier::UNDERLINED));
+
+        // removal prevents the modifier from being reported as present
+        let style = Style::new()
+            .add_modifier(Modifier::BOLD | Modifier::ITALIC)
+            .remove_modifier(Modifier::ITALIC);
+        assert!(style.has_modifier(Modifier::BOLD));
+        assert!(!style.has_modifier(Modifier::ITALIC));
+
+        // patching with a style that removes a modifier clears it
+        let style = Style::new().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+        let patched = style.patch(Style::new().remove_modifier(Modifier::ITALIC));
+        assert!(patched.has_modifier(Modifier::BOLD));
+        assert!(!patched.has_modifier(Modifier::ITALIC));
     }
 
     #[rstest]
