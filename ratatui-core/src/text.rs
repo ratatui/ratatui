@@ -48,8 +48,8 @@
 //! ]);
 //! ```
 
-mod grapheme;
-pub use grapheme::StyledGrapheme;
+pub mod grapheme;
+pub use grapheme::{StyledGrapheme, TerminalWidthStr};
 
 mod line;
 pub use line::{Line, ToLine};
