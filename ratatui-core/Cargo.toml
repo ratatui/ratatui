@@ -23,6 +23,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
+xlayout = []
 
 ## enables std
 std = [

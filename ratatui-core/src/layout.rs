@@ -320,6 +320,7 @@ mod offset;
 mod position;
 mod rect;
 mod size;
+mod xlayout;
 
 pub use alignment::{Alignment, HorizontalAlignment, VerticalAlignment};
 pub use constraint::Constraint;
@@ -331,3 +332,8 @@ pub use offset::Offset;
 pub use position::Position;
 pub use rect::{Columns, Positions, Rect, Rows};
 pub use size::Size;
+pub use xlayout::{
+    Align, ConstraintList, FillRecord, FillRecordSegment, FillRecordStep, Hint, HintRange,
+    IntoConstraint, LinearMargin, LinearSizeRange, RangeLevel, SegmentTarget, SizeRange,
+    XConstraint, XLayout, XMargin,
+};
