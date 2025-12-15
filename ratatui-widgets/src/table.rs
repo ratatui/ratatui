@@ -776,7 +776,7 @@ impl StatefulWidget for &Table<'_> {
 
         self.render_header(header_area, buf, &column_widths);
 
-        self.render_rows(rows_area, buf, state, selection_width, &column_widths);
+        self.render_rows(rows_area, buf, selection_width, state, &column_widths);
 
         self.render_footer(footer_area, buf, &column_widths);
     }
@@ -844,8 +844,8 @@ impl Table<'_> {
         &self,
         area: Rect,
         buf: &mut Buffer,
-        state: &mut TableState,
         selection_width: u16,
+        state: &mut TableState,
         columns_widths: &[Rect],
     ) {
         if self.rows.is_empty() {
@@ -871,9 +871,9 @@ impl Table<'_> {
             buf.set_style(row_area, row.style);
 
             let is_selected = state.selected.is_some_and(|index| index == i);
-            self.set_selection_style(selection_width, is_selected, row_area, buf, row);
+            self.set_selection_style(buf, selection_width, is_selected, row_area, row);
             let mut column_widths_iter = columns_widths.iter();
-            self.render_row_cells(buf, row_area, &row.cells, &mut column_widths_iter);
+            self.render_row_cells(buf, &mut column_widths_iter, &row.cells, row_area);
             if is_selected {
                 selected_row_area = Some(row_area);
             }
@@ -915,9 +915,9 @@ impl Table<'_> {
     fn render_row_cells<'a, T>(
         &self,
         buf: &mut Buffer,
-        row_area: Rect,
-        cells: &Vec<Cell>,
         column_widths_iterator: &mut T,
+        cells: &Vec<Cell>,
+        row_area: Rect,
     ) where
         T: Iterator<Item = &'a Rect>,
     {
@@ -943,10 +943,10 @@ impl Table<'_> {
     /// Set the row style and render the highlight symbol if the row is selected
     fn set_selection_style(
         &self,
+        buf: &mut Buffer,
         selection_width: u16,
         is_selected: bool,
         row_area: Rect,
-        buf: &mut Buffer,
         row: &Row,
     ) {
         if selection_width > 0 && is_selected {
