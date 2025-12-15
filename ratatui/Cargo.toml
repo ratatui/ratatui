@@ -28,10 +28,14 @@ rustdoc-args = ["--cfg", "docsrs"]
 ## which allows you to set the underline color of text, the `macros` feature which provides
 ## some useful macros and `layout-cache` which speeds up layout cache calculations
 ## in `std`-enabled environments.
-default = ["crossterm", "underline-color", "all-widgets", "macros", "layout-cache"]
+default = ["crossterm_0_29", "underline-color", "all-widgets", "macros", "layout-cache"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["std", "dep:ratatui-crossterm"]
+## selects the crossterm 0.28.x backend implementation
+crossterm_0_28 = ["crossterm", "ratatui-crossterm/crossterm_0_28"]
+## selects the crossterm 0.29.x backend implementation (default)
+crossterm_0_29 = ["crossterm", "ratatui-crossterm/crossterm_0_29"]
 ## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
 termion = ["std", "dep:ratatui-termion"]
 ## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
