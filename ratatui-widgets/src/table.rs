@@ -814,10 +814,9 @@ impl Table<'_> {
         if let Some(ref header) = self.header {
             buf.set_style(area, header.style);
             for (cell_area, cell) in column_widths.iter().zip(header.cells.iter()) {
-                cell.render(
-                    Rect::new(area.x + cell_area.x, area.y, cell_area.width, area.height),
-                    buf,
-                );
+                let new_x = area.x + cell_area.x;
+                let area_to_render = Rect::new(new_x, area.y, cell_area.width, area.height);
+                cell.render(area_to_render, buf);
             }
         }
     }
