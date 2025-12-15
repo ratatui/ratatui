@@ -927,6 +927,12 @@ impl Table<'_> {
     ///
     /// Otherwise, returns `Some(Rect{x, y = 0, width, height = 0})`, representing the start
     /// x-coordinate and width of the [`Cell`].
+    ///
+    /// This function consumes `cell_column_span` `Rect`s from `column_widths_iterator` (or all the
+    /// `Rects`) if iterator is less than `cell_column_span` `Rect`s long).  It adds the width of
+    /// each `Rect` plus `column_spacing` to a running total of the final width.  The return value
+    /// is the original x coordinate and the final width, or `None` if `column_widths_iterator` is
+    /// empty or `cell_column_span` is `0`.
     fn get_cell_area<'a, T>(
         column_widths_iterator: &mut T,
         cell_column_span: u16,
