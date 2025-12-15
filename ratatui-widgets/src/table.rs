@@ -271,23 +271,6 @@ pub struct Table<'a> {
     flex: Flex,
 }
 
-/// Return a `Rect` that represents the area that a `Cell` extends over
-///
-/// Currently, `Cell`s may extend over multiple columns but not multiple rows. This function
-/// returns a `Rect` that spans over a single row and possibly multiple columns, with the `x` field
-/// representing the `Cell`'s start coordinate.
-///
-/// Future extensions that allow a `Cell` to span multiple rows can replace all calls to this
-/// function with an initializer for all four fields of `Rect`.
-const fn create_cell_area(x: u16, width: u16) -> Rect {
-    Rect {
-        x,
-        y: 0,
-        width,
-        height: 0,
-    }
-}
-
 impl Default for Table<'_> {
     fn default() -> Self {
         Self {
@@ -847,44 +830,6 @@ impl Table<'_> {
         }
     }
 
-    /// Return the area that a [`Cell`] should occupy, taking into account its
-    /// [`Cell::column_span`]s.
-    ///
-    /// Returns `None` when there are no more columns for the [`Cell`] to occupy.
-    ///
-    /// Otherwise, returns `Some(Rect{x, y = 0, width, height = 0})`, representing the start
-    /// x-coordinate and width of the [`Cell`].
-    fn get_cell_area<'a, T>(
-        column_widths_iterator: &mut T,
-        cell_column_span: u16,
-        column_spacing: u16,
-    ) -> Option<Rect>
-    where
-        T: Iterator<Item = &'a Rect>,
-    {
-        let mut cell_area: Option<Rect> = None;
-        for _ in 0..cell_column_span {
-            let next_x: u16;
-            let next_width: u16;
-            if let Some(cell_area) = column_widths_iterator.next() {
-                next_x = cell_area.x;
-                next_width = cell_area.width;
-            } else {
-                break;
-            }
-            if let Some(area_so_far) = cell_area {
-                cell_area = Some(create_cell_area(
-                    // Initial start of cell area
-                    area_so_far.x,
-                    area_so_far.width + next_width + column_spacing,
-                ));
-            } else {
-                cell_area = Some(create_cell_area(next_x, next_width));
-            }
-        }
-        cell_area
-    }
-
     fn render_rows(
         &self,
         area: Rect,
@@ -973,6 +918,44 @@ impl Table<'_> {
             }
             (None, None) => (),
         }
+    }
+
+    /// Return the area that a [`Cell`] should occupy, taking into account its
+    /// [`Cell::column_span`]s.
+    ///
+    /// Returns `None` when there are no more columns for the [`Cell`] to occupy.
+    ///
+    /// Otherwise, returns `Some(Rect{x, y = 0, width, height = 0})`, representing the start
+    /// x-coordinate and width of the [`Cell`].
+    fn get_cell_area<'a, T>(
+        column_widths_iterator: &mut T,
+        cell_column_span: u16,
+        column_spacing: u16,
+    ) -> Option<Rect>
+    where
+        T: Iterator<Item = &'a Rect>,
+    {
+        let mut cell_area: Option<Rect> = None;
+        for _ in 0..cell_column_span {
+            let next_x: u16;
+            let next_width: u16;
+            if let Some(cell_area) = column_widths_iterator.next() {
+                next_x = cell_area.x;
+                next_width = cell_area.width;
+            } else {
+                break;
+            }
+            if let Some(area_so_far) = cell_area {
+                cell_area = Some(create_cell_area(
+                    // Initial start of cell area
+                    area_so_far.x,
+                    area_so_far.width + next_width + column_spacing,
+                ));
+            } else {
+                cell_area = Some(create_cell_area(next_x, next_width));
+            }
+        }
+        cell_area
     }
 
     /// Return the indexes of the visible rows.
@@ -1084,6 +1067,23 @@ fn ensure_percentages_less_than_100(widths: &[Constraint]) {
                 "Percentages should be between 0 and 100 inclusively."
             );
         }
+    }
+}
+
+/// Return a `Rect` that represents the area that a `Cell` extends over
+///
+/// Currently, `Cell`s may extend over multiple columns but not multiple rows. This function
+/// returns a `Rect` that spans over a single row and possibly multiple columns, with the `x` field
+/// representing the `Cell`'s start coordinate.
+///
+/// Future extensions that allow a `Cell` to span multiple rows can replace all calls to this
+/// function with an initializer for all four fields of `Rect`.
+const fn create_cell_area(x: u16, width: u16) -> Rect {
+    Rect {
+        x,
+        y: 0,
+        width,
+        height: 0,
     }
 }
 
