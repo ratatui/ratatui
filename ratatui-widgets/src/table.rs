@@ -861,32 +861,9 @@ impl Table<'_> {
             buf.set_style(row_area, row.style);
 
             let is_selected = state.selected.is_some_and(|index| index == i);
-            if selection_width > 0 && is_selected {
-                let selection_area = Rect {
-                    width: selection_width,
-                    ..row_area
-                };
-                buf.set_style(selection_area, row.style);
-                (&self.highlight_symbol).render(selection_area, buf);
-            }
+            self.set_selection_style(selection_width, is_selected, row_area, buf, row);
             let mut column_widths_iter = columns_widths.iter();
-            for current_cell in &row.cells {
-                if let Some(cell_area) = Self::get_cell_area(
-                    &mut column_widths_iter,
-                    current_cell.column_span,
-                    self.column_spacing,
-                ) {
-                    current_cell.render(
-                        Rect::new(
-                            row_area.x + cell_area.x,
-                            row_area.y,
-                            cell_area.width,
-                            row_area.height,
-                        ),
-                        buf,
-                    );
-                }
-            }
+            self.render_row_cells(buf, row_area, &row.cells, &mut column_widths_iter);
             if is_selected {
                 selected_row_area = Some(row_area);
             }
@@ -920,8 +897,60 @@ impl Table<'_> {
         }
     }
 
+    /// Render cells into the columns of a row
+    ///
+    /// Render `Cell`s from `cells` into columns consumed from `column_widths_iterator`, stopping
+    /// if either of these iterators are finished.  Each `Cell` gets rendered across
+    /// [`Cell::get_column_span`] columns plus the gaps between them, if this value is > 1.
+    fn render_row_cells<'a, T>(
+        &self,
+        buf: &mut Buffer,
+        row_area: Rect,
+        cells: &Vec<Cell>,
+        column_widths_iterator: &mut T,
+    ) where
+        T: Iterator<Item = &'a Rect>,
+    {
+        for current_cell in cells {
+            if let Some(cell_area) = Self::get_cell_area(
+                column_widths_iterator,
+                current_cell.column_span,
+                self.column_spacing,
+            ) {
+                current_cell.render(
+                    Rect::new(
+                        row_area.x + cell_area.x,
+                        row_area.y,
+                        cell_area.width,
+                        row_area.height,
+                    ),
+                    buf,
+                );
+            }
+        }
+    }
+
+    /// Set the row style and render the highlight symbol if the row is selected
+    fn set_selection_style(
+        &self,
+        selection_width: u16,
+        is_selected: bool,
+        row_area: Rect,
+        buf: &mut Buffer,
+        row: &Row,
+    ) {
+        if selection_width > 0 && is_selected {
+            let selection_area = Rect {
+                width: selection_width,
+                ..row_area
+            };
+            buf.set_style(selection_area, row.style);
+            (&self.highlight_symbol).render(selection_area, buf);
+        }
+    }
+
     /// Return the area that a [`Cell`] should occupy, taking into account its
-    /// [`Cell::column_span`]s.
+    /// [`Cell::column_span`].
     ///
     /// Returns `None` when there are no more columns for the [`Cell`] to occupy.
     ///
