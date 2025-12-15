@@ -806,6 +806,10 @@ impl Table<'_> {
         (header_area, rows_area, footer_area)
     }
 
+    /// Render the header cells, if they are not `None`
+    ///
+    /// The `x` and `width` fields of each `Rect` in `column_widths` denote the starting
+    /// x-coordinate and width of each column in the table.
     fn render_header(&self, area: Rect, buf: &mut Buffer, column_widths: &[Rect]) {
         if let Some(ref header) = self.header {
             buf.set_style(area, header.style);
@@ -818,6 +822,10 @@ impl Table<'_> {
         }
     }
 
+    /// Render the footer cells, if they are not `None`
+    ///
+    /// The `x` and `width` fields of each `Rect` in `column_widths` denote the starting
+    /// x-coordinate and width of each column in the table.
     fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: &[Rect]) {
         if let Some(ref footer) = self.footer {
             buf.set_style(area, footer.style);
@@ -830,6 +838,10 @@ impl Table<'_> {
         }
     }
 
+    /// Render the table rows
+    ///
+    /// The `x` and `width` fields of each `Rect` in `column_widths` denote the starting
+    /// x-coordinate and width of each column in the table.
     fn render_rows(
         &self,
         area: Rect,
