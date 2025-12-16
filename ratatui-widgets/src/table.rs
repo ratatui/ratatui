@@ -927,15 +927,9 @@ impl Table<'_> {
                 current_cell.column_span,
                 self.column_spacing,
             ) {
-                current_cell.render(
-                    Rect::new(
-                        row_area.x + cell_area.x,
-                        row_area.y,
-                        cell_area.width,
-                        row_area.height,
-                    ),
-                    buf,
-                );
+                let new_x = row_area.x + cell_area.x;
+                let area_to_render = Rect::new(new_x, row_area.y, cell_area.width, row_area.height);
+                current_cell.render(area_to_render, buf);
             }
         }
     }
