@@ -1188,10 +1188,10 @@ mod tests {
 
     mod widget {
         use unicode_segmentation::UnicodeSegmentation;
-        use unicode_width::UnicodeWidthStr;
 
         use super::*;
         use crate::buffer::Cell;
+        use crate::text::TerminalWidthStr;
 
         const BLUE: Style = Style::new().blue();
         const GREEN: Style = Style::new().green();

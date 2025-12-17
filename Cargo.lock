@@ -850,7 +850,6 @@ dependencies = [
  "ratatui",
  "strum",
  "time",
- "unicode-width",
 ]
 
 [[package]]
@@ -3452,7 +3451,6 @@ dependencies = [
  "fakeit",
  "itertools 0.14.0",
  "ratatui",
- "unicode-width",
 ]
 
 [[package]]

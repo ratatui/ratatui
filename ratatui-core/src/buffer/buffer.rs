@@ -682,10 +682,10 @@ mod tests {
 
     use itertools::Itertools;
     use rstest::{fixture, rstest};
-    use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
     use super::*;
     use crate::style::{Color, Modifier, Stylize};
+    use crate::text::TerminalWidthStr;
 
     #[test]
     fn debug_empty_buffer() {
@@ -916,7 +916,7 @@ mod tests {
 
     #[test]
     fn set_string_zero_width() {
-        assert_eq!(UnicodeWidthStr::width("\u{200B}"), 0);
+        assert_eq!("\u{200B}".width(), 0);
 
         let area = Rect::new(0, 0, 1, 1);
         let mut buffer = Buffer::empty(area);
@@ -1366,11 +1366,7 @@ mod tests {
         dbg!(
             input
                 .graphemes(true)
-                .map(|symbol| (
-                    symbol,
-                    symbol.escape_unicode().to_string(),
-                    UnicodeWidthStr::width(symbol)
-                ))
+                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
                 .collect::<Vec<_>>()
         );
         dbg!(
@@ -1379,7 +1375,7 @@ mod tests {
                 .map(|char| (
                     char,
                     char.escape_unicode().to_string(),
-                    char.width(),
+                    char.to_string().width(),
                     char.is_control()
                 ))
                 .collect::<Vec<_>>()

@@ -7,7 +7,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use crate::buffer::Buffer;
 use crate::layout::Rect;
 use crate::style::{Style, Styled};
-use crate::text::{Line, StyledGrapheme};
+use crate::text::{Line, StyledGrapheme, TerminalWidthStr};
 use crate::widgets::Widget;
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
@@ -268,7 +268,6 @@ impl<'a> Span<'a> {
 
     /// Returns the unicode width of the content held by this span.
     pub fn width(&self) -> usize {
-        use crate::text::TerminalWidthStr;
         self.content.width()
     }
 
@@ -419,7 +418,6 @@ impl Widget for &Span<'_> {
         }
         let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
-            use crate::text::TerminalWidthStr;
             let symbol_width = grapheme.symbol.width();
             let next_x = x.saturating_add(symbol_width as u16);
             if next_x > area.right() {
