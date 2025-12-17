@@ -536,10 +536,7 @@ impl Buffer {
 
             to_skip = current.symbol().width().saturating_sub(1);
 
-            let affected_width = cmp::max(
-                current.symbol().width(),
-                previous.symbol().width(),
-            );
+            let affected_width = cmp::max(current.symbol().width(), previous.symbol().width());
             invalidated = cmp::max(affected_width, invalidated).saturating_sub(1);
         }
         updates
@@ -678,11 +675,10 @@ impl fmt::Debug for Buffer {
 
 #[cfg(test)]
 mod tests {
-    use std::{dbg, println};
-
     use alloc::format;
     use alloc::string::ToString;
     use core::iter;
+    use std::{dbg, println};
 
     use itertools::Itertools;
     use rstest::{fixture, rstest};
@@ -1370,7 +1366,11 @@ mod tests {
         dbg!(
             input
                 .graphemes(true)
-                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), UnicodeWidthStr::width(symbol)))
+                .map(|symbol| (
+                    symbol,
+                    symbol.escape_unicode().to_string(),
+                    UnicodeWidthStr::width(symbol)
+                ))
                 .collect::<Vec<_>>()
         );
         dbg!(

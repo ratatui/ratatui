@@ -2770,7 +2770,6 @@ dependencies = [
  "strum",
  "time",
  "unicode-segmentation",
- "unicode-width",
 ]
 
 [[package]]

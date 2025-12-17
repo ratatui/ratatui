@@ -284,11 +284,7 @@ impl<'a> Text<'a> {
     /// assert_eq!(15, text.width());
     /// ```
     pub fn width(&self) -> usize {
-        self.lines
-            .iter()
-            .map(Line::width)
-            .max()
-            .unwrap_or_default()
+        self.lines.iter().map(Line::width).max().unwrap_or_default()
     }
 
     /// Returns the height.

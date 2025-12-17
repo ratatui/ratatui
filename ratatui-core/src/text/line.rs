@@ -835,10 +835,9 @@ impl Styled for Line<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::dbg;
-
     use alloc::format;
     use core::iter;
+    use std::dbg;
 
     use rstest::{fixture, rstest};
 
