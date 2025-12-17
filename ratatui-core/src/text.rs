@@ -48,7 +48,7 @@
 //! ]);
 //! ```
 
-pub mod grapheme;
+mod grapheme;
 pub use grapheme::StyledGrapheme;
 
 mod width;
