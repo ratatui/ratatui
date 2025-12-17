@@ -459,7 +459,7 @@ fn render_lines<'a, C: LineComposer<'a>>(mut composer: C, area: Rect, buf: &mut 
 fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u16) {
     let mut x = get_line_offset(wrapped.width, area.width, wrapped.alignment);
     for StyledGrapheme { symbol, style } in wrapped.graphemes {
-        let width = symbol.terminal_width();
+        let width = symbol.width();
         if width == 0 {
             continue;
         }

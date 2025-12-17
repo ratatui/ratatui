@@ -3,7 +3,6 @@ use alloc::string::ToString;
 use core::fmt;
 
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::Buffer;
 use crate::layout::Rect;
@@ -269,7 +268,8 @@ impl<'a> Span<'a> {
 
     /// Returns the unicode width of the content held by this span.
     pub fn width(&self) -> usize {
-        UnicodeWidthStr::width(self)
+        use crate::text::TerminalWidthStr;
+        self.content.width()
     }
 
     /// Returns an iterator over the graphemes held by this span.
@@ -376,17 +376,6 @@ impl<'a> Span<'a> {
     }
 }
 
-impl UnicodeWidthStr for Span<'_> {
-    fn width(&self) -> usize {
-        use crate::text::TerminalWidthStr;
-        self.content.terminal_width()
-    }
-
-    fn width_cjk(&self) -> usize {
-        self.content.width_cjk()
-    }
-}
-
 impl<'a, T> From<T> for Span<'a>
 where
     T: Into<Cow<'a, str>>,
@@ -431,7 +420,7 @@ impl Widget for &Span<'_> {
         let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
             use crate::text::TerminalWidthStr;
-            let symbol_width = grapheme.symbol.terminal_width();
+            let symbol_width = grapheme.symbol.width();
             let next_x = x.saturating_add(symbol_width as u16);
             if next_x > area.right() {
                 break;

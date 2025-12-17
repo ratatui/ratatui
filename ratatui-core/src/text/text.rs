@@ -5,8 +5,6 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use unicode_width::UnicodeWidthStr;
-
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
 use crate::style::{Style, Styled};
@@ -286,7 +284,11 @@ impl<'a> Text<'a> {
     /// assert_eq!(15, text.width());
     /// ```
     pub fn width(&self) -> usize {
-        UnicodeWidthStr::width(self)
+        self.lines
+            .iter()
+            .map(Line::width)
+            .max()
+            .unwrap_or_default()
     }
 
     /// Returns the height.
@@ -558,25 +560,6 @@ impl<'a> Text<'a> {
         } else {
             self.lines.push(Line::from(span));
         }
-    }
-}
-
-impl UnicodeWidthStr for Text<'_> {
-    /// Returns the max width of all the lines.
-    fn width(&self) -> usize {
-        self.lines
-            .iter()
-            .map(UnicodeWidthStr::width)
-            .max()
-            .unwrap_or_default()
-    }
-
-    fn width_cjk(&self) -> usize {
-        self.lines
-            .iter()
-            .map(UnicodeWidthStr::width_cjk)
-            .max()
-            .unwrap_or_default()
     }
 }
 

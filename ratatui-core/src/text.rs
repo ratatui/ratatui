@@ -49,7 +49,10 @@
 //! ```
 
 pub mod grapheme;
-pub use grapheme::{StyledGrapheme, TerminalWidthStr};
+pub use grapheme::StyledGrapheme;
+
+mod width;
+pub use width::TerminalWidthStr;
 
 mod line;
 pub use line::{Line, ToLine};

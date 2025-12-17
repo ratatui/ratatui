@@ -55,7 +55,7 @@ fn buffer_view(buffer: &Buffer) -> String {
             } else {
                 overwritten.push((x, c.symbol()));
             }
-            skip = core::cmp::max(skip, c.symbol().terminal_width()).saturating_sub(1);
+            skip = core::cmp::max(skip, c.symbol().width()).saturating_sub(1);
         }
         view.push('"');
         if !overwritten.is_empty() {

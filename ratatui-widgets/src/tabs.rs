@@ -8,7 +8,6 @@ use ratatui_core::style::{Style, Styled};
 use ratatui_core::symbols;
 use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
-use unicode_width::UnicodeWidthStr;
 
 use crate::block::{Block, BlockExt};
 
@@ -352,6 +351,29 @@ impl<'a> Tabs<'a> {
         self.padding_right = padding.into();
         self
     }
+
+    /// Returns the width of the rendered tabs.
+    ///
+    /// The width includes the titles, dividers, and padding. It does not include any borders added
+    /// by the optional block.
+    ///
+    /// Characters in the Ambiguous category are considered single-width.
+    ///
+    /// ```
+    /// use ratatui::widgets::Tabs;
+    ///
+    /// let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3"]);
+    /// assert_eq!(tabs.width(), 20); // " Tab1 │ Tab2 │ Tab3 "
+    /// ```
+    pub fn width(&self) -> usize {
+        let titles_width = self.titles.iter().map(Line::width).sum::<usize>();
+        let title_count = self.titles.len();
+        let divider_count = title_count.saturating_sub(1);
+        let divider_width = divider_count.saturating_mul(self.divider.width());
+        let left_padding_width = title_count.saturating_mul(self.padding_left.width());
+        let right_padding_width = title_count.saturating_mul(self.padding_right.width());
+        titles_width + divider_width + left_padding_width + right_padding_width
+    }
 }
 
 impl Styled for Tabs<'_> {
@@ -444,64 +466,6 @@ where
 {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
         Self::new(iter)
-    }
-}
-
-impl UnicodeWidthStr for Tabs<'_> {
-    /// Returns the width of the rendered tabs.
-    ///
-    /// The width includes the titles, dividers, and padding. It does not include any borders added
-    /// by the optional block.
-    ///
-    /// Characters in the Ambiguous category are considered single-width.
-    ///
-    /// ```
-    /// use ratatui::widgets::Tabs;
-    /// use unicode_width::UnicodeWidthStr;
-    ///
-    /// let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3"]);
-    /// assert_eq!(tabs.width(), 20); // " Tab1 │ Tab2 │ Tab3 "
-    /// ```
-    fn width(&self) -> usize {
-        let titles_width = self.titles.iter().map(Line::width).sum::<usize>();
-        let title_count = self.titles.len();
-        let divider_count = title_count.saturating_sub(1);
-        let divider_width = divider_count.saturating_mul(self.divider.width());
-        let left_padding_width = title_count.saturating_mul(self.padding_left.width());
-        let right_padding_width = title_count.saturating_mul(self.padding_right.width());
-        titles_width + divider_width + left_padding_width + right_padding_width
-    }
-
-    /// Returns the width of the rendered tabs, accounting for CJK characters.
-    ///
-    /// This is probably the wrong method to use in most contexts that Ratatui applications care
-    /// about as it doesn't correlate with the visual representation of most terminals. Consider
-    /// using [`Tabs::width`] instead.
-    ///
-    /// The width includes the titles, dividers, and padding. It does not include any borders added
-    /// by the optional block.
-    ///
-    /// Characters in the Ambiguous category are considered double-width.
-    ///
-    /// ```
-    /// use ratatui::widgets::Tabs;
-    /// use unicode_width::UnicodeWidthStr;
-    ///
-    /// let tabs = Tabs::new(vec!["你", "好", "世界"]);
-    /// assert_eq!("你".width_cjk(), 2);
-    /// assert_eq!("好".width_cjk(), 2);
-    /// assert_eq!("世界".width_cjk(), 4);
-    /// assert_eq!("│".width_cjk(), 2); // this is correct for cjk
-    /// assert_eq!(tabs.width_cjk(), 18); // " 你 │ 好 │ 世界 "
-    /// ```
-    fn width_cjk(&self) -> usize {
-        let titles_width = self.titles.iter().map(Line::width_cjk).sum::<usize>();
-        let title_count = self.titles.len();
-        let divider_count = title_count.saturating_sub(1);
-        let divider_width = divider_count.saturating_mul(self.divider.width_cjk());
-        let left_padding_width = title_count.saturating_mul(self.padding_left.width_cjk());
-        let right_padding_width = title_count.saturating_mul(self.padding_right.width_cjk());
-        titles_width + divider_width + left_padding_width + right_padding_width
     }
 }
 
@@ -759,48 +723,57 @@ mod tests {
     }
 
     #[test]
-    fn unicode_width_basic() {
+    fn width_basic() {
         let tabs = Tabs::new(vec!["A", "BB", "CCC"]);
         let rendered = " A │ BB │ CCC ";
-        assert_eq!(tabs.width(), rendered.terminal_width());
+        assert_eq!(tabs.width(), rendered.width());
     }
 
     #[test]
-    fn unicode_width_no_padding() {
+    fn width_no_padding() {
         let tabs = Tabs::new(vec!["A", "BB", "CCC"]).padding("", "");
         let rendered = "A│BB│CCC";
-        assert_eq!(tabs.width(), rendered.terminal_width());
+        assert_eq!(tabs.width(), rendered.width());
     }
 
     #[test]
-    fn unicode_width_custom_divider_and_padding() {
+    fn width_custom_divider_and_padding() {
         let tabs = Tabs::new(vec!["A", "BB", "CCC"])
             .divider("--")
             .padding("X", "YY");
         let rendered = "XAYY--XBBYY--XCCCYY";
-        assert_eq!(tabs.width(), rendered.terminal_width());
+        assert_eq!(tabs.width(), rendered.width());
     }
 
     #[test]
-    fn unicode_width_empty_titles() {
+    fn width_empty_titles() {
         let tabs = Tabs::new(Vec::<&str>::new());
         let rendered = "";
-        assert_eq!(tabs.width(), rendered.terminal_width());
+        assert_eq!(tabs.width(), rendered.width());
     }
 
     #[test]
-    fn unicode_width_cjk() {
+    fn width_cjk() {
         let tabs = Tabs::new(vec!["你", "好", "世界"]);
         let rendered = " 你 │ 好 │ 世界 ";
-        assert_eq!(tabs.width_cjk(), UnicodeWidthStr::width_cjk(rendered));
+        assert_eq!(tabs.width(), rendered.width());
     }
 
     #[test]
-    fn unicode_width_cjk_custom_padding_and_divider() {
+    fn width_cjk_custom_padding_and_divider() {
         let tabs = Tabs::new(vec!["你", "好", "世界"])
             .divider("分")
             .padding("左", "右");
         let rendered = "左你右分左好右分左世界右";
-        assert_eq!(tabs.width_cjk(), UnicodeWidthStr::width_cjk(rendered));
+        assert_eq!(tabs.width(), rendered.width());
+    }
+
+    #[test]
+    fn width_halfwidth_katakana_with_dakuten() {
+        // Halfwidth katakana with dakuten (U+FF9E, U+FF9F) should be counted correctly.
+        // These characters are rendered as width 1 in terminals despite unicode-width reporting 0.
+        let tabs = Tabs::new(vec!["ｶﾞ", "ｷﾞ", "ｸﾞ"]);
+        let rendered = " ｶﾞ │ ｷﾞ │ ｸﾞ ";
+        assert_eq!(tabs.width(), rendered.width());
     }
 }

@@ -7,7 +7,6 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use unicode_truncate::UnicodeTruncateStr;
-use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
@@ -438,7 +437,7 @@ impl<'a> Line<'a> {
     /// ```
     #[must_use]
     pub fn width(&self) -> usize {
-        UnicodeWidthStr::width(self)
+        self.spans.iter().map(Span::width).sum()
     }
 
     /// Returns an iterator over the graphemes held by this line.
@@ -561,16 +560,6 @@ impl<'a> Line<'a> {
     /// ```
     pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
         self.spans.push(span.into());
-    }
-}
-
-impl UnicodeWidthStr for Line<'_> {
-    fn width(&self) -> usize {
-        self.spans.iter().map(UnicodeWidthStr::width).sum()
-    }
-
-    fn width_cjk(&self) -> usize {
-        self.spans.iter().map(UnicodeWidthStr::width_cjk).sum()
     }
 }
 
@@ -846,9 +835,10 @@ impl Styled for Line<'_> {
 
 #[cfg(test)]
 mod tests {
+    use std::dbg;
+
     use alloc::format;
     use core::iter;
-    use std::dbg;
 
     use rstest::{fixture, rstest};
 
