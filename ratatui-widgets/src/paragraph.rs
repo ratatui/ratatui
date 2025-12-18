@@ -324,9 +324,12 @@ impl<'a> Paragraph<'a> {
     /// assert_eq!(paragraph.line_count(20), 1);
     /// assert_eq!(paragraph.line_count(10), 2);
     /// ```
-    #[instability::unstable(
-        feature = "rendered-line-info",
-        issue = "https://github.com/ratatui/ratatui/issues/293"
+    #[cfg_attr(
+        feature = "use-instability",
+        instability::unstable(
+            feature = "rendered-line-info",
+            issue = "https://github.com/ratatui/ratatui/issues/293"
+        )
     )]
     pub fn line_count(&self, width: u16) -> usize {
         if width < 1 {
@@ -380,9 +383,12 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World\nhi\nHello World!!!");
     /// assert_eq!(paragraph.line_width(), 14);
     /// ```
-    #[instability::unstable(
-        feature = "rendered-line-info",
-        issue = "https://github.com/ratatui/ratatui/issues/293"
+    #[cfg_attr(
+        feature = "use-instability",
+        instability::unstable(
+            feature = "rendered-line-info",
+            issue = "https://github.com/ratatui/ratatui/issues/293"
+        )
     )]
     pub fn line_width(&self) -> usize {
         let width = self.text.iter().map(Line::width).max().unwrap_or_default();

@@ -679,7 +679,10 @@ pub use ratatui_widgets::scrollbar::{
 pub use ratatui_widgets::sparkline::{RenderDirection, Sparkline, SparklineBar};
 pub use ratatui_widgets::table::{Cell, HighlightSpacing, Row, Table, TableState};
 pub use ratatui_widgets::tabs::Tabs;
-#[instability::unstable(feature = "widget-ref")]
+#[cfg_attr(
+    feature = "use-instability",
+    instability::unstable(feature = "widget-ref")
+)]
 pub use {stateful_widget_ref::StatefulWidgetRef, widget_ref::WidgetRef};
 
 mod stateful_widget_ref;
@@ -689,7 +692,10 @@ use ratatui_core::layout::Rect;
 
 /// Extension trait for [`Frame`] that provides methods to render [`WidgetRef`] and
 /// [`StatefulWidgetRef`] to the current buffer.
-#[instability::unstable(feature = "widget-ref")]
+#[cfg_attr(
+    feature = "use-instability",
+    instability::unstable(feature = "widget-ref")
+)]
 pub trait FrameExt {
     /// Render a [`WidgetRef`] to the current buffer using [`WidgetRef::render_ref`].
     ///
