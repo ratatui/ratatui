@@ -497,9 +497,16 @@ impl Buffer {
         // Cells from the current buffer to skip due to preceding multi-width characters taking
         // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
         let mut to_skip: usize = 0;
+
+        // Track (x, y) coordinates as we iterate through the buffers linearly
+        let mut x = self.area.x;
+        let mut y = self.area.y;
+
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
+            let current_symbol_width = current.symbol().width();
+            let previous_symbol_width = previous.symbol().width();
+
             if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
-                let (x, y) = self.pos_of(i);
                 updates.push((x, y, &next_buffer[i]));
 
                 // If the current cell is multi-width, ensure the trailing cells are explicitly
@@ -507,38 +514,47 @@ impl Buffer {
                 // reliably clear the trailing cell(s) when printing a wide grapheme, which can
                 // result in visual artifacts (e.g., leftover characters). Emitting an explicit
                 // update for the trailing cells avoids this.
-                let symbol = current.symbol();
-                let cell_width = symbol.width();
                 // Work around terminals that fail to clear the trailing cell of certain
                 // emoji presentation sequences (those containing VS16 / U+FE0F).
                 // Only emit explicit clears for such sequences to avoid bloating diffs
                 // for standard wide characters (e.g., CJK), which terminals handle well.
-                let contains_vs16 = symbol.chars().any(|c| c == '\u{FE0F}');
-                if cell_width > 1 && contains_vs16 {
-                    for k in 1..cell_width {
-                        let j = i + k;
-                        // Make sure that we are still inside the buffer.
-                        if j >= next_buffer.len() || j >= previous_buffer.len() {
-                            break;
-                        }
-                        let prev_trailing = &previous_buffer[j];
-                        let next_trailing = &next_buffer[j];
-                        if !next_trailing.skip && prev_trailing != next_trailing {
-                            let (tx, ty) = self.pos_of(j);
-                            // Push an explicit update for the trailing cell.
-                            // This is expected to be a blank cell, but we use the actual
-                            // content from the next buffer to handle cases where
-                            // the user has explicitly set something else.
-                            updates.push((tx, ty, next_trailing));
+                if current_symbol_width > 1 {
+                    let symbol = current.symbol();
+                    let contains_vs16 = symbol.chars().any(|c| c == '\u{FE0F}');
+                    if contains_vs16 {
+                        for k in 1..current_symbol_width {
+                            let j = i + k;
+                            // Make sure that we are still inside the buffer.
+                            if j >= next_buffer.len() || j >= previous_buffer.len() {
+                                break;
+                            }
+                            let prev_trailing = &previous_buffer[j];
+                            let next_trailing = &next_buffer[j];
+                            if !next_trailing.skip && prev_trailing != next_trailing {
+                                // Trailing cells are always on the same row, offset by k columns
+                                let tx = x + k as u16;
+                                // Push an explicit update for the trailing cell.
+                                // This is expected to be a blank cell, but we use the actual
+                                // content from the next buffer to handle cases where
+                                // the user has explicitly set something else.
+                                updates.push((tx, y, next_trailing));
+                            }
                         }
                     }
                 }
             }
 
-            to_skip = current.symbol().width().saturating_sub(1);
+            to_skip = current_symbol_width.saturating_sub(1);
 
-            let affected_width = cmp::max(current.symbol().width(), previous.symbol().width());
+            let affected_width = cmp::max(current_symbol_width, previous_symbol_width);
             invalidated = cmp::max(affected_width, invalidated).saturating_sub(1);
+
+            x += 1;
+            // Check if we've reached the end of the current line
+            if x >= self.area.right() {
+                x = self.area.x;
+                y += 1;
+            }
         }
         updates
     }
