@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: nightly
           components: rustfmt
@@ -103,7 +103,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: ${{ matrix.toolchain }}
           components: clippy
@@ -135,7 +135,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: stable
           components: llvm-tools
@@ -162,7 +162,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: ${{ matrix.toolchain }}
       - uses: taiki-e/install-action@b9c5db3aef04caffaf95a1d03931de10fb2a140f # v2
@@ -180,7 +180,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: stable
           targets: x86_64-unknown-none
@@ -220,7 +220,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: nightly
       - uses: dtolnay/install@74f735cdf643820234e37ae1c4089a08fd266d8a # master
@@ -241,7 +241,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: stable
       - uses: taiki-e/install-action@b9c5db3aef04caffaf95a1d03931de10fb2a140f # v2
@@ -262,7 +262,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: stable
       - uses: taiki-e/install-action@b9c5db3aef04caffaf95a1d03931de10fb2a140f # v2
@@ -288,7 +288,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e # master
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
