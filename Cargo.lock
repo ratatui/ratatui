@@ -1052,9 +1052,9 @@ dependencies = [
 
 [[package]]
 name = "fakeit"
-version = "1.4.0"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50b022284277dcbc4858e61d87f02146c6207f5c1656dcf73e2f5a4cea570ed7"
+checksum = "9ff50593e569e8da220e12d8c171c89794fb2dab023f6391edbe5d16f3cdb311"
 dependencies = [
  "rand 0.9.2",
  "simplerand",
