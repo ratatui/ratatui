@@ -616,6 +616,9 @@
 //! library `no_std` compatible. This is often easier than you might expect and broadens the range
 //! of projects that can use your widgets.
 //!
+//! For more detail on advantages of this, maintenance tips and feature flags, see the
+//! [no-std concept guide].
+//!
 //! To implement `no_std` compatibility, add the `#![no_std]` attribute at the top of your `lib.rs`.
 //! When working in a `no_std` environment, you'll need to make a few adjustments:
 //!
@@ -658,6 +661,7 @@
 //!   straightforward to implement
 //!
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
+//! [no-std concept guide]: https://ratatui.rs/concepts/no-std/
 
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
 pub use ratatui_widgets::barchart::{Bar, BarChart, BarGroup};
