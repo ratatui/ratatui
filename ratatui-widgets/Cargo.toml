@@ -18,7 +18,6 @@ rust-version.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
@@ -68,13 +67,8 @@ unicode-width.workspace = true
 color-eyre.workspace = true
 crossterm.workspace = true
 pretty_assertions.workspace = true
-ratatui.workspace = true
+ratatui = { path = "../ratatui" }
 rstest.workspace = true
 
 [lints]
 workspace = true
-
-# Adding a single example is enough for activating rustdoc-scrape-examples
-[[example]]
-name = "barchart"
-doc-scrape-examples = true
