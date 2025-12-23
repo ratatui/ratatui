@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
 
-## [v0.30.0-beta.1](https://github.com/ratatui/ratatui/releases/tag/v0.30.0-beta.1) - 2025-12-23
+## [v0.30.0-beta.0](https://github.com/ratatui/ratatui/releases/tag/v0.30.0-beta.0) - 2025-12-23
 
 > _"Rats don't just survive; they discover; they create. ... I mean, just look at what they do with
 the terminal!" – Remy & Orhun_
