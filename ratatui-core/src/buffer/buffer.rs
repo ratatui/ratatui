@@ -676,6 +676,7 @@ impl fmt::Debug for Buffer {
 
 #[cfg(test)]
 mod tests {
+    extern crate std;
     use alloc::format;
     use alloc::string::ToString;
     use core::iter;

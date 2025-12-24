@@ -8,7 +8,7 @@ use core::fmt;
 use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::Buffer;
-use crate::layout::{Alignment, Rect};
+use crate::layout::{Alignment, Rect, Size};
 use crate::style::{Style, Styled};
 use crate::text::{Line, Span};
 use crate::widgets::Widget;
@@ -301,6 +301,24 @@ impl<'a> Text<'a> {
     /// ```
     pub fn height(&self) -> usize {
         self.lines.len()
+    }
+
+    /// Returns the width and height.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui_core::layout::Size;
+    /// use ratatui_core::text::Text;
+    ///
+    /// let text = Text::from("The first line\nThe second line");
+    /// assert_eq!(Size::new(15, 2), text.size());
+    /// ```
+    pub fn size(&self) -> Size {
+        Size::new(
+            u16::try_from(self.width()).unwrap_or(u16::MAX),
+            u16::try_from(self.height()).unwrap_or(u16::MAX),
+        )
     }
 
     /// Sets the style of this text.
@@ -819,6 +837,12 @@ mod tests {
     fn height() {
         let text = Text::from("The first line\nThe second line");
         assert_eq!(2, text.height());
+    }
+
+    #[test]
+    fn size() {
+        let text = Text::from("The first line\nThe second line");
+        assert_eq!(Size::new(15, 2), text.size());
     }
 
     #[test]

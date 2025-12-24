@@ -48,6 +48,8 @@ unstable = ["unstable-rendered-line-info"]
 ## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
 unstable-rendered-line-info = []
 
+xlayout = ["ratatui-core/xlayout"]
+
 [dependencies]
 bitflags.workspace = true
 document-features = { workspace = true, optional = true }

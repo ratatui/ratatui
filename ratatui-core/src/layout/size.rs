@@ -53,6 +53,8 @@ pub struct Size {
 impl Size {
     /// A zero sized Size
     pub const ZERO: Self = Self::new(0, 0);
+    /// A max sized Size
+    pub const MAX: Self = Self::new(u16::MAX, u16::MAX);
 
     /// The minimum possible Size
     pub const MIN: Self = Self::ZERO;
