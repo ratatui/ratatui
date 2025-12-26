@@ -973,27 +973,18 @@ impl Table<'_> {
     where
         T: Iterator<Item = &'a Rect>,
     {
-        let mut cell_area: Option<Rect> = None;
-        for _ in 0..cell_column_span {
-            let next_x: u16;
-            let next_width: u16;
-            if let Some(cell_area) = column_widths_iterator.next() {
-                next_x = cell_area.x;
-                next_width = cell_area.width;
-            } else {
-                break;
-            }
-            if let Some(area_so_far) = cell_area {
-                cell_area = Some(create_cell_area(
-                    // Initial start of cell area
-                    area_so_far.x,
-                    area_so_far.width + next_width + column_spacing,
-                ));
-            } else {
-                cell_area = Some(create_cell_area(next_x, next_width));
-            }
+        if cell_column_span == 0 {
+            return None;
         }
-        cell_area
+        let first = column_widths_iterator.next()?;
+        let (n_columns_taken, all_columns_width) = column_widths_iterator
+            .take((cell_column_span - 1).into())
+            .map(|rect| (1, rect.width))
+            .fold((1, first.width), |so_far, next_column| {
+                (next_column.0 + so_far.0, next_column.1 + so_far.1)
+            });
+        let width = all_columns_width + (n_columns_taken - 1) * column_spacing;
+        Some(Rect::new(first.x, first.y, width, 1))
     }
 
     /// Return the indexes of the visible rows.
