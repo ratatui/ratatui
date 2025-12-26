@@ -50,7 +50,7 @@ palette = "0.7"
 pretty_assertions = "1"
 rand = "0.9"
 rand_chacha = "0.9"
-ratatui = { path = "ratatui", version = "0.30.0-beta.1" }
+ratatui = { path = "ratatui", version = "0.30.0-beta.2" }
 ratatui-core = { path = "ratatui-core", version = "0.1.0-beta.1" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-beta.1" }
 ratatui-macros = { path = "ratatui-macros", version = "0.7.0-beta.1" }
