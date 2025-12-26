@@ -10,7 +10,7 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.30.0 Unreleased](#v0300-unreleased)
+- [v0.30.0](#v0300)
   - `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps
     are twice the size of first and last elements
   - `block::Title` no longer exists
@@ -93,7 +93,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## v0.30.0 Unreleased
+## [v0.30.0](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.0)
 
 ### `Marker` is now non-exhaustive ([#2236])
 
