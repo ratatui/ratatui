@@ -871,7 +871,9 @@ impl Table<'_> {
             buf.set_style(row_area, row.style);
 
             let is_selected = state.selected.is_some_and(|index| index == i);
-            self.set_selection_style(buf, selection_width, is_selected, row_area, row);
+            if selection_width > 0 && is_selected {
+                self.set_selection_style(buf, selection_width, row_area, row);
+            }
             let mut column_widths_iter = columns_widths.iter();
             self.render_row_cells(buf, &mut column_widths_iter, &row.cells, row_area);
             if is_selected {
@@ -934,23 +936,20 @@ impl Table<'_> {
         }
     }
 
-    /// Set the row style and render the highlight symbol if the row is selected
+    /// Set the row style and render the highlight symbol
     fn set_selection_style(
         &self,
         buf: &mut Buffer,
         selection_width: u16,
-        is_selected: bool,
         row_area: Rect,
         row: &Row,
     ) {
-        if selection_width > 0 && is_selected {
-            let selection_area = Rect {
-                width: selection_width,
-                ..row_area
-            };
-            buf.set_style(selection_area, row.style);
-            (&self.highlight_symbol).render(selection_area, buf);
-        }
+        let selection_area = Rect {
+            width: selection_width,
+            ..row_area
+        };
+        buf.set_style(selection_area, row.style);
+        (&self.highlight_symbol).render(selection_area, buf);
     }
 
     /// Return the area that a [`Cell`] should occupy, taking into account its
