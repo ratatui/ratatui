@@ -11,7 +11,6 @@ crossterm.workspace = true
 fakeit.workspace = true
 itertools.workspace = true
 ratatui.workspace = true
-unicode-width.workspace = true
 
 [lints]
 workspace = true

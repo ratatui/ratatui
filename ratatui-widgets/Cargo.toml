@@ -61,7 +61,6 @@ serde = { workspace = true, optional = true }
 strum.workspace = true
 time = { workspace = true, optional = true }
 unicode-segmentation.workspace = true
-unicode-width.workspace = true
 
 [dev-dependencies]
 color-eyre.workspace = true

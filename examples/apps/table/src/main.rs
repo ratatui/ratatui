@@ -10,14 +10,13 @@ use crossterm::event::{self, KeyCode, KeyModifiers};
 use itertools::Itertools;
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{self, Color, Modifier, Style, Stylize};
-use ratatui::text::Text;
+use ratatui::text::{TerminalWidthStr, Text};
 use ratatui::widgets::{
     Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
     ScrollbarState, Table, TableState,
 };
 use ratatui::{DefaultTerminal, Frame};
 use style::palette::tailwind;
-use unicode_width::UnicodeWidthStr;
 
 const PALETTES: [tailwind::Palette; 4] = [
     tailwind::BLUE,
@@ -311,20 +310,20 @@ fn constraint_len_calculator(items: &[Data]) -> (u16, u16, u16) {
     let name_len = items
         .iter()
         .map(Data::name)
-        .map(UnicodeWidthStr::width)
+        .map(TerminalWidthStr::width)
         .max()
         .unwrap_or(0);
     let address_len = items
         .iter()
         .map(Data::address)
         .flat_map(str::lines)
-        .map(UnicodeWidthStr::width)
+        .map(TerminalWidthStr::width)
         .max()
         .unwrap_or(0);
     let email_len = items
         .iter()
         .map(Data::email)
-        .map(UnicodeWidthStr::width)
+        .map(TerminalWidthStr::width)
         .max()
         .unwrap_or(0);
 
