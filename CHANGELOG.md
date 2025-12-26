@@ -5,16 +5,16 @@ All notable changes to this project will be documented in this file.
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
 
-## [v0.30.0-beta.1](https://github.com/ratatui/ratatui/releases/tag/v0.30.0-beta.1) - 2025-12-24
+## [v0.30.0](https://github.com/ratatui/ratatui/releases/tag/v0.30.0) - 2025-12-26
 
 > _"Rats don't just survive; they discover; they create. ... I mean, just look at what they do with
 the terminal!" – Remy & Orhun_
 
 We are excited to announce the biggest release of `ratatui` so far - a Rust library that's all about cooking up TUIs 👨‍🍳🐀
 
-📢 Please note that this is a beta release, and we encourage you to try it out and provide feedback!
+🌠 Added "no_std" support for embedded targets, modularized architecture, major widget & layout upgrades!
 
-✨ **WIP Release highlights**: <https://github.com/ratatui/ratatui-website/blob/ratatui-0.30/src/content/docs/highlights/v0.30.md>
+✨ **Release highlights**: <https://ratatui.rs/highlights/v030/>
 
 ⚠️ List of breaking changes can be found [here](https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md).
 
@@ -1968,6 +1968,7 @@ We are excited to announce the biggest release of `ratatui` so far - a Rust libr
   >
 
 ### New Contributors
+
 * @sxyazi made their first contribution in [#2267](https://github.com/ratatui/ratatui/pull/2267)
 * @pharrison31415 made their first contribution in [#2252](https://github.com/ratatui/ratatui/pull/2252)
 * @sbarral made their first contribution in [#2235](https://github.com/ratatui/ratatui/pull/2235)
@@ -2015,7 +2016,7 @@ We are excited to announce the biggest release of `ratatui` so far - a Rust libr
 * @epompeii made their first contribution in [#1470](https://github.com/ratatui/ratatui/pull/1470)
 * @thomas-tacquet made their first contribution in [#1462](https://github.com/ratatui/ratatui/pull/1462)
 
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/v0.29.1-alpha.0...v0.30.0
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/v0.29.0...v0.30.0
 
 ## [v0.29.0](https://github.com/ratatui/ratatui/releases/tag/v0.29.0) - 2024-10-21
 
