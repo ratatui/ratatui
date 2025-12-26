@@ -1062,7 +1062,12 @@ impl Table<'_> {
             .split(columns_area);
         rects
             .iter()
-            .map(|c| create_cell_area(c.x, c.width))
+            .map(|c| Rect {
+                x: c.x,
+                y: 0,
+                width: c.width,
+                height: 1,
+            })
             .collect()
     }
 
@@ -1096,23 +1101,6 @@ fn ensure_percentages_less_than_100(widths: &[Constraint]) {
                 "Percentages should be between 0 and 100 inclusively."
             );
         }
-    }
-}
-
-/// Return a `Rect` that represents the area that a `Cell` extends over
-///
-/// Currently, `Cell`s may extend over multiple columns but not multiple rows. This function
-/// returns a `Rect` that spans over a single row and possibly multiple columns, with the `x` field
-/// representing the `Cell`'s start coordinate.
-///
-/// Future extensions that allow a `Cell` to span multiple rows can replace all calls to this
-/// function with an initializer for all four fields of `Rect`.
-const fn create_cell_area(x: u16, width: u16) -> Rect {
-    Rect {
-        x,
-        y: 0,
-        width,
-        height: 0,
     }
 }
 
@@ -1878,21 +1866,60 @@ mod tests {
             let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [create_cell_area(0, 4), create_cell_area(5, 4)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 4,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 5,
+                        width: 4,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, more than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [create_cell_area(3, 4), create_cell_area(8, 4)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 4,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 8,
+                        width: 4,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // without selection, less than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [create_cell_area(0, 3), create_cell_area(4, 3)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 3,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 4,
+                        width: 3,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, less than needed width
@@ -1904,7 +1931,20 @@ mod tests {
             let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [create_cell_area(3, 2), create_cell_area(6, 1)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 2,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 6,
+                        width: 1,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
         }
 
@@ -1914,28 +1954,80 @@ mod tests {
             let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [create_cell_area(0, 4), create_cell_area(5, 4)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 4,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 5,
+                        width: 4,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, more than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [create_cell_area(3, 4), create_cell_area(8, 4)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 4,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 8,
+                        width: 4,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // without selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [create_cell_area(0, 3), create_cell_area(4, 3)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 3,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 4,
+                        width: 3,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [create_cell_area(3, 2), create_cell_area(6, 1)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 2,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 6,
+                        width: 1,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
         }
 
@@ -1949,14 +2041,40 @@ mod tests {
             let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [create_cell_area(0, 10), create_cell_area(11, 9)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 10,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 11,
+                        width: 9,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [create_cell_area(3, 8), create_cell_area(12, 8)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 8,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 12,
+                        width: 8,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // without selection, less than needed width
@@ -1964,7 +2082,20 @@ mod tests {
             let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [create_cell_area(0, 3), create_cell_area(4, 3)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 3,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 4,
+                        width: 3,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, less than needed width
@@ -1972,7 +2103,20 @@ mod tests {
             let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [create_cell_area(3, 2), create_cell_area(6, 1)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 2,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 6,
+                        width: 1,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
         }
 
@@ -1982,14 +2126,40 @@ mod tests {
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [create_cell_area(0, 6), create_cell_area(7, 6)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 6,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 7,
+                        width: 6,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, more than needed width
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [create_cell_area(3, 5), create_cell_area(9, 5)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 5,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 9,
+                        width: 5,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // without selection, less than needed width
@@ -1997,7 +2167,20 @@ mod tests {
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [create_cell_area(0, 2), create_cell_area(3, 2)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 2,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 3,
+                        width: 2,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, less than needed width
@@ -2005,7 +2188,20 @@ mod tests {
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [create_cell_area(3, 1), create_cell_area(5, 1)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 1,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 5,
+                        width: 1,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
         }
 
@@ -2016,7 +2212,20 @@ mod tests {
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [create_cell_area(0, 7), create_cell_area(8, 6)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 7,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 8,
+                        width: 6,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, more than needed width
@@ -2024,7 +2233,20 @@ mod tests {
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [create_cell_area(3, 6), create_cell_area(10, 5)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 6,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 10,
+                        width: 5,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // without selection, less than needed width
@@ -2032,7 +2254,20 @@ mod tests {
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [create_cell_area(0, 2), create_cell_area(3, 3)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 2,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 3,
+                        width: 3,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
 
             // with selection, less than needed width
@@ -2040,7 +2275,20 @@ mod tests {
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [create_cell_area(3, 1), create_cell_area(5, 2)]
+                [
+                    Rect {
+                        x: 3,
+                        width: 1,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 5,
+                        width: 2,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
         }
 
@@ -2051,9 +2299,24 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    create_cell_area(0, 20),
-                    create_cell_area(21, 20),
-                    create_cell_area(42, 20)
+                    Rect {
+                        x: 0,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 21,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 42,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    }
                 ]
             );
 
@@ -2063,9 +2326,24 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    create_cell_area(0, 10),
-                    create_cell_area(11, 10),
-                    create_cell_area(22, 40)
+                    Rect {
+                        x: 0,
+                        width: 10,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 11,
+                        width: 10,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 22,
+                        width: 40,
+                        y: 0,
+                        height: 1
+                    }
                 ]
             );
 
@@ -2075,9 +2353,24 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    create_cell_area(0, 20),
-                    create_cell_area(21, 20),
-                    create_cell_area(42, 20)
+                    Rect {
+                        x: 0,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 21,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 42,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    }
                 ]
             );
         }
@@ -2088,9 +2381,24 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    create_cell_area(0, 20),
-                    create_cell_area(21, 20),
-                    create_cell_area(42, 20)
+                    Rect {
+                        x: 0,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 21,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 42,
+                        width: 20,
+                        y: 0,
+                        height: 1
+                    }
                 ]
             );
 
@@ -2100,9 +2408,24 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    create_cell_area(0, 10),
-                    create_cell_area(11, 10),
-                    create_cell_area(22, 40)
+                    Rect {
+                        x: 0,
+                        width: 10,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 11,
+                        width: 10,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 22,
+                        width: 40,
+                        y: 0,
+                        height: 1
+                    }
                 ]
             );
         }
@@ -2121,9 +2444,24 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(30, 0, 3),
                 &[
-                    create_cell_area(0, 10),
-                    create_cell_area(10, 10),
-                    create_cell_area(20, 10)
+                    Rect {
+                        x: 0,
+                        width: 10,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 10,
+                        width: 10,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 20,
+                        width: 10,
+                        y: 0,
+                        height: 1
+                    }
                 ]
             );
         }
@@ -2136,7 +2474,20 @@ mod tests {
                 .column_spacing(0);
             assert_eq!(
                 table.get_column_widths(10, 0, 2),
-                [create_cell_area(0, 5), create_cell_area(5, 5)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 5,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 5,
+                        width: 5,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
         }
 
@@ -2148,7 +2499,20 @@ mod tests {
                 .column_spacing(0);
             assert_eq!(
                 table.get_column_widths(10, 0, 2),
-                [create_cell_area(0, 5), create_cell_area(5, 5)]
+                [
+                    Rect {
+                        x: 0,
+                        width: 5,
+                        y: 0,
+                        height: 1
+                    },
+                    Rect {
+                        x: 5,
+                        width: 5,
+                        y: 0,
+                        height: 1
+                    }
+                ]
             );
         }
 
@@ -2608,22 +2972,22 @@ mod tests {
     }
 
     #[rstest]
-    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2), create_cell_area(3, 2)], 2, 5)]
-    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 2, 5,)]
-    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 1, 2)]
-    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2)], 3, 5)]
-    #[case(&[create_cell_area(3, 2)], 1, 2)]
-    #[case(&[create_cell_area(3, 2)], 2, 2)]
+    #[case(&[Rect{x: 3, width: 2, y: 0, height: 1}, Rect{x: 3, width: 2, y: 0, height: 1}, Rect{x: 3, width: 2, y: 0, height: 1}], 2, 5)]
+    #[case(&[Rect{x: 3, width: 2, y: 0, height: 1}, Rect{x: 3, width: 2, y: 0, height: 1}], 2, 5,)]
+    #[case(&[Rect{x: 3, width: 2, y: 0, height: 1}, Rect{x: 3, width: 2, y: 0, height: 1}], 1, 2)]
+    #[case(&[Rect{x: 3, width: 2, y: 0, height: 1}, Rect{x: 3, width: 2, y: 0, height: 1}], 3, 5)]
+    #[case(&[Rect{x: 3, width: 2, y: 0, height: 1}], 1, 2)]
+    #[case(&[Rect{x: 3, width: 2, y: 0, height: 1}], 2, 2)]
     #[case(&[
-        create_cell_area(3, 2),
-        create_cell_area(3, 2),
-        create_cell_area(3, 2),
-        create_cell_area(3, 2),
+        Rect{x: 3, width: 2, y: 0, height: 1},
+        Rect{x: 3, width: 2, y: 0, height: 1},
+        Rect{x: 3, width: 2, y: 0, height: 1},
+        Rect{x: 3, width: 2, y: 0, height: 1},
             ], 3, 8)]
     #[case(&[
-        create_cell_area(3, 2),
-        create_cell_area(3, 2),
-        create_cell_area(3, 2),
+        Rect{x: 3, width: 2, y: 0, height: 1},
+        Rect{x: 3, width: 2, y: 0, height: 1},
+        Rect{x: 3, width: 2, y: 0, height: 1},
             ], 3, 8)]
     fn test_colspan_width_single_column_spacing(
         #[case] columns: &[Rect],
@@ -2636,8 +3000,8 @@ mod tests {
     }
 
     #[rstest]
-    #[case(&[create_cell_area(3, 2), create_cell_area(3, 2), create_cell_area(3, 2)], 3, 10)]
-    #[case(&[create_cell_area(3, 2)], 3, 2)]
+    #[case(&[Rect{x: 3, width: 2, y: 0, height: 1}, Rect{x: 3, width: 2, y: 0, height: 1}, Rect{x: 3, width: 2, y: 0, height: 1}], 3, 10)]
+    #[case(&[Rect{x: 3, width: 2, y: 0, height: 1}], 3, 2)]
     fn test_colspan_width_two_column_spacing(
         #[case] columns: &[Rect],
         #[case] column_span: u16,
