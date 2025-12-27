@@ -1061,12 +1061,7 @@ impl Table<'_> {
             .split(columns_area);
         rects
             .iter()
-            .map(|c| Rect {
-                x: c.x,
-                y: 0,
-                width: c.width,
-                height: 1,
-            })
+            .map(|c| Rect::new(c.x, 0, c.width, 1))
             .collect()
     }
 
@@ -1866,18 +1861,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 4,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 5,
-                        width: 4,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 4, 1),
+                    Rect::new(5, 0, 4, 1),
                 ]
             );
 
@@ -1886,18 +1871,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 4,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 8,
-                        width: 4,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 4, 1),
+                    Rect::new(8, 0, 4, 1)
                 ]
             );
 
@@ -1906,18 +1881,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 3,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 4,
-                        width: 3,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 3, 1),
+                    Rect::new(4, 0, 3, 1)
                 ]
             );
 
@@ -1931,18 +1896,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 2,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 6,
-                        width: 1,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 2, 1),
+                    Rect::new(6, 0, 1, 1)
                 ]
             );
         }
@@ -1954,18 +1909,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 4,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 5,
-                        width: 4,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 4, 1),
+                    Rect::new(5, 0, 4, 1)
                 ]
             );
 
@@ -1974,18 +1919,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 4,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 8,
-                        width: 4,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 4, 1),
+                    Rect::new(8, 0, 4, 1)
                 ]
             );
 
@@ -1994,18 +1929,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 3,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 4,
-                        width: 3,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 3, 1),
+                    Rect::new(4, 0, 3, 1)
                 ]
             );
 
@@ -2014,18 +1939,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 2,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 6,
-                        width: 1,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 2, 1),
+                    Rect::new(6, 0, 1, 1)
                 ]
             );
         }
@@ -2041,18 +1956,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 10,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 11,
-                        width: 9,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 10, 1),
+                    Rect::new(11, 0, 9, 1)
                 ]
             );
 
@@ -2061,18 +1966,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 8,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 12,
-                        width: 8,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 8, 1),
+                    Rect::new(12, 0, 8, 1)
                 ]
             );
 
@@ -2082,18 +1977,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 3,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 4,
-                        width: 3,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 3, 1),
+                    Rect::new(4, 0, 3, 1)
                 ]
             );
 
@@ -2103,18 +1988,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 2,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 6,
-                        width: 1,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 2, 1),
+                    Rect::new(6, 0, 1, 1)
                 ]
             );
         }
@@ -2126,18 +2001,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 6,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 7,
-                        width: 6,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 6, 1),
+                    Rect::new(7, 0, 6, 1)
                 ]
             );
 
@@ -2146,18 +2011,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 5,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 9,
-                        width: 5,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 5, 1),
+                    Rect::new(9, 0, 5, 1)
                 ]
             );
 
@@ -2167,18 +2022,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 2,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 3,
-                        width: 2,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 2, 1),
+                    Rect::new(3, 0, 2, 1)
                 ]
             );
 
@@ -2188,18 +2033,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 1,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 5,
-                        width: 1,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 1, 1),
+                    Rect::new(5, 0, 1, 1)
                 ]
             );
         }
@@ -2212,18 +2047,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 7,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 8,
-                        width: 6,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 7, 1),
+                    Rect::new(8, 0, 6, 1)
                 ]
             );
 
@@ -2233,18 +2058,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 6,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 10,
-                        width: 5,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 6, 1),
+                    Rect::new(10, 0, 5, 1)
                 ]
             );
 
@@ -2254,18 +2069,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
                 [
-                    Rect {
-                        x: 0,
-                        width: 2,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 3,
-                        width: 3,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 2, 1),
+                    Rect::new(3, 0, 3, 1)
                 ]
             );
 
@@ -2275,18 +2080,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
                 [
-                    Rect {
-                        x: 3,
-                        width: 1,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 5,
-                        width: 2,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(3, 0, 1, 1),
+                    Rect::new(5, 0, 2, 1)
                 ]
             );
         }
@@ -2298,24 +2093,9 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    Rect {
-                        x: 0,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 21,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 42,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 20, 1),
+                    Rect::new(21, 0, 20, 1),
+                    Rect::new(42, 0, 20, 1)
                 ]
             );
 
@@ -2325,24 +2105,9 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    Rect {
-                        x: 0,
-                        width: 10,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 11,
-                        width: 10,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 22,
-                        width: 40,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 10, 1),
+                    Rect::new(11, 0, 10, 1),
+                    Rect::new(22, 0, 40, 1)
                 ]
             );
 
@@ -2352,24 +2117,9 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    Rect {
-                        x: 0,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 21,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 42,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 20, 1),
+                    Rect::new(21, 0, 20, 1),
+                    Rect::new(42, 0, 20, 1)
                 ]
             );
         }
@@ -2380,24 +2130,9 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    Rect {
-                        x: 0,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 21,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 42,
-                        width: 20,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 20, 1),
+                    Rect::new(21, 0, 20, 1),
+                    Rect::new(42, 0, 20, 1)
                 ]
             );
 
@@ -2407,24 +2142,9 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(62, 0, 0),
                 &[
-                    Rect {
-                        x: 0,
-                        width: 10,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 11,
-                        width: 10,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 22,
-                        width: 40,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 10, 1),
+                    Rect::new(11, 0, 10, 1),
+                    Rect::new(22, 0, 40, 1)
                 ]
             );
         }
@@ -2443,24 +2163,9 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(30, 0, 3),
                 &[
-                    Rect {
-                        x: 0,
-                        width: 10,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 10,
-                        width: 10,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 20,
-                        width: 10,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 10, 1),
+                    Rect::new(10, 0, 10, 1),
+                    Rect::new(20, 0, 10, 1)
                 ]
             );
         }
@@ -2474,18 +2179,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(10, 0, 2),
                 [
-                    Rect {
-                        x: 0,
-                        width: 5,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 5,
-                        width: 5,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 5, 1),
+                    Rect::new(5, 0, 5, 1)
                 ]
             );
         }
@@ -2499,18 +2194,8 @@ mod tests {
             assert_eq!(
                 table.get_column_widths(10, 0, 2),
                 [
-                    Rect {
-                        x: 0,
-                        width: 5,
-                        y: 0,
-                        height: 1
-                    },
-                    Rect {
-                        x: 5,
-                        width: 5,
-                        y: 0,
-                        height: 1
-                    }
+                    Rect::new(0, 0, 5, 1),
+                    Rect::new(5, 0, 5, 1)
                 ]
             );
         }
