@@ -919,8 +919,7 @@ impl Table<'_> {
         column_widths: Vec<&Rect>,
         cells: &Vec<Cell>,
         row_area: Rect,
-    )
-    {
+    ) {
         let mut column_widths_iterator = column_widths.into_iter();
         for current_cell in cells {
             if let Some(cell_area) = Self::get_cell_area(
@@ -1860,30 +1859,21 @@ mod tests {
             let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [
-                    Rect::new(0, 0, 4, 1),
-                    Rect::new(5, 0, 4, 1),
-                ]
+                [Rect::new(0, 0, 4, 1), Rect::new(5, 0, 4, 1),]
             );
 
             // with selection, more than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [
-                    Rect::new(3, 0, 4, 1),
-                    Rect::new(8, 0, 4, 1)
-                ]
+                [Rect::new(3, 0, 4, 1), Rect::new(8, 0, 4, 1)]
             );
 
             // without selection, less than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [
-                    Rect::new(0, 0, 3, 1),
-                    Rect::new(4, 0, 3, 1)
-                ]
+                [Rect::new(0, 0, 3, 1), Rect::new(4, 0, 3, 1)]
             );
 
             // with selection, less than needed width
@@ -1895,10 +1885,7 @@ mod tests {
             let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [
-                    Rect::new(3, 0, 2, 1),
-                    Rect::new(6, 0, 1, 1)
-                ]
+                [Rect::new(3, 0, 2, 1), Rect::new(6, 0, 1, 1)]
             );
         }
 
@@ -1908,40 +1895,28 @@ mod tests {
             let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [
-                    Rect::new(0, 0, 4, 1),
-                    Rect::new(5, 0, 4, 1)
-                ]
+                [Rect::new(0, 0, 4, 1), Rect::new(5, 0, 4, 1)]
             );
 
             // with selection, more than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [
-                    Rect::new(3, 0, 4, 1),
-                    Rect::new(8, 0, 4, 1)
-                ]
+                [Rect::new(3, 0, 4, 1), Rect::new(8, 0, 4, 1)]
             );
 
             // without selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [
-                    Rect::new(0, 0, 3, 1),
-                    Rect::new(4, 0, 3, 1)
-                ]
+                [Rect::new(0, 0, 3, 1), Rect::new(4, 0, 3, 1)]
             );
 
             // with selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [
-                    Rect::new(3, 0, 2, 1),
-                    Rect::new(6, 0, 1, 1)
-                ]
+                [Rect::new(3, 0, 2, 1), Rect::new(6, 0, 1, 1)]
             );
         }
 
@@ -1955,20 +1930,14 @@ mod tests {
             let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [
-                    Rect::new(0, 0, 10, 1),
-                    Rect::new(11, 0, 9, 1)
-                ]
+                [Rect::new(0, 0, 10, 1), Rect::new(11, 0, 9, 1)]
             );
 
             // with selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [
-                    Rect::new(3, 0, 8, 1),
-                    Rect::new(12, 0, 8, 1)
-                ]
+                [Rect::new(3, 0, 8, 1), Rect::new(12, 0, 8, 1)]
             );
 
             // without selection, less than needed width
@@ -1976,10 +1945,7 @@ mod tests {
             let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [
-                    Rect::new(0, 0, 3, 1),
-                    Rect::new(4, 0, 3, 1)
-                ]
+                [Rect::new(0, 0, 3, 1), Rect::new(4, 0, 3, 1)]
             );
 
             // with selection, less than needed width
@@ -1987,10 +1953,7 @@ mod tests {
             let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [
-                    Rect::new(3, 0, 2, 1),
-                    Rect::new(6, 0, 1, 1)
-                ]
+                [Rect::new(3, 0, 2, 1), Rect::new(6, 0, 1, 1)]
             );
         }
 
@@ -2000,20 +1963,14 @@ mod tests {
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [
-                    Rect::new(0, 0, 6, 1),
-                    Rect::new(7, 0, 6, 1)
-                ]
+                [Rect::new(0, 0, 6, 1), Rect::new(7, 0, 6, 1)]
             );
 
             // with selection, more than needed width
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [
-                    Rect::new(3, 0, 5, 1),
-                    Rect::new(9, 0, 5, 1)
-                ]
+                [Rect::new(3, 0, 5, 1), Rect::new(9, 0, 5, 1)]
             );
 
             // without selection, less than needed width
@@ -2021,10 +1978,7 @@ mod tests {
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [
-                    Rect::new(0, 0, 2, 1),
-                    Rect::new(3, 0, 2, 1)
-                ]
+                [Rect::new(0, 0, 2, 1), Rect::new(3, 0, 2, 1)]
             );
 
             // with selection, less than needed width
@@ -2032,10 +1986,7 @@ mod tests {
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [
-                    Rect::new(3, 0, 1, 1),
-                    Rect::new(5, 0, 1, 1)
-                ]
+                [Rect::new(3, 0, 1, 1), Rect::new(5, 0, 1, 1)]
             );
         }
 
@@ -2046,10 +1997,7 @@ mod tests {
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [
-                    Rect::new(0, 0, 7, 1),
-                    Rect::new(8, 0, 6, 1)
-                ]
+                [Rect::new(0, 0, 7, 1), Rect::new(8, 0, 6, 1)]
             );
 
             // with selection, more than needed width
@@ -2057,10 +2005,7 @@ mod tests {
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [
-                    Rect::new(3, 0, 6, 1),
-                    Rect::new(10, 0, 5, 1)
-                ]
+                [Rect::new(3, 0, 6, 1), Rect::new(10, 0, 5, 1)]
             );
 
             // without selection, less than needed width
@@ -2068,10 +2013,7 @@ mod tests {
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [
-                    Rect::new(0, 0, 2, 1),
-                    Rect::new(3, 0, 3, 1)
-                ]
+                [Rect::new(0, 0, 2, 1), Rect::new(3, 0, 3, 1)]
             );
 
             // with selection, less than needed width
@@ -2079,10 +2021,7 @@ mod tests {
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [
-                    Rect::new(3, 0, 1, 1),
-                    Rect::new(5, 0, 2, 1)
-                ]
+                [Rect::new(3, 0, 1, 1), Rect::new(5, 0, 2, 1)]
             );
         }
 
@@ -2178,10 +2117,7 @@ mod tests {
                 .column_spacing(0);
             assert_eq!(
                 table.get_column_widths(10, 0, 2),
-                [
-                    Rect::new(0, 0, 5, 1),
-                    Rect::new(5, 0, 5, 1)
-                ]
+                [Rect::new(0, 0, 5, 1), Rect::new(5, 0, 5, 1)]
             );
         }
 
@@ -2193,10 +2129,7 @@ mod tests {
                 .column_spacing(0);
             assert_eq!(
                 table.get_column_widths(10, 0, 2),
-                [
-                    Rect::new(0, 0, 5, 1),
-                    Rect::new(5, 0, 5, 1)
-                ]
+                [Rect::new(0, 0, 5, 1), Rect::new(5, 0, 5, 1)]
             );
         }
 
