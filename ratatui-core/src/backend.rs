@@ -301,7 +301,13 @@ pub trait Backend {
 
     /// Flush any buffered content to the terminal screen.
     fn flush(&mut self) -> Result<(), Self::Error>;
+}
 
+/// [`ScrollByRegion`] is a superset of the [`Backend`] trait that supports the scrolling
+/// methods needed for [`insert_before`].
+///
+/// [`insert_before`]: crate::terminal::Terminal::insert_before
+pub trait ScrollByRegion: Backend {
     /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range
     /// of rows.
     ///
@@ -331,7 +337,7 @@ pub trait Backend {
     ///
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_up`].
-    #[cfg(feature = "scrolling-regions")]
+    #[allow(unused_variables)]
     fn scroll_region_up(
         &mut self,
         region: core::ops::Range<u16>,
@@ -356,7 +362,7 @@ pub trait Backend {
     ///
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_down`].
-    #[cfg(feature = "scrolling-regions")]
+    #[allow(unused_variables)]
     fn scroll_region_down(
         &mut self,
         region: core::ops::Range<u16>,

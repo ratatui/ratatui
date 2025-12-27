@@ -451,7 +451,7 @@ pub use crate::init::{
 
 /// Re-exports for the backend implementations.
 pub mod backend {
-    pub use ratatui_core::backend::{Backend, ClearType, TestBackend, WindowSize};
+    pub use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, TestBackend, WindowSize};
     #[cfg(feature = "crossterm")]
     pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
     #[cfg(all(not(windows), feature = "termion"))]
