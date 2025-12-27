@@ -8,3 +8,6 @@ sectore = "sectore" # https://github.com/sectore
 extend-ignore-re = [
   "\\[[[:xdigit:]]{7}\\]\\(https://github.com/ratatui/ratatui/commit/[[:xdigit:]]{40}\\)",
 ]
+
+[files]
+extend-exclude = ["CHANGELOG.md"]
