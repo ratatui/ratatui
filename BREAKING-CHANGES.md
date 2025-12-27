@@ -10,6 +10,8 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.30.1](#v0301)
+  - Adding `AsRef` impls for widgets may affect type inference in rare cases
 - [v0.30.0](#v0300)
   - `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps
     are twice the size of first and last elements
@@ -92,6 +94,17 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
+
+### Adding `AsRef` impls for widgets may affect type inference ([#2297])
+
+[#2297]: https://github.com/ratatui/ratatui/pull/2297
+
+Adding `AsRef<Self>` for built-in widgets can change type inference outcomes in rare cases where
+`AsRef` is part of a trait bound, and can also conflict with downstream blanket or manual `AsRef`
+impls for widget types. If you hit new ambiguity errors, add explicit type annotations or specify
+the concrete widget type to guide inference, and remove any redundant `AsRef` impls.
 
 ## [v0.30.0](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.0)
 
