@@ -874,8 +874,7 @@ impl Table<'_> {
             if selection_width > 0 && is_selected {
                 self.set_selection_style(buf, selection_width, row_area, row);
             }
-            let mut column_widths_iter = columns_widths.iter();
-            self.render_row_cells(buf, &mut column_widths_iter, &row.cells, row_area);
+            self.render_row_cells(buf, columns_widths.iter().collect(), &row.cells, row_area);
             if is_selected {
                 selected_row_area = Some(row_area);
             }
@@ -911,21 +910,21 @@ impl Table<'_> {
 
     /// Render cells into the columns of a row
     ///
-    /// Render `Cell`s from `cells` into columns consumed from `column_widths_iterator`, stopping
+    /// Render `Cell`s from `cells` into columns specified by `column_widths`, stopping
     /// if either of these iterators are finished.  Each `Cell` gets rendered across
     /// [`Cell::get_column_span`] columns plus the gaps between them, if this value is > 1.
-    fn render_row_cells<'a, T>(
+    fn render_row_cells(
         &self,
         buf: &mut Buffer,
-        column_widths_iterator: &mut T,
+        column_widths: Vec<&Rect>,
         cells: &Vec<Cell>,
         row_area: Rect,
-    ) where
-        T: Iterator<Item = &'a Rect>,
+    )
     {
+        let mut column_widths_iterator = column_widths.into_iter();
         for current_cell in cells {
             if let Some(cell_area) = Self::get_cell_area(
-                column_widths_iterator,
+                &mut column_widths_iterator,
                 current_cell.column_span,
                 self.column_spacing,
             ) {
