@@ -340,7 +340,7 @@ We are excited to announce the biggest release of `ratatui` so far - a Rust libr
 
 - [22610b0](https://github.com/ratatui/ratatui/commit/22610b019b9e7b451cd2ba2c44aa625fd24a8f95) *(uncategorized)* Support adding an Offset to Position by @joshka in [#2239](https://github.com/ratatui/ratatui/pull/2239)
 
-  > Adds Position::offset() and arithmentic ops (Position + Offset and
+  > Adds Position::offset() and arithmetic ops (Position + Offset and
   > Position - Offset)
   >
   > Fixes:https://github.com/ratatui/ratatui/issues/2018
