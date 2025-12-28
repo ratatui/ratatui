@@ -11,6 +11,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::backend::{Backend, ClearType, WindowSize};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
+use crate::style::{Color, Modifier};
 
 /// A [`Backend`] implementation used for integration testing that renders to an memory buffer.
 ///
@@ -67,6 +68,124 @@ fn buffer_view(buffer: &Buffer) -> String {
     view
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct StyleSnapshot {
+    fg: Color,
+    bg: Color,
+    modifier: Modifier,
+}
+
+impl Default for StyleSnapshot {
+    fn default() -> Self {
+        Self {
+            fg: Color::Reset,
+            bg: Color::Reset,
+            modifier: Modifier::empty(),
+        }
+    }
+}
+
+impl StyleSnapshot {
+    const fn from_cell(cell: &Cell) -> Self {
+        Self {
+            fg: cell.fg,
+            bg: cell.bg,
+            modifier: cell.modifier,
+        }
+    }
+
+    fn is_default(&self) -> bool {
+        self.fg == Color::Reset && self.bg == Color::Reset && self.modifier.is_empty()
+    }
+}
+
+/// Append a style-change tag like `{fg=Red,bg=Black,mod=BOLD}` or `{/}` to `out`.
+fn append_style_tag(out: &mut String, style: &StyleSnapshot) {
+    // Default style: emit a simple closing marker `{/}`
+    if style.is_default() {
+        out.push_str("{/}");
+        return;
+    }
+
+    out.push('{');
+    let mut first = true;
+
+    if style.fg != Color::Reset {
+        write!(out, "fg={:?}", style.fg).unwrap();
+        first = false;
+    }
+
+    if style.bg != Color::Reset {
+        if !first {
+            out.push(',');
+        }
+        write!(out, "bg={:?}", style.bg).unwrap();
+        first = false;
+    }
+
+    if !style.modifier.is_empty() {
+        if !first {
+            out.push(',');
+        }
+        write!(out, "mod={:?}", style.modifier).unwrap();
+    }
+
+    out.push('}');
+}
+
+/// Like `buffer_view`, but includes serialized color / style information.
+///
+/// Example row:
+///   "{fg=Red}Hello{/} world"
+fn buffer_view_colored(buffer: &Buffer) -> String {
+    // Heuristic capacity: a bit more than plain buffer_view, since we add tags.
+    let mut view =
+        String::with_capacity(buffer.content.len() * 2 + buffer.area.height as usize * 8);
+
+    for cells in buffer.content.chunks(buffer.area.width as usize) {
+        let mut overwritten = vec![];
+        let mut skip: usize = 0;
+        let mut current_style = StyleSnapshot::default();
+
+        view.push('"');
+
+        for (x, c) in cells.iter().enumerate() {
+            if skip == 0 {
+                let style = StyleSnapshot::from_cell(c);
+
+                // Emit a style tag only when the style changes from the previous cell.
+                if style != current_style {
+                    append_style_tag(&mut view, &style);
+                    current_style = style;
+                }
+
+                // Then emit the actual symbol with whatever style is currently "open".
+                view.push_str(c.symbol());
+            } else {
+                // This cell is hidden by a previous multi-width grapheme.
+                overwritten.push((x, c.symbol()));
+            }
+
+            // Same multi-width handling as in `buffer_view`.
+            skip = core::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+        }
+
+        if !current_style.is_default() {
+            append_style_tag(&mut view, &StyleSnapshot::default());
+        }
+
+        view.push('"');
+
+        if !overwritten.is_empty() {
+            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}").unwrap();
+        }
+
+        view.push('\n');
+    }
+
+    view
+}
+
 impl TestBackend {
     /// Creates a new `TestBackend` with the specified width and height.
     pub fn new(width: u16, height: u16) -> Self {
@@ -103,6 +222,14 @@ impl TestBackend {
     /// Returns a reference to the internal buffer of the `TestBackend`.
     pub const fn buffer(&self) -> &Buffer {
         &self.buffer
+    }
+
+    /// Returns a string representation of the buffer including color / modifiers.
+    ///
+    /// This is intended for use in tests where you want to assert on styling,
+    /// not just on the rendered text.
+    pub fn buffer_view_colored(&self) -> String {
+        buffer_view_colored(&self.buffer)
     }
 
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
@@ -458,6 +585,8 @@ mod tests {
     use itertools::Itertools as _;
 
     use super::*;
+    use crate::layout::Rect;
+    use crate::style::{Color, Modifier, Style};
 
     #[test]
     fn new() {
@@ -488,6 +617,56 @@ mod tests {
 "#,
             )
         );
+    }
+
+    #[test]
+    fn buffer_view_colored_matches_plain_view_for_unstyled_buffer() {
+        let buffer = Buffer::with_lines(["abcd", "efgh"]);
+        let plain = buffer_view(&buffer);
+        let colored = buffer_view_colored(&buffer);
+        assert_eq!(colored, plain);
+    }
+
+    #[test]
+    fn buffer_view_colored_inserts_tags_on_style_change() {
+        let mut buffer = Buffer::with_lines(["abc"]);
+        let red_style = Style::default().fg(Color::Red);
+        buffer.set_string(1, 0, "b", red_style);
+        let colored = buffer_view_colored(&buffer);
+        assert_eq!(colored, "\"a{fg=Red}b{/}c\"\n");
+    }
+
+    #[test]
+    fn buffer_view_colored_includes_background_and_modifiers() {
+        let mut buffer = Buffer::with_lines(["x"]);
+        let style = Style::default()
+            .fg(Color::Yellow)
+            .bg(Color::Blue)
+            .add_modifier(Modifier::BOLD);
+        buffer.set_string(0, 0, "x", style);
+        let colored = buffer_view_colored(&buffer);
+        assert_eq!(colored, "\"{fg=Yellow,bg=Blue,mod=BOLD}x{/}\"\n");
+    }
+
+    #[test]
+    fn buffer_view_colored_matches_plain_view_for_multi_width_symbols() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 1));
+        buffer.set_string(0, 0, "界", Style::default());
+        let plain = buffer_view(&buffer);
+        let colored = buffer_view_colored(&buffer);
+        assert_eq!(colored, plain);
+    }
+
+    #[test]
+    fn testbackend_buffer_view_colored_delegates_to_helper() {
+        let mut backend = TestBackend::new(3, 1);
+        let red_style = Style::default().fg(Color::Red);
+        backend.buffer.set_string(0, 0, "x", red_style);
+        backend.buffer.set_string(1, 0, "y", Style::default());
+        backend.buffer.set_string(2, 0, " ", Style::default());
+        let direct = buffer_view_colored(backend.buffer());
+        let via_backend = backend.buffer_view_colored();
+        assert_eq!(via_backend, direct);
     }
 
     #[test]
