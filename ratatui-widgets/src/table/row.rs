@@ -1,3 +1,4 @@
+use alloc::borrow::Cow;
 use alloc::vec::Vec;
 
 use ratatui_core::style::{Style, Styled};
@@ -73,7 +74,7 @@ use super::Cell;
 /// [`Stylize`]: ratatui_core::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Row<'a> {
-    pub(crate) cells: Vec<Cell<'a>>,
+    pub(crate) cells: Cow<'a, [Cell<'a>]>,
     pub(crate) height: u16,
     pub(crate) top_margin: u16,
     pub(crate) bottom_margin: u16,
@@ -98,6 +99,7 @@ impl<'a> Row<'a> {
     ///     Cell::new("Cell 3"),
     /// ]);
     /// ```
+    #[must_use = "constructor"]
     pub fn new<T>(cells: T) -> Self
     where
         T: IntoIterator,
@@ -239,6 +241,43 @@ impl<'a> Row<'a> {
         self.style = style.into();
         self
     }
+
+    /// Return whether the row owns its cells.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::widgets::{Cell, Row};
+    ///
+    /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
+    /// let row = Row::new(cells);
+    /// assert!(row.is_owned());
+    /// ```
+    pub const fn is_owned(&self) -> bool {
+        match self.cells {
+            Cow::Borrowed(_) => false,
+            Cow::Owned(_) => true,
+        }
+    }
+
+    /// Return whether the row borrows its cells.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::widgets::{Cell, Row};
+    ///
+    /// let cells = [
+    ///     Cell::from("Cell 1"),
+    ///     Cell::from("Cell 2"),
+    ///     Cell::from("Cell 3"),
+    /// ];
+    /// let row = Row::from(&cells);
+    /// assert!(row.is_borrowed());
+    /// ```
+    pub const fn is_borrowed(&self) -> bool {
+        !self.is_owned()
+    }
 }
 
 // private methods for rendering
@@ -263,12 +302,57 @@ impl Styled for Row<'_> {
     }
 }
 
+impl<'a> From<Vec<Cell<'a>>> for Row<'a> {
+    fn from(value: Vec<Cell<'a>>) -> Self {
+        Self {
+            cells: Cow::Owned(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<&'a Vec<Cell<'a>>> for Row<'a> {
+    fn from(value: &'a Vec<Cell<'a>>) -> Self {
+        Self {
+            cells: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<&'a [Cell<'a>]> for Row<'a> {
+    fn from(value: &'a [Cell<'a>]) -> Self {
+        Self {
+            cells: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a, const N: usize> From<&'a [Cell<'a>; N]> for Row<'a> {
+    fn from(value: &'a [Cell<'a>; N]) -> Self {
+        Self {
+            cells: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
 impl<'a, Item> FromIterator<Item> for Row<'a>
 where
     Item: Into<Cell<'a>>,
 {
     fn from_iter<IterCells: IntoIterator<Item = Item>>(cells: IterCells) -> Self {
         Self::new(cells)
+    }
+}
+
+impl<'a> From<Cow<'a, [Cell<'a>]>> for Row<'a> {
+    fn from(value: Cow<'a, [Cell<'a>]>) -> Self {
+        Self {
+            cells: value,
+            ..Self::default()
+        }
     }
 }
 
@@ -299,6 +383,34 @@ mod tests {
         let cells = vec![Cell::from("")];
         let row = Row::default().cells(cells.clone());
         assert_eq!(row.cells, cells);
+    }
+
+    #[test]
+    fn from_vec() {
+        let cells = vec![Cell::from("")];
+        let row = Row::from(cells);
+        assert_eq!(row.cells, Cow::<[Cell]>::Owned(vec![Cell::new("")]));
+    }
+
+    #[test]
+    fn from_vec_ref() {
+        let cells = vec![Cell::from("")];
+        let row = Row::from(&cells);
+        assert_eq!(row.cells, Cow::Borrowed(&[Cell::new("")]));
+    }
+
+    #[test]
+    fn from_slice() {
+        let cells = vec![Cell::from("")];
+        let row = Row::from(cells.as_slice());
+        assert_eq!(row.cells, Cow::Borrowed(&[Cell::new("")]));
+    }
+
+    #[test]
+    fn from_array() {
+        let cells = [Cell::from("")];
+        let row = Row::from(&cells);
+        assert_eq!(row.cells, Cow::Borrowed(&[Cell::new("")]));
     }
 
     #[test]
@@ -341,5 +453,21 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::ITALIC)
         );
+    }
+
+    #[test]
+    fn from_cow_borrowed() {
+        let cells: [_; 1] = [Cell::from("Item0")];
+        let cow: Cow<[Cell<'_>]> = Cow::Borrowed(&cells);
+        let row = Row::from(cow);
+        assert_eq!(row.cells, Cow::Borrowed(&[Cell::from("Item0")]));
+    }
+
+    #[test]
+    fn from_cow_owned() {
+        let cells: Vec<_> = [Cell::from("Item0")].to_vec();
+        let cow: Cow<[Cell<'_>]> = Cow::Owned(cells);
+        let row = Row::from(cow);
+        assert_eq!(row.cells, Cow::<[Cell]>::Owned(vec![Cell::from("Item0")]));
     }
 }
