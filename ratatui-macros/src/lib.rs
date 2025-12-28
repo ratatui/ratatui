@@ -173,6 +173,7 @@ mod layout;
 mod line;
 mod list_items;
 mod row;
+mod row_cells;
 mod span;
 mod text;
 
