@@ -171,6 +171,7 @@ pub use alloc::{format, vec};
 
 mod layout;
 mod line;
+mod list_items;
 mod row;
 mod span;
 mod text;

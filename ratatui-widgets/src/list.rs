@@ -27,6 +27,9 @@ mod state;
 ///
 /// [`Table`]: crate::table::Table
 ///
+/// List items can be created on the stack with the macro `list_items!` and used via
+/// [`List::from`] to avoid dynamic allocations.
+///
 /// List items can be aligned using [`Text::alignment`], for more details see [`ListItem`].
 ///
 /// [`List`] is also a [`StatefulWidget`], which means you can use it with [`ListState`] to allow
@@ -73,15 +76,18 @@ mod state;
 /// ```rust
 /// use ratatui::Frame;
 /// use ratatui::layout::Rect;
+/// use ratatui::macros::list_items;
 /// use ratatui::style::{Style, Stylize};
 /// use ratatui::widgets::{Block, List, ListState};
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
+///
 /// // This should be stored outside of the function in your application state.
 /// let mut state = ListState::default();
-/// let items = ["Item 1", "Item 2", "Item 3"];
-/// let list = List::new(items)
+/// let items = list_items!["Item 1", "Item 2", "Item 3"];
+///
+/// let list = List::from(&items)
 ///     .block(Block::bordered().title("List"))
 ///     .highlight_style(Style::new().reversed())
 ///     .highlight_symbol(">>")
@@ -154,19 +160,21 @@ impl<'a> List<'a> {
     /// From a slice of [`&str`]
     ///
     /// ```
+    /// use ratatui::macros::list_items;
     /// use ratatui::widgets::List;
     ///
-    /// let list = List::new(["Item 1", "Item 2"]);
+    /// let list = List::new(list_items!["Item 1", "Item 2"]);
     /// ```
     ///
     /// From [`Text`]
     ///
     /// ```
+    /// use ratatui::macros::list_items;
     /// use ratatui::style::{Style, Stylize};
     /// use ratatui::text::Text;
     /// use ratatui::widgets::List;
     ///
-    /// let list = List::new([
+    /// let list = List::new(list_items![
     ///     Text::styled("Item 1", Style::new().red()),
     ///     Text::styled("Item 2", Style::new().red()),
     /// ]);
@@ -434,11 +442,10 @@ impl<'a> List<'a> {
     /// # Example
     ///
     /// ```
-    /// use ratatui::widgets::{List, ListItem};
+    /// use ratatui::widgets::List;
     ///
-    /// let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
-    /// let list = List::from(&items);
-    /// assert!(list.is_borrowed());
+    /// let list = List::new(["Item 1", "Item 2", "Item 3"]);
+    /// assert!(list.is_owned());
     /// ```
     pub const fn is_owned(&self) -> bool {
         match self.items {
@@ -449,13 +456,27 @@ impl<'a> List<'a> {
 
     /// Returns whether the list borrows its items.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```
+    /// use ratatui::widgets::{List, ListItem};
+    ///
+    /// let items = [
+    ///     ListItem::new("Item 1"),
+    ///     ListItem::new("Item 2"),
+    ///     ListItem::new("Item 3"),
+    /// ];
+    /// let list = List::from(&items);
+    /// assert!(list.is_borrowed());
+    /// ```
+    ///
+    /// ```
+    /// use ratatui::macros::list_items;
     /// use ratatui::widgets::List;
     ///
-    /// let list = List::new(["Item 1", "Item 2", "Item 3"]);
-    /// assert!(list.is_owned());
+    /// let items = list_items!["Item 1", "Item 2", "Item 3"];
+    /// let list = List::from(&items);
+    /// assert!(list.is_borrowed());
     /// ```
     pub const fn is_borrowed(&self) -> bool {
         !self.is_owned()
