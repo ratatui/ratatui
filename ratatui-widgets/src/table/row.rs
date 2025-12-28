@@ -1,5 +1,6 @@
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
+use core::ops::Deref;
 
 use ratatui_core::style::{Style, Styled};
 
@@ -353,6 +354,38 @@ impl<'a> From<Cow<'a, [Cell<'a>]>> for Row<'a> {
             cells: value,
             ..Self::default()
         }
+    }
+}
+
+/// A copy-on-write container for a row of cells.
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum RowCow<'a> {
+    /// A borrowed row of cells.
+    Borrowed(&'a Row<'a>),
+    /// An owned row of cells.
+    Owned(Row<'a>),
+}
+
+impl<'a> Deref for RowCow<'a> {
+    type Target = Row<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            RowCow::Borrowed(row) => row,
+            RowCow::Owned(row) => row,
+        }
+    }
+}
+
+impl<'a> From<&'a Row<'a>> for RowCow<'a> {
+    fn from(value: &'a Row<'a>) -> Self {
+        RowCow::Borrowed(value)
+    }
+}
+
+impl<'a> From<Row<'a>> for RowCow<'a> {
+    fn from(value: Row<'a>) -> Self {
+        RowCow::Owned(value)
     }
 }
 
