@@ -121,17 +121,11 @@ impl<'a> Cell<'a> {
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// # Example
-    ///
     /// ```rust
     /// use ratatui::widgets::{Cell, Row};
     /// let rows = vec![
-    ///     Row::new(vec![
-    ///         Cell::new("12345").column_span(2),
-    ///     ]),
-    ///     Row::new(vec![
-    ///         Cell::new("xx"),
-    ///         Cell::new("yy"),
-    ///     ]),
+    ///     Row::new(vec![Cell::new("12345").column_span(2)]),
+    ///     Row::new(vec![Cell::new("xx"), Cell::new("yy")]),
     /// ];
     /// // "12345",
     /// // "xx yy",
