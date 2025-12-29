@@ -525,7 +525,11 @@ impl Buffer {
                         }
                         let prev_trailing = &previous_buffer[j];
                         let next_trailing = &next_buffer[j];
-                        if !next_trailing.skip && prev_trailing != next_trailing {
+                        // Only emit update if the symbol has changed.
+                        // The style of hidden trailing cells is not visible, so style
+                        // differences alone should not trigger updates that can cause
+                        // cursor positioning issues on some terminals.
+                        if !next_trailing.skip && prev_trailing.symbol() != next_trailing.symbol() {
                             let (tx, ty) = self.pos_of(j);
                             // Push an explicit update for the trailing cell.
                             // This is expected to be a blank cell, but we use the actual
@@ -1368,6 +1372,58 @@ mod tests {
         assert!(
             diff.iter()
                 .any(|(x, y, c)| *x == 1 && *y == 0 && c.symbol() == " ")
+        );
+    }
+
+    /// Regression test for a bug where trailing cells of wide VS16 emojis would generate
+    /// unnecessary diff updates when only the style (not the symbol) changed.
+    ///
+    /// This caused visual artifacts when:
+    /// 1. A previous widget applied a foreground color to the entire area
+    /// 2. A border with VS16 emojis (like ⚠️) was rendered on top
+    /// 3. The trailing cells had different styles but the same symbol (space)
+    ///
+    /// The fix ensures that only symbol changes trigger trailing cell updates,
+    /// not style-only changes, since the style of hidden trailing cells is not visible.
+    #[test]
+    fn diff_ignores_style_only_changes_in_trailing_cells() {
+        use crate::style::Color;
+
+        // Previous buffer: spaces with specific fg color
+        let mut prev = Buffer::empty(Rect::new(0, 0, 3, 1));
+        prev.content[0].set_symbol(" ");
+        prev.content[0].set_fg(Color::LightBlue); // <-- style A
+        prev.content[1].set_symbol(" ");
+        prev.content[1].set_fg(Color::LightBlue);
+        prev.content[2].set_symbol("x");
+
+        // Next buffer: emoji but DIFFERENT style on main cell,
+        // trailing cell has same symbol but different style
+        let mut next = Buffer::empty(Rect::new(0, 0, 3, 1));
+        next.content[0].set_symbol("⚠️"); // emoji symbol
+        next.content[0].set_fg(Color::Reset); // <-- style B (DIFFERENT from prev!)
+        next.content[1].set_symbol(" "); // same symbol (space), trailing cell (hidden by emoji)
+        next.content[1].set_fg(Color::Reset);
+        next.content[2].set_symbol("x");
+
+        let diff = prev.diff(&next);
+
+        // The first cell (0,0) SHOULD be in the diff because the symbol changed
+        assert!(
+            diff.iter().any(|(x, y, _)| *x == 0 && *y == 0),
+            "Diff should include first cell (0,0) because the symbol changed"
+        );
+
+        // The diff should NOT contain an update for the trailing cell (1, 0)
+        // because the symbol is the same (space) - only the style changed,
+        // and the style of a hidden trailing cell is not visible.
+        assert!(
+            !diff.iter().any(|(x, y, _)| *x == 1 && *y == 0),
+            "Diff should not include trailing cell (1,0) when only style changed. \
+             Found updates: {:?}",
+            diff.iter()
+                .map(|(x, y, c)| (x, y, c.symbol(), c.fg))
+                .collect::<Vec<_>>()
         );
     }
 }
