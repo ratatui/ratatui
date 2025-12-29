@@ -51,6 +51,8 @@ use ratatui_core::widgets::Widget;
 pub struct Cell<'a> {
     content: Text<'a>,
     style: Style,
+    /// The number of columns this cell will extend over
+    pub(crate) column_span: u16,
 }
 
 impl<'a> Cell<'a> {
@@ -80,6 +82,7 @@ impl<'a> Cell<'a> {
         Self {
             content: content.into(),
             style: Style::default(),
+            column_span: 1,
         }
     }
 
@@ -110,6 +113,26 @@ impl<'a> Cell<'a> {
         T: Into<Text<'a>>,
     {
         self.content = content.into();
+        self
+    }
+
+    /// Set the `column_span` of this cell
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    /// ```rust
+    /// use ratatui::widgets::{Cell, Row};
+    /// let rows = vec![
+    ///     Row::new(vec![Cell::new("12345").column_span(2)]),
+    ///     Row::new(vec![Cell::new("xx"), Cell::new("yy")]),
+    /// ];
+    /// // "12345",
+    /// // "xx yy",
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn column_span(mut self, column_span: u16) -> Self {
+        self.column_span = column_span;
         self
     }
 
@@ -167,6 +190,7 @@ where
         Self {
             content: content.into(),
             style: Style::default(),
+            column_span: 1,
         }
     }
 }
