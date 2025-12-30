@@ -19,6 +19,7 @@ use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
 use crate::borders::{BorderType, Borders};
+use crate::clear::Clear;
 
 mod padding;
 
@@ -233,6 +234,8 @@ pub struct Block<'a> {
     padding: Padding,
     /// Border merging strategy
     merge_borders: MergeStrategy,
+    /// Whether to clear the area before rendering
+    clear_first: bool,
 }
 
 /// Defines the position of the title.
@@ -274,6 +277,7 @@ impl<'a> Block<'a> {
             style: Style::new(),
             padding: Padding::ZERO,
             merge_borders: MergeStrategy::Replace,
+            clear_first: false,
         }
     }
 
@@ -288,6 +292,33 @@ impl<'a> Block<'a> {
         let mut block = Self::new();
         block.borders = Borders::ALL;
         block
+    }
+
+    /// Clears the area with [Clear] before rendering.
+    ///
+    /// ```
+    /// use ratatui::widgets::Block;
+    ///
+    /// let block = Block::bordered().clear_first();
+    /// ```
+    ///
+    /// When rendered, it is equivalent to:
+    ///
+    /// ```
+    /// use ratatui::Frame;
+    /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{Block, Clear};
+    ///
+    /// fn draw_block_on_clear(f: &mut Frame, area: Rect) {
+    ///     let block = Block::bordered();
+    ///     f.render_widget(Clear, area);
+    ///     f.render_widget(block, area);
+    /// }
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn clear_first(mut self) -> Self {
+        self.clear_first = true;
+        self
     }
 
     /// Adds a title to the block using the default position.
@@ -780,6 +811,9 @@ impl Widget for &Block<'_> {
         if area.is_empty() {
             return;
         }
+        if self.clear_first {
+            Clear.render(area, buf);
+        }
         buf.set_style(area, self.style);
         self.render_borders(area, buf);
         self.render_titles(area, buf);
@@ -1123,7 +1157,7 @@ mod tests {
     use alloc::{format, vec};
 
     use itertools::iproduct;
-    use ratatui_core::layout::Offset;
+    use ratatui_core::layout::{Margin, Offset};
     use ratatui_core::style::{Color, Modifier, Stylize};
     use rstest::rstest;
     use strum::ParseError;
@@ -1340,6 +1374,7 @@ mod tests {
                 style: Style::new(),
                 padding: Padding::ZERO,
                 merge_borders: MergeStrategy::Replace,
+                clear_first: false,
             }
         );
     }
@@ -1356,6 +1391,26 @@ mod tests {
             .title_alignment(Alignment::Left)
             .title_position(TitlePosition::Top)
             .padding(_DEFAULT_PADDING);
+    }
+
+    #[test]
+    fn clear_area_before_block() {
+        assert_eq!(
+            Block::new().clear_first(),
+            Block {
+                titles: Vec::new(),
+                titles_style: Style::new(),
+                titles_alignment: Alignment::Left,
+                titles_position: TitlePosition::Top,
+                borders: Borders::NONE,
+                border_style: Style::new(),
+                border_set: BorderType::Plain.to_border_set(),
+                style: Style::new(),
+                padding: Padding::ZERO,
+                merge_borders: MergeStrategy::Replace,
+                clear_first: true,
+            }
+        );
     }
 
     /// Ensure Style from/into works the way a user would use it.
@@ -1400,6 +1455,54 @@ mod tests {
             block.style,
             Style::new().red().on_blue().bold().italic().not_dim()
         );
+    }
+
+    #[test]
+    fn render_block_with_clear_first() {
+        let mut buffer = Buffer::with_lines(["xxxxxxxxxxxx"; 8]);
+        Block::bordered().clear_first().render(
+            buffer.area.inner(Margin {
+                horizontal: 2,
+                vertical: 2,
+            }),
+            &mut buffer,
+        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx",
+            "xx┌──────┐xx",
+            "xx│      │xx",
+            "xx│      │xx",
+            "xx└──────┘xx",
+            "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_block_without_clear_first() {
+        let mut buffer = Buffer::with_lines(["xxxxxxxxxxxx"; 8]);
+        Block::bordered().render(
+            buffer.area.inner(Margin {
+                horizontal: 2,
+                vertical: 2,
+            }),
+            &mut buffer,
+        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx",
+            "xx┌──────┐xx",
+            "xx│xxxxxx│xx",
+            "xx│xxxxxx│xx",
+            "xx└──────┘xx",
+            "xxxxxxxxxxxx",
+            "xxxxxxxxxxxx",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
