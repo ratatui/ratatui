@@ -57,6 +57,9 @@ fn render(frame: &mut Frame, show_popup: bool) {
         // clears out any background in the area before rendering the popup
         frame.render_widget(Clear, popup_area);
         frame.render_widget(popup, popup_area);
+        // to add something inside the popup you can use the inner area of the block
+        // let inner_area = popup.inner(popup_area);
+        // frame.render_widget(your_widget, popup_area);
     }
 }
 
