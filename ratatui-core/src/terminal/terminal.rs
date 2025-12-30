@@ -871,6 +871,36 @@ where
         Ok(())
     }
 
+     ///     frame.set_cursor_position(Position { x: 0, y: 0 });
+-    ///     io::Result::Ok(())
++    ///     Ok(())
+     /// })?;
+     ///
+-    /// // or with a function
++    /// // Or with a function.
+     /// terminal.try_draw(render)?;
+     ///
+-    /// fn render(frame: &mut ratatui::Frame) -> io::Result<()> {
+-    ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
+-    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.area());
++    /// fn render(frame: &mut Frame<'_>) -> io::Result<()> {
++    ///     frame.render_widget("Hello World!", frame.area());
+     ///     Ok(())
+     /// }
+-    /// # io::Result::Ok(())
++    /// # }
++    /// # #[cfg(not(feature = "crossterm"))]
++    /// # {
++    /// # use ratatui_core::{backend::TestBackend, terminal::Terminal};
++    /// # let backend = TestBackend::new(10, 10);
++    /// # let mut terminal = Terminal::new(backend)?;
++    /// # terminal
++    /// #     .try_draw(|frame| {
++    /// #         frame.render_widget("Hello World!", frame.area());
++    /// #         Ok::<(), core::convert::Infallible>(())
++    /// #     })
++    /// #     ?;
++    /// # }
     /// Hides the cursor.
     ///
     /// When using [`Terminal::draw`], prefer controlling the cursor with
