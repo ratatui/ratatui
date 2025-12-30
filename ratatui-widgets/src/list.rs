@@ -403,7 +403,7 @@ impl<'a> List<'a> {
     ///
     /// # Example
     ///
-    /// A padding value of 1 will keep 1 item above and 1 item bellow visible if possible
+    /// A padding value of 1 will keep 1 item above and 1 item below visible if possible
     ///
     /// ```rust
     /// use ratatui::widgets::List;
