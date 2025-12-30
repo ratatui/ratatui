@@ -20,15 +20,22 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::macros::list_items;
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{List, ListDirection, ListState};
+use ratatui::widgets::{List, ListDirection, ListItem, ListState};
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
     let mut list_state = ListState::default().with_selected(Some(0));
     ratatui::run(|terminal| {
+        let bottom_items = list_items![
+            "[Remy]: I'm building one now.\nIt even supports multiline text!",
+            "[Gusteau]: With enough passion, yes.",
+            "[Remy]: But can anyone build a TUI in Rust?",
+            "[Gusteau]: Anyone can cook!",
+        ];
+
         loop {
-            terminal.draw(|frame| render(frame, &mut list_state))?;
+            terminal.draw(|frame| render(frame, &mut list_state, &bottom_items))?;
             if let Some(key) = event::read()?.as_key_press_event() {
                 match key.code {
                     KeyCode::Char('j') | KeyCode::Down => list_state.select_next(),
@@ -42,7 +49,7 @@ fn main() -> color_eyre::Result<()> {
 }
 
 /// Render the UI with various lists.
-fn render(frame: &mut Frame, list_state: &mut ListState) {
+fn render(frame: &mut Frame, list_state: &mut ListState, bottom_items: &[ListItem]) {
     let constraints = [
         Constraint::Length(1),
         Constraint::Fill(1),
@@ -58,10 +65,11 @@ fn render(frame: &mut Frame, list_state: &mut ListState) {
     frame.render_widget(title.centered(), top);
 
     render_list(frame, first, list_state);
-    render_bottom_list(frame, second);
+    render_bottom_list(frame, second, bottom_items);
 }
 
 /// Render a list.
+/// Construct the items on each render iteration.
 pub fn render_list(frame: &mut Frame, area: Rect, list_state: &mut ListState) {
     let items = list_items!["Item 1", "Item 2", "Item 3", "Item 4"];
     let list = List::from(&items)
@@ -73,14 +81,9 @@ pub fn render_list(frame: &mut Frame, area: Rect, list_state: &mut ListState) {
 }
 
 /// Render a bottom-to-top list.
-pub fn render_bottom_list(frame: &mut Frame, area: Rect) {
-    let items = list_items![
-        "[Remy]: I'm building one now.\nIt even supports multiline text!",
-        "[Gusteau]: With enough passion, yes.",
-        "[Remy]: But can anyone build a TUI in Rust?",
-        "[Gusteau]: Anyone can cook!",
-    ];
-    let list = List::from(&items)
+/// Use the pre-created list of items.
+pub fn render_bottom_list(frame: &mut Frame, area: Rect, bottom_items: &[ListItem]) {
+    let list = List::from(bottom_items)
         .style(Color::White)
         .highlight_style(Style::new().yellow().italic())
         .highlight_symbol("> ".red())

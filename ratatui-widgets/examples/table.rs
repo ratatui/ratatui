@@ -29,8 +29,26 @@ fn main() -> Result<()> {
     table_state.select_first();
     table_state.select_first_column();
     ratatui::run(|terminal| {
+        let header = Row::new(["Ingredient", "Quantity", "Macros"])
+            .style(Style::new().bold())
+            .bottom_margin(1);
+
+        let rows = [
+            Row::new(["Eggplant", "1 medium", "25 kcal, 6g carbs, 1g protein"]),
+            Row::new(["Tomato", "2 large", "44 kcal, 10g carbs, 2g protein"]),
+            Row::new(["Zucchini", "1 medium", "33 kcal, 7g carbs, 2g protein"]),
+            Row::new(["Bell Pepper", "1 medium", "24 kcal, 6g carbs, 1g protein"]),
+            Row::new(["Garlic", "2 cloves", "9 kcal, 2g carbs, 0.4g protein"]),
+        ];
+        let footer = Row::new([
+            "Ratatouille Recipe",
+            "",
+            "135 kcal, 31g carbs, 6.4g protein",
+        ])
+        .italic();
+
         loop {
-            terminal.draw(|frame| render(frame, &mut table_state))?;
+            terminal.draw(|frame| render(frame, &mut table_state, &header, &rows, &footer))?;
             if let Some(key) = event::read()?.as_key_press_event() {
                 match key.code {
                     KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
@@ -48,7 +66,13 @@ fn main() -> Result<()> {
 }
 
 /// Render the UI with a table.
-fn render(frame: &mut Frame, table_state: &mut TableState) {
+fn render<'a>(
+    frame: &mut Frame,
+    table_state: &mut TableState,
+    header: &'a Row<'a>,
+    rows: &'a [Row<'a>],
+    footer: &'a Row<'a>,
+) {
     let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).spacing(1);
     let [top, main] = frame.area().layout(&layout);
 
@@ -58,36 +82,27 @@ fn render(frame: &mut Frame, table_state: &mut TableState) {
     ]);
     frame.render_widget(title.centered(), top);
 
-    render_table(frame, main, table_state);
+    render_table(frame, main, table_state, header, rows, footer);
 }
 
 /// Render a table with some rows and columns.
-pub fn render_table(frame: &mut Frame, area: Rect, table_state: &mut TableState) {
-    let header = Row::new(["Ingredient", "Quantity", "Macros"])
-        .style(Style::new().bold())
-        .bottom_margin(1);
-
-    let rows = [
-        Row::new(["Eggplant", "1 medium", "25 kcal, 6g carbs, 1g protein"]),
-        Row::new(["Tomato", "2 large", "44 kcal, 10g carbs, 2g protein"]),
-        Row::new(["Zucchini", "1 medium", "33 kcal, 7g carbs, 2g protein"]),
-        Row::new(["Bell Pepper", "1 medium", "24 kcal, 6g carbs, 1g protein"]),
-        Row::new(["Garlic", "2 cloves", "9 kcal, 2g carbs, 0.4g protein"]),
-    ];
-    let footer = Row::new([
-        "Ratatouille Recipe",
-        "",
-        "135 kcal, 31g carbs, 6.4g protein",
-    ]);
+pub fn render_table<'a>(
+    frame: &mut Frame,
+    area: Rect,
+    table_state: &mut TableState,
+    header: &'a Row<'a>,
+    rows: &'a [Row<'a>],
+    footer: &'a Row<'a>,
+) {
     let widths = [
         Constraint::Percentage(30),
         Constraint::Percentage(20),
         Constraint::Percentage(50),
     ];
-    let table = Table::from(&rows)
+    let table = Table::from(rows)
         .widths(widths)
         .header(header)
-        .footer(footer.italic())
+        .footer(footer)
         .column_spacing(1)
         .style(Color::White)
         .row_highlight_style(Style::new().on_black().bold())
