@@ -135,3 +135,102 @@ impl<B: Backend> Terminal<B> {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::backend::{Backend, TestBackend};
+    use crate::layout::{Position, Rect};
+    use crate::terminal::{Terminal, TerminalOptions, Viewport};
+
+    #[test]
+    fn new_fullscreen_initializes_state() {
+        let backend = TestBackend::new(10, 5);
+        let terminal = Terminal::new(backend).unwrap();
+
+        assert_eq!(terminal.viewport, Viewport::Fullscreen);
+        assert_eq!(terminal.viewport_area, Rect::new(0, 0, 10, 5));
+        assert_eq!(terminal.last_known_area, Rect::new(0, 0, 10, 5));
+        assert_eq!(terminal.last_known_cursor_pos, Position::ORIGIN);
+        assert_eq!(terminal.current, 0);
+        assert!(!terminal.hidden_cursor);
+        assert_eq!(terminal.frame_count, 0);
+        assert_eq!(terminal.buffers[0].area, terminal.viewport_area);
+        assert_eq!(terminal.buffers[1].area, terminal.viewport_area);
+    }
+
+    #[test]
+    fn with_options_fixed_uses_fixed_area() {
+        let backend = TestBackend::new(10, 10);
+        let viewport = Viewport::Fixed(Rect::new(2, 3, 5, 4));
+        let terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: viewport.clone(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(terminal.viewport, viewport);
+        assert_eq!(terminal.viewport_area, Rect::new(2, 3, 5, 4));
+        assert_eq!(terminal.last_known_area, Rect::new(2, 3, 5, 4));
+        assert_eq!(terminal.last_known_cursor_pos, Position { x: 2, y: 3 });
+        assert_eq!(terminal.buffers[0].area, terminal.viewport_area);
+        assert_eq!(terminal.buffers[1].area, terminal.viewport_area);
+    }
+
+    #[test]
+    fn with_options_inline_anchors_to_cursor_when_space_available() {
+        let mut backend = TestBackend::new(10, 10);
+        backend
+            .set_cursor_position(Position { x: 0, y: 3 })
+            .unwrap();
+
+        let terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(4),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(terminal.viewport_area, Rect::new(0, 3, 10, 4));
+        assert_eq!(terminal.last_known_cursor_pos, Position { x: 0, y: 3 });
+    }
+
+    #[test]
+    fn with_options_inline_shifts_up_when_near_bottom() {
+        let mut backend = TestBackend::new(10, 10);
+        backend
+            .set_cursor_position(Position { x: 0, y: 8 })
+            .unwrap();
+
+        let terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(4),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(terminal.viewport_area, Rect::new(0, 6, 10, 4));
+        assert_eq!(terminal.last_known_cursor_pos, Position { x: 0, y: 8 });
+    }
+
+    #[test]
+    fn with_options_inline_clamps_height_to_terminal() {
+        let mut backend = TestBackend::new(10, 3);
+        backend
+            .set_cursor_position(Position { x: 0, y: 0 })
+            .unwrap();
+
+        let terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(10),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(terminal.viewport_area, Rect::new(0, 0, 10, 3));
+    }
+}
