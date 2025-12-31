@@ -14,7 +14,7 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::Stylize;
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Clear};
+use ratatui::widgets::{Block, Clear, Paragraph};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -52,13 +52,14 @@ fn render(frame: &mut Frame, show_popup: bool) {
     frame.render_widget(Block::bordered().title("Content").on_blue(), content);
 
     if show_popup {
-        let popup = Block::bordered().title("Popup");
+        let popup_block = Block::bordered().title("Popup");
         let popup_area = centered_area(area, 60, 20);
         // clears out any background in the area before rendering the popup
         frame.render_widget(Clear, popup_area);
-        frame.render_widget(popup, popup_area);
-        // to add something inside the popup you can use the inner area of the block
-        // let inner_area = popup.inner(popup_area);
+        let paragraph = Paragraph::new("Lorem ipsum").block(popup_block);
+        frame.render_widget(paragraph, popup_area);
+        // another solution is to use the inner area of the block
+        // let inner_area = popup_block.inner(popup_area);
         // frame.render_widget(your_widget, inner_area);
     }
 }
