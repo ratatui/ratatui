@@ -11,7 +11,7 @@
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
 use ratatui::Frame;
-use ratatui::layout::{Constraint, Flex, Layout, Rect};
+use ratatui::layout::{Constraint, Layout};
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Clear, Paragraph};
@@ -53,22 +53,13 @@ fn render(frame: &mut Frame, show_popup: bool) {
 
     if show_popup {
         let popup_block = Block::bordered().title("Popup");
-        let popup_area = centered_area(area, 60, 20);
+        let centered_area = area.centered(Constraint::Percentage(60), Constraint::Percentage(20));
         // clears out any background in the area before rendering the popup
-        frame.render_widget(Clear, popup_area);
+        frame.render_widget(Clear, centered_area);
         let paragraph = Paragraph::new("Lorem ipsum").block(popup_block);
-        frame.render_widget(paragraph, popup_area);
+        frame.render_widget(paragraph, centered_area);
         // another solution is to use the inner area of the block
-        // let inner_area = popup_block.inner(popup_area);
+        // let inner_area = popup_block.inner(centered_area);
         // frame.render_widget(your_widget, inner_area);
     }
-}
-
-/// Create a centered rect using up certain percentage of the available rect
-fn centered_area(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
-    let vertical = Layout::vertical([Constraint::Percentage(percent_y)]).flex(Flex::Center);
-    let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
-    let [area] = area.layout(&vertical);
-    let [area] = area.layout(&horizontal);
-    area
 }
