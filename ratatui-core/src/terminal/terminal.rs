@@ -133,219 +133,83 @@ use crate::terminal::{CompletedFrame, Frame, TerminalOptions, Viewport};
 /// application with the new size. This will automatically resize the internal buffers to match the
 /// new size for inline and fullscreen viewports. Fixed viewports are not resized automatically.
 ///
-/// # Inline Viewport
+/// # Initialization
 ///
-/// Inline mode is designed for applications that want to embed a UI into a larger CLI flow. In
-/// [`Viewport::Inline`], Ratatui anchors the viewport to the backend cursor row at initialization
-/// time and always starts drawing at column 0.
+/// For most applications, consider using the convenience functions `ratatui::run()`,
+/// `ratatui::init()`, and `ratatui::restore()` (available since version 0.28.1) along with the
+/// `DefaultTerminal` type alias instead of constructing `Terminal` instances manually. These
+/// functions handle the common setup and teardown tasks automatically. Manual construction
+/// using `Terminal::new()` or `Terminal::with_options()` is still supported for applications
+/// that need fine-grained control over initialization.
 ///
-/// To reserve vertical space for the requested height, Ratatui may append lines. When the cursor is
-/// near the bottom edge, terminals scroll; Ratatui accounts for that scrolling by shifting the
-/// computed viewport origin upward so the viewport stays fully visible.
+/// # Examples
 ///
-/// While running in inline mode, [`Terminal::insert_before`] can be used to print output above the
-/// viewport without disturbing the UI.
-/// When Ratatui is built with the `scrolling-regions` feature, `insert_before` can do this without
-/// clearing and redrawing the viewport.
+/// ## Using convenience functions (recommended for most applications)
 ///
 /// ```rust,ignore
-/// use ratatui::{TerminalOptions, Viewport};
-///
-/// println!("Some output above the UI");
-///
-/// let options = TerminalOptions {
-///     viewport: Viewport::Inline(10),
-/// };
-/// let mut terminal = ratatui::try_init_with_options(options)?;
-///
-/// terminal.insert_before(1, |buf| {
-///     // Render a single line of output into `buf` before the UI.
-///     // (For example: logs, status updates, or command output.)
+/// // Modern approach using convenience functions
+/// ratatui::run(|terminal| {
+///     terminal.draw(|frame| {
+///         let area = frame.area();
+///         frame.render_widget(Paragraph::new("Hello World!"), area);
+///     })?;
+///     Ok(())
 /// })?;
 /// ```
 ///
-/// # More Information
+/// ## Manual construction (for fine-grained control)
 ///
-/// - Choosing a viewport: [`Terminal::with_options`], [`TerminalOptions`], and [`Viewport`]
-/// - The rendering pipeline: [`Terminal::draw`] and [`Terminal::try_draw`]
-/// - Resize handling: [`Terminal::autoresize`] and [`Terminal::resize`]
-/// - Manual rendering and testing: [`Terminal::get_frame`], [`Terminal::flush`], and
-///   [`Terminal::swap_buffers`]
-/// - Printing above an inline UI: [`Terminal::insert_before`]
+/// ```rust,ignore
+/// use std::io::stdout;
 ///
-/// # Initialization
+/// use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
 ///
-/// Most interactive TUIs need process-wide terminal setup (for example: raw mode and an alternate
-/// screen) and matching teardown on exit and on panic. In Ratatui, that setup lives in the
-/// `ratatui` crate; `Terminal` itself focuses on rendering and does not implicitly change those
-/// modes.
-///
-/// If you're using the `ratatui` crate with its default backend ([Crossterm]), there are three
-/// common entry points:
-///
-/// - [`ratatui::run`]: recommended for most applications. Provides a [`ratatui::DefaultTerminal`],
-///   runs your closure, and restores terminal state on exit and on panic.
-/// - [`ratatui::init`] + [`ratatui::restore`]: like `run`, but you control the event loop and
-///   decide when to restore.
-/// - [`Terminal::new`] / [`Terminal::with_options`]: manual construction (for example: custom
-///   backends such as [Termion] / [Termwiz], inline UIs, or fixed viewports). You are responsible
-///   for terminal mode setup and teardown.
-///
-/// [`ratatui::run`] was introduced in Ratatui 0.30, so older tutorials may use `init`/`restore` or
-/// manual construction.
-///
-/// Some applications install a custom panic hook to log a crash report, print a friendlier error,
-/// or integrate with error reporting. If you do, install it before calling [`ratatui::init`] /
-/// [`ratatui::run`]. Ratatui wraps the current hook so it can restore terminal state first (for
-/// example: leaving the alternate screen and disabling raw mode) and then delegate to your hook.
-///
-/// Crossterm is cross-platform and is what most Ratatui applications use by default. Ratatui also
-/// supports other backends such as [Termion] and [Termwiz], and third-party backends can integrate
-/// by implementing [`Backend`].
-///
-/// # How it works
-///
-/// `Terminal` ties together a [`Backend`], a [`Viewport`], and a double-buffered diffing renderer.
-/// The high-level flow is described in the "Rendering Pipeline" section above; this section focuses
-/// on how that pipeline is implemented.
-///
-/// `Terminal` is generic over a [`Backend`] implementation and does not depend on a particular
-/// terminal library. It relies on the backend to:
-///
-/// - report the current screen size (used by [`Terminal::autoresize`])
-/// - draw cell updates (used by [`Terminal::flush`])
-/// - clear regions (used by [`Terminal::clear`] and [`Terminal::resize`])
-/// - move and show/hide the cursor (used by [`Terminal::try_draw`])
-/// - optionally append lines (used by inline viewports and by [`Terminal::insert_before`])
-///
-/// ## Buffers and diffing
-///
-/// The `Terminal` maintains two [`Buffer`]s sized to the current viewport. During a render pass,
-/// widgets draw into the "current" buffer via the [`Frame`] passed to your callback. At the end of
-/// the pass, [`Terminal::flush`] diffs the current buffer against the previous buffer and sends
-/// only the changed cells to the backend.
-///
-/// After flushing, [`Terminal::swap_buffers`] flips which buffer is considered "current" and resets
-/// the next buffer. This is why each render pass starts from an empty buffer: your callback is
-/// expected to fully redraw the viewport every time.
-///
-/// The [`CompletedFrame`] returned from [`Terminal::draw`] / [`Terminal::try_draw`] provides a
-/// reference to the buffer that was just rendered, which can be useful for assertions in tests.
-///
-/// ## Viewport state and resizing
-///
-/// The active [`Viewport`] controls how the viewport area is computed:
-///
-/// - Fullscreen: `Frame::area` covers the full backend size.
-/// - Fixed: `Frame::area` is the exact rectangle you provided in terminal coordinates.
-/// - Inline: `Frame::area` is a rectangle anchored to the backend cursor row.
-///
-/// For fullscreen and inline viewports, [`Terminal::autoresize`] checks the backend size during
-/// every render pass and calls [`Terminal::resize`] when it changes. Resizing updates the internal
-/// buffer sizes and clears the affected region; it also resets the previous buffer so the next draw
-/// is treated as a full redraw.
-///
-/// ## Cursor tracking
-///
-/// The cursor position requested by [`Frame::set_cursor_position`] is applied after
-/// [`Terminal::flush`] so the cursor ends up on top of the rendered UI. `Terminal` also tracks a
-/// "last known cursor position" as a best-effort record of where it last wrote, and uses that
-/// information when recomputing inline viewports on resize.
-///
-/// ## Inline-specific behavior
-///
-/// Inline viewports reserve vertical space by calling [`Backend::append_lines`]. If the cursor is
-/// close enough to the bottom edge, terminals scroll as lines are appended. Ratatui accounts for
-/// that scrolling by shifting the computed viewport origin upward so the viewport remains fully
-/// visible. On resize, Ratatui recomputes the inline origin while trying to keep the cursor at the
-/// same relative row inside the viewport.
-///
-/// When Ratatui is built with the `scrolling-regions` feature, [`Terminal::insert_before`] uses
-/// terminal scrolling regions to insert content above an inline viewport without clearing and
-/// redrawing it.
+/// let backend = CrosstermBackend::new(stdout());
+/// let mut terminal = Terminal::new(backend)?;
+/// terminal.draw(|frame| {
+///     let area = frame.area();
+///     frame.render_widget(Paragraph::new("Hello World!"), area);
+/// })?;
+/// # std::io::Result::Ok(())
+/// ```
 ///
 /// [Crossterm]: https://crates.io/crates/crossterm
 /// [Termion]: https://crates.io/crates/termion
 /// [Termwiz]: https://crates.io/crates/termwiz
 /// [`backend`]: crate::backend
 /// [`Backend`]: crate::backend::Backend
-/// [`Backend::flush`]: crate::backend::Backend::flush
 /// [`Buffer`]: crate::buffer::Buffer
-/// [`ratatui::DefaultTerminal`]: https://docs.rs/ratatui/latest/ratatui/type.DefaultTerminal.html
-/// [`ratatui::init`]: https://docs.rs/ratatui/latest/ratatui/fn.init.html
-/// [`ratatui::restore`]: https://docs.rs/ratatui/latest/ratatui/fn.restore.html
-/// [`ratatui::run`]: https://docs.rs/ratatui/latest/ratatui/fn.run.html
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where
     B: Backend,
 {
-    /// The backend used to write updates to the terminal.
-    ///
-    /// Most application code does not need to interact with the backend directly; see
-    /// [`Terminal::draw`]. Accessing the backend can be useful for backend-specific testing and
-    /// inspection (see [`Terminal::backend`]).
+    /// The backend used to interface with the terminal
     backend: B,
-    /// Double-buffered render state.
-    ///
-    /// [`Terminal::flush`] diffs `buffers[current]` against the other buffer to compute a minimal
-    /// set of updates to send to the backend.
+    /// Holds the results of the current and previous draw calls. The two are compared at the end
+    /// of each draw pass to output the necessary updates to the terminal
     buffers: [Buffer; 2],
-    /// Index of the "current" buffer in [`Terminal::buffers`].
-    ///
-    /// This toggles between 0 and 1 and is updated by [`Terminal::swap_buffers`].
+    /// Index of the current buffer in the previous array
     current: usize,
-    /// Whether Ratatui believes it has hidden the cursor.
-    ///
-    /// This is tracked so [`Drop`] can attempt to restore cursor visibility.
+    /// Whether the cursor is currently hidden
     hidden_cursor: bool,
-    /// The configured [`Viewport`] mode.
-    ///
-    /// This determines how the initial viewport area is computed during construction, whether
-    /// [`Terminal::autoresize`] runs, how [`Terminal::clear`] behaves, and whether operations like
-    /// [`Terminal::insert_before`] have any effect.
+    /// Viewport
     viewport: Viewport,
-    /// The current viewport rectangle in terminal coordinates.
-    ///
-    /// This is the area returned by [`Frame::area`] and the size of the internal buffers. It is
-    /// set during construction and updated by [`Terminal::resize`]. In inline mode, calls to
-    /// [`Terminal::insert_before`] can also move the viewport vertically.
+    /// Area of the viewport
     viewport_area: Rect,
-    /// Last known renderable "screen" area.
-    ///
-    /// For fullscreen and inline viewports this tracks the backend-reported terminal size. For
-    /// fixed viewports, this tracks the user-provided fixed area.
-    ///
-    /// This is used by [`Terminal::autoresize`] and is reported via [`CompletedFrame::area`].
+    /// Last known area of the terminal. Used to detect if the internal buffers have to be resized.
     last_known_area: Rect,
-    /// Last known cursor position in terminal coordinates.
-    ///
-    /// This is updated when:
-    ///
-    /// - [`Terminal::set_cursor_position`] is called directly.
-    /// - [`Frame::set_cursor_position`] is used during [`Terminal::draw`].
-    /// - [`Terminal::flush`] observes a diff update (used as a proxy for the "last written" cell).
-    ///
-    /// Inline viewports use this during [`Terminal::resize`] to preserve the cursor's relative
-    /// position within the viewport.
+    /// Last known position of the cursor. Used to find the new area when the viewport is inlined
+    /// and the terminal resized.
     last_known_cursor_pos: Position,
-    /// Number of frames rendered so far.
-    ///
-    /// This increments after each successful [`Terminal::draw`] / [`Terminal::try_draw`] and wraps
-    /// at `usize::MAX`.
+    /// Number of frames rendered up until current time.
     frame_count: usize,
 }
 
 /// Options to pass to [`Terminal::with_options`]
-///
-/// Most applications can use [`Terminal::new`]. Use `TerminalOptions` when you need to configure a
-/// non-default [`Viewport`] at initialization time (see [`Terminal`] for an overview).
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Options {
-    /// Viewport used to draw to the terminal.
-    ///
-    /// See [`Terminal`] for a higher-level overview, and [`Viewport`] for the per-variant
-    /// definition.
+    /// Viewport used to draw to the terminal
     pub viewport: Viewport,
 }
 
@@ -371,14 +235,9 @@ where
 {
     /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
     ///
-    /// This is a convenience for [`Terminal::with_options`] with [`Viewport::Fullscreen`].
-    ///
-    /// After creating a terminal, call [`Terminal::draw`] (or [`Terminal::try_draw`]) in a loop to
-    /// render your UI.
-    ///
-    /// Note that unlike [`ratatui::init`], this does not install a panic hook, so it is
-    /// recommended to do that manually when using this function, otherwise any panic messages will
-    /// be printed to the alternate screen and the terminal may be left in an unusable state.
+    /// Note that unlike `ratatui::init`, this does not install a panic hook, so it is recommended
+    /// to do that manually when using this function, otherwise any panic messages will be printed
+    /// to the alternate screen and the terminal may be left in an unusable state.
     ///
     /// See [how to set up panic hooks](https://ratatui.rs/recipes/apps/panic-hooks/) and
     /// [`better-panic` example](https://ratatui.rs/recipes/apps/better-panic/) for more
@@ -386,17 +245,13 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,no_run
-    /// # #![allow(unexpected_cfgs)]
-    /// # #[cfg(feature = "crossterm")]
-    /// # {
+    /// ```rust,ignore
     /// use std::io::stdout;
     ///
-    /// use ratatui::Terminal;
-    /// use ratatui::backend::CrosstermBackend;
+    /// use ratatui::{backend::CrosstermBackend, Terminal};
     ///
     /// let backend = CrosstermBackend::new(stdout());
-    /// let _terminal = Terminal::new(backend)?;
+    /// let terminal = Terminal::new(backend)?;
     ///
     /// // Optionally set up a panic hook to restore the terminal on panic.
     /// let old_hook = std::panic::take_hook();
@@ -404,17 +259,8 @@ where
     ///     ratatui::restore();
     ///     old_hook(info);
     /// }));
-    /// # }
-    /// # #[cfg(not(feature = "crossterm"))]
-    /// # {
-    /// # use ratatui_core::{backend::TestBackend, terminal::Terminal};
-    /// # let backend = TestBackend::new(10, 10);
-    /// # let _terminal = Terminal::new(backend)?;
-    /// # }
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// # std::io::Result::Ok(())
     /// ```
-    ///
-    /// [`ratatui::init`]: https://docs.rs/ratatui/latest/ratatui/fn.init.html
     pub fn new(backend: B) -> Result<Self, B::Error> {
         Self::with_options(
             backend,
@@ -426,52 +272,18 @@ where
 
     /// Creates a new [`Terminal`] with the given [`Backend`] and [`TerminalOptions`].
     ///
-    /// The viewport determines what area is exposed to widgets via [`Frame::area`]. See
-    /// [`Viewport`] for an overview of the available modes.
-    ///
-    /// After creating a terminal, call [`Terminal::draw`] (or [`Terminal::try_draw`]) in a loop to
-    /// render your UI.
-    ///
-    /// Resize behavior depends on the selected viewport:
-    ///
-    /// - [`Viewport::Fullscreen`] and [`Viewport::Inline`] are automatically resized during
-    ///   [`Terminal::draw`] (via [`Terminal::autoresize`]).
-    /// - [`Viewport::Fixed`] is not automatically resized; call [`Terminal::resize`] if the region
-    ///   should change.
-    ///
     /// # Example
     ///
-    /// ```rust,no_run
-    /// # #![allow(unexpected_cfgs)]
-    /// # #[cfg(feature = "crossterm")]
-    /// # {
+    /// ```rust,ignore
     /// use std::io::stdout;
     ///
-    /// use ratatui::backend::CrosstermBackend;
-    /// use ratatui::layout::Rect;
-    /// use ratatui::{Terminal, TerminalOptions, Viewport};
+    /// use ratatui::{backend::CrosstermBackend, layout::Rect, Terminal, TerminalOptions, Viewport};
     ///
     /// let backend = CrosstermBackend::new(stdout());
     /// let viewport = Viewport::Fixed(Rect::new(0, 0, 10, 10));
-    /// let _terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
-    /// # }
-    /// # #[cfg(not(feature = "crossterm"))]
-    /// # {
-    /// # use ratatui_core::{
-    /// #     backend::TestBackend,
-    /// #     layout::Rect,
-    /// #     terminal::{Terminal, TerminalOptions, Viewport},
-    /// # };
-    /// # let backend = TestBackend::new(10, 10);
-    /// # let viewport = Viewport::Fixed(Rect::new(0, 0, 10, 10));
-    /// # let _terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
-    /// # }
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// let terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
+    /// # std::io::Result::Ok(())
     /// ```
-    ///
-    /// When the viewport is [`Viewport::Inline`], Ratatui anchors the viewport to the current
-    /// cursor row at initialization time (always starting at column 0). Ratatui may scroll the
-    /// terminal to make enough room for the requested height so the viewport stays fully visible.
     pub fn with_options(mut backend: B, options: TerminalOptions) -> Result<Self, B::Error> {
         let area = match options.viewport {
             Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?.into(),
@@ -728,28 +540,22 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,no_run
-    /// # mod ratatui {
-    /// #     pub use ratatui_core::backend;
-    /// #     pub use ratatui_core::terminal::Terminal;
-    /// # }
-    /// use ratatui::Terminal;
-    /// use ratatui::backend::{Backend, TestBackend};
+    /// Getting the buffer and asserting on some cells after rendering a widget.
     ///
+    /// ```rust,ignore
+    /// use ratatui::{backend::TestBackend, Terminal};
+    /// use ratatui::widgets::Paragraph;
     /// let backend = TestBackend::new(30, 5);
-    /// let mut terminal = Terminal::new(backend)?;
+    /// let mut terminal = Terminal::new(backend).unwrap();
     /// {
     ///     let mut frame = terminal.get_frame();
-    ///     frame.render_widget("Hello", frame.area());
+    ///     frame.render_widget(Paragraph::new("Hello"), frame.area());
     /// }
     /// // When not using `draw`, present the buffer manually:
-    /// terminal.flush()?;
+    /// terminal.flush().unwrap();
     /// terminal.swap_buffers();
-    /// terminal.backend_mut().flush()?;
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// terminal.backend_mut().flush().unwrap();
     /// ```
-    ///
-    /// [`Backend::flush`]: crate::backend::Backend::flush
     pub const fn get_frame(&mut self) -> Frame<'_> {
         let count = self.frame_count;
         Frame {
@@ -761,45 +567,22 @@ where
     }
 
     /// Gets the current buffer as a mutable reference.
-    ///
-    /// This is the buffer that the next [`Frame`] will render into (see [`Terminal::get_frame`]).
-    /// Most applications should render inside [`Terminal::draw`] and access the buffer via
-    /// [`Frame::buffer_mut`] instead.
     pub const fn current_buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffers[self.current]
     }
 
-    /// Returns a shared reference to the backend.
-    ///
-    /// This is primarily useful for backend-specific inspection in tests (e.g. reading
-    /// [`TestBackend`]'s buffer). Most applications should interact with the terminal via
-    /// [`Terminal::draw`] rather than calling backend methods directly.
-    ///
-    /// [`TestBackend`]: crate::backend::TestBackend
+    /// Gets the backend
     pub const fn backend(&self) -> &B {
         &self.backend
     }
 
-    /// Returns a mutable reference to the backend.
-    ///
-    /// This is an advanced escape hatch. Mutating the backend directly can desynchronize Ratatui's
-    /// internal buffers from what's on-screen; if you do this, you may need to call
-    /// [`Terminal::clear`] to force a full redraw.
+    /// Gets the backend as a mutable reference
     pub const fn backend_mut(&mut self) -> &mut B {
         &mut self.backend
     }
 
-    /// Writes the current buffer to the backend using a diff against the previous buffer.
-    ///
-    /// This is one of the building blocks used by [`Terminal::draw`] / [`Terminal::try_draw`]. It
-    /// does not swap buffers or flush the backend; see [`Terminal::swap_buffers`] and
-    /// [`Backend::flush`].
-    ///
-    /// Implementation note: when there are updates, Ratatui records the position of the last
-    /// updated cell as the "last known cursor position". Inline viewports use this to preserve the
-    /// cursor's relative position within the viewport across resizes.
-    ///
-    /// [`Backend::flush`]: crate::backend::Backend::flush
+    /// Obtains a difference between the previous and the current buffer and passes it to the
+    /// current backend for drawing.
     pub fn flush(&mut self) -> Result<(), B::Error> {
         let previous_buffer = &self.buffers[1 - self.current];
         let current_buffer = &self.buffers[self.current];
@@ -812,15 +595,8 @@ where
 
     /// Updates the Terminal so that internal buffers match the requested area.
     ///
-    /// This updates the buffer size used for rendering and triggers a full clear so the next
-    /// [`Terminal::draw`] paints into a consistent area.
-    ///
-    /// When the viewport is [`Viewport::Inline`], the `area` argument is treated as the new
-    /// terminal size and the viewport origin is recomputed relative to the current cursor position.
-    /// Ratatui attempts to keep the cursor at the same relative row within the viewport across
-    /// resizes.
-    ///
-    /// See also: [`Terminal::autoresize`] (automatic resizing during [`Terminal::draw`]).
+    /// Requested area will be saved to remain consistent when rendering. This leads to a full clear
+    /// of the screen.
     pub fn resize(&mut self, area: Rect) -> Result<(), B::Error> {
         let next_area = match self.viewport {
             Viewport::Inline(height) => {
@@ -845,9 +621,6 @@ where
         Ok(())
     }
 
-    /// Resize internal buffers and update the current viewport area.
-    ///
-    /// This is an internal helper used by [`Terminal::with_options`] and [`Terminal::resize`].
     fn set_viewport_area(&mut self, area: Rect) {
         self.buffers[self.current].resize(area);
         self.buffers[1 - self.current].resize(area);
@@ -855,11 +628,6 @@ where
     }
 
     /// Queries the backend for size and resizes if it doesn't match the previous size.
-    ///
-    /// This is called automatically during [`Terminal::draw`] for fullscreen and inline viewports.
-    /// Fixed viewports are not automatically resized.
-    ///
-    /// If the size changed, this calls [`Terminal::resize`] (which clears the screen).
     pub fn autoresize(&mut self) -> Result<(), B::Error> {
         // fixed viewports do not get autoresized
         if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
@@ -871,40 +639,7 @@ where
         Ok(())
     }
 
-     ///     frame.set_cursor_position(Position { x: 0, y: 0 });
--    ///     io::Result::Ok(())
-+    ///     Ok(())
-     /// })?;
-     ///
--    /// // or with a function
-+    /// // Or with a function.
-     /// terminal.try_draw(render)?;
-     ///
--    /// fn render(frame: &mut ratatui::Frame) -> io::Result<()> {
--    ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
--    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.area());
-+    /// fn render(frame: &mut Frame<'_>) -> io::Result<()> {
-+    ///     frame.render_widget("Hello World!", frame.area());
-     ///     Ok(())
-     /// }
--    /// # io::Result::Ok(())
-+    /// # }
-+    /// # #[cfg(not(feature = "crossterm"))]
-+    /// # {
-+    /// # use ratatui_core::{backend::TestBackend, terminal::Terminal};
-+    /// # let backend = TestBackend::new(10, 10);
-+    /// # let mut terminal = Terminal::new(backend)?;
-+    /// # terminal
-+    /// #     .try_draw(|frame| {
-+    /// #         frame.render_widget("Hello World!", frame.area());
-+    /// #         Ok::<(), core::convert::Infallible>(())
-+    /// #     })
-+    /// #     ?;
-+    /// # }
     /// Hides the cursor.
-    ///
-    /// When using [`Terminal::draw`], prefer controlling the cursor with
-    /// [`Frame::set_cursor_position`]. Mixing the APIs can lead to surprising results.
     pub fn hide_cursor(&mut self) -> Result<(), B::Error> {
         self.backend.hide_cursor()?;
         self.hidden_cursor = true;
@@ -912,9 +647,6 @@ where
     }
 
     /// Shows the cursor.
-    ///
-    /// When using [`Terminal::draw`], prefer controlling the cursor with
-    /// [`Frame::set_cursor_position`]. Mixing the APIs can lead to surprising results.
     pub fn show_cursor(&mut self) -> Result<(), B::Error> {
         self.backend.show_cursor()?;
         self.hidden_cursor = false;
@@ -939,21 +671,12 @@ where
 
     /// Gets the current cursor position.
     ///
-    /// This queries the backend for the current cursor position.
-    ///
-    /// When using [`Terminal::draw`], prefer controlling the cursor with
-    /// [`Frame::set_cursor_position`]. For direct control, see [`Terminal::set_cursor_position`].
+    /// This is the position of the cursor after the last draw call.
     pub fn get_cursor_position(&mut self) -> Result<Position, B::Error> {
         self.backend.get_cursor_position()
     }
 
     /// Sets the cursor position.
-    ///
-    /// This updates the backend cursor and Ratatui's internal cursor tracking. Inline viewports
-    /// use that tracking when recomputing the viewport on resize.
-    ///
-    /// When using [`Terminal::draw`], consider using [`Frame::set_cursor_position`] instead so the
-    /// cursor is updated as part of the normal rendering flow.
     pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), B::Error> {
         let position = position.into();
         self.backend.set_cursor_position(position)?;
@@ -962,18 +685,6 @@ where
     }
 
     /// Clear the terminal and force a full redraw on the next draw call.
-    ///
-    /// What gets cleared depends on the active [`Viewport`]:
-    ///
-    /// - [`Viewport::Fullscreen`]: clears the entire terminal.
-    /// - [`Viewport::Fixed`]: clears only the viewport region.
-    /// - [`Viewport::Inline`]: clears after the viewport's origin, leaving any content above the
-    ///   viewport untouched.
-    ///
-    /// This also resets the "previous" buffer so the next [`Terminal::flush`] redraws the full
-    /// viewport. [`Terminal::resize`] calls this internally.
-    ///
-    /// Implementation note: this uses [`ClearType::AfterCursor`] starting at the viewport origin.
     pub fn clear(&mut self) -> Result<(), B::Error> {
         match self.viewport {
             Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
@@ -995,21 +706,13 @@ where
         Ok(())
     }
 
-    /// Clears the inactive buffer and swaps it with the current buffer.
-    ///
-    /// This is part of the standard rendering flow (see [`Terminal::try_draw`]). If you render
-    /// manually using [`Terminal::get_frame`] and [`Terminal::flush`], call this afterward so the
-    /// next flush can compute diffs against the correct "previous" buffer.
+    /// Clears the inactive buffer and swaps it with the current buffer
     pub fn swap_buffers(&mut self) {
         self.buffers[1 - self.current].reset();
         self.current = 1 - self.current;
     }
 
     /// Queries the real size of the backend.
-    ///
-    /// This returns the size of the underlying terminal. The current renderable area depends on
-    /// the configured [`Viewport`]; use [`Frame::area`] inside [`Terminal::draw`] if you want the
-    /// area you should render into.
     pub fn size(&self) -> Result<Size, B::Error> {
         self.backend.size()
     }
@@ -1017,23 +720,15 @@ where
     /// Insert some content before the current inline viewport. This has no effect when the
     /// viewport is not inline.
     ///
-    /// This is intended for inline UIs that want to print output (e.g. logs or status messages)
-    /// above the UI without breaking it. See [`Viewport::Inline`] for how inline viewports are
-    /// anchored.
-    ///
     /// The `draw_fn` closure will be called to draw into a writable `Buffer` that is `height`
     /// lines tall. The content of that `Buffer` will then be inserted before the viewport.
-    ///
-    /// When Ratatui is built with the `scrolling-regions` feature, this can be done without
-    /// clearing and redrawing the viewport. Without `scrolling-regions`, Ratatui falls back to a
-    /// more portable approach and clears the viewport so the next [`Terminal::draw`] repaints it.
     ///
     /// If the viewport isn't yet at the bottom of the screen, inserted lines will push it towards
     /// the bottom. Once the viewport is at the bottom of the screen, inserted lines will scroll
     /// the area of the screen above the viewport upwards.
     ///
     /// Before:
-    /// ```text
+    /// ```ignore
     /// +---------------------+
     /// | pre-existing line 1 |
     /// | pre-existing line 2 |
@@ -1046,7 +741,7 @@ where
     /// ```
     ///
     /// After inserting 2 lines:
-    /// ```text
+    /// ```ignore
     /// +---------------------+
     /// | pre-existing line 1 |
     /// | pre-existing line 2 |
@@ -1059,7 +754,7 @@ where
     /// ```
     ///
     /// After inserting 2 more lines:
-    /// ```text
+    /// ```ignore
     /// +---------------------+
     /// | pre-existing line 2 |
     /// |   inserted line 1   |
@@ -1079,41 +774,24 @@ where
     ///
     /// ## Insert a single line before the current viewport
     ///
-    /// ```rust,no_run
-    /// # mod ratatui {
-    /// #     pub use ratatui_core::backend;
-    /// #     pub use ratatui_core::layout;
-    /// #     pub use ratatui_core::style;
-    /// #     pub use ratatui_core::terminal::{Terminal, TerminalOptions, Viewport};
-    /// #     pub use ratatui_core::text;
-    /// #     pub use ratatui_core::widgets;
-    /// # }
-    /// use ratatui::backend::{Backend, TestBackend};
-    /// use ratatui::layout::Position;
-    /// use ratatui::style::{Color, Style};
-    /// use ratatui::text::{Line, Span};
-    /// use ratatui::widgets::Widget;
-    /// use ratatui::{Terminal, TerminalOptions, Viewport};
-    ///
-    /// let mut backend = TestBackend::new(10, 10);
-    /// // Simulate existing output above the inline UI.
-    /// backend.set_cursor_position(Position::new(0, 3))?;
-    /// let mut terminal = Terminal::with_options(
-    ///     backend,
-    ///     TerminalOptions {
-    ///         viewport: Viewport::Inline(4),
-    ///     },
-    /// )?;
-    ///
+    /// ```rust,ignore
+    /// use ratatui::{
+    ///     backend::TestBackend,
+    ///     style::{Color, Style},
+    ///     text::{Line, Span},
+    ///     widgets::{Paragraph, Widget},
+    ///     Terminal,
+    /// };
+    /// # let backend = TestBackend::new(10, 10);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
     /// terminal.insert_before(1, |buf| {
-    ///     Line::from(vec![
+    ///     Paragraph::new(Line::from(vec![
     ///         Span::raw("This line will be added "),
     ///         Span::styled("before", Style::default().fg(Color::Blue)),
     ///         Span::raw(" the current viewport"),
-    ///     ])
+    ///     ]))
     ///     .render(buf.area, buf);
-    /// })?;
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// });
     /// ```
     pub fn insert_before<F>(&mut self, height: u16, draw_fn: F) -> Result<(), B::Error>
     where
@@ -1129,18 +807,15 @@ where
     }
 
     /// Implement `Self::insert_before` using standard backend capabilities.
-    ///
-    /// This is the fallback implementation when the `scrolling-regions` feature is disabled. It
-    /// renders the inserted lines into a temporary [`Buffer`], then draws them directly to the
-    /// backend in chunks, scrolling the terminal as needed.
-    ///
-    /// See [`Terminal::insert_before`] for the public API contract.
     #[cfg(not(feature = "scrolling-regions"))]
     fn insert_before_no_scrolling_regions(
         &mut self,
         height: u16,
         draw_fn: impl FnOnce(&mut Buffer),
     ) -> Result<(), B::Error> {
+        // The approach of this function is to first render all of the lines to insert into a
+        // temporary buffer, and then to loop drawing chunks from the buffer to the screen. drawing
+        // this buffer onto the screen.
         let area = Rect {
             x: 0,
             y: 0,
@@ -1239,6 +914,9 @@ where
         mut height: u16,
         draw_fn: impl FnOnce(&mut Buffer),
     ) -> Result<(), B::Error> {
+        // The approach of this function is to first render all of the lines to insert into a
+        // temporary buffer, and then to loop drawing chunks from the buffer to the screen. drawing
+        // this buffer onto the screen.
         let area = Rect {
             x: 0,
             y: 0,
@@ -1302,9 +980,6 @@ where
 
     /// Draw lines at the given vertical offset. The slice of cells must contain enough cells
     /// for the requested lines. A slice of the unused cells are returned.
-    ///
-    /// This is a small internal helper used by [`Terminal::insert_before`]. It writes cells
-    /// directly to the backend in terminal coordinates (not viewport coordinates).
     fn draw_lines<'a>(
         &mut self,
         y_offset: u16,
@@ -1327,9 +1002,6 @@ where
     /// Draw lines at the given vertical offset, assuming that the lines they are replacing on the
     /// screen are cleared. The slice of cells must contain enough cells for the requested lines. A
     /// slice of the unused cells are returned.
-    ///
-    /// This is used by the `scrolling-regions` implementation of [`Terminal::insert_before`] to
-    /// avoid relying on a full-screen clear while updating only part of the terminal.
     #[cfg(feature = "scrolling-regions")]
     fn draw_lines_over_cleared<'a>(
         &mut self,
@@ -1353,10 +1025,6 @@ where
     }
 
     /// Scroll the whole screen up by the given number of lines.
-    ///
-    /// This is used by [`Terminal::insert_before`] when the `scrolling-regions` feature is
-    /// disabled.
-    /// It scrolls by moving the cursor to the last row and calling [`Backend::append_lines`].
     #[cfg(not(feature = "scrolling-regions"))]
     fn scroll_up(&mut self, lines_to_scroll: u16) -> Result<(), B::Error> {
         if lines_to_scroll > 0 {
@@ -1370,31 +1038,6 @@ where
     }
 }
 
-/// Compute the on-screen area for an inline viewport.
-///
-/// This helper is used by [`Terminal::with_options`] (initialization) and [`Terminal::resize`]
-/// (after a terminal resize) to translate `Viewport::Inline(height)` into a concrete [`Rect`].
-///
-/// This returns the computed viewport area and the cursor position observed at the start of the
-/// call.
-///
-/// Inline viewports always start at column 0, span the full terminal width, and are anchored to the
-/// backend cursor row at the time of the call. The requested height is clamped to the current
-/// terminal height.
-///
-/// Ratatui reserves vertical space for the requested height by calling [`Backend::append_lines`].
-/// If the cursor is close enough to the bottom that appending would run past the last row,
-/// terminals scroll; in that case we shift the computed `y` upward by the number of rows scrolled
-/// so the viewport remains fully visible.
-///
-/// `offset_in_previous_viewport` is used by [`Terminal::resize`] to keep the cursor at the same
-/// relative row within the viewport across resizes.
-///
-/// Related viewport code lives in:
-///
-/// - [`Terminal::with_options`] (selects the viewport and computes the initial area)
-/// - [`Terminal::autoresize`] (detects backend size changes during [`Terminal::draw`])
-/// - [`Terminal::resize`] (recomputes the viewport and clears before the next draw)
 fn compute_inline_size<B: Backend>(
     backend: &mut B,
     height: u16,
