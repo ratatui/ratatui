@@ -29,11 +29,13 @@ use crate::terminal::{CompletedFrame, Frame, TerminalOptions, Viewport};
 ///
 /// # Typical Usage
 ///
-/// In a typical application, you:
+/// In a typical application, the flow is: set up a terminal, run an event loop, update state, and
+/// draw each frame.
 ///
-/// 1. Set up the terminal and obtain a `Terminal`. Most applications use [`ratatui::run`]; for
-///    manual construction, use [`Terminal::new`] (fullscreen) or [`Terminal::with_options`] (select
-///    a [`Viewport`] with [`TerminalOptions`]).
+/// 1. Choose a setup path for a `Terminal`. Most apps call [`ratatui::run`], which passes a
+///    preconfigured `Terminal` into your callback. If you need more control, use [`ratatui::init`]
+///    and [`ratatui::restore`], or construct a `Terminal` manually via [`Terminal::new`]
+///    (fullscreen) or [`Terminal::with_options`] (select a [`Viewport`]).
 /// 2. Enter your application's event loop and call [`Terminal::draw`] (or [`Terminal::try_draw`])
 ///    to render the current UI state into a [`Frame`].
 /// 3. Handle input and application state updates between draw calls.
@@ -495,165 +497,6 @@ where
         })
     }
 
-    /// Returns a [`Frame`] for manual rendering.
-    ///
-    /// Most applications should render via [`Terminal::draw`] / [`Terminal::try_draw`]. This method
-    /// exposes the frame construction step used by [`Terminal::try_draw`] so tests and advanced
-    /// callers can render without running the full draw pipeline.
-    ///
-    /// Unlike `draw` / `try_draw`, this does not call [`Terminal::autoresize`], does not write
-    /// updates to the backend, and does not apply any cursor changes. After rendering, you
-    /// typically call [`Terminal::flush`], [`Terminal::swap_buffers`], and [`Backend::flush`].
-    ///
-    /// The returned `Frame` mutably borrows the current buffer, so it must be dropped before you
-    /// can call methods like [`Terminal::flush`]. The example below uses a scope to make that
-    /// explicit.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # mod ratatui {
-    /// #     pub use ratatui_core::backend;
-    /// #     pub use ratatui_core::terminal::Terminal;
-    /// # }
-    /// use ratatui::Terminal;
-    /// use ratatui::backend::{Backend, TestBackend};
-    ///
-    /// let backend = TestBackend::new(30, 5);
-    /// let mut terminal = Terminal::new(backend)?;
-    /// {
-    ///     let mut frame = terminal.get_frame();
-    ///     frame.render_widget("Hello", frame.area());
-    /// }
-    /// // When not using `draw`, present the buffer manually:
-    /// terminal.flush()?;
-    /// terminal.swap_buffers();
-    /// terminal.backend_mut().flush()?;
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
-    /// ```
-    ///
-    /// [`Backend::flush`]: crate::backend::Backend::flush
-    pub const fn get_frame(&mut self) -> Frame<'_> {
-        let count = self.frame_count;
-        Frame {
-            cursor_position: None,
-            viewport_area: self.viewport_area,
-            buffer: self.current_buffer_mut(),
-            count,
-        }
-    }
-
-    /// Gets the current buffer as a mutable reference.
-    ///
-    /// This is the buffer that the next [`Frame`] will render into (see [`Terminal::get_frame`]).
-    /// Most applications should render inside [`Terminal::draw`] and access the buffer via
-    /// [`Frame::buffer_mut`] instead.
-    pub const fn current_buffer_mut(&mut self) -> &mut Buffer {
-        &mut self.buffers[self.current]
-    }
-
-    /// Returns a shared reference to the backend.
-    ///
-    /// This is primarily useful for backend-specific inspection in tests (e.g. reading
-    /// [`TestBackend`]'s buffer). Most applications should interact with the terminal via
-    /// [`Terminal::draw`] rather than calling backend methods directly.
-    ///
-    /// [`TestBackend`]: crate::backend::TestBackend
-    pub const fn backend(&self) -> &B {
-        &self.backend
-    }
-
-    /// Returns a mutable reference to the backend.
-    ///
-    /// This is an advanced escape hatch. Mutating the backend directly can desynchronize Ratatui's
-    /// internal buffers from what's on-screen; if you do this, you may need to call
-    /// [`Terminal::clear`] to force a full redraw.
-    pub const fn backend_mut(&mut self) -> &mut B {
-        &mut self.backend
-    }
-
-    /// Writes the current buffer to the backend using a diff against the previous buffer.
-    ///
-    /// This is one of the building blocks used by [`Terminal::draw`] / [`Terminal::try_draw`]. It
-    /// does not swap buffers or flush the backend; see [`Terminal::swap_buffers`] and
-    /// [`Backend::flush`].
-    ///
-    /// Implementation note: when there are updates, Ratatui records the position of the last
-    /// updated cell as the "last known cursor position". Inline viewports use this to preserve the
-    /// cursor's relative position within the viewport across resizes.
-    ///
-    /// [`Backend::flush`]: crate::backend::Backend::flush
-    pub fn flush(&mut self) -> Result<(), B::Error> {
-        let previous_buffer = &self.buffers[1 - self.current];
-        let current_buffer = &self.buffers[self.current];
-        let updates = previous_buffer.diff(current_buffer);
-        if let Some((col, row, _)) = updates.last() {
-            self.last_known_cursor_pos = Position { x: *col, y: *row };
-        }
-        self.backend.draw(updates.into_iter())
-    }
-
-    /// Updates the Terminal so that internal buffers match the requested area.
-    ///
-    /// This updates the buffer size used for rendering and triggers a full clear so the next
-    /// [`Terminal::draw`] paints into a consistent area.
-    ///
-    /// When the viewport is [`Viewport::Inline`], the `area` argument is treated as the new
-    /// terminal size and the viewport origin is recomputed relative to the current cursor position.
-    /// Ratatui attempts to keep the cursor at the same relative row within the viewport across
-    /// resizes.
-    ///
-    /// See also: [`Terminal::autoresize`] (automatic resizing during [`Terminal::draw`]).
-    pub fn resize(&mut self, area: Rect) -> Result<(), B::Error> {
-        let next_area = match self.viewport {
-            Viewport::Inline(height) => {
-                let offset_in_previous_viewport = self
-                    .last_known_cursor_pos
-                    .y
-                    .saturating_sub(self.viewport_area.top());
-                compute_inline_size(
-                    &mut self.backend,
-                    height,
-                    area.as_size(),
-                    offset_in_previous_viewport,
-                )?
-                .0
-            }
-            Viewport::Fixed(_) | Viewport::Fullscreen => area,
-        };
-        self.set_viewport_area(next_area);
-        self.clear()?;
-
-        self.last_known_area = area;
-        Ok(())
-    }
-
-    /// Resize internal buffers and update the current viewport area.
-    ///
-    /// This is an internal helper used by [`Terminal::with_options`] and [`Terminal::resize`].
-    fn set_viewport_area(&mut self, area: Rect) {
-        self.buffers[self.current].resize(area);
-        self.buffers[1 - self.current].resize(area);
-        self.viewport_area = area;
-    }
-
-    /// Queries the backend for size and resizes if it doesn't match the previous size.
-    ///
-    /// This is called automatically during [`Terminal::draw`] for fullscreen and inline viewports.
-    /// Fixed viewports are not automatically resized.
-    ///
-    /// If the size changed, this calls [`Terminal::resize`] (which clears the screen).
-    pub fn autoresize(&mut self) -> Result<(), B::Error> {
-        // fixed viewports do not get autoresized
-        if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
-            let area = self.size()?.into();
-            if area != self.last_known_area {
-                self.resize(area)?;
-            }
-        }
-        Ok(())
-    }
-
     /// Draws a single frame to the terminal.
     ///
     /// Returns a [`CompletedFrame`] if successful, otherwise a backend error (`B::Error`).
@@ -867,6 +710,165 @@ where
         self.frame_count = self.frame_count.wrapping_add(1);
 
         Ok(completed_frame)
+    }
+
+    /// Returns a [`Frame`] for manual rendering.
+    ///
+    /// Most applications should render via [`Terminal::draw`] / [`Terminal::try_draw`]. This method
+    /// exposes the frame construction step used by [`Terminal::try_draw`] so tests and advanced
+    /// callers can render without running the full draw pipeline.
+    ///
+    /// Unlike `draw` / `try_draw`, this does not call [`Terminal::autoresize`], does not write
+    /// updates to the backend, and does not apply any cursor changes. After rendering, you
+    /// typically call [`Terminal::flush`], [`Terminal::swap_buffers`], and [`Backend::flush`].
+    ///
+    /// The returned `Frame` mutably borrows the current buffer, so it must be dropped before you
+    /// can call methods like [`Terminal::flush`]. The example below uses a scope to make that
+    /// explicit.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # mod ratatui {
+    /// #     pub use ratatui_core::backend;
+    /// #     pub use ratatui_core::terminal::Terminal;
+    /// # }
+    /// use ratatui::Terminal;
+    /// use ratatui::backend::{Backend, TestBackend};
+    ///
+    /// let backend = TestBackend::new(30, 5);
+    /// let mut terminal = Terminal::new(backend)?;
+    /// {
+    ///     let mut frame = terminal.get_frame();
+    ///     frame.render_widget("Hello", frame.area());
+    /// }
+    /// // When not using `draw`, present the buffer manually:
+    /// terminal.flush()?;
+    /// terminal.swap_buffers();
+    /// terminal.backend_mut().flush()?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    ///
+    /// [`Backend::flush`]: crate::backend::Backend::flush
+    pub const fn get_frame(&mut self) -> Frame<'_> {
+        let count = self.frame_count;
+        Frame {
+            cursor_position: None,
+            viewport_area: self.viewport_area,
+            buffer: self.current_buffer_mut(),
+            count,
+        }
+    }
+
+    /// Gets the current buffer as a mutable reference.
+    ///
+    /// This is the buffer that the next [`Frame`] will render into (see [`Terminal::get_frame`]).
+    /// Most applications should render inside [`Terminal::draw`] and access the buffer via
+    /// [`Frame::buffer_mut`] instead.
+    pub const fn current_buffer_mut(&mut self) -> &mut Buffer {
+        &mut self.buffers[self.current]
+    }
+
+    /// Returns a shared reference to the backend.
+    ///
+    /// This is primarily useful for backend-specific inspection in tests (e.g. reading
+    /// [`TestBackend`]'s buffer). Most applications should interact with the terminal via
+    /// [`Terminal::draw`] rather than calling backend methods directly.
+    ///
+    /// [`TestBackend`]: crate::backend::TestBackend
+    pub const fn backend(&self) -> &B {
+        &self.backend
+    }
+
+    /// Returns a mutable reference to the backend.
+    ///
+    /// This is an advanced escape hatch. Mutating the backend directly can desynchronize Ratatui's
+    /// internal buffers from what's on-screen; if you do this, you may need to call
+    /// [`Terminal::clear`] to force a full redraw.
+    pub const fn backend_mut(&mut self) -> &mut B {
+        &mut self.backend
+    }
+
+    /// Writes the current buffer to the backend using a diff against the previous buffer.
+    ///
+    /// This is one of the building blocks used by [`Terminal::draw`] / [`Terminal::try_draw`]. It
+    /// does not swap buffers or flush the backend; see [`Terminal::swap_buffers`] and
+    /// [`Backend::flush`].
+    ///
+    /// Implementation note: when there are updates, Ratatui records the position of the last
+    /// updated cell as the "last known cursor position". Inline viewports use this to preserve the
+    /// cursor's relative position within the viewport across resizes.
+    ///
+    /// [`Backend::flush`]: crate::backend::Backend::flush
+    pub fn flush(&mut self) -> Result<(), B::Error> {
+        let previous_buffer = &self.buffers[1 - self.current];
+        let current_buffer = &self.buffers[self.current];
+        let updates = previous_buffer.diff(current_buffer);
+        if let Some((col, row, _)) = updates.last() {
+            self.last_known_cursor_pos = Position { x: *col, y: *row };
+        }
+        self.backend.draw(updates.into_iter())
+    }
+
+    /// Updates the Terminal so that internal buffers match the requested area.
+    ///
+    /// This updates the buffer size used for rendering and triggers a full clear so the next
+    /// [`Terminal::draw`] paints into a consistent area.
+    ///
+    /// When the viewport is [`Viewport::Inline`], the `area` argument is treated as the new
+    /// terminal size and the viewport origin is recomputed relative to the current cursor position.
+    /// Ratatui attempts to keep the cursor at the same relative row within the viewport across
+    /// resizes.
+    ///
+    /// See also: [`Terminal::autoresize`] (automatic resizing during [`Terminal::draw`]).
+    pub fn resize(&mut self, area: Rect) -> Result<(), B::Error> {
+        let next_area = match self.viewport {
+            Viewport::Inline(height) => {
+                let offset_in_previous_viewport = self
+                    .last_known_cursor_pos
+                    .y
+                    .saturating_sub(self.viewport_area.top());
+                compute_inline_size(
+                    &mut self.backend,
+                    height,
+                    area.as_size(),
+                    offset_in_previous_viewport,
+                )?
+                .0
+            }
+            Viewport::Fixed(_) | Viewport::Fullscreen => area,
+        };
+        self.set_viewport_area(next_area);
+        self.clear()?;
+
+        self.last_known_area = area;
+        Ok(())
+    }
+
+    /// Resize internal buffers and update the current viewport area.
+    ///
+    /// This is an internal helper used by [`Terminal::with_options`] and [`Terminal::resize`].
+    fn set_viewport_area(&mut self, area: Rect) {
+        self.buffers[self.current].resize(area);
+        self.buffers[1 - self.current].resize(area);
+        self.viewport_area = area;
+    }
+
+    /// Queries the backend for size and resizes if it doesn't match the previous size.
+    ///
+    /// This is called automatically during [`Terminal::draw`] for fullscreen and inline viewports.
+    /// Fixed viewports are not automatically resized.
+    ///
+    /// If the size changed, this calls [`Terminal::resize`] (which clears the screen).
+    pub fn autoresize(&mut self) -> Result<(), B::Error> {
+        // fixed viewports do not get autoresized
+        if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
+            let area = self.size()?.into();
+            if area != self.last_known_area {
+                self.resize(area)?;
+            }
+        }
+        Ok(())
     }
 
     /// Hides the cursor.
