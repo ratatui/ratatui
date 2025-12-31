@@ -75,3 +75,77 @@ impl<B: Backend> Terminal<B> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::backend::{Backend, TestBackend};
+    use crate::layout::Position;
+    use crate::terminal::Terminal;
+
+    #[test]
+    fn hide_cursor_updates_terminal_state() {
+        let backend = TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.hide_cursor().unwrap();
+
+        assert!(terminal.hidden_cursor);
+        assert!(!terminal.backend().cursor_visible());
+    }
+
+    #[test]
+    fn show_cursor_updates_terminal_state() {
+        let backend = TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.hide_cursor().unwrap();
+        terminal.show_cursor().unwrap();
+
+        assert!(!terminal.hidden_cursor);
+        assert!(terminal.backend().cursor_visible());
+    }
+
+    #[test]
+    fn set_cursor_position_updates_backend_and_tracking() {
+        let backend = TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.set_cursor_position((3, 4)).unwrap();
+
+        assert_eq!(terminal.last_known_cursor_pos, Position { x: 3, y: 4 });
+        terminal
+            .backend_mut()
+            .assert_cursor_position(Position { x: 3, y: 4 });
+    }
+
+    #[test]
+    fn get_cursor_position_queries_backend() {
+        let backend = TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal
+            .backend_mut()
+            .set_cursor_position(Position { x: 7, y: 2 })
+            .unwrap();
+
+        assert_eq!(
+            terminal.get_cursor_position().unwrap(),
+            Position { x: 7, y: 2 }
+        );
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn deprecated_cursor_wrappers_delegate_to_position_apis() {
+        let backend = TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.set_cursor(4, 1).unwrap();
+
+        assert_eq!(terminal.get_cursor().unwrap(), (4, 1));
+        assert_eq!(terminal.last_known_cursor_pos, Position { x: 4, y: 1 });
+        terminal
+            .backend_mut()
+            .assert_cursor_position(Position { x: 4, y: 1 });
+    }
+}
