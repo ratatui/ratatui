@@ -197,7 +197,8 @@ impl<B: Backend> Terminal<B> {
         // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
         let cursor_position = frame.cursor_position;
 
-        // Draw to stdout
+        // Apply the buffer diff to the backend (this is the terminal's "flush" step, distinct
+        // from `Backend::flush` below which flushes the backend's output).
         self.flush()?;
 
         match cursor_position {
@@ -210,7 +211,7 @@ impl<B: Backend> Terminal<B> {
 
         self.swap_buffers();
 
-        // Flush
+        // Flush any buffered backend output.
         self.backend.flush()?;
 
         let completed_frame = CompletedFrame {
@@ -223,5 +224,514 @@ impl<B: Backend> Terminal<B> {
         self.frame_count = self.frame_count.wrapping_add(1);
 
         Ok(completed_frame)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::fmt;
+
+    use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
+    use crate::buffer::{Buffer, Cell};
+    use crate::layout::{Position, Rect};
+    use crate::terminal::{Terminal, TerminalOptions, Viewport};
+
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    struct TestError(&'static str);
+
+    impl fmt::Display for TestError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    impl core::error::Error for TestError {}
+
+    /// A thin wrapper around [`TestBackend`] with a fallible error type.
+    ///
+    /// [`TestBackend`] uses [`core::convert::Infallible`] as its associated `Backend::Error`, which
+    /// is ideal for most tests but makes it impossible to write a `try_draw` callback that returns
+    /// an error (because `E: Into<B::Error>` would require converting a real error into
+    /// `Infallible`). This wrapper keeps the same observable backend behavior (buffer + cursor)
+    /// while allowing tests to exercise `Terminal::try_draw`'s error path.
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    struct FallibleTestBackend {
+        inner: TestBackend,
+    }
+
+    impl FallibleTestBackend {
+        fn new(inner: TestBackend) -> Self {
+            Self { inner }
+        }
+    }
+
+    impl Backend for FallibleTestBackend {
+        type Error = TestError;
+
+        fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+        where
+            I: Iterator<Item = (u16, u16, &'a crate::buffer::Cell)>,
+        {
+            self.inner.draw(content).map_err(|err| match err {})
+        }
+
+        fn append_lines(&mut self, n: u16) -> Result<(), Self::Error> {
+            self.inner.append_lines(n).map_err(|err| match err {})
+        }
+
+        fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+            self.inner.hide_cursor().map_err(|err| match err {})
+        }
+
+        fn show_cursor(&mut self) -> Result<(), Self::Error> {
+            self.inner.show_cursor().map_err(|err| match err {})
+        }
+
+        fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+            self.inner.get_cursor_position().map_err(|err| match err {})
+        }
+
+        fn set_cursor_position<P: Into<Position>>(
+            &mut self,
+            position: P,
+        ) -> Result<(), Self::Error> {
+            self.inner
+                .set_cursor_position(position)
+                .map_err(|err| match err {})
+        }
+
+        fn clear(&mut self) -> Result<(), Self::Error> {
+            self.inner.clear().map_err(|err| match err {})
+        }
+
+        fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+            self.inner
+                .clear_region(clear_type)
+                .map_err(|err| match err {})
+        }
+
+        fn size(&self) -> Result<crate::layout::Size, Self::Error> {
+            self.inner.size().map_err(|err| match err {})
+        }
+
+        fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+            self.inner.window_size().map_err(|err| match err {})
+        }
+
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.inner.flush().map_err(|err| match err {})
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_up(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.inner
+                .scroll_region_up(region, line_count)
+                .map_err(|err| match err {})
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_down(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.inner
+                .scroll_region_down(region, line_count)
+                .map_err(|err| match err {})
+        }
+    }
+
+    /// `draw` hides the cursor when the frame does not request a cursor position.
+    ///
+    /// This asserts the end-to-end effect on the backend (buffer contents + cursor state) as well
+    /// as internal frame counting.
+    #[test]
+    fn draw_hides_cursor_when_frame_cursor_is_not_set() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.show_cursor().unwrap();
+
+        let completed = terminal
+            .draw(|frame| {
+                // Ensure the frame produces updates so `Terminal::flush` writes to the backend.
+                frame.buffer_mut()[(0, 0)] = Cell::new("x");
+            })
+            .unwrap();
+
+        assert_eq!(completed.count, 0, "first draw returns count 0");
+        assert_eq!(
+            completed.area,
+            Rect::new(0, 0, 3, 2),
+            "completed area matches terminal size in fullscreen mode"
+        );
+        assert_eq!(
+            completed.buffer,
+            &Buffer::with_lines(["x  ", "   "]),
+            "completed buffer contains the rendered content"
+        );
+
+        assert!(terminal.hidden_cursor);
+        assert!(!terminal.backend().cursor_visible());
+        assert_eq!(
+            terminal.frame_count, 1,
+            "successful draw increments frame_count"
+        );
+    }
+
+    /// `draw` applies the cursor requested by `Frame::set_cursor_position`.
+    ///
+    /// The cursor is updated after rendering has been flushed, so it appears on top of the drawn
+    /// UI.
+    #[test]
+    fn draw_shows_and_positions_cursor_when_frame_cursor_is_set() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.hide_cursor().unwrap();
+
+        terminal
+            .draw(|frame| {
+                // The cursor is applied after the frame is flushed.
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+                frame.buffer_mut()[(1, 0)] = Cell::new("y");
+            })
+            .unwrap();
+
+        assert!(!terminal.hidden_cursor);
+        assert!(terminal.backend().cursor_visible());
+        assert_eq!(
+            terminal.backend().cursor_position(),
+            Position { x: 2, y: 1 },
+            "backend cursor is positioned after flushing"
+        );
+        assert_eq!(
+            terminal.last_known_cursor_pos,
+            Position { x: 2, y: 1 },
+            "terminal cursor tracking matches the final cursor position"
+        );
+    }
+
+    /// When the render callback returns an error, `try_draw` does not update the terminal.
+    ///
+    /// This is a characterization of the "no partial updates" behavior: backend contents and
+    /// cursor state are unchanged and `frame_count` does not advance.
+    #[test]
+    fn try_draw_propagates_render_errors_without_updating_backend() {
+        let backend = FallibleTestBackend::new(TestBackend::with_lines(["aaa", "bbb"]));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.show_cursor().unwrap();
+
+        let was_hidden = terminal.hidden_cursor;
+        let cursor_visible = terminal.backend().inner.cursor_visible();
+        let cursor_position = terminal.backend().inner.cursor_position();
+
+        let result = terminal.try_draw(|_frame| Err::<(), _>(TestError("render failed")));
+
+        assert_eq!(
+            result.unwrap_err(),
+            TestError("render failed"),
+            "try_draw returns the render callback error"
+        );
+
+        assert_eq!(terminal.frame_count, 0, "frame_count is unchanged on error");
+        assert_eq!(
+            terminal.backend().inner.buffer(),
+            &Buffer::with_lines(["aaa", "bbb"]),
+            "backend buffer is unchanged on error"
+        );
+        assert_eq!(
+            terminal.hidden_cursor, was_hidden,
+            "terminal cursor state is unchanged on error"
+        );
+        assert_eq!(
+            terminal.backend().inner.cursor_visible(),
+            cursor_visible,
+            "backend cursor visibility is unchanged on error"
+        );
+        assert_eq!(
+            terminal.backend().inner.cursor_position(),
+            cursor_position,
+            "backend cursor position is unchanged on error"
+        );
+    }
+
+    /// `draw` autoresizes fullscreen terminals and clears before rendering.
+    ///
+    /// This simulates the backend resizing between draw calls; `draw` runs `autoresize()` first
+    /// (which calls `resize()` and clears) so the frame renders into a fresh, correctly-sized
+    /// region.
+    #[test]
+    fn draw_clears_on_fullscreen_resize_before_rendering() {
+        let backend = TestBackend::with_lines(["xxx", "yyy"]);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.backend_mut().resize(4, 3);
+
+        terminal
+            .draw(|frame| {
+                // Render a marker to show we rendered after the clear.
+                frame.buffer_mut()[(0, 0)] = Cell::new("x");
+            })
+            .unwrap();
+
+        assert_eq!(
+            terminal.viewport_area,
+            Rect::new(0, 0, 4, 3),
+            "viewport area tracks the resized terminal size"
+        );
+        assert_eq!(
+            terminal.last_known_area,
+            Rect::new(0, 0, 4, 3),
+            "last_known_area tracks the resized terminal size"
+        );
+        terminal
+            .backend()
+            .assert_buffer_lines(["x   ", "    ", "    "]);
+    }
+
+    /// In fixed viewports, `Frame::area` is an absolute terminal rectangle.
+    ///
+    /// This asserts that rendering at `frame.area().x/y` updates the backend at that absolute
+    /// position.
+    #[test]
+    fn draw_uses_fixed_viewport_coordinates() {
+        let backend = TestBackend::new(5, 3);
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Fixed(Rect::new(2, 1, 2, 1)),
+            },
+        )
+        .unwrap();
+
+        terminal
+            .draw(|frame| {
+                assert_eq!(
+                    frame.area(),
+                    Rect::new(2, 1, 2, 1),
+                    "frame area matches the configured fixed viewport"
+                );
+                let area = frame.area();
+                frame.buffer_mut()[(area.x, area.y)] = Cell::new("z");
+            })
+            .unwrap();
+
+        terminal
+            .backend()
+            .assert_buffer_lines(["     ", "  z  ", "     "]);
+    }
+
+    /// Inline viewports render into a sub-rectangle, but `CompletedFrame::area` reports terminal
+    /// size.
+    ///
+    /// This asserts that the `CompletedFrame` returned from `draw` reports the full terminal
+    /// size while its buffer is sized to the inline viewport, and that rendering uses the inline
+    /// viewport's absolute origin.
+    #[test]
+    fn draw_inline_completed_frame_reports_terminal_size() {
+        let mut inner = TestBackend::new(6, 5);
+        inner.set_cursor_position((0, 2)).unwrap();
+        let mut terminal = Terminal::with_options(
+            inner,
+            TerminalOptions {
+                viewport: Viewport::Inline(3),
+            },
+        )
+        .unwrap();
+
+        let viewport_area = terminal.viewport_area;
+        {
+            // `CompletedFrame` borrows the terminal, so backend assertions happen after it drops.
+            let completed = terminal
+                .draw(|frame| {
+                    assert_eq!(
+                        frame.area(),
+                        viewport_area,
+                        "inline frame area matches the computed viewport"
+                    );
+                    frame.buffer_mut()[(viewport_area.x, viewport_area.y)] = Cell::new("i");
+                })
+                .unwrap();
+
+            assert_eq!(
+                completed.area,
+                Rect::new(0, 0, 6, 5),
+                "completed area reports the full terminal size"
+            );
+            assert_eq!(
+                completed.buffer.area, viewport_area,
+                "completed buffer is sized to the inline viewport"
+            );
+        }
+
+        assert_eq!(
+            terminal.backend().buffer()[(viewport_area.x, viewport_area.y)].symbol(),
+            "i"
+        );
+    }
+
+    /// Inline viewports are autoresized during `draw`.
+    ///
+    /// This asserts that when the backend reports a different terminal size, `draw` recomputes the
+    /// inline viewport rectangle and renders into the new viewport area.
+    #[test]
+    fn draw_inline_autoresize_recomputes_viewport_on_grow() {
+        let mut backend = TestBackend::new(6, 5);
+        backend
+            .set_cursor_position(Position { x: 0, y: 2 })
+            .unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(3),
+            },
+        )
+        .unwrap();
+
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                frame.set_cursor_position(Position {
+                    x: area.x,
+                    y: area.y.saturating_add(1),
+                });
+                frame.buffer_mut()[(area.x, area.y)] = Cell::new("a");
+            })
+            .unwrap();
+
+        terminal.backend_mut().resize(8, 7);
+        let new_area = Rect::new(0, 0, 8, 7);
+
+        let previous_viewport = terminal.viewport_area;
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                frame.buffer_mut()[(area.x, area.y)] = Cell::new("g");
+            })
+            .unwrap();
+
+        assert_eq!(
+            terminal.last_known_area, new_area,
+            "inline last_known_area tracks the resized terminal size"
+        );
+        assert_eq!(
+            terminal.viewport_area.width, 8,
+            "inline viewport width tracks the resized terminal width"
+        );
+        assert_eq!(
+            terminal.viewport_area.height, 3,
+            "inline viewport height is capped by the configured inline height"
+        );
+        assert_eq!(
+            terminal.viewport_area.y, previous_viewport.y,
+            "inline viewport stays anchored relative to the cursor across a grow"
+        );
+        assert_eq!(
+            terminal.backend().buffer()[(terminal.viewport_area.x, terminal.viewport_area.y)]
+                .symbol(),
+            "g",
+            "render output lands at the recomputed viewport origin"
+        );
+    }
+
+    /// Inline viewports are autoresized during `draw`.
+    ///
+    /// This asserts that shrinking the backend terminal size causes `draw` to recompute the inline
+    /// viewport origin so it stays visible, and that rendering uses the new viewport origin.
+    #[test]
+    fn draw_inline_autoresize_recomputes_viewport_on_shrink() {
+        let mut backend = TestBackend::new(6, 6);
+        backend
+            .set_cursor_position(Position { x: 0, y: 4 })
+            .unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(4),
+            },
+        )
+        .unwrap();
+
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                frame.set_cursor_position(Position {
+                    x: area.x,
+                    y: area.y.saturating_add(2),
+                });
+                frame.buffer_mut()[(area.x, area.y)] = Cell::new("a");
+            })
+            .unwrap();
+
+        terminal.backend_mut().resize(6, 5);
+        let new_area = Rect::new(0, 0, 6, 5);
+
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                frame.buffer_mut()[(area.x, area.y)] = Cell::new("s");
+            })
+            .unwrap();
+
+        assert_eq!(
+            terminal.last_known_area, new_area,
+            "inline last_known_area tracks the resized terminal size"
+        );
+        assert_eq!(
+            terminal.viewport_area,
+            Rect::new(0, 1, 6, 4),
+            "inline viewport is recomputed to stay visible after a shrink"
+        );
+        assert_eq!(
+            terminal.backend().buffer()[(terminal.viewport_area.x, terminal.viewport_area.y)]
+                .symbol(),
+            "s",
+            "render output lands at the recomputed viewport origin"
+        );
+    }
+
+    /// `CompletedFrame` is only valid until the next draw call.
+    ///
+    /// This asserts that each `draw` returns the buffer for the frame that was just rendered
+    /// and that the count increments after each successful draw.
+    #[test]
+    fn draw_returns_completed_frame_for_current_render_pass() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        {
+            // `CompletedFrame` borrows the terminal, and is only valid until the next draw call.
+            let first = terminal
+                .draw(|frame| {
+                    frame.buffer_mut()[(0, 0)] = Cell::new("a");
+                })
+                .unwrap();
+
+            assert_eq!(first.count, 0, "first CompletedFrame has count 0");
+            assert_eq!(
+                first.buffer,
+                &Buffer::with_lines(["a  ", "   "]),
+                "first frame's buffer contains the first render output"
+            );
+        }
+
+        let second = terminal
+            .draw(|frame| {
+                frame.buffer_mut()[(0, 0)] = Cell::new("b");
+            })
+            .unwrap();
+
+        assert_eq!(second.count, 1, "second CompletedFrame has count 1");
+        assert_eq!(
+            second.buffer,
+            &Buffer::with_lines(["b  ", "   "]),
+            "second frame's buffer contains the second render output"
+        );
     }
 }
