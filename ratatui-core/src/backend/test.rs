@@ -105,6 +105,19 @@ impl TestBackend {
         &self.buffer
     }
 
+    /// Returns whether the cursor is visible.
+    pub const fn cursor_visible(&self) -> bool {
+        self.cursor
+    }
+
+    /// Returns the current cursor position.
+    pub const fn cursor_position(&self) -> Position {
+        Position {
+            x: self.pos.0,
+            y: self.pos.1,
+        }
+    }
+
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
     ///
     /// The scrollback buffer represents the part of the screen that is currently hidden from view,
