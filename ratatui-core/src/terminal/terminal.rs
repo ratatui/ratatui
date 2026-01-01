@@ -1,3 +1,6 @@
+use core::cmp::Ordering;
+use core::mem;
+
 use crate::backend::{Backend, ClearType};
 use crate::buffer::{Buffer, Cell};
 use crate::layout::{Position, Rect, Size};
@@ -567,6 +570,61 @@ where
     /// Queries the real size of the backend.
     pub fn size(&self) -> Result<Size, B::Error> {
         self.backend.size()
+    }
+
+    /// Sets the height of an inline viewport and resizes it accordingly.
+    ///
+    /// This method only works with inline viewports. For other viewport types, it has no effect.
+    /// The viewport will be resized to the new height, and the buffers will be cleared and
+    /// reallocated to match the new size.
+    ///
+    /// # Arguments
+    ///
+    /// * `new_height` - The new height for the inline viewport in lines
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// use ratatui::{Terminal, TerminalOptions, Viewport};
+    ///
+    /// let mut terminal = Terminal::with_options(backend, TerminalOptions {
+    ///     viewport: Viewport::Inline(8),
+    /// })?;
+    ///
+    /// // Later, resize the viewport to 12 lines
+    /// terminal.set_viewport_height(12)?;
+    /// ```
+    pub fn set_viewport_height(&mut self, new_height: u16) -> Result<(), B::Error> {
+        let Viewport::Inline(height) = &mut self.viewport else {
+            return Ok(());
+        };
+        if *height == new_height {
+            return Ok(());
+        }
+
+        let old_height = mem::replace(height, new_height);
+        self.clear()?;
+
+        let new_y = match new_height.cmp(&old_height) {
+            Ordering::Greater => {
+                let overflow =
+                    (self.viewport_area.y + new_height).saturating_sub(self.last_known_area.height);
+                if overflow > 0 {
+                    self.scroll_up(overflow)?;
+                    self.viewport_area.y.saturating_sub(overflow)
+                } else {
+                    self.viewport_area.y
+                }
+            }
+            _ => self.viewport_area.y,
+        };
+
+        self.set_viewport_area(Rect {
+            height: new_height,
+            y: new_y,
+            ..self.viewport_area
+        });
+        self.clear()
     }
 
     /// Insert some content before the current inline viewport. This has no effect when the
