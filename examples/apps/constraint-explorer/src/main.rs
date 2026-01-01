@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 /// A Ratatui example that demonstrates how different layout constraints work.
 ///
 /// It also supports swapping constraints, adding and removing blocks, and changing the spacing
@@ -30,7 +32,7 @@ fn main() -> Result<()> {
 #[derive(Default)]
 struct App {
     mode: AppMode,
-    spacing: u16,
+    spacing: i16,
     constraints: Vec<Constraint>,
     selected_index: usize,
     value: u16,
@@ -269,7 +271,7 @@ impl App {
     }
 
     fn instructions() -> impl Widget {
-        let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, + -: spacing";
+        let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, +/-: spacing";
         Paragraph::new(text)
             .fg(Self::TEXT_COLOR)
             .centered()
@@ -307,10 +309,12 @@ impl App {
     ///
     /// Only shows the gap when spacing is not zero
     fn axis(&self, width: u16) -> impl Widget {
-        let label = if self.spacing != 0 {
-            format!("{} px (gap: {} px)", width, self.spacing)
-        } else {
-            format!("{width} px")
+        let label = match self.spacing.cmp(&0) {
+            Ordering::Greater => format!("{width} px (gap: {} px)", self.spacing),
+            Ordering::Less => {
+                format!("{width} px (overlap: {} px)", self.spacing.unsigned_abs())
+            }
+            Ordering::Equal => format!("{width} px"),
         };
         let bar_width = width.saturating_sub(2) as usize; // we want to `<` and `>` at the ends
         let width_bar = format!("<{label:-^bar_width$}>");
