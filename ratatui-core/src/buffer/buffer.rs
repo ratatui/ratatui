@@ -25,7 +25,7 @@ use crate::text::{Line, Span};
 /// use ratatui_core::layout::{Position, Rect};
 /// use ratatui_core::style::{Color, Style};
 ///
-/// # fn foo() -> Option<()> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut buf = Buffer::empty(Rect {
 ///     x: 0,
 ///     y: 0,
@@ -42,10 +42,12 @@ use crate::text::{Line, Span};
 /// assert_eq!(buf[(0, 1)].symbol(), "B");
 ///
 /// // getting an Option instead of panicking if the position is outside the buffer
-/// let cell = buf.cell_mut(Position { x: 0, y: 2 })?;
+/// let cell = buf
+///     .cell_mut(Position { x: 0, y: 2 })
+///     .ok_or("cell not found")?;
 /// cell.set_symbol("C");
 ///
-/// let cell = buf.cell(Position { x: 0, y: 2 })?;
+/// let cell = buf.cell(Position { x: 0, y: 2 }).ok_or("cell not found")?;
 /// assert_eq!(cell.symbol(), "C");
 ///
 /// buf.set_string(
@@ -58,7 +60,7 @@ use crate::text::{Line, Span};
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);
 /// assert_eq!(cell.bg, Color::White);
-/// # Some(())
+/// # Ok(())
 /// # }
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
