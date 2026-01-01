@@ -288,12 +288,12 @@ impl Backend for TestBackend {
         let region = match clear_type {
             ClearType::All => return self.clear(),
             ClearType::AfterCursor => {
-                let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
                 &mut self.buffer.content[index..]
             }
             ClearType::BeforeCursor => {
                 let index = self.buffer.index_of(self.pos.0, self.pos.1);
-                &mut self.buffer.content[..index]
+                &mut self.buffer.content[..=index]
             }
             ClearType::CurrentLine => {
                 let line_start_index = self.buffer.index_of(0, self.pos.1);
@@ -633,7 +633,7 @@ mod tests {
         backend.assert_buffer_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
-            "aaaa      ",
+            "aaa       ",
             "          ",
             "          ",
         ]);
@@ -657,7 +657,7 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "     aaaaa",
+            "      aaaa",
             "aaaaaaaaaa",
         ]);
     }
