@@ -419,3 +419,509 @@ pub(crate) fn compute_inline_size<B: Backend>(
         pos,
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::backend::{Backend, TestBackend};
+    use crate::layout::{Position, Rect, Size};
+    use crate::style::Style;
+    use crate::terminal::inline::compute_inline_size;
+    use crate::terminal::{Terminal, TerminalOptions, Viewport};
+
+    #[test]
+    fn compute_inline_size_uses_cursor_offset_when_space_available() {
+        // Diagram (terminal height = 10, requested viewport height = 4):
+        //
+        // Cursor at y=6, previous cursor offset within viewport = 1.
+        //
+        // Before (conceptually):
+        //   0
+        //   1
+        //   2
+        //   3
+        //   4
+        //   5  <- viewport top (expected)
+        //   6  <- cursor row (observed_pos.y)
+        //   7
+        //   8
+        //   9
+        //
+        // After: viewport top y = 5 (6 - 1), height = 4 => rows 5..9 (exclusive).
+        let mut backend = TestBackend::new(10, 10);
+        backend
+            .set_cursor_position(Position { x: 0, y: 6 })
+            .unwrap();
+
+        let (area, observed_pos) =
+            compute_inline_size(&mut backend, 4, Size::new(10, 10), 1).unwrap();
+
+        assert_eq!(observed_pos, Position { x: 0, y: 6 });
+        assert_eq!(area, Rect::new(0, 5, 10, 4));
+    }
+
+    #[test]
+    fn compute_inline_size_saturates_when_offset_exceeds_cursor_row() {
+        // Diagram (terminal height = 10, requested viewport height = 4):
+        //
+        // Cursor at y=0, previous cursor offset within viewport = 5 (nonsensical but possible if
+        // callers pass a stale/oversized offset).
+        //
+        // We saturate so the computed viewport top cannot go negative:
+        //   top = cursor_y.saturating_sub(offset) = 0.saturating_sub(5) = 0
+        //
+        // Expected viewport area:
+        //   y=0..4 (fully pinned to the top)
+        let mut backend = TestBackend::new(10, 10);
+        backend
+            .set_cursor_position(Position { x: 0, y: 0 })
+            .unwrap();
+
+        let (area, _observed_pos) =
+            compute_inline_size(&mut backend, 4, Size::new(10, 10), 5).unwrap();
+
+        assert_eq!(area, Rect::new(0, 0, 10, 4));
+    }
+
+    #[cfg(not(feature = "scrolling-regions"))]
+    mod no_scrolling_regions {
+        use super::*;
+
+        #[test]
+        fn insert_before_is_noop_for_non_inline_viewports() {
+            // Diagram:
+            //
+            // Viewport is fullscreen (not inline), so insert_before() is a no-op.
+            //
+            // Screen before:
+            //   x..
+            //   ...
+            //
+            // Screen after:
+            //   x..
+            //   ...
+            let mut terminal = Terminal::new(TestBackend::new(3, 2)).unwrap();
+            {
+                let frame = terminal.get_frame();
+                frame.buffer[(0, 0)].set_symbol("x");
+            }
+            terminal.flush().unwrap();
+
+            let viewport_area = terminal.viewport_area;
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "zzz", Style::default());
+                })
+                .unwrap();
+
+            assert_eq!(terminal.viewport_area, viewport_area);
+            terminal.backend().assert_buffer_lines(["x  ", "   "]);
+        }
+
+        #[test]
+        fn insert_before_pushes_viewport_down_when_space_available() {
+            // Diagram (screen height = 10, viewport height = 4, cursor row = 3):
+            //
+            // Before:
+            //   0: 0000000000
+            //   1: 1111111111
+            //   2: 2222222222
+            //   3: [viewport top] 3333333333
+            //   4:               4444444444
+            //   5:               5555555555
+            //   6:               6666666666
+            //   7: 7777777777
+            //   8: 8888888888
+            //   9: 9999999999
+            //
+            // After inserting 1 line above an inline viewport (no scrolling regions):
+            // - A line is drawn at the old viewport top (y=3)
+            // - The viewport moves down by 1 row (new top y=4)
+            // - The viewport is cleared so it will be redrawn on the next draw()
+            let mut backend = TestBackend::with_lines([
+                "0000000000",
+                "1111111111",
+                "2222222222",
+                "3333333333",
+                "4444444444",
+                "5555555555",
+                "6666666666",
+                "7777777777",
+                "8888888888",
+                "9999999999",
+            ]);
+            backend
+                .set_cursor_position(Position { x: 0, y: 3 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "INSERTLINE", Style::default());
+                })
+                .unwrap();
+
+            assert_eq!(terminal.viewport_area, Rect::new(0, 4, 10, 4));
+            terminal.backend().assert_buffer_lines([
+                "0000000000",
+                "1111111111",
+                "2222222222",
+                "INSERTLINE",
+                "4         ",
+                "          ",
+                "          ",
+                "          ",
+                "          ",
+                "          ",
+            ]);
+        }
+
+        #[test]
+        fn insert_before_scrolls_when_viewport_is_at_bottom() {
+            // Diagram (screen height = 10, viewport height = 4, cursor row = 6):
+            //
+            // Before:
+            //   0: 0000000000
+            //   1: 1111111111
+            //   2: 2222222222
+            //   3: 3333333333
+            //   4: 4444444444
+            //   5: 5555555555
+            //   6: [viewport top] 6666666666
+            //   7:               7777777777
+            //   8:               8888888888
+            //   9:               9999999999
+            //
+            // After inserting 2 lines:
+            // - The area above the viewport scrolls up to make room
+            // - Inserted lines appear immediately above the viewport
+            // - The viewport is cleared so it will be redrawn on the next draw()
+            let mut backend = TestBackend::with_lines([
+                "0000000000",
+                "1111111111",
+                "2222222222",
+                "3333333333",
+                "4444444444",
+                "5555555555",
+                "6666666666",
+                "7777777777",
+                "8888888888",
+                "9999999999",
+            ]);
+            backend
+                .set_cursor_position(Position { x: 0, y: 6 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf.set_string(0, 0, "INSERTED1", Style::default());
+                    buf.set_string(0, 1, "INSERTED2", Style::default());
+                })
+                .unwrap();
+
+            assert_eq!(terminal.viewport_area, Rect::new(0, 6, 10, 4));
+            terminal.backend().assert_buffer_lines([
+                "2222222222",
+                "3333333333",
+                "4444444444",
+                "5555555555",
+                "INSERTED1 ",
+                "INSERTED2 ",
+                "8         ",
+                "          ",
+                "          ",
+                "          ",
+            ]);
+        }
+
+        #[test]
+        fn insert_before_then_draw_repaints_cleared_viewport() {
+            // Diagram (screen height = 10, viewport height = 4, cursor row = 6):
+            //
+            // 1) Draw a frame into the inline viewport at the bottom:
+            //   6..9: AAAAAAAAAA
+            //
+            // 2) Insert 2 lines above the viewport:
+            //   - Inserts appear at rows 4..5
+            //   - Viewport is cleared (so it is blank on-screen until the next draw)
+            //
+            // 3) Draw again:
+            //   6..9: BBBBBBBBBB
+            //
+            // Expected final screen:
+            //   4: INSERTED00
+            //   5: INSERTED01
+            //   6..9: BBBBBBBBBB
+            let mut backend = TestBackend::new(10, 10);
+            backend
+                .set_cursor_position(Position { x: 0, y: 6 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .draw(|frame| {
+                    let area = frame.area();
+                    for y in area.top()..area.bottom() {
+                        frame
+                            .buffer
+                            .set_string(area.x, y, "AAAAAAAAAA", Style::default());
+                    }
+                })
+                .unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf.set_string(0, 0, "INSERTED00", Style::default());
+                    buf.set_string(0, 1, "INSERTED01", Style::default());
+                })
+                .unwrap();
+
+            terminal
+                .draw(|frame| {
+                    let area = frame.area();
+                    for y in area.top()..area.bottom() {
+                        frame
+                            .buffer
+                            .set_string(area.x, y, "BBBBBBBBBB", Style::default());
+                    }
+                })
+                .unwrap();
+
+            terminal.backend().assert_buffer_lines([
+                "          ",
+                "          ",
+                "          ",
+                "          ",
+                "INSERTED00",
+                "INSERTED01",
+                "BBBBBBBBBB",
+                "BBBBBBBBBB",
+                "BBBBBBBBBB",
+                "BBBBBBBBBB",
+            ]);
+        }
+    }
+
+    #[cfg(feature = "scrolling-regions")]
+    mod scrolling_regions {
+        use super::*;
+
+        #[test]
+        fn insert_before_moves_viewport_down_without_clearing() {
+            // Diagram (screen height = 10, viewport height = 4, cursor row = 3):
+            //
+            // With scrolling regions enabled, we can create a gap and draw the inserted line
+            // without clearing the viewport content.
+            //
+            // Before:
+            //   2: 2222222222
+            //   3: [viewport top] 3333333333
+            //   4:               4444444444
+            //
+            // After:
+            //   3: INSERTLINE
+            //   4: 3333333333  (viewport content preserved)
+            let mut backend = TestBackend::with_lines([
+                "0000000000",
+                "1111111111",
+                "2222222222",
+                "3333333333",
+                "4444444444",
+                "5555555555",
+                "6666666666",
+                "7777777777",
+                "8888888888",
+                "9999999999",
+            ]);
+            backend
+                .set_cursor_position(Position { x: 0, y: 3 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "INSERTLINE", Style::default());
+                })
+                .unwrap();
+
+            assert_eq!(terminal.viewport_area, Rect::new(0, 4, 10, 4));
+            terminal.backend().assert_buffer_lines([
+                "0000000000",
+                "1111111111",
+                "2222222222",
+                "INSERTLINE",
+                "3333333333",
+                "4444444444",
+                "5555555555",
+                "6666666666",
+                "8888888888",
+                "9999999999",
+            ]);
+        }
+
+        #[test]
+        fn insert_before_when_viewport_is_at_bottom_preserves_viewport() {
+            // Diagram (screen height = 10, viewport height = 4, viewport top = 6):
+            //
+            // With scrolling regions enabled and the viewport already at the bottom:
+            // - The region above the viewport (rows 0..6) scrolls up to make room.
+            // - Inserted lines are drawn into the cleared space immediately above the viewport.
+            // - The viewport itself is not cleared and stays on-screen.
+            //
+            // Before (after drawing V into the viewport):
+            //   0: 0000000000
+            //   1: 1111111111
+            //   2: 2222222222
+            //   3: 3333333333
+            //   4: 4444444444
+            //   5: 5555555555
+            //   6..9: VVVVVVVVVV
+            //
+            // After inserting 2 lines:
+            //   0..3: previous 2..5
+            //   4: AAAAAAAAAA
+            //   5: BBBBBBBBBB
+            //   6..9: VVVVVVVVVV
+            //
+            // The scrolled-off lines are appended to scrollback (previous 0 and 1).
+            let mut backend = TestBackend::with_lines([
+                "0000000000",
+                "1111111111",
+                "2222222222",
+                "3333333333",
+                "4444444444",
+                "5555555555",
+                "6666666666",
+                "7777777777",
+                "8888888888",
+                "9999999999",
+            ]);
+            backend
+                .set_cursor_position(Position { x: 0, y: 6 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .draw(|frame| {
+                    let area = frame.area();
+                    for y in area.top()..area.bottom() {
+                        frame
+                            .buffer
+                            .set_string(area.x, y, "VVVVVVVVVV", Style::default());
+                    }
+                })
+                .unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf.set_string(0, 0, "AAAAAAAAAA", Style::default());
+                    buf.set_string(0, 1, "BBBBBBBBBB", Style::default());
+                })
+                .unwrap();
+
+            terminal.backend().assert_buffer_lines([
+                "2222222222",
+                "3333333333",
+                "4444444444",
+                "5555555555",
+                "AAAAAAAAAA",
+                "BBBBBBBBBB",
+                "VVVVVVVVVV",
+                "VVVVVVVVVV",
+                "VVVVVVVVVV",
+                "VVVVVVVVVV",
+            ]);
+            terminal
+                .backend()
+                .assert_scrollback_lines(["0000000000", "1111111111"]);
+        }
+
+        #[test]
+        fn insert_before_when_viewport_is_fullscreen_appends_to_scrollback() {
+            // Diagram (screen height = 4, viewport height = 4):
+            //
+            // When the viewport takes the whole screen, there is no visible "area above" it.
+            // The scrolling-regions implementation handles this by repeatedly:
+            // - drawing one line over the top row
+            // - immediately scrolling that row into scrollback
+            //
+            // The viewport content stays on-screen; inserted lines end up in scrollback.
+            let mut backend = TestBackend::new(10, 4);
+            backend
+                .set_cursor_position(Position { x: 0, y: 0 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .draw(|frame| {
+                    let area = frame.area();
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y, "VIEWLINE00", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 1, "VIEWLINE01", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 2, "VIEWLINE02", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 3, "VIEWLINE03", Style::default());
+                })
+                .unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf.set_string(0, 0, "INSERTED00", Style::default());
+                    buf.set_string(0, 1, "INSERTED01", Style::default());
+                })
+                .unwrap();
+
+            terminal.backend().assert_buffer_lines([
+                "VIEWLINE00",
+                "VIEWLINE01",
+                "VIEWLINE02",
+                "VIEWLINE03",
+            ]);
+            terminal
+                .backend()
+                .assert_scrollback_lines(["INSERTED00", "INSERTED01"]);
+        }
+    }
+}
