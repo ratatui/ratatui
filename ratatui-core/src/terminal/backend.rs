@@ -36,3 +36,40 @@ impl<B: Backend> Terminal<B> {
         self.backend.size()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::backend::TestBackend;
+    use crate::layout::{Position, Size};
+    use crate::terminal::Terminal;
+
+    #[test]
+    fn backend_returns_shared_reference() {
+        let backend = TestBackend::new(3, 2);
+        let terminal = Terminal::new(backend).unwrap();
+
+        assert_eq!(terminal.backend().cursor_position(), Position::ORIGIN);
+    }
+
+    #[test]
+    fn backend_mut_allows_mutating_backend_state() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.backend_mut().resize(4, 3);
+
+        assert_eq!(terminal.size().unwrap(), Size::new(4, 3));
+        terminal
+            .backend()
+            .assert_buffer_lines(["    ", "    ", "    "]);
+    }
+
+    #[test]
+    fn size_queries_underlying_backend_size() {
+        let mut backend = TestBackend::new(3, 2);
+        backend.resize(4, 3);
+        let terminal = Terminal::new(backend).unwrap();
+
+        assert_eq!(terminal.size().unwrap(), Size::new(4, 3));
+    }
+}
