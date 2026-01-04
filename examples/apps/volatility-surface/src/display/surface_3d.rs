@@ -3,6 +3,8 @@
 //! This module implements perspective projection and rotation to render a 3D volatility surface
 //! on a 2D canvas using Braille characters for high-resolution output.
 
+use std::f64::consts::{PI, TAU};
+
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
@@ -37,18 +39,17 @@ impl Surface3D {
 
     /// Rotate the surface around the X axis (tilt up/down).
     pub fn rotate_x(&mut self, delta: f64) {
-        self.rotation_x = (self.rotation_x + delta)
-            .clamp(-std::f64::consts::PI / 2.0, std::f64::consts::PI / 2.0);
+        self.rotation_x = (self.rotation_x + delta).clamp(-PI / 2.0, PI / 2.0);
     }
 
     /// Rotate the surface around the Z axis (spin left/right).
     pub fn rotate_z(&mut self, delta: f64) {
         self.rotation_z += delta;
-        if self.rotation_z > 2.0 * std::f64::consts::PI {
-            self.rotation_z -= 2.0 * std::f64::consts::PI;
+        if self.rotation_z > TAU {
+            self.rotation_z -= TAU;
         }
         if self.rotation_z < 0.0 {
-            self.rotation_z += 2.0 * std::f64::consts::PI;
+            self.rotation_z += TAU;
         }
     }
 
