@@ -1,3 +1,9 @@
+//! A Ratatui example that demonstrates 3D perspective projection in the terminal.
+//!
+//! This example visualizes an implied volatility surface as an interactive 3D wireframe
+//! using Braille canvas for high-resolution rendering. It demonstrates rotation matrices,
+//! perspective projection, and real-time animation.
+
 mod display;
 mod volatility;
 

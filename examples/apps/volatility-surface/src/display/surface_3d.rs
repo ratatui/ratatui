@@ -1,3 +1,8 @@
+//! 3D surface rendering module for the volatility surface visualization.
+//!
+//! This module implements perspective projection and rotation to render a 3D volatility surface
+//! on a 2D canvas using Braille characters for high-resolution output.
+
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
@@ -7,6 +12,12 @@ use ratatui::widgets::{Block, Borders};
 
 use super::Palette;
 
+/// A 3D surface renderer that maintains rotation, zoom, and color palette state.
+///
+/// This renderer uses a concept called perspective projection to map 3D coordinates to 2D screen space,
+/// allowing interactive orientation of a volatility surface through rotation and zoom.
+/// The surface is rendered using Braille characters via the Canvas widget, which gives
+/// substantially higher resolution than standard block characters.
 pub struct Surface3D {
     rotation_x: f64,
     rotation_z: f64,
@@ -24,11 +35,13 @@ impl Surface3D {
         }
     }
 
+    /// Rotate the surface around the X axis (tilt up/down).
     pub fn rotate_x(&mut self, delta: f64) {
         self.rotation_x = (self.rotation_x + delta)
             .clamp(-std::f64::consts::PI / 2.0, std::f64::consts::PI / 2.0);
     }
 
+    /// Rotate the surface around the Z axis (spin left/right).
     pub fn rotate_z(&mut self, delta: f64) {
         self.rotation_z += delta;
         if self.rotation_z > 2.0 * std::f64::consts::PI {
@@ -39,11 +52,15 @@ impl Surface3D {
         }
     }
 
+    /// Adjust the zoom level by the given factor.
     pub fn zoom(&mut self, factor: f64) {
         self.zoom = (self.zoom * factor).clamp(0.3, 3.0);
     }
 
-    /// Project 3D point to 2D
+    /// Project a 3D point to 2D screen coordinates using perspective projection.
+    ///
+    /// This method applies rotation matrices and perspective division to transform
+    /// 3D coordinates into 2D screen space while maintaining depth information.
     fn project(&self, x: f64, y: f64, z: f64) -> (f64, f64) {
         // Apply rotations
         let (sin_x, cos_x) = self.rotation_x.sin_cos();
@@ -67,6 +84,10 @@ impl Surface3D {
 }
 
 impl Surface3D {
+    /// Render the 3D volatility surface to the given frame.
+    ///
+    /// The surface data is expected to be a 2D grid of volatility values, where the first
+    /// dimension represents expiration times and the second dimension represents strike prices.
     pub fn render(&self, frame: &mut Frame, area: Rect, surface_data: &Vec<Vec<f64>>, _time: f64) {
         let n_exp = surface_data.len();
         let n_strike = surface_data.first().map_or(0, std::vec::Vec::len);
@@ -193,6 +214,7 @@ impl Surface3D {
         frame.render_widget(canvas, area);
     }
 
+    /// Cycle to the next color palette.
     pub const fn cycle_palette(&mut self) {
         self.palette = self.palette.next();
     }

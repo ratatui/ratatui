@@ -1,3 +1,8 @@
+//! Color palette module for the volatility surface visualization.
+//!
+//! This module provides color gradients using the colorgrad library,
+//! including perceptually uniform colormaps and custom gradients.
+
 use colorgrad::{Color as GradColor, Gradient, LinearGradient};
 use ratatui::style::Color;
 
