@@ -21,10 +21,7 @@ use volatility::VolatilityEngine;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
-    let result = App::new().run(terminal);
-    ratatui::restore();
-    result
+    ratatui::run(|terminal| App::new().run(terminal))
 }
 
 struct App {
@@ -46,7 +43,7 @@ impl App {
         }
     }
 
-    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         let tick_rate = Duration::from_secs_f64(1.0 / 30.0); // 30 FPS
         let mut last_tick = Instant::now();
         let mut fps_timer = Instant::now();
