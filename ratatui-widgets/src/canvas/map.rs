@@ -31,7 +31,7 @@ impl MapResolution {
     }
 }
 
-/// A world map using a Plate carrée (equirectangular) projection. 
+/// A world map using a plate carrée (equirectangular) projection. 
 ///
 /// A world map can be rendered with different [resolutions](MapResolution) and [colors](Color).
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
