@@ -9,7 +9,7 @@ use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::symbols::Marker;
-use ratatui::widgets::canvas::{Canvas, Line, Points};
+use ratatui::widgets::canvas::{Canvas, Context, Line, Points};
 use ratatui::widgets::{Block, Borders};
 
 use super::Palette;
@@ -91,7 +91,7 @@ impl Surface3D {
     ///
     /// The surface data is expected to be a 2D grid of volatility values, where the first
     /// dimension represents expiration times and the second dimension represents strike prices.
-    pub fn render(&self, frame: &mut Frame, area: Rect, surface_data: &Vec<Vec<f64>>, _time: f64) {
+    pub fn render(&self, frame: &mut Frame, area: Rect, surface_data: &[Vec<f64>], _time: f64) {
         let n_exp = surface_data.len();
         let n_strike = surface_data.first().map_or(0, std::vec::Vec::len);
 
@@ -99,9 +99,27 @@ impl Surface3D {
             return;
         }
 
-        // Find min/max for normalization
+        let (min_vol, max_vol) = Self::find_volatility_range(surface_data);
+
+        let canvas = Canvas::default()
+            .block(Self::create_border())
+            .marker(Marker::Braille)
+            .x_bounds([-2.0, 2.0]) // Canvas viewport slightly larger than surface bounds
+            .y_bounds([-1.5, 1.5]) // Narrower vertically to match terminal aspect ratio
+            .paint(|ctx| {
+                self.draw_strike_grid_lines(ctx, surface_data, n_exp, n_strike, min_vol, max_vol);
+                self.draw_expiry_grid_lines(ctx, surface_data, n_exp, n_strike, min_vol, max_vol);
+                self.draw_peak_highlights(ctx, surface_data, n_exp, n_strike, min_vol, max_vol);
+            });
+
+        frame.render_widget(canvas, area);
+    }
+
+    /// Find the minimum and maximum volatility values in the surface data.
+    fn find_volatility_range(surface_data: &[Vec<f64>]) -> (f64, f64) {
         let mut min_vol = f64::MAX;
         let mut max_vol = f64::MIN;
+
         for row in surface_data {
             for &vol in row {
                 min_vol = min_vol.min(vol);
@@ -109,112 +127,169 @@ impl Surface3D {
             }
         }
 
-        let canvas = Canvas::default()
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(" 3D Volatility Surface - Use ↑↓←→ to rotate, Z/X to zoom ")
-                    .border_style(Style::default().fg(Color::DarkGray)),
-            )
-            .marker(Marker::Braille)
-            .x_bounds([-2.0, 2.0])
-            .y_bounds([-1.5, 1.5])
-            .paint(|ctx| {
-                // Draw grid lines along strike dimension
-                for (i, row) in surface_data.iter().enumerate() {
-                    let mut points = Vec::new();
-                    let exp_norm = f64::from(i as u32) / f64::from((n_exp - 1) as u32);
+        (min_vol, max_vol)
+    }
 
-                    for (j, &vol) in row.iter().enumerate().take(n_strike) {
-                        let strike_norm = f64::from(j as u32) / f64::from((n_strike - 1) as u32);
-                        let vol_norm = (vol - min_vol) / (max_vol - min_vol);
+    /// Create the border block with title.
+    fn create_border() -> Block<'static> {
+        Block::default()
+            .borders(Borders::ALL)
+            .title(" 3D Volatility Surface - Use ↑↓←→ to rotate, Z/X to zoom ")
+            .border_style(Style::default().fg(Color::DarkGray))
+    }
 
-                        // Map to 3D coordinates
-                        let x = (strike_norm - 0.5) * 3.0; // Strike
-                        let y = (exp_norm - 0.5) * 3.0; // Expiry
-                        let z = (vol_norm - 0.5) * 2.0; // IV height
+    /// Draw grid lines along the strike dimension (horizontal lines).
+    fn draw_strike_grid_lines(
+        &self,
+        ctx: &mut Context,
+        surface_data: &[Vec<f64>],
+        n_exp: usize,
+        n_strike: usize,
+        min_vol: f64,
+        max_vol: f64,
+    ) {
+        for (i, row) in surface_data.iter().enumerate() {
+            let points = self.project_row_to_points(row, i, n_exp, n_strike, min_vol, max_vol);
+            // Map to [0.3, 1.0] range to avoid too-dark colors at the edges
+            let color = self
+                .palette
+                .get_color((i as f64 / n_exp as f64 * 0.7 + 0.3).min(1.0));
+            Self::draw_line_strip(ctx, &points, color);
+        }
+    }
 
-                        let (px, py) = self.project(x, y, z);
-                        points.push((px, py));
+    /// Draw grid lines along the expiry dimension (vertical lines).
+    fn draw_expiry_grid_lines(
+        &self,
+        ctx: &mut Context,
+        surface_data: &[Vec<f64>],
+        n_exp: usize,
+        n_strike: usize,
+        min_vol: f64,
+        max_vol: f64,
+    ) {
+        // Draw every other line to reduce visual clutter, got better results with this
+        for j in (0..n_strike).step_by(2) {
+            let points =
+                self.project_column_to_points(surface_data, j, n_exp, n_strike, min_vol, max_vol);
+            let strike_norm = f64::from(j as u32) / f64::from((n_strike - 1) as u32);
+            let color = self.palette.get_color((strike_norm * 0.7 + 0.3).min(1.0));
+            Self::draw_line_strip(ctx, &points, color);
+        }
+    }
+
+    /// Draw highlighted points at volatility peaks.
+    fn draw_peak_highlights(
+        &self,
+        ctx: &mut Context,
+        surface_data: &[Vec<f64>],
+        n_exp: usize,
+        n_strike: usize,
+        min_vol: f64,
+        max_vol: f64,
+    ) {
+        // Sample every other point to avoid overcrowding
+        let peak_points: Vec<(f64, f64)> = (0..n_exp)
+            .step_by(2)
+            .flat_map(|i| {
+                (0..n_strike).step_by(2).filter_map(move |j| {
+                    let vol = surface_data[i][j];
+                    let vol_norm = (vol - min_vol) / (max_vol - min_vol);
+
+                    // Only highlight top 30% of volatility values
+                    if vol_norm > 0.7 {
+                        Some(self.project_normalized_point(
+                            f64::from(j as u32) / f64::from((n_strike - 1) as u32),
+                            f64::from(i as u32) / f64::from((n_exp - 1) as u32),
+                            vol_norm,
+                        ))
+                    } else {
+                        None
                     }
+                })
+            })
+            .collect();
 
-                    // Draw line with color based on expiry
-                    let color_val = (i as f64 / n_exp as f64 * 0.7 + 0.3).min(1.0);
-                    let color = self.palette.get_color(color_val);
-
-                    for window in points.windows(2) {
-                        ctx.draw(&Line {
-                            x1: window[0].0,
-                            y1: window[0].1,
-                            x2: window[1].0,
-                            y2: window[1].1,
-                            color,
-                        });
-                    }
-                }
-
-                // Draw grid lines along expiry dimension
-                for j in (0..n_strike).step_by(2) {
-                    let mut points = Vec::new();
-                    let strike_norm = f64::from(j as u32) / f64::from((n_strike - 1) as u32);
-
-                    for (i, row) in surface_data.iter().enumerate() {
-                        let exp_norm = f64::from(i as u32) / f64::from((n_exp - 1) as u32);
-                        let vol = row[j];
-                        let vol_norm = (vol - min_vol) / (max_vol - min_vol);
-
-                        let x = (strike_norm - 0.5) * 3.0;
-                        let y = (exp_norm - 0.5) * 3.0;
-                        let z = (vol_norm - 0.5) * 2.0;
-
-                        let (px, py) = self.project(x, y, z);
-                        points.push((px, py));
-                    }
-
-                    let color_val = (strike_norm * 0.7 + 0.3).min(1.0);
-                    let color = self.palette.get_color(color_val);
-
-                    for window in points.windows(2) {
-                        ctx.draw(&Line {
-                            x1: window[0].0,
-                            y1: window[0].1,
-                            x2: window[1].0,
-                            y2: window[1].1,
-                            color,
-                        });
-                    }
-                }
-
-                // Add some glowing points at peaks for emphasis
-                let mut peak_points = Vec::new();
-                for i in (0..n_exp).step_by(2) {
-                    for j in (0..n_strike).step_by(2) {
-                        let exp_norm = i as f64 / (n_exp - 1) as f64;
-                        let strike_norm = j as f64 / (n_strike - 1) as f64;
-                        let vol = surface_data[i][j];
-                        let vol_norm = (vol - min_vol) / (max_vol - min_vol);
-
-                        if vol_norm > 0.7 {
-                            // Only show high points
-                            let x = (strike_norm - 0.5) * 3.0;
-                            let y = (exp_norm - 0.5) * 3.0;
-                            let z = (vol_norm - 0.5) * 2.0;
-
-                            let (px, py) = self.project(x, y, z);
-                            peak_points.push((px, py));
-                        }
-                    }
-                }
-
-                if !peak_points.is_empty() {
-                    ctx.draw(&Points {
-                        coords: &peak_points,
-                        color: self.palette.get_color(0.9),
-                    });
-                }
+        if !peak_points.is_empty() {
+            ctx.draw(&Points {
+                coords: &peak_points,
+                color: self.palette.get_color(0.9),
             });
+        }
+    }
 
-        frame.render_widget(canvas, area);
+    /// Project a row of data to 2D screen points.
+    fn project_row_to_points(
+        &self,
+        row: &[f64],
+        row_idx: usize,
+        n_exp: usize,
+        n_strike: usize,
+        min_vol: f64,
+        max_vol: f64,
+    ) -> Vec<(f64, f64)> {
+        let exp_norm = f64::from(row_idx as u32) / f64::from((n_exp - 1) as u32);
+
+        row.iter()
+            .enumerate()
+            .take(n_strike)
+            .map(|(j, &vol)| {
+                let strike_norm = f64::from(j as u32) / f64::from((n_strike - 1) as u32);
+                let vol_norm = (vol - min_vol) / (max_vol - min_vol);
+                self.project_normalized_point(strike_norm, exp_norm, vol_norm)
+            })
+            .collect()
+    }
+
+    /// Project a column of data to 2D screen points.
+    fn project_column_to_points(
+        &self,
+        surface_data: &[Vec<f64>],
+        col_idx: usize,
+        n_exp: usize,
+        n_strike: usize,
+        min_vol: f64,
+        max_vol: f64,
+    ) -> Vec<(f64, f64)> {
+        let strike_norm = f64::from(col_idx as u32) / f64::from((n_strike - 1) as u32);
+
+        surface_data
+            .iter()
+            .enumerate()
+            .map(|(i, row)| {
+                let exp_norm = f64::from(i as u32) / f64::from((n_exp - 1) as u32);
+                let vol = row[col_idx];
+                let vol_norm = (vol - min_vol) / (max_vol - min_vol);
+                self.project_normalized_point(strike_norm, exp_norm, vol_norm)
+            })
+            .collect()
+    }
+
+    /// Project normalized coordinates (0.0-1.0) to 2D screen space.
+    fn project_normalized_point(
+        &self,
+        strike_norm: f64,
+        exp_norm: f64,
+        vol_norm: f64,
+    ) -> (f64, f64) {
+        // Center the surface at origin by subtracting 0.5, then scale to world space
+        let x = (strike_norm - 0.5) * 3.0; // Strike: ±1.5 units
+        let y = (exp_norm - 0.5) * 3.0; // Expiry: ±1.5 units
+        let z = (vol_norm - 0.5) * 2.0; // Height: ±1.0 units (less tall to avoid distortion)
+        self.project(x, y, z)
+    }
+
+    /// Draw a series of connected line segments.
+    fn draw_line_strip(ctx: &mut Context, points: &[(f64, f64)], color: Color) {
+        for window in points.windows(2) {
+            ctx.draw(&Line {
+                x1: window[0].0,
+                y1: window[0].1,
+                x2: window[1].0,
+                y2: window[1].1,
+                color,
+            });
+        }
     }
 
     /// Cycle to the next color palette.
