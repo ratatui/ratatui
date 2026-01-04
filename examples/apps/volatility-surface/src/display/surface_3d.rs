@@ -16,8 +16,8 @@ use super::Palette;
 
 /// A 3D surface renderer that maintains rotation, zoom, and color palette state.
 ///
-/// This renderer uses a concept called perspective projection to map 3D coordinates to 2D screen space,
-/// allowing interactive orientation of a volatility surface through rotation and zoom.
+/// This renderer uses a concept called perspective projection to map 3D coordinates to 2D screen
+/// space, allowing interactive orientation of a volatility surface through rotation and zoom.
 /// The surface is rendered using Braille characters via the Canvas widget, which gives
 /// substantially higher resolution than standard block characters.
 pub struct Surface3D {
@@ -28,6 +28,9 @@ pub struct Surface3D {
 }
 
 impl Surface3D {
+    /// Distance from the camera to the projection plane
+    const CAMERA_DISTANCE: f64 = 4.0;
+
     pub const fn new() -> Self {
         Self {
             rotation_x: 0.6, // Tilt forward for better view
@@ -77,8 +80,7 @@ impl Surface3D {
         let z2 = y1 * sin_x + z1 * cos_x;
 
         // Perspective projection
-        let distance = 4.0;
-        let perspective = distance / (distance + z2);
+        let perspective = Self::CAMERA_DISTANCE / (Self::CAMERA_DISTANCE + z2);
 
         (x1 * perspective * self.zoom, y2 * perspective * self.zoom)
     }
