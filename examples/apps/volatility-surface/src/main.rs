@@ -10,7 +10,7 @@ mod volatility;
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
+use crossterm::event::{self, KeyCode, KeyEventKind, KeyModifiers};
 use display::Surface3D;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
@@ -65,8 +65,9 @@ impl App {
 
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
-                    if self.handle_key(key.code, key.modifiers) {
+                // Only handle key press events, not repeat or release
+                if let event::Event::Key(key) = event::read()? {
+                    if key.kind == KeyEventKind::Press && self.handle_key(key.code, key.modifiers) {
                         break;
                     }
                 }
@@ -96,10 +97,10 @@ impl App {
                 self.time = 0.0;
                 self.vol_engine = VolatilityEngine::new();
             }
-            KeyCode::Up => self.surface_3d.rotate_x(0.1),
-            KeyCode::Down => self.surface_3d.rotate_x(-0.1),
-            KeyCode::Left => self.surface_3d.rotate_z(0.1),
-            KeyCode::Right => self.surface_3d.rotate_z(-0.1),
+            KeyCode::Up | KeyCode::Char('k') => self.surface_3d.rotate_x(0.1),
+            KeyCode::Down | KeyCode::Char('j') => self.surface_3d.rotate_x(-0.1),
+            KeyCode::Left | KeyCode::Char('h') => self.surface_3d.rotate_z(0.1),
+            KeyCode::Right | KeyCode::Char('l') => self.surface_3d.rotate_z(-0.1),
             KeyCode::Char('z') => self.surface_3d.zoom(1.1),
             KeyCode::Char('x') => self.surface_3d.zoom(0.9),
             KeyCode::Char('p') => self.surface_3d.cycle_palette(),
