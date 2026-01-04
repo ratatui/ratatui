@@ -13,7 +13,7 @@ use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind, KeyModifiers};
 use display::Surface3D;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Color, Modifier, Style};
+use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::{DefaultTerminal, Frame};
@@ -120,17 +120,12 @@ impl App {
 
     fn render_header(&self, frame: &mut Frame, area: Rect) {
         let title = Line::from(vec![
-            Span::styled(
-                "3D Volatility Surface Visualizer",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
+            "3D Volatility Surface Visualizer".cyan().bold(),
             Span::raw(format!(" | FPS: {} | ", self.fps)),
             if self.paused {
-                Span::styled("PAUSED", Style::default().fg(Color::Red))
+                "PAUSED".red()
             } else {
-                Span::styled("LIVE", Style::default().fg(Color::Green))
+                "LIVE".green()
             },
         ]);
 
@@ -152,17 +147,17 @@ impl App {
 
     fn render_footer(frame: &mut Frame, area: Rect) {
         let controls = Line::from(vec![
-            Span::styled("↑↓←→", Style::default().fg(Color::Yellow)),
+            "↑↓←→".yellow(),
             Span::raw(" Rotate | "),
-            Span::styled("Z/X", Style::default().fg(Color::Yellow)),
+            "Z/X".yellow(),
             Span::raw(" Zoom | "),
-            Span::styled("P", Style::default().fg(Color::Yellow)),
+            "P".yellow(),
             Span::raw(" Palette | "),
-            Span::styled("Space", Style::default().fg(Color::Cyan)),
+            "Space".cyan(),
             Span::raw(" Pause | "),
-            Span::styled("Ctrl+R", Style::default().fg(Color::Cyan)),
+            "Ctrl+R".cyan(),
             Span::raw(" Reset | "),
-            Span::styled("Q", Style::default().fg(Color::Red)),
+            "Q".red(),
             Span::raw(" Quit"),
         ]);
 
