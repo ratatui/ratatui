@@ -1,3 +1,4 @@
+use colorgrad::{Color as GradColor, Gradient, LinearGradient};
 use ratatui::style::Color;
 
 #[derive(Debug, Clone, Copy)]
@@ -5,8 +6,8 @@ pub enum Palette {
     Viridis,
     Plasma,
     Phosphor,
-    Fear, // Red-dominant for high vol
-    Calm, // Blue-dominant for low vol
+    Fear,
+    Calm,
     Inferno,
 }
 
@@ -26,66 +27,46 @@ impl Palette {
     pub fn get_color(self, t: f64) -> Color {
         let t = t.clamp(0.0, 1.0);
 
-        match self {
-            Self::Viridis => viridis(t),
-            Self::Plasma => plasma(t),
-            Self::Phosphor => phosphor(t),
-            Self::Fear => fear(t),
-            Self::Calm => calm(t),
-            Self::Inferno => inferno(t),
-        }
+        let grad: Box<dyn Gradient> = match self {
+            Self::Viridis => Box::new(colorgrad::preset::viridis()),
+            Self::Plasma => Box::new(colorgrad::preset::plasma()),
+            Self::Inferno => Box::new(colorgrad::preset::inferno()),
+            Self::Phosphor => Box::new(Self::custom_phosphor()),
+            Self::Fear => Box::new(Self::custom_fear()),
+            Self::Calm => Box::new(Self::custom_calm()),
+        };
+
+        let rgba = grad.at(t as f32).to_rgba8();
+        Color::Rgb(rgba[0], rgba[1], rgba[2])
     }
-}
 
-fn viridis(t: f64) -> Color {
-    // Perceptually uniform colormap
-    let r = (0.282 + t * (0.277 - 0.004 * t)).clamp(0.0, 1.0);
-    let g = (0.0 + t * (0.982 - 0.020 * t)).clamp(0.0, 1.0);
-    let b = (0.329 + t * (0.576 - 1.034 * t + 0.568 * t.powi(2))).clamp(0.0, 1.0);
+    fn custom_phosphor() -> LinearGradient {
+        colorgrad::GradientBuilder::new()
+            .colors(&[
+                GradColor::from_rgba8(0, 40, 0, 255),
+                GradColor::from_rgba8(38, 255, 63, 255),
+            ])
+            .build()
+            .unwrap()
+    }
 
-    Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
-}
+    fn custom_fear() -> LinearGradient {
+        colorgrad::GradientBuilder::new()
+            .colors(&[
+                GradColor::from_rgba8(127, 0, 0, 255),
+                GradColor::from_rgba8(255, 76, 0, 255),
+            ])
+            .build()
+            .unwrap()
+    }
 
-fn plasma(t: f64) -> Color {
-    let r = (0.050 + t * (1.0 - 0.050)).clamp(0.0, 1.0);
-    let g = (0.030 + t * t * 0.970).clamp(0.0, 1.0);
-    let b = (0.570 - t * 0.570).clamp(0.0, 1.0);
-
-    Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
-}
-
-fn phosphor(t: f64) -> Color {
-    // Retro green CRT phosphor glow
-    let intensity = (t * 1.5).min(1.0);
-    let r = (intensity * 0.15) as u8;
-    let g = (intensity * 255.0) as u8;
-    let b = (intensity * 0.25 * 255.0) as u8;
-
-    Color::Rgb(r, g, b)
-}
-
-fn fear(t: f64) -> Color {
-    // Red-orange for high volatility/fear
-    let r = (0.5 + t * 0.5).min(1.0);
-    let g = (t * 0.3).min(1.0);
-    let b = 0.0;
-
-    Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
-}
-
-fn calm(t: f64) -> Color {
-    // Cool blues for low volatility
-    let r = (t * 0.2).min(1.0);
-    let g = (0.3 + t * 0.5).min(1.0);
-    let b = (0.5 + t * 0.5).min(1.0);
-
-    Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
-}
-
-fn inferno(t: f64) -> Color {
-    let r = (t.powf(0.5)).min(1.0);
-    let g = (t.powi(2)).min(1.0);
-    let b = (t.powi(4)).min(1.0);
-
-    Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
+    fn custom_calm() -> LinearGradient {
+        colorgrad::GradientBuilder::new()
+            .colors(&[
+                GradColor::from_rgba8(51, 76, 127, 255),
+                GradColor::from_rgba8(102, 204, 255, 255),
+            ])
+            .build()
+            .unwrap()
+    }
 }
