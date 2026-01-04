@@ -29,7 +29,6 @@ fn main() -> Result<()> {
 
 struct App {
     paused: bool,
-    time: f64,
     fps: usize,
     frame_count: usize,
     vol_engine: VolatilityEngine,
@@ -40,7 +39,6 @@ impl App {
     fn new() -> Self {
         Self {
             paused: false,
-            time: 0.0,
             fps: 0,
             frame_count: 0,
             vol_engine: VolatilityEngine::new(),
@@ -49,7 +47,7 @@ impl App {
     }
 
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
-        let tick_rate = Duration::from_millis(33); // 30 FPS
+        let tick_rate = Duration::from_secs_f64(1.0 / 30.0); // 30 FPS
         let mut last_tick = Instant::now();
         let mut fps_timer = Instant::now();
 
@@ -85,8 +83,7 @@ impl App {
     }
 
     fn update(&mut self) {
-        self.time += 0.05;
-        self.vol_engine.update(self.time);
+        self.vol_engine.update();
     }
 
     fn handle_key(&mut self, code: KeyCode, modifiers: KeyModifiers) -> bool {
@@ -94,8 +91,7 @@ impl App {
             KeyCode::Char('q') | KeyCode::Esc => return true,
             KeyCode::Char(' ') => self.paused = !self.paused,
             KeyCode::Char('r') if modifiers.contains(KeyModifiers::CONTROL) => {
-                self.time = 0.0;
-                self.vol_engine = VolatilityEngine::new();
+                self.vol_engine.reset();
             }
             KeyCode::Up | KeyCode::Char('k') => self.surface_3d.rotate_x(0.1),
             KeyCode::Down | KeyCode::Char('j') => self.surface_3d.rotate_x(-0.1),
@@ -151,7 +147,7 @@ impl App {
 
     fn render_surface(&self, frame: &mut Frame, area: Rect) {
         let surface_data = self.vol_engine.get_surface();
-        self.surface_3d.render(frame, area, surface_data, self.time);
+        self.surface_3d.render(frame, area, surface_data);
     }
 
     fn render_footer(frame: &mut Frame, area: Rect) {

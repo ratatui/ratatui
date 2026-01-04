@@ -8,6 +8,7 @@ pub struct VolatilityEngine {
     base_vol: f64,
     skew: f64,
     term_structure: Vec<f64>,
+    time: f64,
 }
 
 impl VolatilityEngine {
@@ -22,6 +23,7 @@ impl VolatilityEngine {
             base_vol: 20.0,
             skew: 0.3,
             term_structure: Vec::new(),
+            time: 0.0,
         };
 
         engine.initialize();
@@ -45,9 +47,14 @@ impl VolatilityEngine {
         self.regenerate_surface(0.0);
     }
 
-    pub fn update(&mut self, time: f64) {
-        // Animate the volatility surface
-        self.regenerate_surface(time);
+    pub fn update(&mut self) {
+        self.time += 0.05;
+        self.regenerate_surface(self.time);
+    }
+
+    pub fn reset(&mut self) {
+        self.time = 0.0;
+        self.regenerate_surface(self.time);
     }
 
     fn regenerate_surface(&mut self, time: f64) {

@@ -91,7 +91,7 @@ impl Surface3D {
     ///
     /// The surface data is expected to be a 2D grid of volatility values, where the first
     /// dimension represents expiration times and the second dimension represents strike prices.
-    pub fn render(&self, frame: &mut Frame, area: Rect, surface_data: &[Vec<f64>], _time: f64) {
+    pub fn render(&self, frame: &mut Frame, area: Rect, surface_data: &[Vec<f64>]) {
         let n_exp = surface_data.len();
         let n_strike = surface_data.first().map_or(0, std::vec::Vec::len);
 
