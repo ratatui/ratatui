@@ -26,37 +26,59 @@ fn main() -> Result<()> {
 
 struct App {
     paused: bool,
-    fps: usize,
-    frame_count: usize,
+    fps_counter: FpsCounter,
     vol_engine: VolatilityEngine,
     surface_3d: Surface3D,
+}
+
+struct FpsCounter {
+    frame_count: usize,
+    last_instant: Instant,
+    fps: f64,
+}
+
+impl FpsCounter {
+    fn new() -> Self {
+        Self {
+            frame_count: 0,
+            last_instant: Instant::now(),
+            fps: 0.0,
+        }
+    }
+
+    fn update(&mut self) {
+        self.frame_count += 1;
+        let elapsed = self.last_instant.elapsed();
+        // Update FPS calculation every second
+        if elapsed >= Duration::from_secs(1) {
+            self.fps = self.frame_count as f64 / elapsed.as_secs_f64();
+            self.frame_count = 0;
+            self.last_instant = Instant::now();
+        }
+    }
+
+    const fn fps(&self) -> usize {
+        self.fps as usize
+    }
 }
 
 impl App {
     fn new() -> Self {
         Self {
             paused: false,
-            fps: 0,
-            frame_count: 0,
+            fps_counter: FpsCounter::new(),
             vol_engine: VolatilityEngine::new(),
             surface_3d: Surface3D::new(),
         }
     }
 
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
-        let tick_rate = Duration::from_secs_f64(1.0 / 30.0); // 30 FPS
+        let tick_rate = Duration::from_secs_f64(1.0 / 50.0); // 50 FPS (better for gifs)
         let mut last_tick = Instant::now();
-        let mut fps_timer = Instant::now();
 
         loop {
             terminal.draw(|frame| self.render(frame))?;
-
-            self.frame_count += 1;
-            if fps_timer.elapsed() >= Duration::from_secs(1) {
-                self.fps = self.frame_count;
-                self.frame_count = 0;
-                fps_timer = Instant::now();
-            }
+            self.fps_counter.update();
 
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
@@ -118,7 +140,7 @@ impl App {
     fn render_header(&self, frame: &mut Frame, area: Rect) {
         let title = Line::from(vec![
             "3D Volatility Surface Visualizer".cyan().bold(),
-            Span::raw(format!(" | FPS: {} | ", self.fps)),
+            Span::raw(format!(" | FPS: {} | ", self.fps_counter.fps())),
             if self.paused {
                 "PAUSED".red()
             } else {
