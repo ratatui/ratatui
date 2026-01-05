@@ -31,7 +31,7 @@ impl MapResolution {
     }
 }
 
-/// A world map. It represents the world using the EPSG:4326 coordinate reference system.
+/// A world map. It represents the world using the [EPSG:4326 coordinate reference system](https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset).
 ///
 /// A world map can be rendered with different [resolutions](MapResolution) and [colors](Color).
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
