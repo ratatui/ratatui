@@ -134,6 +134,11 @@ use std::io::{self, Stdout, stdout};
 use ratatui_core::terminal::{Terminal, TerminalOptions};
 use ratatui_crossterm::CrosstermBackend;
 use ratatui_crossterm::crossterm::execute;
+use ratatui_crossterm::crossterm::event::{
+        PushKeyboardEnhancementFlags,
+        KeyboardEnhancementFlags,
+        PopKeyboardEnhancementFlags,
+}
 use ratatui_crossterm::crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
 };
@@ -330,7 +335,14 @@ pub fn init() -> DefaultTerminal {
 pub fn try_init() -> io::Result<DefaultTerminal> {
     set_panic_hook();
     enable_raw_mode()?;
-    execute!(stdout(), EnterAlternateScreen)?;
+    execute!(stdout(), 
+             EnterAlternateScreen,
+             // We need this to detect
+             // SUPER, HYPER and META.
+             PushKeyboardEnhancementFlags(
+                 KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
+             )    
+    )?;
     let backend = CrosstermBackend::new(stdout());
     Terminal::new(backend)
 }
@@ -488,7 +500,10 @@ pub fn try_restore() -> io::Result<()> {
     // disabling raw mode first is important as it has more side effects than leaving the alternate
     // screen buffer
     disable_raw_mode()?;
-    execute!(stdout(), LeaveAlternateScreen)?;
+    execute!(stdout(), 
+             LeaveAlternateScreen,
+             PopKeyboardEnhancmentFlags,
+        )?;
     Ok(())
 }
 
