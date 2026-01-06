@@ -17,6 +17,17 @@ pub enum Palette {
 }
 
 impl Palette {
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Viridis => "viridis",
+            Self::Plasma => "plasma",
+            Self::Phosphor => "phosphor",
+            Self::Fear => "fear",
+            Self::Calm => "calm",
+            Self::Inferno => "inferno",
+        }
+    }
+
     pub const fn next(self) -> Self {
         match self {
             Self::Viridis => Self::Plasma,

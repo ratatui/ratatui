@@ -61,6 +61,11 @@ impl Surface3D {
         self.zoom = (self.zoom * factor).clamp(0.3, 3.0);
     }
 
+    /// Get the current palette name for display.
+    pub const fn palette_name(&self) -> &'static str {
+        self.palette.name()
+    }
+
     /// Project a 3D point to 2D screen coordinates using perspective projection.
     ///
     /// This method applies rotation matrices and perspective division to transform
@@ -130,11 +135,10 @@ impl Surface3D {
         (min_vol, max_vol)
     }
 
-    /// Create the border block with title.
+    /// Create the border block for the canvas area.
     fn create_border() -> Block<'static> {
         Block::default()
             .borders(Borders::ALL)
-            .title(" 3D Volatility Surface - Use ↑↓←→ to rotate, Z/X to zoom ")
             .border_style(Style::default().fg(Color::DarkGray))
     }
 

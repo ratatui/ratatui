@@ -13,9 +13,10 @@ use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind, KeyModifiers};
 use display::Surface3D;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Color, Style, Stylize};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::style::palette::tailwind::SLATE;
+use ratatui::style::{Style, Stylize};
+use ratatui::text::Line;
+use ratatui::widgets::Paragraph;
 use ratatui::{DefaultTerminal, Frame};
 use volatility::VolatilityEngine;
 
@@ -126,9 +127,9 @@ impl App {
 
     fn render(&self, frame: &mut Frame) {
         let chunks = Layout::vertical([
-            Constraint::Length(3),
+            Constraint::Length(1),
             Constraint::Min(0),
-            Constraint::Length(3),
+            Constraint::Length(1),
         ])
         .split(frame.area());
 
@@ -138,23 +139,18 @@ impl App {
     }
 
     fn render_header(&self, frame: &mut Frame, area: Rect) {
-        let title = Line::from(vec![
-            "3D Volatility Surface Visualizer".cyan().bold(),
-            Span::raw(format!(" | FPS: {} | ", self.fps_counter.fps())),
-            if self.paused {
-                "PAUSED".red()
-            } else {
-                "LIVE".green()
-            },
-        ]);
+        let status = if self.paused { "Paused" } else { "Live" };
+        let palette_name = self.surface_3d.palette_name();
+        let title = format!(
+            "volatility-surface - Status: {}, Palette: {}, FPS: {}",
+            status,
+            palette_name,
+            self.fps_counter.fps()
+        );
 
-        let header = Paragraph::new(vec![title])
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::DarkGray)),
-            )
-            .style(Style::default().bg(Color::Black));
+        let header = Paragraph::new(title)
+            .centered()
+            .style(Style::default().bg(SLATE.c100).fg(SLATE.c800));
 
         frame.render_widget(header, area);
     }
@@ -166,27 +162,23 @@ impl App {
 
     fn render_footer(frame: &mut Frame, area: Rect) {
         let controls = Line::from(vec![
-            "↑↓←→".yellow(),
-            Span::raw(" Rotate | "),
-            "Z/X".yellow(),
-            Span::raw(" Zoom | "),
-            "P".yellow(),
-            Span::raw(" Palette | "),
-            "Space".cyan(),
-            Span::raw(" Pause | "),
-            "Ctrl+R".cyan(),
-            Span::raw(" Reset | "),
-            "Q".red(),
-            Span::raw(" Quit"),
+            "↑↓←→/hjkl".cyan(),
+            " Rotate | ".into(),
+            "zx".cyan(),
+            " Zoom | ".into(),
+            "p".cyan(),
+            " Palette | ".into(),
+            "space".cyan(),
+            " Pause | ".into(),
+            "ctrl-r".cyan(),
+            " Reset | ".into(),
+            "q".cyan(),
+            " Quit".into(),
         ]);
 
-        let footer = Paragraph::new(vec![controls])
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::DarkGray)),
-            )
-            .style(Style::default().bg(Color::Black).fg(Color::Gray));
+        let footer = Paragraph::new(controls)
+            .centered()
+            .style(Style::default().fg(SLATE.c400).bg(SLATE.c950));
 
         frame.render_widget(footer, area);
     }
