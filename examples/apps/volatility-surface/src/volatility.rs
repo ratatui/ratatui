@@ -66,7 +66,7 @@ impl VolatilityEngine {
             let term_vol = self.term_structure[exp_idx];
 
             // Add some time-based variation
-            let time_wave = (time * 0.5 + exp_idx as f64 * 0.1).sin() * 2.0;
+            let time_wave = (time * 0.5 + exp_idx as f64 * 0.1).sin() * 20.0;
             let vol_shock = (time * 0.3).sin() * 1.5; // Market-wide vol shock
 
             for &strike in &self.strikes {
