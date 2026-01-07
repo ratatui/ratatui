@@ -5,21 +5,23 @@
 
 use std::f64::consts::{PI, TAU};
 
-use ratatui::Frame;
+use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::style::{Color, Style};
+use ratatui::style::Color;
 use ratatui::symbols::Marker;
 use ratatui::widgets::canvas::{Canvas, Context, Line, Points};
-use ratatui::widgets::{Block, Borders};
+use ratatui::widgets::{StatefulWidget, Widget};
 
 use super::Palette;
 
+/// Distance from the camera to the projection plane
+const CAMERA_DISTANCE: f64 = 4.0;
+
 /// A 3D surface renderer that maintains rotation, zoom, and color palette state.
 ///
-/// This renderer uses a concept called perspective projection to map 3D coordinates to 2D screen
-/// space, allowing interactive orientation of a volatility surface through rotation and zoom.
-/// The surface is rendered using Braille characters via the Canvas widget, which gives
-/// substantially higher resolution than standard block characters.
+/// This struct serves as the state for the [`VolatilitySurface`] widget. It maintains the
+/// current view orientation (rotation around X and Z axes), zoom level, and the active color
+/// palette. Use this with [`VolatilitySurface`] via the [`StatefulWidget`] trait.
 pub struct Surface3D {
     rotation_x: f64,
     rotation_z: f64,
@@ -28,9 +30,6 @@ pub struct Surface3D {
 }
 
 impl Surface3D {
-    /// Distance from the camera to the projection plane
-    const CAMERA_DISTANCE: f64 = 4.0;
-
     pub const fn new() -> Self {
         Self {
             rotation_x: 0.6, // Tilt forward for better view
@@ -85,18 +84,16 @@ impl Surface3D {
         let z2 = y1 * sin_x + z1 * cos_x;
 
         // Perspective projection
-        let perspective = Self::CAMERA_DISTANCE / (Self::CAMERA_DISTANCE + z2);
+        let perspective = CAMERA_DISTANCE / (CAMERA_DISTANCE + z2);
 
         (x1 * perspective * self.zoom, y2 * perspective * self.zoom)
     }
-}
 
-impl Surface3D {
-    /// Render the 3D volatility surface to the given frame.
+    /// Render the 3D volatility surface with the given data.
     ///
     /// The surface data is expected to be a 2D grid of volatility values, where the first
     /// dimension represents expiration times and the second dimension represents strike prices.
-    pub fn render(&self, frame: &mut Frame, area: Rect, surface_data: &[Vec<f64>]) {
+    fn render(&self, area: Rect, buf: &mut Buffer, surface_data: &[Vec<f64>]) {
         let n_exp = surface_data.len();
         let n_strike = surface_data.first().map_or(0, std::vec::Vec::len);
 
@@ -107,7 +104,6 @@ impl Surface3D {
         let (min_vol, max_vol) = Self::find_volatility_range(surface_data);
 
         let canvas = Canvas::default()
-            .block(Self::create_border())
             .marker(Marker::Braille)
             .x_bounds([-2.0, 2.0]) // Canvas viewport slightly larger than surface bounds
             .y_bounds([-1.5, 1.5]) // Narrower vertically to match terminal aspect ratio
@@ -117,7 +113,7 @@ impl Surface3D {
                 self.draw_peak_highlights(ctx, surface_data, n_exp, n_strike, min_vol, max_vol);
             });
 
-        frame.render_widget(canvas, area);
+        canvas.render(area, buf);
     }
 
     /// Find the minimum and maximum volatility values in the surface data.
@@ -133,13 +129,6 @@ impl Surface3D {
         }
 
         (min_vol, max_vol)
-    }
-
-    /// Create the border block for the canvas area.
-    fn create_border() -> Block<'static> {
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::DarkGray))
     }
 
     /// Draw grid lines along the strike dimension (horizontal lines).
@@ -299,5 +288,40 @@ impl Surface3D {
     /// Cycle to the next color palette.
     pub const fn cycle_palette(&mut self) {
         self.palette = self.palette.next();
+    }
+}
+
+/// A widget that displays a 3D volatility surface using perspective projection.
+///
+/// This widget renders a 2D grid of volatility data as an interactive 3D wireframe surface
+/// using Braille characters for high resolution. It should be rendered with [`Surface3D`] as
+/// the state via the [`StatefulWidget`] trait.
+///
+/// # Example
+///
+/// ```ignore
+/// let surface_data = vec![vec![0.2, 0.25, 0.3], vec![0.22, 0.27, 0.32]];
+/// let mut state = Surface3D::new();
+/// frame.render_stateful_widget(VolatilitySurface::new(&surface_data), area, &mut state);
+/// ```
+pub struct VolatilitySurface<'a> {
+    surface_data: &'a [Vec<f64>],
+}
+
+impl<'a> VolatilitySurface<'a> {
+    /// Create a new volatility surface widget with the given data.
+    ///
+    /// The surface data should be a 2D grid where the first dimension represents
+    /// expiration times and the second dimension represents strike prices.
+    pub const fn new(surface_data: &'a [Vec<f64>]) -> Self {
+        Self { surface_data }
+    }
+}
+
+impl StatefulWidget for VolatilitySurface<'_> {
+    type State = Surface3D;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        state.render(area, buf, self.surface_data);
     }
 }

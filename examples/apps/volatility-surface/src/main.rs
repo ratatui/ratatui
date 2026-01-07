@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind, KeyModifiers};
-use display::Surface3D;
+use display::{Surface3D, VolatilitySurface};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::palette::tailwind::SLATE;
 use ratatui::style::{Style, Stylize};
@@ -125,7 +125,7 @@ impl App {
         false
     }
 
-    fn render(&self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame) {
         let chunks = Layout::vertical([
             Constraint::Length(1),
             Constraint::Min(0),
@@ -155,9 +155,13 @@ impl App {
         frame.render_widget(header, area);
     }
 
-    fn render_surface(&self, frame: &mut Frame, area: Rect) {
+    fn render_surface(&mut self, frame: &mut Frame, area: Rect) {
         let surface_data = self.vol_engine.get_surface();
-        self.surface_3d.render(frame, area, surface_data);
+        frame.render_stateful_widget(
+            VolatilitySurface::new(surface_data),
+            area,
+            &mut self.surface_3d,
+        );
     }
 
     fn render_footer(frame: &mut Frame, area: Rect) {
