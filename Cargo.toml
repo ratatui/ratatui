@@ -45,18 +45,18 @@ itertools = { version = "0.14", default-features = false, features = ["use_alloc
 kasuari = { version = "0.4", default-features = false }
 line-clipping = "0.3"
 lru = "0.16"
-octocrab = "0.48"
+octocrab = "0.49"
 palette = "0.7"
 pretty_assertions = "1"
 rand = "0.9"
 rand_chacha = "0.9"
-ratatui = { path = "ratatui", version = "0.30.0-beta.0" }
-ratatui-core = { path = "ratatui-core", version = "0.1.0-beta.0" }
-ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-beta.0" }
-ratatui-macros = { path = "ratatui-macros", version = "0.7.0-beta.0" }
-ratatui-termion = { path = "ratatui-termion", version = "0.1.0-beta.0" }
-ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-beta.0" }
-ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-beta.0" }
+ratatui = { path = "ratatui", version = "0.30.0" }
+ratatui-core = { path = "ratatui-core", version = "0.1.0" }
+ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0" }
+ratatui-macros = { path = "ratatui-macros", version = "0.7.0" }
+ratatui-termion = { path = "ratatui-termion", version = "0.1.0" }
+ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0" }
+ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0" }
 rstest = "0.26"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -64,7 +64,7 @@ strum = { version = "0.27", default-features = false, features = ["derive"] }
 termion = "4"
 termwiz = "0.23"
 thiserror = { version = "2", default-features = false }
-time = { version = "0.3", default-features = false }
+time = { version = "0.3.37", default-features = false }
 tokio = "1"
 tokio-stream = "0.1"
 tracing = "0.1"

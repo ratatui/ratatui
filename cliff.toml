@@ -34,7 +34,7 @@ body = """
 {% macro commit(commit) -%}
 - [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui/ratatui/commit/" ~ commit.id }}) \
   *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first | trim }}\
-  {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}\
+  {% if commit.remote.username %} by `@{{ commit.remote.username }}`{%- endif -%}\
   {% if commit.remote.pr_number %} in [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}){%- endif %}\
 {%- if commit.breaking %} [**breaking**]{% endif %}
 {%- if commit.body %}\n\n{{ commit.body | indent(prefix="  > ", first=true, blank=true) }}
@@ -123,6 +123,7 @@ commit_preprocessors = [
   { pattern = '\<[f]eatuers\>', replace = "features" },
   { pattern = '\<[s]pecically\>', replace = "specially" },
   { pattern = '\<[g]ague\>', replace = "gauge" },
+  { pattern = '\<[a]rithmentic\>', replace = "arithmetic" },
   { pattern = '\<[i]ntructions\>', replace = "instructions" },
   { pattern = '\<[i]mplementated\>', replace = "implemented" },
 ]

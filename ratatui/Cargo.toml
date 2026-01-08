@@ -1,7 +1,7 @@
 [package]
 name = "ratatui"
 description = "A library that's all about cooking up terminal user interfaces"
-version = "0.30.0-beta.0"
+version = "0.30.0"
 authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
@@ -32,6 +32,10 @@ default = ["crossterm", "underline-color", "all-widgets", "macros", "layout-cach
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["std", "dep:ratatui-crossterm"]
+## selects the crossterm 0.28.x backend implementation
+crossterm_0_28 = ["crossterm", "ratatui-crossterm/crossterm_0_28"]
+## selects the crossterm 0.29.x backend implementation (default)
+crossterm_0_29 = ["crossterm", "ratatui-crossterm/crossterm_0_29"]
 ## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
 termion = ["std", "dep:ratatui-termion"]
 ## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].

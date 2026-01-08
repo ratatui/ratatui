@@ -130,5 +130,6 @@ pub mod tabs;
 mod polyfills;
 mod reflow;
 
+mod as_ref;
 #[cfg(feature = "calendar")]
 pub mod calendar;

@@ -474,7 +474,7 @@ impl Widget for &Span<'_> {
 /// A trait for converting a value to a [`Span`].
 ///
 /// This trait is automatically implemented for any type that implements the [`Display`] trait. As
-/// such, `ToSpan` shouln't be implemented directly: [`Display`] should be implemented instead, and
+/// such, `ToSpan` shouldn't be implemented directly: [`Display`] should be implemented instead, and
 /// you get the `ToSpan` implementation for free.
 ///
 /// [`Display`]: std::fmt::Display
