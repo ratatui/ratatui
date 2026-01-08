@@ -423,6 +423,79 @@ impl IntoCrossterm<CrosstermColor> for Color {
     }
 }
 
+impl IntoCrossterm<ContentStyle> for Style {
+    fn into_crossterm(self) -> ContentStyle {
+        let mut attributes = CrosstermAttributes::default();
+
+        // Add modifiers
+        if self.add_modifier.contains(Modifier::BOLD) {
+            attributes.set(CrosstermAttribute::Bold);
+        }
+        if self.add_modifier.contains(Modifier::DIM) {
+            attributes.set(CrosstermAttribute::Dim);
+        }
+        if self.add_modifier.contains(Modifier::ITALIC) {
+            attributes.set(CrosstermAttribute::Italic);
+        }
+        if self.add_modifier.contains(Modifier::UNDERLINED) {
+            attributes.set(CrosstermAttribute::Underlined);
+        }
+        if self.add_modifier.contains(Modifier::SLOW_BLINK) {
+            attributes.set(CrosstermAttribute::SlowBlink);
+        }
+        if self.add_modifier.contains(Modifier::RAPID_BLINK) {
+            attributes.set(CrosstermAttribute::RapidBlink);
+        }
+        if self.add_modifier.contains(Modifier::REVERSED) {
+            attributes.set(CrosstermAttribute::Reverse);
+        }
+        if self.add_modifier.contains(Modifier::HIDDEN) {
+            attributes.set(CrosstermAttribute::Hidden);
+        }
+        if self.add_modifier.contains(Modifier::CROSSED_OUT) {
+            attributes.set(CrosstermAttribute::CrossedOut);
+        }
+
+        // Sub modifiers (remove modifiers)
+        if self.sub_modifier.contains(Modifier::BOLD) {
+            attributes.set(CrosstermAttribute::NoBold);
+        }
+        if self.sub_modifier.contains(Modifier::DIM) {
+            attributes.set(CrosstermAttribute::NormalIntensity);
+        }
+        if self.sub_modifier.contains(Modifier::ITALIC) {
+            attributes.set(CrosstermAttribute::NoItalic);
+        }
+        if self.sub_modifier.contains(Modifier::UNDERLINED) {
+            attributes.set(CrosstermAttribute::NoUnderline);
+        }
+        if self.sub_modifier.contains(Modifier::SLOW_BLINK)
+            || self.sub_modifier.contains(Modifier::RAPID_BLINK)
+        {
+            attributes.set(CrosstermAttribute::NoBlink);
+        }
+        if self.sub_modifier.contains(Modifier::REVERSED) {
+            attributes.set(CrosstermAttribute::NoReverse);
+        }
+        if self.sub_modifier.contains(Modifier::HIDDEN) {
+            attributes.set(CrosstermAttribute::NoHidden);
+        }
+        if self.sub_modifier.contains(Modifier::CROSSED_OUT) {
+            attributes.set(CrosstermAttribute::NotCrossedOut);
+        }
+
+        ContentStyle {
+            foreground_color: self.fg.map(IntoCrossterm::into_crossterm),
+            background_color: self.bg.map(IntoCrossterm::into_crossterm),
+            #[cfg(feature = "underline-color")]
+            underline_color: self.underline_color.map(IntoCrossterm::into_crossterm),
+            #[cfg(not(feature = "underline-color"))]
+            underline_color: None,
+            attributes,
+        }
+    }
+}
+
 impl FromCrossterm<CrosstermColor> for Color {
     fn from_crossterm(value: CrosstermColor) -> Self {
         match value {
@@ -875,5 +948,177 @@ mod tests {
             Style::from_crossterm(content_style),
             Style::default().underline_color(Color::Red)
         );
+    }
+
+    #[rstest]
+    #[case(Style::default(), ContentStyle::default())]
+    #[case(
+        Style::default().fg(Color::Yellow),
+        ContentStyle {
+            foreground_color: Some(CrosstermColor::DarkYellow),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().bg(Color::Yellow),
+        ContentStyle {
+            background_color: Some(CrosstermColor::DarkYellow),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::BOLD),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::Bold),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().remove_modifier(Modifier::BOLD),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NoBold),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::ITALIC),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::Italic),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().remove_modifier(Modifier::ITALIC),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NoItalic),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::UNDERLINED),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::Underlined),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().remove_modifier(Modifier::UNDERLINED),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NoUnderline),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::DIM),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::Dim),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().remove_modifier(Modifier::DIM),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NormalIntensity),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::SLOW_BLINK),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::SlowBlink),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::RAPID_BLINK),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::RapidBlink),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().remove_modifier(Modifier::SLOW_BLINK),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NoBlink),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::REVERSED),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::Reverse),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().remove_modifier(Modifier::REVERSED),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NoReverse),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::HIDDEN),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::Hidden),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().remove_modifier(Modifier::HIDDEN),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NoHidden),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().add_modifier(Modifier::CROSSED_OUT),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::CrossedOut),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default().remove_modifier(Modifier::CROSSED_OUT),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NotCrossedOut),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default()
+            .add_modifier(Modifier::BOLD)
+            .add_modifier(Modifier::ITALIC),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::Bold, CrosstermAttribute::Italic].as_ref()
+            ),
+            ..Default::default()
+        }
+    )]
+    #[case(
+        Style::default()
+            .remove_modifier(Modifier::BOLD)
+            .remove_modifier(Modifier::ITALIC),
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::NoBold, CrosstermAttribute::NoItalic].as_ref()
+            ),
+            ..Default::default()
+        }
+    )]
+    fn into_crossterm_content_style(#[case] style: Style, #[case] content_style: ContentStyle) {
+        assert_eq!(style.into_crossterm(), content_style);
+    }
+
+    #[test]
+    #[cfg(feature = "underline-color")]
+    fn into_crossterm_content_style_underline() {
+        let style = Style::default().underline_color(Color::Red);
+        let content_style = ContentStyle {
+            underline_color: Some(CrosstermColor::DarkRed),
+            ..Default::default()
+        };
+        assert_eq!(style.into_crossterm(), content_style);
     }
 }
