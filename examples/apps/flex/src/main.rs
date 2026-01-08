@@ -9,6 +9,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::num::NonZeroUsize;
+use std::sync::LazyLock;
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
@@ -29,6 +30,8 @@ fn main() -> Result<()> {
     color_eyre::install()?;
     ratatui::run(|terminal| App::new().run(terminal))
 }
+
+static THEME: LazyLock<Theme> = LazyLock::new(Theme::new);
 
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     (
@@ -123,7 +126,6 @@ struct App {
     scroll_offset: u16,
     spacing: u16,
     state: AppState,
-    theme: Theme,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -139,7 +141,6 @@ struct Example {
     description: String,
     flex: Flex,
     spacing: u16,
-    theme: Theme,
 }
 
 /// Tabs for the different layouts
@@ -161,13 +162,11 @@ enum SelectedTab {
 
 impl App {
     fn new() -> Self {
-        let theme = Theme::new();
         Self {
             selected_tab: SelectedTab::default(),
             scroll_offset: 0,
             spacing: 0,
             state: AppState::default(),
-            theme,
         }
     }
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
@@ -282,7 +281,7 @@ impl Widget for App {
 
 impl App {
     fn tabs(self) -> impl Widget {
-        let tab_titles = SelectedTab::iter().map(|tab| SelectedTab::to_tab_title(tab, self.theme));
+        let tab_titles = SelectedTab::iter().map(|tab| SelectedTab::to_tab_title(tab, *THEME));
         let block = Block::new()
             .title("Flex Layouts ".bold())
             .title(" Use ◄ ► to change tab, ▲ ▼  to scroll, - + to change spacing ");
@@ -393,51 +392,43 @@ impl StatefulWidget for SelectedTab {
     type State = u16;
     fn render(self, area: Rect, buf: &mut Buffer, spacing: &mut Self::State) {
         let spacing = *spacing;
-        let theme = Theme::new();
         match self {
-            Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing, theme),
-            Self::Start => Self::render_examples(area, buf, Flex::Start, spacing, theme),
-            Self::Center => Self::render_examples(area, buf, Flex::Center, spacing, theme),
-            Self::End => Self::render_examples(area, buf, Flex::End, spacing, theme),
+            Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing),
+            Self::Start => Self::render_examples(area, buf, Flex::Start, spacing),
+            Self::Center => Self::render_examples(area, buf, Flex::Center, spacing),
+            Self::End => Self::render_examples(area, buf, Flex::End, spacing),
             Self::SpaceEvenly => {
-                Self::render_examples(area, buf, Flex::SpaceEvenly, spacing, theme);
+                Self::render_examples(area, buf, Flex::SpaceEvenly, spacing);
             }
             Self::SpaceBetween => {
-                Self::render_examples(area, buf, Flex::SpaceBetween, spacing, theme);
+                Self::render_examples(area, buf, Flex::SpaceBetween, spacing);
             }
             Self::SpaceAround => {
-                Self::render_examples(area, buf, Flex::SpaceAround, spacing, theme);
+                Self::render_examples(area, buf, Flex::SpaceAround, spacing);
             }
         }
     }
 }
 
 impl SelectedTab {
-    fn render_examples(area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16, theme: Theme) {
+    fn render_examples(area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16) {
         let heights = EXAMPLE_DATA
             .iter()
             .map(|(desc, _)| get_description_height(desc) + 4);
         let areas = Layout::vertical(heights).flex(Flex::Start).split(area);
         for (area, (description, constraints)) in areas.iter().zip(EXAMPLE_DATA.iter()) {
-            Example::new(constraints, description, flex, spacing, theme).render(*area, buf);
+            Example::new(constraints, description, flex, spacing).render(*area, buf);
         }
     }
 }
 
 impl Example {
-    fn new(
-        constraints: &[Constraint],
-        description: &str,
-        flex: Flex,
-        spacing: u16,
-        theme: Theme,
-    ) -> Self {
+    fn new(constraints: &[Constraint], description: &str, flex: Flex, spacing: u16) -> Self {
         Self {
             constraints: constraints.into(),
             description: description.into(),
             flex,
             spacing,
-            theme,
         }
     }
 }
@@ -457,7 +448,7 @@ impl Widget for Example {
             Paragraph::new(
                 self.description
                     .split('\n')
-                    .map(|s| format!("// {s}").italic().fg(self.theme.description_fg))
+                    .map(|s| format!("// {s}").italic().fg(THEME.description_fg))
                     .map(Line::from)
                     .collect::<Vec<Line>>(),
             )
@@ -465,7 +456,7 @@ impl Widget for Example {
         }
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
-            Self::illustration(*constraint, block.width, self.theme).render(*block, buf);
+            Self::illustration(*constraint, block.width, *THEME).render(*block, buf);
         }
 
         for spacer in spacers.iter() {
