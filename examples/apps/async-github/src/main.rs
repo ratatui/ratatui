@@ -39,7 +39,9 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget};
+use ratatui::widgets::{
+    Block, Row, StatefulWidget, Table, TableHighlightSpacing, TableState, Widget,
+};
 use ratatui::{DefaultTerminal, Frame};
 use tokio_stream::StreamExt;
 
@@ -220,7 +222,7 @@ impl Widget for &PullRequestListWidget {
         ];
         let table = Table::new(rows, widths)
             .block(block)
-            .highlight_spacing(HighlightSpacing::Always)
+            .highlight_spacing(TableHighlightSpacing::Always)
             .highlight_symbol(">>")
             .row_highlight_style(Style::new().on_blue());
 
