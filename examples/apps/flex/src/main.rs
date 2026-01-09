@@ -575,20 +575,20 @@ impl Theme {
         };
 
         Self {
-            min_bg: color(BLUE.c900, Color::Indexed(33)),
-            max_bg: color(BLUE.c800, Color::Indexed(32)),
-            length_bg: color(SLATE.c700, Color::Indexed(110)),
-            percentage_bg: color(SLATE.c800, Color::Indexed(25)),
-            ratio_bg: color(SLATE.c900, Color::Indexed(20)),
-            fill_bg: color(SLATE.c950, Color::Black),
-            legacy_tab: color(ORANGE.c400, Color::Indexed(216)),
-            start_tab: color(SKY.c400, Color::Indexed(33)),
-            center_tab: color(SKY.c300, Color::Indexed(39)),
-            end_tab: color(SKY.c200, Color::Indexed(45)),
-            space_evenly_tab: color(INDIGO.c400, Color::Indexed(99)),
-            space_between_tab: color(INDIGO.c300, Color::Indexed(105)),
-            space_around_tab: color(INDIGO.c500, Color::Indexed(111)),
-            description_fg: color(SLATE.c400, Color::Indexed(111)),
+            min_bg: color(BLUE.c900, Color::Indexed(24)),
+            max_bg: color(BLUE.c800, Color::Indexed(25)),
+            length_bg: color(SLATE.c700, Color::Indexed(67)),
+            percentage_bg: color(SLATE.c800, Color::Indexed(18)),
+            ratio_bg: color(SLATE.c900, Color::Indexed(17)),
+            fill_bg: color(SLATE.c950, Color::Indexed(16)),
+            legacy_tab: color(ORANGE.c400, Color::Indexed(173)),
+            start_tab: color(SKY.c400, Color::Indexed(74)),
+            center_tab: color(SKY.c300, Color::Indexed(116)),
+            end_tab: color(SKY.c200, Color::Indexed(152)),
+            space_evenly_tab: color(INDIGO.c400, Color::Indexed(104)),
+            space_between_tab: color(INDIGO.c300, Color::Indexed(146)),
+            space_around_tab: color(INDIGO.c500, Color::Indexed(68)),
+            description_fg: color(SLATE.c400, Color::Indexed(109)),
         }
     }
 
