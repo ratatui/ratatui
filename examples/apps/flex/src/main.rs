@@ -593,20 +593,20 @@ impl Theme {
             }
         } else {
             Self {
-                min_bg: Color::Indexed(33),
-                max_bg: Color::Indexed(32),
-                length_bg: Color::Indexed(110),
-                percentage_bg: Color::Indexed(25),
-                ratio_bg: Color::Indexed(20),
+                min_bg: Color::Indexed(24),
+                max_bg: Color::Indexed(25),
+                length_bg: Color::Indexed(59),
+                percentage_bg: Color::Indexed(17),
+                ratio_bg: Color::Indexed(16),
                 fill_bg: Color::Black,
-                legacy_tab: Color::Indexed(216),
-                start_tab: Color::Indexed(33),
-                center_tab: Color::Indexed(39),
-                end_tab: Color::Indexed(45),
-                space_evenly_tab: Color::Indexed(99),
-                space_between_tab: Color::Indexed(105),
-                space_around_tab: Color::Indexed(111),
-                description_fg: Color::Indexed(111),
+                legacy_tab: Color::Indexed(173),
+                start_tab: Color::Indexed(74),
+                center_tab: Color::Indexed(116),
+                end_tab: Color::Indexed(152),
+                space_evenly_tab: Color::Indexed(104),
+                space_between_tab: Color::Indexed(146),
+                space_around_tab: Color::Indexed(68),
+                description_fg: Color::Indexed(109),
             }
         }
     }
