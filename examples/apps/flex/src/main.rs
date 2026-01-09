@@ -543,8 +543,7 @@ fn get_description_height(s: &str) -> u16 {
         s.split('\n').count() as u16
     }
 }
-
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 struct Theme {
     min_bg: Color,
     max_bg: Color,
@@ -561,44 +560,35 @@ struct Theme {
     space_around_tab: Color,
     description_fg: Color,
 }
+
 impl Theme {
     pub fn new() -> Self {
         use tailwind::{BLUE, INDIGO, ORANGE, SKY, SLATE};
 
-        if Self::is_true_color_supported() {
-            Self {
-                min_bg: BLUE.c900,
-                max_bg: BLUE.c800,
-                length_bg: SLATE.c700,
-                percentage_bg: SLATE.c800,
-                ratio_bg: SLATE.c900,
-                fill_bg: SLATE.c950,
-                legacy_tab: ORANGE.c400,
-                start_tab: SKY.c400,
-                center_tab: SKY.c300,
-                end_tab: SKY.c200,
-                space_evenly_tab: INDIGO.c400,
-                space_between_tab: INDIGO.c300,
-                space_around_tab: INDIGO.c500,
-                description_fg: SLATE.c400,
+        let is_true_color = Self::is_true_color_supported();
+        let color = |true_color, ansi_color| {
+            if is_true_color {
+                true_color
+            } else {
+                ansi_color
             }
-        } else {
-            Self {
-                min_bg: Color::Indexed(33),
-                max_bg: Color::Indexed(32),
-                length_bg: Color::Indexed(110),
-                percentage_bg: Color::Indexed(25),
-                ratio_bg: Color::Indexed(20),
-                fill_bg: Color::Black,
-                legacy_tab: Color::Indexed(216),
-                start_tab: Color::Indexed(33),
-                center_tab: Color::Indexed(39),
-                end_tab: Color::Indexed(45),
-                space_evenly_tab: Color::Indexed(99),
-                space_between_tab: Color::Indexed(105),
-                space_around_tab: Color::Indexed(111),
-                description_fg: Color::Indexed(111),
-            }
+        };
+
+        Self {
+            min_bg: color(BLUE.c900, Color::Indexed(33)),
+            max_bg: color(BLUE.c800, Color::Indexed(32)),
+            length_bg: color(SLATE.c700, Color::Indexed(110)),
+            percentage_bg: color(SLATE.c800, Color::Indexed(25)),
+            ratio_bg: color(SLATE.c900, Color::Indexed(20)),
+            fill_bg: color(SLATE.c950, Color::Black),
+            legacy_tab: color(ORANGE.c400, Color::Indexed(216)),
+            start_tab: color(SKY.c400, Color::Indexed(33)),
+            center_tab: color(SKY.c300, Color::Indexed(39)),
+            end_tab: color(SKY.c200, Color::Indexed(45)),
+            space_evenly_tab: color(INDIGO.c400, Color::Indexed(99)),
+            space_between_tab: color(INDIGO.c300, Color::Indexed(105)),
+            space_around_tab: color(INDIGO.c500, Color::Indexed(111)),
+            description_fg: color(SLATE.c400, Color::Indexed(111)),
         }
     }
 
