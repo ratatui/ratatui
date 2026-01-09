@@ -543,6 +543,7 @@ fn get_description_height(s: &str) -> u16 {
         s.split('\n').count() as u16
     }
 }
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 struct Theme {
     min_bg: Color,
