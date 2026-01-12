@@ -8,7 +8,7 @@ use bitflags::bitflags;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Constraint, Flex, Layout, Rect};
-use ratatui_core::style::{Style, Styled};
+use ratatui_core::style::{Color, Style, Styled};
 use ratatui_core::symbols::line;
 use ratatui_core::text::Text;
 use ratatui_core::widgets::{StatefulWidget, Widget};
