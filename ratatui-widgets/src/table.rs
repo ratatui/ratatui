@@ -862,10 +862,7 @@ impl StatefulWidget for &Table<'_> {
         // Header bottom border
         if self.borders.contains(TableBorders::HORIZONTAL) && !header_area.is_empty() {
             let y = header_area.bottom();
-            if y < rows_area.top()
-                || (y < table_area.bottom()
-                    && self.header.as_ref().is_some_and(|h| h.bottom_margin > 0))
-            {
+            if y < rows_area.top() {
                 for x in table_area.left()..table_area.right() {
                     buf[(x, y)]
                         .set_symbol(line::HORIZONTAL)
@@ -888,9 +885,7 @@ impl StatefulWidget for &Table<'_> {
         // Footer top border
         if self.borders.contains(TableBorders::HORIZONTAL) && !footer_area.is_empty() {
             let y = footer_area.top().saturating_sub(1);
-            if y >= rows_area.bottom()
-                || (y >= table_area.top() && self.footer.as_ref().is_some_and(|f| f.top_margin > 0))
-            {
+            if y >= rows_area.bottom() {
                 for x in table_area.left()..table_area.right() {
                     buf[(x, y)]
                         .set_symbol(line::HORIZONTAL)
@@ -2140,6 +2135,130 @@ mod tests {
 
             assert_eq!(buf, Buffer::with_lines(expected_items));
             assert_eq!(state.offset, expected_offset);
+        }
+
+        #[test]
+        fn render_with_borders_style_and_shorthand() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 3));
+            let rows = vec![Row::new(vec!["C1"]), Row::new(vec!["C2"])];
+            let table = Table::new(rows, [Constraint::Length(5)])
+                .borders(TableBorders::HORIZONTAL)
+                .row_spacing(1)
+                .border_style(Style::new().red());
+            Widget::render(table, Rect::new(0, 0, 5, 3), &mut buf);
+            assert_eq!(buf[(0, 1)].symbol(), "─");
+            assert_eq!(buf[(0, 1)].style().fg, Some(Color::Red));
+        }
+
+        #[test]
+        fn render_with_borders_1_column() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 3));
+            let rows = vec![Row::new(vec!["C1"]), Row::new(vec!["C2"])];
+            let table = Table::new(rows, [Constraint::Length(10)])
+                .borders(TableBorders::ALL)
+                .row_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 10, 3), &mut buf);
+            // No vertical borders should be drawn for a single column
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "C1        ",
+                "──────────",
+                "C2        ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_borders_all_overflow() {
+            // Test boundary where row_spacing might be outside the area
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 2));
+            let rows = vec![Row::new(vec!["C1"]), Row::new(vec!["C2"])];
+            let table = Table::new(rows, [Constraint::Length(5)])
+                .borders(TableBorders::ALL)
+                .row_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 5, 2), &mut buf);
+            // Row 1 at y=0, Horizontal border at y=1.
+            // Area height is 2, so Row 2 at y=2 is NOT rendered.
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "C1   ",
+                "─────",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_borders_empty_rows() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 3));
+            let header = Row::new(vec!["H1"]).bottom_margin(1);
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Length(5)])
+                .header(header)
+                .borders(TableBorders::ALL);
+            Widget::render(table, Rect::new(0, 0, 5, 3), &mut buf);
+            // Even if rows are empty, header border should be drawn if margin exists
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "H1   ",
+                "─────",
+                "     ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+        #[test]
+        fn render_with_borders_vertical_only_footer() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            let footer = Row::new(vec!["F1", "F2"]);
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Length(5); 2])
+                .footer(footer)
+                .borders(TableBorders::VERTICAL);
+            Widget::render(table, Rect::new(0, 0, 10, 1), &mut buf);
+            assert_eq!(buf[(5, 0)].symbol(), "│");
+        }
+
+        #[test]
+        fn render_with_borders_vertical_only_header() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            let header = Row::new(vec!["H1", "H2"]);
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Length(5); 2])
+                .header(header)
+                .borders(TableBorders::VERTICAL);
+            Widget::render(table, Rect::new(0, 0, 10, 1), &mut buf);
+            assert_eq!(buf[(5, 0)].symbol(), "│");
+        }
+
+        #[test]
+        fn render_with_borders_vertical_truncated() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            let rows = vec![Row::new(vec!["C1", "C2"])];
+            let table = Table::new(rows, [Constraint::Length(5), Constraint::Length(5)])
+                .borders(TableBorders::VERTICAL)
+                .column_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 5, 1), &mut buf);
+            // x = 5, area.right = 5. 5 < 5 is false, no border should be drawn at the very edge.
+            assert_eq!(buf[(4, 0)].symbol(), "2"); // Part of C2 ("C2   ")
+        }
+
+        #[test]
+        fn render_with_borders_no_margins() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 3));
+            let header = Row::new(vec!["H1"]);
+            let footer = Row::new(vec!["F1"]);
+            let rows = vec![Row::new(vec!["C1"])];
+            let table = Table::new(rows, [Constraint::Length(5)])
+                .header(header)
+                .footer(footer)
+                .borders(TableBorders::ALL)
+                .row_spacing(0)
+                .column_spacing(0);
+            Widget::render(table, Rect::new(0, 0, 5, 3), &mut buf);
+            // No internal borders should be drawn because margins/spacing are 0
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "H1   ",
+                "C1   ",
+                "F1   ",
+            ]);
+            assert_eq!(buf, expected);
         }
     }
 
