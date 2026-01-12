@@ -869,7 +869,10 @@ impl StatefulWidget for &Table<'_> {
                         .set_style(self.border_style);
                 }
                 if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
-                    let x_coords = column_widths.windows(2).map(|w| table_area.x + w[0].right()).filter(|&x| x < table_area.right());
+                    let x_coords = column_widths
+                        .windows(2)
+                        .map(|w| table_area.x + w[0].right())
+                        .filter(|&x| x < table_area.right());
                     for x in x_coords {
                         buf[(x, y)].set_symbol(line::CROSS);
                         buf[(x, y)].set_style(self.border_style);
@@ -890,7 +893,10 @@ impl StatefulWidget for &Table<'_> {
                         .set_style(self.border_style);
                 }
                 if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
-                    let x_coords = column_widths.windows(2).map(|w| table_area.x + w[0].right()).filter(|&x| x < table_area.right());
+                    let x_coords = column_widths
+                        .windows(2)
+                        .map(|w| table_area.x + w[0].right())
+                        .filter(|&x| x < table_area.right());
                     for x in x_coords {
                         buf[(x, y)].set_symbol(line::CROSS);
                         buf[(x, y)].set_style(self.border_style);
@@ -940,7 +946,10 @@ impl Table<'_> {
                 cell.render(area_to_render, buf);
             }
             if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
-                let x_coords = column_widths.windows(2).map(|w| area.x + w[0].right()).filter(|&x| x < area.right());
+                let x_coords = column_widths
+                    .windows(2)
+                    .map(|w| area.x + w[0].right())
+                    .filter(|&x| x < area.right());
                 for x in x_coords {
                     for y in area.top()..area.bottom() {
                         buf[(x, y)].set_symbol(line::VERTICAL);
@@ -964,7 +973,10 @@ impl Table<'_> {
                 cell.render(area_to_render, buf);
             }
             if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
-                let x_coords = column_widths.windows(2).map(|w| area.x + w[0].right()).filter(|&x| x < area.right());
+                let x_coords = column_widths
+                    .windows(2)
+                    .map(|w| area.x + w[0].right())
+                    .filter(|&x| x < area.right());
                 for x in x_coords {
                     for y in area.top()..area.bottom() {
                         buf[(x, y)].set_symbol(line::VERTICAL);
@@ -1017,7 +1029,10 @@ impl Table<'_> {
 
             // Vertical borders
             if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
-                let x_coords = columns_widths.windows(2).map(|w| area.x + w[0].right()).filter(|&x| x < area.right());
+                let x_coords = columns_widths
+                    .windows(2)
+                    .map(|w| area.x + w[0].right())
+                    .filter(|&x| x < area.right());
                 for x in x_coords {
                     for row_y in y..y + height {
                         buf[(x, row_y)].set_symbol(line::VERTICAL);
