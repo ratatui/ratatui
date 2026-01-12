@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(rustdoc::broken_intra_doc_links)]
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(

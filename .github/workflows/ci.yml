@@ -41,6 +41,7 @@ jobs:
         with:
           tool: taplo-cli
       - run: cargo xtask format --check
+        shell: bash
 
   # Check for typos in the codebase.
   # See <https://github.com/crate-ci/typos/>
@@ -109,6 +110,7 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
       - run: cargo xtask clippy
+        shell: bash
         env:
           RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
 
@@ -144,6 +146,7 @@ jobs:
           tool: cargo-llvm-cov
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
       - run: cargo xtask coverage
+        shell: bash
       - uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -170,6 +173,7 @@ jobs:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
       - run: cargo xtask check --all-features
+        shell: bash
         env:
           RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
 
@@ -203,11 +207,15 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
+        with:
+          toolchain: stable
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
       - uses: taiki-e/install-action@0e76c5c569f13f7eb21e8e5b26fe710062b57b62 # v2
         with:
           tool: cargo-rdme
       - run: cargo xtask readme --check
+        shell: bash
 
   # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account the
   # package.metadata.docs.rs configured in Cargo.toml. https://github.com/dtolnay/cargo-docs-rs
@@ -231,6 +239,7 @@ jobs:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
       - run: cargo xtask docs
+        shell: bash
 
   # Run cargo test on the documentation of the crate. This will catch any code examples that don't
   # compile, or any other issues in the documentation.
@@ -249,6 +258,7 @@ jobs:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
       - run: cargo xtask test-docs
+        shell: bash
 
   # Run cargo test on the libraries of the crate.
   test-libs:
@@ -264,12 +274,13 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
       - uses: taiki-e/install-action@0e76c5c569f13f7eb21e8e5b26fe710062b57b62 # v2
         with:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
       - run: cargo xtask test-libs
+        shell: bash
 
   # Run cargo test on all the backends.
   test-backends:
@@ -293,3 +304,4 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
       - run: cargo xtask test-backend ${{ matrix.backend }}
+        shell: bash

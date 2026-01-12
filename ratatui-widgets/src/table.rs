@@ -4,10 +4,12 @@
 use alloc::vec;
 use alloc::vec::Vec;
 
+use bitflags::bitflags;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Constraint, Flex, Layout, Rect};
 use ratatui_core::style::{Style, Styled};
+use ratatui_core::symbols::line;
 use ratatui_core::text::Text;
 use ratatui_core::widgets::{StatefulWidget, Widget};
 
@@ -21,6 +23,22 @@ mod cell;
 mod highlight_spacing;
 mod row;
 mod state;
+
+bitflags! {
+    /// Bitflags that can be composed to set the visible borders on the table widget.
+    #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+    pub struct TableBorders: u8 {
+        /// Show no borders
+        const NONE = 0b0000;
+        /// Show vertical borders between columns
+        const VERTICAL = 0b0001;
+        /// Show horizontal borders between rows
+        const HORIZONTAL = 0b0010;
+        /// Show all borders
+        const ALL = Self::VERTICAL.bits() | Self::HORIZONTAL.bits();
+    }
+}
 
 /// A widget to display data in formatted columns.
 ///
@@ -246,6 +264,11 @@ pub struct Table<'a> {
     /// Space between each column
     column_spacing: u16,
 
+    /// Space between each row
+    ///
+    /// If [`TableBorders::HORIZONTAL`] is set, this space is used to draw the horizontal borders.
+    row_spacing: u16,
+
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
 
@@ -269,6 +292,12 @@ pub struct Table<'a> {
 
     /// Controls how to distribute extra space among the columns
     flex: Flex,
+
+    /// Visible borders
+    borders: TableBorders,
+
+    /// Border style
+    border_style: Style,
 }
 
 impl Default for Table<'_> {
@@ -279,6 +308,7 @@ impl Default for Table<'_> {
             footer: None,
             widths: Vec::new(),
             column_spacing: 1,
+            row_spacing: 0,
             block: None,
             style: Style::new(),
             row_highlight_style: Style::new(),
@@ -287,6 +317,8 @@ impl Default for Table<'_> {
             highlight_symbol: Text::default(),
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
+            borders: TableBorders::NONE,
+            border_style: Style::new(),
         }
     }
 }
@@ -464,6 +496,22 @@ impl<'a> Table<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
+        self
+    }
+
+    /// Set the spacing between rows
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::widgets::{Row, Table};
+    /// let table = Table::default().row_spacing(1);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn row_spacing(mut self, spacing: u16) -> Self {
+        self.row_spacing = spacing;
         self
     }
 
@@ -720,6 +768,41 @@ impl<'a> Table<'a> {
         self.flex = flex;
         self
     }
+
+    /// Set the visible borders of the table
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::widgets::{Row, Table, TableBorders};
+    /// let table = Table::default().borders(TableBorders::ALL);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn borders(mut self, borders: TableBorders) -> Self {
+        self.borders = borders;
+        self
+    }
+
+    /// Sets the style of the borders.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{style::{Style, Stylize}, widgets::{Row, Table}};
+    /// let table = Table::default().border_style(Style::new().red().italic());
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.border_style = style.into();
+        self
+    }
 }
 
 impl Widget for Table<'_> {
@@ -776,7 +859,51 @@ impl StatefulWidget for &Table<'_> {
 
         self.render_header(header_area, buf, &column_widths);
 
+        // Header bottom border
+        if self.borders.contains(TableBorders::HORIZONTAL) && !header_area.is_empty() {
+            let y = header_area.bottom();
+            if y < rows_area.top() {
+                for x in table_area.left()..table_area.right() {
+                    buf[(x, y)]
+                        .set_symbol(line::HORIZONTAL)
+                        .set_style(self.border_style);
+                }
+                if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
+                    let x_coords = column_widths
+                        .windows(2)
+                        .map(|w| table_area.x + w[0].right())
+                        .filter(|&x| x < table_area.right());
+                    for x in x_coords {
+                        buf[(x, y)].set_symbol(line::CROSS);
+                        buf[(x, y)].set_style(self.border_style);
+                    }
+                }
+            }
+        }
+
         self.render_rows(rows_area, buf, selection_width, state, &column_widths);
+
+        // Footer top border
+        if self.borders.contains(TableBorders::HORIZONTAL) && !footer_area.is_empty() {
+            let y = footer_area.top().saturating_sub(1);
+            if y >= rows_area.bottom() {
+                for x in table_area.left()..table_area.right() {
+                    buf[(x, y)]
+                        .set_symbol(line::HORIZONTAL)
+                        .set_style(self.border_style);
+                }
+                if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
+                    let x_coords = column_widths
+                        .windows(2)
+                        .map(|w| table_area.x + w[0].right())
+                        .filter(|&x| x < table_area.right());
+                    for x in x_coords {
+                        buf[(x, y)].set_symbol(line::CROSS);
+                        buf[(x, y)].set_style(self.border_style);
+                    }
+                }
+            }
+        }
 
         self.render_footer(footer_area, buf, &column_widths);
     }
@@ -818,6 +945,18 @@ impl Table<'_> {
                 let area_to_render = Rect::new(new_x, area.y, cell_area.width, area.height);
                 cell.render(area_to_render, buf);
             }
+            if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
+                let x_coords = column_widths
+                    .windows(2)
+                    .map(|w| area.x + w[0].right())
+                    .filter(|&x| x < area.right());
+                for x in x_coords {
+                    for y in area.top()..area.bottom() {
+                        buf[(x, y)].set_symbol(line::VERTICAL);
+                        buf[(x, y)].set_style(self.border_style);
+                    }
+                }
+            }
         }
     }
 
@@ -832,6 +971,18 @@ impl Table<'_> {
                 let new_x = area.x + cell_area.x;
                 let area_to_render = Rect::new(new_x, area.y, cell_area.width, area.height);
                 cell.render(area_to_render, buf);
+            }
+            if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
+                let x_coords = column_widths
+                    .windows(2)
+                    .map(|w| area.x + w[0].right())
+                    .filter(|&x| x < area.right());
+                for x in x_coords {
+                    for y in area.top()..area.bottom() {
+                        buf[(x, y)].set_symbol(line::VERTICAL);
+                        buf[(x, y)].set_style(self.border_style);
+                    }
+                }
             }
         }
     }
@@ -875,10 +1026,47 @@ impl Table<'_> {
                 self.set_selection_style(buf, selection_width, row_area, row);
             }
             self.render_row_cells(buf, columns_widths.iter().collect(), &row.cells, row_area);
+
+            // Vertical borders
+            if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
+                let x_coords = columns_widths
+                    .windows(2)
+                    .map(|w| area.x + w[0].right())
+                    .filter(|&x| x < area.right());
+                for x in x_coords {
+                    for row_y in y..y + height {
+                        buf[(x, row_y)].set_symbol(line::VERTICAL);
+                        buf[(x, row_y)].set_style(self.border_style);
+                    }
+                }
+            }
+
             if is_selected {
                 selected_row_area = Some(row_area);
             }
             y_offset += row.height_with_margin();
+
+            // Horizontal borders
+            if i < self.rows.len() - 1 && y_offset < area.height {
+                if self.borders.contains(TableBorders::HORIZONTAL) && self.row_spacing > 0 {
+                    let line_y = area.y + y_offset;
+                    for x in area.left()..area.right() {
+                        buf[(x, line_y)].set_symbol(line::HORIZONTAL);
+                        buf[(x, line_y)].set_style(self.border_style);
+                    }
+                    if self.borders.contains(TableBorders::VERTICAL) && self.column_spacing > 0 {
+                        let x_coords = columns_widths
+                            .windows(2)
+                            .map(|w| area.x + w[0].right())
+                            .filter(|&x| x < area.right());
+                        for x in x_coords {
+                            buf[(x, line_y)].set_symbol(line::CROSS);
+                            buf[(x, line_y)].set_style(self.border_style);
+                        }
+                    }
+                }
+                y_offset += self.row_spacing;
+            }
         }
 
         let selected_column_area = state.selected_column.and_then(|s| {
@@ -1004,11 +1192,16 @@ impl Table<'_> {
         let mut end = start;
         let mut height = 0;
 
-        for item in self.rows.iter().skip(start) {
-            if height + item.height > area.height {
+        for (i, item) in self.rows.iter().enumerate().skip(start) {
+            let item_height = item.height_with_margin();
+            let next_height = height + item_height;
+            if next_height > area.height {
                 break;
             }
-            height += item.height_with_margin();
+            height = next_height;
+            if i < last_row {
+                height = height.saturating_add(self.row_spacing);
+            }
             end += 1;
         }
 
@@ -1018,9 +1211,15 @@ impl Table<'_> {
             // scroll down until the selected row is visible
             while selected >= end {
                 height = height.saturating_add(self.rows[end].height_with_margin());
+                if end > 0 {
+                    height = height.saturating_add(self.row_spacing);
+                }
                 end += 1;
                 while height > area.height {
                     height = height.saturating_sub(self.rows[start].height_with_margin());
+                    if start < last_row {
+                        height = height.saturating_sub(self.row_spacing);
+                    }
                     start += 1;
                 }
             }
@@ -1534,6 +1733,102 @@ mod tests {
         }
 
         #[test]
+        fn render_with_borders_vertical_only() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let rows = vec![Row::new(vec!["C1", "C2"]), Row::new(vec!["C3", "C4"])];
+            let table = Table::new(rows, [Constraint::Length(5); 2])
+                .borders(TableBorders::VERTICAL)
+                .column_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "C1   │C2       ",
+                "C3   │C4       ",
+                "               ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_borders_horizontal_only() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 3));
+            let rows = vec![Row::new(vec!["C1"]), Row::new(vec!["C2"])];
+            let table = Table::new(rows, [Constraint::Length(10)])
+                .borders(TableBorders::HORIZONTAL)
+                .row_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 10, 3), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "C1        ",
+                "──────────",
+                "C2        ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_borders_no_spacing() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let rows = vec![Row::new(vec!["C1", "C2"]), Row::new(vec!["C3", "C4"])];
+            let table = Table::new(rows, [Constraint::Length(5); 2])
+                .borders(TableBorders::ALL)
+                .column_spacing(0)
+                .row_spacing(0);
+            Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "C1   C2        ",
+                "C3   C4        ",
+                "               ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_footer_borders() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let footer = Row::new(vec!["F1", "F2"]).top_margin(1);
+            let rows = vec![Row::new(vec!["C1", "C2"])];
+            let table = || {
+                Table::new(rows.clone(), [Constraint::Length(5); 2])
+                    .footer(footer.clone())
+                    .borders(TableBorders::ALL)
+                    .column_spacing(1)
+                    .row_spacing(1)
+            };
+            Widget::render(table(), Rect::new(0, 0, 15, 3), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "C1   │C2       ",
+                "─────┼─────────",
+                "F1   │F2       ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_borders() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 5));
+            let header = Row::new(vec!["H1", "H2"]).bottom_margin(1);
+            let rows = vec![Row::new(vec!["C1", "C2"]), Row::new(vec!["C3", "C4"])];
+            let table = Table::new(rows, [Constraint::Length(5); 2])
+                .header(header)
+                .borders(TableBorders::ALL)
+                .column_spacing(1)
+                .row_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 15, 5), &mut buf);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "H1   │H2       ",
+                "─────┼─────────",
+                "C1   │C2       ",
+                "─────┼─────────",
+                "C3   │C4       ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
         fn render_with_header() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
             let header = Row::new(vec!["Head1", "Head2"]);
@@ -1846,6 +2141,185 @@ mod tests {
 
             assert_eq!(buf, Buffer::with_lines(expected_items));
             assert_eq!(state.offset, expected_offset);
+        }
+
+        #[test]
+        fn render_with_borders_style_and_shorthand() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 3));
+            let rows = vec![Row::new(vec!["C1"]), Row::new(vec!["C2"])];
+            let table = Table::new(rows, [Constraint::Length(5)])
+                .borders(TableBorders::HORIZONTAL)
+                .row_spacing(1)
+                .border_style(Style::new().red());
+            Widget::render(table, Rect::new(0, 0, 5, 3), &mut buf);
+            assert_eq!(buf[(0, 1)].symbol(), "─");
+            assert_eq!(buf[(0, 1)].style().fg, Some(Color::Red));
+        }
+
+        #[test]
+        fn render_with_borders_1_column() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 3));
+            let rows = vec![Row::new(vec!["C1"]), Row::new(vec!["C2"])];
+            let table = Table::new(rows, [Constraint::Length(10)])
+                .borders(TableBorders::ALL)
+                .row_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 10, 3), &mut buf);
+            // No vertical borders should be drawn for a single column
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "C1        ",
+                "──────────",
+                "C2        ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_borders_all_overflow() {
+            // Test boundary where row_spacing might be outside the area
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 2));
+            let rows = vec![Row::new(vec!["C1"]), Row::new(vec!["C2"])];
+            let table = Table::new(rows, [Constraint::Length(5)])
+                .borders(TableBorders::ALL)
+                .row_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 5, 2), &mut buf);
+            // Row 1 at y=0, Horizontal border at y=1.
+            // Area height is 2, so Row 2 at y=2 is NOT rendered.
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "C1   ",
+                "─────",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_borders_empty_rows() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 3));
+            let header = Row::new(vec!["H1"]).bottom_margin(1);
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Length(5)])
+                .header(header)
+                .borders(TableBorders::ALL);
+            Widget::render(table, Rect::new(0, 0, 5, 3), &mut buf);
+            // Even if rows are empty, header border should be drawn if margin exists
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "H1   ",
+                "─────",
+                "     ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+        #[test]
+        fn render_with_borders_vertical_only_footer() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            let footer = Row::new(vec!["F1", "F2"]);
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Length(5); 2])
+                .footer(footer)
+                .borders(TableBorders::VERTICAL);
+            Widget::render(table, Rect::new(0, 0, 10, 1), &mut buf);
+            assert_eq!(buf[(5, 0)].symbol(), "│");
+        }
+
+        #[test]
+        fn render_with_borders_vertical_only_header() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            let header = Row::new(vec!["H1", "H2"]);
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Length(5); 2])
+                .header(header)
+                .borders(TableBorders::VERTICAL);
+            Widget::render(table, Rect::new(0, 0, 10, 1), &mut buf);
+            assert_eq!(buf[(5, 0)].symbol(), "│");
+        }
+
+        #[test]
+        fn render_with_borders_vertical_truncated() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            let rows = vec![Row::new(vec!["C1", "C2"])];
+            let table = Table::new(rows, [Constraint::Length(5), Constraint::Length(5)])
+                .borders(TableBorders::VERTICAL)
+                .column_spacing(1);
+            Widget::render(table, Rect::new(0, 0, 5, 1), &mut buf);
+            // x = 5, area.right = 5. 5 < 5 is false, no border should be drawn at the very edge.
+            assert_eq!(buf[(4, 0)].symbol(), "2"); // Part of C2 ("C2   ")
+        }
+
+        #[test]
+        fn render_with_borders_truncated_all() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 5));
+            let header = Row::new(vec!["H1", "H2"]).bottom_margin(1);
+            let footer = Row::new(vec!["F1", "F2"]).top_margin(1);
+            let rows = vec![Row::new(vec!["C1", "C2"])];
+            let table = Table::new(rows, [Constraint::Length(5); 2])
+                .header(header)
+                .footer(footer)
+                .borders(TableBorders::ALL)
+                .column_spacing(1)
+                .row_spacing(1);
+            // Width 5 means only 1st column fits, spacer/border at x=5 is outside.
+            // Height 5: Header(1) + HeaderMargin(1) + Row1(1) + RowMargin(1) + Footer(1) = 5.
+            Widget::render(table, Rect::new(0, 0, 5, 5), &mut buf);
+
+            // Verify header border (should be horizontal only, no cross because x=5 is at right)
+            assert_eq!(buf[(0, 1)].symbol(), "─");
+            assert_eq!(buf[(4, 1)].symbol(), "─");
+
+            // Verify row vertical border (none because x=5 is at right)
+            // It seems "C2" is being rendered partially due to layout truncation
+            assert_eq!(buf[(4, 2)].symbol(), "2");
+
+            // Verify row horizontal border (should be horizontal only)
+            assert_eq!(buf[(0, 3)].symbol(), "─");
+
+            // Verify footer
+            assert_eq!(buf[(0, 4)].symbol(), "F");
+        }
+
+        #[test]
+        fn render_with_borders_no_margins() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 3));
+            let header = Row::new(vec!["H1"]);
+            let footer = Row::new(vec!["F1"]);
+            let rows = vec![Row::new(vec!["C1"])];
+            let table = Table::new(rows, [Constraint::Length(5)])
+                .header(header)
+                .footer(footer)
+                .borders(TableBorders::ALL)
+                .row_spacing(0)
+                .column_spacing(0);
+            Widget::render(table, Rect::new(0, 0, 5, 3), &mut buf);
+            // No internal borders should be drawn because margins/spacing are 0
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "H1   ",
+                "C1   ",
+                "F1   ",
+            ]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_borders_vertical_missing_header_margin() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 3));
+            let header = Row::new(vec!["H1"]).bottom_margin(1);
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Length(5)])
+                .header(header)
+                .borders(TableBorders::HORIZONTAL);
+            Widget::render(table, Rect::new(0, 0, 5, 3), &mut buf);
+            // x=0, y=1 should be HORIZONTAL since y=1 < rows_area.top() (which is 2)
+            assert_eq!(buf[(0, 1)].symbol(), "─");
+        }
+
+        #[test]
+        fn render_with_borders_vertical_missing_footer_margin() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 3));
+            let footer = Row::new(vec!["F1"]).top_margin(1);
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Length(5)])
+                .footer(footer)
+                .borders(TableBorders::HORIZONTAL);
+            Widget::render(table, Rect::new(0, 0, 5, 3), &mut buf);
+            // y=1 is the top of footer margin
+            assert_eq!(buf[(0, 1)].symbol(), "─");
         }
     }
 
