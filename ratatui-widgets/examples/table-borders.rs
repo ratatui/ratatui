@@ -9,10 +9,10 @@
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
 use ratatui::{
-    layout::{Constraint, Layout},
-    style::{Modifier, Style, Stylize},
-    widgets::{Block, Cell, Row, Table, TableBorders, TableState},
     Frame,
+    layout::{Constraint, Layout},
+    style::{Modifier, Style},
+    widgets::{Block, Cell, Row, Table, TableBorders, TableState},
 };
 
 fn main() -> Result<()> {
@@ -39,7 +39,8 @@ fn main() -> Result<()> {
 
 fn render(f: &mut Frame, state: &mut TableState) {
     let area = f.area();
-    let chunks = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]).split(area);
+    let chunks =
+        Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]).split(area);
 
     let items = (0..20)
         .map(|i| {
@@ -51,7 +52,9 @@ fn render(f: &mut Frame, state: &mut TableState) {
         })
         .collect::<Vec<_>>();
 
-    let rows = items.iter().map(|item| Row::new(item.iter().map(|c| Cell::from(c.as_str()))));
+    let rows = items
+        .iter()
+        .map(|item| Row::new(item.iter().map(|c| Cell::from(c.as_str()))));
 
     // Left Table: ALL borders, row_spacing 1, column_spacing 1
     let table1 = Table::new(
