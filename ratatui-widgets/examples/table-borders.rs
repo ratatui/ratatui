@@ -8,12 +8,10 @@
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
-use ratatui::{
-    Frame,
-    layout::{Constraint, Layout},
-    style::{Modifier, Style},
-    widgets::{Block, Cell, Row, Table, TableBorders, TableState},
-};
+use ratatui::Frame;
+use ratatui::layout::{Constraint, Layout};
+use ratatui::style::{Modifier, Style};
+use ratatui::widgets::{Block, Cell, Row, Table, TableBorders, TableState};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

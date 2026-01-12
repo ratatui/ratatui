@@ -4,12 +4,13 @@
 use alloc::vec;
 use alloc::vec::Vec;
 
+use bitflags::bitflags;
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Constraint, Flex, Layout, Rect};
 use ratatui_core::style::{Style, Styled};
-use ratatui_core::text::Text;
 use ratatui_core::symbols::line;
+use ratatui_core::text::Text;
 use ratatui_core::widgets::{StatefulWidget, Widget};
 
 pub use self::cell::Cell;
@@ -17,7 +18,6 @@ pub use self::highlight_spacing::HighlightSpacing;
 pub use self::row::Row;
 pub use self::state::TableState;
 use crate::block::{Block, BlockExt};
-use bitflags::bitflags;
 
 mod cell;
 mod highlight_spacing;
