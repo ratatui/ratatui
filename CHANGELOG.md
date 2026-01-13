@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
 
+## ratatui-termion - [0.1.1](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0...ratatui-termion-v0.1.1) - 2026-01-13
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.0...ratatui-termion-v0.1.1
+
+
+
+## ratatui-termwiz - [0.1.1](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0...ratatui-termwiz-v0.1.1) - 2026-01-13
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.0...ratatui-termwiz-v0.1.1
+
+
+
+## ratatui-macros - [0.7.1](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0...ratatui-macros-v0.7.1) - 2026-01-13
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.0...ratatui-macros-v0.7.1
+
+
+
 ## [v0.30.0](https://github.com/ratatui/ratatui/releases/tag/v0.30.0) - 2025-12-26
 
 > _"Rats don't just survive; they discover; they create. ... I mean, just look at what they do with
