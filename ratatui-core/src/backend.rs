@@ -109,19 +109,28 @@ use crate::layout::{Position, Size};
 mod test;
 pub use self::test::TestBackend;
 
-/// Enum representing the different types of clearing operations that can be performed
-/// on the terminal screen.
+/// Defines which region of the terminal's visible display area is cleared.
+///
+/// Clearing operates on character cells in the active display surface. It does not move, hide, or
+/// reset the cursor position. If the cursor lies inside the cleared region, the character cell at
+/// the cursor position is cleared as well.
+///
+/// Clearing applies to the terminal's visible display area, not just content previously drawn by
+/// Ratatui. No guarantees are made about scrollback, history, or off-screen buffers.
 #[derive(Debug, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum ClearType {
-    /// Clear the entire screen.
+    /// Clears all character cells in the visible display area.
     All,
-    /// Clear everything after the cursor.
+    /// Clears all character cells from the cursor position (inclusive) through the end of the
+    /// display area.
     AfterCursor,
-    /// Clear everything before the cursor.
+    /// Clears all character cells from the start of the display area through the cursor position
+    /// (inclusive).
     BeforeCursor,
-    /// Clear the current line.
+    /// Clears all character cells in the cursor's current line.
     CurrentLine,
-    /// Clear everything from the cursor until the next newline.
+    /// Clears all character cells from the cursor position (inclusive) to the end of the current
+    /// line.
     UntilNewLine,
 }
 
@@ -237,7 +246,14 @@ pub trait Backend {
         self.set_cursor_position(Position { x, y })
     }
 
-    /// Clears the whole terminal screen
+    /// Clears all character cells in the terminal's visible display area.
+    ///
+    /// This operation preserves the cursor position. If the cursor lies within the cleared
+    /// region, the character cell at the cursor position is cleared. No guarantees are made about
+    /// scrollback, history, or off-screen buffers.
+    ///
+    /// This is equivalent to calling [`clear_region`](Self::clear_region) with
+    /// [`ClearType::All`].
     ///
     /// # Example
     ///
@@ -251,7 +267,13 @@ pub trait Backend {
     /// ```
     fn clear(&mut self) -> Result<(), Self::Error>;
 
-    /// Clears a specific region of the terminal specified by the [`ClearType`] parameter
+    /// Clears a specific region of the terminal's visible display area, as defined by
+    /// [`ClearType`].
+    ///
+    /// This operation preserves the cursor position. If the cursor lies within the cleared
+    /// region, the character cell at the cursor position is cleared. Clearing applies to the
+    /// active display surface only and does not make guarantees about scrollback, history, or
+    /// off-screen buffers.
     ///
     /// This method is optional and may not be implemented by all backends. The default
     /// implementation calls [`clear`] if the `clear_type` is [`ClearType::All`] and returns an
