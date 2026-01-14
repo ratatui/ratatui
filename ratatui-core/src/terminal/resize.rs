@@ -22,13 +22,23 @@ impl<B: Backend> Terminal<B> {
                     .last_known_cursor_pos
                     .y
                     .saturating_sub(self.viewport_area.top());
-                compute_inline_size(
+                let next_area = compute_inline_size(
                     &mut self.backend,
                     height,
                     area.as_size(),
                     offset_in_previous_viewport,
                 )?
-                .0
+                .0;
+
+                if area.width < self.last_known_area.width {
+                    let factor = self.last_known_area.width / area.width;
+                    let terminal_height = self.get_cursor_position()?.y;
+
+                    self.backend
+                        .scroll_region_down(0..terminal_height, height * factor)?;
+                }
+
+                next_area
             }
             Viewport::Fixed(_) | Viewport::Fullscreen => area,
         };
