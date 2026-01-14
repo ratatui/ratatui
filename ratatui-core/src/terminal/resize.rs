@@ -22,7 +22,9 @@ impl<B: Backend> Terminal<B> {
                     .last_known_cursor_pos
                     .y
                     .saturating_sub(self.viewport_area.top());
-                let next_area = compute_inline_size(
+
+                #[cfg_attr(feature = "scrolling-regions", expect(unused_mut))]
+                let mut next_area = compute_inline_size(
                     &mut self.backend,
                     height,
                     area.as_size(),
@@ -32,10 +34,23 @@ impl<B: Backend> Terminal<B> {
 
                 if area.width < self.last_known_area.width {
                     let factor = self.last_known_area.width / area.width;
-                    let terminal_height = self.get_cursor_position()?.y;
+                    let offset = height * factor;
+                    #[cfg(feature = "scrolling-regions")]
+                    {
+                        let terminal_height = self.get_cursor_position()?.y;
 
-                    self.backend
-                        .scroll_region_down(0..terminal_height, height * factor)?;
+                        self.backend
+                            .scroll_region_down(0..terminal_height, offset)?;
+                    }
+                    #[cfg(not(feature = "scrolling-regions"))]
+                    {
+                        use crate::layout::Offset;
+
+                        next_area = next_area.offset(Offset {
+                            x: 0,
+                            y: -i32::from(offset),
+                        });
+                    }
                 }
 
                 next_area
