@@ -417,11 +417,54 @@ impl Buffer {
     /// length is equal to area.width * area.height
     pub fn resize(&mut self, area: Rect) {
         let length = area.area() as usize;
-        if self.content.len() > length {
-            self.content.truncate(length);
-        } else {
+
+        // if terminal grew we dont do anything special
+        if self.content.len() <= length {
             self.content.resize(length, Cell::EMPTY);
+            self.area = area;
+            return;
         }
+
+        // Truncate every row individually in O(n) where n is area.width * area.height
+        //
+        // There isn't a good way to know whether the terminal was shrunk from the left
+        // or from the right (and top or bottom), so we assume a top left alignment.
+        if area.width <= self.area.width {
+            for row_idx in 0..area.height as usize {
+                // index of the first element of our row in the flat buffer
+                let row_start = row_idx * self.area.width as usize;
+                // index of the first element of the truncated row in the flat buffer
+                let new_row_start = row_idx * area.width as usize;
+
+                // this traverses from left to right (increasing order)
+                // area.width < self.area.width
+                // => new_row_start < row_start
+                // => new_row_start + col < row_start + col
+                // which means we never read from an overwritten index
+                for col in 0..area.width as usize {
+                    self.content[new_row_start + col] = self.content[row_start + col].clone();
+                }
+            }
+        } else {
+            // this case is rare but it can happen if the width increased
+            // but the height decreased sufficiently. we need to pad out
+            // each row. The safest way is to use another allocation
+            let mut new_content = Self::empty(area);
+            let mut cursor = 0;
+            let pad_size = area.width.saturating_sub(self.area.width);
+            let row_width = self.area.width as usize;
+            for row in self.content.chunks(row_width) {
+                debug_assert!(
+                    row.len() == row_width,
+                    "buffer should not have truncated rows"
+                );
+                let dest = &mut new_content.content[cursor..cursor + row_width];
+                dest.clone_from_slice(row);
+                cursor += row_width + pad_size as usize;
+            }
+        }
+
+        self.content.truncate(length);
         self.area = area;
     }
 
