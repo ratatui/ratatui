@@ -1,4 +1,5 @@
 use crate::backend::Backend;
+use crate::buffer::Cell;
 use crate::layout::{Offset, Rect};
 use crate::terminal::inline::compute_inline_size;
 use crate::terminal::{Terminal, Viewport};
@@ -32,23 +33,41 @@ impl<B: Backend> Terminal<B> {
                 .0;
 
                 if area.width < self.last_known_area.width {
-                    let factor = self.last_known_area.width / area.width;
-                    let wrong_height = height * factor;
+                    let row_width = self.last_known_area.width as usize;
+                    // calculate area of non empty content in buffer
+                    // divide the area by the constant width to get the wrapped height
+                    let content_amount = self.buffers[1 - self.current]
+                        .content()
+                        .chunks(row_width)
+                        .map(|row| {
+                            let left = row
+                                .iter()
+                                .position(|cell| cell.symbol() != " ")
+                                .unwrap_or(0);
+                            let right = row
+                                .iter()
+                                .rposition(|cell| cell.symbol() != " ")
+                                .unwrap_or(row.len());
+                            right.saturating_sub(left) + 1
+                        })
+                        .sum::<usize>();
+                    // if there is still room in our viewport, we dont need to do anything
+                    if content_amount >= (area.width * height) as usize {
+                        let wrong_height = content_amount / area.width as usize;
+                        let wrong_height = wrong_height as u16;
+                        let scrollback_height = next_area.top();
+                        let space_left = self
+                            .backend
+                            .size()?
+                            .height
+                            .saturating_sub(scrollback_height + height);
+                        let offset = wrong_height.saturating_sub(space_left);
 
-                    self.clear()?;
-
-                    let scrollback_height = next_area.top();
-                    let space_left = self
-                        .backend
-                        .size()?
-                        .height
-                        .saturating_sub(scrollback_height + height);
-                    let offset = wrong_height.saturating_sub(space_left);
-
-                    next_area = next_area.offset(Offset {
-                        x: 0,
-                        y: -i32::from(offset),
-                    });
+                        next_area = next_area.offset(Offset {
+                            x: 0,
+                            y: -i32::from(offset),
+                        });
+                    }
                 }
                 next_area
             }
