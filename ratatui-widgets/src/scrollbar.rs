@@ -559,7 +559,7 @@ impl Scrollbar<'_> {
         // This integer division rounds to the nearest integer, but rounding up instead of
         // to rounding down as is the case for plain integer division.
         #[inline]
-        const fn _rounding_divide(numerator: usize, denominator: usize) -> usize {
+        const fn rounding_divide(numerator: usize, denominator: usize) -> usize {
             (numerator + denominator / 2) / denominator
         }
 
@@ -575,13 +575,13 @@ impl Scrollbar<'_> {
             return (0, track_length, 0);
         }
 
-        let thumb_length = _rounding_divide(
+        let thumb_length = rounding_divide(
             viewport_length.saturating_mul(track_length),
             max_viewport_position,
         )
         .clamp(1, track_length);
 
-        let thumb_start = _rounding_divide(
+        let thumb_start = rounding_divide(
             start_position.saturating_mul(track_length),
             max_viewport_position,
         )
