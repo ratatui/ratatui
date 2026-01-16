@@ -1,5 +1,4 @@
 use crate::backend::Backend;
-use crate::buffer::Cell;
 use crate::layout::{Offset, Rect};
 use crate::terminal::inline::compute_inline_size;
 use crate::terminal::{Terminal, Viewport};
