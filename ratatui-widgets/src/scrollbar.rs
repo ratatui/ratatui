@@ -563,6 +563,11 @@ impl Scrollbar<'_> {
         let start_position = state.position.clamp(0, max_position);
         let max_viewport_position = max_position.saturating_add(viewport_length);
 
+        if max_viewport_position == 0 {
+            // prevent division by zero
+            return (0, track_length, 0);
+        }
+
         // This integer division rounds to the nearest integer, but rounding up instead of
         // to rounding down as is the case for plain integer division.
         fn rounding_divide(numerator: usize, denominator: usize) -> usize {
