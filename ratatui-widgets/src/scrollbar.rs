@@ -556,6 +556,13 @@ impl Scrollbar<'_> {
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &ScrollbarState) -> (usize, usize, usize) {
+        // This integer division rounds to the nearest integer, but rounding up instead of
+        // to rounding down as is the case for plain integer division.
+        #[inline]
+        const fn _rounding_divide(numerator: usize, denominator: usize) -> usize {
+            (numerator + denominator / 2) / denominator
+        }
+
         let track_length = self.track_length_excluding_arrow_heads(area) as usize;
         let viewport_length = self.viewport_length(state, area);
 
@@ -568,19 +575,13 @@ impl Scrollbar<'_> {
             return (0, track_length, 0);
         }
 
-        // This integer division rounds to the nearest integer, but rounding up instead of
-        // to rounding down as is the case for plain integer division.
-        const fn rounding_divide(numerator: usize, denominator: usize) -> usize {
-            (numerator + denominator / 2) / denominator
-        }
-
-        let thumb_length = rounding_divide(
+        let thumb_length = _rounding_divide(
             viewport_length.saturating_mul(track_length),
             max_viewport_position,
         )
         .clamp(1, track_length);
 
-        let thumb_start = rounding_divide(
+        let thumb_start = _rounding_divide(
             start_position.saturating_mul(track_length),
             max_viewport_position,
         )
