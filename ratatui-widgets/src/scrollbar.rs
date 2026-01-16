@@ -557,7 +557,7 @@ impl Scrollbar<'_> {
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &ScrollbarState) -> (usize, usize, usize) {
         // This integer division rounds to the nearest integer, but rounding up instead of
-        // to rounding down as is the case for plain integer division.
+        // rounding down (as is the case for plain integer division).
         #[inline]
         const fn rounding_divide(numerator: usize, denominator: usize) -> usize {
             (numerator + denominator / 2) / denominator
