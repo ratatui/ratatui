@@ -31,6 +31,36 @@ impl<B: Backend> Terminal<B> {
                 )?
                 .0;
 
+                // inline viewport rendering breaks when shrinking the terminal
+                // window due to line wrap. line wrap causes the height of the
+                // viewport to temporarily increase, such that the bottom line
+                // remains at the same position and everything else scrolls up.
+                //
+                // the way this counteracts that is by conditionally moving the
+                // viewport area up by an offset. the offset can be calculated
+                // as:
+                //
+                // `offset = content_area / area_width - space_left`
+                //
+                // the space left is just the terminal height minus the position
+                // of the viewport and minus the height of the viewport. The
+                // content area is the area of actually filled cells. The
+                // reason we need this is because the terminal will not wrap
+                // lines if it has enough room for them. applying an offset in
+                // that case would be wrong. spaces inbetween actual characters
+                // count towards line wrap (the terminal will not just compress
+                // lines), so a line like
+                //
+                // `    [      ]    `
+                //  0123456789...
+                //      ^------^ this is incompressible for the terminal
+                //    left   right --  is what we must find
+                //
+                // is 8 characters in area. we calculate the area by integrating
+                // over height, summing up the area of all lines. This is O(n*m)
+                // where n and m are the dimensions of the terminal, but in practice
+                // it would be closer to O(n) if you fill your viewport with a block
+                // because finding the start and end is just 2 checks.
                 if area.width < self.last_known_area.width {
                     let row_width = self.last_known_area.width as usize;
                     // calculate area of non empty content in buffer
@@ -39,14 +69,11 @@ impl<B: Backend> Terminal<B> {
                         .content()
                         .chunks(row_width)
                         .map(|row| {
-                            let left = row
-                                .iter()
-                                .position(|cell| cell.symbol() != " ")
-                                .unwrap_or(0);
-                            let right = row
-                                .iter()
-                                .rposition(|cell| cell.symbol() != " ")
-                                .unwrap_or(row.len());
+                            let left = row.iter().position(|cell| cell.symbol() != " ");
+                            let Some(left) = left else {
+                                return row.len() + 1;
+                            };
+                            let right = row.iter().rposition(|cell| cell.symbol() != " ").unwrap();
                             right.saturating_sub(left) + 1
                         })
                         .sum::<usize>();
