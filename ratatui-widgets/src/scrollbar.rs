@@ -585,7 +585,7 @@ impl Scrollbar<'_> {
             start_position.saturating_mul(track_length),
             max_viewport_position,
         )
-        .min(track_length - 1);
+        .clamp(0, track_length.saturating_sub(1));
 
         let track_end = track_length.saturating_sub(thumb_start + thumb_length);
         (thumb_start, thumb_length, track_end)
