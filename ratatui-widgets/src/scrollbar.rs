@@ -564,6 +564,11 @@ impl Scrollbar<'_> {
         }
 
         let track_length = self.track_length_excluding_arrow_heads(area) as usize;
+
+        if track_length == 0 {
+            return (0, 0, 0);
+        }
+
         let viewport_length = self.viewport_length(state, area);
 
         let max_position = state.content_length.saturating_sub(1);
@@ -1123,5 +1128,44 @@ mod tests {
         let mut state = ScrollbarState::new(10).position(5);
         // This should not panic, even if the buffer has zero size.
         scrollbar.render(buffer.area, &mut buffer, &mut state);
+    }
+
+    #[rstest]
+    #[case::horizontal_width_eq_arrows(ScrollbarOrientation::HorizontalTop, Rect::new(0, 0, 2, 1))]
+    #[case::horizontal_width_lt_arrows(ScrollbarOrientation::HorizontalTop, Rect::new(0, 0, 1, 1))]
+    #[case::vertical_height_eq_arrows(ScrollbarOrientation::VerticalLeft, Rect::new(0, 0, 1, 2))]
+    #[case::vertical_height_lt_arrows(ScrollbarOrientation::VerticalLeft, Rect::new(0, 0, 1, 1))]
+    fn part_lengths_returns_zeros_when_track_len_is_zero(
+        #[case] orientation: ScrollbarOrientation,
+        #[case] area: Rect,
+    ) {
+        let scrollbar = Scrollbar::new(orientation)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("-"))
+            .thumb_symbol("#");
+
+        let state = ScrollbarState::new(10)
+            .position(5)
+            .viewport_content_length(2);
+
+        let (start, thumb_len, end) = scrollbar.part_lengths(area, &state);
+        assert_eq!((start, thumb_len, end), (0, 0, 0));
+    }
+
+    #[test]
+    fn part_lengths_returns_zeros_when_area_dimension_is_zero_even_without_arrows() {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::HorizontalTop)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .track_symbol(Some("-"))
+            .thumb_symbol("#");
+
+        let state = ScrollbarState::new(10)
+            .position(3)
+            .viewport_content_length(2);
+
+        let (start, thumb_len, end) = scrollbar.part_lengths(Rect::new(0, 0, 0, 1), &state);
+        assert_eq!((start, thumb_len, end), (0, 0, 0));
     }
 }
