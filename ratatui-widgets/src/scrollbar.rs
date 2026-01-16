@@ -571,7 +571,7 @@ impl Scrollbar<'_> {
         let max_viewport_position = max_position.saturating_add(viewport_length);
 
         if max_viewport_position == 0 {
-            // prevent division by zero
+            // just in case to prevent division by zero
             return (0, track_length, 0);
         }
 
