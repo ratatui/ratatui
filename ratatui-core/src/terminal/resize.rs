@@ -16,7 +16,7 @@ impl<B: Backend> Terminal<B> {
     ///
     /// See also: [`Terminal::autoresize`] (automatic resizing during [`Terminal::draw`]).
     pub fn resize(&mut self, area: Rect) -> Result<(), B::Error> {
-        let next_area = match self.viewport {
+        let mut next_area = match self.viewport {
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
@@ -32,6 +32,13 @@ impl<B: Backend> Terminal<B> {
             }
             Viewport::Fixed(_) | Viewport::Fullscreen => area,
         };
+
+        // clear screen on horizontal shrink to avoid line wrapping issues
+        if next_area.width < self.viewport_area.width {
+            next_area.y = 0;
+            self.backend.clear_region(crate::backend::ClearType::All)?;
+        }
+
         self.set_viewport_area(next_area);
         self.clear()?;
 
