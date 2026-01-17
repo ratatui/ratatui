@@ -579,6 +579,8 @@ impl<'a> Context<'a> {
         let dot = symbols::DOT.chars().next().unwrap();
         let block = symbols::block::FULL.chars().next().unwrap();
         let bar = symbols::bar::HALF.chars().next().unwrap();
+        let plus_sign = symbols::PLUS_SIGN.chars().next().unwrap();
+        let x_sign = symbols::X_SIGN.chars().next().unwrap();
         match marker {
             Marker::Block => Box::new(CharGrid::new(width, height, block).apply_color_to_bg()),
             Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
@@ -587,6 +589,8 @@ impl<'a> Context<'a> {
             Marker::Quadrant => Box::new(PatternGrid::<2, 2>::new(width, height, &QUADRANTS)),
             Marker::Sextant => Box::new(PatternGrid::<2, 3>::new(width, height, &SEXTANTS)),
             Marker::Octant => Box::new(PatternGrid::<2, 4>::new(width, height, &OCTANTS)),
+            Marker::XSign => Box::new(CharGrid::new(width, height, x_sign)),
+            Marker::PlusSign => Box::new(CharGrid::new(width, height, plus_sign)),
             Marker::Dot | _ => Box::new(CharGrid::new(width, height, dot)),
         }
     }
@@ -997,6 +1001,22 @@ mod tests {
                 ▌xxxx
                 𜷀▂▂▂▂"
             ))]
+    #[case::x_sign(Marker::XSign, indoc!(
+                "
+                ×xxxx
+                ×xxxx
+                ×xxxx
+                ×xxxx
+                ×××××"
+            ))]
+    #[case::plus_sign(Marker::PlusSign, indoc!(
+                "
+                +xxxx
+                +xxxx
+                +xxxx
+                +xxxx
+                +++++"
+            ))]
     #[case::dot(Marker::Dot, indoc!(
                 "
                 •xxxx
@@ -1089,6 +1109,22 @@ mod tests {
                 xx█xx
                 x▞x▚x
                 ▞xxx▚"
+            ))]
+    #[case::x_sign(Marker::XSign, indoc!(
+                "
+                ×xxx×
+                x×x×x
+                xx×xx
+                x×x×x
+                ×xxx×"
+            ))]
+    #[case::plus_sign(Marker::PlusSign, indoc!(
+                "
+                +xxx+
+                x+x+x
+                xx+xx
+                x+x+x
+                +xxx+"
             ))]
     #[case::dot(Marker::Dot, indoc!(
                 "

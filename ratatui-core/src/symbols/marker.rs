@@ -1,6 +1,8 @@
 use strum::{Display, EnumString};
 
 pub const DOT: &str = "•";
+pub const X_SIGN: &str = "×";
+pub const PLUS_SIGN: &str = "+";
 
 /// Marker to use when plotting data points
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
@@ -53,6 +55,10 @@ pub enum Marker {
     /// unicode that is less broadly supported than Braille dots. If your terminal does not support
     /// this, you will see unicode replacement characters (`�`) instead of octants (`𜴇`, `𜷀`, `𜴷`).
     Octant,
+    /// One point per cell in shape of x (`×`)
+    XSign,
+    /// One point per cell in shape of + (`+`)
+    PlusSign,
 }
 
 #[cfg(test)]
@@ -69,6 +75,8 @@ mod tests {
         assert_eq!(Marker::Block.to_string(), "Block");
         assert_eq!(Marker::Bar.to_string(), "Bar");
         assert_eq!(Marker::Braille.to_string(), "Braille");
+        assert_eq!(Marker::XSign.to_string(), "XSign");
+        assert_eq!(Marker::PlusSign.to_string(), "PlusSign");
     }
 
     #[test]
@@ -77,6 +85,8 @@ mod tests {
         assert_eq!("Block".parse::<Marker>(), Ok(Marker::Block));
         assert_eq!("Bar".parse::<Marker>(), Ok(Marker::Bar));
         assert_eq!("Braille".parse::<Marker>(), Ok(Marker::Braille));
+        assert_eq!("XSign".parse::<Marker>(), Ok(Marker::XSign));
+        assert_eq!("PlusSign".parse::<Marker>(), Ok(Marker::PlusSign));
         assert_eq!("".parse::<Marker>(), Err(ParseError::VariantNotFound));
     }
 }
