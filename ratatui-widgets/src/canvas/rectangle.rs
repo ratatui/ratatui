@@ -88,21 +88,6 @@ mod tests {
 
     #[test]
     fn draw_block_lines() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
-        let canvas = Canvas::default()
-            .marker(Marker::Block)
-            .x_bounds([0.0, 10.0])
-            .y_bounds([0.0, 10.0])
-            .paint(|context| {
-                context.draw(&Rectangle {
-                    x: 0.0,
-                    y: 0.0,
-                    width: 10.0,
-                    height: 10.0,
-                    color: Color::Red,
-                });
-            });
-        canvas.render(buffer.area, &mut buffer);
         let mut expected = Buffer::with_lines([
             "██████████",
             "█        █",
@@ -115,28 +100,14 @@ mod tests {
             "█        █",
             "██████████",
         ]);
-        expected.set_style(buffer.area, Style::new().red().on_red());
-        expected.set_style(buffer.area.inner(Margin::new(1, 1)), Style::reset());
-        assert_eq!(buffer, expected);
+        let rect = Rect::new(0, 0, 10, 10);
+        expected.set_style(rect, Style::new().red().on_red());
+        expected.set_style(rect.inner(Margin::new(1, 1)), Style::reset());
+        assert_rectangle(Marker::Block, rect, expected);
     }
 
     #[test]
     fn draw_half_block_lines() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
-        let canvas = Canvas::default()
-            .marker(Marker::HalfBlock)
-            .x_bounds([0.0, 10.0])
-            .y_bounds([0.0, 10.0])
-            .paint(|context| {
-                context.draw(&Rectangle {
-                    x: 0.0,
-                    y: 0.0,
-                    width: 10.0,
-                    height: 10.0,
-                    color: Color::Red,
-                });
-            });
-        canvas.render(buffer.area, &mut buffer);
         let mut expected = Buffer::with_lines([
             "█▀▀▀▀▀▀▀▀█",
             "█        █",
@@ -149,10 +120,11 @@ mod tests {
             "█        █",
             "█▄▄▄▄▄▄▄▄█",
         ]);
-        expected.set_style(buffer.area, Style::new().red().on_red());
-        expected.set_style(buffer.area.inner(Margin::new(1, 0)), Style::reset().red());
-        expected.set_style(buffer.area.inner(Margin::new(1, 1)), Style::reset());
-        assert_eq!(buffer, expected);
+        let rect = Rect::new(0, 0, 10, 10);
+        expected.set_style(rect, Style::new().red().on_red());
+        expected.set_style(rect.inner(Margin::new(1, 0)), Style::reset().red());
+        expected.set_style(rect.inner(Margin::new(1, 1)), Style::reset());
+        assert_rectangle(Marker::HalfBlock, rect, expected);
     }
 
     #[test]
@@ -198,5 +170,67 @@ mod tests {
         expected.set_style(buffer.area.inner(Margin::new(2, 2)), Style::new().green());
         expected.set_style(buffer.area.inner(Margin::new(3, 3)), Style::reset());
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn draw_x_lines() {
+        let mut expected = Buffer::with_lines([
+            "××××××××××",
+            "×        ×",
+            "×        ×",
+            "×        ×",
+            "×        ×",
+            "×        ×",
+            "×        ×",
+            "×        ×",
+            "×        ×",
+            "××××××××××",
+        ]);
+        let rect = Rect::new(0, 0, 10, 10);
+        expected.set_style(rect, Style::new().red());
+        expected.set_style(rect.inner(Margin::new(1, 0)), Style::reset().red());
+        expected.set_style(rect.inner(Margin::new(1, 1)), Style::reset());
+        assert_rectangle(Marker::XSign, rect, expected);
+    }
+
+    #[test]
+    fn draw_plus_lines() {
+        let mut expected = Buffer::with_lines([
+            "++++++++++",
+            "+        +",
+            "+        +",
+            "+        +",
+            "+        +",
+            "+        +",
+            "+        +",
+            "+        +",
+            "+        +",
+            "++++++++++",
+        ]);
+        let rect = Rect::new(0, 0, 10, 10);
+        expected.set_style(rect, Style::new().red());
+        expected.set_style(rect.inner(Margin::new(1, 0)), Style::reset().red());
+        expected.set_style(rect.inner(Margin::new(1, 1)), Style::reset());
+        assert_rectangle(Marker::PlusSign, rect, expected);
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
+    fn assert_rectangle(marker: Marker, rect: Rect, expected: Buffer) {
+        let mut buffer = Buffer::empty(rect);
+        let canvas = Canvas::default()
+            .marker(marker)
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .paint(|context| {
+                context.draw(&Rectangle {
+                    x: 0.0,
+                    y: 0.0,
+                    width: 10.0,
+                    height: 10.0,
+                    color: Color::Red,
+                });
+            });
+        canvas.render(buffer.area, &mut buffer);
+        assert_eq!(expected, buffer);
     }
 }

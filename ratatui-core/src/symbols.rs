@@ -1,6 +1,6 @@
 //! Symbols and markers for drawing various widgets.
 
-pub use marker::{DOT, Marker};
+pub use marker::{DOT, Marker, PLUS_SIGN, X_SIGN};
 
 pub mod bar;
 pub mod block;
