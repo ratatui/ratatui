@@ -7,7 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 color-eyre.workspace = true
-colorgrad = "0.7"
+colorgrad = "0.8"
 crossterm.workspace = true
 rand.workspace = true
 ratatui.workspace = true
