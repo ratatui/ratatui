@@ -151,13 +151,16 @@ impl<'a> Paragraph<'a> {
     where
         T: Into<Text<'a>>,
     {
+        let text: Text = text.into();
+        let text_alignment = text.alignment.unwrap_or(Alignment::Left);
         Self {
             block: None,
             style: Style::default(),
             wrap: None,
-            text: text.into(),
+            text: text,
+            alignment: text_alignment,
             scroll: Position::ORIGIN,
-            alignment: Alignment::Left,
+
         }
     }
 
@@ -1172,6 +1175,27 @@ mod tests {
     #[test]
     fn right_aligned() {
         let p = Paragraph::new("Hello, world!").right_aligned();
+        assert_eq!(p.alignment, Alignment::Right);
+    }
+
+    #[test]
+    fn inherit_text_alignment_left_aligned() {
+        let text = Text::from(Line::from("Hello, world!")).left_aligned();
+        let p = Paragraph::new(text);
+        assert_eq!(p.alignment, Alignment::Left);
+    }
+
+    #[test]
+    fn inherit_text_alignment_centered() {
+        let text = Text::from(Line::from("Hello, world!")).centered();
+        let p = Paragraph::new(text);
+        assert_eq!(p.alignment, Alignment::Center);
+    }
+
+    #[test]
+    fn inherit_text_alignment_right_aligned() {
+        let text = Text::from(Line::from("Hello, world!")).right_aligned();
+        let p = Paragraph::new(text);
         assert_eq!(p.alignment, Alignment::Right);
     }
 
