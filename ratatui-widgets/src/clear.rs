@@ -75,11 +75,20 @@ mod tests {
     }
 
     #[test]
-    fn render_out_of_bounds() {
+    fn render_partially_out_of_bounds() {
         let mut buffer = Buffer::with_lines(["xxxxxxxxxxxxxxx"; 7]);
         let clear = Clear;
         clear.render(Rect::new(2, 0, 100, 100), &mut buffer);
         let expected = Buffer::with_lines(["xx             "; 7]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_fully_out_of_bounds() {
+        let mut buffer = Buffer::with_lines(["xxxxxxxxxxxxxxx"; 7]);
+        let clear = Clear;
+        clear.render(Rect::new(100, 0, 100, 100), &mut buffer);
+        let expected = Buffer::with_lines(["xxxxxxxxxxxxxxx"; 7]);
         assert_eq!(buffer, expected);
     }
 }
