@@ -37,6 +37,10 @@ impl Widget for Clear {
 
 impl Widget for &Clear {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(*buf.area());
+        if area.is_empty() {
+            return;
+        }
         for x in area.left()..area.right() {
             for y in area.top()..area.bottom() {
                 buf[(x, y)].reset();
@@ -67,6 +71,15 @@ mod tests {
             "x   xxxxxxxxxxx",
             "xxxxxxxxxxxxxxx",
         ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_out_of_bounds() {
+        let mut buffer = Buffer::with_lines(["xxxxxxxxxxxxxxx"; 7]);
+        let clear = Clear;
+        clear.render(Rect::new(2, 0, 100, 100), &mut buffer);
+        let expected = Buffer::with_lines(["xx             "; 7]);
         assert_eq!(buffer, expected);
     }
 }
