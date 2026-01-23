@@ -152,15 +152,14 @@ impl<'a> Paragraph<'a> {
         T: Into<Text<'a>>,
     {
         let text: Text = text.into();
-        let text_alignment = text.alignment.unwrap_or(Alignment::Left);
+        let alignment = text.alignment.unwrap_or(Alignment::Left);
         Self {
             block: None,
             style: Style::default(),
             wrap: None,
-            text: text,
-            alignment: text_alignment,
+            text,
             scroll: Position::ORIGIN,
-
+            alignment,
         }
     }
 
