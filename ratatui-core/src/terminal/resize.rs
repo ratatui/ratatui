@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, ClearType};
 use crate::layout::Rect;
 use crate::terminal::inline::compute_inline_size;
 use crate::terminal::{Terminal, Viewport};
@@ -36,7 +36,7 @@ impl<B: Backend> Terminal<B> {
         // clear screen on horizontal shrink to avoid line wrapping issues
         if next_area.width < self.viewport_area.width {
             next_area.y = 0;
-            self.backend.clear_region(crate::backend::ClearType::All)?;
+            self.backend.clear_region(ClearType::All)?;
         }
 
         self.set_viewport_area(next_area);
@@ -260,12 +260,11 @@ mod tests {
         assert_eq!(terminal.viewport_area, Rect::new(0, 0, 10, 3));
     }
 
+    // This tests for the case where the new width is smaller than the old
+    // width. The screen should be cleared completely to avoid rendering
+    // glitches caused by line wrap.
     #[test]
     fn resize_inline_clears_screen_on_horizontal_shrink() {
-        // this tests for the case where the new width is smaller than the old
-        // with. the screen should be cleared completely to avoid rendering
-        // glitches caused by line wrap.
-
         let mut backend = TestBackend::with_lines(["0000", "1111"]);
         backend
             .set_cursor_position(Position { x: 0, y: 0 })
