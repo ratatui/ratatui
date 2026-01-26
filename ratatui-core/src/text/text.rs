@@ -928,11 +928,7 @@ mod tests {
 
     #[test]
     fn from_slice_of_strs() {
-        let slice = [
-            "Hello",
-            "world!",
-            "Extra",
-        ];
+        let slice = ["Hello", "world!", "Extra"];
         let text = Text::from(&slice[0..1]);
         let text2 = Text::from(&slice[1..]);
         assert_eq!(text.lines, [Line::from("Hello")]);

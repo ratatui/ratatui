@@ -1045,11 +1045,7 @@ mod tests {
 
     #[test]
     fn from_slice_of_strs() {
-        let slice = [
-            "Hello",
-            "world!",
-            "Extra",
-        ];
+        let slice = ["Hello", "world!", "Extra"];
         let line = Line::from(&slice[0..2]);
         let line2 = Line::from(&slice[1..]);
         assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
