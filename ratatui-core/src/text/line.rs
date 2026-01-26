@@ -35,6 +35,7 @@ use crate::widgets::Widget;
 /// - [`Line::from`] creates a `Line` from a [`String`].
 /// - [`Line::from`] creates a `Line` from a [`&str`].
 /// - [`Line::from`] creates a `Line` from a [`Vec`] of [`Span`]s.
+/// - [`Line::from`] creates a `Line` from a [`&[Into<Span>]`].
 /// - [`Line::from`] creates a `Line` from single [`Span`].
 /// - [`String::from`] converts a line into a [`String`].
 /// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
