@@ -628,6 +628,15 @@ impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     }
 }
 
+impl<'a, 'b> From<&'b [Span<'a>]> for Line<'a> {
+    fn from(value: &'b [Span<'a>]) -> Self {
+        Self {
+            spans: value.to_vec(),
+            ..Default::default()
+        }
+    }
+}
+
 impl<'a> From<Span<'a>> for Line<'a> {
     fn from(span: Span<'a>) -> Self {
         Self::from(vec![span])
@@ -1015,6 +1024,15 @@ mod tests {
         ];
         let line = Line::from(spans.clone());
         assert_eq!(line.spans, spans);
+    }
+
+    #[test]
+    fn from_slice() {
+        let slice = [Span::from("Hello"), Span::from("world!"), Span::from("Extra")];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
     }
 
     #[test]
