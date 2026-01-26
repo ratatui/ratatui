@@ -628,10 +628,13 @@ impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     }
 }
 
-impl<'a, 'b> From<&'b [Span<'a>]> for Line<'a> {
-    fn from(value: &'b [Span<'a>]) -> Self {
+impl<'a, 'b, T> From<&'b [T]> for Line<'a>
+where
+    T: Into<Span<'a>> + Clone,
+{
+    fn from(value: &'b [T]) -> Self {
         Self {
-            spans: value.to_vec(),
+            spans: value.iter().cloned().map(Into::into).collect(),
             ..Default::default()
         }
     }
@@ -1027,8 +1030,38 @@ mod tests {
     }
 
     #[test]
-    fn from_slice() {
-        let slice = [Span::from("Hello"), Span::from("world!"), Span::from("Extra")];
+    fn from_slice_of_spans() {
+        let slice = [
+            Span::from("Hello"),
+            Span::from("world!"),
+            Span::from("Extra"),
+        ];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strs() {
+        let slice = [
+            "Hello",
+            "world!",
+            "Extra",
+        ];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strings() {
+        let slice = [
+            "Hello".to_string(),
+            "world!".to_string(),
+            "Extra".to_string(),
+        ];
         let line = Line::from(&slice[0..2]);
         let line2 = Line::from(&slice[1..]);
         assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
