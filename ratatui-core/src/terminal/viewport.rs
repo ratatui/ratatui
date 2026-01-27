@@ -2,31 +2,67 @@ use core::fmt;
 
 use crate::layout::Rect;
 
-/// Represents the viewport of the terminal. The viewport is the area of the terminal that is
-/// currently visible to the user. It can be either fullscreen, inline or fixed.
+/// The area of the terminal that Ratatui draws into.
 ///
-/// When the viewport is fullscreen, the whole terminal is used to draw the application.
+/// A [`Viewport`] controls where widgets render and what [`Frame::area`] returns.
 ///
-/// When the viewport is inline, it is drawn inline with the rest of the terminal. The height of
-/// the viewport is fixed, but the width is the same as the terminal width.
+/// For a higher-level overview of viewports in the context of an application (including
+/// examples), see [`Terminal`].
 ///
-/// When the viewport is fixed, it is drawn in a fixed area of the terminal. The area is specified
-/// by a [`Rect`].
+/// Most applications use [`Viewport::Fullscreen`]. Use [`Viewport::Inline`] when you want to embed
+/// a UI into a larger CLI flow (for example: print some text, then start an interactive UI below
+/// it). Use [`Viewport::Fixed`] when you want Ratatui to render into a specific region of the
+/// terminal.
 ///
-/// See [`Terminal::with_options`] for more information.
+/// In fullscreen mode, the viewport starts at (0, 0). In inline and fixed mode, the viewport may
+/// have a non-zero `x`/`y` origin; prefer using `Frame::area()` as your root layout rectangle.
 ///
+/// See [`Terminal::with_options`] for how to select a viewport, and [`Terminal::resize`] /
+/// [`Terminal::autoresize`] for resize behavior.
+///
+/// [`Frame::area`]: crate::terminal::Frame::area
+/// [`Terminal`]: crate::terminal::Terminal
 /// [`Terminal::with_options`]: crate::terminal::Terminal::with_options
+/// [`Terminal::resize`]: crate::terminal::Terminal::resize
+/// [`Terminal::autoresize`]: crate::terminal::Terminal::autoresize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub enum Viewport {
-    /// The viewport is fullscreen
+    /// Draw into the entire terminal.
+    ///
+    /// This is the default viewport used by [`Terminal::new`].
+    ///
+    /// When the terminal size changes, Ratatui automatically resizes internal buffers during
+    /// [`Terminal::draw`].
+    ///
+    /// `Frame::area()` always starts at (0, 0).
+    ///
+    /// [`Terminal::new`]: crate::terminal::Terminal::new
+    /// [`Terminal::draw`]: crate::terminal::Terminal::draw
     #[default]
     Fullscreen,
-    /// The viewport is inline with the rest of the terminal.
+    /// Draw the application inline with the rest of the terminal output.
     ///
-    /// The viewport's height is fixed and specified in number of lines. The width is the same as
-    /// the terminal's width. The viewport is drawn below the cursor position.
+    /// The viewport spans the full terminal width and its top-left corner is anchored to column 0
+    /// of the current cursor row when the terminal is created (and when it is resized). Ratatui
+    /// reserves space for the requested height; if the cursor is near the bottom of the screen,
+    /// this may scroll the terminal so the viewport remains fully visible.
+    ///
+    /// The height is specified in rows and is clamped to the current terminal height.
     Inline(u16),
-    /// The viewport is drawn in a fixed area of the terminal. The area is specified by a [`Rect`].
+    /// Draw into a fixed region of the terminal.
+    ///
+    /// This can be useful when Ratatui is responsible for only part of the screen (for example, a
+    /// status panel beside another renderer), or when you want to manage the overall layout
+    /// yourself.
+    ///
+    /// Fixed viewports are not automatically resized. If the region should change (for example, on
+    /// terminal resize), call [`Terminal::resize`] yourself.
+    ///
+    /// The area is specified as a [`Rect`] in terminal coordinates.
+    ///
+    /// `Frame::area()` returns this rectangle as-is (including its `x`/`y` offset).
+    ///
+    /// [`Terminal::resize`]: crate::terminal::Terminal::resize
     Fixed(Rect),
 }
 

@@ -10,7 +10,9 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.30.0 Unreleased](#v0300-unreleased)
+- [v0.30.1](#v0301)
+  - Adding `AsRef` impls for widgets may affect type inference in rare cases
+- [v0.30.0](#v0300)
   - `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps
     are twice the size of first and last elements
   - `block::Title` no longer exists
@@ -18,7 +20,7 @@ This is a quick summary of the sections below:
   - `FrameExt` trait for `unstable-widget-ref` feature
   - `List::highlight_symbol` now accepts `Into<Line>` instead of `&str`
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
-  - The MSRV is now 1.85.0
+  - MSRV is now 1.86.0
   - `Backend` now requires an associated `Error` type and `clear_region` method
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
@@ -27,6 +29,9 @@ This is a quick summary of the sections below:
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
     `Terminal`
   - Support a broader range for `unicode-width` version
+  - `Marker` is now non-exhaustive
+  - `symbols::braille::BLANK` and `symbols::braille::DOTS` have been removed in favor of an ordered
+    array of all Braille characters
 - [v0.29.0](#v0290)
   - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer
     const
@@ -90,7 +95,36 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## v0.30.0 Unreleased
+## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
+
+### Adding `AsRef` impls for widgets may affect type inference ([#2297])
+
+[#2297]: https://github.com/ratatui/ratatui/pull/2297
+
+Adding `AsRef<Self>` for built-in widgets can change type inference outcomes in rare cases where
+`AsRef` is part of a trait bound, and can also conflict with downstream blanket or manual `AsRef`
+impls for widget types. If you hit new ambiguity errors, add explicit type annotations or specify
+the concrete widget type to guide inference, and remove any redundant `AsRef` impls.
+
+## [v0.30.0](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.0)
+
+### `Marker` is now non-exhaustive ([#2236])
+
+[#2236]: https://github.com/ratatui/ratatui/pull/2236
+
+The `Marker` enum is now marked as `#[non_exhaustive]`, if you were matching on `Marker` exhaustively,
+you will need to add a wildcard arm:
+
+```diff
+  match marker {
+      Marker::Dot => { /* ... */ }
+      Marker::Block => { /* ... */ }
+      Marker::Bar => { /* ... */ }
+      Marker::Braille => { /* ... */ }
+      Marker::HalfBlock => { /* ... */ }
++     _ => { /* ... */ }
+  }
+```
 
 ### `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps ([#1952])
 
@@ -235,11 +269,11 @@ instead.
 + fn run(mut terminal: DefaultTerminal) -> io::Result<()> {
 ```
 
-### The MSRV is now 1.85.0 ([#1860])
+### MSRV is now 1.86.0 ([#2230])
 
-[#1860]: https://github.com/ratatui/ratatui/pull/1860
+[#2230]: https://github.com/ratatui/ratatui/pull/2230
 
-The minimum supported Rust version (MSRV) is now 1.85.0.
+The minimum supported Rust version (MSRV) is now 1.86.0.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 
@@ -1087,7 +1121,7 @@ previously did not need to use type annotations to fail to compile. To fix this,
 
 [#133]: https://github.com/ratatui/ratatui/issues/133
 
-Code using the `Block` marker that previously rendered using a half block character (`'▀'``) now
+Code using the `Block` marker that previously rendered using a half block character (`'▀'`) now
 renders using the full block character (`'█'`). A new marker variant`Bar` is introduced to replace
 the existing code.
 

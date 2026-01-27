@@ -105,6 +105,19 @@ impl TestBackend {
         &self.buffer
     }
 
+    /// Returns whether the cursor is visible.
+    pub const fn cursor_visible(&self) -> bool {
+        self.cursor
+    }
+
+    /// Returns the current cursor position.
+    pub const fn cursor_position(&self) -> Position {
+        Position {
+            x: self.pos.0,
+            y: self.pos.1,
+        }
+    }
+
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
     ///
     /// The scrollback buffer represents the part of the screen that is currently hidden from view,
@@ -275,12 +288,12 @@ impl Backend for TestBackend {
         let region = match clear_type {
             ClearType::All => return self.clear(),
             ClearType::AfterCursor => {
-                let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
                 &mut self.buffer.content[index..]
             }
             ClearType::BeforeCursor => {
                 let index = self.buffer.index_of(self.pos.0, self.pos.1);
-                &mut self.buffer.content[..index]
+                &mut self.buffer.content[..=index]
             }
             ClearType::CurrentLine => {
                 let line_start_index = self.buffer.index_of(0, self.pos.1);
@@ -620,7 +633,7 @@ mod tests {
         backend.assert_buffer_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
-            "aaaa      ",
+            "aaa       ",
             "          ",
             "          ",
         ]);
@@ -644,7 +657,7 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "     aaaaa",
+            "      aaaa",
             "aaaaaaaaaa",
         ]);
     }

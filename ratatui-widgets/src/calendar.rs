@@ -104,6 +104,36 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
         self
     }
 
+    /// Return the width required to render the calendar.
+    #[must_use]
+    pub fn width(&self) -> u16 {
+        const DAYS_PER_WEEK: u16 = 7;
+        const GUTTER_WIDTH: u16 = 1;
+        const DAY_WIDTH: u16 = 2;
+
+        let mut width = DAYS_PER_WEEK * (GUTTER_WIDTH + DAY_WIDTH);
+        if let Some(block) = &self.block {
+            let (left, right) = block.horizontal_space();
+            width = width.saturating_add(left).saturating_add(right);
+        }
+        width
+    }
+
+    /// Return the height required to render the calendar.
+    #[must_use]
+    pub fn height(&self) -> u16 {
+        let mut height = u16::from(sunday_based_weeks(self.display_date))
+            .saturating_add(u16::from(self.show_month.is_some()))
+            .saturating_add(u16::from(self.show_weekday.is_some()));
+
+        if let Some(block) = &self.block {
+            let (top, bottom) = block.vertical_space();
+            height = height.saturating_add(top).saturating_add(bottom);
+        }
+
+        height
+    }
+
     /// Return a style with only the background from the default style
     const fn default_bg(&self) -> Style {
         match self.default_style.bg {
@@ -200,6 +230,22 @@ impl<DS: DateStyler> Monthly<'_, DS> {
     }
 }
 
+/// Compute how many Sunday-based week rows are needed to render `display_date`.
+///
+/// Mirrors the rendering logic by taking the difference between the first and last day
+/// Sunday-based week numbers (inclusive).
+fn sunday_based_weeks(display_date: Date) -> u8 {
+    let first_of_month = display_date
+        .replace_day(1)
+        .expect("valid first day of month");
+    let last_of_month = first_of_month
+        .replace_day(first_of_month.month().length(first_of_month.year()))
+        .expect("valid last of month");
+    let first_week = first_of_month.sunday_based_week();
+    let last_week = last_of_month.sunday_based_week();
+    last_week.saturating_sub(first_week) + 1
+}
+
 /// Provides a method for styling a given date. [Monthly] is generic on this trait, so any type
 /// that implements this trait can be used.
 pub trait DateStyler {
@@ -268,10 +314,11 @@ impl Default for CalendarEventStore {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::style::Color;
+    use ratatui_core::style::{Color, Style};
     use time::Month;
 
     use super::*;
+    use crate::block::{Block, Padding};
 
     #[test]
     fn event_store() {
@@ -324,5 +371,88 @@ mod tests {
         );
         // This should not panic, even if the buffer has zero size.
         calendar.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn calendar_width_reflects_grid_layout() {
+        let date = Date::from_calendar_date(2023, Month::January, 1).unwrap();
+        let calendar = Monthly::new(date, CalendarEventStore::default());
+        assert_eq!(calendar.width(), 21);
+    }
+
+    #[test]
+    fn calendar_height_counts_weeks_and_headers() {
+        let date = Date::from_calendar_date(2015, Month::February, 1).unwrap();
+        let base_calendar = Monthly::new(date, CalendarEventStore::default());
+        assert_eq!(base_calendar.height(), 4);
+
+        let decorated_calendar = Monthly::new(date, CalendarEventStore::default())
+            .show_month_header(Style::default())
+            .show_weekdays_header(Style::default());
+        assert_eq!(decorated_calendar.height(), 6);
+    }
+
+    #[test]
+    fn calendar_dimensions_examples() {
+        // Feb 2015 starts Sunday and spans 4 rows.
+        let feb_2015 = Date::from_calendar_date(2015, Month::February, 1).unwrap();
+        let cal = Monthly::new(feb_2015, CalendarEventStore::default());
+        assert_eq!(cal.width(), 21, "4w base width");
+        assert_eq!(cal.height(), 4, "Feb 2015 rows");
+
+        let cal = Monthly::new(feb_2015, CalendarEventStore::default())
+            .show_month_header(Style::default())
+            .show_weekdays_header(Style::default());
+        assert_eq!(cal.height(), 6, "Headers add 2 rows");
+
+        let block = Block::bordered().padding(Padding::new(2, 3, 1, 2));
+        let cal = Monthly::new(feb_2015, CalendarEventStore::default()).block(block);
+        assert_eq!(cal.width(), 28, "Padding widens width");
+        assert_eq!(cal.height(), 9, "Padding grows height");
+
+        // Feb 2024 starts Thursday and spans 5 rows.
+        let feb_2024 = Date::from_calendar_date(2024, Month::February, 1).unwrap();
+        let cal = Monthly::new(feb_2024, CalendarEventStore::default());
+        assert_eq!(cal.width(), 21, "5w base width");
+        assert_eq!(cal.height(), 5, "Feb 2024 rows");
+
+        let cal = Monthly::new(feb_2024, CalendarEventStore::default())
+            .show_month_header(Style::default())
+            .show_weekdays_header(Style::default());
+        assert_eq!(cal.height(), 7, "Headers add 2 rows (5w)");
+
+        let cal = Monthly::new(feb_2024, CalendarEventStore::default()).block(Block::bordered());
+        assert_eq!(cal.width(), 23, "Border adds 2 cols");
+        assert_eq!(cal.height(), 7, "Border adds 2 rows");
+
+        // Apr 2023 starts Saturday and spans 6 rows.
+        let apr_2023 = Date::from_calendar_date(2023, Month::April, 1).unwrap();
+        let cal = Monthly::new(apr_2023, CalendarEventStore::default());
+        assert_eq!(cal.width(), 21, "6w base width");
+        assert_eq!(cal.height(), 6, "Apr 2023 rows");
+
+        let cal = Monthly::new(apr_2023, CalendarEventStore::default())
+            .show_month_header(Style::default())
+            .show_weekdays_header(Style::default());
+        assert_eq!(cal.height(), 8, "Headers add 2 rows (6w)");
+
+        let block = Block::bordered().padding(Padding::symmetric(1, 1));
+        let cal = Monthly::new(apr_2023, CalendarEventStore::default()).block(block);
+        assert_eq!(cal.width(), 25, "Symmetric padding width");
+        assert_eq!(cal.height(), 10, "Symmetric padding height");
+    }
+
+    #[test]
+    fn sunday_based_weeks_shapes() {
+        let sunday_start =
+            Date::from_calendar_date(2015, Month::February, 11).expect("valid test date");
+        let saturday_start =
+            Date::from_calendar_date(2023, Month::April, 9).expect("valid test date");
+        let leap_year =
+            Date::from_calendar_date(2024, Month::February, 29).expect("valid test date");
+
+        assert_eq!(sunday_based_weeks(sunday_start), 4);
+        assert_eq!(sunday_based_weeks(saturday_start), 6);
+        assert_eq!(sunday_based_weeks(leap_year), 5);
     }
 }

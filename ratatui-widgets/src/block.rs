@@ -1951,18 +1951,18 @@ mod tests {
         let mut offset = Offset::ZERO;
         for (border_type_1, border_type_2) in iproduct!(border_types, border_types) {
             let title = format!("{border_type_1} + {border_type_2}");
-            let title_area = Rect::new(0, 0, 43, 1).offset(offset);
+            let title_area = Rect::new(0, 0, 43, 1) + offset;
             title.render(title_area, &mut buffer);
             offset.y += 1;
             for (rect_1, rect_2) in rects {
                 Block::bordered()
                     .border_type(border_type_1)
                     .merge_borders(strategy)
-                    .render(rect_1.offset(offset), &mut buffer);
+                    .render(rect_1 + offset, &mut buffer);
                 Block::bordered()
                     .border_type(border_type_2)
                     .merge_borders(strategy)
-                    .render(rect_2.offset(offset), &mut buffer);
+                    .render(rect_2 + offset, &mut buffer);
             }
             offset.y += 9;
         }

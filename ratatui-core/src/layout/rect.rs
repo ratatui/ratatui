@@ -3,10 +3,11 @@ use core::array::TryFromSliceError;
 use core::cmp::{max, min};
 use core::fmt;
 
-use crate::layout::{Margin, Position, Size};
+pub use self::iter::{Columns, Positions, Rows};
+use crate::layout::{Margin, Offset, Position, Size};
 
 mod iter;
-pub use iter::*;
+mod ops;
 
 use super::{Constraint, Flex, Layout};
 
@@ -45,6 +46,7 @@ use super::{Constraint, Flex, Layout};
 ///
 /// - [`inner`](Self::inner), [`outer`](Self::outer) - Apply margins to shrink or expand
 /// - [`offset`](Self::offset) - Move the rectangle by a relative amount
+/// - [`resize`](Self::resize) - Change the rectangle size while keeping the bottom/right in range
 /// - [`union`](Self::union) - Combine with another rectangle to create a bounding box
 /// - [`intersection`](Self::intersection) - Find the overlapping area with another rectangle
 /// - [`clamp`](Self::clamp) - Constrain the rectangle to fit within another
@@ -66,21 +68,67 @@ use super::{Constraint, Flex, Layout};
 ///
 /// # Examples
 ///
+/// To create a new `Rect`, use [`Rect::new`]. The size of the `Rect` will be clamped to keep the
+/// right and bottom coordinates within `u16`. Note that this clamping does not occur when creating
+/// a `Rect` directly.
+///
+/// ```rust
+/// use ratatui_core::layout::Rect;
+///
+/// let rect = Rect::new(1, 2, 3, 4);
+/// assert_eq!(
+///     rect,
+///     Rect {
+///         x: 1,
+///         y: 2,
+///         width: 3,
+///         height: 4
+///     }
+/// );
+/// ```
+///
+/// You can also create a `Rect` from a [`Position`] and a [`Size`].
+///
 /// ```rust
 /// use ratatui_core::layout::{Position, Rect, Size};
 ///
-/// // Create a rectangle manually
-/// let rect = Rect::new(10, 5, 80, 20);
-/// assert_eq!(rect.x, 10);
-/// assert_eq!(rect.y, 5);
-/// assert_eq!(rect.width, 80);
-/// assert_eq!(rect.height, 20);
+/// let position = Position::new(1, 2);
+/// let size = Size::new(3, 4);
+/// let rect = Rect::from((position, size));
+/// assert_eq!(
+///     rect,
+///     Rect {
+///         x: 1,
+///         y: 2,
+///         width: 3,
+///         height: 4
+///     }
+/// );
+/// ```
 ///
-/// // Create from position and size
-/// let rect = Rect::from((Position::new(10, 5), Size::new(80, 20)));
+/// To move a `Rect` without modifying its size, add or subtract an [`Offset`] to it.
+///
+/// ```rust
+/// use ratatui_core::layout::{Offset, Rect};
+///
+/// let rect = Rect::new(1, 2, 3, 4);
+/// let offset = Offset::new(5, 6);
+/// let moved_rect = rect + offset;
+/// assert_eq!(moved_rect, Rect::new(6, 8, 3, 4));
+/// ```
+///
+/// To resize a `Rect` while ensuring it stays within bounds, use [`Rect::resize`]. The size is
+/// clamped so that `right()` and `bottom()` do not exceed `u16::MAX`.
+///
+/// ```rust
+/// use ratatui_core::layout::{Rect, Size};
+///
+/// let rect = Rect::new(u16::MAX - 1, u16::MAX - 1, 1, 1).resize(Size::new(10, 10));
+/// assert_eq!(rect, Rect::new(u16::MAX - 1, u16::MAX - 1, 1, 1));
 /// ```
 ///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
+
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rect {
@@ -92,30 +140,6 @@ pub struct Rect {
     pub width: u16,
     /// The height of the `Rect`.
     pub height: u16,
-}
-
-/// Amounts by which to move a [`Rect`](crate::layout::Rect).
-///
-/// Positive numbers move to the right/bottom and negative to the left/top.
-///
-/// See [`Rect::offset`]
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Offset {
-    /// How much to move on the X axis
-    pub x: i32,
-    /// How much to move on the Y axis
-    pub y: i32,
-}
-
-impl Offset {
-    /// A zero offset
-    pub const ZERO: Self = Self { x: 0, y: 0 };
-
-    /// Creates a new `Offset` with the given values.
-    pub const fn new(x: i32, y: i32) -> Self {
-        Self { x, y }
-    }
 }
 
 impl fmt::Display for Rect {
@@ -133,6 +157,12 @@ impl Rect {
         height: 0,
     };
 
+    /// The minimum possible Rect
+    pub const MIN: Self = Self::ZERO;
+
+    /// The maximum possible Rect
+    pub const MAX: Self = Self::new(0, 0, u16::MAX, u16::MAX);
+
     /// Creates a new `Rect`, with width and height limited to keep both bounds within `u16`.
     ///
     /// If the width or height would cause the right or bottom coordinate to be larger than the
@@ -147,15 +177,8 @@ impl Rect {
     /// let rect = Rect::new(1, 2, 3, 4);
     /// ```
     pub const fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
-        // these calculations avoid using min so that this function can be const
-        let max_width = u16::MAX - x;
-        let max_height = u16::MAX - y;
-        let width = if width > max_width { max_width } else { width };
-        let height = if height > max_height {
-            max_height
-        } else {
-            height
-        };
+        let width = x.saturating_add(width) - x;
+        let height = y.saturating_add(height) - y;
         Self {
             x,
             y,
@@ -260,13 +283,19 @@ impl Rect {
     /// See [`Offset`] for details.
     #[must_use = "method returns the modified value"]
     pub fn offset(self, offset: Offset) -> Self {
+        self + offset
+    }
+
+    /// Resizes the `Rect`, clamping to keep the right and bottom within `u16::MAX`.
+    ///
+    /// The position is preserved. If the requested size would push the `Rect` beyond the bounds of
+    /// `u16`, the width or height is reduced so that [`right`](Self::right) and
+    /// [`bottom`](Self::bottom) remain within range.
+    #[must_use = "method returns the modified value"]
+    pub const fn resize(self, size: Size) -> Self {
         Self {
-            x: i32::from(self.x)
-                .saturating_add(offset.x)
-                .clamp(0, i32::from(u16::MAX - self.width)) as u16,
-            y: i32::from(self.y)
-                .saturating_add(offset.y)
-                .clamp(0, i32::from(u16::MAX - self.height)) as u16,
+            width: self.x.saturating_add(size.width).saturating_sub(self.x),
+            height: self.y.saturating_add(size.height).saturating_sub(self.y),
             ..self
         }
     }
@@ -811,6 +840,16 @@ mod tests {
         assert!(!Rect::new(1, 2, 3, 4).intersects(Rect::new(5, 6, 7, 8)));
     }
 
+    #[rstest]
+    #[case::corner(Rect::new(0, 0, 10, 10), Rect::new(10, 10, 20, 20))]
+    #[case::edge(Rect::new(0, 0, 10, 10), Rect::new(10, 0, 20, 10))]
+    #[case::no_intersect(Rect::new(0, 0, 10, 10), Rect::new(11, 11, 20, 20))]
+    #[case::contains(Rect::new(0, 0, 20, 20), Rect::new(5, 5, 10, 10))]
+    fn mutual_intersect(#[case] rect0: Rect, #[case] rect1: Rect) {
+        assert_eq!(rect0.intersection(rect1), rect1.intersection(rect0));
+        assert_eq!(rect0.intersects(rect1), rect1.intersects(rect0));
+    }
+
     // the bounds of this rect are x: [1..=3], y: [2..=5]
     #[rstest]
     #[case::inside_top_left(Rect::new(1, 2, 3, 4), Position { x: 1, y: 2 }, true)]
@@ -855,6 +894,18 @@ mod tests {
                 height: 1000
             }
         );
+    }
+
+    #[test]
+    fn resize_updates_size() {
+        let rect = Rect::new(10, 20, 5, 5).resize(Size::new(30, 40));
+        assert_eq!(rect, Rect::new(10, 20, 30, 40));
+    }
+
+    #[test]
+    fn resize_clamps_at_bounds() {
+        let rect = Rect::new(u16::MAX - 2, u16::MAX - 3, 1, 1).resize(Size::new(10, 10));
+        assert_eq!(rect, Rect::new(u16::MAX - 2, u16::MAX - 3, 2, 3));
     }
 
     #[test]

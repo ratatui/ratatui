@@ -803,7 +803,7 @@ fn spans_after_width<'a>(
 /// A trait for converting a value to a [`Line`].
 ///
 /// This trait is automatically implemented for any type that implements the [`Display`] trait. As
-/// such, `ToLine` shouln't be implemented directly: [`Display`] should be implemented instead, and
+/// such, `ToLine` shouldn't be implemented directly: [`Display`] should be implemented instead, and
 /// you get the `ToLine` implementation for free.
 ///
 /// [`Display`]: std::fmt::Display
