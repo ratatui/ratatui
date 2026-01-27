@@ -262,7 +262,7 @@ fn render(frame: &mut Frame, downloads: &Downloads) {
             ]))
         })
         .collect();
-    let list = List::new(items);
+    let list = List::from(&items);
     frame.render_widget(list, list_area);
 
     #[expect(clippy::cast_possible_truncation)]
