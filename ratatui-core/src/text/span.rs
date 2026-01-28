@@ -3,12 +3,11 @@ use alloc::string::ToString;
 use core::fmt;
 
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::Buffer;
 use crate::layout::Rect;
 use crate::style::{Style, Styled};
-use crate::text::{Line, StyledGrapheme};
+use crate::text::{Line, StyledGrapheme, TerminalWidthStr};
 use crate::widgets::Widget;
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
@@ -269,7 +268,7 @@ impl<'a> Span<'a> {
 
     /// Returns the unicode width of the content held by this span.
     pub fn width(&self) -> usize {
-        UnicodeWidthStr::width(self)
+        self.content.width()
     }
 
     /// Returns an iterator over the graphemes held by this span.
@@ -373,16 +372,6 @@ impl<'a> Span<'a> {
     #[deprecated = "use `into_right_aligned_line()` instead"]
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()
-    }
-}
-
-impl UnicodeWidthStr for Span<'_> {
-    fn width(&self) -> usize {
-        self.content.width()
-    }
-
-    fn width_cjk(&self) -> usize {
-        self.content.width_cjk()
     }
 }
 
