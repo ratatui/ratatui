@@ -4,7 +4,7 @@ use core::cmp::{max, min};
 use core::fmt;
 
 pub use self::iter::{Columns, Positions, Rows};
-use crate::layout::{Margin, Offset, Position, Size};
+use crate::layout::{Inset, Margin, Offset, Position, Size};
 
 mod iter;
 mod ops;
@@ -44,7 +44,7 @@ use super::{Constraint, Flex, Layout};
 ///
 /// # Spatial Operations
 ///
-/// - [`inner`](Self::inner), [`outer`](Self::outer) - Apply margins to shrink or expand
+/// - [`inner`](Self::inner), [`outer`](Self::outer) - Apply insets or margins to shrink or expand
 /// - [`offset`](Self::offset) - Move the rectangle by a relative amount
 /// - [`resize`](Self::resize) - Change the rectangle size while keeping the bottom/right in range
 /// - [`union`](Self::union) - Combine with another rectangle to create a bounding box
@@ -125,6 +125,15 @@ use super::{Constraint, Flex, Layout};
 ///
 /// let rect = Rect::new(u16::MAX - 1, u16::MAX - 1, 1, 1).resize(Size::new(10, 10));
 /// assert_eq!(rect, Rect::new(u16::MAX - 1, u16::MAX - 1, 1, 1));
+/// ```
+///
+/// To inset a `Rect` with different values on each side, use [`Rect::inner`] with an [`Inset`].
+///
+/// ```rust
+/// use ratatui_core::layout::{Inset, Rect};
+///
+/// let rect = Rect::new(0, 0, 10, 10).inner(Inset::trbl(1, 2, 3, 4));
+/// assert_eq!(rect, Rect::new(4, 1, 4, 6));
 /// ```
 ///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
@@ -225,22 +234,48 @@ impl Rect {
         self.y.saturating_add(self.height)
     }
 
-    /// Returns a new `Rect` inside the current one, with the given margin on each side.
+    /// Returns a new `Rect` inside the current one, with the given inset on each side.
     ///
-    /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
+    /// Accepts any type that can convert into an [`Inset`], including [`Margin`]. If the inset is
+    /// larger than the `Rect`, the returned `Rect` will have no area.
+    ///
+    /// # Examples
+    ///
+    /// Using a margin (shared horizontal and vertical):
+    ///
+    /// ```rust
+    /// use ratatui_core::layout::{Margin, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 6);
+    /// let inner = area.inner(Margin::new(1, 2));
+    ///
+    /// assert_eq!(inner, Rect::new(1, 2, 8, 2));
+    /// ```
+    ///
+    /// Using an inset with side-specific values:
+    ///
+    /// ```rust
+    /// use ratatui_core::layout::{Inset, Rect};
+    ///
+    /// let area = Rect::new(0, 0, 10, 6);
+    /// let inner = area.inner(Inset::trbl(1, 2, 3, 4));
+    ///
+    /// assert_eq!(inner, Rect::new(4, 1, 4, 2));
+    /// ```
     #[must_use = "method returns the modified value"]
-    pub const fn inner(self, margin: Margin) -> Self {
-        let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
-        let doubled_margin_vertical = margin.vertical.saturating_mul(2);
+    pub fn inner<I: Into<Inset>>(self, inset: I) -> Self {
+        let inset = inset.into();
+        let total_horizontal = inset.left.saturating_add(inset.right);
+        let total_vertical = inset.top.saturating_add(inset.bottom);
 
-        if self.width < doubled_margin_horizontal || self.height < doubled_margin_vertical {
+        if self.width < total_horizontal || self.height < total_vertical {
             Self::ZERO
         } else {
             Self {
-                x: self.x.saturating_add(margin.horizontal),
-                y: self.y.saturating_add(margin.vertical),
-                width: self.width.saturating_sub(doubled_margin_horizontal),
-                height: self.height.saturating_sub(doubled_margin_vertical),
+                x: self.x.saturating_add(inset.left),
+                y: self.y.saturating_add(inset.top),
+                width: self.width.saturating_sub(total_horizontal),
+                height: self.height.saturating_sub(total_vertical),
             }
         }
     }
@@ -774,6 +809,22 @@ mod tests {
         assert_eq!(
             Rect::new(u16::MAX - 20, u16::MAX - 40, 10, 20).outer(Margin::new(20, 30)),
             Rect::new(u16::MAX - 40, u16::MAX - 70, 40, 70),
+        );
+    }
+
+    #[test]
+    fn inner_supports_inset() {
+        assert_eq!(
+            Rect::new(10, 20, 50, 60).inner(Inset::trbl(1, 2, 3, 4)),
+            Rect::new(14, 21, 44, 56),
+        );
+    }
+
+    #[test]
+    fn inner_inset_zero_on_overflow() {
+        assert_eq!(
+            Rect::new(0, 0, 2, 2).inner(Inset::trbl(1, 1, 2, 2)),
+            Rect::ZERO,
         );
     }
 
