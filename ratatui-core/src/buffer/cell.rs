@@ -1,7 +1,28 @@
+use core::num::NonZeroUsize;
+
 use compact_str::CompactString;
 
 use crate::style::{Color, Modifier, Style};
 use crate::symbols::merge::MergeStrategy;
+
+/// Cell diffing options
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CellDiffOption {
+    #[default]
+    /// No special option.
+    None,
+    /// Skip this cell when diffing.
+    ///
+    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
+    /// covered by something from an escape sequence, such as graphics or links.
+    Skip,
+    /// Force a width regardless of the symbol text width.
+    ///
+    /// Escape sequences will have some computed width that does match what is written to the
+    /// screen.
+    ForcedWidth(NonZeroUsize),
+}
 
 /// A buffer cell
 #[derive(Debug, Default, Clone)]
@@ -30,8 +51,8 @@ pub struct Cell {
     /// The modifier of the cell.
     pub modifier: Modifier,
 
-    /// Whether the cell should be skipped when copying (diffing) the buffer to the screen.
-    pub skip: bool,
+    /// Special option applied when copying (diffing) the buffer to the screen (or another buffer).
+    pub diff_option: CellDiffOption,
 }
 
 impl Cell {
@@ -43,7 +64,7 @@ impl Cell {
         #[cfg(feature = "underline-color")]
         underline_color: Color::Reset,
         modifier: Modifier::empty(),
-        skip: false,
+        diff_option: CellDiffOption::None,
     };
 
     /// Creates a new `Cell` with the given symbol.
@@ -180,12 +201,26 @@ impl Cell {
         }
     }
 
-    /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.
-    ///
-    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
-    /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
+    #[deprecated(
+        since = "0.30.0",
+        note = "use `set_diff_option(CellDiffOption::Skip)` instead"
+    )]
+    /// Set cell diffing option to [`CellDiffOption::Skip`].
     pub const fn set_skip(&mut self, skip: bool) -> &mut Self {
-        self.skip = skip;
+        self.diff_option = if skip {
+            CellDiffOption::Skip
+        } else {
+            CellDiffOption::None
+        };
+        self
+    }
+
+    /// Sets cell [`CellDiffOption`].
+    ///
+    /// The diff options are for dealing with cells that are wider than a unit, or that should not
+    /// be updated at all (skip output due to preceding wider cells).
+    pub const fn set_diff_option(&mut self, diff_option: CellDiffOption) -> &mut Self {
+        self.diff_option = diff_option;
         self
     }
 
@@ -215,7 +250,7 @@ impl PartialEq for Cell {
             && self.fg == other.fg
             && self.bg == other.bg
             && self.modifier == other.modifier
-            && self.skip == other.skip
+            && self.diff_option == other.diff_option
     }
 }
 
@@ -233,7 +268,7 @@ impl core::hash::Hash for Cell {
         #[cfg(feature = "underline-color")]
         self.underline_color.hash(state);
         self.modifier.hash(state);
-        self.skip.hash(state);
+        self.diff_option.hash(state);
     }
 }
 
@@ -261,7 +296,7 @@ mod tests {
                 #[cfg(feature = "underline-color")]
                 underline_color: Color::Reset,
                 modifier: Modifier::empty(),
-                skip: false,
+                diff_option: CellDiffOption::None,
             }
         );
     }
@@ -321,8 +356,8 @@ mod tests {
     #[test]
     fn set_skip() {
         let mut cell = Cell::EMPTY;
-        cell.set_skip(true);
-        assert!(cell.skip);
+        cell.set_diff_option(CellDiffOption::Skip);
+        assert_eq!(cell.diff_option, CellDiffOption::Skip);
     }
 
     #[test]
@@ -331,12 +366,12 @@ mod tests {
         cell.set_symbol("あ");
         cell.set_fg(Color::Red);
         cell.set_bg(Color::Blue);
-        cell.set_skip(true);
+        cell.set_diff_option(CellDiffOption::Skip);
         cell.reset();
         assert_eq!(cell.symbol(), " ");
         assert_eq!(cell.fg, Color::Reset);
         assert_eq!(cell.bg, Color::Reset);
-        assert!(!cell.skip);
+        assert_eq!(cell.diff_option, CellDiffOption::None);
     }
 
     #[test]
