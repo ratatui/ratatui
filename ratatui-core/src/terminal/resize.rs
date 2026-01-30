@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, ClearType};
 use crate::layout::Rect;
 use crate::terminal::inline::compute_inline_size;
 use crate::terminal::{Terminal, Viewport};
@@ -16,7 +16,7 @@ impl<B: Backend> Terminal<B> {
     ///
     /// See also: [`Terminal::autoresize`] (automatic resizing during [`Terminal::draw`]).
     pub fn resize(&mut self, area: Rect) -> Result<(), B::Error> {
-        let next_area = match self.viewport {
+        let mut next_area = match self.viewport {
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
@@ -32,6 +32,13 @@ impl<B: Backend> Terminal<B> {
             }
             Viewport::Fixed(_) | Viewport::Fullscreen => area,
         };
+
+        // clear screen on horizontal shrink to avoid line wrapping issues
+        if next_area.width < self.viewport_area.width {
+            next_area.y = 0;
+            self.backend.clear_region(ClearType::All)?;
+        }
+
         self.set_viewport_area(next_area);
         self.clear()?;
 
@@ -251,5 +258,38 @@ mod tests {
         terminal.resize(Rect::new(0, 0, 10, 3)).unwrap();
 
         assert_eq!(terminal.viewport_area, Rect::new(0, 0, 10, 3));
+    }
+
+    // This tests for the case where the new width is smaller than the old
+    // width. The screen should be cleared completely to avoid rendering
+    // glitches caused by line wrap.
+    #[test]
+    fn resize_inline_clears_screen_on_horizontal_shrink() {
+        let mut backend = TestBackend::with_lines(["0000", "1111"]);
+        backend
+            .set_cursor_position(Position { x: 0, y: 0 })
+            .unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(2),
+            },
+        )
+        .unwrap();
+
+        let old_area = terminal.backend().buffer().area;
+        let new_area = Rect {
+            width: old_area.width - 1,
+            ..old_area
+        };
+
+        terminal.resize(new_area);
+        assert_eq!(terminal.viewport_area, new_area);
+        let all_clear = terminal
+            .current_buffer_mut()
+            .content()
+            .iter()
+            .all(|cell| cell == &crate::buffer::Cell::EMPTY);
+        assert!(all_clear, "not all buffer cells are empty");
     }
 }
