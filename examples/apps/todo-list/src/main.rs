@@ -13,7 +13,7 @@ use ratatui::style::palette::tailwind::{BLUE, GREEN, SLATE};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::{
-    Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
+    Block, Borders, List, ListHighlightSpacing, ListItem, ListState, Padding, Paragraph,
     StatefulWidget, Widget, Wrap,
 };
 use ratatui::{DefaultTerminal, symbols};
@@ -235,7 +235,7 @@ impl App {
             .block(block)
             .highlight_style(SELECTED_STYLE)
             .highlight_symbol(">")
-            .highlight_spacing(HighlightSpacing::Always);
+            .highlight_spacing(ListHighlightSpacing::Always);
 
         // We need to disambiguate this trait method as both `Widget` and `StatefulWidget` share the
         // same method name `render`.
