@@ -21,7 +21,7 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Padding};
-use ratatui_widgets::calendar::{CalendarEventStore, Monthly};
+use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
 use time::{Date, Month, OffsetDateTime};
 
 fn main() -> Result<()> {
