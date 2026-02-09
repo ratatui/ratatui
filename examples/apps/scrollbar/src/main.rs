@@ -33,6 +33,10 @@ fn main() -> Result<()> {
     ratatui::run(|terminal| App::default().run(terminal))
 }
 
+fn create_block(title: &str) -> Block<'_> {
+    Block::bordered().gray().title(title.bold())
+}
+
 impl App {
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         let tick_rate = Duration::from_millis(250);
@@ -82,13 +86,7 @@ impl App {
             .position(self.horizontal_scroll);
     }
 
-    fn render_vertical_scroll(
-        &mut self,
-        frame: &mut Frame,
-        text: &[Line],
-        chunks: &Rc<[Rect]>,
-        create_block: &dyn Fn(&'static str) -> Block<'static>,
-    ) {
+    fn render_vertical_scroll(&mut self, frame: &mut Frame, text: &[Line], chunks: &Rc<[Rect]>) {
         let title = Block::new()
             .title_alignment(Alignment::Center)
             .title("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold());
@@ -128,13 +126,7 @@ impl App {
         );
     }
 
-    fn render_horizontal_scroll(
-        &mut self,
-        frame: &mut Frame,
-        text: &[Line],
-        chunks: &Rc<[Rect]>,
-        create_block: &dyn Fn(&'static str) -> Block<'static>,
-    ) {
+    fn render_horizontal_scroll(&mut self, frame: &mut Frame, text: &[Line], chunks: &Rc<[Rect]>) {
         let paragraph = Paragraph::new(text.to_owned())
             .gray()
             .block(create_block(
@@ -215,8 +207,7 @@ impl App {
         self.vertical_scroll_state = self.vertical_scroll_state.content_length(text.len());
         self.horizontal_scroll_state = self.horizontal_scroll_state.content_length(long_line.len());
 
-        let create_block = |title: &'static str| Block::bordered().gray().title(title.bold());
-        self.render_vertical_scroll(frame, &text, &chunks, &create_block);
-        self.render_horizontal_scroll(frame, &text, &chunks, &create_block);
+        self.render_vertical_scroll(frame, &text, &chunks);
+        self.render_horizontal_scroll(frame, &text, &chunks);
     }
 }
