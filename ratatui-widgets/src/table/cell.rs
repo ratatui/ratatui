@@ -173,6 +173,11 @@ impl<'a> Cell<'a> {
         self.style = style.into();
         self
     }
+
+    /// Get the width of the [`Cell`]
+    pub fn width(&self) -> usize {
+        self.content.width()
+    }
 }
 
 impl Cell<'_> {
