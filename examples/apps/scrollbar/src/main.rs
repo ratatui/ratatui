@@ -189,20 +189,16 @@ impl App {
             Line::from("This is a longer line".crossed_out()),
             Line::from(long_line.clone()),
             Line::from("This is a line".reset()),
-            Line::from(vec![
-                Span::raw("Masked text: "),
-                Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
-            ]),
+            Span::raw("Masked text: ")
+                + Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
             Line::from("This is a line "),
             Line::from("This is a line   ".red()),
             Line::from("This is a line".on_dark_gray()),
             Line::from("This is a longer line".crossed_out()),
             Line::from(long_line.clone()),
             Line::from("This is a line".reset()),
-            Line::from(vec![
-                Span::raw("Masked text: "),
-                Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
-            ]),
+            Span::raw("Masked text: ")
+                + Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
         ];
         self.vertical_scroll_state = self.vertical_scroll_state.content_length(text.len());
         self.horizontal_scroll_state = self.horizontal_scroll_state.content_length(long_line.len());
