@@ -33,10 +33,6 @@ fn main() -> Result<()> {
     ratatui::run(|terminal| App::default().run(terminal))
 }
 
-fn create_block(title: &str) -> Block<'_> {
-    Block::bordered().gray().title(title.bold())
-}
-
 impl App {
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         let tick_rate = Duration::from_millis(250);
@@ -60,6 +56,10 @@ impl App {
                 }
             }
         }
+    }
+
+    fn create_block(title: &str) -> Block<'_> {
+        Block::bordered().gray().title(title.bold())
     }
 
     const fn scroll_down(&mut self) {
@@ -94,7 +94,7 @@ impl App {
 
         let paragraph = Paragraph::new(text.to_owned())
             .gray()
-            .block(create_block("Vertical scrollbar with arrows"))
+            .block(Self::create_block("Vertical scrollbar with arrows"))
             .scroll((self.vertical_scroll as u16, 0));
         frame.render_widget(paragraph, chunks[1]);
         frame.render_stateful_widget(
@@ -107,7 +107,7 @@ impl App {
 
         let paragraph = Paragraph::new(text.to_owned())
             .gray()
-            .block(create_block(
+            .block(Self::create_block(
                 "Vertical scrollbar without arrows, without track symbol and mirrored",
             ))
             .scroll((self.vertical_scroll as u16, 0));
@@ -129,7 +129,7 @@ impl App {
     fn render_horizontal_scroll(&mut self, frame: &mut Frame, text: &[Line], chunks: &Rc<[Rect]>) {
         let paragraph = Paragraph::new(text.to_owned())
             .gray()
-            .block(create_block(
+            .block(Self::create_block(
                 "Horizontal scrollbar with only begin arrow & custom thumb symbol",
             ))
             .scroll((0, self.horizontal_scroll as u16));
@@ -147,7 +147,7 @@ impl App {
 
         let paragraph = Paragraph::new(text.to_owned())
             .gray()
-            .block(create_block(
+            .block(Self::create_block(
                 "Horizontal scrollbar without arrows & custom thumb and track symbol",
             ))
             .scroll((0, self.horizontal_scroll as u16));
