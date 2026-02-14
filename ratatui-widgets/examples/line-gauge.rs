@@ -67,14 +67,14 @@ impl App {
 
     fn handle_events(&mut self) -> Result<()> {
         let timeout = Duration::from_secs_f32(1.0 / 20.0);
-        if event::poll(timeout)? {
-            if let Some(key) = event::read()?.as_key_press_event() {
-                match key.code {
-                    KeyCode::Char(' ') => self.toggle_start(),
-                    KeyCode::Char('r') => self.reset(),
-                    KeyCode::Char('q') => self.state = AppState::Quit,
-                    _ => {}
-                }
+        if event::poll(timeout)?
+            && let Some(key) = event::read()?.as_key_press_event()
+        {
+            match key.code {
+                KeyCode::Char(' ') => self.toggle_start(),
+                KeyCode::Char('r') => self.reset(),
+                KeyCode::Char('q') => self.state = AppState::Quit,
+                _ => {}
             }
         }
         Ok(())
