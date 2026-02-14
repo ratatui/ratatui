@@ -1,4 +1,6 @@
 use core::num::NonZeroU8;
+
+use crate::buffer::cell_width::StrCellWidth;
 use crate::style::{Color, Modifier, Style};
 use crate::symbols::merge::MergeStrategy;
 
@@ -361,6 +363,18 @@ impl From<char> for Cell {
         let mut cell = Self::EMPTY;
         cell.set_char(ch);
         cell
+    }
+}
+
+impl StrCellWidth for Cell {
+    /// Returns the display width of the cell's symbol without constructing a `&str`
+    /// for single-byte (ASCII) symbols.
+    fn cell_width(&self) -> u16 {
+        if self.symbol.bytes[1] == 0 {
+            1
+        } else {
+            self.symbol.as_str().cell_width()
+        }
     }
 }
 
