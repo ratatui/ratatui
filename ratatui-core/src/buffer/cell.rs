@@ -220,7 +220,11 @@ impl Cell {
     /// [border collapsing]: https://ratatui.rs/recipes/layout/collapse-borders/
     /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
     pub fn merge_symbol(&mut self, symbol: &str, strategy: MergeStrategy) -> &mut Self {
-        let merged_symbol = strategy.merge(self.symbol.as_str(), symbol);
+        let merged_symbol = if self.symbol.bytes[0] == b' ' {
+            symbol
+        } else {
+            strategy.merge(self.symbol.as_str(), symbol)
+        };
         self.symbol = merged_symbol.into();
         self
     }
@@ -322,8 +326,6 @@ impl Cell {
 
 impl PartialEq for Cell {
     fn eq(&self, other: &Self) -> bool {
-        // Compare raw bytes — zero-padded EmbeddedStr guarantees correctness
-        // without computing string length.
         self.symbol.bytes == other.symbol.bytes
             && self.fg == other.fg
             && self.bg == other.bg
