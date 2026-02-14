@@ -10,7 +10,7 @@ struct EmbeddedStr2 {
 
 impl EmbeddedStr2 {
     fn len(&self) -> usize {
-        const LEN: [u8; 16] = [1,1,1,1,1,1,1,1, 1,1,1,1, 2,2, 3, 4];
+        const LEN: [u8; 16] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4];
         LEN[(self.bytes[0] >> 4) as usize] as usize
     }
 
@@ -99,9 +99,19 @@ fn assert_str_eq(s: &str) {
     let embedded = EmbeddedStr2::from(s);
     if s.len() <= 4 {
         let compact = CompactString::from(s);
-        assert_eq!(embedded.as_str(), compact.as_str(), "mismatch for str {:?}", s);
+        assert_eq!(
+            embedded.as_str(),
+            compact.as_str(),
+            "mismatch for str {:?}",
+            s
+        );
     } else {
-        assert_eq!(embedded.as_str(), " ", "expected fallback to space for {:?}", s);
+        assert_eq!(
+            embedded.as_str(),
+            " ",
+            "expected fallback to space for {:?}",
+            s
+        );
     }
 }
 
@@ -110,19 +120,19 @@ fn assert_str_eq(s: &str) {
 // ---------------------------------------------------------------------------
 
 const ASCII_CHARS: &[char] = &[
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'a', 'b',
-    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', ' ', '.', ',', ':',
-    ';', '-', '=', '+', '!', '?', '#', '@', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'a', 'b', 'c',
+    'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', ' ', '.', ',', ':', ';', '-',
+    '=', '+', '!', '?', '#', '@', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 ];
 
 const CJK_CHARS: &[char] = &[
-    '你', '好', '世', '界', '日', '本', '語', '中', '文', '字', '東', '京', '大', '学', '人',
-    '山', '川', '田', '上', '下',
+    '你', '好', '世', '界', '日', '本', '語', '中', '文', '字', '東', '京', '大', '学', '人', '山',
+    '川', '田', '上', '下',
 ];
 
 const BOX_DRAWING: &[&str] = &[
-    "─", "│", "┌", "┐", "└", "┘", "├", "┤", "┬", "┴", "┼", "═", "║", "╔", "╗", "╚", "╝", "╠",
-    "╣", "╬",
+    "─", "│", "┌", "┐", "└", "┘", "├", "┤", "┬", "┴", "┼", "═", "║", "╔", "╗", "╚", "╝", "╠", "╣",
+    "╬",
 ];
 
 #[test]

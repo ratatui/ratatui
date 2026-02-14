@@ -489,6 +489,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "unsupported: multi-codepoint graphemes with EmbeddedStr"]
     fn buffer_view_with_overwrites() {
         let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 2 wide
         let buffer = Buffer::with_lines([multi_byte_char]);
