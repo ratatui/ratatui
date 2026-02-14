@@ -140,6 +140,7 @@ ratatui-termion = { workspace = true, optional = true }
 color-eyre.workspace = true
 criterion.workspace = true
 crossterm = { workspace = true, features = ["event-stream"] }
+compact_str.workspace = true
 fakeit.workspace = true
 futures.workspace = true
 indoc.workspace = true
@@ -153,6 +154,7 @@ tokio = { workspace = true, features = ["rt", "macros", "time", "rt-multi-thread
 tracing.workspace = true
 tracing-appender.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
+unicode-width.workspace = true
 
 [lints]
 workspace = true
