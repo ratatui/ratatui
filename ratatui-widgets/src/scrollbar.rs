@@ -7,6 +7,7 @@
     clippy::module_name_repetitions
 )]
 
+use unicode_width::UnicodeWidthStr;
 use core::iter;
 
 use ratatui_core::buffer::Buffer;
@@ -15,7 +16,6 @@ use ratatui_core::style::Style;
 use ratatui_core::symbols::scrollbar::{DOUBLE_HORIZONTAL, DOUBLE_VERTICAL, Set};
 use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
-use unicode_width::UnicodeWidthStr;
 
 /// A widget to display a scrollbar
 ///

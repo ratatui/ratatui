@@ -4,9 +4,8 @@ use core::ops::{Index, IndexMut};
 use core::{cmp, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
-use crate::buffer::{Cell, CellDiffOption};
+use crate::buffer::{Cell, CellDiffOption, StrCellWidth};
 use crate::layout::{Position, Rect};
 use crate::style::Style;
 use crate::text::{Line, Span};
@@ -350,7 +349,7 @@ impl Buffer {
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
-            .map(|symbol| (symbol, symbol.width() as u16))
+            .map(|symbol| (symbol, symbol.cell_width()))
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
                 remaining_width = remaining_width.checked_sub(width)?;
@@ -524,7 +523,7 @@ impl Buffer {
                         // explicit update for the trailing cells avoids
                         // this.
                         let symbol = current.symbol();
-                        let cell_width = symbol.width();
+                        let cell_width = symbol.cell_width() as _;
                         // Work around terminals that fail to clear the trailing cell of certain
                         // emoji presentation sequences (those containing VS16 / U+FE0F).
                         // Only emit explicit clears for such sequences to avoid bloating diffs
@@ -638,7 +637,7 @@ impl fmt::Debug for Buffer {
         let mut styles = vec![];
         for (y, line) in self.content.chunks(self.area.width as usize).enumerate() {
             let mut overwritten = vec![];
-            let mut skip: usize = 0;
+            let mut skip: u16 = 0;
             f.write_str("        \"")?;
             for (x, c) in line.iter().enumerate() {
                 if skip == 0 {
@@ -646,7 +645,7 @@ impl fmt::Debug for Buffer {
                 } else {
                     overwritten.push((x, c.symbol()));
                 }
-                skip = cmp::max(skip, c.symbol().width()).saturating_sub(1);
+                skip = cmp::max(skip, c.symbol().cell_width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
@@ -933,7 +932,7 @@ mod tests {
 
     #[test]
     fn set_string_zero_width() {
-        assert_eq!("\u{200B}".width(), 0);
+        assert_eq!("\u{200B}".cell_width(), 0);
 
         let area = Rect::new(0, 0, 1, 1);
         let mut buffer = Buffer::empty(area);
@@ -1427,7 +1426,7 @@ mod tests {
         dbg!(
             input
                 .graphemes(true)
-                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
+                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.cell_width()))
                 .collect::<Vec<_>>()
         );
         dbg!(
