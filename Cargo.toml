@@ -48,8 +48,8 @@ lru = "0.16"
 octocrab = "0.49"
 palette = "0.7"
 pretty_assertions = "1"
-rand = "0.9"
-rand_chacha = "0.9"
+rand = "0.10"
+rand_chacha = "0.10"
 ratatui = { path = "ratatui", version = "0.30.0" }
 ratatui-core = { path = "ratatui-core", version = "0.1.0" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0" }
