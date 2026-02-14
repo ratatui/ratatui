@@ -508,7 +508,7 @@ impl Buffer {
                         let (x, y) = self.pos_of(i);
                         updates.push((x, y, &next_buffer[i]));
                     }
-                    to_skip = width.get().saturating_sub(1);
+                    to_skip = usize::from(width.get()).saturating_sub(1);
                 }
                 CellDiffOption::None => {
                     if current != previous {
@@ -694,7 +694,7 @@ mod tests {
     use alloc::format;
     use alloc::string::{String, ToString};
     use core::iter;
-    use core::num::NonZero;
+    use core::num::NonZeroU8;
     use std::{dbg, println};
 
     use itertools::Itertools;
@@ -1177,7 +1177,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("456")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(3).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU8::new(3).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1192,7 +1192,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("\x1b]8;;http://example.com\x1b\\link\x1b]8;;\x1b\\")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(4).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU8::new(4).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1207,7 +1207,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("\x1b]8;;http://example.com\x1b\\🔗")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(2).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU8::new(2).unwrap()));
         // Set inner characters normally.
         next.cell_mut((2, 0)).unwrap().set_symbol("l");
         next.cell_mut((3, 0)).unwrap().set_symbol("i");
@@ -1217,7 +1217,7 @@ mod tests {
         next.cell_mut((7, 0))
             .unwrap()
             .set_symbol("🔗\x1b]8;;\x1b\\")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(2).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU8::new(2).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1246,7 +1246,7 @@ mod tests {
         prev.cell_mut((0, 0))
             .unwrap()
             .set_symbol(&kitty_image_placeholder_start)
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(1).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU8::new(1).unwrap()));
 
         // Add two follow up placeholder symbols that have a natural width of 1.
         prev.cell_mut((1, 0)).unwrap().set_char('\u{10EEEE}');
@@ -1256,7 +1256,7 @@ mod tests {
         prev.cell_mut((3, 0))
             .unwrap()
             .set_symbol("\u{10EEEE}\x1b[u")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(1).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU8::new(1).unwrap()));
 
         let mut buffer = Buffer::filled(Rect::new(0, 0, 20, 1), Cell::new("x"));
         buffer.merge(&prev);
