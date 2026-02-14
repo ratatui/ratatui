@@ -367,14 +367,17 @@ impl From<char> for Cell {
 }
 
 impl StrCellWidth for Cell {
-    /// Returns the display width of the cell's symbol without constructing a `&str`
-    /// for single-byte (ASCII) symbols.
+    /// Returns the display width of the cell's symbol.
+    ///
+    /// Always returns 1, as `EmbeddedStr` stores a single codepoint and this
+    /// targets fixed-width bitmap fonts where every glyph occupies one cell.
     fn cell_width(&self) -> u16 {
-        if self.symbol.bytes[1] == 0 {
-            1
-        } else {
-            self.symbol.as_str().cell_width()
-        }
+        1
+        // if self.symbol.bytes[1] == 0 {
+        //     1
+        // } else {
+        //     self.symbol.as_str().cell_width()
+        // }
     }
 }
 

@@ -777,6 +777,7 @@ mod tests {
         /// When the span contains a multi-width grapheme that does not fit in the area passed to
         /// render, the entire grapheme will be truncated.
         #[test]
+        #[ignore = "multi-width characters not supported in embedded POC"]
         fn render_multi_width_symbol_truncates_entire_symbol() {
             // the 😃 emoji is 2 columns wide so it will be truncated
             let style = Style::new().green().on_yellow();

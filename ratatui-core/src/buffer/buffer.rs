@@ -917,6 +917,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "double-width characters not supported in embedded POC"]
     fn set_string_multi_width_overwrite() {
         let area = Rect::new(0, 0, 5, 1);
         let mut buffer = Buffer::empty(area);
@@ -928,6 +929,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "zero-width characters not supported in embedded POC"]
     fn set_string_zero_width() {
         assert_eq!("\u{200B}".cell_width(), 0);
 
@@ -946,6 +948,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "double-width characters not supported in embedded POC"]
     fn set_string_double_width() {
         let area = Rect::new(0, 0, 5, 1);
         let mut buffer = Buffer::empty(area);
@@ -1117,6 +1120,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "multi-width characters not supported in embedded POC"]
     fn diff_multi_width() {
         #[rustfmt::skip]
         let prev = Buffer::with_lines([
@@ -1142,6 +1146,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "multi-width characters not supported in embedded POC"]
     fn diff_multi_width_offset() {
         let prev = Buffer::with_lines(["┌称号──┐"]);
         let next = Buffer::with_lines(["┌─称号─┐"]);
@@ -1415,6 +1420,7 @@ mod tests {
     // Keyboard keycap emoji: base symbol + VS16 for emoji presentation
     // This should render as a single grapheme with width 2.
     #[case::keyboard_emoji("⌨️", "⌨️xxxxx")]
+    #[ignore = "multi-width characters not supported in embedded POC"]
     fn renders_emoji(#[case] input: &str, #[case] expected: &str) {
         let mut buffer = Buffer::filled(Rect::new(0, 0, 7, 1), Cell::new("x"));
         buffer.set_string(0, 0, input, Style::new());

@@ -1,4 +1,4 @@
-use unicode_width::UnicodeWidthStr;
+// use unicode_width::UnicodeWidthStr;
 
 pub trait StrCellWidth {
     fn cell_width(&self) -> u16;
@@ -6,10 +6,11 @@ pub trait StrCellWidth {
 
 impl StrCellWidth for str {
     fn cell_width(&self) -> u16 {
-        if self.len() == 1 {
-            1
-        } else {
-            self.width() as u16
-        }
+        1
+        // if self.len() == 1 {
+        //     1
+        // } else {
+        //     self.width() as u16
+        // }
     }
 }
