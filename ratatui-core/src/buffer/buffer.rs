@@ -495,7 +495,7 @@ impl Buffer {
         let mut updates: Vec<(u16, u16, &Cell)> = vec![];
         // Cells from the current buffer to skip due to preceding multi-width characters taking
         // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
-        let mut to_skip: usize = 0;
+        let mut to_skip: u8 = 0;
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
             if to_skip > 0 {
                 to_skip -= 1;
@@ -508,7 +508,7 @@ impl Buffer {
                         let (x, y) = self.pos_of(i);
                         updates.push((x, y, &next_buffer[i]));
                     }
-                    to_skip = usize::from(width.get()).saturating_sub(1);
+                    to_skip = width.get().saturating_sub(1);
                 }
                 CellDiffOption::None => {
                     if current != previous {
@@ -549,7 +549,7 @@ impl Buffer {
                             }
                         }
                         if cell_width > 1 {
-                            to_skip = cell_width.saturating_sub(1);
+                            to_skip = cell_width.saturating_sub(1) as _;
                         }
                     }
                 }
@@ -692,10 +692,9 @@ impl fmt::Debug for Buffer {
 #[cfg(test)]
 mod tests {
     use alloc::format;
-    use alloc::string::{String, ToString};
+    use alloc::string::String;
     use core::iter;
     use core::num::NonZeroU8;
-    use std::{dbg, println};
 
     use itertools::Itertools;
     use rstest::{fixture, rstest};
