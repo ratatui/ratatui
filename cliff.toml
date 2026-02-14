@@ -25,7 +25,7 @@ body = """
 ## [unreleased]
 {% else -%}
 {%- if package -%} {# release-plz specific variable #}
-## {{ package }} - [{{ version }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+## [{{ version }}+{{ package }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {%- else -%}
 ## [{{ version }}]({{ self::remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {%- endif %}
