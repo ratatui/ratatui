@@ -1,5 +1,5 @@
 use criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
-use rand::Rng;
+use rand::RngExt;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::{Sparkline, Widget};
