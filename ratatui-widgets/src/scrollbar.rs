@@ -612,8 +612,8 @@ impl Scrollbar<'_> {
     /// <═══█████═══════>
     /// ```
     fn track_length_excluding_arrow_heads(&self, area: Rect) -> u16 {
-        let start_len = self.begin_symbol.map_or(0, |s| s.cell_width());
-        let end_len = self.end_symbol.map_or(0, |s| s.cell_width());
+        let start_len = self.begin_symbol.map_or(0, CellWidth::cell_width);
+        let end_len = self.end_symbol.map_or(0, CellWidth::cell_width);
         let arrows_len = start_len.saturating_add(end_len);
         if self.orientation.is_vertical() {
             area.height.saturating_sub(arrows_len)
