@@ -1,4 +1,4 @@
-use core::num::NonZeroU8;
+use core::num::NonZeroU16;
 
 use compact_str::CompactString;
 
@@ -21,7 +21,7 @@ pub enum CellDiffOption {
     ///
     /// Escape sequences will have some computed width that does match what is written to the
     /// screen.
-    ForcedWidth(NonZeroU8),
+    ForcedWidth(NonZeroU16),
 }
 
 /// A buffer cell
