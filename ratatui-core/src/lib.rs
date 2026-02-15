@@ -71,6 +71,8 @@
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
+#[cfg(all(test, not(feature = "std")))]
+extern crate std;
 
 pub mod backend;
 pub mod buffer;

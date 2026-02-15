@@ -33,8 +33,8 @@ bitflags = "2.10"
 clap = { version = "4.5", features = ["derive"] }
 color-eyre = "0.6"
 compact_str = { version = "0.9", default-features = false }
-critical-section = "1.2"
 criterion = { version = "0.8", features = ["html_reports"] }
+critical-section = "1.2"
 crossterm = "0.29"
 document-features = "0.2"
 fakeit = "1"

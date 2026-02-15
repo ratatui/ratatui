@@ -742,18 +742,32 @@ impl Layout {
 
         #[cfg(all(feature = "layout-cache", not(feature = "std")))]
         {
-            critical_section::with(|cs| {
+            // Check cache inside critical section, but compute outside to avoid
+            // blocking interrupts during the (expensive) constraint solver.
+            let cached = critical_section::with(|cs| {
                 let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
                 let cache = cache.get_or_insert_with(|| {
                     Cache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap())
                 });
                 let key = (area, self.clone());
-                let (segments, spacers) = cache.get_or_insert(key, || {
-                    let (s, sp) = split();
-                    (s.to_vec(), sp.to_vec())
+                cache
+                    .get(&key)
+                    .map(|(s, sp)| (Rc::from(s.as_slice()), Rc::from(sp.as_slice())))
+            });
+
+            if let Some(result) = cached {
+                result
+            } else {
+                let result = split();
+                critical_section::with(|cs| {
+                    let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+                    if let Some(cache) = cache.as_mut() {
+                        let key = (area, self.clone());
+                        cache.put(key, (result.0.to_vec(), result.1.to_vec()));
+                    }
                 });
-                (Rc::from(segments.as_slice()), Rc::from(spacers.as_slice()))
-            })
+                result
+            }
         }
 
         #[cfg(not(feature = "layout-cache"))]

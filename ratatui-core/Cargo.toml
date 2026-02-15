@@ -79,6 +79,7 @@ unicode-truncate = { workspace = true, default-features = false }
 unicode-width.workspace = true
 
 [dev-dependencies]
+critical-section = { workspace = true, features = ["std"] }
 pretty_assertions.workspace = true
 rstest.workspace = true
 serde_json.workspace = true
