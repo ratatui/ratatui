@@ -4,10 +4,10 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::mem;
 
+use ratatui_core::buffer::CellWidth;
 use ratatui_core::layout::Alignment;
 use ratatui_core::text::StyledGrapheme;
 use unicode_segmentation::UnicodeSegmentation;
-use ratatui_core::buffer::CellWidth;
 
 /// A state machine to pack styled symbols into lines.
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
@@ -298,7 +298,7 @@ where
                     continue;
                 }
 
-                if current_line_width + symbol.cell_width()  > self.max_line_width {
+                if current_line_width + symbol.cell_width() > self.max_line_width {
                     // Truncate line
                     break;
                 }

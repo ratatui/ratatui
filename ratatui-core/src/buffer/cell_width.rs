@@ -4,8 +4,8 @@ use unicode_width::UnicodeWidthStr;
 ///
 /// This trait provides a unified way to compute cell widths for both string content
 /// and [`Cell`](super::Cell)s. For strings, the width is derived from
-/// [`UnicodeWidthStr`]. For cells, [`CellDiffOption::ForcedWidth`](super::CellDiffOption::ForcedWidth)
-/// is respected when set.
+/// [`UnicodeWidthStr`]. For cells,
+/// [`CellDiffOption::ForcedWidth`](super::CellDiffOption::ForcedWidth) is respected when set.
 // Public because ratatui-widgets needs access, but not part of the user-facing API.
 #[doc(hidden)]
 pub trait CellWidth {
@@ -16,12 +16,33 @@ pub trait CellWidth {
 impl CellWidth for str {
     fn cell_width(&self) -> u16 {
         if self.len() == 1 {
-            // Single-byte strings are always printable ASCII (width 1) in practice:
-            // control characters are filtered out before reaching this point by
-            // `Buffer::set_stringn` and `Span::styled_graphemes`.
+            debug_assert!(
+                !self.as_bytes()[0].is_ascii_control(),
+                "control character passed to cell_width without filtering"
+            );
             1
         } else {
             self.width() as u16
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ascii() {
+        assert_eq!("a".cell_width(), 1);
+    }
+
+    #[test]
+    fn wide_char() {
+        assert_eq!("あ".cell_width(), 2);
+    }
+
+    #[test]
+    fn empty() {
+        assert_eq!("".cell_width(), 0);
     }
 }

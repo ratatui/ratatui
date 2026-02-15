@@ -430,7 +430,7 @@ impl Widget for &Span<'_> {
         let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
             let symbol_width = grapheme.symbol.cell_width();
-            let next_x = x.saturating_add(symbol_width as u16);
+            let next_x = x.saturating_add(symbol_width);
             if next_x > area.right() {
                 break;
             }

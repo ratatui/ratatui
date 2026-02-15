@@ -653,12 +653,11 @@ mod tests {
     use alloc::string::ToString;
     use core::str::FromStr;
 
-    use unicode_width::UnicodeWidthStr;
-
     use ratatui_core::text::Text;
     use ratatui_core::widgets::Widget;
     use rstest::{fixture, rstest};
     use strum::ParseError;
+    use unicode_width::UnicodeWidthStr;
 
     use super::*;
 

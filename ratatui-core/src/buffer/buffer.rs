@@ -1428,7 +1428,11 @@ mod tests {
         dbg!(
             input
                 .graphemes(true)
-                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.cell_width()))
+                .map(|symbol| (
+                    symbol,
+                    symbol.escape_unicode().to_string(),
+                    symbol.cell_width()
+                ))
                 .collect::<Vec<_>>()
         );
         dbg!(
