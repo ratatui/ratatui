@@ -2,6 +2,7 @@ use core::num::NonZeroU16;
 
 use compact_str::CompactString;
 
+use crate::buffer::cell_width::StrCellWidth;
 use crate::style::{Color, Modifier, Style};
 use crate::symbols::merge::MergeStrategy;
 
@@ -277,6 +278,15 @@ impl From<char> for Cell {
         let mut cell = Self::EMPTY;
         cell.set_char(ch);
         cell
+    }
+}
+
+impl StrCellWidth for Cell {
+    fn cell_width(&self) -> u16 {
+        match self.diff_option {
+            CellDiffOption::ForcedWidth(w) => w.get(),
+            _ => self.symbol().cell_width(),
+        }
     }
 }
 

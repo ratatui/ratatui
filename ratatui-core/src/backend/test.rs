@@ -49,12 +49,13 @@ fn buffer_view(buffer: &Buffer) -> String {
         let mut skip: u16 = 0;
         view.push('"');
         for (x, c) in cells.iter().enumerate() {
+            let sym = c.symbol();
             if skip == 0 {
-                view.push_str(c.symbol());
+                view.push_str(sym);
             } else {
-                overwritten.push((x, c.symbol()));
+                overwritten.push((x, sym));
             }
-            skip = core::cmp::max(skip, c.symbol().cell_width()).saturating_sub(1);
+            skip = core::cmp::max(skip, c.cell_width()).saturating_sub(1);
         }
         view.push('"');
         if !overwritten.is_empty() {

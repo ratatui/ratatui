@@ -522,14 +522,15 @@ impl Buffer {
                         // result in visual artifacts (e.g., leftover characters). Emitting an
                         // explicit update for the trailing cells avoids
                         // this.
-                        let symbol = current.symbol();
-                        let cell_width = symbol.cell_width() as _;
+                        let cell_width = current.cell_width() as usize;
                         // Work around terminals that fail to clear the trailing cell of certain
                         // emoji presentation sequences (those containing VS16 / U+FE0F).
                         // Only emit explicit clears for such sequences to avoid bloating diffs
                         // for standard wide characters (e.g., CJK), which terminals handle well.
-                        let contains_vs16 = symbol.chars().any(|c| c == '\u{FE0F}');
-                        if cell_width > 1 && contains_vs16 {
+                        let contains_vs16 =
+                            cell_width > 1 && current.symbol().chars().any(|c| c == '\u{FE0F}');
+                        
+                        if contains_vs16 {
                             for k in 1..cell_width {
                                 let j = i + k;
                                 // Make sure that we are still inside the buffer.
@@ -640,12 +641,13 @@ impl fmt::Debug for Buffer {
             let mut skip: u16 = 0;
             f.write_str("        \"")?;
             for (x, c) in line.iter().enumerate() {
+                let sym = c.symbol();
                 if skip == 0 {
-                    f.write_str(c.symbol())?;
+                    f.write_str(sym)?;
                 } else {
-                    overwritten.push((x, c.symbol()));
+                    overwritten.push((x, sym));
                 }
-                skip = cmp::max(skip, c.symbol().cell_width()).saturating_sub(1);
+                skip = cmp::max(skip, c.cell_width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
