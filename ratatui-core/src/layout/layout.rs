@@ -32,20 +32,29 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
-#[cfg(feature = "layout-cache")]
+// std path: cache stores Rc directly (no Send needed with thread_local)
+#[cfg(all(feature = "layout-cache", feature = "std"))]
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
+
+// no_std path: cache stores Vec (Send-safe) for critical_section::Mutex
+#[cfg(all(feature = "layout-cache", not(feature = "std")))]
+type Cache = LruCache<(Rect, Layout), (Vec<Rect>, Vec<Rect>)>;
 
 // Multiplier that decides floating point precision when rounding.
 // The number of zeros in this number is the precision for the rounding of f64 to u16 in layout
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
-#[cfg(feature = "layout-cache")]
+#[cfg(all(feature = "layout-cache", feature = "std"))]
 std::thread_local! {
     static LAYOUT_CACHE: core::cell::RefCell<Cache> = core::cell::RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
 }
+
+#[cfg(all(feature = "layout-cache", not(feature = "std")))]
+static LAYOUT_CACHE: critical_section::Mutex<core::cell::RefCell<Option<Cache>>> =
+    critical_section::Mutex::new(core::cell::RefCell::new(None));
 
 /// Represents the spacing between segments in a layout.
 ///
@@ -300,7 +309,17 @@ impl Layout {
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
     #[cfg(feature = "layout-cache")]
     pub fn init_cache(cache_size: NonZeroUsize) {
+        #[cfg(feature = "std")]
         LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
+
+        #[cfg(not(feature = "std"))]
+        critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+            match cache.as_mut() {
+                Some(c) => c.resize(cache_size),
+                None => *cache = Some(Cache::new(cache_size)),
+            }
+        });
     }
 
     /// Set the direction of the layout.
@@ -713,11 +732,27 @@ impl Layout {
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
         let split = || self.try_split(area).expect("failed to split");
 
-        #[cfg(feature = "layout-cache")]
+        #[cfg(all(feature = "layout-cache", feature = "std"))]
         {
             LAYOUT_CACHE.with_borrow_mut(|cache| {
                 let key = (area, self.clone());
                 cache.get_or_insert(key, split).clone()
+            })
+        }
+
+        #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+        {
+            critical_section::with(|cs| {
+                let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+                let cache = cache.get_or_insert_with(|| {
+                    Cache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap())
+                });
+                let key = (area, self.clone());
+                let (segments, spacers) = cache.get_or_insert(key, || {
+                    let (s, sp) = split();
+                    (s.to_vec(), sp.to_vec())
+                });
+                (Rc::from(segments.as_slice()), Rc::from(spacers.as_slice()))
             })
         }
 
@@ -1331,14 +1366,35 @@ mod tests {
     #[test]
     #[cfg(feature = "layout-cache")]
     fn cache_size() {
-        LAYOUT_CACHE.with_borrow(|cache| {
-            assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
-        });
+        #[cfg(feature = "std")]
+        {
+            LAYOUT_CACHE.with_borrow(|cache| {
+                assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
+            });
 
-        Layout::init_cache(NonZeroUsize::new(10).unwrap());
-        LAYOUT_CACHE.with_borrow(|cache| {
-            assert_eq!(cache.cap().get(), 10);
-        });
+            Layout::init_cache(NonZeroUsize::new(10).unwrap());
+            LAYOUT_CACHE.with_borrow(|cache| {
+                assert_eq!(cache.cap().get(), 10);
+            });
+        }
+
+        #[cfg(not(feature = "std"))]
+        {
+            Layout::init_cache(NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap());
+            critical_section::with(|cs| {
+                let cache = LAYOUT_CACHE.borrow(cs).borrow();
+                assert_eq!(
+                    cache.as_ref().unwrap().cap().get(),
+                    Layout::DEFAULT_CACHE_SIZE
+                );
+            });
+
+            Layout::init_cache(NonZeroUsize::new(10).unwrap());
+            critical_section::with(|cs| {
+                let cache = LAYOUT_CACHE.borrow(cs).borrow();
+                assert_eq!(cache.as_ref().unwrap().cap().get(), 10);
+            });
+        }
     }
 
     #[test]

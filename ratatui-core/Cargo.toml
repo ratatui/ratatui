@@ -34,8 +34,9 @@ std = [
   "strum/std",
 ]
 
-## enables layout cache
-layout-cache = ["std"]
+## enables layout cache; uses thread_local when std is available,
+## critical-section::Mutex otherwise (for no_std/embedded targets).
+layout-cache = ["dep:critical-section"]
 
 ## enables conversions to / from colors, modifiers, and styles in the ['anstyle'] crate
 anstyle = ["dep:anstyle"]
@@ -62,6 +63,7 @@ serde = ["std", "dep:serde", "bitflags/serde", "compact_str/serde"]
 anstyle = { workspace = true, optional = true }
 bitflags.workspace = true
 compact_str.workspace = true
+critical-section = { workspace = true, optional = true }
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
 indoc.workspace = true
