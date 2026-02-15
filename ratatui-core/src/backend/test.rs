@@ -7,7 +7,7 @@ use core::fmt::{self, Write};
 use core::iter;
 
 use crate::backend::{Backend, ClearType, WindowSize};
-use crate::buffer::{Buffer, Cell, StrCellWidth};
+use crate::buffer::{Buffer, Cell, CellWidth};
 use crate::layout::{Position, Rect, Size};
 
 /// A [`Backend`] implementation used for integration testing that renders to an memory buffer.

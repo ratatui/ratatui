@@ -7,7 +7,7 @@ use core::mem;
 use ratatui_core::layout::Alignment;
 use ratatui_core::text::StyledGrapheme;
 use unicode_segmentation::UnicodeSegmentation;
-use ratatui_core::buffer::StrCellWidth;
+use ratatui_core::buffer::CellWidth;
 
 /// A state machine to pack styled symbols into lines.
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming

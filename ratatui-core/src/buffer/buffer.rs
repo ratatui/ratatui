@@ -5,7 +5,7 @@ use core::{cmp, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::buffer::{Cell, CellDiffOption, StrCellWidth};
+use crate::buffer::{Cell, CellDiffOption, CellWidth};
 use crate::layout::{Position, Rect};
 use crate::style::Style;
 use crate::text::{Line, Span};
@@ -529,7 +529,7 @@ impl Buffer {
                         // for standard wide characters (e.g., CJK), which terminals handle well.
                         let contains_vs16 =
                             cell_width > 1 && current.symbol().chars().any(|c| c == '\u{FE0F}');
-                        
+
                         if contains_vs16 {
                             for k in 1..cell_width {
                                 let j = i + k;

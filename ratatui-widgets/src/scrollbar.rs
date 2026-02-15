@@ -9,7 +9,7 @@
 
 use core::iter;
 
-use ratatui_core::buffer::{Buffer, StrCellWidth};
+use ratatui_core::buffer::{Buffer, CellWidth};
 use ratatui_core::layout::Rect;
 use ratatui_core::style::Style;
 use ratatui_core::symbols::scrollbar::{DOUBLE_HORIZONTAL, DOUBLE_VERTICAL, Set};

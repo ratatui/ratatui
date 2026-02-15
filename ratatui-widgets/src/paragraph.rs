@@ -1,6 +1,6 @@
 //! The [`Paragraph`] widget and related types allows displaying a block of text with optional
 //! wrapping, alignment, and block styling.
-use ratatui_core::buffer::{Buffer, StrCellWidth};
+use ratatui_core::buffer::{Buffer, CellWidth};
 use ratatui_core::layout::{Alignment, Position, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::text::{Line, StyledGrapheme, Text};

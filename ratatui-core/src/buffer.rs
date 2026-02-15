@@ -8,4 +8,4 @@ mod cell_width;
 
 pub use buffer::Buffer;
 pub use cell::{Cell, CellDiffOption};
-pub use cell_width::StrCellWidth;
+pub use cell_width::CellWidth;

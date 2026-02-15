@@ -5,7 +5,7 @@ use core::fmt;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::buffer::{Buffer, StrCellWidth};
+use crate::buffer::{Buffer, CellWidth};
 use crate::layout::Rect;
 use crate::style::{Style, Styled};
 use crate::text::{Line, StyledGrapheme};
