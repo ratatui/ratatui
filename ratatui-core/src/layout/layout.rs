@@ -307,12 +307,13 @@ impl Layout {
     /// grows until `cache_size` is reached.
     ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
-    #[cfg(feature = "layout-cache")]
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
     pub fn init_cache(cache_size: NonZeroUsize) {
-        #[cfg(feature = "std")]
         LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
+    }
 
-        #[cfg(not(feature = "std"))]
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    pub fn init_cache(cache_size: NonZeroUsize) {
         critical_section::with(|cs| {
             let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
             match cache.as_mut() {
@@ -729,49 +730,49 @@ impl Layout {
     ///     ]
     /// );
     /// ```
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
-        let split = || self.try_split(area).expect("failed to split");
+        LAYOUT_CACHE.with_borrow_mut(|cache| {
+            let key = (area, self.clone());
+            cache
+                .get_or_insert(key, || self.try_split(area).expect("failed to split"))
+                .clone()
+        })
+    }
 
-        #[cfg(all(feature = "layout-cache", feature = "std"))]
-        {
-            LAYOUT_CACHE.with_borrow_mut(|cache| {
-                let key = (area, self.clone());
-                cache.get_or_insert(key, split).clone()
-            })
-        }
-
-        #[cfg(all(feature = "layout-cache", not(feature = "std")))]
-        {
-            // Check cache inside critical section, but compute outside to avoid
-            // blocking interrupts during the (expensive) constraint solver.
-            let cached = critical_section::with(|cs| {
-                let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
-                let cache = cache.get_or_insert_with(|| {
-                    Cache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap())
-                });
-                let key = (area, self.clone());
-                cache
-                    .get(&key)
-                    .map(|(s, sp)| (Rc::from(s.as_slice()), Rc::from(sp.as_slice())))
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
+        // Check cache inside critical section, but compute outside to avoid
+        // blocking interrupts during the (expensive) constraint solver.
+        let cached = critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+            let cache = cache.get_or_insert_with(|| {
+                Cache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap())
             });
+            let key = (area, self.clone());
+            cache
+                .get(&key)
+                .map(|(s, sp)| (Rc::from(s.as_slice()), Rc::from(sp.as_slice())))
+        });
 
-            if let Some(result) = cached {
-                result
-            } else {
-                let result = split();
-                critical_section::with(|cs| {
-                    let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
-                    if let Some(cache) = cache.as_mut() {
-                        let key = (area, self.clone());
-                        cache.put(key, (result.0.to_vec(), result.1.to_vec()));
-                    }
-                });
-                result
-            }
+        if let Some(result) = cached {
+            result
+        } else {
+            let result = self.try_split(area).expect("failed to split");
+            critical_section::with(|cs| {
+                let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+                if let Some(cache) = cache.as_mut() {
+                    let key = (area, self.clone());
+                    cache.put(key, (result.0.to_vec(), result.1.to_vec()));
+                }
+            });
+            result
         }
+    }
 
-        #[cfg(not(feature = "layout-cache"))]
-        split()
+    #[cfg(not(feature = "layout-cache"))]
+    pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
+        self.try_split(area).expect("failed to split")
     }
 
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
@@ -1378,37 +1379,35 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "layout-cache")]
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
     fn cache_size() {
-        #[cfg(feature = "std")]
-        {
-            LAYOUT_CACHE.with_borrow(|cache| {
-                assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
-            });
+        LAYOUT_CACHE.with_borrow(|cache| {
+            assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
+        });
 
-            Layout::init_cache(NonZeroUsize::new(10).unwrap());
-            LAYOUT_CACHE.with_borrow(|cache| {
-                assert_eq!(cache.cap().get(), 10);
-            });
-        }
+        Layout::init_cache(NonZeroUsize::new(10).unwrap());
+        LAYOUT_CACHE.with_borrow(|cache| {
+            assert_eq!(cache.cap().get(), 10);
+        });
+    }
 
-        #[cfg(not(feature = "std"))]
-        {
-            Layout::init_cache(NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap());
-            critical_section::with(|cs| {
-                let cache = LAYOUT_CACHE.borrow(cs).borrow();
-                assert_eq!(
-                    cache.as_ref().unwrap().cap().get(),
-                    Layout::DEFAULT_CACHE_SIZE
-                );
-            });
+    #[test]
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn cache_size() {
+        Layout::init_cache(NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap());
+        critical_section::with(|cs| {
+            let cache = LAYOUT_CACHE.borrow(cs).borrow();
+            assert_eq!(
+                cache.as_ref().unwrap().cap().get(),
+                Layout::DEFAULT_CACHE_SIZE
+            );
+        });
 
-            Layout::init_cache(NonZeroUsize::new(10).unwrap());
-            critical_section::with(|cs| {
-                let cache = LAYOUT_CACHE.borrow(cs).borrow();
-                assert_eq!(cache.as_ref().unwrap().cap().get(), 10);
-            });
-        }
+        Layout::init_cache(NonZeroUsize::new(10).unwrap());
+        critical_section::with(|cs| {
+            let cache = LAYOUT_CACHE.borrow(cs).borrow();
+            assert_eq!(cache.as_ref().unwrap().cap().get(), 10);
+        });
     }
 
     #[test]
