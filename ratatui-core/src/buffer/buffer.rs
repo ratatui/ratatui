@@ -692,6 +692,9 @@ impl fmt::Debug for Buffer {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
+
     use alloc::format;
     use alloc::string::{String, ToString};
     use core::iter;

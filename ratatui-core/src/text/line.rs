@@ -846,6 +846,9 @@ impl Styled for Line<'_> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
+
     use alloc::format;
     use core::iter;
     use std::dbg;
