@@ -307,13 +307,18 @@ impl Layout {
     /// grows until `cache_size` is reached.
     ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
-    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    #[cfg(feature = "layout-cache")]
     pub fn init_cache(cache_size: NonZeroUsize) {
+        Self::resize_cache(cache_size);
+    }
+
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    fn resize_cache(cache_size: NonZeroUsize) {
         LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
     }
 
     #[cfg(all(feature = "layout-cache", not(feature = "std")))]
-    pub fn init_cache(cache_size: NonZeroUsize) {
+    fn resize_cache(cache_size: NonZeroUsize) {
         critical_section::with(|cs| {
             let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
             match cache.as_mut() {
@@ -730,18 +735,28 @@ impl Layout {
     ///     ]
     /// );
     /// ```
-    #[cfg(all(feature = "layout-cache", feature = "std"))]
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
+        #[cfg(feature = "layout-cache")]
+        {
+            self.cached_split(area)
+        }
+
+        #[cfg(not(feature = "layout-cache"))]
+        {
+            self.split_layout(area)
+        }
+    }
+
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
         LAYOUT_CACHE.with_borrow_mut(|cache| {
             let key = (area, self.clone());
-            cache
-                .get_or_insert(key, || self.try_split(area).expect("failed to split"))
-                .clone()
+            cache.get_or_insert(key, || self.split_layout(area)).clone()
         })
     }
 
     #[cfg(all(feature = "layout-cache", not(feature = "std")))]
-    pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
+    fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
         // Check cache inside critical section, but compute outside to avoid
         // blocking interrupts during the (expensive) constraint solver.
         let cached = critical_section::with(|cs| {
@@ -758,7 +773,7 @@ impl Layout {
         if let Some(result) = cached {
             result
         } else {
-            let result = self.try_split(area).expect("failed to split");
+            let result = self.split_layout(area);
             critical_section::with(|cs| {
                 let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
                 if let Some(cache) = cache.as_mut() {
@@ -770,8 +785,7 @@ impl Layout {
         }
     }
 
-    #[cfg(not(feature = "layout-cache"))]
-    pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
+    fn split_layout(&self, area: Rect) -> (Segments, Spacers) {
         self.try_split(area).expect("failed to split")
     }
 
