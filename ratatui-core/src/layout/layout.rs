@@ -36,7 +36,7 @@ type Spacers = Rects;
 #[cfg(all(feature = "layout-cache", feature = "std"))]
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 
-// no_std path: cache stores Vec (Send-safe) for critical_section::Mutex
+// Without std: cache stores Vec instead (Send-safe for critical_section::Mutex)
 #[cfg(all(feature = "layout-cache", not(feature = "std")))]
 type Cache = LruCache<(Rect, Layout), (Vec<Rect>, Vec<Rect>)>;
 
