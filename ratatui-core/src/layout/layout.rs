@@ -747,6 +747,7 @@ impl Layout {
         }
     }
 
+    // std builds: use a thread-local cache with cheap Rc cloning and no locking.
     #[cfg(all(feature = "layout-cache", feature = "std"))]
     fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
         LAYOUT_CACHE.with_borrow_mut(|cache| {
