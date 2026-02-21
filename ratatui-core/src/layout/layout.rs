@@ -756,6 +756,7 @@ impl Layout {
         })
     }
 
+    // no_std builds: use a critical-section cache and compute layouts outside locks.
     #[cfg(all(feature = "layout-cache", not(feature = "std")))]
     fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
         // Check cache inside critical section, but compute outside to avoid
