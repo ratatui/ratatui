@@ -772,18 +772,21 @@ impl Layout {
                 .map(|(s, sp)| (Rc::from(s.as_slice()), Rc::from(sp.as_slice())))
         });
 
-        if let Some(result) = cached {
-            result
-        } else {
-            let result = self.split_layout(area);
-            critical_section::with(|cs| {
-                let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
-                if let Some(cache) = cache.as_mut() {
-                    let key = (area, self.clone());
-                    cache.put(key, (result.0.to_vec(), result.1.to_vec()));
-                }
-            });
-            result
+        match cached {
+            Some(result) => result,
+            None => {
+                let result = self.split_layout(area);
+
+                critical_section::with(|cs| {
+                    let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+                    if let Some(cache) = cache.as_mut() {
+                        let key = (area, self.clone());
+                        cache.put(key, (result.0.to_vec(), result.1.to_vec()));
+                    }
+                });
+
+                result
+            }
         }
     }
 
