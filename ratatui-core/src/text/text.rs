@@ -1175,6 +1175,7 @@ mod tests {
         use super::*;
 
         #[test]
+
         fn render() {
             let text = Text::from("foo");
             let area = Rect::new(0, 0, 5, 1);
@@ -1191,6 +1192,7 @@ mod tests {
         }
 
         #[test]
+
         fn render_right_aligned() {
             let text = Text::from("foo").alignment(Alignment::Right);
             let area = Rect::new(0, 0, 5, 1);
@@ -1200,6 +1202,7 @@ mod tests {
         }
 
         #[test]
+
         fn render_centered_odd() {
             let text = Text::from("foo").alignment(Alignment::Center);
             let area = Rect::new(0, 0, 5, 1);
@@ -1209,6 +1212,7 @@ mod tests {
         }
 
         #[test]
+
         fn render_centered_even() {
             let text = Text::from("foo").alignment(Alignment::Center);
             let area = Rect::new(0, 0, 6, 1);
@@ -1245,6 +1249,7 @@ mod tests {
         }
 
         #[test]
+
         fn render_one_line_right() {
             let text = Text::from(vec![
                 "foo".into(),
@@ -1258,6 +1263,7 @@ mod tests {
         }
 
         #[test]
+
         fn render_only_styles_line_area() {
             let area = Rect::new(0, 0, 5, 1);
             let mut buf = Buffer::empty(area);

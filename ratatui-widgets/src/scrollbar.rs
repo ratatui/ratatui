@@ -9,13 +9,12 @@
 
 use core::iter;
 
-use ratatui_core::buffer::Buffer;
+use ratatui_core::buffer::{Buffer, StrCellWidth};
 use ratatui_core::layout::Rect;
 use ratatui_core::style::Style;
 use ratatui_core::symbols::scrollbar::{DOUBLE_HORIZONTAL, DOUBLE_VERTICAL, Set};
 use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
-use unicode_width::UnicodeWidthStr;
 
 /// A widget to display a scrollbar
 ///
@@ -613,8 +612,8 @@ impl Scrollbar<'_> {
     /// <═══█████═══════>
     /// ```
     fn track_length_excluding_arrow_heads(&self, area: Rect) -> u16 {
-        let start_len = self.begin_symbol.map_or(0, |s| s.width() as u16);
-        let end_len = self.end_symbol.map_or(0, |s| s.width() as u16);
+        let start_len = self.begin_symbol.map_or(0, |s| s.cell_width());
+        let end_len = self.end_symbol.map_or(0, |s| s.cell_width());
         let arrows_len = start_len.saturating_add(end_len);
         if self.orientation.is_vertical() {
             area.height.saturating_sub(arrows_len)
@@ -653,6 +652,8 @@ mod tests {
     use alloc::format;
     use alloc::string::ToString;
     use core::str::FromStr;
+
+    use unicode_width::UnicodeWidthStr;
 
     use ratatui_core::text::Text;
     use ratatui_core::widgets::Widget;
