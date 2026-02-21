@@ -125,7 +125,8 @@ impl App {
             Marker::HalfBlock => Marker::Quadrant,
             Marker::Quadrant => Marker::Sextant,
             Marker::Sextant => Marker::Octant,
-            Marker::Octant => Marker::Bar,
+            Marker::Octant => Marker::Custom('×'),
+            Marker::Custom('×') => Marker::Bar,
             Marker::Bar => Marker::Dot,
             _ => unreachable!(),
         };
