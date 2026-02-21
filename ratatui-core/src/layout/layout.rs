@@ -32,7 +32,7 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
-// std path: cache stores Rc directly (no Send needed with thread_local)
+// With std: cache can store Rc directly (no Send needed thanks to thread_local)
 #[cfg(all(feature = "layout-cache", feature = "std"))]
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 
