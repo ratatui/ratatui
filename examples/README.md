@@ -192,6 +192,12 @@ Shows how to create an interactive table. [Source](./apps/table/).
 
 ![Table demo][table.gif]
 
+## Table detail TEA
+
+Shows how to create an interactive table with detail view using the Elm architecture. [Source](./apps/table-detail-tea/).
+
+![Table detail tea demo][table-detail-tea.gif]
+
 ## Todo List
 
 Shows how to create a simple todo list application. [Source](./apps/todo-list/).
@@ -256,10 +262,6 @@ vhs/generate.bash
 [constraint-explorer.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraint-explorer.gif?raw=true
 [constraints.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraints.gif?raw=true
 [custom-widget.gif]: https://github.com/ratatui/ratatui/blob/images/examples/custom-widget.gif?raw=true
-[demo2-destroy.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2-destroy.gif?raw=true
-[demo2-social.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2-social.gif?raw=true
-[demo2.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true
-[demo.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true
 [flex.gif]: https://github.com/ratatui/ratatui/blob/images/examples/flex.gif?raw=true
 [hello-world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello-world.gif?raw=true
 [hyperlink.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hyperlink.gif?raw=true
@@ -270,6 +272,7 @@ vhs/generate.bash
 [popup.gif]: https://github.com/ratatui/ratatui/blob/images/examples/popup.gif?raw=true
 [scrollbar.gif]: https://github.com/ratatui/ratatui/blob/images/examples/scrollbar.gif?raw=true
 [table.gif]: https://github.com/ratatui/ratatui/blob/images/examples/table.gif?raw=true
+[table-detail-tea.gif]: https://github.com/ratatui/ratatui/blob/images/examples/table-detail-tea.gif?raw=true
 [todo-list.gif]: https://github.com/ratatui/ratatui/blob/images/examples/todo-list.gif?raw=true
 [tracing.gif]: https://github.com/ratatui/ratatui/blob/images/examples/tracing.gif?raw=true
 [user-input.gif]: https://github.com/ratatui/ratatui/blob/images/examples/user-input.gif?raw=true
