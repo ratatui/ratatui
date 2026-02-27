@@ -9,6 +9,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::num::NonZeroUsize;
+use std::sync::LazyLock;
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
@@ -27,8 +28,10 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    ratatui::run(|terminal| App::default().run(terminal))
+    ratatui::run(|terminal| App::new().run(terminal))
 }
+
+static THEME: LazyLock<Theme> = LazyLock::new(Theme::new);
 
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     (
@@ -158,6 +161,14 @@ enum SelectedTab {
 }
 
 impl App {
+    fn new() -> Self {
+        Self {
+            selected_tab: SelectedTab::default(),
+            scroll_offset: 0,
+            spacing: 0,
+            state: AppState::default(),
+        }
+    }
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         // increase the layout cache to account for the number of layout events. This ensures that
         // layout is not generally reprocessed on every frame (which would lead to possible janky
@@ -270,7 +281,7 @@ impl Widget for App {
 
 impl App {
     fn tabs(self) -> impl Widget {
-        let tab_titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
+        let tab_titles = SelectedTab::iter().map(|tab| SelectedTab::to_tab_title(tab, *THEME));
         let block = Block::new()
             .title("Flex Layouts ".bold())
             .title(" Use ◄ ► to change tab, ▲ ▼  to scroll, - + to change spacing ");
@@ -362,17 +373,16 @@ impl SelectedTab {
     }
 
     /// Convert a `SelectedTab` into a `Line` to display it by the `Tabs` widget.
-    fn to_tab_title(value: Self) -> Line<'static> {
-        use tailwind::{INDIGO, ORANGE, SKY};
+    fn to_tab_title(value: Self, theme: Theme) -> Line<'static> {
         let text = value.to_string();
         let color = match value {
-            Self::Legacy => ORANGE.c400,
-            Self::Start => SKY.c400,
-            Self::Center => SKY.c300,
-            Self::End => SKY.c200,
-            Self::SpaceEvenly => INDIGO.c400,
-            Self::SpaceBetween => INDIGO.c300,
-            Self::SpaceAround => INDIGO.c500,
+            Self::Legacy => theme.legacy_tab,
+            Self::Start => theme.start_tab,
+            Self::Center => theme.center_tab,
+            Self::End => theme.end_tab,
+            Self::SpaceEvenly => theme.space_evenly_tab,
+            Self::SpaceBetween => theme.space_between_tab,
+            Self::SpaceAround => theme.space_around_tab,
         };
         format!(" {text} ").fg(color).bg(Color::Black).into()
     }
@@ -387,9 +397,15 @@ impl StatefulWidget for SelectedTab {
             Self::Start => Self::render_examples(area, buf, Flex::Start, spacing),
             Self::Center => Self::render_examples(area, buf, Flex::Center, spacing),
             Self::End => Self::render_examples(area, buf, Flex::End, spacing),
-            Self::SpaceEvenly => Self::render_examples(area, buf, Flex::SpaceEvenly, spacing),
-            Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing),
-            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
+            Self::SpaceEvenly => {
+                Self::render_examples(area, buf, Flex::SpaceEvenly, spacing);
+            }
+            Self::SpaceBetween => {
+                Self::render_examples(area, buf, Flex::SpaceBetween, spacing);
+            }
+            Self::SpaceAround => {
+                Self::render_examples(area, buf, Flex::SpaceAround, spacing);
+            }
         }
     }
 }
@@ -432,7 +448,7 @@ impl Widget for Example {
             Paragraph::new(
                 self.description
                     .split('\n')
-                    .map(|s| format!("// {s}").italic().fg(tailwind::SLATE.c400))
+                    .map(|s| format!("// {s}").italic().fg(THEME.description_fg))
                     .map(Line::from)
                     .collect::<Vec<Line>>(),
             )
@@ -440,7 +456,7 @@ impl Widget for Example {
         }
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
-            Self::illustration(*constraint, block.width).render(*block, buf);
+            Self::illustration(*constraint, block.width, *THEME).render(*block, buf);
         }
 
         for spacer in spacers.iter() {
@@ -495,8 +511,8 @@ impl Example {
             .render(spacer, buf);
     }
 
-    fn illustration(constraint: Constraint, width: u16) -> impl Widget {
-        let main_color = color_for_constraint(constraint);
+    fn illustration(constraint: Constraint, width: u16, theme: Theme) -> impl Widget {
+        let main_color = color_for_constraint(constraint, theme);
         let fg_color = Color::White;
         let title = format!("{constraint}");
         let content = format!("{width} px");
@@ -508,16 +524,14 @@ impl Example {
         Paragraph::new(text).centered().block(block)
     }
 }
-
-const fn color_for_constraint(constraint: Constraint) -> Color {
-    use tailwind::{BLUE, SLATE};
+const fn color_for_constraint(constraint: Constraint, theme: Theme) -> Color {
     match constraint {
-        Constraint::Min(_) => BLUE.c900,
-        Constraint::Max(_) => BLUE.c800,
-        Constraint::Length(_) => SLATE.c700,
-        Constraint::Percentage(_) => SLATE.c800,
-        Constraint::Ratio(_, _) => SLATE.c900,
-        Constraint::Fill(_) => SLATE.c950,
+        Constraint::Min(_) => theme.min_bg,
+        Constraint::Max(_) => theme.max_bg,
+        Constraint::Length(_) => theme.length_bg,
+        Constraint::Percentage(_) => theme.percentage_bg,
+        Constraint::Ratio(_, _) => theme.ratio_bg,
+        Constraint::Fill(_) => theme.fill_bg,
     }
 }
 
@@ -527,5 +541,77 @@ fn get_description_height(s: &str) -> u16 {
         0
     } else {
         s.split('\n').count() as u16
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+struct Theme {
+    min_bg: Color,
+    max_bg: Color,
+    length_bg: Color,
+    percentage_bg: Color,
+    ratio_bg: Color,
+    fill_bg: Color,
+    legacy_tab: Color,
+    start_tab: Color,
+    center_tab: Color,
+    end_tab: Color,
+    space_evenly_tab: Color,
+    space_between_tab: Color,
+    space_around_tab: Color,
+    description_fg: Color,
+}
+
+impl Theme {
+    pub fn new() -> Self {
+        use tailwind::{BLUE, INDIGO, ORANGE, SKY, SLATE};
+
+        let is_true_color = Self::is_true_color_supported();
+        let color = |true_color, ansi_color| {
+            if is_true_color {
+                true_color
+            } else {
+                ansi_color
+            }
+        };
+
+        Self {
+            min_bg: color(BLUE.c900, Color::Indexed(24)),
+            max_bg: color(BLUE.c800, Color::Indexed(25)),
+            length_bg: color(SLATE.c700, Color::Indexed(67)),
+            percentage_bg: color(SLATE.c800, Color::Indexed(18)),
+            ratio_bg: color(SLATE.c900, Color::Indexed(17)),
+            fill_bg: color(SLATE.c950, Color::Indexed(16)),
+            legacy_tab: color(ORANGE.c400, Color::Indexed(173)),
+            start_tab: color(SKY.c400, Color::Indexed(74)),
+            center_tab: color(SKY.c300, Color::Indexed(116)),
+            end_tab: color(SKY.c200, Color::Indexed(152)),
+            space_evenly_tab: color(INDIGO.c400, Color::Indexed(104)),
+            space_between_tab: color(INDIGO.c300, Color::Indexed(146)),
+            space_around_tab: color(INDIGO.c500, Color::Indexed(68)),
+            description_fg: color(SLATE.c400, Color::Indexed(109)),
+        }
+    }
+
+    // Checks whether truecolor (24-bit color) is supported in the current terminal.
+    //
+    // Terminals known *not* to support truecolor:
+    // - Apple Terminal.app: all versions before 2.15 (build 465)
+    //
+    // Environment variables used:
+    // - "TERM_PROGRAM": identifies the terminal application in use
+    // - "TERM_PROGRAM_VERSION": version number of that terminal application
+    fn is_true_color_supported() -> bool {
+        let term = std::env::var("TERM_PROGRAM").unwrap_or_default();
+        if term == "Apple_Terminal" {
+            let term_v = std::env::var("TERM_PROGRAM_VERSION")
+                .unwrap_or_default()
+                .parse()
+                .unwrap_or(0);
+            if term_v < 465 {
+                return false;
+            }
+        }
+        true
     }
 }
