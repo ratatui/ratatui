@@ -535,12 +535,13 @@ impl ModifierDiff {
     where
         W: io::Write,
     {
-        //use crossterm::Attribute;
         let removed = self.from - self.to;
         if removed.contains(Modifier::REVERSED) {
             queue!(w, SetAttribute(CrosstermAttribute::NoReverse))?;
         }
-        if removed.contains(Modifier::BOLD) || removed.contains(Modifier::DIM) {
+
+        let reset_intensity = removed.contains(Modifier::BOLD) || removed.contains(Modifier::DIM);
+        if reset_intensity {
             // Bold and Dim are both reset by applying the Normal intensity
             queue!(w, SetAttribute(CrosstermAttribute::NormalIntensity))?;
 
@@ -554,6 +555,7 @@ impl ModifierDiff {
                 queue!(w, SetAttribute(CrosstermAttribute::Bold))?;
             }
         }
+
         if removed.contains(Modifier::ITALIC) {
             queue!(w, SetAttribute(CrosstermAttribute::NoItalic))?;
         }
@@ -563,6 +565,9 @@ impl ModifierDiff {
         if removed.contains(Modifier::CROSSED_OUT) {
             queue!(w, SetAttribute(CrosstermAttribute::NotCrossedOut))?;
         }
+        if removed.contains(Modifier::HIDDEN) {
+            queue!(w, SetAttribute(CrosstermAttribute::NoHidden))?;
+        }
         if removed.contains(Modifier::SLOW_BLINK) || removed.contains(Modifier::RAPID_BLINK) {
             queue!(w, SetAttribute(CrosstermAttribute::NoBlink))?;
         }
@@ -571,7 +576,7 @@ impl ModifierDiff {
         if added.contains(Modifier::REVERSED) {
             queue!(w, SetAttribute(CrosstermAttribute::Reverse))?;
         }
-        if added.contains(Modifier::BOLD) {
+        if added.contains(Modifier::BOLD) && !reset_intensity {
             queue!(w, SetAttribute(CrosstermAttribute::Bold))?;
         }
         if added.contains(Modifier::ITALIC) {
@@ -580,11 +585,14 @@ impl ModifierDiff {
         if added.contains(Modifier::UNDERLINED) {
             queue!(w, SetAttribute(CrosstermAttribute::Underlined))?;
         }
-        if added.contains(Modifier::DIM) {
+        if added.contains(Modifier::DIM) && !reset_intensity {
             queue!(w, SetAttribute(CrosstermAttribute::Dim))?;
         }
         if added.contains(Modifier::CROSSED_OUT) {
             queue!(w, SetAttribute(CrosstermAttribute::CrossedOut))?;
+        }
+        if added.contains(Modifier::HIDDEN) {
+            queue!(w, SetAttribute(CrosstermAttribute::Hidden))?;
         }
         if added.contains(Modifier::SLOW_BLINK) {
             queue!(w, SetAttribute(CrosstermAttribute::SlowBlink))?;
@@ -806,6 +814,36 @@ mod tests {
     #[case(CrosstermColor::AnsiValue(37), Color::Indexed(37))]
     fn from_crossterm_color(#[case] crossterm_color: CrosstermColor, #[case] color: Color) {
         assert_eq!(Color::from_crossterm(crossterm_color), color);
+    }
+
+    #[rstest]
+    #[case(Modifier::BOLD, Modifier::BOLD | Modifier::HIDDEN, &[CrosstermAttribute::Hidden])]
+    #[case(Modifier::BOLD, Modifier::DIM, &[CrosstermAttribute::NormalIntensity, CrosstermAttribute::Dim])]
+    #[case(Modifier::CROSSED_OUT, Modifier::empty(), &[CrosstermAttribute::NotCrossedOut])]
+    #[case(Modifier::DIM, Modifier::BOLD, &[CrosstermAttribute::NormalIntensity, CrosstermAttribute::Bold])]
+    #[case(Modifier::HIDDEN | Modifier::CROSSED_OUT, Modifier::CROSSED_OUT, &[CrosstermAttribute::NoHidden])]
+    #[case(Modifier::HIDDEN | Modifier::DIM, Modifier::BOLD | Modifier::DIM, &[CrosstermAttribute::NoHidden, CrosstermAttribute::Bold])]
+    #[case(Modifier::HIDDEN, Modifier::HIDDEN, &[])]
+    #[case(Modifier::HIDDEN, Modifier::empty(), &[CrosstermAttribute::NoHidden])]
+    #[case(Modifier::REVERSED, Modifier::empty(), &[CrosstermAttribute::NoReverse])]
+    #[case(Modifier::SLOW_BLINK, Modifier::RAPID_BLINK, &[CrosstermAttribute::NoBlink, CrosstermAttribute::RapidBlink])]
+    #[case(Modifier::empty(), Modifier::CROSSED_OUT, &[CrosstermAttribute::CrossedOut])]
+    #[case(Modifier::empty(), Modifier::HIDDEN, &[CrosstermAttribute::Hidden])]
+    #[case(Modifier::empty(), Modifier::REVERSED, &[CrosstermAttribute::Reverse])]
+    fn queue_modifier_diff(
+        #[case] from: Modifier,
+        #[case] to: Modifier,
+        #[case] expected_attributes: &[CrosstermAttribute],
+    ) {
+        let mut actual = Vec::new();
+        ModifierDiff { from, to }.queue(&mut actual).unwrap();
+
+        let mut expected = Vec::new();
+        for attribute in expected_attributes {
+            queue!(&mut expected, SetAttribute(*attribute)).unwrap();
+        }
+
+        assert_eq!(actual, expected);
     }
 
     mod modifier {
