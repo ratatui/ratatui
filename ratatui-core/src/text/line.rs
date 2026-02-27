@@ -1,6 +1,6 @@
 #![deny(missing_docs)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::arithmetic_side_effects)]
-use alloc::borrow::Cow;
+use alloc::borrow::{Cow, ToOwned};
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
@@ -12,7 +12,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
 use crate::style::{Style, Styled};
-use crate::text::{Span, StyledGrapheme, Text};
+use crate::text::{Overflow, Span, StyledGrapheme, Text};
 use crate::widgets::Widget;
 
 /// A line of text, consisting of one or more [`Span`]s.
@@ -189,6 +189,9 @@ pub struct Line<'a> {
 
     /// The spans that make up this line of text.
     pub spans: Vec<Span<'a>>,
+
+    /// The overflow handling for this line of text.
+    overflow: Overflow<'a>,
 }
 
 impl fmt::Debug for Line<'_> {
@@ -562,6 +565,12 @@ impl<'a> Line<'a> {
     pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
         self.spans.push(span.into());
     }
+
+    /// Sets the overflow behaviour of this line of text.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn overflow(self, overflow: Overflow<'a>) -> Self {
+        Self { overflow, ..self }
+    }
 }
 
 impl UnicodeWidthStr for Line<'_> {
@@ -691,7 +700,7 @@ impl Widget for Line<'_> {
 
 impl Widget for &Line<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.render_with_alignment(area, buf, None);
+        self.render_with_alignment(area, buf, None, &self.overflow);
     }
 }
 
@@ -703,6 +712,7 @@ impl Line<'_> {
         area: Rect,
         buf: &mut Buffer,
         parent_alignment: Option<Alignment>,
+        overflow: &Overflow,
     ) {
         let area = area.intersection(buf.area);
         if area.is_empty() {
@@ -728,7 +738,7 @@ impl Line<'_> {
             };
             let indent_width = u16::try_from(indent_width).unwrap_or(u16::MAX);
             let area = area.indent_x(indent_width);
-            render_spans(&self.spans, area, buf, 0);
+            render_spans(&self.spans, area, buf, 0, overflow);
         } else {
             // There is not enough space to render the whole line. As the right side is truncated by
             // the area width, only truncate the left.
@@ -737,18 +747,47 @@ impl Line<'_> {
                 Some(Alignment::Right) => line_width.saturating_sub(area_width),
                 Some(Alignment::Left) | None => 0,
             };
-            render_spans(&self.spans, area, buf, skip_width);
+            render_spans(&self.spans, area, buf, skip_width, overflow);
         }
     }
 }
 
 /// Renders all the spans of the line that should be visible.
-fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, span_skip_width: usize) {
+fn render_spans(
+    spans: &[Span],
+    mut area: Rect,
+    buf: &mut Buffer,
+    span_skip_width: usize,
+    overflow: &Overflow,
+) {
     for (span, span_width, offset) in spans_after_width(spans, span_skip_width) {
         area = area.indent_x(offset);
         if area.is_empty() {
             break;
         }
+        let area_width = area.width;
+        let span = if span_width > area_width.into() {
+            let (end, _) = overflow.kinds();
+            if let Some(symbol) = end.symbol() {
+                let symbol_width = symbol.width();
+                let offset = usize::from(area_width).saturating_sub(symbol_width);
+                let split_str = span.content.split_at(offset).0;
+                let mut truncated_str = split_str.to_owned();
+                truncated_str.push_str(symbol);
+
+                Span {
+                    content: truncated_str.into(),
+                    style: span.style,
+                }
+            } else {
+                // If clipping is allowed.
+                span
+            }
+        } else {
+            // When there is no overflow.
+            span
+        };
+
         span.render(area, buf);
         let span_width = u16::try_from(span_width).unwrap_or(u16::MAX);
         area = area.indent_x(span_width);
@@ -1061,6 +1100,7 @@ mod tests {
                 spans: vec![Span::raw("Red"), Span::raw("blue").blue()],
                 style: Style::new().red(),
                 alignment: None,
+                overflow: Overflow::default(),
             },
         );
     }
@@ -1073,6 +1113,7 @@ mod tests {
                 lines: vec![Line::raw("Red").red(), Line::raw("Blue").blue()],
                 style: Style::default(),
                 alignment: None,
+                overflow: Overflow::default()
             }
         );
     }
@@ -1087,6 +1128,7 @@ mod tests {
                 spans: vec![Span::raw("Red"), Span::raw("Blue").blue()],
                 style: Style::new().red(),
                 alignment: None,
+                overflow: Overflow::default()
             },
         );
     }
@@ -1260,11 +1302,16 @@ mod tests {
             assert_eq!(buf, expected);
         }
 
-        #[test]
-        fn render_truncates() {
+        #[rstest]
+        #[case::clip(Overflow::CLIP, "Hello     ")]
+        #[case::clip(Overflow::ELLIPSIS, "Hell…     ")]
+        #[case::clip(Overflow::custom("eee"), "Heeee     ")]
+        fn render_truncates(#[case] overflow: Overflow, #[case] expected: &str) {
             let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
-            Line::from("Hello world!").render(Rect::new(0, 0, 5, 1), &mut buf);
-            assert_eq!(buf, Buffer::with_lines(["Hello     "]));
+            Line::from("Hello world!")
+                .overflow(overflow)
+                .render(Rect::new(0, 0, 5, 1), &mut buf);
+            assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
         #[test]
