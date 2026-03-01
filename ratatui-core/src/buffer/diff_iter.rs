@@ -10,6 +10,7 @@ use crate::layout::Rect;
 /// Yields `(x, y, &Cell)` tuples for each cell in `next` that differs from the corresponding cell
 /// in `prev`. Handles multi-width characters (including VS16 emoji trailing cells) and
 /// [`CellDiffOption`] directives.
+#[derive(Debug)]
 pub struct BufferDiff<'prev, 'next> {
     /// The next (current) buffer's cells.
     next: &'next [Cell],
@@ -24,6 +25,7 @@ pub struct BufferDiff<'prev, 'next> {
 }
 
 /// Tracks pending trailing-cell yields for VS16 wide characters.
+#[derive(Debug)]
 struct TrailingState {
     next_index: usize,
     end: usize,
@@ -260,5 +262,27 @@ mod tests {
         assert_eq!(diff.len(), 1);
         assert_eq!(diff[0].0, 0);
         assert_eq!(diff[0].1, 0);
+    }
+
+    #[test]
+    fn mismatched_widths_returns_error() {
+        use alloc::string::ToString;
+
+        let prev = Buffer::empty(Rect::new(0, 0, 5, 1));
+        let next = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let err = BufferDiff::new(&prev, &next).unwrap_err();
+        assert_eq!(
+            err,
+            BufferDiffError {
+                prev: Rect::new(0, 0, 5, 1),
+                next: Rect::new(0, 0, 10, 1),
+            }
+        );
+        assert_eq!(
+            err.to_string(),
+            "buffer areas must have the same x, y, and width: \
+             prev=Rect { x: 0, y: 0, width: 5, height: 1 }, \
+             next=Rect { x: 0, y: 0, width: 10, height: 1 }",
+        );
     }
 }
