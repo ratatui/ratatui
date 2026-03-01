@@ -32,20 +32,29 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
-#[cfg(feature = "layout-cache")]
+// With std: cache can store Rc directly (no Send needed thanks to thread_local)
+#[cfg(all(feature = "layout-cache", feature = "std"))]
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
+
+// Without std: cache stores Vec instead (Send-safe for critical_section::Mutex)
+#[cfg(all(feature = "layout-cache", not(feature = "std")))]
+type Cache = LruCache<(Rect, Layout), (Vec<Rect>, Vec<Rect>)>;
 
 // Multiplier that decides floating point precision when rounding.
 // The number of zeros in this number is the precision for the rounding of f64 to u16 in layout
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
-#[cfg(feature = "layout-cache")]
+#[cfg(all(feature = "layout-cache", feature = "std"))]
 std::thread_local! {
     static LAYOUT_CACHE: core::cell::RefCell<Cache> = core::cell::RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
 }
+
+#[cfg(all(feature = "layout-cache", not(feature = "std")))]
+static LAYOUT_CACHE: critical_section::Mutex<core::cell::RefCell<Option<Cache>>> =
+    critical_section::Mutex::new(core::cell::RefCell::new(None));
 
 /// Represents the spacing between segments in a layout.
 ///
@@ -300,7 +309,23 @@ impl Layout {
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
     #[cfg(feature = "layout-cache")]
     pub fn init_cache(cache_size: NonZeroUsize) {
+        Self::resize_cache(cache_size);
+    }
+
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    fn resize_cache(cache_size: NonZeroUsize) {
         LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
+    }
+
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn resize_cache(cache_size: NonZeroUsize) {
+        critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+            match cache.as_mut() {
+                Some(c) => c.resize(cache_size),
+                None => *cache = Some(Cache::new(cache_size)),
+            }
+        });
     }
 
     /// Set the direction of the layout.
@@ -711,18 +736,62 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
-        let split = || self.try_split(area).expect("failed to split");
-
         #[cfg(feature = "layout-cache")]
         {
-            LAYOUT_CACHE.with_borrow_mut(|cache| {
-                let key = (area, self.clone());
-                cache.get_or_insert(key, split).clone()
-            })
+            self.cached_split(area)
         }
 
         #[cfg(not(feature = "layout-cache"))]
-        split()
+        {
+            self.split_layout(area)
+        }
+    }
+
+    // std builds: use a thread-local cache with cheap Rc cloning and no locking.
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
+        LAYOUT_CACHE.with_borrow_mut(|cache| {
+            let key = (area, self.clone());
+            cache.get_or_insert(key, || self.split_layout(area)).clone()
+        })
+    }
+
+    // no_std builds: use a critical-section cache and compute layouts outside locks.
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
+        // Check cache inside critical section, but compute outside to avoid
+        // blocking interrupts during the (expensive) constraint solver.
+        let cached = critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+            let cache = cache.get_or_insert_with(|| {
+                Cache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap())
+            });
+            let key = (area, self.clone());
+            cache
+                .get(&key)
+                .map(|(s, sp)| (Rc::from(s.as_slice()), Rc::from(sp.as_slice())))
+        });
+
+        match cached {
+            Some(result) => result,
+            None => {
+                let result = self.split_layout(area);
+
+                critical_section::with(|cs| {
+                    let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+                    if let Some(cache) = cache.as_mut() {
+                        let key = (area, self.clone());
+                        cache.put(key, (result.0.to_vec(), result.1.to_vec()));
+                    }
+                });
+
+                result
+            }
+        }
+    }
+
+    fn split_layout(&self, area: Rect) -> (Segments, Spacers) {
+        self.try_split(area).expect("failed to split")
     }
 
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
@@ -1329,7 +1398,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "layout-cache")]
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
     fn cache_size() {
         LAYOUT_CACHE.with_borrow(|cache| {
             assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
@@ -1338,6 +1407,25 @@ mod tests {
         Layout::init_cache(NonZeroUsize::new(10).unwrap());
         LAYOUT_CACHE.with_borrow(|cache| {
             assert_eq!(cache.cap().get(), 10);
+        });
+    }
+
+    #[test]
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn cache_size() {
+        Layout::init_cache(NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap());
+        critical_section::with(|cs| {
+            let cache = LAYOUT_CACHE.borrow(cs).borrow();
+            assert_eq!(
+                cache.as_ref().unwrap().cap().get(),
+                Layout::DEFAULT_CACHE_SIZE
+            );
+        });
+
+        Layout::init_cache(NonZeroUsize::new(10).unwrap());
+        critical_section::with(|cs| {
+            let cache = LAYOUT_CACHE.borrow(cs).borrow();
+            assert_eq!(cache.as_ref().unwrap().cap().get(), 10);
         });
     }
 

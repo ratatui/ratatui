@@ -112,7 +112,7 @@ impl App {
         }
     }
 
-    pub fn next_row(&mut self) {
+    pub const fn next_row(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
@@ -127,7 +127,7 @@ impl App {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
-    pub fn previous_row(&mut self) {
+    pub const fn previous_row(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {

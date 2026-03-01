@@ -28,13 +28,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 # master
         with:
           toolchain: stable
       - uses: rust-lang/crates-io-auth-action@b7e9a28eded4986ec6b1fa40eeee8f8f165559ec # v1
         id: auth
       - name: Run release-plz
-        uses: release-plz/action@52440b50d383aa252927de395c8b2c1e0a9cf8e9 # v0.5
+        uses: release-plz/action@f708778669256143d984cce4b23592637532e040 # v0.5
         with:
           command: release
         env:
@@ -59,11 +59,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 # master
         with:
           toolchain: stable
       - name: Run release-plz
-        uses: release-plz/action@52440b50d383aa252927de395c8b2c1e0a9cf8e9 # v0.5
+        uses: release-plz/action@f708778669256143d984cce4b23592637532e040 # v0.5
         with:
           command: release-pr
         env:

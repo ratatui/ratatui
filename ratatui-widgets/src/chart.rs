@@ -1009,12 +1009,12 @@ impl Widget for &Chart<'_> {
             }
         }
 
-        if let Some(y) = layout.axis_x {
-            if let Some(x) = layout.axis_y {
-                buf[(x, y)]
-                    .set_symbol(symbols::line::BOTTOM_LEFT)
-                    .set_style(self.x_axis.style);
-            }
+        if let Some(y) = layout.axis_x
+            && let Some(x) = layout.axis_y
+        {
+            buf[(x, y)]
+                .set_symbol(symbols::line::BOTTOM_LEFT)
+                .set_style(self.x_axis.style);
         }
 
         Canvas::default()

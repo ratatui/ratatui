@@ -299,7 +299,7 @@ impl<'a> Text<'a> {
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
-    pub fn height(&self) -> usize {
+    pub const fn height(&self) -> usize {
         self.lines.len()
     }
 
