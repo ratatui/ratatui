@@ -18,14 +18,16 @@ fn table(c: &mut Criterion) {
             // Render default table
             group.bench_with_input(
                 BenchmarkId::new("render", &bench_sizes),
-                &Table::new(rows.clone(), [] as [Constraint; 0]),
+                &Table::from(&rows).widths([] as [Constraint; 0]),
                 render,
             );
 
             // Render with an offset to the middle of the table and a selected row
             group.bench_with_input(
                 BenchmarkId::new("render_scroll_half", &bench_sizes),
-                &Table::new(rows, [] as [Constraint; 0]).highlight_symbol(">>"),
+                &Table::from(&rows)
+                    .widths([] as [Constraint; 0])
+                    .highlight_symbol(">>"),
                 |b, table| {
                     render_stateful(
                         b,

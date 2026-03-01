@@ -1,3 +1,5 @@
+use std::cell::OnceCell;
+
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{self, Span};
@@ -118,7 +120,7 @@ fn draw_charts(frame: &mut Frame, app: &mut App, area: Rect) {
                 .iter()
                 .map(|i| ListItem::new(vec![text::Line::from(Span::raw(*i))]))
                 .collect();
-            let tasks = List::new(tasks)
+            let tasks = List::from(&tasks)
                 .block(Block::bordered().title("List"))
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD))
                 .highlight_symbol("> ");
@@ -147,7 +149,7 @@ fn draw_charts(frame: &mut Frame, app: &mut App, area: Rect) {
                     ListItem::new(content)
                 })
                 .collect();
-            let logs = List::new(logs).block(Block::bordered().title("List"));
+            let logs = List::from(&logs).block(Block::bordered().title("List"));
             frame.render_stateful_widget(logs, chunks[1], &mut app.logs.state);
         }
 
@@ -362,7 +364,7 @@ fn draw_second_tab(frame: &mut Frame, app: &mut App, area: Rect) {
 
 fn draw_third_tab(frame: &mut Frame, _app: &mut App, area: Rect) {
     let chunks = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]).split(area);
-    let colors = [
+    const COLORS: [Color; 17] = [
         Color::Reset,
         Color::Black,
         Color::Red,
@@ -381,25 +383,26 @@ fn draw_third_tab(frame: &mut Frame, _app: &mut App, area: Rect) {
         Color::LightCyan,
         Color::White,
     ];
-    let items: Vec<Row> = colors
-        .iter()
-        .map(|c| {
-            let cells = vec![
-                Cell::from(Span::raw(format!("{c:?}: "))),
-                Cell::from(Span::styled("Foreground", Style::default().fg(*c))),
-                Cell::from(Span::styled("Background", Style::default().bg(*c))),
-            ];
-            Row::new(cells)
-        })
-        .collect();
-    let table = Table::new(
-        items,
-        [
+    let color_rows: OnceCell<Vec<Row<'_>>> = OnceCell::new();
+    let rows = color_rows.get_or_init(|| {
+        COLORS
+            .iter()
+            .map(|c| {
+                let cells = vec![
+                    Cell::from(Span::raw(format!("{c:?}: "))),
+                    Cell::from(Span::styled("Foreground", Style::default().fg(*c))),
+                    Cell::from(Span::styled("Background", Style::default().bg(*c))),
+                ];
+                Row::new(cells)
+            })
+            .collect()
+    });
+    let table = Table::from(rows)
+        .widths([
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
-        ],
-    )
-    .block(Block::bordered().title("Colors"));
+        ])
+        .block(Block::bordered().title("Colors"));
     frame.render_widget(table, chunks[0]);
 }

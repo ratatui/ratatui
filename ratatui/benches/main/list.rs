@@ -16,14 +16,14 @@ fn list(c: &mut Criterion) {
         // Render default list
         group.bench_with_input(
             BenchmarkId::new("render", line_count),
-            &List::new(lines.clone()),
+            &List::from(&lines),
             render,
         );
 
         // Render with an offset to the middle of the list and a selected item
         group.bench_with_input(
             BenchmarkId::new("render_scroll_half", line_count),
-            &List::new(lines.clone()).highlight_symbol(">>"),
+            &List::from(&lines).highlight_symbol(">>"),
             |b, list| {
                 render_stateful(
                     b,
