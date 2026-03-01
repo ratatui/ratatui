@@ -4,9 +4,8 @@ use core::ops::{Index, IndexMut};
 use core::{cmp, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
-use crate::buffer::{Cell, CellDiffOption};
+use crate::buffer::{Cell, CellDiffOption, CellWidth};
 use crate::layout::{Position, Rect};
 use crate::style::Style;
 use crate::text::{Line, Span};
@@ -350,7 +349,7 @@ impl Buffer {
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
-            .map(|symbol| (symbol, symbol.width() as u16))
+            .map(|symbol| (symbol, symbol.cell_width()))
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
                 remaining_width = remaining_width.checked_sub(width)?;
@@ -509,7 +508,7 @@ impl Buffer {
                         let (x, y) = self.pos_of(i);
                         updates.push((x, y, &next_buffer[i]));
                     }
-                    to_skip = width.get().saturating_sub(1);
+                    to_skip = usize::from(width.get()).saturating_sub(1);
                 }
                 CellDiffOption::None => {
                     if current != previous {
@@ -523,14 +522,15 @@ impl Buffer {
                         // result in visual artifacts (e.g., leftover characters). Emitting an
                         // explicit update for the trailing cells avoids
                         // this.
-                        let symbol = current.symbol();
-                        let cell_width = symbol.width();
+                        let cell_width = current.cell_width() as usize;
                         // Work around terminals that fail to clear the trailing cell of certain
                         // emoji presentation sequences (those containing VS16 / U+FE0F).
                         // Only emit explicit clears for such sequences to avoid bloating diffs
                         // for standard wide characters (e.g., CJK), which terminals handle well.
-                        let contains_vs16 = symbol.chars().any(|c| c == '\u{FE0F}');
-                        if cell_width > 1 && contains_vs16 {
+                        let contains_vs16 =
+                            cell_width > 1 && current.symbol().chars().any(|c| c == '\u{FE0F}');
+
+                        if contains_vs16 {
                             for k in 1..cell_width {
                                 let j = i + k;
                                 // Make sure that we are still inside the buffer.
@@ -638,15 +638,16 @@ impl fmt::Debug for Buffer {
         let mut styles = vec![];
         for (y, line) in self.content.chunks(self.area.width as usize).enumerate() {
             let mut overwritten = vec![];
-            let mut skip: usize = 0;
+            let mut skip: u16 = 0;
             f.write_str("        \"")?;
             for (x, c) in line.iter().enumerate() {
+                let sym = c.symbol();
                 if skip == 0 {
-                    f.write_str(c.symbol())?;
+                    f.write_str(sym)?;
                 } else {
-                    overwritten.push((x, c.symbol()));
+                    overwritten.push((x, sym));
                 }
-                skip = cmp::max(skip, c.symbol().width()).saturating_sub(1);
+                skip = cmp::max(skip, c.cell_width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
@@ -698,7 +699,7 @@ mod tests {
     use alloc::format;
     use alloc::string::{String, ToString};
     use core::iter;
-    use core::num::NonZero;
+    use core::num::NonZeroU16;
     use std::{dbg, println};
 
     use itertools::Itertools;
@@ -936,7 +937,7 @@ mod tests {
 
     #[test]
     fn set_string_zero_width() {
-        assert_eq!("\u{200B}".width(), 0);
+        assert_eq!("\u{200B}".cell_width(), 0);
 
         let area = Rect::new(0, 0, 1, 1);
         let mut buffer = Buffer::empty(area);
@@ -1181,7 +1182,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("456")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(3).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(3).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1196,7 +1197,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("\x1b]8;;http://example.com\x1b\\link\x1b]8;;\x1b\\")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(4).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(4).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1211,7 +1212,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("\x1b]8;;http://example.com\x1b\\🔗")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(2).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
         // Set inner characters normally.
         next.cell_mut((2, 0)).unwrap().set_symbol("l");
         next.cell_mut((3, 0)).unwrap().set_symbol("i");
@@ -1221,7 +1222,7 @@ mod tests {
         next.cell_mut((7, 0))
             .unwrap()
             .set_symbol("🔗\x1b]8;;\x1b\\")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(2).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1250,7 +1251,7 @@ mod tests {
         prev.cell_mut((0, 0))
             .unwrap()
             .set_symbol(&kitty_image_placeholder_start)
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(1).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(1).unwrap()));
 
         // Add two follow up placeholder symbols that have a natural width of 1.
         prev.cell_mut((1, 0)).unwrap().set_char('\u{10EEEE}');
@@ -1260,7 +1261,7 @@ mod tests {
         prev.cell_mut((3, 0))
             .unwrap()
             .set_symbol("\u{10EEEE}\x1b[u")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(1).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(1).unwrap()));
 
         let mut buffer = Buffer::filled(Rect::new(0, 0, 20, 1), Cell::new("x"));
         buffer.merge(&prev);
@@ -1430,7 +1431,11 @@ mod tests {
         dbg!(
             input
                 .graphemes(true)
-                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
+                .map(|symbol| (
+                    symbol,
+                    symbol.escape_unicode().to_string(),
+                    symbol.cell_width()
+                ))
                 .collect::<Vec<_>>()
         );
         dbg!(
