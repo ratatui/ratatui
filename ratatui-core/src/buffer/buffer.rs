@@ -6,7 +6,7 @@ use core::{cmp, fmt};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::buffer::{Cell, CellDiffOption};
+use crate::buffer::{BufferDiff, Cell};
 use crate::layout::{Position, Rect};
 use crate::style::Style;
 use crate::text::{Line, Span};
@@ -490,73 +490,44 @@ impl Buffer {
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
     pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
-        let previous_buffer = &self.content;
-        let next_buffer = &other.content;
+        self.diff_iter(other)
+            .expect("buffers must have the same x, y, and width")
+            .collect()
+    }
 
-        let mut updates: Vec<(u16, u16, &Cell)> = vec![];
-        // Cells from the current buffer to skip due to preceding multi-width characters taking
-        // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
-        let mut to_skip: usize = 0;
-        for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
-            if to_skip > 0 {
-                to_skip -= 1;
-                continue;
-            }
-            match current.diff_option {
-                CellDiffOption::Skip => {}
-                CellDiffOption::ForcedWidth(width) => {
-                    if current != previous {
-                        let (x, y) = self.pos_of(i);
-                        updates.push((x, y, &next_buffer[i]));
-                    }
-                    to_skip = width.get().saturating_sub(1);
-                }
-                CellDiffOption::None => {
-                    if current != previous {
-                        let (x, y) = self.pos_of(i);
-                        updates.push((x, y, &next_buffer[i]));
-
-                        // If the current cell is multi-width, ensure the trailing cells are
-                        // explicitly cleared when they previously contained
-                        // non-blank content. Some terminals do not reliably
-                        // clear the trailing cell(s) when printing a wide grapheme, which can
-                        // result in visual artifacts (e.g., leftover characters). Emitting an
-                        // explicit update for the trailing cells avoids
-                        // this.
-                        let symbol = current.symbol();
-                        let cell_width = symbol.width();
-                        // Work around terminals that fail to clear the trailing cell of certain
-                        // emoji presentation sequences (those containing VS16 / U+FE0F).
-                        // Only emit explicit clears for such sequences to avoid bloating diffs
-                        // for standard wide characters (e.g., CJK), which terminals handle well.
-                        let contains_vs16 = symbol.chars().any(|c| c == '\u{FE0F}');
-                        if cell_width > 1 && contains_vs16 {
-                            for k in 1..cell_width {
-                                let j = i + k;
-                                // Make sure that we are still inside the buffer.
-                                if j >= next_buffer.len() || j >= previous_buffer.len() {
-                                    break;
-                                }
-                                let prev_trailing = &previous_buffer[j];
-                                let next_trailing = &next_buffer[j];
-                                if prev_trailing != next_trailing {
-                                    let (tx, ty) = self.pos_of(j);
-                                    // Push an explicit update for the trailing cell.
-                                    // This is expected to be a blank cell, but we use the actual
-                                    // content from the next buffer to handle cases where
-                                    // the user has explicitly set something else.
-                                    updates.push((tx, ty, next_trailing));
-                                }
-                            }
-                        }
-                        if cell_width > 1 {
-                            to_skip = cell_width.saturating_sub(1);
-                        }
-                    }
-                }
-            }
-        }
-        updates
+    /// Builds a minimal sequence of coordinates and Cells necessary to update the UI from
+    /// self to other.
+    ///
+    /// We're assuming that buffers are well-formed, that is no double-width cell is followed by
+    /// a non-blank cell.
+    ///
+    /// # Multi-width characters handling:
+    ///
+    /// ```text
+    /// (Index:) `01`
+    /// Prev:    `コ`
+    /// Next:    `aa`
+    /// Updates: `0: a, 1: a'
+    /// ```
+    ///
+    /// ```text
+    /// (Index:) `01`
+    /// Prev:    `a `
+    /// Next:    `コ`
+    /// Updates: `0: コ` (double width symbol at index 0 - skip index 1)
+    /// ```
+    ///
+    /// ```text
+    /// (Index:) `012`
+    /// Prev:    `aaa`
+    /// Next:    `aコ`
+    /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
+    /// ```
+    pub fn diff_iter<'prev, 'next>(
+        &'prev self,
+        other: &'next Self,
+    ) -> Result<BufferDiff<'prev, 'next>, super::BufferDiffError> {
+        BufferDiff::new(self, other)
     }
 }
 
@@ -705,6 +676,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::buffer::CellDiffOption;
     use crate::style::{Color, Modifier, Stylize};
 
     #[test]
@@ -1082,8 +1054,8 @@ mod tests {
         let area = Rect::new(0, 0, 40, 40);
         let prev = Buffer::empty(area);
         let next = Buffer::filled(area, Cell::new("a"));
-        let diff = prev.diff(&next);
-        assert_eq!(diff.len(), 40 * 40);
+        let diff = prev.diff_iter(&next).unwrap();
+        assert_eq!(diff.count(), 40 * 40);
     }
 
     #[test]
@@ -1190,7 +1162,7 @@ mod tests {
 
     #[test]
     fn merge_diff_link() {
-        let mut prev = Buffer::with_lines(["_".repeat(10)]);
+        let mut prev = Buffer::with_lines(["_".repeat(4)]);
         let mut next = Buffer::empty(Rect::new(0, 0, 4, 1));
         // Squeeze everything into the first cell, remaining cells are irrelevant.
         next.cell_mut((0, 0))
@@ -1205,7 +1177,7 @@ mod tests {
 
     #[test]
     fn merge_diff_split_link() {
-        let mut prev = Buffer::with_lines(["_".repeat(10)]);
+        let mut prev = Buffer::with_lines(["_".repeat(8)]);
         let mut next = Buffer::empty(Rect::new(0, 0, 8, 1));
         // Squeeze starting sequence and first character in first cell.
         next.cell_mut((0, 0))

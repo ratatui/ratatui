@@ -75,11 +75,21 @@ impl<B: Backend> Terminal<B> {
     pub fn flush(&mut self) -> Result<(), B::Error> {
         let previous_buffer = &self.buffers[1 - self.current];
         let current_buffer = &self.buffers[self.current];
-        let updates = previous_buffer.diff(current_buffer);
-        if let Some((col, row, _)) = updates.last() {
-            self.last_known_cursor_pos = Position { x: *col, y: *row };
+        let mut last_pos = None;
+
+        let updates = previous_buffer
+            .diff_iter(current_buffer)
+            .expect("terminal buffers have matching areas")
+            .inspect(|(col, row, _)| {
+                last_pos = Some(Position { x: *col, y: *row });
+            });
+        self.backend.draw(updates)?;
+
+        if let Some(pos) = last_pos {
+            self.last_known_cursor_pos = pos;
         }
-        self.backend.draw(updates.into_iter())
+
+        Ok(())
     }
 
     /// Clears the inactive buffer and swaps it with the current buffer.
