@@ -1,53 +1,69 @@
+use core::fmt;
+
 use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::{Buffer, Cell, CellDiffOption};
+use crate::layout::Rect;
 
-/// A zero-allocation iterator over the differences between two buffers.
+/// A zero-allocation iterator over the differences between two buffers of the same width.
 ///
 /// Yields `(x, y, &Cell)` tuples for each cell in `next` that differs from the corresponding cell
 /// in `prev`. Handles multi-width characters (including VS16 emoji trailing cells) and
 /// [`CellDiffOption`] directives.
 pub struct BufferDiff<'prev, 'next> {
-    /// The next (current) buffer's cells — needed for trailing cell random access.
+    /// The next (current) buffer's cells.
     next: &'next [Cell],
-    /// The previous buffer's cells — needed for trailing cell comparison.
+    /// The previous buffer's cells.
     prev: &'prev [Cell],
     /// Buffer width (for `pos_of` calculation).
-    width: u16,
-    x_offset: u16,
-    y_offset: u16,
+    area: Rect,
     /// Current position in the flat cell array.
     pos: usize,
     /// When processing VS16 trailing cells, tracks the range of trailing indices still to yield.
-    trailing: TrailingState,
+    trailing: Option<TrailingState>,
 }
 
 /// Tracks pending trailing-cell yields for VS16 wide characters.
-enum TrailingState {
-    /// No trailing cells pending.
-    None,
-    /// Yielding trailing cells for indices `next_index..end` (then resume main loop from `end`).
-    Pending { next_index: usize, end: usize },
+struct TrailingState {
+    next_index: usize,
+    end: usize,
 }
 
 impl<'prev, 'next> BufferDiff<'prev, 'next> {
     /// Creates a new iterator over the differences between `prev` and `next` terminal cells.
-    pub(crate) fn new(prev: &'prev Buffer, next: &'next Buffer) -> Self {
-        Self {
+    ///
+    /// Returns an error if the buffers have different `x`, `y`, or `width` values.
+    /// Heights may differ; the iterator uses the minimum of the two.
+    pub(crate) fn new(prev: &'prev Buffer, next: &'next Buffer) -> Result<Self, BufferDiffError> {
+        if prev.area.x != next.area.x
+            || prev.area.y != next.area.y
+            || prev.area.width != next.area.width
+        {
+            return Err(BufferDiffError {
+                prev: prev.area,
+                next: next.area,
+            });
+        }
+
+        let mut area = prev.area;
+        area.height = area.height.min(next.area.height);
+
+        Ok(Self {
             next: &next.content,
             prev: &prev.content,
-            width: prev.area.width,
-            x_offset: prev.area.x,
-            y_offset: prev.area.y,
+            area,
             pos: 0,
-            trailing: TrailingState::None,
-        }
+            trailing: None,
+        })
     }
 
     /// Converts a flat index to (x, y) coordinates.
     const fn pos_of(&self, index: usize) -> (u16, u16) {
-        let x = index % self.width as usize + self.x_offset as usize;
-        let y = index / self.width as usize + self.y_offset as usize;
+        let w = self.area.width as usize;
+
+        let x = index % w + self.area.x as usize;
+        let y = index / w + self.area.y as usize;
+
         (x as u16, y as u16)
     }
 }
@@ -57,10 +73,10 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
     fn next(&mut self) -> Option<Self::Item> {
         // First, yield any pending VS16 trailing cells.
-        if let TrailingState::Pending {
+        if let Some(TrailingState {
             ref mut next_index,
             end,
-        } = self.trailing
+        }) = self.trailing
         {
             while *next_index < end {
                 let j = *next_index;
@@ -74,7 +90,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
             // Done with trailing cells; resume main loop past the wide character.
             self.pos = end;
-            self.trailing = TrailingState::None;
+            self.trailing = None;
         }
 
         let len = self.next.len().min(self.prev.len());
@@ -117,10 +133,10 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     let contains_vs16 = cell_width > 1 && symbol.chars().any(|c| c == '\u{FE0F}');
                     if contains_vs16 {
                         let trailing_end = (i + cell_width).min(len);
-                        self.trailing = TrailingState::Pending {
+                        self.trailing = Some(TrailingState {
                             next_index: i + 1,
                             end: trailing_end,
-                        };
+                        });
                     } else if cell_width > 1 {
                         self.pos += cell_width.saturating_sub(1);
                     } else {
@@ -137,6 +153,25 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
     }
 }
 
+/// Error returned when two buffers have incompatible areas for diffing.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BufferDiffError {
+    prev: Rect,
+    next: Rect,
+}
+
+impl fmt::Display for BufferDiffError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "buffer areas must have the same x, y, and width: prev={:?}, next={:?}",
+            self.prev, self.next,
+        )
+    }
+}
+
+impl core::error::Error for BufferDiffError {}
+
 #[cfg(test)]
 mod tests {
     use alloc::vec::Vec;
@@ -148,7 +183,7 @@ mod tests {
 
     /// Helper: collect diff iterator results into a Vec for comparison with `Buffer::diff`.
     fn collect_diff<'a>(prev: &'a Buffer, next: &'a Buffer) -> Vec<(u16, u16, &'a Cell)> {
-        BufferDiff::new(prev, next).collect()
+        BufferDiff::new(prev, next).unwrap().collect()
     }
 
     #[test]

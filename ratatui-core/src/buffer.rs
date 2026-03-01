@@ -8,4 +8,4 @@ mod diff_iter;
 
 pub use buffer::Buffer;
 pub use cell::{Cell, CellDiffOption};
-pub use diff_iter::BufferDiff;
+pub use diff_iter::{BufferDiff, BufferDiffError};

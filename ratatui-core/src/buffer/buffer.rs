@@ -490,7 +490,9 @@ impl Buffer {
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
     pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
-        self.diff_iter(other).collect()
+        self.diff_iter(other)
+            .expect("buffers must have the same x, y, and width")
+            .collect()
     }
 
     /// Builds a minimal sequence of coordinates and Cells necessary to update the UI from
@@ -521,7 +523,10 @@ impl Buffer {
     /// Next:    `aコ`
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
-    pub fn diff_iter<'prev, 'next>(&'prev self, other: &'next Self) -> BufferDiff<'prev, 'next> {
+    pub fn diff_iter<'prev, 'next>(
+        &'prev self,
+        other: &'next Self,
+    ) -> Result<BufferDiff<'prev, 'next>, super::BufferDiffError> {
         BufferDiff::new(self, other)
     }
 }
@@ -1049,7 +1054,7 @@ mod tests {
         let area = Rect::new(0, 0, 40, 40);
         let prev = Buffer::empty(area);
         let next = Buffer::filled(area, Cell::new("a"));
-        let diff = prev.diff_iter(&next);
+        let diff = prev.diff_iter(&next).unwrap();
         assert_eq!(diff.count(), 40 * 40);
     }
 
@@ -1157,7 +1162,7 @@ mod tests {
 
     #[test]
     fn merge_diff_link() {
-        let mut prev = Buffer::with_lines(["_".repeat(10)]);
+        let mut prev = Buffer::with_lines(["_".repeat(4)]);
         let mut next = Buffer::empty(Rect::new(0, 0, 4, 1));
         // Squeeze everything into the first cell, remaining cells are irrelevant.
         next.cell_mut((0, 0))
@@ -1172,7 +1177,7 @@ mod tests {
 
     #[test]
     fn merge_diff_split_link() {
-        let mut prev = Buffer::with_lines(["_".repeat(10)]);
+        let mut prev = Buffer::with_lines(["_".repeat(8)]);
         let mut next = Buffer::empty(Rect::new(0, 0, 8, 1));
         // Squeeze starting sequence and first character in first cell.
         next.cell_mut((0, 0))

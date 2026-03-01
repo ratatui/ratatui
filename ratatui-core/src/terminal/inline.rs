@@ -336,7 +336,10 @@ impl<B: Backend> Terminal<B> {
                 area,
                 content: to_draw.to_vec(),
             };
-            self.backend.draw(old.diff_iter(&new))?;
+            self.backend.draw(
+                old.diff_iter(&new)
+                    .expect("inline buffers have matching areas"),
+            )?;
             self.backend.flush()?;
         }
         Ok(remainder)
