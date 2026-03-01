@@ -102,7 +102,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     // characters). Emitting an explicit update for the trailing cells avoids
                     // this.
                     let symbol = current.symbol();
-                    let cell_width = symbol.width();
+                    let cell_width = if symbol.len() == 1 { 1 } else { symbol.width() };
 
                     if current == previous {
                         // Equal cells still need to account for multi-width skip.
