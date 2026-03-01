@@ -33,6 +33,7 @@ use crate::widgets::Widget;
 /// - [`Text::from`] creates a `Text` from a [`Span`].
 /// - [`Text::from`] creates a `Text` from a [`Line`].
 /// - [`Text::from`] creates a `Text` from a `Vec<Line>`.
+/// - [`Text::from`] creates a `Text` from a `&[Into<Line>]`.
 /// - [`Text::from_iter`] creates a `Text` from an iterator of items that can be converted into
 ///   `Line`.
 ///
@@ -652,6 +653,18 @@ impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     }
 }
 
+impl<'a, 'b, T> From<&'b [T]> for Text<'a>
+where
+    T: Into<Line<'a>> + Clone,
+{
+    fn from(value: &'b [T]) -> Self {
+        Self {
+            lines: value.iter().cloned().map(Into::into).collect(),
+            ..Default::default()
+        }
+    }
+}
+
 impl<'a, T> FromIterator<T> for Text<'a>
 where
     T: Into<Line<'a>>,
@@ -885,6 +898,54 @@ mod tests {
     fn from_line() {
         let text = Text::from(Line::from("The first line"));
         assert_eq!(text.lines, [Line::from("The first line")]);
+    }
+
+    #[test]
+    fn from_slice_of_spans() {
+        let slice = [
+            Span::from("Hello"),
+            Span::from("world!"),
+            Span::from("Extra"),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_lines() {
+        let slice = [
+            Line::from("Hello"),
+            Line::from("world!"),
+            Line::from("Extra"),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strs() {
+        let slice = ["Hello", "world!", "Extra"];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strings() {
+        let slice = [
+            "Hello".to_string(),
+            "world!".to_string(),
+            "Extra".to_string(),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
     }
 
     #[rstest]

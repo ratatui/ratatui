@@ -35,6 +35,7 @@ use crate::widgets::Widget;
 /// - [`Line::from`] creates a `Line` from a [`String`].
 /// - [`Line::from`] creates a `Line` from a [`&str`].
 /// - [`Line::from`] creates a `Line` from a [`Vec`] of [`Span`]s.
+/// - [`Line::from`] creates a `Line` from a `&[Into<Span>]`.
 /// - [`Line::from`] creates a `Line` from single [`Span`].
 /// - [`String::from`] converts a line into a [`String`].
 /// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
@@ -628,6 +629,18 @@ impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     }
 }
 
+impl<'a, 'b, T> From<&'b [T]> for Line<'a>
+where
+    T: Into<Span<'a>> + Clone,
+{
+    fn from(value: &'b [T]) -> Self {
+        Self {
+            spans: value.iter().cloned().map(Into::into).collect(),
+            ..Default::default()
+        }
+    }
+}
+
 impl<'a> From<Span<'a>> for Line<'a> {
     fn from(span: Span<'a>) -> Self {
         Self::from(vec![span])
@@ -1018,6 +1031,41 @@ mod tests {
         ];
         let line = Line::from(spans.clone());
         assert_eq!(line.spans, spans);
+    }
+
+    #[test]
+    fn from_slice_of_spans() {
+        let slice = [
+            Span::from("Hello"),
+            Span::from("world!"),
+            Span::from("Extra"),
+        ];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strs() {
+        let slice = ["Hello", "world!", "Extra"];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strings() {
+        let slice = [
+            "Hello".to_string(),
+            "world!".to_string(),
+            "Extra".to_string(),
+        ];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
     }
 
     #[test]
