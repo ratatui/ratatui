@@ -3,9 +3,8 @@ use alloc::string::{String, ToString};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Style, Styled};
-use ratatui_core::text::Line;
+use ratatui_core::text::{Line, TerminalWidthStr};
 use ratatui_core::widgets::Widget;
-use unicode_width::UnicodeWidthStr;
 
 /// A bar to be shown by the [`BarChart`](super::BarChart) widget.
 ///
