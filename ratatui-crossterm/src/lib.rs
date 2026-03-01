@@ -834,16 +834,18 @@ mod tests {
         #[case] from: Modifier,
         #[case] to: Modifier,
         #[case] expected_attributes: &[CrosstermAttribute],
-    ) {
+    ) -> io::Result<()> {
         let mut actual = Vec::new();
-        ModifierDiff { from, to }.queue(&mut actual).unwrap();
+        ModifierDiff { from, to }.queue(&mut actual)?;
 
         let mut expected = Vec::new();
         for attribute in expected_attributes {
-            queue!(&mut expected, SetAttribute(*attribute)).unwrap();
+            queue!(&mut expected, SetAttribute(*attribute))?;
         }
 
         assert_eq!(actual, expected);
+
+        Ok(())
     }
 
     mod modifier {
