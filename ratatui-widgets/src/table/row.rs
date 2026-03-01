@@ -239,6 +239,11 @@ impl<'a> Row<'a> {
         self.style = style.into();
         self
     }
+
+    /// Get an iterator of the [`Cell`] widths
+    pub fn widths(&self) -> impl Iterator<Item = usize> {
+        self.cells.iter().map(Cell::width)
+    }
 }
 
 // private methods for rendering
