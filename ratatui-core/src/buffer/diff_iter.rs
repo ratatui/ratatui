@@ -1,11 +1,6 @@
-use core::iter::{Enumerate, Zip};
-use core::slice::Iter;
-
 use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::{Buffer, Cell, CellDiffOption};
-
-type CellIter<'next, 'prev> = Enumerate<Zip<Iter<'next, Cell>, Iter<'prev, Cell>>>;
 
 /// A zero-allocation iterator over the differences between two buffers.
 ///
@@ -13,8 +8,6 @@ type CellIter<'next, 'prev> = Enumerate<Zip<Iter<'next, Cell>, Iter<'prev, Cell>
 /// in `prev`. Handles multi-width characters (including VS16 emoji trailing cells) and
 /// [`CellDiffOption`] directives.
 pub struct BufferDiff<'prev, 'next> {
-    /// Zipped iterator over (next, prev) cell pairs with index.
-    iter: CellIter<'next, 'prev>,
     /// The next (current) buffer's cells — needed for trailing cell random access.
     next: &'next [Cell],
     /// The previous buffer's cells — needed for trailing cell comparison.
@@ -23,8 +16,8 @@ pub struct BufferDiff<'prev, 'next> {
     width: u16,
     x_offset: u16,
     y_offset: u16,
-    /// Number of main-loop cells still to skip (from multi-width characters).
-    to_skip: u16,
+    /// Current position in the flat cell array.
+    pos: usize,
     /// When processing VS16 trailing cells, tracks the range of trailing indices still to yield.
     trailing: TrailingState,
 }
@@ -33,26 +26,20 @@ pub struct BufferDiff<'prev, 'next> {
 enum TrailingState {
     /// No trailing cells pending.
     None,
-    /// Yielding trailing cells for indices `next_index..end` (then resume main loop with
-    /// `resume_skip` cells to skip).
-    Pending {
-        next_index: usize,
-        end: usize,
-        resume_skip: u16,
-    },
+    /// Yielding trailing cells for indices `next_index..end` (then resume main loop from `end`).
+    Pending { next_index: usize, end: usize },
 }
 
 impl<'prev, 'next> BufferDiff<'prev, 'next> {
     /// Creates a new iterator over the differences between `prev` and `next` terminal cells.
     pub(crate) fn new(prev: &'prev Buffer, next: &'next Buffer) -> Self {
         Self {
-            iter: next.content.iter().zip(prev.content.iter()).enumerate(),
             next: &next.content,
             prev: &prev.content,
             width: prev.area.width,
             x_offset: prev.area.x,
             y_offset: prev.area.y,
-            to_skip: 0,
+            pos: 0,
             trailing: TrailingState::None,
         }
     }
@@ -73,17 +60,11 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
         if let TrailingState::Pending {
             ref mut next_index,
             end,
-            resume_skip,
         } = self.trailing
         {
             while *next_index < end {
                 let j = *next_index;
                 *next_index += 1;
-
-                // Make sure that we are still inside the buffer.
-                if j >= self.next.len() || j >= self.prev.len() {
-                    break;
-                }
 
                 if self.prev[j] != self.next[j] {
                     let (tx, ty) = self.pos_of(j);
@@ -91,38 +72,29 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                 }
             }
 
-            // Done with trailing cells; resume main loop.
-            self.to_skip = resume_skip;
+            // Done with trailing cells; resume main loop past the wide character.
+            self.pos = end;
             self.trailing = TrailingState::None;
         }
 
-        // Cells from the current buffer to skip due to preceding multi-width characters taking
-        // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
-        for (i, (current, previous)) in self.iter.by_ref() {
-            if self.to_skip > 0 {
-                self.to_skip -= 1;
-                continue;
-            }
+        let len = self.next.len().min(self.prev.len());
+        while self.pos < len {
+            let i = self.pos;
+            self.pos += 1;
+
+            let current = &self.next[i];
+            let previous = &self.prev[i];
 
             match current.diff_option {
                 CellDiffOption::Skip => {}
                 CellDiffOption::ForcedWidth(width) => {
-                    self.to_skip = width.get().saturating_sub(1) as u16;
+                    self.pos += width.get().saturating_sub(1);
                     if current != previous {
                         let (x, y) = self.pos_of(i);
                         return Some((x, y, &self.next[i]));
                     }
                 }
                 CellDiffOption::None => {
-                    if current == previous {
-                        // Equal cells still need to account for multi-width skip.
-                        let cell_width = current.symbol().width();
-                        if cell_width > 1 {
-                            self.to_skip = cell_width.saturating_sub(1) as u16;
-                        }
-                        continue;
-                    }
-
                     // If the current cell is multi-width, ensure the trailing cells are
                     // explicitly cleared when they previously contained non-blank content.
                     // Some terminals do not reliably clear the trailing cell(s) when printing
@@ -132,31 +104,27 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     let symbol = current.symbol();
                     let cell_width = symbol.width();
 
+                    if current == previous {
+                        // Equal cells still need to account for multi-width skip.
+                        self.pos += cell_width.saturating_sub(1);
+                        continue;
+                    }
+
                     // Work around terminals that fail to clear the trailing cell of certain
                     // emoji presentation sequences (those containing VS16 / U+FE0F).
                     // Only emit explicit clears for such sequences to avoid bloating diffs
                     // for standard wide characters (e.g., CJK), which terminals handle well.
                     let contains_vs16 = cell_width > 1 && symbol.chars().any(|c| c == '\u{FE0F}');
-
                     if contains_vs16 {
-                        let trailing_start = i + 1;
-                        let trailing_end =
-                            (i + cell_width).min(self.next.len().min(self.prev.len()));
-
+                        let trailing_end = (i + cell_width).min(len);
                         self.trailing = TrailingState::Pending {
-                            next_index: trailing_start,
+                            next_index: i + 1,
                             end: trailing_end,
-                            resume_skip: cell_width.saturating_sub(1) as u16,
                         };
-                        // Advance the inner iterator past the trailing cells so we
-                        // don't visit them again in the main loop.
-                        for _ in 1..cell_width {
-                            self.iter.next();
-                        }
-                    }
-
-                    if !contains_vs16 && cell_width > 1 {
-                        self.to_skip = cell_width.saturating_sub(1) as u16;
+                    } else if cell_width > 1 {
+                        self.pos += cell_width.saturating_sub(1);
+                    } else {
+                        // single-width character, no position adjustment needed
                     }
 
                     let (x, y) = self.pos_of(i);
@@ -236,5 +204,26 @@ mod tests {
         let diff: Vec<_> = collect_diff(&prev, &next);
         assert_eq!(diff.len(), 1);
         assert_eq!(diff[0].2.symbol(), "x");
+    }
+
+    #[test]
+    fn vs16_trailing_cell_unchanged() {
+        use crate::style::{Color, Style};
+
+        let rect = Rect::new(0, 0, 4, 1);
+        let mut prev = Buffer::empty(rect);
+        prev.set_string(0, 0, "⌨️", Style::new());
+        prev.set_string(2, 0, "ab", Style::new());
+
+        let mut next = Buffer::empty(rect);
+        next.set_string(0, 0, "⌨️", Style::new().fg(Color::Red));
+        next.set_string(2, 0, "ab", Style::new());
+
+        // Only the main emoji cell (0,0) differs (different style);
+        // the trailing cell (1,0) is identical in both buffers.
+        let diff: Vec<_> = collect_diff(&prev, &next);
+        assert_eq!(diff.len(), 1);
+        assert_eq!(diff[0].0, 0);
+        assert_eq!(diff[0].1, 0);
     }
 }
