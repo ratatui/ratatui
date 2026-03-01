@@ -282,6 +282,8 @@ impl From<char> for Cell {
 }
 
 impl CellWidth for Cell {
+    /// Returns [`CellDiffOption::ForcedWidth`] when set, otherwise computes the width from the
+    /// cell's symbol.
     fn cell_width(&self) -> u16 {
         match self.diff_option {
             CellDiffOption::ForcedWidth(w) => w.get(),
