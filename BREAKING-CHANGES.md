@@ -24,6 +24,7 @@ This is a quick summary of the sections below:
   - 'layout::Alignment' is renamed to 'layout::HorizontalAlignment'
   - MSRV is now 1.86.0
   - `Backend` now requires an associated `Error` type and `clear_region` method
+  - `Rect::inner` now takes `Into<Inset>` instead of `Margin`
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
   - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache`
@@ -146,6 +147,13 @@ behavior can be achieved by using `Flex::SpaceEvenly` instead.
 - let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::SpaceAround).split(area);
 + let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::SpaceEvenly).split(area);
 ```
+
+### `Rect::inner` now takes `Into<Inset>` instead of `Margin`
+
+`Rect::inner` accepts any type that converts into `Inset` (for example `Inset` or `Margin`). Calls
+that relied on inference for a `Margin` conversion may now need an explicit `Margin::new` (or
+`Inset::trbl`) to make type inference succeed. This change also removes `const` support for
+`Rect::inner`, so calls in const contexts need to move to runtime code.
 
 ### `block::Title` no longer exists ([#1926])
 
