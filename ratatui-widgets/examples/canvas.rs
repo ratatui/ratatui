@@ -21,8 +21,7 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Stylize};
 use ratatui::symbols::Marker;
 use ratatui::text::{Line as TextLine, Span};
-use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
-use ratatui::widgets::canvas::Points;
+use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Points, Rectangle};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
