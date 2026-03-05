@@ -10,6 +10,8 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.31.0](#v0310)
+  - MSRV is now 1.88.0
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
 - [v0.30.0](#v0300)
@@ -94,6 +96,12 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## [v0.31.0](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.31.0)
+
+### MSRV is now 1.88.0
+
+The minimum supported Rust version (MSRV) is now 1.88.0.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 

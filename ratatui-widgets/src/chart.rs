@@ -368,8 +368,9 @@ impl<'a> Dataset<'a> {
 
     /// Sets the kind of character to use to display this dataset
     ///
-    /// You can use dots (`•`), blocks (`█`), bars (`▄`), braille (`⠓`, `⣇`, `⣿`) or half-blocks
-    /// (`█`, `▄`, and `▀`). See [`symbols::Marker`] for more details.
+    /// You can use dots (`•`), blocks (`█`), bars (`▄`), braille (`⠓`, `⣇`, `⣿`), half-blocks
+    /// (`█`, `▄`, and `▀`) or if you need custom chars use
+    /// [`Marker::Custom`](symbols::Marker::Custom). See [`symbols::Marker`] for more details.
     ///
     /// Note [`Marker::Braille`](symbols::Marker::Braille) requires a font that supports Unicode
     /// Braille Patterns.
@@ -1009,12 +1010,12 @@ impl Widget for &Chart<'_> {
             }
         }
 
-        if let Some(y) = layout.axis_x {
-            if let Some(x) = layout.axis_y {
-                buf[(x, y)]
-                    .set_symbol(symbols::line::BOTTOM_LEFT)
-                    .set_style(self.x_axis.style);
-            }
+        if let Some(y) = layout.axis_x
+            && let Some(x) = layout.axis_y
+        {
+            buf[(x, y)]
+                .set_symbol(symbols::line::BOTTOM_LEFT)
+                .set_style(self.x_axis.style);
         }
 
         Canvas::default()

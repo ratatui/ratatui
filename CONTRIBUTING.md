@@ -160,6 +160,16 @@ cd ratatui
 cargo xtask build
 ```
 
+You would need the following packages installed if you want to run the other `cargo xtask` commands:
+
+- [cargo-hack](https://github.com/taiki-e/cargo-hack)
+- [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)
+- [cargo-rdme](https://github.com/orium/cargo-rdme)
+- [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
+- [cargo-docs-rs](https://github.com/dtolnay/cargo-docs-rs)
+- [taplo-cli](https://github.com/tamasfe/taplo)
+- [typos-cli](https://github.com/crate-ci/typos)
+
 ### Architecture
 
 For an understanding of the crate organization and design decisions, see [ARCHITECTURE.md]. This

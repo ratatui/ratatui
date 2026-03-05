@@ -1,6 +1,6 @@
 use crate::backend::{Backend, ClearType};
-use crate::buffer::Buffer;
-use crate::layout::Position;
+use crate::buffer::{Buffer, Cell};
+use crate::layout::{Position, Rect};
 use crate::terminal::{Frame, Terminal, Viewport};
 
 impl<B: Backend> Terminal<B> {
@@ -101,39 +101,75 @@ impl<B: Backend> Terminal<B> {
     /// - [`Viewport::Inline`]: clears after the viewport's origin, leaving any content above the
     ///   viewport untouched.
     ///
+    /// Current behavior: for [`Viewport::Inline`], clearing runs from the viewport origin through
+    /// the end of the visible display area, not just the viewport's rectangle. This is an
+    /// implementation detail rather than a contract; do not rely on it.
+    ///
+    /// This preserves the cursor position.
+    ///
     /// This also resets the "previous" buffer so the next [`Terminal::flush`] redraws the full
     /// viewport. [`Terminal::resize`] calls this internally.
     ///
     /// Implementation note: this uses [`ClearType::AfterCursor`] starting at the viewport origin.
     pub fn clear(&mut self) -> Result<(), B::Error> {
+        let original_cursor = self.backend.get_cursor_position()?;
         match self.viewport {
             Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
             Viewport::Inline(_) => {
                 self.backend
                     .set_cursor_position(self.viewport_area.as_position())?;
-                // TODO: `ClearType::AfterCursor` is exclusive of the cursor cell in `TestBackend`
-                // (and in terminals that interpret this as "after" rather than "from"), which can
-                // leave the viewport origin cell uncleared. Consider switching to a clear that
-                // includes the cursor cell when fixing clear semantics.
                 self.backend.clear_region(ClearType::AfterCursor)?;
             }
             Viewport::Fixed(_) => {
                 let area = self.viewport_area;
-                for y in area.top()..area.bottom() {
-                    // TODO: Fixed viewports can start at x > 0 and have a limited width. Clearing
-                    // from x = 0 clears outside the viewport. Consider clearing only within
-                    // `viewport_area` (respecting both x offset and width) when fixing clear
-                    // semantics.
-                    self.backend.set_cursor_position(Position { x: 0, y })?;
-                    // TODO: `ClearType::AfterCursor` is exclusive of the cursor cell in
-                    // `TestBackend`, so the first cell of each cleared row can remain. Consider a
-                    // clear mode that includes the cursor cell when fixing clear semantics.
-                    self.backend.clear_region(ClearType::AfterCursor)?;
-                }
+                self.clear_fixed_viewport(area)?;
             }
         }
+        self.backend.set_cursor_position(original_cursor)?;
         // Reset the back buffer to make sure the next update will redraw everything.
         self.buffers[1 - self.current].reset();
+        Ok(())
+    }
+
+    /// Clears a fixed viewport using terminal clear commands when possible.
+    ///
+    /// Terminal clear commands can be faster than per-cell updates.
+    fn clear_fixed_viewport(&mut self, area: Rect) -> Result<(), B::Error> {
+        if area.is_empty() {
+            return Ok(());
+        }
+        let size = self.backend.size()?;
+        let is_full_width = area.x == 0 && area.width == size.width;
+        let ends_at_bottom = area.bottom() == size.height;
+        if is_full_width && ends_at_bottom {
+            self.backend.set_cursor_position(area.as_position())?;
+            self.backend.clear_region(ClearType::AfterCursor)?;
+        } else if is_full_width {
+            self.clear_full_width_rows(area)?;
+        } else {
+            self.clear_region_cells(area)?;
+        }
+        Ok(())
+    }
+
+    /// Clears full-width rows using line clear commands.
+    ///
+    /// This avoids per-cell writes when the viewport spans the full width.
+    fn clear_full_width_rows(&mut self, area: Rect) -> Result<(), B::Error> {
+        for y in area.top()..area.bottom() {
+            self.backend.set_cursor_position(Position { x: 0, y })?;
+            self.backend.clear_region(ClearType::CurrentLine)?;
+        }
+        Ok(())
+    }
+
+    /// Clears a non-full-width region by writing empty cells directly.
+    ///
+    /// This is used when line-based clears would affect cells outside the viewport.
+    fn clear_region_cells(&mut self, area: Rect) -> Result<(), B::Error> {
+        let clear_cell = Cell::default();
+        let updates = area.positions().map(|pos| (pos.x, pos.y, &clear_cell));
+        self.backend.draw(updates)?;
         Ok(())
     }
 }
@@ -222,83 +258,123 @@ mod tests {
 
     #[test]
     fn clear_inline_clears_after_viewport_origin_and_resets_back_buffer() {
-        // Characterization test:
-        // The current implementation clears using ClearType::AfterCursor, which is exclusive of
-        // the cursor cell. This yields somewhat surprising results (the origin cell is left
-        // untouched). We'll fix the clear semantics later; this test locks down current behavior.
-        //
         // Inline clear is implemented as:
         //   1) move the backend cursor to the viewport origin
         //   2) call ClearType::AfterCursor once
-        //
-        // Note: TestBackend's ClearType::AfterCursor clears *after the cursor position*, keeping
-        // the cell at the cursor intact, and clears through the end of the screen buffer.
-        let mut backend = TestBackend::with_lines(["aaa", "bbb", "ccc"]);
-        backend.set_cursor_position((0, 1)).unwrap();
-        let mut terminal = Terminal::with_options(
-            backend,
-            TerminalOptions {
-                viewport: Viewport::Inline(1),
-            },
-        )
-        .unwrap();
+        let mut backend = TestBackend::with_lines([
+            "before 1  ",
+            "before 2  ",
+            "viewport 1",
+            "viewport 2",
+            "after 1   ",
+            "after 2   ",
+        ]);
+        backend
+            .set_cursor_position(Position { x: 2, y: 2 })
+            .unwrap();
+        let options = TerminalOptions {
+            viewport: Viewport::Inline(2),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+        terminal
+            .backend_mut()
+            .set_cursor_position(Position { x: 2, y: 2 })
+            .unwrap();
 
-        terminal.buffers[1][(2, 1)] = Cell::new("x");
+        terminal.buffers[1][(2, 2)] = Cell::new("x");
         terminal.clear().unwrap();
 
-        terminal
-            .backend()
-            .assert_buffer_lines(["aaa", "b  ", "   "]);
+        // Inline viewport is anchored to the cursor row (y = 2) with height 2. Clear runs from
+        // the viewport origin through the end of the display, including the rows after it.
+        terminal.backend().assert_buffer_lines([
+            "before 1  ",
+            "before 2  ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]);
         assert_eq!(
             terminal.buffers[1 - terminal.current],
             Buffer::empty(terminal.viewport_area)
         );
-        // The inline branch also explicitly sets the cursor to the viewport origin before
-        // clearing, so the backend cursor ends up at that origin.
         assert_eq!(
             terminal.backend().cursor_position(),
-            Position { x: 0, y: 1 }
+            Position { x: 2, y: 2 }
         );
     }
 
     #[test]
     fn clear_fixed_clears_viewport_rows_and_resets_back_buffer() {
-        // Characterization test:
-        // The current implementation clears using ClearType::AfterCursor, which is exclusive of
-        // the cursor cell. This yields somewhat surprising results (each row's first cell is left
-        // untouched, and TestBackend clears through the end of the screen). We'll fix the clear
-        // semantics later; this test locks down current behavior.
-        //
-        // Fixed clear is implemented as: for each viewport row, set the cursor to the start of
-        // the row (x = 0) and call ClearType::AfterCursor.
-        //
-        // Note: TestBackend's ClearType::AfterCursor clears from *after the cursor* through the
-        // end of the screen buffer (not just the current line). That means the first iteration
-        // clears everything below the viewport's first row too.
-        let backend = TestBackend::with_lines(["aaa", "bbb", "ccc"]);
-        let mut terminal = Terminal::with_options(
-            backend,
-            TerminalOptions {
-                viewport: Viewport::Fixed(Rect::new(0, 1, 3, 2)),
-            },
-        )
-        .unwrap();
+        // For full-width fixed viewports that reach the terminal bottom, clear uses
+        // ClearType::AfterCursor starting at the viewport origin.
+        let mut backend = TestBackend::with_lines(["before 1  ", "viewport 1", "viewport 2"]);
+        backend.set_cursor_position((2, 0)).unwrap();
+        let options = TerminalOptions {
+            viewport: Viewport::Fixed(Rect::new(0, 1, 10, 2)),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
 
-        terminal.buffers[1][(2, 1)] = Cell::new("x");
         terminal.clear().unwrap();
 
         terminal
             .backend()
-            .assert_buffer_lines(["aaa", "b  ", "   "]);
+            .assert_buffer_lines(["before 1  ", "          ", "          "]);
         assert_eq!(
             terminal.buffers[1 - terminal.current],
             Buffer::empty(terminal.viewport_area)
         );
-        // The fixed branch sets the cursor for each row it processes; after the loop, the cursor
-        // is left at the start of the last processed row.
         assert_eq!(
             terminal.backend().cursor_position(),
-            Position { x: 0, y: 2 }
+            Position { x: 2, y: 0 }
+        );
+    }
+
+    #[test]
+    fn clear_fixed_full_width_not_at_bottom() {
+        let mut backend =
+            TestBackend::with_lines(["before 1  ", "viewport 1", "viewport 2", "after 1   "]);
+        backend.set_cursor_position((1, 0)).unwrap();
+        let options = TerminalOptions {
+            viewport: Viewport::Fixed(Rect::new(0, 1, 10, 2)),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+
+        terminal.clear().unwrap();
+
+        terminal.backend().assert_buffer_lines([
+            "before 1  ",
+            "          ",
+            "          ",
+            "after 1   ",
+        ]);
+        assert_eq!(
+            terminal.backend().cursor_position(),
+            Position { x: 1, y: 0 }
+        );
+    }
+
+    #[test]
+    fn clear_fixed_respects_non_full_width_viewport() {
+        let mut backend =
+            TestBackend::with_lines(["before 1  ", "viewport 1", "viewport 2", "after 1   "]);
+        backend.set_cursor_position((3, 0)).unwrap();
+        let options = TerminalOptions {
+            viewport: Viewport::Fixed(Rect::new(1, 1, 3, 2)),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+
+        terminal.clear().unwrap();
+
+        terminal.backend().assert_buffer_lines([
+            "before 1  ",
+            "v   port 1",
+            "v   port 2",
+            "after 1   ",
+        ]);
+        assert_eq!(
+            terminal.backend().cursor_position(),
+            Position { x: 3, y: 0 }
         );
     }
 }
