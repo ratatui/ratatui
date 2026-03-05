@@ -587,6 +587,7 @@ impl<'a> Context<'a> {
             Marker::Quadrant => Box::new(PatternGrid::<2, 2>::new(width, height, &QUADRANTS)),
             Marker::Sextant => Box::new(PatternGrid::<2, 3>::new(width, height, &SEXTANTS)),
             Marker::Octant => Box::new(PatternGrid::<2, 4>::new(width, height, &OCTANTS)),
+            Marker::Custom(char) => Box::new(CharGrid::new(width, height, char)),
             Marker::Dot | _ => Box::new(CharGrid::new(width, height, dot)),
         }
     }
@@ -997,6 +998,22 @@ mod tests {
                 ▌xxxx
                 𜷀▂▂▂▂"
             ))]
+    #[case::x_sign(Marker::Custom('×'), indoc!(
+                "
+                ×xxxx
+                ×xxxx
+                ×xxxx
+                ×xxxx
+                ×××××"
+            ))]
+    #[case::plus_sign(Marker::Custom('+'), indoc!(
+                "
+                +xxxx
+                +xxxx
+                +xxxx
+                +xxxx
+                +++++"
+            ))]
     #[case::dot(Marker::Dot, indoc!(
                 "
                 •xxxx
@@ -1089,6 +1106,22 @@ mod tests {
                 xx█xx
                 x▞x▚x
                 ▞xxx▚"
+            ))]
+    #[case::x_sign(Marker::Custom('×'), indoc!(
+                "
+                ×xxx×
+                x×x×x
+                xx×xx
+                x×x×x
+                ×xxx×"
+            ))]
+    #[case::plus_sign(Marker::Custom('+'), indoc!(
+                "
+                +xxx+
+                x+x+x
+                xx+xx
+                x+x+x
+                +xxx+"
             ))]
     #[case::dot(Marker::Dot, indoc!(
                 "
