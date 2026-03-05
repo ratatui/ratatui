@@ -561,7 +561,6 @@ struct Theme {
     space_around_tab: Color,
     description_fg: Color,
 }
-}
 
 impl Theme {
     pub fn new() -> Self {
