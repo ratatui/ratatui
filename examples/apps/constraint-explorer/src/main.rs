@@ -158,7 +158,7 @@ impl App {
     }
 
     /// select the next block with wrap around
-    fn next_block(&mut self) {
+    const fn next_block(&mut self) {
         if self.constraints.is_empty() {
             return;
         }
@@ -167,7 +167,7 @@ impl App {
     }
 
     /// select the previous block with wrap around
-    fn prev_block(&mut self) {
+    const fn prev_block(&mut self) {
         if self.constraints.is_empty() {
             return;
         }

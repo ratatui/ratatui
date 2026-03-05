@@ -25,7 +25,7 @@ body = """
 ## [unreleased]
 {% else -%}
 {%- if package -%} {# release-plz specific variable #}
-## {{ package }} - [{{ version }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+## [{{ version }}+{{ package }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {%- else -%}
 ## [{{ version }}]({{ self::remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {%- endif %}
@@ -66,7 +66,7 @@ body = """
 ### New Contributors
 {%- endif %}\
 {% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
-* @{{ contributor.username }} made their first contribution
+* `@{{ contributor.username }}` made their first contribution
 {%- if contributor.pr_number %} in \
 [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
 {%- endif %}

@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 
 /// Generates realistic implied volatility surface data with animation
 pub struct VolatilityEngine {

@@ -84,10 +84,11 @@ impl App {
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
                 // Only handle key press events, not repeat or release
-                if let event::Event::Key(key) = event::read()? {
-                    if key.kind == KeyEventKind::Press && self.handle_key(key.code, key.modifiers) {
-                        break;
-                    }
+                if let event::Event::Key(key) = event::read()?
+                    && key.kind == KeyEventKind::Press
+                    && self.handle_key(key.code, key.modifiers)
+                {
+                    break;
                 }
             }
 

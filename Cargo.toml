@@ -25,15 +25,16 @@ readme = "README.md"
 license = "MIT"
 exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
 edition = "2024"
-rust-version = "1.86.0"
+rust-version = "1.88.0"
 
 [workspace.dependencies]
 anstyle = "1"
-bitflags = "2.10"
+bitflags = "2.11"
 clap = { version = "4.5", features = ["derive"] }
 color-eyre = "0.6"
 compact_str = { version = "0.9", default-features = false }
 criterion = { version = "0.8", features = ["html_reports"] }
+critical-section = "1.2"
 crossterm = "0.29"
 document-features = "0.2"
 fakeit = "1"
@@ -48,8 +49,8 @@ lru = "0.16"
 octocrab = "0.49"
 palette = "0.7"
 pretty_assertions = "1"
-rand = "0.9"
-rand_chacha = "0.9"
+rand = "0.10"
+rand_chacha = "0.10"
 ratatui = { path = "ratatui", version = "0.30.0" }
 ratatui-core = { path = "ratatui-core", version = "0.1.0" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0" }
@@ -60,11 +61,11 @@ ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0", default-feature
 rstest = "0.26"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-strum = { version = "0.27", default-features = false, features = ["derive"] }
+strum = { version = "0.28", default-features = false, features = ["derive"] }
 termion = "4"
 termwiz = "0.23"
 thiserror = { version = "2", default-features = false }
-time = { version = "0.3.45", default-features = false }
+time = { version = "0.3.47", default-features = false }
 tokio = "1"
 tokio-stream = "0.1"
 tracing = "0.1"

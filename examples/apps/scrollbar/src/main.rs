@@ -8,11 +8,12 @@
 /// release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
-use ratatui::layout::{Alignment, Constraint, Layout, Margin};
+use ratatui::layout::{Alignment, Constraint, Layout, Margin, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::symbols::scrollbar;
 use ratatui::text::{Line, Masked, Span};
@@ -57,6 +58,10 @@ impl App {
         }
     }
 
+    fn create_block(title: &str) -> Block<'_> {
+        Block::bordered().gray().title(title.bold())
+    }
+
     const fn scroll_down(&mut self) {
         self.vertical_scroll = self.vertical_scroll.saturating_add(1);
         self.vertical_scroll_state = self.vertical_scroll_state.position(self.vertical_scroll);
@@ -81,7 +86,84 @@ impl App {
             .position(self.horizontal_scroll);
     }
 
-    #[expect(clippy::too_many_lines, clippy::cast_possible_truncation)]
+    fn render_vertical_scroll(&mut self, frame: &mut Frame, text: &[Line], chunks: &Rc<[Rect]>) {
+        let title = Block::new()
+            .title_alignment(Alignment::Center)
+            .title("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold());
+        frame.render_widget(title, chunks[0]);
+
+        let paragraph = Paragraph::new(text.to_owned())
+            .gray()
+            .block(Self::create_block("Vertical scrollbar with arrows"))
+            .scroll((self.vertical_scroll as u16, 0));
+        frame.render_widget(paragraph, chunks[1]);
+        frame.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓")),
+            chunks[1],
+            &mut self.vertical_scroll_state,
+        );
+
+        let paragraph = Paragraph::new(text.to_owned())
+            .gray()
+            .block(Self::create_block(
+                "Vertical scrollbar without arrows, without track symbol and mirrored",
+            ))
+            .scroll((self.vertical_scroll as u16, 0));
+        frame.render_widget(paragraph, chunks[2]);
+        frame.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::VerticalLeft)
+                .symbols(scrollbar::VERTICAL)
+                .begin_symbol(None)
+                .track_symbol(None)
+                .end_symbol(None),
+            chunks[2].inner(Margin {
+                vertical: 1,
+                horizontal: 0,
+            }),
+            &mut self.vertical_scroll_state,
+        );
+    }
+
+    fn render_horizontal_scroll(&mut self, frame: &mut Frame, text: &[Line], chunks: &Rc<[Rect]>) {
+        let paragraph = Paragraph::new(text.to_owned())
+            .gray()
+            .block(Self::create_block(
+                "Horizontal scrollbar with only begin arrow & custom thumb symbol",
+            ))
+            .scroll((0, self.horizontal_scroll as u16));
+        frame.render_widget(paragraph, chunks[3]);
+        frame.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
+                .thumb_symbol("🬋")
+                .end_symbol(None),
+            chunks[3].inner(Margin {
+                vertical: 0,
+                horizontal: 1,
+            }),
+            &mut self.horizontal_scroll_state,
+        );
+
+        let paragraph = Paragraph::new(text.to_owned())
+            .gray()
+            .block(Self::create_block(
+                "Horizontal scrollbar without arrows & custom thumb and track symbol",
+            ))
+            .scroll((0, self.horizontal_scroll as u16));
+        frame.render_widget(paragraph, chunks[4]);
+        frame.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
+                .thumb_symbol("░")
+                .track_symbol(Some("─")),
+            chunks[4].inner(Margin {
+                vertical: 0,
+                horizontal: 1,
+            }),
+            &mut self.horizontal_scroll_state,
+        );
+    }
+
     fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
@@ -107,98 +189,21 @@ impl App {
             Line::from("This is a longer line".crossed_out()),
             Line::from(long_line.clone()),
             Line::from("This is a line".reset()),
-            Line::from(vec![
-                Span::raw("Masked text: "),
-                Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
-            ]),
+            Span::raw("Masked text: ")
+                + Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
             Line::from("This is a line "),
             Line::from("This is a line   ".red()),
             Line::from("This is a line".on_dark_gray()),
             Line::from("This is a longer line".crossed_out()),
             Line::from(long_line.clone()),
             Line::from("This is a line".reset()),
-            Line::from(vec![
-                Span::raw("Masked text: "),
-                Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
-            ]),
+            Span::raw("Masked text: ")
+                + Span::styled(Masked::new("password", '*'), Style::new().fg(Color::Red)),
         ];
         self.vertical_scroll_state = self.vertical_scroll_state.content_length(text.len());
         self.horizontal_scroll_state = self.horizontal_scroll_state.content_length(long_line.len());
 
-        let create_block = |title: &'static str| Block::bordered().gray().title(title.bold());
-
-        let title = Block::new()
-            .title_alignment(Alignment::Center)
-            .title("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold());
-        frame.render_widget(title, chunks[0]);
-
-        let paragraph = Paragraph::new(text.clone())
-            .gray()
-            .block(create_block("Vertical scrollbar with arrows"))
-            .scroll((self.vertical_scroll as u16, 0));
-        frame.render_widget(paragraph, chunks[1]);
-        frame.render_stateful_widget(
-            Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                .begin_symbol(Some("↑"))
-                .end_symbol(Some("↓")),
-            chunks[1],
-            &mut self.vertical_scroll_state,
-        );
-
-        let paragraph = Paragraph::new(text.clone())
-            .gray()
-            .block(create_block(
-                "Vertical scrollbar without arrows, without track symbol and mirrored",
-            ))
-            .scroll((self.vertical_scroll as u16, 0));
-        frame.render_widget(paragraph, chunks[2]);
-        frame.render_stateful_widget(
-            Scrollbar::new(ScrollbarOrientation::VerticalLeft)
-                .symbols(scrollbar::VERTICAL)
-                .begin_symbol(None)
-                .track_symbol(None)
-                .end_symbol(None),
-            chunks[2].inner(Margin {
-                vertical: 1,
-                horizontal: 0,
-            }),
-            &mut self.vertical_scroll_state,
-        );
-
-        let paragraph = Paragraph::new(text.clone())
-            .gray()
-            .block(create_block(
-                "Horizontal scrollbar with only begin arrow & custom thumb symbol",
-            ))
-            .scroll((0, self.horizontal_scroll as u16));
-        frame.render_widget(paragraph, chunks[3]);
-        frame.render_stateful_widget(
-            Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
-                .thumb_symbol("🬋")
-                .end_symbol(None),
-            chunks[3].inner(Margin {
-                vertical: 0,
-                horizontal: 1,
-            }),
-            &mut self.horizontal_scroll_state,
-        );
-
-        let paragraph = Paragraph::new(text.clone())
-            .gray()
-            .block(create_block(
-                "Horizontal scrollbar without arrows & custom thumb and track symbol",
-            ))
-            .scroll((0, self.horizontal_scroll as u16));
-        frame.render_widget(paragraph, chunks[4]);
-        frame.render_stateful_widget(
-            Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
-                .thumb_symbol("░")
-                .track_symbol(Some("─")),
-            chunks[4].inner(Margin {
-                vertical: 0,
-                horizontal: 1,
-            }),
-            &mut self.horizontal_scroll_state,
-        );
+        self.render_vertical_scroll(frame, &text, &chunks);
+        self.render_horizontal_scroll(frame, &text, &chunks);
     }
 }

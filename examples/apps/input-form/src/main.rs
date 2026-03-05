@@ -177,7 +177,7 @@ impl StringField {
         }
     }
 
-    fn cursor_offset(&self) -> Offset {
+    const fn cursor_offset(&self) -> Offset {
         let x = (self.label.len() + self.value.len() + 2) as i32;
         Offset::new(x, 0)
     }
