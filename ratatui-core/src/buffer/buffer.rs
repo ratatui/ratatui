@@ -461,34 +461,14 @@ impl Buffer {
         self.area = area;
     }
 
-    /// Builds a minimal sequence of coordinates and Cells necessary to update the UI from
-    /// self to other.
+    /// Collects the diff between `self` and `other` into a `Vec`.
     ///
-    /// We're assuming that buffers are well-formed, that is no double-width cell is followed by
-    /// a non-blank cell.
+    /// This is a convenience wrapper around [`diff_iter`](Self::diff_iter) that collects the
+    /// results. Prefer `diff_iter` to avoid the intermediate allocation.
     ///
-    /// # Multi-width characters handling:
+    /// # Panics
     ///
-    /// ```text
-    /// (Index:) `01`
-    /// Prev:    `コ`
-    /// Next:    `aa`
-    /// Updates: `0: a, 1: a'
-    /// ```
-    ///
-    /// ```text
-    /// (Index:) `01`
-    /// Prev:    `a `
-    /// Next:    `コ`
-    /// Updates: `0: コ` (double width symbol at index 0 - skip index 1)
-    /// ```
-    ///
-    /// ```text
-    /// (Index:) `012`
-    /// Prev:    `aaa`
-    /// Next:    `aコ`
-    /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
-    /// ```
+    /// Panics if the two buffers have different `x`, `y`, or `width` values.
     pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
         self.diff_iter(other)
             .expect("buffers must have the same x, y, and width")
