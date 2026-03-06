@@ -321,10 +321,7 @@ impl<'a> Paragraph<'a> {
     /// use ratatui::text::Line;
     /// use ratatui::widgets::Paragraph;
     ///
-    /// let paragraph = Paragraph::new(vec![
-    ///     Line::from("Hello").on_red(),
-    /// ])
-    /// .style_entire_line(true);
+    /// let paragraph = Paragraph::new(vec![Line::from("Hello").on_red()]).style_entire_line(true);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn style_entire_line(mut self, style_entire_line: bool) -> Self {
