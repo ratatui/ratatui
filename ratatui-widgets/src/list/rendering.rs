@@ -35,6 +35,9 @@ impl StatefulWidget for &List<'_> {
         self.block.as_ref().render(area, buf);
         let list_area = self.block.inner_if_some(area);
 
+        // Always update item_count so navigation methods can clamp properly
+        state.item_count = Some(self.items.len());
+
         if list_area.is_empty() {
             return;
         }
