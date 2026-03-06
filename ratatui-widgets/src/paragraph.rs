@@ -87,6 +87,8 @@ pub struct Paragraph<'a> {
     scroll: Position,
     /// Alignment of the text
     alignment: Alignment,
+    /// Whether to extend each line's style to fill the entire row
+    style_entire_line: bool,
 }
 
 /// Describes how to wrap text across lines.
@@ -158,6 +160,7 @@ impl<'a> Paragraph<'a> {
             text: text.into(),
             scroll: Position::ORIGIN,
             alignment: Alignment::Left,
+            style_entire_line: false,
         }
     }
 
@@ -304,6 +307,31 @@ impl<'a> Paragraph<'a> {
         self.alignment(Alignment::Right)
     }
 
+    /// Sets whether to extend each [`Line`]'s style to fill the entire row width.
+    ///
+    /// When set to `true`, the style of each [`Line`] will be applied to the remaining empty
+    /// cells on the row after the text content, similar to how the [`Text`] widget renders.
+    /// When `false` (the default), only the cells containing actual text graphemes receive the
+    /// line's style.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui::style::Stylize;
+    /// use ratatui::text::Line;
+    /// use ratatui::widgets::Paragraph;
+    ///
+    /// let paragraph = Paragraph::new(vec![
+    ///     Line::from("Hello").on_red(),
+    /// ])
+    /// .style_entire_line(true);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn style_entire_line(mut self, style_entire_line: bool) -> Self {
+        self.style_entire_line = style_entire_line;
+        self
+    }
+
     /// Calculates the number of lines needed to fully render.
     ///
     /// Given a max line width, this method calculates the number of lines that a paragraph will
@@ -346,7 +374,7 @@ impl<'a> Paragraph<'a> {
                     .iter()
                     .flat_map(|span| span.styled_graphemes(self.style));
                 let alignment = line.alignment.unwrap_or(self.alignment);
-                (graphemes, alignment)
+                (graphemes, alignment, Style::default())
             });
             let mut line_composer = WordWrapper::new(styled, width, trim);
             let mut count = 0;
@@ -424,7 +452,8 @@ impl Paragraph<'_> {
         let styled = self.text.iter().map(|line| {
             let graphemes = line.styled_graphemes(self.text.style);
             let alignment = line.alignment.unwrap_or(self.alignment);
-            (graphemes, alignment)
+            let line_style = self.text.style.patch(line.style);
+            (graphemes, alignment, line_style)
         });
 
         if let Some(Wrap { trim }) = self.wrap {
@@ -435,21 +464,26 @@ impl Paragraph<'_> {
                     return;
                 }
             }
-            render_lines(line_composer, text_area, buf);
+            render_lines(line_composer, text_area, buf, self.style_entire_line);
         } else {
             // avoid unnecessary work by skipping directly to the relevant line before rendering
             let lines = styled.skip(self.scroll.y as usize);
             let mut line_composer = LineTruncator::new(lines, text_area.width);
             line_composer.set_horizontal_offset(self.scroll.x);
-            render_lines(line_composer, text_area, buf);
+            render_lines(line_composer, text_area, buf, self.style_entire_line);
         }
     }
 }
 
-fn render_lines<'a, C: LineComposer<'a>>(mut composer: C, area: Rect, buf: &mut Buffer) {
+fn render_lines<'a, C: LineComposer<'a>>(
+    mut composer: C,
+    area: Rect,
+    buf: &mut Buffer,
+    style_entire_line: bool,
+) {
     let mut y = 0;
     while let Some(ref wrapped) = composer.next_line() {
-        render_line(wrapped, area, buf, y);
+        render_line(wrapped, area, buf, y, style_entire_line);
         y += 1;
         if y >= area.height {
             break;
@@ -457,8 +491,15 @@ fn render_lines<'a, C: LineComposer<'a>>(mut composer: C, area: Rect, buf: &mut 
     }
 }
 
-fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u16) {
-    let mut x = get_line_offset(wrapped.width, area.width, wrapped.alignment);
+fn render_line(
+    wrapped: &WrappedLine<'_, '_>,
+    area: Rect,
+    buf: &mut Buffer,
+    y: u16,
+    style_entire_line: bool,
+) {
+    let line_offset = get_line_offset(wrapped.width, area.width, wrapped.alignment);
+    let mut x = line_offset;
     for StyledGrapheme { symbol, style } in wrapped.graphemes {
         let width = symbol.width();
         if width == 0 {
@@ -469,6 +510,24 @@ fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u
         let position = Position::new(area.left() + x, area.top() + y);
         buf[position].set_symbol(symbol).set_style(*style);
         x += u16::try_from(width).unwrap_or(u16::MAX);
+    }
+
+    if style_entire_line {
+        let row_y = area.top() + y;
+        let text_end = line_offset + wrapped.width;
+
+        // Fill left side (for Right and Center alignment)
+        if line_offset > 0 {
+            let left_fill = Rect::new(area.left(), row_y, line_offset, 1);
+            buf.set_style(left_fill, wrapped.style);
+        }
+
+        // Fill right side (for Left and Center alignment)
+        if text_end < area.width {
+            let right_fill_width = area.width - text_end;
+            let right_fill = Rect::new(area.left() + text_end, row_y, right_fill_width, 1);
+            buf.set_style(right_fill, wrapped.style);
+        }
     }
 }
 
@@ -1235,5 +1294,67 @@ mod tests {
         let paragraph = Paragraph::new("Lorem ipsum");
         // This should not panic, even if the buffer has zero size.
         paragraph.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn test_style_entire_line_left_aligned() {
+        let paragraph = Paragraph::new(vec![
+            Line::styled("Hi", Style::new().on_red()),
+            Line::raw("ok"),
+        ])
+        .style_entire_line(true);
+
+        let mut expected = Buffer::with_lines(["Hi        ", "ok        "]);
+        expected.set_style(Rect::new(0, 0, 10, 1), Style::new().on_red());
+
+        test_case(&paragraph, &expected);
+    }
+
+    #[test]
+    fn test_style_entire_line_right_aligned() {
+        let paragraph = Paragraph::new(vec![Line::styled("Hi", Style::new().on_red())])
+            .style_entire_line(true)
+            .right_aligned();
+
+        let mut expected = Buffer::with_lines(["        Hi"]);
+        expected.set_style(Rect::new(0, 0, 10, 1), Style::new().on_red());
+
+        test_case(&paragraph, &expected);
+    }
+
+    #[test]
+    fn test_style_entire_line_centered() {
+        let paragraph = Paragraph::new(vec![Line::styled("Hi", Style::new().on_red())])
+            .style_entire_line(true)
+            .centered();
+
+        let mut expected = Buffer::with_lines(["    Hi    "]);
+        expected.set_style(Rect::new(0, 0, 10, 1), Style::new().on_red());
+
+        test_case(&paragraph, &expected);
+    }
+
+    #[test]
+    fn test_style_entire_line_with_wrap() {
+        let paragraph = Paragraph::new(vec![Line::styled("Hello World", Style::new().on_blue())])
+            .style_entire_line(true)
+            .wrap(Wrap { trim: true });
+
+        let mut expected = Buffer::with_lines(["Hello ", "World "]);
+        expected.set_style(Rect::new(0, 0, 6, 1), Style::new().on_blue());
+        expected.set_style(Rect::new(0, 1, 6, 1), Style::new().on_blue());
+
+        test_case(&paragraph, &expected);
+    }
+
+    #[test]
+    fn test_style_entire_line_default_false() {
+        // When style_entire_line is false (default), only graphemes get the line style
+        let paragraph = Paragraph::new(vec![Line::styled("Hi", Style::new().on_red())]);
+
+        let mut expected = Buffer::with_lines(["Hi        "]);
+        expected.set_style(Rect::new(0, 0, 2, 1), Style::new().on_red());
+
+        test_case(&paragraph, &expected);
     }
 }
