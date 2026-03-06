@@ -1,7 +1,6 @@
-use core::num::NonZeroUsize;
+use core::num::NonZeroU8;
 
-use compact_str::CompactString;
-
+use crate::buffer::cell_width::StrCellWidth;
 use crate::style::{Color, Modifier, Style};
 use crate::symbols::merge::MergeStrategy;
 
@@ -21,22 +20,121 @@ pub enum CellDiffOption {
     ///
     /// Escape sequences will have some computed width that does match what is written to the
     /// screen.
-    ForcedWidth(NonZeroUsize),
+    ForcedWidth(NonZeroU8),
+}
+
+/// A 4-byte inline string that stores a single Unicode codepoint (up to 4-byte UTF-8).
+///
+/// The length is derived from the UTF-8 leading byte via a branchless lookup table,
+/// eliminating the need for a separate length field. Zero-padded trailing bytes enable
+/// raw byte comparison for equality checks without computing the length.
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct EmbeddedStr {
+    bytes: [u8; 4],
+}
+
+/// Branchless UTF-8 length lookup indexed by the high nibble of the leading byte.
+const UTF8_LEN: [u8; 16] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4];
+
+impl EmbeddedStr {
+    /// Creates a new `EmbeddedStr` from a char at compile time.
+    pub const fn new(symbol: char) -> Self {
+        let mut buf = [0u8; 4];
+        let encoded = symbol.encode_utf8(&mut buf);
+        let len = encoded.len();
+        // copy only the encoded bytes (clear any trailing garbage)
+        let mut bytes = [0u8; 4];
+        let mut i = 0;
+        while i < len {
+            bytes[i] = buf[i];
+            i += 1;
+        }
+        Self { bytes }
+    }
+
+    /// Returns the byte length of the stored UTF-8 sequence.
+    pub fn len(&self) -> usize {
+        UTF8_LEN[(self.bytes[0] >> 4) as usize] as usize
+    }
+
+    /// Returns the stored string as a `&str`.
+    pub fn as_str(&self) -> &str {
+        #[allow(unsafe_code)]
+        unsafe {
+            core::str::from_utf8_unchecked(&self.bytes[..self.len()])
+        }
+    }
+}
+
+impl Default for EmbeddedStr {
+    fn default() -> Self {
+        Self {
+            bytes: [b' ', 0, 0, 0],
+        }
+    }
+}
+
+impl From<char> for EmbeddedStr {
+    fn from(c: char) -> Self {
+        let c = c as u32;
+
+        // fast path for ASCII
+        if c < 0x80 {
+            return Self {
+                bytes: [c as u8, 0, 0, 0],
+            };
+        }
+
+        let mut bytes = [0u8; 4];
+        if c < 0x800 {
+            bytes[0] = 0xC0 | ((c >> 6) as u8);
+            bytes[1] = 0x80 | ((c & 0x3F) as u8);
+        } else if c < 0x10000 {
+            bytes[0] = 0xE0 | ((c >> 12) as u8);
+            bytes[1] = 0x80 | (((c >> 6) & 0x3F) as u8);
+            bytes[2] = 0x80 | ((c & 0x3F) as u8);
+        } else {
+            bytes[0] = 0xF0 | ((c >> 18) as u8);
+            bytes[1] = 0x80 | (((c >> 12) & 0x3F) as u8);
+            bytes[2] = 0x80 | (((c >> 6) & 0x3F) as u8);
+            bytes[3] = 0x80 | ((c & 0x3F) as u8);
+        }
+        Self { bytes }
+    }
+}
+
+impl From<&str> for EmbeddedStr {
+    fn from(s: &str) -> Self {
+        let bytes = s.as_bytes();
+        if bytes.len() <= 4 {
+            let mut result_bytes = [0u8; 4];
+            result_bytes[..bytes.len()].copy_from_slice(bytes);
+            Self {
+                bytes: result_bytes,
+            }
+        } else {
+            Self {
+                bytes: [b' ', 0, 0, 0],
+            }
+        }
+    }
+}
+
+impl AsRef<str> for EmbeddedStr {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 
 /// A buffer cell
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cell {
     /// The string to be drawn in the cell.
     ///
-    /// This accepts unicode grapheme clusters which might take up more than one cell.
-    ///
-    /// This is a [`CompactString`] which is a wrapper around [`String`] that uses a small inline
-    /// buffer for short strings.
-    ///
-    /// See <https://github.com/ratatui/ratatui/pull/601> for more information.
-    symbol: Option<CompactString>,
+    /// Stores a single Unicode codepoint inline as 4 bytes of UTF-8. Defaults to a space.
+    symbol: EmbeddedStr,
 
     /// The foreground color of the cell.
     pub fg: Color,
@@ -55,10 +153,18 @@ pub struct Cell {
     pub diff_option: CellDiffOption,
 }
 
+impl Default for Cell {
+    fn default() -> Self {
+        Self::EMPTY
+    }
+}
+
 impl Cell {
     /// An empty `Cell`
     pub const EMPTY: Self = Self {
-        symbol: None,
+        symbol: EmbeddedStr {
+            bytes: [b' ', 0, 0, 0],
+        },
         fg: Color::Reset,
         bg: Color::Reset,
         #[cfg(feature = "underline-color")]
@@ -68,24 +174,17 @@ impl Cell {
     };
 
     /// Creates a new `Cell` with the given symbol.
-    ///
-    /// This works at compile time and puts the symbol onto the stack. Fails to build when the
-    /// symbol doesn't fit onto the stack and requires to be placed on the heap. Use
-    /// `Self::default().set_symbol()` in that case. See [`CompactString::const_new`] for more
-    /// details on this.
-    pub const fn new(symbol: &'static str) -> Self {
+    pub fn new(symbol: &'static str) -> Self {
         Self {
-            symbol: Some(CompactString::const_new(symbol)),
+            symbol: symbol.into(),
             ..Self::EMPTY
         }
     }
 
     /// Gets the symbol of the cell.
-    ///
-    /// If the cell has no symbol, returns a single space character.
     #[must_use]
     pub fn symbol(&self) -> &str {
-        self.symbol.as_ref().map_or(" ", |s| s.as_str())
+        self.symbol.as_str()
     }
 
     /// Merges the symbol of the cell with the one already on the cell, using the provided
@@ -98,9 +197,6 @@ impl Cell {
     /// Merging may not be perfect due to Unicode limitations; some symbol combinations might not
     /// produce a valid character. [`MergeStrategy`] defines how to handle such cases, e.g.,
     /// `Exact` for valid merges only, or `Fuzzy` for close matches.
-    ///
-    /// If the cell has no symbol set, it will set the symbol to the provided one rather than
-    /// merging.
     ///
     /// # Example
     ///
@@ -126,32 +222,32 @@ impl Cell {
     /// [border collapsing]: https://ratatui.rs/recipes/layout/collapse-borders/
     /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
     pub fn merge_symbol(&mut self, symbol: &str, strategy: MergeStrategy) -> &mut Self {
-        let merged_symbol = self
-            .symbol
-            .as_ref()
-            .map_or(symbol, |s| strategy.merge(s, symbol));
-        self.symbol = Some(CompactString::new(merged_symbol));
+        let merged_symbol = if self.symbol.bytes[0] == b' ' {
+            symbol
+        } else {
+            strategy.merge(self.symbol.as_str(), symbol)
+        };
+        self.symbol = merged_symbol.into();
         self
     }
 
     /// Sets the symbol of the cell.
     pub fn set_symbol(&mut self, symbol: &str) -> &mut Self {
-        self.symbol = Some(CompactString::new(symbol));
+        self.symbol = symbol.into();
         self
     }
 
     /// Appends a symbol to the cell.
     ///
     /// This is particularly useful for adding zero-width characters to the cell.
-    pub(crate) fn append_symbol(&mut self, symbol: &str) -> &mut Self {
-        self.symbol.get_or_insert_default().push_str(symbol);
+    pub(crate) fn append_symbol(&mut self, _symbol: &str) -> &mut Self {
+        // todo: not supported for EmbeddedStr (4-byte inline storage)
         self
     }
 
     /// Sets the symbol of the cell to a single character.
     pub fn set_char(&mut self, ch: char) -> &mut Self {
-        let mut buf = [0; 4];
-        self.symbol = Some(CompactString::new(ch.encode_utf8(&mut buf)));
+        self.symbol = ch.into();
         self
     }
 
@@ -231,24 +327,18 @@ impl Cell {
 }
 
 impl PartialEq for Cell {
-    /// Compares two `Cell`s for equality.
-    ///
-    /// Note that cells with no symbol (i.e., `Cell::EMPTY`) are considered equal to cells with a
-    /// single space symbol. This is to ensure that empty cells are treated uniformly,
-    /// regardless of how they were created
     fn eq(&self, other: &Self) -> bool {
-        // Treat None and Some(" ") as equal
-        let symbols_eq = self.symbol() == other.symbol();
-
-        #[cfg(feature = "underline-color")]
-        let underline_color_eq = self.underline_color == other.underline_color;
-        #[cfg(not(feature = "underline-color"))]
-        let underline_color_eq = true;
-
-        symbols_eq
-            && underline_color_eq
+        self.symbol.bytes == other.symbol.bytes
             && self.fg == other.fg
             && self.bg == other.bg
+            && {
+                #[cfg(feature = "underline-color")]
+                {
+                    self.underline_color == other.underline_color
+                }
+                #[cfg(not(feature = "underline-color"))]
+                true
+            }
             && self.modifier == other.modifier
             && self.diff_option == other.diff_option
     }
@@ -257,12 +347,8 @@ impl PartialEq for Cell {
 impl Eq for Cell {}
 
 impl core::hash::Hash for Cell {
-    /// Hashes the cell.
-    ///
-    /// This treats symbols with Some(" ") as equal to None, so that empty cells are
-    /// treated uniformly, regardless of how they were created.
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-        self.symbol().hash(state);
+        self.symbol.bytes.hash(state);
         self.fg.hash(state);
         self.bg.hash(state);
         #[cfg(feature = "underline-color")]
@@ -280,6 +366,21 @@ impl From<char> for Cell {
     }
 }
 
+impl StrCellWidth for Cell {
+    /// Returns the display width of the cell's symbol.
+    ///
+    /// Always returns 1, as `EmbeddedStr` stores a single codepoint and this
+    /// targets fixed-width bitmap fonts where every glyph occupies one cell.
+    fn cell_width(&self) -> u16 {
+        1
+        // if self.symbol.bytes[1] == 0 {
+        //     1
+        // } else {
+        //     self.symbol.as_str().cell_width()
+        // }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -290,7 +391,7 @@ mod tests {
         assert_eq!(
             cell,
             Cell {
-                symbol: Some(CompactString::const_new("あ")),
+                symbol: "あ".into(),
                 fg: Color::Reset,
                 bg: Color::Reset,
                 #[cfg(feature = "underline-color")]
@@ -308,20 +409,24 @@ mod tests {
     }
 
     #[test]
-    fn set_symbol() {
+    fn set_symbol_multibyte() {
         let mut cell = Cell::EMPTY;
-        cell.set_symbol("あ"); // Multi-byte character
+        cell.set_symbol("あ"); // 3-byte character
         assert_eq!(cell.symbol(), "あ");
-        cell.set_symbol("👨‍👩‍👧‍👦"); // Multiple code units combined with ZWJ
-        assert_eq!(cell.symbol(), "👨‍👩‍👧‍👦");
     }
 
     #[test]
-    fn append_symbol() {
+    fn set_symbol_4byte() {
         let mut cell = Cell::EMPTY;
-        cell.set_symbol("あ"); // Multi-byte character
-        cell.append_symbol("\u{200B}"); // zero-width space
-        assert_eq!(cell.symbol(), "あ\u{200B}");
+        cell.set_char('🦀'); // 4-byte character
+        assert_eq!(cell.symbol(), "🦀");
+    }
+
+    #[test]
+    fn set_symbol_overflow_falls_back_to_space() {
+        let mut cell = Cell::EMPTY;
+        cell.set_symbol("👨‍👩‍👧‍👦"); // >4 bytes, falls back to space
+        assert_eq!(cell.symbol(), " ");
     }
 
     #[test]
@@ -408,5 +513,32 @@ mod tests {
         let cell1 = Cell::new("あ");
         let cell2 = Cell::new("い");
         assert_ne!(cell1, cell2);
+    }
+
+    #[test]
+    fn embedded_str_ascii() {
+        let e = EmbeddedStr::from('A');
+        assert_eq!(e.as_str(), "A");
+        assert_eq!(e.len(), 1);
+    }
+
+    #[test]
+    fn embedded_str_cjk() {
+        let e = EmbeddedStr::from('你');
+        assert_eq!(e.as_str(), "你");
+        assert_eq!(e.len(), 3);
+    }
+
+    #[test]
+    fn embedded_str_4byte() {
+        let e = EmbeddedStr::from('🦀');
+        assert_eq!(e.as_str(), "🦀");
+        assert_eq!(e.len(), 4);
+    }
+
+    #[test]
+    fn embedded_str_default_is_space() {
+        let e = EmbeddedStr::default();
+        assert_eq!(e.as_str(), " ");
     }
 }
