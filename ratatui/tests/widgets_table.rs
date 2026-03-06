@@ -840,3 +840,70 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
         "└────────────────────────────┘",
     ]);
 }
+
+#[test]
+fn widgets_table_select_next_should_not_exceed_row_count() {
+    let backend = TestBackend::new(30, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let mut state = TableState::default();
+    let rows = vec!["Row 0", "Row 1", "Row 2"];
+    state.select(Some(2)); // select last row
+
+    // Render once so the table knows there are 3 rows
+    terminal
+        .draw(|f| {
+            let table = Table::new(
+                rows.iter().map(|r| Row::new(vec![*r])),
+                [Constraint::Length(10)],
+            );
+            f.render_stateful_widget(table, f.area(), &mut state);
+        })
+        .unwrap();
+
+    // Now try to move past the last row — this should be clamped
+    state.select_next();
+
+    // Without the fix, selected() returns Some(3) which causes a panic when
+    // used to index into the rows list — a common pattern in user code:
+    //   let current_row = rows[state.selected().unwrap()];
+    let selected = state.selected().unwrap();
+    assert!(
+        selected < rows.len(),
+        "selected row index ({selected}) should be within bounds (len: {})",
+        rows.len(),
+    );
+}
+
+#[test]
+fn widgets_table_select_next_column_should_not_exceed_column_count() {
+    let backend = TestBackend::new(30, 3);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let mut state = TableState::default();
+    let columns = vec!["Col A", "Col B", "Col C"];
+    state.select(Some(0));
+    state.select_column(Some(2)); // select last column
+
+    // Render once so the table knows there are 3 columns
+    terminal
+        .draw(|f| {
+            let table = Table::new(
+                vec![Row::new(columns.clone())],
+                [Constraint::Length(6); 3],
+            );
+            f.render_stateful_widget(table, f.area(), &mut state);
+        })
+        .unwrap();
+
+    // Now try to move past the last column — this should be clamped
+    state.select_next_column();
+
+    // Without the fix, selected_column() returns Some(3) which causes a panic
+    // when used to index into a columns list:
+    //   let current_col = columns[state.selected_column().unwrap()];
+    let selected_col = state.selected_column().unwrap();
+    assert!(
+        selected_col < columns.len(),
+        "selected column index ({selected_col}) should be within bounds (len: {})",
+        columns.len(),
+    );
+}
