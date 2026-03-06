@@ -468,4 +468,103 @@ mod tests {
 
         assert_eq!(state.selected(), Some(3), "no clamping without item_count");
     }
+
+    #[test]
+    fn partial_eq_ignores_item_count() {
+        let state_a = ListState {
+            item_count: Some(10),
+            ..Default::default()
+        };
+        let state_b = ListState {
+            item_count: None,
+            ..Default::default()
+        };
+        assert_eq!(state_a, state_b, "item_count should not affect equality");
+
+        let mut state_c = ListState::default();
+        state_c.select(Some(1));
+        assert_ne!(state_a, state_c, "different selected should not be equal");
+    }
+
+    #[test]
+    fn hash_ignores_item_count() {
+        use core::hash::{Hash, Hasher};
+
+        let state_a = ListState {
+            item_count: Some(10),
+            ..Default::default()
+        };
+        let state_b = ListState {
+            item_count: None,
+            ..Default::default()
+        };
+
+        let hash = |state: &ListState| {
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            state.hash(&mut hasher);
+            hasher.finish()
+        };
+
+        assert_eq!(
+            hash(&state_a),
+            hash(&state_b),
+            "item_count should not affect hash"
+        );
+    }
+
+    #[test]
+    fn item_count_returns_cached_value() {
+        let state = ListState::default();
+        assert_eq!(state.item_count(), None);
+
+        let state = ListState {
+            item_count: Some(42),
+            ..Default::default()
+        };
+        assert_eq!(state.item_count(), Some(42));
+    }
+
+    #[test]
+    fn clamp_selected_with_zero_item_count_deselects() {
+        let mut state = ListState {
+            item_count: Some(0),
+            ..Default::default()
+        };
+        state.select(Some(5));
+
+        state.select_next();
+
+        assert_eq!(state.selected(), None, "empty list should deselect");
+    }
+
+    #[test]
+    fn clamp_selected_does_nothing_when_within_bounds() {
+        let mut state = ListState {
+            item_count: Some(5),
+            ..Default::default()
+        };
+        state.select(Some(2));
+
+        state.select_next();
+
+        assert_eq!(
+            state.selected(),
+            Some(3),
+            "should move normally when within bounds"
+        );
+    }
+
+    #[test]
+    fn clamp_selected_does_nothing_without_item_count() {
+        let mut state = ListState::default();
+        state.select(Some(100));
+
+        state.select_next();
+
+        assert_eq!(
+            state.selected(),
+            Some(101),
+            "should not clamp without item_count"
+        );
+    }
 }
