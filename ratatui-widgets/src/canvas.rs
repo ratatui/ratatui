@@ -29,6 +29,7 @@ use ratatui_core::symbols::{self, Marker};
 use ratatui_core::text::Line as TextLine;
 use ratatui_core::widgets::Widget;
 
+pub use self::area_line::AreaLine;
 pub use self::circle::Circle;
 pub use self::line::Line;
 pub use self::map::{Map, MapResolution};
@@ -38,6 +39,7 @@ use crate::block::{Block, BlockExt};
 #[cfg(not(feature = "std"))]
 use crate::polyfills::F64Polyfills;
 
+mod area_line;
 mod circle;
 mod line;
 mod map;
