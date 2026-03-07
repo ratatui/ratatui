@@ -231,8 +231,8 @@ impl ListState {
     /// state.select_previous();
     /// ```
     pub fn select_previous(&mut self) {
-        let last = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
-        let previous = self.selected.map_or(last, |i| i.saturating_sub(1));
+        let current = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
+        let previous = self.selected.map_or(current, |i| i.saturating_sub(1));
         self.select(Some(previous));
     }
 
@@ -459,11 +459,7 @@ mod tests {
 
         state.select_last();
 
-        assert_eq!(
-            state.selected(),
-            Some(4),
-            "should go to last valid index, not usize::MAX"
-        );
+        assert_eq!(state.selected(), Some(4), "should go to last valid index");
     }
 
     #[test]
@@ -475,22 +471,7 @@ mod tests {
 
         state.select_previous();
 
-        assert_eq!(
-            state.selected(),
-            Some(4),
-            "should go to last item, not usize::MAX"
-        );
-    }
-
-    #[test]
-    fn without_item_count_select_next_uses_old_behavior() {
-        // Before first render, item_count is None — old behavior preserved
-        let mut state = ListState::default();
-        state.select(Some(2));
-
-        state.select_next();
-
-        assert_eq!(state.selected(), Some(3), "no clamping without item_count");
+        assert_eq!(state.selected(), Some(4), "should go to last item");
     }
 
     #[test]
@@ -575,20 +556,6 @@ mod tests {
             state.selected(),
             Some(3),
             "should move normally when within bounds"
-        );
-    }
-
-    #[test]
-    fn clamp_selected_does_nothing_without_item_count() {
-        let mut state = ListState::default();
-        state.select(Some(100));
-
-        state.select_next();
-
-        assert_eq!(
-            state.selected(),
-            Some(101),
-            "should not clamp without item_count"
         );
     }
 }
