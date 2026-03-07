@@ -12,7 +12,7 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 use crate::block::{Block, BlockExt};
-use crate::canvas::{Canvas, Line as CanvasLine, Points};
+use crate::canvas::{AreaLine, Canvas, Line as CanvasLine, Points};
 
 /// An X or Y axis for the [`Chart`] widget
 ///
@@ -154,7 +154,7 @@ impl<'a> Axis<'a> {
 }
 
 /// Used to determine which style of graphing to use
-#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq)]
 pub enum GraphType {
     /// Draw each point. This is the default.
     #[default]
@@ -168,6 +168,13 @@ pub enum GraphType {
 
     /// Draw a bar chart. This will draw a bar for each point in the dataset.
     Bar,
+
+    /// Draw a line between each following point and fill the area under/above it.
+    ///
+    /// The value specifies the Y-coordinate up to which the area under the line will be filled.
+    /// If the line is above this value, the area between the line and this value is filled.
+    /// If the line is below this value, the area between the value and the line is filled.
+    AreaLine(f64),
 }
 
 /// Allow users to specify the position of a legend in a [`Chart`]
@@ -1039,6 +1046,18 @@ impl Widget for &Chart<'_> {
                                     y1: data[0].1,
                                     x2: data[1].0,
                                     y2: data[1].1,
+                                    color,
+                                });
+                            }
+                        }
+                        GraphType::AreaLine(y) => {
+                            for data in dataset.data.windows(2) {
+                                ctx.draw(&AreaLine {
+                                    x1: data[0].0,
+                                    y1: data[0].1,
+                                    x2: data[1].0,
+                                    y2: data[1].1,
+                                    fill_to_y: y,
                                     color,
                                 });
                             }
