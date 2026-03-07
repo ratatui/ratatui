@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 use core::mem;
 
 use ratatui_core::layout::Alignment;
+use ratatui_core::style::Style;
 use ratatui_core::text::StyledGrapheme;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -24,6 +25,8 @@ pub struct WrappedLine<'lend, 'text> {
     pub width: u16,
     /// Whether the line was aligned left or right
     pub alignment: Alignment,
+    /// The style of the source line (for filling remaining cells)
+    pub style: Style,
 }
 
 /// A state machine that wraps lines on word boundaries.
@@ -31,7 +34,7 @@ pub struct WrappedLine<'lend, 'text> {
 pub struct WordWrapper<'a, O, I>
 where
     // Outer iterator providing the individual lines
-    O: Iterator<Item = (I, Alignment)>,
+    O: Iterator<Item = (I, Alignment, Style)>,
     // Inner iterator providing the styled symbols of a line Each line consists of an alignment and
     // a series of symbols
     I: Iterator<Item = StyledGrapheme<'a>>,
@@ -41,6 +44,7 @@ where
     max_line_width: u16,
     wrapped_lines: VecDeque<Vec<StyledGrapheme<'a>>>,
     current_alignment: Alignment,
+    current_style: Style,
     current_line: Vec<StyledGrapheme<'a>>,
     /// Removes the leading whitespace from lines
     trim: bool,
@@ -53,7 +57,7 @@ where
 
 impl<'a, O, I> WordWrapper<'a, O, I>
 where
-    O: Iterator<Item = (I, Alignment)>,
+    O: Iterator<Item = (I, Alignment, Style)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
     /// Create a new `WordWrapper` with the given lines and maximum line width.
@@ -63,6 +67,7 @@ where
             max_line_width,
             wrapped_lines: VecDeque::new(),
             current_alignment: Alignment::Left,
+            current_style: Style::new(),
             current_line: vec![],
             trim,
 
@@ -201,7 +206,7 @@ where
 
 impl<'a, O, I> LineComposer<'a> for WordWrapper<'a, O, I>
 where
-    O: Iterator<Item = (I, Alignment)>,
+    O: Iterator<Item = (I, Alignment, Style)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
@@ -222,12 +227,14 @@ where
                     graphemes: &self.current_line,
                     width: line_width,
                     alignment: self.current_alignment,
+                    style: self.current_style,
                 });
             }
 
             // otherwise, process pending wrapped lines from input
-            let (line_symbols, line_alignment) = self.input_lines.next()?;
+            let (line_symbols, line_alignment, line_style) = self.input_lines.next()?;
             self.current_alignment = line_alignment;
+            self.current_style = line_style;
             self.process_input(line_symbols);
         }
     }
@@ -238,7 +245,7 @@ where
 pub struct LineTruncator<'a, O, I>
 where
     // Outer iterator providing the individual lines
-    O: Iterator<Item = (I, Alignment)>,
+    O: Iterator<Item = (I, Alignment, Style)>,
     // Inner iterator providing the styled symbols of a line Each line consists of an alignment and
     // a series of symbols
     I: Iterator<Item = StyledGrapheme<'a>>,
@@ -247,13 +254,14 @@ where
     input_lines: O,
     max_line_width: u16,
     current_line: Vec<StyledGrapheme<'a>>,
+    current_style: Style,
     /// Record the offset to skip render
     horizontal_offset: u16,
 }
 
 impl<'a, O, I> LineTruncator<'a, O, I>
 where
-    O: Iterator<Item = (I, Alignment)>,
+    O: Iterator<Item = (I, Alignment, Style)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
     /// Create a new `LineTruncator` with the given lines and maximum line width.
@@ -263,6 +271,7 @@ where
             max_line_width,
             horizontal_offset: 0,
             current_line: vec![],
+            current_style: Style::new(),
         }
     }
 
@@ -274,7 +283,7 @@ where
 
 impl<'a, O, I> LineComposer<'a> for LineTruncator<'a, O, I>
 where
-    O: Iterator<Item = (I, Alignment)>,
+    O: Iterator<Item = (I, Alignment, Style)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
@@ -288,9 +297,10 @@ where
         let mut lines_exhausted = true;
         let mut horizontal_offset = self.horizontal_offset as usize;
         let mut current_alignment = Alignment::Left;
-        if let Some((current_line, alignment)) = &mut self.input_lines.next() {
+        if let Some((current_line, alignment, style)) = &mut self.input_lines.next() {
             lines_exhausted = false;
             current_alignment = *alignment;
+            self.current_style = *style;
 
             for StyledGrapheme { symbol, style } in current_line {
                 // Ignore characters wider that the total max width.
@@ -328,6 +338,7 @@ where
                 graphemes: &self.current_line,
                 width: current_line_width,
                 alignment: current_alignment,
+                style: self.current_style,
             })
         }
     }
@@ -377,6 +388,7 @@ mod tests {
                 line.iter()
                     .flat_map(|span| span.styled_graphemes(Style::default())),
                 line.alignment.unwrap_or(Alignment::Left),
+                Style::default(),
             )
         });
 
@@ -393,6 +405,7 @@ mod tests {
             graphemes,
             width,
             alignment,
+            ..
         }) = composer.next_line()
         {
             let line = graphemes
