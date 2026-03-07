@@ -397,6 +397,30 @@ mod tests {
     }
 
     #[test]
+    fn state_navigation_when_select_is_none() {
+        // This test is a bit redundant, but documents default behavior
+        let mut state = ListState::default();
+        state.select_next();
+        assert_eq!(state.selected, Some(0));
+
+        let mut state = ListState::default();
+        state.select_previous();
+        assert_eq!(state.selected, Some(usize::MAX));
+
+        let mut state = ListState::default();
+        state.select_last();
+        assert_eq!(state.selected, Some(usize::MAX));
+
+        let mut state = ListState::default();
+        state.scroll_down_by(3);
+        assert_eq!(state.selected, Some(3));
+
+        let mut state = ListState::default();
+        state.scroll_up_by(3);
+        assert_eq!(state.selected, Some(0));
+    }
+
+    #[test]
     fn select_next_should_not_exceed_item_count() {
         let mut state = ListState {
             item_count: Some(3),
