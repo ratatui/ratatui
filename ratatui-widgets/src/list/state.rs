@@ -40,11 +40,28 @@
 /// ```
 ///
 /// [`List`]: super::List
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListState {
     pub(crate) offset: usize,
     pub(crate) selected: Option<usize>,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub(crate) item_count: Option<usize>,
+}
+
+impl PartialEq for ListState {
+    fn eq(&self, other: &Self) -> bool {
+        self.offset == other.offset && self.selected == other.selected
+    }
+}
+
+impl Eq for ListState {}
+
+impl core::hash::Hash for ListState {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.offset.hash(state);
+        self.selected.hash(state);
+    }
 }
 
 impl ListState {
@@ -142,6 +159,13 @@ impl ListState {
         &mut self.selected
     }
 
+    /// Returns the number of items in the list, if known.
+    ///
+    /// This value is set during rendering. Returns `None` if the list hasn't been rendered yet.
+    pub const fn item_count(&self) -> Option<usize> {
+        self.item_count
+    }
+
     /// Sets the index of the selected item
     ///
     /// Set to `None` if no item is selected. This will also reset the offset to `0`.
@@ -161,6 +185,19 @@ impl ListState {
         }
     }
 
+    /// Clamps the `selected` index to valid bounds if `item_count` is known.
+    const fn clamp_selected(&mut self) {
+        if let (Some(selected), Some(count)) = (self.selected, self.item_count) {
+            if count == 0 {
+                self.selected = None;
+            } else if selected >= count {
+                self.selected = Some(count - 1);
+            } else {
+                // selected is already within bounds, nothing to do
+            }
+        }
+    }
+
     /// Selects the next item or the first one if no item is selected
     ///
     /// Note: until the list is rendered, the number of items is not known, so the index is set to
@@ -177,6 +214,7 @@ impl ListState {
     pub fn select_next(&mut self) {
         let next = self.selected.map_or(0, |i| i.saturating_add(1));
         self.select(Some(next));
+        self.clamp_selected();
     }
 
     /// Selects the previous item or the last one if no item is selected
@@ -193,7 +231,8 @@ impl ListState {
     /// state.select_previous();
     /// ```
     pub fn select_previous(&mut self) {
-        let previous = self.selected.map_or(usize::MAX, |i| i.saturating_sub(1));
+        let current = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
+        let previous = self.selected.map_or(current, |i| i.saturating_sub(1));
         self.select(Some(previous));
     }
 
@@ -227,8 +266,9 @@ impl ListState {
     /// let mut state = ListState::default();
     /// state.select_last();
     /// ```
-    pub const fn select_last(&mut self) {
-        self.select(Some(usize::MAX));
+    pub fn select_last(&mut self) {
+        let last = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
+        self.select(Some(last));
     }
 
     /// Scrolls down by a specified `amount` in the list.
@@ -248,6 +288,7 @@ impl ListState {
     pub fn scroll_down_by(&mut self, amount: u16) {
         let selected = self.selected.unwrap_or_default();
         self.select(Some(selected.saturating_add(amount as usize)));
+        self.clamp_selected();
     }
 
     /// Scrolls up by a specified `amount` in the list.
@@ -353,5 +394,168 @@ mod tests {
 
         state.scroll_up_by(4);
         assert_eq!(state.selected, Some(0));
+    }
+
+    #[test]
+    fn state_navigation_when_select_is_none() {
+        // This test is a bit redundant, but documents default behavior
+        let mut state = ListState::default();
+        state.select_next();
+        assert_eq!(state.selected, Some(0));
+
+        let mut state = ListState::default();
+        state.select_previous();
+        assert_eq!(state.selected, Some(usize::MAX));
+
+        let mut state = ListState::default();
+        state.select_last();
+        assert_eq!(state.selected, Some(usize::MAX));
+
+        let mut state = ListState::default();
+        state.scroll_down_by(3);
+        assert_eq!(state.selected, Some(3));
+
+        let mut state = ListState::default();
+        state.scroll_up_by(3);
+        assert_eq!(state.selected, Some(0));
+    }
+
+    #[test]
+    fn select_next_should_not_exceed_item_count() {
+        let mut state = ListState {
+            item_count: Some(3),
+            ..Default::default()
+        };
+        state.select(Some(2));
+
+        state.select_next();
+
+        assert_eq!(state.selected(), Some(2), "should stay at last item");
+    }
+
+    #[test]
+    fn scroll_down_by_should_not_exceed_item_count() {
+        let mut state = ListState {
+            item_count: Some(5),
+            ..Default::default()
+        };
+        state.select(Some(3));
+
+        state.scroll_down_by(100);
+
+        assert_eq!(
+            state.selected(),
+            Some(4),
+            "should clamp to last valid index"
+        );
+    }
+
+    #[test]
+    fn select_last_should_use_item_count() {
+        let mut state = ListState {
+            item_count: Some(5),
+            ..Default::default()
+        };
+
+        state.select_last();
+
+        assert_eq!(state.selected(), Some(4), "should go to last valid index");
+    }
+
+    #[test]
+    fn select_previous_from_none_should_use_item_count() {
+        let mut state = ListState {
+            item_count: Some(5),
+            ..Default::default()
+        };
+
+        state.select_previous();
+
+        assert_eq!(state.selected(), Some(4), "should go to last item");
+    }
+
+    #[test]
+    fn partial_eq_ignores_item_count() {
+        let state_a = ListState {
+            item_count: Some(10),
+            ..Default::default()
+        };
+        let state_b = ListState {
+            item_count: None,
+            ..Default::default()
+        };
+        assert_eq!(state_a, state_b, "item_count should not affect equality");
+
+        let mut state_c = ListState::default();
+        state_c.select(Some(1));
+        assert_ne!(state_a, state_c, "different selected should not be equal");
+    }
+
+    #[test]
+    fn hash_ignores_item_count() {
+        use core::hash::{Hash, Hasher};
+
+        let state_a = ListState {
+            item_count: Some(10),
+            ..Default::default()
+        };
+        let state_b = ListState {
+            item_count: None,
+            ..Default::default()
+        };
+
+        let hash = |state: &ListState| {
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            state.hash(&mut hasher);
+            hasher.finish()
+        };
+
+        assert_eq!(
+            hash(&state_a),
+            hash(&state_b),
+            "item_count should not affect hash"
+        );
+    }
+
+    #[test]
+    fn item_count_returns_cached_value() {
+        let state = ListState::default();
+        assert_eq!(state.item_count(), None);
+
+        let state = ListState {
+            item_count: Some(42),
+            ..Default::default()
+        };
+        assert_eq!(state.item_count(), Some(42));
+    }
+
+    #[test]
+    fn clamp_selected_with_zero_item_count_deselects() {
+        let mut state = ListState {
+            item_count: Some(0),
+            ..Default::default()
+        };
+        state.select(Some(5));
+
+        state.select_next();
+
+        assert_eq!(state.selected(), None, "empty list should deselect");
+    }
+
+    #[test]
+    fn clamp_selected_does_nothing_when_within_bounds() {
+        let mut state = ListState {
+            item_count: Some(5),
+            ..Default::default()
+        };
+        state.select(Some(2));
+
+        state.select_next();
+
+        assert_eq!(
+            state.selected(),
+            Some(3),
+            "should move normally when within bounds"
+        );
     }
 }
