@@ -3,7 +3,8 @@ use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape};
 
-/// A line from `(x1, y1)` to `(x2, y2)` with the given color and with area filled up to `fill_to_y`.
+/// A line from `(x1, y1)` to `(x2, y2)` with the given color and with area filled up to
+/// `fill_to_y`.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct AreaLine {
     /// `x` of the starting point
