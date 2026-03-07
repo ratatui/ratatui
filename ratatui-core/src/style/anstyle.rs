@@ -113,8 +113,8 @@ impl From<Color> for anstyle::Color {
     ///
     /// # Panics
     ///
-    /// This method will panic if the input is `Color::Reset`, as there is no
-    /// equivalent representation for a reset color in the `anstyle` crate.
+    /// This method will panic if the input is [`Color::Reset`], as there is no
+    /// equivalent representation for a reset color in `anstyle`.
     fn from(color: Color) -> Self {
         match color {
             Color::Reset => panic!("Color::Reset has no equivalent in anstyle"),
