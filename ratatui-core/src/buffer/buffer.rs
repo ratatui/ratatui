@@ -470,9 +470,7 @@ impl Buffer {
     ///
     /// Panics if the two buffers have different `x`, `y`, or `width` values.
     pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
-        self.diff_iter(other)
-            .expect("buffers must have the same x, y, and width")
-            .collect()
+        self.diff_iter(other).collect()
     }
 
     /// Builds a minimal sequence of coordinates and Cells necessary to update the UI from
@@ -503,10 +501,10 @@ impl Buffer {
     /// Next:    `aコ`
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
-    pub fn diff_iter<'prev, 'next>(
-        &'prev self,
-        other: &'next Self,
-    ) -> Result<BufferDiff<'prev, 'next>, super::BufferDiffError> {
+    /// # Panics
+    ///
+    /// Panics if the two buffers have different `x`, `y`, or `width` values.
+    pub fn diff_iter<'prev, 'next>(&'prev self, other: &'next Self) -> BufferDiff<'prev, 'next> {
         BufferDiff::new(self, other)
     }
 }
@@ -1034,7 +1032,7 @@ mod tests {
         let area = Rect::new(0, 0, 40, 40);
         let prev = Buffer::empty(area);
         let next = Buffer::filled(area, Cell::new("a"));
-        let diff = prev.diff_iter(&next).unwrap();
+        let diff = prev.diff_iter(&next);
         assert_eq!(diff.count(), 40 * 40);
     }
 

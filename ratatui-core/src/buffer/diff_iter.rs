@@ -1,5 +1,3 @@
-use core::fmt;
-
 use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::{Buffer, Cell, CellDiffOption};
@@ -34,29 +32,31 @@ struct TrailingState {
 impl<'prev, 'next> BufferDiff<'prev, 'next> {
     /// Creates a new iterator over the differences between `prev` and `next` terminal cells.
     ///
-    /// Returns an error if the buffers have different `x`, `y`, or `width` values.
     /// Heights may differ; the iterator uses the minimum of the two.
-    pub(crate) fn new(prev: &'prev Buffer, next: &'next Buffer) -> Result<Self, BufferDiffError> {
-        if prev.area.x != next.area.x
-            || prev.area.y != next.area.y
-            || prev.area.width != next.area.width
-        {
-            return Err(BufferDiffError {
-                prev: prev.area,
-                next: next.area,
-            });
-        }
+    ///
+    /// # Panics
+    ///
+    /// Panics if the buffers have different `x`, `y`, or `width` values.
+    pub(crate) fn new(prev: &'prev Buffer, next: &'next Buffer) -> Self {
+        assert!(
+            prev.area.x == next.area.x
+                && prev.area.y == next.area.y
+                && prev.area.width == next.area.width,
+            "buffer areas must have the same x, y, and width: prev={:?}, next={:?}",
+            prev.area,
+            next.area,
+        );
 
         let mut area = prev.area;
         area.height = area.height.min(next.area.height);
 
-        Ok(Self {
+        Self {
             next: &next.content,
             prev: &prev.content,
             area,
             pos: 0,
             trailing: None,
-        })
+        }
     }
 
     /// Converts a flat index to (x, y) coordinates.
@@ -161,25 +161,6 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
     }
 }
 
-/// Error returned when two buffers have incompatible areas for diffing.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BufferDiffError {
-    prev: Rect,
-    next: Rect,
-}
-
-impl fmt::Display for BufferDiffError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "buffer areas must have the same x, y, and width: prev={:?}, next={:?}",
-            self.prev, self.next,
-        )
-    }
-}
-
-impl core::error::Error for BufferDiffError {}
-
 #[cfg(test)]
 mod tests {
     use alloc::vec::Vec;
@@ -189,29 +170,26 @@ mod tests {
     use crate::buffer::Buffer;
     use crate::layout::Rect;
 
-    /// Helper: collect diff iterator results into a Vec for comparison with `Buffer::diff`.
-    fn collect_diff<'a>(prev: &'a Buffer, next: &'a Buffer) -> Vec<(u16, u16, &'a Cell)> {
-        BufferDiff::new(prev, next).unwrap().collect()
-    }
-
     #[test]
     fn empty_buffers_yield_no_diffs() {
         let rect = Rect::new(0, 0, 5, 1);
         let buf = Buffer::empty(rect);
-        assert!(collect_diff(&buf, &buf).is_empty());
+        let diff: Vec<_> = BufferDiff::new(&buf, &buf).collect();
+        assert!(diff.is_empty());
     }
 
     #[test]
     fn identical_buffers_yield_no_diffs() {
         let buf = Buffer::with_lines(["hello"]);
-        assert!(collect_diff(&buf, &buf).is_empty());
+        let diff: Vec<_> = BufferDiff::new(&buf, &buf).collect();
+        assert!(diff.is_empty());
     }
 
     #[test]
     fn single_cell_change() {
         let prev = Buffer::with_lines(["hello"]);
         let next = Buffer::with_lines(["hallo"]);
-        let diff: Vec<_> = collect_diff(&prev, &next);
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
         assert_eq!(diff.len(), 1);
         assert_eq!(diff[0].0, 1); // x
         assert_eq!(diff[0].1, 0); // y
@@ -222,7 +200,7 @@ mod tests {
     fn all_cells_changed() {
         let prev = Buffer::with_lines(["aaa"]);
         let next = Buffer::with_lines(["bbb"]);
-        let diff: Vec<_> = collect_diff(&prev, &next);
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
         assert_eq!(diff.len(), 3);
     }
 
@@ -232,7 +210,7 @@ mod tests {
         let mut next = Buffer::with_lines(["xyz"]);
         next.content[1].diff_option = CellDiffOption::Skip;
 
-        let diff: Vec<_> = collect_diff(&prev, &next);
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
         assert_eq!(diff.len(), 2);
         assert_eq!(diff[0].2.symbol(), "x");
         assert_eq!(diff[1].2.symbol(), "z");
@@ -244,7 +222,7 @@ mod tests {
         let mut next = Buffer::with_lines(["xbcd"]);
         next.content[0].diff_option = CellDiffOption::ForcedWidth(NonZeroUsize::new(2).unwrap());
 
-        let diff: Vec<_> = collect_diff(&prev, &next);
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
         assert_eq!(diff.len(), 1);
         assert_eq!(diff[0].2.symbol(), "x");
     }
@@ -264,31 +242,17 @@ mod tests {
 
         // Only the main emoji cell (0,0) differs (different style);
         // the trailing cell (1,0) is identical in both buffers.
-        let diff: Vec<_> = collect_diff(&prev, &next);
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
         assert_eq!(diff.len(), 1);
         assert_eq!(diff[0].0, 0);
         assert_eq!(diff[0].1, 0);
     }
 
     #[test]
-    fn mismatched_widths_returns_error() {
-        use alloc::string::ToString;
-
+    #[should_panic(expected = "buffer areas must have the same x, y, and width")]
+    fn mismatched_widths_panics() {
         let prev = Buffer::empty(Rect::new(0, 0, 5, 1));
         let next = Buffer::empty(Rect::new(0, 0, 10, 1));
-        let err = BufferDiff::new(&prev, &next).unwrap_err();
-        assert_eq!(
-            err,
-            BufferDiffError {
-                prev: Rect::new(0, 0, 5, 1),
-                next: Rect::new(0, 0, 10, 1),
-            }
-        );
-        assert_eq!(
-            err.to_string(),
-            "buffer areas must have the same x, y, and width: \
-             prev=Rect { x: 0, y: 0, width: 5, height: 1 }, \
-             next=Rect { x: 0, y: 0, width: 10, height: 1 }",
-        );
+        BufferDiff::new(&prev, &next);
     }
 }

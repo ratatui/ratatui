@@ -79,7 +79,6 @@ impl<B: Backend> Terminal<B> {
 
         let updates = previous_buffer
             .diff_iter(current_buffer)
-            .expect("terminal buffers have matching areas")
             .inspect(|(col, row, _)| {
                 last_pos = Some(Position { x: *col, y: *row });
             });
