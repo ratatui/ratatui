@@ -14,7 +14,7 @@
 /// [`selected`]: ListState::selected()
 /// [`item_count`]: ListState::item_count()
 ///
-/// See the list in the [Examples] directory for a more in depth example of the various
+/// See the list in the [Examples] directory for a more in-depth example of the various
 /// configuration options and for how to handle state.
 ///
 /// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
@@ -84,9 +84,9 @@ impl core::hash::Hash for ListState {
 }
 
 impl ListState {
-    /// Sets the index of the first item to be displayed
+    /// Sets the index of the first item to be displayed.
     ///
-    /// Fluent setter method which must be chained or used as it consumes self
+    /// Fluent setter method which must be chained or used as it consumes self.
     ///
     /// # Examples
     ///
@@ -101,9 +101,9 @@ impl ListState {
         self
     }
 
-    /// Sets the index of the selected item
+    /// Sets the index of the selected item.
     ///
-    /// Fluent setter method which must be chained or used as it consumes self
+    /// Fluent setter method which must be chained or used as it consumes self.
     ///
     /// # Examples
     ///
@@ -118,9 +118,9 @@ impl ListState {
         self
     }
 
-    /// Sets the number of items in the list
+    /// Sets the number of items in the list.
     ///
-    /// Fluent setter method which must be chained or used as it consumes self
+    /// Fluent setter method which must be chained or used as it consumes self.
     ///
     /// # Examples
     ///
@@ -135,7 +135,7 @@ impl ListState {
         self
     }
 
-    /// Index of the first item to be displayed
+    /// Index of the first item to be displayed.
     ///
     /// # Examples
     ///
@@ -149,7 +149,7 @@ impl ListState {
         self.offset
     }
 
-    /// Mutable reference to the index of the first item to be displayed
+    /// Mutable reference to the index of the first item to be displayed.
     ///
     /// # Examples
     ///
@@ -163,9 +163,9 @@ impl ListState {
         &mut self.offset
     }
 
-    /// Index of the selected item
+    /// Index of the selected item.
     ///
-    /// Returns `None` if no item is selected
+    /// Returns `None` if no item is selected.
     ///
     /// # Examples
     ///
@@ -179,9 +179,9 @@ impl ListState {
         self.selected
     }
 
-    /// Mutable reference to the index of the selected item
+    /// Mutable reference to the index of the selected item.
     ///
-    /// Returns `None` if no item is selected
+    /// Returns `None` if no item is selected.
     ///
     /// Note: this bypasses clamping. The `selected` value will be clamped on the next render
     /// or navigation method call.
@@ -198,7 +198,7 @@ impl ListState {
         &mut self.selected
     }
 
-    /// Returns the number of items in the list, if known
+    /// Returns the number of items in the list, if known.
     ///
     /// This value is set during rendering or by calling [`set_item_count`](Self::set_item_count).
     /// Returns `None` if the list hasn't been rendered yet.
@@ -206,7 +206,7 @@ impl ListState {
         self.item_count
     }
 
-    /// Sets the number of items in the list
+    /// Sets the number of items in the list.
     ///
     /// This value is updated during rendering.
     /// You can update it manually to enable clamping before the first render,
@@ -236,7 +236,7 @@ impl ListState {
         !self.clamp_selected()
     }
 
-    /// Sets the index of the selected item
+    /// Sets the index of the selected item.
     ///
     /// Set to `None` if no item is selected. This will also reset the offset to `0`.
     ///
@@ -274,6 +274,7 @@ impl ListState {
     }
 
     /// Clamps the `selected` index to valid bounds if `item_count` is known.
+    ///
     /// Returns `true` if the `selected` index was clamped.
     const fn clamp_selected(&mut self) -> bool {
         if let (Some(selected), Some(count)) = (self.selected, self.item_count) {
@@ -289,7 +290,7 @@ impl ListState {
         false
     }
 
-    /// Selects the next item or the first one if no item is selected
+    /// Selects the next item or the first one if no item is selected.
     ///
     /// Returns `true` if the `selected` index was successfully moved, `false` if it was clamped.
     ///
@@ -322,7 +323,7 @@ impl ListState {
         self.select(Some(next))
     }
 
-    /// Selects the previous item or the last one if no item is selected
+    /// Selects the previous item or the last one if no item is selected.
     ///
     /// Returns `true` if the `selected` index was successfully moved, `false` if it was clamped.
     ///
@@ -356,7 +357,7 @@ impl ListState {
         self.select(Some(previous))
     }
 
-    /// Selects the first item
+    /// Selects the first item.
     ///
     /// Sets the `selected` index to `0`, unless the `item_count` is zero, then `selected` is set
     /// to `None`.
@@ -379,7 +380,7 @@ impl ListState {
         self.select(Some(0));
     }
 
-    /// Selects the last item
+    /// Selects the last item.
     ///
     /// Note: until the list is rendered, the number of items is not known, so the `selected` index
     /// is set to `usize::MAX`. After the item count is known, the `selected` index will be clamped
@@ -405,7 +406,7 @@ impl ListState {
         self.select(Some(last));
     }
 
-    /// Scrolls down by a specified `amount` in the list
+    /// Scrolls down by a specified `amount` in the list.
     ///
     /// This method updates `selected` by moving it down by the given `amount`.
     /// If the `item_count` is known and the `amount` causes `selected` to exceed it,
@@ -440,7 +441,7 @@ impl ListState {
         }
     }
 
-    /// Scrolls up by a specified `amount` in the list
+    /// Scrolls up by a specified `amount` in the list.
     ///
     /// This method updates `selected` by moving it up by the given `amount`.
     /// If the `amount` causes `selected` to go below zero, the first item in the list
