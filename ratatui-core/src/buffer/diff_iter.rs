@@ -84,7 +84,13 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                 let j = *next_index;
                 *next_index += 1;
 
-                if self.prev[j] != self.next[j] {
+                // Only emit update if the symbol has changed.
+                // The style of hidden trailing cells is not visible, so style
+                // differences alone should not trigger updates that can cause
+                // cursor positioning issues on some terminals.
+                if self.next[j].diff_option != CellDiffOption::Skip
+                    && self.prev[j].symbol() != self.next[j].symbol()
+                {
                     let (tx, ty) = self.pos_of(j);
                     return Some((tx, ty, &self.next[j]));
                 }
