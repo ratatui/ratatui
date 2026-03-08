@@ -44,18 +44,26 @@
 /// ```rust
 /// use ratatui::widgets::ListState;
 ///
+/// fn select_next_or_wrap(state: &mut ListState) {
+///     if !state.select_next() {
+///         state.select_first();
+///     }
+/// }
+///
+/// fn select_previous_or_wrap(state: &mut ListState) {
+///     if !state.select_previous() {
+///         state.select_last();
+///     }
+/// }
+///
 /// let mut state = ListState::default().with_item_count(Some(5));
 ///
 /// state.select_first();
-/// if !state.select_previous() {
-///     state.select_last();
-/// }
-/// assert_eq!(state.selected(), Some(4)); // list wrapped (0-index)
+/// select_previous_or_wrap(&mut state);
+/// assert_eq!(state.selected(), Some(4)); // wrapped to last
 ///
-/// if !state.select_next() {
-///     state.select_first();
-/// }
-/// assert_eq!(state.selected(), Some(0)); // list wrapped (0-index)
+/// select_next_or_wrap(&mut state);
+/// assert_eq!(state.selected(), Some(0)); // wrapped to first
 /// ```
 ///
 /// [`List`]: super::List
