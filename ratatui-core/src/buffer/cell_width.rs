@@ -16,12 +16,17 @@ pub trait CellWidth {
 }
 
 impl CellWidth for str {
+    /// Returns the display width in terminal cells.
+    ///
+    /// ## Note
+    ///
+    /// Control characters are filtered out by `Span::styled_graphemes()` and
+    /// `Buffer::set_stringn()` before reaching this point. `Cell::set_symbol()`
+    /// and `set_char()` do not filter, but those are low-level APIs where the
+    /// caller is responsible for providing valid content. Single-byte control
+    /// characters that slip through will be reported as width 1.
     fn cell_width(&self) -> u16 {
         if self.len() == 1 {
-            // Control characters are filtered out by `Span::styled_graphemes()` and
-            // `Buffer::set_stringn()` before reaching this point. `Cell::set_symbol()`
-            // and `set_char()` do not filter, but those are low-level APIs where the
-            // caller is responsible for providing valid content.
             debug_assert!(
                 !self.as_bytes()[0].is_ascii_control(),
                 "control character passed to cell_width without filtering"
