@@ -10,8 +10,6 @@ use unicode_width::UnicodeWidthStr;
 /// - **[`Cell`](super::Cell)**: returns the
 ///   [`CellDiffOption::ForcedWidth`](super::CellDiffOption::ForcedWidth) when set, otherwise falls
 ///   back to the width of the cell's symbol.
-// Public because ratatui-widgets needs access, but not part of the user-facing API.
-#[doc(hidden)]
 pub trait CellWidth {
     /// Returns the display width in terminal cells.
     fn cell_width(&self) -> u16;
