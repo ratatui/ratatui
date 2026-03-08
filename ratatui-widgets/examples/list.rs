@@ -30,8 +30,12 @@ fn main() -> color_eyre::Result<()> {
             terminal.draw(|frame| render(frame, &mut list_state))?;
             if let Some(key) = event::read()?.as_key_press_event() {
                 match key.code {
-                    KeyCode::Char('j') | KeyCode::Down => list_state.select_next(),
-                    KeyCode::Char('k') | KeyCode::Up => list_state.select_previous(),
+                    KeyCode::Char('j') | KeyCode::Down => {
+                        list_state.select_next();
+                    }
+                    KeyCode::Char('k') | KeyCode::Up => {
+                        list_state.select_previous();
+                    }
                     KeyCode::Char('q') | KeyCode::Esc => break Ok(()),
                     _ => {}
                 }

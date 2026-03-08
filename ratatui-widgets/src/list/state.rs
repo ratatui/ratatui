@@ -40,6 +40,23 @@
 /// frame.render_stateful_widget(list, area, &mut state);
 /// # }
 /// ```
+/// ## Simple List Wrap Implementation
+/// ```rust
+/// use ratatui::widgets::ListState;
+///
+/// let mut state = ListState::default().with_item_count(Some(5));
+///
+/// state.select_first();
+/// if !state.select_previous() {
+///     state.select_last();
+/// }
+/// assert_eq!(state.selected(), Some(4)); // list wrapped (0-index)
+///
+/// if !state.select_next() {
+///     state.select_first();
+/// }
+/// assert_eq!(state.selected(), Some(0)); // list wrapped (0-index)
+/// ```
 ///
 /// [`List`]: super::List
 #[derive(Debug, Default, Clone, Copy)]
@@ -197,6 +214,8 @@ impl ListState {
     ///
     /// Note: This will immediately clamp the `selected` to be less than `item_count`.
     ///
+    /// Returns `true` if `selected` is within bounds, `false` if it was clamped.
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -204,10 +223,17 @@ impl ListState {
     ///
     /// let mut state = ListState::default();
     /// state.set_item_count(Some(5));
+    ///
+    /// // Clamping
+    /// let mut state = ListState::default();
+    /// state.select(Some(4));
+    /// let in_bounds = state.set_item_count(Some(2));
+    /// assert!(!in_bounds); // selected was clamped
+    /// assert_eq!(state.selected(), Some(1)); // (0-indexed)
     /// ```
-    pub const fn set_item_count(&mut self, count: Option<usize>) {
+    pub const fn set_item_count(&mut self, count: Option<usize>) -> bool {
         self.item_count = count;
-        self.clamp_selected();
+        !self.clamp_selected()
     }
 
     /// Sets the index of the selected item
@@ -219,6 +245,8 @@ impl ListState {
     /// indices past the last item are clamped to the last item.
     ///
     /// If the `item_count` is zero, any `selected` index results in `None`.
+    ///
+    /// Returns `true` if `selected` is within bounds, `false` if it was clamped.
     ///
     /// # Examples
     ///
@@ -237,28 +265,33 @@ impl ListState {
     /// state.set_item_count(Some(0)); // `selected` updated
     /// assert_eq!(state.selected(), None);
     /// ```
-    pub const fn select(&mut self, index: Option<usize>) {
+    pub const fn select(&mut self, index: Option<usize>) -> bool {
         self.selected = index;
         if index.is_none() {
             self.offset = 0;
         }
-        self.clamp_selected();
+        !self.clamp_selected()
     }
 
     /// Clamps the `selected` index to valid bounds if `item_count` is known.
-    const fn clamp_selected(&mut self) {
+    /// Returns `true` if the `selected` index was clamped.
+    const fn clamp_selected(&mut self) -> bool {
         if let (Some(selected), Some(count)) = (self.selected, self.item_count) {
             if count == 0 {
                 self.selected = None;
-            } else if selected >= count {
+                return true;
+            }
+            if selected >= count {
                 self.selected = Some(count - 1);
-            } else {
-                // selected is already within bounds, nothing to do
+                return true;
             }
         }
+        false
     }
 
     /// Selects the next item or the first one if no item is selected
+    ///
+    /// Returns `true` if the `selected` index was successfully moved, `false` if it was clamped.
     ///
     /// Note: until the list is rendered, the number of items is not known, so the `selected` index
     /// is set to `0`. After the item count is known, the `selected` index will be clamped to the
@@ -269,16 +302,29 @@ impl ListState {
     /// ```rust
     /// use ratatui::widgets::ListState;
     ///
+    /// // Before rendering, item count is unknown
     /// let mut state = ListState::default();
     /// state.select_next();
     /// assert_eq!(state.selected(), Some(0));
+    ///
+    /// // After rendering
+    /// state.set_item_count(Some(3)); // Called during render
+    /// state.select(Some(2));
+    /// let moved = state.select_next(); // clamped to last item
+    /// assert!(!moved);
+    /// assert_eq!(state.selected(), Some(2));
     /// ```
-    pub fn select_next(&mut self) {
+    pub fn select_next(&mut self) -> bool {
+        if self.selected == Some(usize::MAX) {
+            return false;
+        }
         let next = self.selected.map_or(0, |i| i.saturating_add(1));
-        self.select(Some(next));
+        self.select(Some(next))
     }
 
     /// Selects the previous item or the last one if no item is selected
+    ///
+    /// Returns `true` if the `selected` index was successfully moved, `false` if it was clamped.
     ///
     /// Note: until the list is rendered, the number of items is not known, so the `selected` index
     /// is set to `usize::MAX`. After the item count is known, the `selected` index will be clamped
@@ -289,14 +335,25 @@ impl ListState {
     /// ```rust
     /// use ratatui::widgets::ListState;
     ///
+    /// // Before rendering, item count is unknown
     /// let mut state = ListState::default();
     /// state.select_previous();
     /// assert_eq!(state.selected(), Some(usize::MAX));
+    ///
+    /// // After rendering
+    /// state.set_item_count(Some(5)); // Called during render
+    /// state.select(Some(0));
+    /// let moved = state.select_previous(); // already at first item
+    /// assert!(!moved);
+    /// assert_eq!(state.selected(), Some(0));
     /// ```
-    pub fn select_previous(&mut self) {
-        let current = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
-        let previous = self.selected.map_or(current, |i| i.saturating_sub(1));
-        self.select(Some(previous));
+    pub fn select_previous(&mut self) -> bool {
+        if self.selected == Some(0) {
+            return false;
+        }
+        let index_max = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
+        let previous = self.selected.map_or(index_max, |i| i.saturating_sub(1));
+        self.select(Some(previous))
     }
 
     /// Selects the first item
@@ -312,6 +369,11 @@ impl ListState {
     /// let mut state = ListState::default();
     /// state.select_first();
     /// assert_eq!(state.selected(), Some(0));
+    ///
+    /// // After rendering
+    /// state.set_item_count(Some(0)); // Called during render (empty list)
+    /// state.select_first();
+    /// assert_eq!(state.selected(), None);
     /// ```
     pub const fn select_first(&mut self) {
         self.select(Some(0));
@@ -328,9 +390,15 @@ impl ListState {
     /// ```rust
     /// use ratatui::widgets::ListState;
     ///
+    /// // Before rendering, item count is unknown
     /// let mut state = ListState::default();
     /// state.select_last();
     /// assert_eq!(state.selected(), Some(usize::MAX));
+    ///
+    /// // After rendering
+    /// state.set_item_count(Some(5)); // Called during render
+    /// state.select_last();
+    /// assert_eq!(state.selected(), Some(4));
     /// ```
     pub fn select_last(&mut self) {
         let last = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
@@ -343,19 +411,33 @@ impl ListState {
     /// If the `item_count` is known and the `amount` causes `selected` to exceed it,
     /// the last item in the list will be selected.
     ///
+    /// Returns `true` if the `selected` index was successfully moved, `false` if it was clamped.
+    ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui::widgets::ListState;
     ///
+    /// // Before rendering, item count is unknown
     /// let mut state = ListState::default();
+    /// state.scroll_down_by(3);
+    /// assert_eq!(state.selected(), Some(3));
+    ///
+    /// // After rendering
+    /// state.set_item_count(Some(5)); // Called during render
     /// state.select(Some(2));
-    /// state.scroll_down_by(4);
-    /// assert_eq!(state.selected(), Some(6));
+    /// let moved = state.scroll_down_by(4); // clamped to last item
+    /// assert!(!moved);
+    /// assert_eq!(state.selected(), Some(4));
     /// ```
-    pub fn scroll_down_by(&mut self, amount: u16) {
+    pub fn scroll_down_by(&mut self, amount: u16) -> bool {
         let selected = self.selected.unwrap_or_default();
-        self.select(Some(selected.saturating_add(amount as usize)));
+        if let Some(next) = selected.checked_add(amount as usize) {
+            self.select(Some(next))
+        } else {
+            self.select(Some(usize::MAX));
+            false
+        }
     }
 
     /// Scrolls up by a specified `amount` in the list
@@ -364,19 +446,33 @@ impl ListState {
     /// If the `amount` causes `selected` to go below zero, the first item in the list
     /// will be selected.
     ///
+    /// Returns `true` if the `selected` index was successfully moved, `false` if it was clamped.
+    ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui::widgets::ListState;
     ///
+    /// // Before rendering, item count is unknown
     /// let mut state = ListState::default();
+    /// state.scroll_up_by(3);
+    /// assert_eq!(state.selected(), Some(0));
+    ///
+    /// // After rendering
+    /// state.set_item_count(Some(5)); // Called during render
     /// state.select(Some(2));
-    /// state.scroll_up_by(4);
+    /// let moved = state.scroll_up_by(4); // saturates at first item
+    /// assert!(!moved);
     /// assert_eq!(state.selected(), Some(0));
     /// ```
-    pub fn scroll_up_by(&mut self, amount: u16) {
+    pub fn scroll_up_by(&mut self, amount: u16) -> bool {
         let selected = self.selected.unwrap_or_default();
-        self.select(Some(selected.saturating_sub(amount as usize)));
+        if let Some(next) = selected.checked_sub(amount as usize) {
+            self.select(Some(next))
+        } else {
+            self.select(Some(0));
+            false
+        }
     }
 }
 
@@ -449,6 +545,10 @@ mod tests {
         assert_eq!(state.selected, Some(usize::MAX));
 
         let mut state = ListState::default();
+        state.select_last();
+        state.scroll_down_by(4);
+        assert_eq!(state.selected, Some(usize::MAX));
+
         state.select(Some(2));
         state.scroll_down_by(4);
         assert_eq!(state.selected, Some(6));
@@ -462,30 +562,6 @@ mod tests {
         assert_eq!(state.selected, Some(2));
 
         state.scroll_up_by(4);
-        assert_eq!(state.selected, Some(0));
-    }
-
-    #[test]
-    fn state_navigation_when_select_is_none() {
-        // This test is a bit redundant, but documents default behavior
-        let mut state = ListState::default();
-        state.select_next();
-        assert_eq!(state.selected, Some(0));
-
-        let mut state = ListState::default();
-        state.select_previous();
-        assert_eq!(state.selected, Some(usize::MAX));
-
-        let mut state = ListState::default();
-        state.select_last();
-        assert_eq!(state.selected, Some(usize::MAX));
-
-        let mut state = ListState::default();
-        state.scroll_down_by(3);
-        assert_eq!(state.selected, Some(3));
-
-        let mut state = ListState::default();
-        state.scroll_up_by(3);
         assert_eq!(state.selected, Some(0));
     }
 
@@ -627,4 +703,7 @@ mod tests {
             "should move normally when within bounds"
         );
     }
+
+    #[test]
+    fn simple_list_wrap_example() {}
 }
