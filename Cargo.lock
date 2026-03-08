@@ -2814,6 +2814,7 @@ name = "ratatui"
 version = "0.30.0"
 dependencies = [
  "color-eyre",
+ "compact_str",
  "criterion",
  "crossterm 0.29.0",
  "document-features",
@@ -2839,6 +2840,7 @@ dependencies = [
  "tracing 0.1.44",
  "tracing-appender",
  "tracing-subscriber",
+ "unicode-width",
 ]
 
 [[package]]
