@@ -1627,6 +1627,36 @@ mod tests {
     }
 
     #[test]
+    fn area_line() {
+        let data = [(0.0, 0.0), (5.0, 5.0), (10.0, 5.0)];
+        let chart = Chart::new(vec![
+            Dataset::default()
+                .data(&data)
+                .marker(symbols::Marker::Dot)
+                .graph_type(GraphType::AreaLine(0.0)),
+        ])
+        .x_axis(Axis::default().bounds([0.0, 10.0]))
+        .y_axis(Axis::default().bounds([0.0, 10.0]));
+        let area = Rect::new(0, 0, 11, 11);
+        let mut buffer = Buffer::empty(area);
+        chart.render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines([
+            "           ",
+            "           ",
+            "           ",
+            "           ",
+            "           ",
+            "     ••••••",
+            "    •••••••",
+            "   ••••••••",
+            "  •••••••••",
+            " ••••••••••",
+            "•••••••••••",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
     fn render_in_minimal_buffer() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
         let chart = Chart::new(vec![Dataset::default().data(&[(0.0, 0.0), (1.0, 1.0)])])
