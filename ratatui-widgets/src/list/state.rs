@@ -498,6 +498,19 @@ mod tests {
     }
 
     #[test]
+    fn with_item_count() {
+        let state = ListState::default().with_item_count(Some(5));
+        assert_eq!(state.item_count(), Some(5));
+    }
+
+    #[test]
+    fn selected_mut() {
+        let mut state = ListState::default();
+        *state.selected_mut() = Some(1);
+        assert_eq!(state.selected(), Some(1));
+    }
+
+    #[test]
     fn select() {
         let mut state = ListState::default();
         assert_eq!(state.selected, None);
