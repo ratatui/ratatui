@@ -1,3 +1,5 @@
+use crate::transient::Transient;
+
 /// State of the [`List`] widget
 ///
 /// This state can be used to scroll through items and select one. When the list is rendered as a
@@ -67,28 +69,13 @@
 /// ```
 ///
 /// [`List`]: super::List
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListState {
     pub(crate) offset: usize,
     pub(crate) selected: Option<usize>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub(crate) item_count: Option<usize>,
-}
-
-impl PartialEq for ListState {
-    fn eq(&self, other: &Self) -> bool {
-        self.offset == other.offset && self.selected == other.selected
-    }
-}
-
-impl Eq for ListState {}
-
-impl core::hash::Hash for ListState {
-    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-        self.offset.hash(state);
-        self.selected.hash(state);
-    }
+    pub(crate) item_count: Transient<Option<usize>>,
 }
 
 impl ListState {
@@ -139,7 +126,7 @@ impl ListState {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn with_item_count(mut self, count: Option<usize>) -> Self {
-        self.item_count = count;
+        self.item_count = Transient(count);
         self
     }
 
@@ -211,7 +198,7 @@ impl ListState {
     /// This value is set during rendering or by calling [`set_item_count`](Self::set_item_count).
     /// Returns `None` if the list hasn't been rendered yet.
     pub const fn item_count(&self) -> Option<usize> {
-        self.item_count
+        self.item_count.0
     }
 
     /// Sets the number of items in the list.
@@ -240,7 +227,7 @@ impl ListState {
     /// assert_eq!(state.selected(), Some(1)); // (0-indexed)
     /// ```
     pub const fn set_item_count(&mut self, count: Option<usize>) -> bool {
-        self.item_count = count;
+        self.item_count.0 = count;
         !self.clamp_selected()
     }
 
@@ -285,7 +272,7 @@ impl ListState {
     ///
     /// Returns `true` if the `selected` index was clamped.
     const fn clamp_selected(&mut self) -> bool {
-        if let (Some(selected), Some(count)) = (self.selected, self.item_count) {
+        if let (Some(selected), Some(count)) = (self.selected, self.item_count.0) {
             if count == 0 {
                 self.selected = None;
                 return true;
@@ -360,7 +347,10 @@ impl ListState {
         if self.selected == Some(0) {
             return false;
         }
-        let index_max = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
+        let index_max = self
+            .item_count
+            .0
+            .map_or(usize::MAX, |c| c.saturating_sub(1));
         let previous = self.selected.map_or(index_max, |i| i.saturating_sub(1));
         self.select(Some(previous))
     }
@@ -410,7 +400,10 @@ impl ListState {
     /// assert_eq!(state.selected(), Some(4));
     /// ```
     pub fn select_last(&mut self) {
-        let last = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
+        let last = self
+            .item_count
+            .0
+            .map_or(usize::MAX, |c| c.saturating_sub(1));
         self.select(Some(last));
     }
 
@@ -490,6 +483,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::list::ListState;
+    use crate::transient::Transient;
 
     #[test]
     fn selected() {
@@ -577,7 +571,7 @@ mod tests {
     #[test]
     fn select_next_should_not_exceed_item_count() {
         let mut state = ListState {
-            item_count: Some(3),
+            item_count: Transient(Some(3)),
             ..Default::default()
         };
         state.select(Some(2));
@@ -590,7 +584,7 @@ mod tests {
     #[test]
     fn scroll_down_by_should_not_exceed_item_count() {
         let mut state = ListState {
-            item_count: Some(5),
+            item_count: Transient(Some(5)),
             ..Default::default()
         };
         state.select(Some(3));
@@ -607,7 +601,7 @@ mod tests {
     #[test]
     fn select_last_should_use_item_count() {
         let mut state = ListState {
-            item_count: Some(5),
+            item_count: Transient(Some(5)),
             ..Default::default()
         };
 
@@ -619,7 +613,7 @@ mod tests {
     #[test]
     fn select_previous_from_none_should_use_item_count() {
         let mut state = ListState {
-            item_count: Some(5),
+            item_count: Transient(Some(5)),
             ..Default::default()
         };
 
@@ -629,55 +623,12 @@ mod tests {
     }
 
     #[test]
-    fn partial_eq_ignores_item_count() {
-        let state_a = ListState {
-            item_count: Some(10),
-            ..Default::default()
-        };
-        let state_b = ListState {
-            item_count: None,
-            ..Default::default()
-        };
-        assert_eq!(state_a, state_b, "item_count should not affect equality");
-
-        let mut state_c = ListState::default();
-        state_c.select(Some(1));
-        assert_ne!(state_a, state_c, "different selected should not be equal");
-    }
-
-    #[test]
-    fn hash_ignores_item_count() {
-        use core::hash::{Hash, Hasher};
-
-        let state_a = ListState {
-            item_count: Some(10),
-            ..Default::default()
-        };
-        let state_b = ListState {
-            item_count: None,
-            ..Default::default()
-        };
-
-        let hash = |state: &ListState| {
-            let mut hasher = std::collections::hash_map::DefaultHasher::new();
-            state.hash(&mut hasher);
-            hasher.finish()
-        };
-
-        assert_eq!(
-            hash(&state_a),
-            hash(&state_b),
-            "item_count should not affect hash"
-        );
-    }
-
-    #[test]
     fn item_count_returns_cached_value() {
         let state = ListState::default();
         assert_eq!(state.item_count(), None);
 
         let state = ListState {
-            item_count: Some(42),
+            item_count: Transient(Some(42)),
             ..Default::default()
         };
         assert_eq!(state.item_count(), Some(42));
@@ -686,7 +637,7 @@ mod tests {
     #[test]
     fn clamp_selected_with_zero_item_count_deselects() {
         let mut state = ListState {
-            item_count: Some(0),
+            item_count: Transient(Some(0)),
             ..Default::default()
         };
         state.select(Some(5));
@@ -699,7 +650,7 @@ mod tests {
     #[test]
     fn clamp_selected_does_nothing_when_within_bounds() {
         let mut state = ListState {
-            item_count: Some(5),
+            item_count: Transient(Some(5)),
             ..Default::default()
         };
         state.select(Some(2));

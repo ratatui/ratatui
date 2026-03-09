@@ -129,6 +129,7 @@ pub mod tabs;
 #[cfg(not(feature = "std"))]
 mod polyfills;
 mod reflow;
+pub(crate) mod transient;
 
 mod as_ref;
 #[cfg(feature = "calendar")]
