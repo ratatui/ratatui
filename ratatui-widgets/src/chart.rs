@@ -154,7 +154,7 @@ impl<'a> Axis<'a> {
 }
 
 /// Used to determine which style of graphing to use
-#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GraphType {
     /// Draw each point. This is the default.
     #[default]
