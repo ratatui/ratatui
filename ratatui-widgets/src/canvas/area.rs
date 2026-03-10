@@ -1,7 +1,8 @@
-use core::ops::{Range, RangeInclusive};
-use std::{dbg, vec::Vec};
+use alloc::vec::Vec;
 
-use line_clipping::{LineSegment, Point, Window, cohen_sutherland};
+use core::ops::RangeInclusive;
+use std::borrow::ToOwned;
+
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape, line};
@@ -32,6 +33,11 @@ impl Shape for Area<'_> {
             return;
         }
 
+        // let's to vec it rn to satisfy the borrow checker.
+        let x_min_bound = painter.bounds().0[0];
+        let x_max_bound = painter.bounds().0[1];
+        let y_min_bound = painter.bounds().1[0];
+        let y_max_bound = painter.bounds().1[1];
         let (x_min, x_max, y_min, y_max) = self.vertecies.iter().fold(
             (
                 f64::INFINITY,
@@ -43,6 +49,11 @@ impl Shape for Area<'_> {
                 (x_min.min(x), x_max.max(x), y_min.min(y), y_max.max(y))
             },
         );
+
+        let x_min = x_min.clamp(x_min_bound, x_max_bound);
+        let x_max = x_max.clamp(x_min_bound, x_max_bound);
+        let y_min = y_min.clamp(y_min_bound, y_max_bound);
+        let y_max = y_max.clamp(y_min_bound, y_max_bound);
 
         let Some((_, y_min)) = painter.get_point(x_min, y_min) else {
             return;
@@ -65,10 +76,26 @@ impl Shape for Area<'_> {
                 // % len to connect last and first vertecies
                 let p2 = self.vertecies[(i + 1) % len];
 
-                let Some((x1, y1)) = painter.get_point(p1.0, p1.1) else {
+                // let Some((x1, y1, x2, y2)) = line::clip_line(
+                //     &[x_min_bound, x_max_bound],
+                //     &[y_min_bound, y_max_bound],
+                //     p1.0,
+                //     p1.1,
+                //     p2.0,
+                //     p2.1,
+                // ) else {
+                //     return;
+                // };
+
+                let x1 = p1.0.clamp(x_min_bound, x_max_bound);
+                let x2 = p2.0.clamp(x_min_bound, x_max_bound);
+                let y1 = p1.1.clamp(y_min_bound, y_max_bound);
+                let y2 = p2.1.clamp(y_min_bound, y_max_bound);
+
+                let Some((x1, y1)) = painter.get_point(x1, y1) else {
                     return;
                 };
-                let Some((x2, y2)) = painter.get_point(p2.0, p2.1) else {
+                let Some((x2, y2)) = painter.get_point(x2, y2) else {
                     return;
                 };
 

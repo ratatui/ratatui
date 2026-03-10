@@ -168,6 +168,7 @@ pub enum GraphType {
 
     /// Draw a bar chart. This will draw a bar for each point in the dataset.
     Bar,
+    Area,
 }
 
 /// Allow users to specify the position of a legend in a [`Chart`]
@@ -328,6 +329,7 @@ pub struct Dataset<'a> {
     graph_type: GraphType,
     /// Style used to plot this dataset
     style: Style,
+    fill_to_y: f64,
 }
 
 impl<'a> Dataset<'a> {
@@ -420,6 +422,11 @@ impl<'a> Dataset<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
+        self
+    }
+
+    pub fn fill_to_y(mut self, fill_to_y: f64) -> Self {
+        self.fill_to_y = fill_to_y;
         self
     }
 }
@@ -1053,6 +1060,19 @@ impl Widget for &Chart<'_> {
                                     color,
                                 });
                             }
+                        }
+                        GraphType::Area => {
+                            let mut data = dataset.data.to_vec();
+
+                            let (x_min, x_max) = dataset.data.iter().fold(
+                                (f64::INFINITY, f64::NEG_INFINITY),
+                                |(x_min, x_max), &(x, y)| (x_min.min(x), x_max.max(x)),
+                            );
+
+                            data.push((x_max, dataset.fill_to_y));
+                            data.push((x_min, dataset.fill_to_y));
+                            let area = Area::new(&data, color, true);
+                            ctx.draw(&area);
                         }
                         GraphType::Scatter => {}
                     }
