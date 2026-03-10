@@ -47,36 +47,7 @@ impl Shape for Line {
             return;
         };
 
-        let (dx, x_range) = if x2 >= x1 {
-            (x2 - x1, x1..=x2)
-        } else {
-            (x1 - x2, x2..=x1)
-        };
-        let (dy, y_range) = if y2 >= y1 {
-            (y2 - y1, y1..=y2)
-        } else {
-            (y1 - y2, y2..=y1)
-        };
-
-        if dx == 0 {
-            for y in y_range {
-                painter.paint(x1, y, self.color);
-            }
-        } else if dy == 0 {
-            for x in x_range {
-                painter.paint(x, y1, self.color);
-            }
-        } else if dy < dx {
-            if x1 > x2 {
-                draw_line_low(painter, x2, y2, x1, y1, self.color);
-            } else {
-                draw_line_low(painter, x1, y1, x2, y2, self.color);
-            }
-        } else if y1 > y2 {
-            draw_line_high(painter, x2, y2, x1, y1, self.color);
-        } else {
-            draw_line_high(painter, x1, y1, x2, y2, self.color);
-        }
+        draw_line(painter, x1, y1, x2, y2, self.color);
     }
 }
 
@@ -98,6 +69,46 @@ fn clip_line(
         Some((x1, y1, x2, y2))
     } else {
         None
+    }
+}
+
+pub(super) fn draw_line(
+    painter: &mut Painter,
+    x1: usize,
+    y1: usize,
+    x2: usize,
+    y2: usize,
+    color: Color,
+) {
+    let (dx, x_range) = if x2 >= x1 {
+        (x2 - x1, x1..=x2)
+    } else {
+        (x1 - x2, x2..=x1)
+    };
+    let (dy, y_range) = if y2 >= y1 {
+        (y2 - y1, y1..=y2)
+    } else {
+        (y1 - y2, y2..=y1)
+    };
+
+    if dx == 0 {
+        for y in y_range {
+            painter.paint(x1, y, color);
+        }
+    } else if dy == 0 {
+        for x in x_range {
+            painter.paint(x, y1, color);
+        }
+    } else if dy < dx {
+        if x1 > x2 {
+            draw_line_low(painter, x2, y2, x1, y1, color);
+        } else {
+            draw_line_low(painter, x1, y1, x2, y2, color);
+        }
+    } else if y1 > y2 {
+        draw_line_high(painter, x2, y2, x1, y1, color);
+    } else {
+        draw_line_high(painter, x1, y1, x2, y2, color);
     }
 }
 

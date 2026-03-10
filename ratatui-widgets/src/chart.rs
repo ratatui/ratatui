@@ -12,7 +12,7 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 use crate::block::{Block, BlockExt};
-use crate::canvas::{AreaLine, Canvas, Line as CanvasLine, Points};
+use crate::canvas::{Area, Canvas, Line as CanvasLine, Points};
 
 /// An X or Y axis for the [`Chart`] widget
 ///
@@ -154,7 +154,7 @@ impl<'a> Axis<'a> {
 }
 
 /// Used to determine which style of graphing to use
-#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GraphType {
     /// Draw each point. This is the default.
     #[default]
@@ -168,13 +168,6 @@ pub enum GraphType {
 
     /// Draw a bar chart. This will draw a bar for each point in the dataset.
     Bar,
-
-    /// Draw a line between each following point and fill the area under/above it.
-    ///
-    /// The value specifies the Y-coordinate up to which the area under the line will be filled.
-    /// If the line is above this value, the area between the line and this value is filled.
-    /// If the line is below this value, the area between the value and the line is filled.
-    AreaLine(f64),
 }
 
 /// Allow users to specify the position of a legend in a [`Chart`]
@@ -1050,18 +1043,6 @@ impl Widget for &Chart<'_> {
                                 });
                             }
                         }
-                        GraphType::AreaLine(y) => {
-                            for data in dataset.data.windows(2) {
-                                ctx.draw(&AreaLine {
-                                    x1: data[0].0,
-                                    y1: data[0].1,
-                                    x2: data[1].0,
-                                    y2: data[1].1,
-                                    fill_to_y: y,
-                                    color,
-                                });
-                            }
-                        }
                         GraphType::Bar => {
                             for (x, y) in dataset.data {
                                 ctx.draw(&CanvasLine {
@@ -1626,35 +1607,35 @@ mod tests {
         assert_eq!(buffer, expected);
     }
 
-    #[test]
-    fn area_line() {
-        let data = [(0.0, 0.0), (5.0, 5.0), (10.0, 5.0)];
-        let chart = Chart::new(vec![
-            Dataset::default()
-                .data(&data)
-                .marker(symbols::Marker::Dot)
-                .graph_type(GraphType::AreaLine(0.0)),
-        ])
-        .x_axis(Axis::default().bounds([0.0, 10.0]))
-        .y_axis(Axis::default().bounds([0.0, 10.0]));
-        let area = Rect::new(0, 0, 11, 11);
-        let mut buffer = Buffer::empty(area);
-        chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines([
-            "           ",
-            "           ",
-            "           ",
-            "           ",
-            "           ",
-            "     ••••••",
-            "    •••••••",
-            "   ••••••••",
-            "  •••••••••",
-            " ••••••••••",
-            "•••••••••••",
-        ]);
-        assert_eq!(buffer, expected);
-    }
+    // #[test]
+    // fn area_line() {
+    //     let data = [(0.0, 0.0), (5.0, 5.0), (10.0, 5.0)];
+    //     let chart = Chart::new(vec![
+    //         Dataset::default()
+    //             .data(&data)
+    //             .marker(symbols::Marker::Dot)
+    //             .graph_type(GraphType::AreaLine(0.0)),
+    //     ])
+    //     .x_axis(Axis::default().bounds([0.0, 10.0]))
+    //     .y_axis(Axis::default().bounds([0.0, 10.0]));
+    //     let area = Rect::new(0, 0, 11, 11);
+    //     let mut buffer = Buffer::empty(area);
+    //     chart.render(buffer.area, &mut buffer);
+    //     let expected = Buffer::with_lines([
+    //         "           ",
+    //         "           ",
+    //         "           ",
+    //         "           ",
+    //         "           ",
+    //         "     ••••••",
+    //         "    •••••••",
+    //         "   ••••••••",
+    //         "  •••••••••",
+    //         " ••••••••••",
+    //         "•••••••••••",
+    //     ]);
+    //     assert_eq!(buffer, expected);
+    // }
 
     #[test]
     fn render_in_minimal_buffer() {
