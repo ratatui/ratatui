@@ -1,7 +1,6 @@
-use alloc::vec::Vec;
-
 use core::ops::RangeInclusive;
-use std::borrow::ToOwned;
+
+use alloc::vec::Vec;
 
 use ratatui_core::style::Color;
 
@@ -33,12 +32,26 @@ impl Shape for Area<'_> {
             return;
         }
 
-        // let's to vec it rn to satisfy the borrow checker.
         let x_min_bound = painter.bounds().0[0];
         let x_max_bound = painter.bounds().0[1];
         let y_min_bound = painter.bounds().1[0];
         let y_max_bound = painter.bounds().1[1];
-        let (x_min, x_max, y_min, y_max) = self.vertecies.iter().fold(
+
+        let clipped = clip_polygon(
+            self.vertecies,
+            x_min_bound,
+            x_max_bound,
+            y_min_bound,
+            y_max_bound,
+        );
+
+        if clipped.is_empty() {
+            return;
+        }
+
+        let len = clipped.len();
+
+        let (x_min, x_max, y_min, y_max) = clipped.iter().fold(
             (
                 f64::INFINITY,
                 f64::NEG_INFINITY,
@@ -50,15 +63,10 @@ impl Shape for Area<'_> {
             },
         );
 
-        let x_min = x_min.clamp(x_min_bound, x_max_bound);
-        let x_max = x_max.clamp(x_min_bound, x_max_bound);
-        let y_min = y_min.clamp(y_min_bound, y_max_bound);
-        let y_max = y_max.clamp(y_min_bound, y_max_bound);
-
-        let Some((_, y_min)) = painter.get_point(x_min, y_min) else {
+        let Some((x_min, y_min)) = painter.get_point(x_min, y_min) else {
             return;
         };
-        let Some((_, y_max)) = painter.get_point(x_max, y_max) else {
+        let Some((x_max, y_max)) = painter.get_point(x_max, y_max) else {
             return;
         };
 
@@ -72,41 +80,31 @@ impl Shape for Area<'_> {
             };
 
             for i in 0..len {
-                let p1 = self.vertecies[i];
+                let p1 = clipped[i];
                 // % len to connect last and first vertecies
-                let p2 = self.vertecies[(i + 1) % len];
+                let p2 = clipped[(i + 1) % len];
 
-                // let Some((x1, y1, x2, y2)) = line::clip_line(
-                //     &[x_min_bound, x_max_bound],
-                //     &[y_min_bound, y_max_bound],
-                //     p1.0,
-                //     p1.1,
-                //     p2.0,
-                //     p2.1,
-                // ) else {
-                //     return;
-                // };
-
-                let x1 = p1.0.clamp(x_min_bound, x_max_bound);
-                let x2 = p2.0.clamp(x_min_bound, x_max_bound);
-                let y1 = p1.1.clamp(y_min_bound, y_max_bound);
-                let y2 = p2.1.clamp(y_min_bound, y_max_bound);
-
-                let Some((x1, y1)) = painter.get_point(x1, y1) else {
-                    return;
+                let Some((x1, y1)) = painter.get_point(p1.0, p1.1) else {
+                    continue;
                 };
-                let Some((x2, y2)) = painter.get_point(x2, y2) else {
-                    return;
+                let Some((x2, y2)) = painter.get_point(p2.0, p2.1) else {
+                    continue;
                 };
 
-                line::draw_line(painter, x1, y1, x2, y2, self.color);
+                // skip horizontal lines (don't contribute to intersections)
+                if y1 == y2 {
+                    line::draw_line(painter, x1, y1, x2, y2, self.color);
+                    continue;
+                }
 
-                if self.fill && (y1 <= y && y < y2) || (y2 <= y && y < y1) {
+                if self.fill && ((y1 <= y && y < y2) || (y2 <= y && y < y1)) {
                     let cross = (x1 as isize
                         + (y as isize - y1 as isize) * (x2 as isize - x1 as isize)
                             / (y2 as isize - y1 as isize)) as usize;
                     intersections.push(cross);
                 }
+
+                line::draw_line(painter, x1, y1, x2, y2, self.color);
             }
 
             if !self.fill {
@@ -127,6 +125,97 @@ impl Shape for Area<'_> {
             }
         }
     }
+}
+
+fn clip_polygon(
+    vertecies: &[(f64, f64)],
+    x_min_bound: f64,
+    x_max_bound: f64,
+    y_min_bound: f64,
+    y_max_bound: f64,
+) -> Vec<(f64, f64)> {
+    let clipped = vertecies.to_vec();
+    let clipped = clip_left(&clipped, x_min_bound);
+    let clipped = clip_right(&clipped, x_max_bound);
+    let clipped = clip_bottom(&clipped, y_min_bound);
+    clip_top(&clipped, y_max_bound)
+}
+
+fn clip_top(clipped: &Vec<(f64, f64)>, y_max_bound: f64) -> Vec<(f64, f64)> {
+    clip_edge(
+        clipped,
+        |(_, y)| y <= y_max_bound,
+        |(x1, y1), (x2, y2)| {
+            let t = (y_max_bound - y1) / (y2 - y1);
+            (x1 + t * (x2 - x1), y_max_bound)
+        },
+    )
+}
+
+fn clip_bottom(clipped: &Vec<(f64, f64)>, y_min_bound: f64) -> Vec<(f64, f64)> {
+    clip_edge(
+        clipped,
+        |(_, y)| y >= y_min_bound,
+        |(x1, y1), (x2, y2)| {
+            let t = (y_min_bound - y1) / (y2 - y1);
+            (x1 + t * (x2 - x1), y_min_bound)
+        },
+    )
+}
+
+fn clip_right(clipped: &Vec<(f64, f64)>, x_max_bound: f64) -> Vec<(f64, f64)> {
+    clip_edge(
+        clipped,
+        |(x, _)| x <= x_max_bound,
+        |(x1, y1), (x2, y2)| {
+            let t = (x_max_bound - x1) / (x2 - x1);
+            (x_max_bound, (y1 + t * (y2 - y1)))
+        },
+    )
+}
+
+fn clip_left(clipped: &Vec<(f64, f64)>, x_min_bound: f64) -> Vec<(f64, f64)> {
+    clip_edge(
+        clipped,
+        |(x, _)| x >= x_min_bound,
+        |(x1, y1), (x2, y2)| {
+            let t = (x_min_bound - x1) / (x2 - x1);
+            (x_min_bound, (y1 + t * (y2 - y1)))
+        },
+    )
+}
+
+fn clip_edge<F, I>(
+    vertecies: &Vec<(f64, f64)>,
+    is_inside: F,
+    get_intersection: I,
+) -> Vec<(f64, f64)>
+where
+    F: Fn((f64, f64)) -> bool,
+    I: Fn((f64, f64), (f64, f64)) -> (f64, f64),
+{
+    let mut result = Vec::new();
+    let len = vertecies.len();
+    for i in 0..len {
+        let p1 = vertecies[i];
+        // % len to connect last and first vertecies
+        let p2 = vertecies[(i + 1) % len];
+
+        let p1_inside = is_inside(p1);
+        let p2_inside = is_inside(p2);
+
+        if p2_inside {
+            if !p1_inside {
+                result.push(get_intersection(p1, p2));
+            }
+            result.push(p2);
+        } else {
+            if p1_inside {
+                result.push(get_intersection(p1, p2));
+            }
+        }
+    }
+    result
 }
 
 // #[cfg(test)]
