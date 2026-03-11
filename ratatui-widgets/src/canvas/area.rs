@@ -1,10 +1,7 @@
-use core::ops::RangeInclusive;
-
-use alloc::vec::Vec;
-
-use ratatui_core::style::Color;
-
 use crate::canvas::{Painter, Shape, line};
+use alloc::vec::Vec;
+use core::ops::RangeInclusive;
+use ratatui_core::style::Color;
 
 /// A shape that draws a polygon defined by a list of vertices.
 ///
@@ -14,9 +11,9 @@ use crate::canvas::{Painter, Shape, line};
 ///
 /// # Bridge artifacts
 ///
-/// This algorithm produces a "bridge" artifact when clipping non-convex polygons that split into multiple pieces.
-/// It connects the disjoint visible regions with a straight line along the clip window border,
-/// creating a single polygon where multiple separate polygons would be correct.
+/// This algorithm produces a "bridge" artifact when clipping non-convex polygons that split into
+/// multiple pieces. It connects the disjoint visible regions with a straight line along the clip
+/// window border, creating a single polygon where multiple separate polygons would be correct.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Area<'a> {
     /// List of vertices defining the polygon
