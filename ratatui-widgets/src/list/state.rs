@@ -168,7 +168,7 @@ impl ListState {
     /// This will immediately clamp the `selected` to be less than `item_count`.
     pub(crate) const fn set_item_count(&mut self, count: Option<usize>) {
         self.item_count.0 = count;
-        self.clamp_selected()
+        self.clamp_selected();
     }
 
     /// Sets the index of the selected item
@@ -186,9 +186,9 @@ impl ListState {
     /// Before `item_count` is set, no clamping occurs:
     ///
     /// ```rust
-    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     /// use ratatui::buffer::Buffer;
     /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     ///
     /// let mut state = ListState::default();
     /// state.select(Some(1));
@@ -218,7 +218,12 @@ impl ListState {
     /// # use ratatui::layout::Rect;
     /// # let mut state = ListState::default();
     /// # let r = Rect::new(0, 0, 20, 20);
-    /// StatefulWidget::render(List::new(Vec::<&str>::new()), r, &mut Buffer::empty(r), &mut state);
+    /// StatefulWidget::render(
+    ///     List::new(Vec::<&str>::new()),
+    ///     r,
+    ///     &mut Buffer::empty(r),
+    ///     &mut state,
+    /// );
     /// assert_eq!(state.selected(), None);
     /// ```
     pub const fn select(&mut self, index: Option<usize>) {
@@ -226,7 +231,7 @@ impl ListState {
         if index.is_none() {
             self.offset = 0;
         }
-        self.clamp_selected()
+        self.clamp_selected();
     }
 
     /// Clamps the `selected` index to valid bounds if `item_count` is known.
@@ -236,9 +241,10 @@ impl ListState {
         if let (Some(selected), Some(count)) = (self.selected, self.item_count.0) {
             if count == 0 {
                 self.selected = None;
-            }
-            if selected >= count {
+            } else if selected >= count {
                 self.selected = Some(count - 1);
+            } else {
+                // selected is already within bounds, nothing to do
             }
         }
     }
@@ -255,9 +261,9 @@ impl ListState {
     /// Before rendering, item count is unknown:
     ///
     /// ```rust
-    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     /// use ratatui::buffer::Buffer;
     /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     ///
     /// let mut state = ListState::default();
     /// state.select_next();
@@ -275,13 +281,12 @@ impl ListState {
     /// let r = Rect::new(0, 0, 20, 20);
     /// StatefulWidget::render(List::new(vec![""; 3]), r, &mut Buffer::empty(r), &mut state);
     /// state.select(Some(2));
-    /// let moved = state.select_next(); // clamped to last item
-    /// assert!(!moved);
+    /// state.select_next(); // clamped to last item
     /// assert_eq!(state.selected(), Some(2));
     /// ```
     pub fn select_next(&mut self) {
         let next = self.selected.map_or(0, |i| i.saturating_add(1));
-        self.select(Some(next))
+        self.select(Some(next));
     }
 
     /// Selects the previous item or the last one if no item is selected
@@ -305,8 +310,7 @@ impl ListState {
     /// state.select_previous();
     /// assert_eq!(state.selected(), Some(0));
     ///
-    /// let moved = state.select_previous(); // already at first item
-    /// assert!(!moved);
+    /// state.select_previous(); // already at first item
     /// assert_eq!(state.selected(), Some(0));
     /// ```
     pub fn select_previous(&mut self) {
@@ -315,10 +319,10 @@ impl ListState {
             .0
             .map_or(usize::MAX, |c| c.saturating_sub(1));
         let previous = self.selected.map_or(index_max, |i| i.saturating_sub(1));
-        self.select(Some(previous))
+        self.select(Some(previous));
     }
 
-    /// Selects the first item or `None` if the `item_count is `0`.
+    /// Selects the first item or `None` if the `item_count` is `0`.
     ///
     /// Note: until the list is rendered, the number of items is not known, so the index is set to
     /// `0` and will be corrected when the list is rendered
@@ -326,9 +330,9 @@ impl ListState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     /// use ratatui::buffer::Buffer;
     /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     ///
     /// let mut state = ListState::default();
     /// state.select_first();
@@ -344,7 +348,12 @@ impl ListState {
     /// #
     /// let mut state = ListState::default();
     /// let r = Rect::new(0, 0, 20, 20);
-    /// StatefulWidget::render(List::new(Vec::<&str>::new()), r, &mut Buffer::empty(r), &mut state);
+    /// StatefulWidget::render(
+    ///     List::new(Vec::<&str>::new()),
+    ///     r,
+    ///     &mut Buffer::empty(r),
+    ///     &mut state,
+    /// );
     /// state.select_first();
     /// assert_eq!(state.selected(), None);
     /// ```
@@ -363,9 +372,9 @@ impl ListState {
     /// Before rendering, item count is unknown:
     ///
     /// ```rust
-    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     /// use ratatui::buffer::Buffer;
     /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     ///
     /// let mut state = ListState::default();
     /// state.select_last();
@@ -406,9 +415,9 @@ impl ListState {
     /// Before rendering, item count is unknown:
     ///
     /// ```rust
-    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     /// use ratatui::buffer::Buffer;
     /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{List, ListState, StatefulWidget};
     ///
     /// let mut state = ListState::default();
     /// state.scroll_down_by(3);
@@ -426,8 +435,7 @@ impl ListState {
     /// let r = Rect::new(0, 0, 20, 20);
     /// StatefulWidget::render(List::new(vec![""; 5]), r, &mut Buffer::empty(r), &mut state);
     /// state.select(Some(2));
-    /// let moved = state.scroll_down_by(4); // clamped to last item
-    /// assert!(!moved);
+    /// state.scroll_down_by(4); // clamped to last item
     /// assert_eq!(state.selected(), Some(4));
     /// ```
     pub fn scroll_down_by(&mut self, amount: u16) {
@@ -456,8 +464,7 @@ impl ListState {
     /// state.scroll_up_by(4);
     /// assert_eq!(state.selected(), Some(2));
     ///
-    /// let moved = state.scroll_up_by(4); // saturates at first item
-    /// assert!(!moved);
+    /// state.scroll_up_by(4); // saturates at first item
     /// assert_eq!(state.selected(), Some(0));
     /// ```
     pub fn scroll_up_by(&mut self, amount: u16) {
