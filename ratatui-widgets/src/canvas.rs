@@ -31,7 +31,7 @@ use ratatui_core::widgets::Widget;
 
 pub use self::area_line::AreaLine;
 pub use self::circle::Circle;
-pub use self::line::Line;
+pub use self::line::{FilledLine, Line};
 pub use self::map::{Map, MapResolution};
 pub use self::points::Points;
 pub use self::rectangle::Rectangle;

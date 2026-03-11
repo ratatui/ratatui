@@ -12,7 +12,7 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 use crate::block::{Block, BlockExt};
-use crate::canvas::{AreaLine, Canvas, Line as CanvasLine, Points};
+use crate::canvas::{Canvas, FilledLine, Line as CanvasLine, Points};
 
 /// An X or Y axis for the [`Chart`] widget
 ///
@@ -169,12 +169,10 @@ pub enum GraphType {
     /// Draw a bar chart. This will draw a bar for each point in the dataset.
     Bar,
 
-    /// Draw a line between each following point and fill the area under/above it.
-    ///
-    /// The value specifies the Y-coordinate up to which the area under the line will be filled.
-    /// If the line is above this value, the area between the line and this value is filled.
-    /// If the line is below this value, the area between the value and the line is filled.
-    AreaLine(f64),
+    /// Draw a line chart with the area filled. Like [`Line`](GraphType::Line), this draws a line
+    /// between each following point, but also fills the area between the line and the y-coordinate
+    /// specified by [`Dataset::fill_to_y`].
+    Area,
 }
 
 /// Allow users to specify the position of a legend in a [`Chart`]
@@ -335,6 +333,8 @@ pub struct Dataset<'a> {
     graph_type: GraphType,
     /// Style used to plot this dataset
     style: Style,
+    /// The y-coordinate to fill area to when using [`GraphType::Area`]
+    fill_to_y: f64,
 }
 
 impl<'a> Dataset<'a> {
@@ -427,6 +427,18 @@ impl<'a> Dataset<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
+        self
+    }
+
+    /// Sets the y-coordinate to fill the area to when using [`GraphType::Area`]
+    ///
+    /// When the graph type is set to [`GraphType::Area`], the area between the data points and the
+    /// specified y-coordinate will be filled with the dataset's style. The default is `0.0`.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn fill_to_y(mut self, fill_to_y: f64) -> Self {
+        self.fill_to_y = fill_to_y;
         self
     }
 }
@@ -1050,18 +1062,6 @@ impl Widget for &Chart<'_> {
                                 });
                             }
                         }
-                        GraphType::AreaLine(y) => {
-                            for data in dataset.data.windows(2) {
-                                ctx.draw(&AreaLine {
-                                    x1: data[0].0,
-                                    y1: data[0].1,
-                                    x2: data[1].0,
-                                    y2: data[1].1,
-                                    fill_to_y: y,
-                                    color,
-                                });
-                            }
-                        }
                         GraphType::Bar => {
                             for (x, y) in dataset.data {
                                 ctx.draw(&CanvasLine {
@@ -1073,6 +1073,19 @@ impl Widget for &Chart<'_> {
                                 });
                             }
                         }
+                        GraphType::Area => {
+                            for data in dataset.data.windows(2) {
+                                ctx.draw(&FilledLine {
+                                    x1: data[0].0,
+                                    y1: data[0].1,
+                                    x2: data[1].0,
+                                    y2: data[1].1,
+                                    fill_to_y: dataset.fill_to_y,
+                                    color,
+                                });
+                            }
+                        }
+
                         GraphType::Scatter => {}
                     }
                 }
@@ -1627,13 +1640,14 @@ mod tests {
     }
 
     #[test]
-    fn area_line() {
+    fn filled_line() {
         let data = [(0.0, 0.0), (5.0, 5.0), (10.0, 5.0)];
         let chart = Chart::new(vec![
             Dataset::default()
                 .data(&data)
                 .marker(symbols::Marker::Dot)
-                .graph_type(GraphType::AreaLine(0.0)),
+                .fill_to_y(0.0)
+                .graph_type(GraphType::Area),
         ])
         .x_axis(Axis::default().bounds([0.0, 10.0]))
         .y_axis(Axis::default().bounds([0.0, 10.0]));
