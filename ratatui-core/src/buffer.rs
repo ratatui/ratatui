@@ -4,8 +4,8 @@
 mod assert;
 mod buffer;
 mod cell;
-mod diff_iter;
+mod diff;
 
 pub use buffer::Buffer;
 pub use cell::{Cell, CellDiffOption};
-pub use diff_iter::BufferDiff;
+pub use diff::BufferDiff;
