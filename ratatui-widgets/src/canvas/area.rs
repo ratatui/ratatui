@@ -1,7 +1,9 @@
-use crate::canvas::{Painter, Shape, line};
 use alloc::vec::Vec;
 use core::ops::RangeInclusive;
+
 use ratatui_core::style::Color;
+
+use crate::canvas::{Painter, Shape, line};
 
 /// A shape that draws a polygon defined by a list of vertices.
 ///
