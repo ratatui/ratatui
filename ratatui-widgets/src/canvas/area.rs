@@ -6,19 +6,38 @@ use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape, line};
 
+/// A shape that draws a polygon defined by a list of vertices.
+///
+/// The polygon can be convex or non-convex, and may self-intersect. When `fill` is `true`, the
+/// interior of the polygon is filled using the specified color; otherwise only the outline is
+/// drawn.
+///
+/// # Bridge artifacts
+///
+/// This algorithm produces a "bridge" artifact when clipping non-convex polygons that split into multiple pieces.
+/// It connects the disjoint visible regions with a straight line along the clip window border,
+/// creating a single polygon where multiple separate polygons would be correct.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Area<'a> {
-    /// List of vertecies
-    pub vertecies: &'a [(f64, f64)],
-    /// Color of the points
+    /// List of vertices defining the polygon
+    pub vertices: &'a [(f64, f64)],
+    /// Color used to draw the polygon
     pub color: Color,
+    /// Whether to fill the interior of the polygon or draw only the outline
     pub fill: bool,
 }
 
 impl<'a> Area<'a> {
-    pub const fn new(vertecies: &'a [(f64, f64)], color: Color, fill: bool) -> Self {
+    /// Creates a new polygon shape.
+    ///
+    /// # Arguments
+    ///
+    /// * `vertices` - A slice of `(x, y)` coordinate pairs defining the polygon's vertices
+    /// * `color` - The color to use for drawing
+    /// * `fill` - If `true`, fills the interior of the polygon; if `false`, draws only the outline
+    pub const fn new(vertices: &'a [(f64, f64)], color: Color, fill: bool) -> Self {
         Self {
-            vertecies,
+            vertices,
             color,
             fill,
         }
@@ -27,7 +46,7 @@ impl<'a> Area<'a> {
 
 impl Shape for Area<'_> {
     fn draw(&self, painter: &mut Painter) {
-        let len = self.vertecies.len();
+        let len = self.vertices.len();
         if len == 0 {
             return;
         }
@@ -38,7 +57,7 @@ impl Shape for Area<'_> {
         let y_max_bound = painter.bounds().1[1];
 
         let clipped = clip_polygon(
-            self.vertecies,
+            self.vertices,
             x_min_bound,
             x_max_bound,
             y_min_bound,
@@ -63,16 +82,14 @@ impl Shape for Area<'_> {
             },
         );
 
-        let Some((x_min, y_min)) = painter.get_point(x_min, y_min) else {
+        let Some((_, y_max_bound)) = painter.get_point(x_min, y_min) else {
             return;
         };
-        let Some((x_max, y_max)) = painter.get_point(x_max, y_max) else {
+        let Some((_, y_min_bound)) = painter.get_point(x_max, y_max) else {
             return;
         };
 
-        // idk what i do wrong but my y_min is bigger than y_max
-        // so i just switched them
-        for y in y_max..=y_min {
+        for y in y_min_bound..=y_max_bound {
             let mut intersections = if self.fill {
                 Vec::new()
             } else {
@@ -81,7 +98,7 @@ impl Shape for Area<'_> {
 
             for i in 0..len {
                 let p1 = clipped[i];
-                // % len to connect last and first vertecies
+                // % len to connect last and first vertices
                 let p2 = clipped[(i + 1) % len];
 
                 let Some((x1, y1)) = painter.get_point(p1.0, p1.1) else {
@@ -128,13 +145,13 @@ impl Shape for Area<'_> {
 }
 
 fn clip_polygon(
-    vertecies: &[(f64, f64)],
+    vertices: &[(f64, f64)],
     x_min_bound: f64,
     x_max_bound: f64,
     y_min_bound: f64,
     y_max_bound: f64,
 ) -> Vec<(f64, f64)> {
-    let clipped = vertecies.to_vec();
+    let clipped = vertices.to_vec();
     let clipped = clip_left(&clipped, x_min_bound);
     let clipped = clip_right(&clipped, x_max_bound);
     let clipped = clip_bottom(&clipped, y_min_bound);
@@ -185,21 +202,17 @@ fn clip_left(clipped: &Vec<(f64, f64)>, x_min_bound: f64) -> Vec<(f64, f64)> {
     )
 }
 
-fn clip_edge<F, I>(
-    vertecies: &Vec<(f64, f64)>,
-    is_inside: F,
-    get_intersection: I,
-) -> Vec<(f64, f64)>
+fn clip_edge<F, I>(vertices: &Vec<(f64, f64)>, is_inside: F, get_intersection: I) -> Vec<(f64, f64)>
 where
     F: Fn((f64, f64)) -> bool,
     I: Fn((f64, f64), (f64, f64)) -> (f64, f64),
 {
     let mut result = Vec::new();
-    let len = vertecies.len();
+    let len = vertices.len();
     for i in 0..len {
-        let p1 = vertecies[i];
-        // % len to connect last and first vertecies
-        let p2 = vertecies[(i + 1) % len];
+        let p1 = vertices[i];
+        // % len to connect last and first vertices
+        let p2 = vertices[(i + 1) % len];
 
         let p1_inside = is_inside(p1);
         let p2_inside = is_inside(p2);
@@ -218,218 +231,234 @@ where
     result
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use ratatui_core::buffer::Buffer;
-//     use ratatui_core::layout::Rect;
-//     use ratatui_core::style::Style;
-//     use ratatui_core::symbols::Marker;
-//     use ratatui_core::widgets::Widget;
-//     use rstest::rstest;
+#[cfg(test)]
+mod tests {
+    use ratatui_core::buffer::Buffer;
+    use ratatui_core::layout::Rect;
+    use ratatui_core::style::Style;
+    use ratatui_core::symbols::Marker;
+    use ratatui_core::widgets::Widget;
+    use rstest::rstest;
 
-//     use super::*;
-//     use crate::canvas::Canvas;
+    use super::*;
+    use crate::canvas::Canvas;
 
-//     #[rstest]
-//     #[case::off_grid1(&Area::new(-1.0, 0.0, -1.0, 10.0, 0.0, Color::Red), ["          "; 10])]
-//     #[case::off_grid2(&Area::new(0.0, -1.0, 10.0, -1.0, 0.0, Color::Red), ["          "; 10])]
-//     #[case::off_grid3(&Area::new(-10.0, 5.0, -1.0, 5.0, 0.0, Color::Red), ["          "; 10])]
-//     #[case::off_grid4(&Area::new(5.0, 11.0, 5.0, 20.0, 0.0, Color::Red), ["          "; 10])]
-//     #[case::off_grid5(&Area::new(-10.0, 0.0, 5.0, 0.0, -10.0, Color::Red), [
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "••••••    ",
-//     ])]
-//     #[case::off_grid6(&Area::new(0.0, 0.0, 10.0, 10.0, 0.0, Color::Red), [
-//         "         •",
-//         "        ••",
-//         "       •••",
-//         "      ••••",
-//         "     •••••",
-//         "    ••••••",
-//         "   •••••••",
-//         "  ••••••••",
-//         " •••••••••",
-//         "••••••••••",
-//     ])]
-//     #[case::off_grid7(&Area::new(0.0, 0.0, 11.0, 11.0, 0.0, Color::Red), [
-//         "         •",
-//         "        ••",
-//         "       •••",
-//         "      ••••",
-//         "     •••••",
-//         "    ••••••",
-//         "   •••••••",
-//         "  ••••••••",
-//         " •••••••••",
-//         "••••••••••",
-//     ])]
-//     #[case::off_grid8(&Area::new(-1.0, -1.0, 11.0, 11.0, 0.0, Color::Red), [
-//         "         •",
-//         "        ••",
-//         "       •••",
-//         "      ••••",
-//         "     •••••",
-//         "    ••••••",
-//         "   •••••••",
-//         "  ••••••••",
-//         " •••••••••",
-//         "••••••••••",
-//     ])]
-//     #[case::horizontal1(&Area::new(0.0, 0.0, 10.0, 0.0, 0.0, Color::Red), [
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "••••••••••",
-//     ])]
-//     #[case::horizontal2(&Area::new(0.0, 0.0, 10.0, 0.0, 10.0, Color::Red), [
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//     ])]
-//     #[case::horizontal3(&Area::new(10.0, 10.0, 0.0, 10.0, 10.0, Color::Red), [
-//         "••••••••••",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//     ])]
-//     #[case::horizontal4(&Area::new(10.0, 10.0, 0.0, 10.0, 0.0, Color::Red), [
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//         "••••••••••",
-//     ])]
-//     #[case::vertical1(&Area::new(0.0, 0.0, 0.0, 10.0, 0.0, Color::Red), ["•         "; 10])]
-//     #[case::vertical2(&Area::new(10.0, 10.0, 10.0, 0.0, 0.0, Color::Red), ["         •"; 10])]
-//     // dy < dx, x1 < x2
-//     #[case::diagonal1(&Area::new(0.0, 0.0, 10.0, 5.0, 0.0, Color::Red), [
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "        ••",
-//         "      ••••",
-//         "    ••••••",
-//         "  ••••••••",
-//         "••••••••••",
-//     ])]
-//     // dy < dx, x1 > x2
-//     #[case::diagonal2(&Area::new(10.0, 0.0, 0.0, 5.0, 0.0, Color::Red), [
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "          ",
-//         "••        ",
-//         "••••      ",
-//         "••••••    ",
-//         "••••••••  ",
-//         "••••••••••",
-//     ])]
-//     // dy > dx, y1 < y2
-//     #[case::diagonal3(&Area::new(0.0, 0.0, 5.0, 10.0, 0.0, Color::Red), [
-//         "     •    ",
-//         "    ••    ",
-//         "    ••    ",
-//         "   •••    ",
-//         "   •••    ",
-//         "  ••••    ",
-//         "  ••••    ",
-//         " •••••    ",
-//         " •••••    ",
-//         "••••••    ",
-//     ])]
-//     // dy > dx, y1 > y2
-//     #[case::diagonal4(&Area::new(0.0, 10.0, 5.0, 0.0, 0.0, Color::Red), [
-//         "•         ",
-//         "••        ",
-//         "••        ",
-//         "•••       ",
-//         "•••       ",
-//         "••••      ",
-//         "••••      ",
-//         "•••••     ",
-//         "•••••     ",
-//         "••••••    ",
-//     ])]
-//     #[case::split1(&Area::new(0.0, 0.0, 10.0, 10.0, 5.0, Color::Red), [
-//         "         •",
-//         "        ••",
-//         "       •••",
-//         "      ••••",
-//         "     •••••",
-//         "••••••••••",
-//         "••••      ",
-//         "•••       ",
-//         "••        ",
-//         "•         ",
-//     ])]
-//     #[case::split2(&Area::new(0.0, 0.0, 10.0, 10.0, 7.0, Color::Red), [
-//         "         •",
-//         "        ••",
-//         "       •••",
-//         "••••••••••",
-//         "••••••    ",
-//         "•••••     ",
-//         "••••      ",
-//         "•••       ",
-//         "••        ",
-//         "•         ",
-//     ])]
-//     fn tests<'expected_line, ExpectedLines>(
-//         #[case] area_line: &Area,
-//         #[case] expected: ExpectedLines,
-//     ) where
-//         ExpectedLines: IntoIterator,
-//         ExpectedLines::Item: Into<ratatui_core::text::Line<'expected_line>>,
-//     {
-//         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
-//         let canvas = Canvas::default()
-//             .marker(Marker::Dot)
-//             .x_bounds([0.0, 10.0])
-//             .y_bounds([0.0, 10.0])
-//             .paint(|context| context.draw(area_line));
-//         canvas.render(buffer.area, &mut buffer);
+    #[rstest]
+    #[case::off_grid1(&Area::new(&[(-1.0, 0.0), (-1.0, 10.0), (-1.0,-1.0)], Color::Red, true), ["          "; 10])]
+    #[case::off_grid2(&Area::new(&[(0.0, -1.0), (10.0, -1.0), (0.0,-10.0)], Color::Red, true), ["          "; 10])]
+    #[case::off_grid3(&Area::new(&[(-10.0, 5.0), (-1.0, 5.0), (-1.0,0.0)], Color::Red, true), ["          "; 10])]
+    #[case::off_grid4(&Area::new(&[(5.0, 11.0), (5.0, 20.0), (11.0,11.0)], Color::Red, true), ["          "; 10])]
+    #[case::off_grid5(&Area::new(&[(-10.0, 0.0), (5.0, 0.0), (-10.0,0.0)], Color::Red, true), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "••••••    ",
+    ])]
+    #[case::off_grid6(&Area::new(&[(0.0, 0.0), (10.0, 10.0), (10.0, 0.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "     •••••",
+        "    ••••••",
+        "   •••••••",
+        "  ••••••••",
+        " •••••••••",
+        "••••••••••",
+    ])]
+    #[case::off_grid7(&Area::new(&[(0.0, 0.0), (11.0, 11.0), (10.0, 0.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "     •••••",
+        "    ••••••",
+        "   •••••••",
+        "  ••••••••",
+        " •••••••••",
+        "••••••••••",
+    ])]
+    #[case::off_grid8(&Area::new(&[(-1.0, -1.0), (11.0, 11.0), (10.0,-1.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "     •••••",
+        "    ••••••",
+        "   •••••••",
+        "  ••••••••",
+        " •••••••••",
+        "••••••••••",
+    ])]
+    #[case::off_grid9(&Area::new(&[(5.0, 0.0), (5.0, 5.0), (15.0, 0.0)], Color::Red, true), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "     ••   ",
+        "     •••• ",
+        "     •••••",
+        "     •••••",
+        "     •••••",
+    ])]
+    #[case::off_grid10(&Area::new(&[(-5.0, 0.0), (-5.0, 5.0), (5.0, 0.0)], Color::Red, true), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "••        ",
+        "••••      ",
+        "••••••    ",
+    ])]
+    #[case::off_grid11(&Area::new(&[(5.0, 0.0), (5.0, 5.0), (10.0, 5.0), (10.0, 0.0)], Color::Red, true), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "     •••••",
+        "     •••••",
+        "     •••••",
+        "     •••••",
+        "     •••••",
+    ])]
+    #[case::off_grid12(&Area::new(&[(7.0, 5.0), (11.0, 10.0), (11.0, 0.0)], Color::Red, true), [
+        "          ",
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "      ••••",
+        "       •••",
+        "        ••",
+        "         •",
+        "          ",
+    ])]
+    #[case::rhombus_1(&Area::new(&[(0.0, 0.0), (0.0, 7.0), (10.0, 10.0), (10.0, 3.0)], Color::Red, true), [
+        "        ••",
+        "     •••••",
+        "  ••••••••",
+        "••••••••••",
+        "••••••••••",
+        "••••••••••",
+        "••••••••••",
+        "••••••••  ",
+        "•••••     ",
+        "••        ",
+    ])]
+    #[case::rhombus_2(&Area::new(&[(5.0, 0.0), (4.0, 0.0), (0.0, 4.0), (0.0, 5.0), (4.0, 10.0), (5.0, 10.0), (10.0, 6.0), (10.0, 5.0)], Color::Red, true), [
+        "    ••    ",
+        "   ••••   ",
+        "  ••••••  ",
+        " •••••••• ",
+        "••••••••••",
+        "••••••••••",
+        " •••••••• ",
+        "  ••••••  ",
+        "   ••••   ",
+        "    ••    ",
+    ])]
+    #[case::rhombus_1_not_filled(&Area::new(&[(0.0, 0.0), (0.0, 7.0), (10.0, 10.0), (10.0, 3.0)], Color::Red, false), [
+        "        ••",
+        "     ••• •",
+        "  •••    •",
+        "••       •",
+        "•        •",
+        "•        •",
+        "•       ••",
+        "•    •••  ",
+        "• •••     ",
+        "••        ",
+    ])]
+    #[case::rhombus_2_not_filled(&Area::new(&[(5.0, 0.0), (4.0, 0.0), (0.0, 5.0), (0.0, 6.0), (4.0, 10.0), (5.0, 10.0), (10.0, 6.0), (10.0, 5.0)], Color::Red, false), [
+        "    ••    ",
+        "   •  •   ",
+        "  •    •  ",
+        " •      • ",
+        "•        •",
+        "•        •",
+        " •      • ",
+        "  •    •  ",
+        "   •  •   ",
+        "    ••    ",
+    ])]
+    #[case::cross1(&Area::new(&[(0.0, 0.0), (0.0, 5.0), (10.0, 5.0), (10.0, 10.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "     •••••",
+        "••••••••••",
+        "••••      ",
+        "•••       ",
+        "••        ",
+        "•         ",
+    ])]
+    #[case::cross2(&Area::new(&[(0.0, 0.0), (0.0, 7.0), (10.0, 3.0), (10.0, 10.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "••    ••••",
+        "••••••••••",
+        "••••••••••",
+        "••••    ••",
+        "•••       ",
+        "••        ",
+        "•         ",
+    ])]
+    #[case::cross1_not_filled(&Area::new(&[(0.0, 0.0), (0.0, 5.0), (10.0, 5.0), (10.0, 10.0)], Color::Red, false), [
+        "         •",
+        "        ••",
+        "       • •",
+        "      •  •",
+        "     •   •",
+        "••••••••••",
+        "•  •      ",
+        "• •       ",
+        "••        ",
+        "•         ",
+    ])]
+    #[case::cross_not_filled2(&Area::new(&[(0.0, 0.0), (0.0, 7.0), (10.0, 3.0), (10.0, 10.0)], Color::Red, false), [
+        "         •",
+        "        ••",
+        "       • •",
+        "••    •  •",
+        "• ••••   •",
+        "•   •••• •",
+        "•  •    ••",
+        "• •       ",
+        "••        ",
+        "•         ",
+    ])]
+    fn tests<'expected_line, ExpectedLines>(#[case] area: &Area, #[case] expected: ExpectedLines)
+    where
+        ExpectedLines: IntoIterator,
+        ExpectedLines::Item: Into<ratatui_core::text::Line<'expected_line>>,
+    {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
+        let canvas = Canvas::default()
+            .marker(Marker::Dot)
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .paint(|context| context.draw(area));
+        canvas.render(buffer.area, &mut buffer);
 
-//         let mut expected = Buffer::with_lines(expected);
-//         for cell in &mut expected.content {
-//             if cell.symbol() == "•" {
-//                 cell.set_style(Style::new().red());
-//             }
-//         }
-//         assert_eq!(buffer, expected);
-//     }
-// }
+        let mut expected = Buffer::with_lines(expected);
+        for cell in &mut expected.content {
+            if cell.symbol() == "•" {
+                cell.set_style(Style::new().red());
+            }
+        }
+        assert_eq!(buffer, expected);
+    }
+}
