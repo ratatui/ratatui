@@ -166,11 +166,9 @@ impl ListState {
     /// or change the upper bound of the clamp between renders.
     ///
     /// This will immediately clamp the `selected` to be less than `item_count`.
-    ///
-    /// Returns `true` if `selected` was not clamped.
-    pub(crate) const fn set_item_count(&mut self, count: Option<usize>) -> bool {
+    pub(crate) const fn set_item_count(&mut self, count: Option<usize>) {
         self.item_count.0 = count;
-        !self.clamp_selected()
+        self.clamp_selected()
     }
 
     /// Sets the index of the selected item
@@ -182,8 +180,6 @@ impl ListState {
     /// indices past the last item are clamped to the last item.
     ///
     /// If the `item_count` is zero, any `selected` index results in `None`.
-    ///
-    /// Returns `true` if `selected` is within bounds, `false` if it was clamped.
     ///
     /// # Examples
     ///
@@ -225,29 +221,26 @@ impl ListState {
     /// StatefulWidget::render(List::new(Vec::<&str>::new()), r, &mut Buffer::empty(r), &mut state);
     /// assert_eq!(state.selected(), None);
     /// ```
-    pub const fn select(&mut self, index: Option<usize>) -> bool {
+    pub const fn select(&mut self, index: Option<usize>) {
         self.selected = index;
         if index.is_none() {
             self.offset = 0;
         }
-        !self.clamp_selected()
+        self.clamp_selected()
     }
 
     /// Clamps the `selected` index to valid bounds if `item_count` is known.
     ///
     /// Returns `true` if the `selected` index was clamped.
-    const fn clamp_selected(&mut self) -> bool {
+    const fn clamp_selected(&mut self) {
         if let (Some(selected), Some(count)) = (self.selected, self.item_count.0) {
             if count == 0 {
                 self.selected = None;
-                return true;
             }
             if selected >= count {
                 self.selected = Some(count - 1);
-                return true;
             }
         }
-        false
     }
 
     /// Selects the next item or the first one if no item is selected
@@ -256,8 +249,6 @@ impl ListState {
     /// last item in the list.
     ///
     /// If `item_count` is `Some(0)`, then `selected` will be clamped and set to `None`.
-    ///
-    /// Returns `true` if the `selected` index was successfully moved, `false` if it was clamped.
     ///
     /// # Examples
     ///
@@ -288,10 +279,7 @@ impl ListState {
     /// assert!(!moved);
     /// assert_eq!(state.selected(), Some(2));
     /// ```
-    pub fn select_next(&mut self) -> bool {
-        if self.selected == Some(usize::MAX) {
-            return false;
-        }
+    pub fn select_next(&mut self) {
         let next = self.selected.map_or(0, |i| i.saturating_add(1));
         self.select(Some(next))
     }
@@ -303,8 +291,6 @@ impl ListState {
     /// If `item_count` is known, the function will select `item_count - 1` as the last item.
     ///
     /// If `item_count` is `Some(0)`, then `selected` will be clamped and set to `None`.
-    ///
-    /// Returns `true` if the `selected` index was successfully moved, `false` if it was clamped.
     ///
     /// # Examples
     ///
@@ -323,10 +309,7 @@ impl ListState {
     /// assert!(!moved);
     /// assert_eq!(state.selected(), Some(0));
     /// ```
-    pub fn select_previous(&mut self) -> bool {
-        if self.selected == Some(0) {
-            return false;
-        }
+    pub fn select_previous(&mut self) {
         let index_max = self
             .item_count
             .0
@@ -447,14 +430,9 @@ impl ListState {
     /// assert!(!moved);
     /// assert_eq!(state.selected(), Some(4));
     /// ```
-    pub fn scroll_down_by(&mut self, amount: u16) -> bool {
+    pub fn scroll_down_by(&mut self, amount: u16) {
         let selected = self.selected.unwrap_or_default();
-        if let Some(next) = selected.checked_add(amount as usize) {
-            self.select(Some(next))
-        } else {
-            self.select(Some(usize::MAX));
-            false
-        }
+        self.select(Some(selected.saturating_add(amount as usize)));
     }
 
     /// Scrolls up by a specified `amount` in the list.
@@ -482,14 +460,9 @@ impl ListState {
     /// assert!(!moved);
     /// assert_eq!(state.selected(), Some(0));
     /// ```
-    pub fn scroll_up_by(&mut self, amount: u16) -> bool {
+    pub fn scroll_up_by(&mut self, amount: u16) {
         let selected = self.selected.unwrap_or_default();
-        if let Some(next) = selected.checked_sub(amount as usize) {
-            self.select(Some(next))
-        } else {
-            self.select(Some(0));
-            false
-        }
+        self.select(Some(selected.saturating_sub(amount as usize)));
     }
 }
 

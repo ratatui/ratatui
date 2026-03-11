@@ -378,7 +378,6 @@ fn widgets_list_select_next_should_not_exceed_item_count() {
     let items = vec!["Item 0", "Item 1", "Item 2"];
     state.select(Some(2)); // select last item
 
-    // Render once so the list knows there are 3 items
     terminal
         .draw(|f| {
             let list = List::new(items.clone()).highlight_symbol(">> ");
@@ -386,12 +385,8 @@ fn widgets_list_select_next_should_not_exceed_item_count() {
         })
         .unwrap();
 
-    // Now try to move past the end — this should be clamped
-    state.select_next();
+    state.select_next(); // clamped to last item
 
-    // Without the fix, selected() returns Some(3) which causes a panic when
-    // used to index into the items list — a common pattern in user code:
-    //   let current_item = items[state.selected().unwrap()];
     let selected = state.selected().unwrap();
     assert!(
         selected < items.len(),
