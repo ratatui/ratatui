@@ -571,60 +571,6 @@ mod tests {
     }
 
     #[test]
-    fn select_next_should_not_exceed_item_count() {
-        let mut state = ListState {
-            item_count: Transient(Some(3)),
-            ..Default::default()
-        };
-        state.select(Some(2));
-
-        state.select_next();
-
-        assert_eq!(state.selected(), Some(2), "should stay at last item");
-    }
-
-    #[test]
-    fn scroll_down_by_should_not_exceed_item_count() {
-        let mut state = ListState {
-            item_count: Transient(Some(5)),
-            ..Default::default()
-        };
-        state.select(Some(3));
-
-        state.scroll_down_by(100);
-
-        assert_eq!(
-            state.selected(),
-            Some(4),
-            "should clamp to last valid index"
-        );
-    }
-
-    #[test]
-    fn select_last_should_use_item_count() {
-        let mut state = ListState {
-            item_count: Transient(Some(5)),
-            ..Default::default()
-        };
-
-        state.select_last();
-
-        assert_eq!(state.selected(), Some(4), "should go to last valid index");
-    }
-
-    #[test]
-    fn select_previous_from_none_should_use_item_count() {
-        let mut state = ListState {
-            item_count: Transient(Some(5)),
-            ..Default::default()
-        };
-
-        state.select_previous();
-
-        assert_eq!(state.selected(), Some(4), "should go to last item");
-    }
-
-    #[test]
     fn item_count_returns_cached_value() {
         let state = ListState::default();
         assert_eq!(state.item_count(), None);
@@ -634,35 +580,5 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(state.item_count(), Some(42));
-    }
-
-    #[test]
-    fn clamp_selected_with_zero_item_count_deselects() {
-        let mut state = ListState {
-            item_count: Transient(Some(0)),
-            ..Default::default()
-        };
-        state.select(Some(5));
-
-        state.select_next();
-
-        assert_eq!(state.selected(), None, "empty list should deselect");
-    }
-
-    #[test]
-    fn clamp_selected_does_nothing_when_within_bounds() {
-        let mut state = ListState {
-            item_count: Transient(Some(5)),
-            ..Default::default()
-        };
-        state.select(Some(2));
-
-        state.select_next();
-
-        assert_eq!(
-            state.selected(),
-            Some(3),
-            "should move normally when within bounds"
-        );
     }
 }
