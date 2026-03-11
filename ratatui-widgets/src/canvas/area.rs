@@ -158,7 +158,7 @@ fn clip_polygon(
     clip_top(&clipped, y_max_bound)
 }
 
-fn clip_top(clipped: &Vec<(f64, f64)>, y_max_bound: f64) -> Vec<(f64, f64)> {
+fn clip_top(clipped: &[(f64, f64)], y_max_bound: f64) -> Vec<(f64, f64)> {
     clip_edge(
         clipped,
         |(_, y)| y <= y_max_bound,
@@ -169,7 +169,7 @@ fn clip_top(clipped: &Vec<(f64, f64)>, y_max_bound: f64) -> Vec<(f64, f64)> {
     )
 }
 
-fn clip_bottom(clipped: &Vec<(f64, f64)>, y_min_bound: f64) -> Vec<(f64, f64)> {
+fn clip_bottom(clipped: &[(f64, f64)], y_min_bound: f64) -> Vec<(f64, f64)> {
     clip_edge(
         clipped,
         |(_, y)| y >= y_min_bound,
@@ -180,7 +180,7 @@ fn clip_bottom(clipped: &Vec<(f64, f64)>, y_min_bound: f64) -> Vec<(f64, f64)> {
     )
 }
 
-fn clip_right(clipped: &Vec<(f64, f64)>, x_max_bound: f64) -> Vec<(f64, f64)> {
+fn clip_right(clipped: &[(f64, f64)], x_max_bound: f64) -> Vec<(f64, f64)> {
     clip_edge(
         clipped,
         |(x, _)| x <= x_max_bound,
@@ -191,7 +191,7 @@ fn clip_right(clipped: &Vec<(f64, f64)>, x_max_bound: f64) -> Vec<(f64, f64)> {
     )
 }
 
-fn clip_left(clipped: &Vec<(f64, f64)>, x_min_bound: f64) -> Vec<(f64, f64)> {
+fn clip_left(clipped: &[(f64, f64)], x_min_bound: f64) -> Vec<(f64, f64)> {
     clip_edge(
         clipped,
         |(x, _)| x >= x_min_bound,
@@ -202,7 +202,7 @@ fn clip_left(clipped: &Vec<(f64, f64)>, x_min_bound: f64) -> Vec<(f64, f64)> {
     )
 }
 
-fn clip_edge<F, I>(vertices: &Vec<(f64, f64)>, is_inside: F, get_intersection: I) -> Vec<(f64, f64)>
+fn clip_edge<F, I>(vertices: &[(f64, f64)], is_inside: F, get_intersection: I) -> Vec<(f64, f64)>
 where
     F: Fn((f64, f64)) -> bool,
     I: Fn((f64, f64), (f64, f64)) -> (f64, f64),
@@ -222,10 +222,10 @@ where
                 result.push(get_intersection(p1, p2));
             }
             result.push(p2);
+        } else if p1_inside {
+            result.push(get_intersection(p1, p2));
         } else {
-            if p1_inside {
-                result.push(get_intersection(p1, p2));
-            }
+            // we don't care if none of the points is inside
         }
     }
     result
