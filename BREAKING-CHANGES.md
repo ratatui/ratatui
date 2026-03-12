@@ -25,7 +25,8 @@ This is a quick summary of the sections below:
   - MSRV is now 1.86.0
   - `Backend` now requires an associated `Error` type and `clear_region` method
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
-  - Disabling `default-features` will now disable layout cache, which can have a negative impact on performance
+  - Disabling `default-features` will now disable layout cache,
+  which can have a negative impact on performance
   - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache`
     feature is enabled
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
