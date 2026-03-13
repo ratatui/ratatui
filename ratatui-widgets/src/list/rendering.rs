@@ -35,6 +35,9 @@ impl StatefulWidget for &List<'_> {
         self.block.as_ref().render(area, buf);
         let list_area = self.block.inner_if_some(area);
 
+        // Setter clamps `selected`
+        state.set_item_count(Some(self.items.len()));
+
         if list_area.is_empty() {
             return;
         }
@@ -42,11 +45,6 @@ impl StatefulWidget for &List<'_> {
         if self.items.is_empty() {
             state.select(None);
             return;
-        }
-
-        // If the selected index is out of bounds, set it to the last item
-        if state.selected.is_some_and(|s| s >= self.items.len()) {
-            state.select(Some(self.items.len().saturating_sub(1)));
         }
 
         let list_height = list_area.height as usize;
