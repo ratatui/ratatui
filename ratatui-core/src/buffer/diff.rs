@@ -1,6 +1,4 @@
-use unicode_width::UnicodeWidthStr;
-
-use crate::buffer::{Buffer, Cell, CellDiffOption};
+use crate::buffer::{Buffer, Cell, CellDiffOption, CellWidth};
 use crate::layout::Rect;
 
 /// A zero-allocation iterator over the differences between two buffers of the same width.
@@ -112,7 +110,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
             match current.diff_option {
                 CellDiffOption::Skip => {}
                 CellDiffOption::ForcedWidth(width) => {
-                    self.pos += width.get().saturating_sub(1);
+                    self.pos += width.get().saturating_sub(1) as usize;
                     if current != previous {
                         let (x, y) = self.pos_of(i);
                         return Some((x, y, &self.next[i]));
@@ -125,9 +123,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     // a wide grapheme, which can result in visual artifacts (e.g., leftover
                     // characters). Emitting an explicit update for the trailing cells avoids
                     // this.
-                    let symbol = current.symbol();
-                    let cell_width = if symbol.len() == 1 { 1 } else { symbol.width() };
-
+                    let cell_width = current.cell_width() as usize;
                     if current == previous {
                         // Equal cells still need to account for multi-width skip.
                         self.pos += cell_width.saturating_sub(1);
@@ -138,7 +134,9 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     // emoji presentation sequences (those containing VS16 / U+FE0F).
                     // Only emit explicit clears for such sequences to avoid bloating diffs
                     // for standard wide characters (e.g., CJK), which terminals handle well.
-                    let contains_vs16 = cell_width > 1 && symbol.chars().any(|c| c == '\u{FE0F}');
+                    let contains_vs16 =
+                        cell_width > 1 && current.symbol().chars().any(|c| c == '\u{FE0F}');
+
                     if contains_vs16 {
                         let trailing_end = (i + cell_width).min(len);
                         self.trailing = Some(TrailingState {
@@ -164,7 +162,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 #[cfg(test)]
 mod tests {
     use alloc::vec::Vec;
-    use core::num::NonZeroUsize;
+    use core::num::NonZeroU16;
 
     use super::*;
     use crate::buffer::Buffer;
@@ -220,7 +218,7 @@ mod tests {
     fn forced_width_skips_trailing() {
         let prev = Buffer::with_lines(["abcd"]);
         let mut next = Buffer::with_lines(["xbcd"]);
-        next.content[0].diff_option = CellDiffOption::ForcedWidth(NonZeroUsize::new(2).unwrap());
+        next.content[0].diff_option = CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap());
 
         let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
         assert_eq!(diff.len(), 1);
