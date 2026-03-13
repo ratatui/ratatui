@@ -1,5 +1,3 @@
-use crate::transient::Transient;
-
 /// State of the [`List`] widget
 ///
 /// This state can be used to scroll through items and select one. When the list is rendered as a
@@ -49,8 +47,7 @@ use crate::transient::Transient;
 pub struct ListState {
     pub(crate) offset: usize,
     pub(crate) selected: Option<usize>,
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub(crate) item_count: Transient<Option<usize>>,
+    pub(crate) item_count: Option<usize>,
 }
 
 impl ListState {
@@ -156,7 +153,7 @@ impl ListState {
     /// This value is set during rendering.
     /// Returns `None` if the list hasn't been rendered yet.
     pub const fn item_count(&self) -> Option<usize> {
-        self.item_count.0
+        self.item_count
     }
 
     /// Sets the number of items in the list.
@@ -167,7 +164,7 @@ impl ListState {
     ///
     /// This will immediately clamp the `selected` to be less than `item_count`.
     pub(crate) const fn set_item_count(&mut self, count: Option<usize>) {
-        self.item_count.0 = count;
+        self.item_count = count;
         self.clamp_selected();
     }
 
@@ -238,7 +235,7 @@ impl ListState {
     ///
     /// Returns `true` if the `selected` index was clamped.
     const fn clamp_selected(&mut self) {
-        if let (Some(selected), Some(count)) = (self.selected, self.item_count.0) {
+        if let (Some(selected), Some(count)) = (self.selected, self.item_count) {
             if count == 0 {
                 self.selected = None;
             } else if selected >= count {
@@ -314,10 +311,7 @@ impl ListState {
     /// assert_eq!(state.selected(), Some(0));
     /// ```
     pub fn select_previous(&mut self) {
-        let index_max = self
-            .item_count
-            .0
-            .map_or(usize::MAX, |c| c.saturating_sub(1));
+        let index_max = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
         let previous = self.selected.map_or(index_max, |i| i.saturating_sub(1));
         self.select(Some(previous));
     }
@@ -395,10 +389,7 @@ impl ListState {
     /// assert_eq!(state.selected(), Some(4));
     /// ```
     pub fn select_last(&mut self) {
-        let last = self
-            .item_count
-            .0
-            .map_or(usize::MAX, |c| c.saturating_sub(1));
+        let last = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
         self.select(Some(last));
     }
 
@@ -478,7 +469,6 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::list::ListState;
-    use crate::transient::Transient;
 
     #[test]
     fn selected() {
@@ -576,7 +566,7 @@ mod tests {
         assert_eq!(state.item_count(), None);
 
         let state = ListState {
-            item_count: Transient(Some(42)),
+            item_count: Some(42),
             ..Default::default()
         };
         assert_eq!(state.item_count(), Some(42));
