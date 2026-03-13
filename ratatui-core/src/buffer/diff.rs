@@ -1,5 +1,3 @@
-use unicode_width::UnicodeWidthStr;
-
 use crate::buffer::{Buffer, Cell, CellDiffOption, CellWidth};
 use crate::layout::Rect;
 
@@ -164,8 +162,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 #[cfg(test)]
 mod tests {
     use alloc::vec::Vec;
-    use core::num::NonZeroUsize;
-    use std::num::NonZeroU16;
+    use core::num::NonZeroU16;
 
     use super::*;
     use crate::buffer::Buffer;
