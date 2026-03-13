@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # GitHub Copilot Code Review Instructions
 
 ## General Review Principles
@@ -52,7 +53,7 @@
 ```
 This PR seems quite large with changes across multiple areas. Consider splitting it into smaller, focused PRs:
 - Core functionality changes
-- Documentation updates  
+- Documentation updates
 - Test additions
 - Configuration changes
 

@@ -4,7 +4,7 @@
 
 This crate provides [`CrosstermBackend`], an implementation of the [`Backend`] trait for the
 [Ratatui] library. It uses the [Crossterm] library for all terminal manipulation.
-
+<!-- markdownlint-disable-next-line heading-increment -->
 ### Crossterm Version and Re-export
 
 `ratatui-crossterm` requires you to specify a version of the [Crossterm] library to be used.
