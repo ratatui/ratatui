@@ -212,19 +212,17 @@ impl Cell {
         }
     }
 
+    /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.
+    ///
+    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
+    /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
     #[deprecated(
         since = "0.30.1",
         note = "use `set_diff_option(CellDiffOption::Skip)` instead"
     )]
-    /// Set cell diffing option to [`CellDiffOption::Skip`].
     #[allow(deprecated)]
     pub const fn set_skip(&mut self, skip: bool) -> &mut Self {
         self.skip = skip;
-        self.diff_option = if skip {
-            CellDiffOption::Skip
-        } else {
-            CellDiffOption::None
-        };
         self
     }
 
