@@ -30,7 +30,7 @@ rust-version = "1.88.0"
 [workspace.dependencies]
 anstyle = "1"
 bitflags = "2.11"
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.6", features = ["derive"] }
 color-eyre = "0.6"
 compact_str = { version = "0.9", default-features = false }
 criterion = { version = "0.8", features = ["html_reports"] }
