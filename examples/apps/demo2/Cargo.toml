@@ -16,4 +16,3 @@ rand_chacha.workspace = true
 ratatui = { workspace = true, features = ["all-widgets"] }
 strum.workspace = true
 time.workspace = true
-unicode-width.workspace = true
