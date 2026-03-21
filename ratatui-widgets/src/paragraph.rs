@@ -1,5 +1,7 @@
 //! The [`Paragraph`] widget and related types allows displaying a block of text with optional
 //! wrapping, alignment, and block styling.
+use alloc::borrow::Cow;
+
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Position, Rect};
 use ratatui_core::style::{Style, Styled};
@@ -81,8 +83,12 @@ pub struct Paragraph<'a> {
     style: Style,
     /// How to wrap the text
     wrap: Option<Wrap>,
-    /// The text to display
-    text: Text<'a>,
+    /// The lines to display
+    lines: Cow<'a, [Line<'a>]>,
+    /// Base style applied to each line's graphemes (inherited from `Text` in `new()`).
+    ///
+    /// This is patched with each [`Line`]'s own style before rendering.
+    text_style: Style,
     /// Scroll
     scroll: Position,
     /// Alignment of the text
@@ -151,14 +157,46 @@ impl<'a> Paragraph<'a> {
     where
         T: Into<Text<'a>>,
     {
+        let text = text.into();
         Self {
             block: None,
             style: Style::default(),
             wrap: None,
-            text: text.into(),
+            lines: Cow::Owned(text.lines),
+            text_style: text.style,
             scroll: Position::ORIGIN,
             alignment: Alignment::Left,
         }
+    }
+
+    /// Creates a [`Paragraph`] that borrows lines directly, avoiding cloning.
+    ///
+    /// Use this when you already have a `&[Line]` and want to render or measure
+    /// without copying every span and string.
+    ///
+    /// If the source [`Text`] had a style, pass it via [`text_style`](Self::text_style)
+    /// to preserve the same rendering as [`Paragraph::new`].
+    pub fn from_lines(lines: &'a [Line<'a>]) -> Self {
+        Self {
+            block: None,
+            style: Style::default(),
+            wrap: None,
+            lines: Cow::Borrowed(lines),
+            text_style: Style::default(),
+            scroll: Position::ORIGIN,
+            alignment: Alignment::Left,
+        }
+    }
+
+    /// Sets the base text style applied to every line's graphemes.
+    ///
+    /// This is the style that was previously inherited from [`Text::style`] in
+    /// [`Paragraph::new`]. Use this with [`from_lines`](Self::from_lines) when the
+    /// source `Text` carried a non-default style.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn text_style(mut self, style: Style) -> Self {
+        self.text_style = style;
+        self
     }
 
     /// Surrounds the [`Paragraph`] widget with a [`Block`].
@@ -340,14 +378,7 @@ impl<'a> Paragraph<'a> {
             .unwrap_or_default();
 
         let count = if let Some(Wrap { trim }) = self.wrap {
-            let styled = self.text.iter().map(|line| {
-                let graphemes = line
-                    .spans
-                    .iter()
-                    .flat_map(|span| span.styled_graphemes(self.style));
-                let alignment = line.alignment.unwrap_or(self.alignment);
-                (graphemes, alignment)
-            });
+            let styled = self.styled_lines();
             let mut line_composer = WordWrapper::new(styled, width, trim);
             let mut count = 0;
             while line_composer.next_line().is_some() {
@@ -355,7 +386,7 @@ impl<'a> Paragraph<'a> {
             }
             count
         } else {
-            self.text.height()
+            self.lines.len()
         };
 
         count
@@ -385,7 +416,7 @@ impl<'a> Paragraph<'a> {
         issue = "https://github.com/ratatui/ratatui/issues/293"
     )]
     pub fn line_width(&self) -> usize {
-        let width = self.text.iter().map(Line::width).max().unwrap_or_default();
+        let width = self.lines.iter().map(Line::width).max().unwrap_or_default();
         let (left, right) = self
             .block
             .as_ref()
@@ -415,17 +446,26 @@ impl Widget for &Paragraph<'_> {
 }
 
 impl Paragraph<'_> {
+    /// Returns an iterator over lines, each paired with its resolved alignment
+    /// and styled graphemes. This is the single source of truth used by both
+    /// `line_count` and `render_paragraph`.
+    fn styled_lines(
+        &self,
+    ) -> impl Iterator<Item = (impl Iterator<Item = StyledGrapheme<'_>>, Alignment)> {
+        self.lines.iter().map(|line: &Line<'_>| {
+            let graphemes = line.styled_graphemes(self.text_style);
+            let alignment = line.alignment.unwrap_or(self.alignment);
+            (graphemes, alignment)
+        })
+    }
+
     fn render_paragraph(&self, text_area: Rect, buf: &mut Buffer) {
         if text_area.is_empty() {
             return;
         }
 
         buf.set_style(text_area, self.style);
-        let styled = self.text.iter().map(|line| {
-            let graphemes = line.styled_graphemes(self.text.style);
-            let alignment = line.alignment.unwrap_or(self.alignment);
-            (graphemes, alignment)
-        });
+        let styled = self.styled_lines();
 
         if let Some(Wrap { trim }) = self.wrap {
             let mut line_composer = WordWrapper::new(styled, text_area.width, trim);
@@ -1235,5 +1275,46 @@ mod tests {
         let paragraph = Paragraph::new("Lorem ipsum");
         // This should not panic, even if the buffer has zero size.
         paragraph.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn from_lines_renders_same_as_new() {
+        let lines = vec![
+            Line::from(vec![
+                Span::raw("Hello "),
+                Span::styled("world", Style::new().red()),
+            ]),
+            Line::from("second line"),
+        ];
+        let area = Rect::new(0, 0, 20, 3);
+
+        let mut buf_new = Buffer::empty(area);
+        Paragraph::new(lines.clone()).render(area, &mut buf_new);
+
+        let mut buf_ref = Buffer::empty(area);
+        Paragraph::from_lines(&lines).render(area, &mut buf_ref);
+
+        assert_eq!(buf_new, buf_ref);
+
+        let p_ref = Paragraph::from_lines(&lines);
+        let p_new = Paragraph::new(lines.clone());
+        assert_eq!(p_ref.line_count(20), p_new.line_count(20));
+        assert_eq!(p_ref.line_width(), p_new.line_width());
+
+        let long = vec![Line::from(
+            "Hello world, this is a long line that should wrap",
+        )];
+        let p_ref = Paragraph::from_lines(&long).wrap(Wrap { trim: false });
+        let p_new = Paragraph::new(long.clone()).wrap(Wrap { trim: false });
+        assert_eq!(p_ref.line_count(10), p_new.line_count(10));
+    }
+
+    #[test]
+    fn from_lines_empty_slice() {
+        let lines: &[Line<'_>] = &[];
+        let area = Rect::new(0, 0, 10, 2);
+        let mut buf = Buffer::empty(area);
+        Paragraph::from_lines(lines).render(area, &mut buf);
+        assert_eq!(buf, Buffer::empty(area));
     }
 }
