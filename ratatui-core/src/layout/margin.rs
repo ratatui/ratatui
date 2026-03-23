@@ -49,6 +49,12 @@ impl Margin {
     }
 }
 
+impl From<u16> for Margin {
+    fn from(value: u16) -> Self {
+        Self::new(value, value)
+    }
+}
+
 impl fmt::Display for Margin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}x{}", self.horizontal, self.vertical)
@@ -73,6 +79,18 @@ mod tests {
             Margin {
                 horizontal: 1,
                 vertical: 2
+            }
+        );
+    }
+
+    #[test]
+    fn from_u16() {
+        let m: Margin = 5_u16.into();
+        assert_eq!(
+            m,
+            Margin {
+                horizontal: 5,
+                vertical: 5
             }
         );
     }
