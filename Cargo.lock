@@ -2318,8 +2318,8 @@ checksum = "4cbf71184cc5ecc2e4e1baccdb21026c20e5fc3dcf63028a086131b3ab00b6e6"
 dependencies = [
  "approx",
  "fast-srgb8",
+ "libm",
  "palette_derive",
- "phf 0.11.3",
 ]
 
 [[package]]
