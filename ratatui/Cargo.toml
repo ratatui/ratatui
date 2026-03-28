@@ -26,8 +26,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 ## By default, we enable the crossterm backend as this is a reasonable choice for most applications
 ## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
 ## which allows you to set the underline color of text, the `macros` feature which provides
-## some useful macros and `layout-cache` which speeds up layout cache calculations
-## in `std`-enabled environments.
+## some useful macros and `layout-cache` which speeds up layout cache calculations.
 default = ["crossterm", "underline-color", "all-widgets", "macros", "layout-cache"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
@@ -42,13 +41,12 @@ termion = ["std", "dep:ratatui-termion"]
 termwiz = ["std", "dep:ratatui-termwiz"]
 
 ## enables std
-std = ["ratatui-core/std", "ratatui-widgets/std"]
+std = ["ratatui-core/std", "ratatui-widgets/std", "serde?/std"]
 
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = [
-  "std",
   "dep:serde",
   "ratatui-core/serde",
   "ratatui-widgets/serde",
@@ -61,7 +59,7 @@ serde = [
 layout-cache = ["ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
-palette = ["std", "ratatui-core/palette", "dep:palette"]
+palette = ["ratatui-core/palette", "dep:palette"]
 
 ## enables portable-atomic integration for targets that don't support atomic types.
 portable-atomic = ["ratatui-core/portable-atomic"]
