@@ -64,8 +64,8 @@
 //!   restores the terminal on exit.
 //! - Use [`init()`] / [`restore()`] (or [`try_init()`] / [`try_restore()`]) when you want manual
 //!   control over terminal lifetime and the event loop structure.
-//! - Use [`init_with_options()`] / [`try_init_with_options()`] when you need a custom
-//!   [`Viewport`], such as inline rendering or a fixed drawing region.
+//! - Use [`init_with_options()`] / [`try_init_with_options()`] when you need a custom [`Viewport`],
+//!   such as inline rendering or a fixed drawing region.
 //!
 //! Reach for [`Terminal::new`] or [`Terminal::with_options`] directly only when you need custom
 //! backend construction or terminal setup that Ratatui's convenience functions do not manage.
@@ -80,8 +80,8 @@
 //! - [`ratatui-core`] for widget libraries, custom integrations, and lower-level rendering
 //!   contracts
 //! - [`ratatui-widgets`] when you only need the built-in widgets crate as a dependency
-//! - [`ratatui-crossterm`], [`ratatui-termion`], or [`ratatui-termwiz`] when you need to select
-//!   and depend on a backend crate directly
+//! - [`ratatui-crossterm`], [`ratatui-termion`], or [`ratatui-termwiz`] when you need to select and
+//!   depend on a backend crate directly
 //!
 //! # Other documentation
 //!
@@ -246,26 +246,23 @@
 //!
 //! ### What happens if...
 //!
-//! - **If the terminal is resized:**  
-//!   Ratatui does not redraw automatically when a resize event arrives. Your app should continue
-//!   the event loop and call [`Terminal::draw`] again. During that render pass, Ratatui checks the
-//!   backend's current size instead of assuming the resize events were complete or up to date.
-//!   This keeps layout based on the size that actually exists when rendering, even if multiple
-//!   resize events were coalesced, missed, or delivered before the UI redraws. Fullscreen and
-//!   inline viewports update their internal size during that render pass; fixed viewports keep
-//!   their configured rectangle until you call [`Terminal::resize`].
-//! - **If [`Terminal::try_draw`] returns an error:**  
-//!   The render pass stops early and Ratatui does not promise that the terminal, cursor, and
-//!   internal buffers are still synchronized. In most applications, return the error and let the
-//!   surrounding setup path restore terminal state on exit.
-//! - **If you move the cursor directly:**  
-//!   Cursor changes made through backend-specific APIs or [`Terminal`] cursor methods can be
-//!   overwritten by the next render pass if that pass sets cursor state through [`Frame`].
-//!   Prefer choosing one path and using it consistently.
-//! - **If you mutate the backend directly:**  
-//!   Direct backend changes bypass Ratatui's diffing and viewport bookkeeping. After doing that,
-//!   run a full draw pass or clear the terminal before assuming Ratatui's internal view still
-//!   matches the screen.
+//! - **If the terminal is resized:**<br> Ratatui does not redraw automatically when a resize event
+//!   arrives. Your app should continue the event loop and call [`Terminal::draw`] again. During
+//!   that render pass, Ratatui checks the backend's current size instead of assuming the resize
+//!   events were complete or up to date. This keeps layout based on the size that actually exists
+//!   when rendering, even if multiple resize events were coalesced, missed, or delivered before the
+//!   UI redraws. Fullscreen and inline viewports update their internal size during that render
+//!   pass; fixed viewports keep their configured rectangle until you call [`Terminal::resize`].
+//! - **If [`Terminal::try_draw`] returns an error:**<br> The render pass stops early and Ratatui
+//!   does not promise that the terminal, cursor, and internal buffers are still synchronized. In
+//!   most applications, return the error and let the surrounding setup path restore terminal state
+//!   on exit.
+//! - **If you move the cursor directly:**<br> Cursor changes made through backend-specific APIs or
+//!   [`Terminal`] cursor methods can be overwritten by the next render pass if that pass sets
+//!   cursor state through [`Frame`]. Prefer choosing one path and using it consistently.
+//! - **If you mutate the backend directly:**<br> Direct backend changes bypass Ratatui's diffing
+//!   and viewport bookkeeping. After doing that, run a full draw pass or clear the terminal before
+//!   assuming Ratatui's internal view still matches the screen.
 //!
 //! ## Handling events
 //!

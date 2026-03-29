@@ -9,8 +9,8 @@
 //! providing the essential building blocks for creating rich terminal user interfaces in Rust.
 //!
 //! [ratatui]: https://github.com/ratatui/ratatui
-//! <!-- markdownlint-disable-next-line heading-increment -->
-//! ## Why `ratatui-core`?
+//!
+//! # Why `ratatui-core`?
 //!
 //! The `ratatui-core` crate is split from the main [`ratatui`](https://crates.io/crates/ratatui)
 //! crate to offer better stability for widget library authors and advanced integrations. Widget

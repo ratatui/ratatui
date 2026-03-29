@@ -22,7 +22,9 @@
 //! # {
 //! use std::io::stdout;
 //!
-//! use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
+//! use ratatui::Terminal;
+//! use ratatui::backend::CrosstermBackend;
+//! use ratatui::widgets::Paragraph;
 //!
 //! let backend = CrosstermBackend::new(stdout());
 //! let mut terminal = Terminal::new(backend)?;
@@ -202,8 +204,8 @@ use crate::layout::{Position, Rect};
 /// # #![allow(unexpected_cfgs)]
 /// # #[cfg(feature = "crossterm")]
 /// # {
-/// use ratatui::layout::{Constraint, Layout, Rect};
 /// use ratatui::backend::CrosstermBackend;
+/// use ratatui::layout::{Constraint, Layout, Rect};
 /// use ratatui::{Terminal, TerminalOptions, Viewport};
 ///
 /// // Fullscreen (most common):

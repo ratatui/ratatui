@@ -12,8 +12,8 @@
 //! backend and provides higher-level setup helpers. Reach for `ratatui-crossterm` directly when
 //! you need to depend on the backend crate itself, choose the Crossterm version explicitly, or
 //! integrate with Crossterm APIs beyond Ratatui's higher-level surface.
-//! <!-- markdownlint-disable-next-line heading-increment -->
-//! ## Crossterm Version and Re-export
+//!
+//! # Crossterm Version and Re-export
 //!
 //! `ratatui-crossterm` requires you to specify a version of the [Crossterm] library to be used.
 //! This is managed via feature flags. The highest enabled feature flag of the available
