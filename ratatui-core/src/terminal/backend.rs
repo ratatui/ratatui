@@ -19,10 +19,16 @@ impl<B: Backend> Terminal<B> {
 
     /// Returns a mutable reference to the backend.
     ///
-    /// This is an advanced escape hatch. Mutating the backend directly can desynchronize Ratatui's
-    /// internal buffers, cursor tracking, or viewport assumptions from what's on-screen. If you do
-    /// this, call [`Terminal::clear`] or perform a full draw pass before relying on Ratatui's view
-    /// of the terminal again.
+    /// This is an advanced escape hatch. Normal applications should render through
+    /// [`Terminal::draw`] / [`Terminal::try_draw`] instead of mutating the backend directly.
+    ///
+    /// Use this when integrating with backend-specific APIs that Ratatui does not model, or when
+    /// tests need direct control over backend state.
+    ///
+    /// Mutating the backend directly can desynchronize Ratatui's internal buffers, cursor
+    /// tracking, or viewport assumptions from what's on-screen. If you do this, call
+    /// [`Terminal::clear`] or perform a full draw pass before relying on Ratatui's view of the
+    /// terminal again.
     ///
     /// [`Terminal::clear`]: crate::terminal::Terminal::clear
     /// [`Terminal::draw`]: crate::terminal::Terminal::draw

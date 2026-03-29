@@ -6,9 +6,9 @@ use crate::terminal::{Frame, Terminal, Viewport};
 impl<B: Backend> Terminal<B> {
     /// Returns a [`Frame`] for manual rendering.
     ///
-    /// Most applications should render via [`Terminal::draw`] / [`Terminal::try_draw`]. This method
-    /// exposes the frame construction step used by [`Terminal::try_draw`] so tests and advanced
-    /// callers can render without running the full draw pipeline.
+    /// Most applications should render via [`Terminal::draw`] / [`Terminal::try_draw`]. This is an
+    /// escape hatch that exposes the frame construction step used by [`Terminal::try_draw`] so
+    /// tests and advanced callers can render without running the full draw pipeline.
     ///
     /// This is primarily useful for tests, backend adapters, and specialized integrations that
     /// intentionally manage presentation themselves.
@@ -61,11 +61,14 @@ impl<B: Backend> Terminal<B> {
     /// Gets the current buffer as a mutable reference.
     ///
     /// This is the buffer that the next [`Frame`] will render into (see [`Terminal::get_frame`]).
-    /// Most applications should render inside [`Terminal::draw`] and access the buffer via
-    /// [`Frame::buffer_mut`] instead.
+    /// This is a low-level escape hatch; normal applications should render inside
+    /// [`Terminal::draw`] and access the buffer through widgets, or through [`Frame::buffer_mut`]
+    /// when they intentionally need direct cell access during a render pass.
     ///
     /// Mutating this buffer does not update the backend immediately. The changes become visible
-    /// only after a later [`Terminal::flush`] or full draw pass applies the diff.
+    /// only after a later [`Terminal::flush`] or full draw pass applies the diff. Because this
+    /// bypasses the usual render callback structure, it is mainly useful for tests and specialized
+    /// integrations that intentionally manage presentation themselves.
     pub const fn current_buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffers[self.current]
     }

@@ -21,18 +21,18 @@
 //!
 //! # Which function should I start with?
 //!
-//! Choose the entry point that matches how you want to structure the app:
+//! Start with the simplest path that fits your application:
 //!
-//! - [`run`] for the normal case: Ratatui owns setup and cleanup around your application closure.
-//! - [`init`] / [`restore`] when you want explicit control over setup, teardown, or event loop
-//!   structure.
-//! - [`try_init`] / [`try_restore`] when you want the same control but need explicit error
-//!   handling instead of panicking or printing cleanup failures.
-//! - [`init_with_options`] / [`try_init_with_options`] when you need a custom [`TerminalOptions`]
-//!   such as inline or fixed viewports.
-//!
-//! If you need a non-default backend or terminal setup that should happen outside these helpers,
-//! construct [`Terminal`] manually instead.
+//! 1. Use [`run`] for the normal case: Ratatui owns setup and cleanup around your application
+//!    closure.
+//! 2. Move to [`init`] / [`restore`] when you want explicit control over setup, teardown, or event
+//!    loop structure.
+//! 3. Use [`try_init`] / [`try_restore`] when you want the same control but need explicit error
+//!    handling instead of panicking or printing cleanup failures.
+//! 4. Use [`init_with_options`] / [`try_init_with_options`] when you need a custom
+//!    [`TerminalOptions`] such as inline or fixed viewports.
+//! 5. Construct [`Terminal`] manually only when these helpers do not match the backend or terminal
+//!    lifecycle you need.
 //!
 //! # Available Types and Functions
 //!
@@ -62,7 +62,7 @@
 //!
 //! # Usage Guide
 //!
-//! For the simplest setup with automatic cleanup, use [`run`]:
+//! Start with the normal fullscreen application path:
 //!
 //! ```rust,no_run
 //! fn main() -> std::io::Result<()> {
@@ -77,7 +77,7 @@
 //! }
 //! ```
 //!
-//! For a typical event loop that redraws after resize events:
+//! Then add resize-aware redraws to the event loop:
 //!
 //! ```rust,no_run
 //! use crossterm::event::{self, Event, KeyCode, KeyEventKind};
@@ -105,7 +105,7 @@
 //! }
 //! ```
 //!
-//! For standard full-screen applications with manual control over initialization and cleanup:
+//! Reach for [`init`] / [`restore`] when you want manual control over setup and teardown:
 //!
 //! ```rust,no_run
 //! // Using init() - panics on failure
@@ -120,8 +120,8 @@
 //! # Ok::<(), std::io::Error>(())
 //! ```
 //!
-//! For applications that need custom terminal behavior (inline rendering, custom viewport sizes,
-//! or applications that don't want alternate screen buffer):
+//! Use [`init_with_options`] when the UI should not use the normal fullscreen path, for example
+//! for an inline UI that continues to share the terminal with earlier output:
 //!
 //! ```rust,no_run
 //! use crossterm::event::{self, Event, KeyCode, KeyEventKind};
@@ -165,6 +165,9 @@
 //! ratatui::try_restore()?;
 //! # Ok::<(), std::io::Error>(())
 //! ```
+//!
+//! These higher-level helpers are the normal application path. Manual [`Terminal`] construction is
+//! still available for custom backends and specialized integrations, but it is an advanced path.
 //!
 //! For cleanup, use [`restore`] in most cases where you want to attempt restoration but don't need
 //! to handle errors (they are printed to stderr). Use [`try_restore`] when you need to handle

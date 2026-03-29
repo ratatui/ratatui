@@ -103,6 +103,10 @@ use crate::layout::{Position, Rect};
 ///    fullscreen and inline viewports during `draw`; fixed viewports require an explicit call to
 ///    [`Terminal::resize`] if you want the region to change.
 ///
+/// The normal mental model is: redraw the whole UI each pass, let Ratatui compute the diff, and
+/// treat `Frame::area` as the source of truth for where this pass can render. Most application
+/// code can stay entirely within that model.
+///
 /// # Rendering Pipeline
 ///
 /// A single call to [`Terminal::draw`] (or [`Terminal::try_draw`]) represents one render pass. In
@@ -127,16 +131,28 @@ use crate::layout::{Position, Rect};
 /// an explicit [`Terminal::resize`]), Ratatui clears the viewport and resets the previous buffer so
 /// the next `draw` is treated as a full redraw.
 ///
-/// Most applications should use [`Terminal::draw`] / [`Terminal::try_draw`]. For manual rendering
-/// (primarily for tests), you can build a frame with [`Terminal::get_frame`], apply the current
-/// buffer diff with [`Terminal::flush`], then call [`Terminal::swap_buffers`]. If your backend
-/// buffers output, also call [`Backend::flush`].
+/// If [`Terminal::try_draw`] returns an error, the render pass ends early. Depending on where the
+/// failure happened, Ratatui may have already resized internal buffers, written part of the diff,
+/// or left cursor state unapplied. In most applications, treat that error as fatal for the current
+/// terminal session and let higher-level setup code restore terminal state before continuing.
+///
+/// Most applications should use [`Terminal::draw`] / [`Terminal::try_draw`]. Manual rendering is a
+/// separate, lower-level path intended primarily for tests and specialized integrations. In that
+/// mode you build a frame with [`Terminal::get_frame`], apply the current buffer diff with
+/// [`Terminal::flush`], then call [`Terminal::swap_buffers`]. If your backend buffers output, also
+/// call [`Backend::flush`].
 ///
 /// [`Terminal::flush`] only knows about Ratatui's two screen buffers. It does not know whether
 /// you have changed terminal modes or switched display surfaces (for example by leaving the
 /// alternate screen). If you call it after such a change, Ratatui may replay a diff computed for
 /// the old surface onto the new one. When you need a complete draw pass that stays synchronized
 /// with cursor updates and backend flushing, prefer [`Terminal::draw`] / [`Terminal::try_draw`].
+///
+/// The same caution applies to direct backend mutation and direct cursor manipulation. If you
+/// write to the backend or move the cursor outside Ratatui's normal render pass, the next draw may
+/// overwrite those changes or may diff against stale assumptions. Use those escape hatches only
+/// when you intentionally manage resynchronization yourself, typically by calling
+/// [`Terminal::clear`] or performing a full render pass afterward.
 ///
 /// ```rust,no_run
 /// # mod ratatui {
@@ -216,6 +232,12 @@ use crate::layout::{Position, Rect};
 /// [`Terminal::try_draw`]. Fullscreen and inline viewports resize automatically during those render
 /// passes; fixed viewports do not.
 ///
+/// If your event loop receives a resize event, treat that event as a signal to render again rather
+/// than as a complete source of truth for layout. During a render pass, use [`Frame::area`] as the
+/// rectangle that Ratatui has actually prepared for drawing. Ratatui checks the backend's current
+/// size during `draw` / `try_draw` so layout reflects the terminal size that exists at render
+/// time, even if resize events were coalesced, missed, or arrived before your app handled them.
+///
 /// # Inline Viewport
 ///
 /// Inline mode is designed for applications that want to embed a UI into a larger CLI flow. In
@@ -262,6 +284,8 @@ use crate::layout::{Position, Rect};
 /// - Choosing a viewport: [`Terminal::with_options`], [`TerminalOptions`], and [`Viewport`]
 /// - The rendering pipeline: [`Terminal::draw`] and [`Terminal::try_draw`]
 /// - Resize handling: [`Terminal::autoresize`] and [`Terminal::resize`]
+/// - Cursor behavior: [`Frame::set_cursor_position`], [`Terminal::set_cursor_position`], and
+///   [`Terminal::show_cursor`]
 /// - Manual rendering and testing: [`Terminal::get_frame`], [`Terminal::flush`], and
 ///   [`Terminal::swap_buffers`]
 /// - Printing above an inline UI: [`Terminal::insert_before`]

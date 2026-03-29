@@ -73,6 +73,7 @@ pub enum Viewport {
     ///
     /// [`Terminal::new`]: crate::terminal::Terminal::new
     /// [`Terminal::draw`]: crate::terminal::Terminal::draw
+    /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     #[default]
     Fullscreen,
     /// Draw the application inline with the rest of the terminal output.
@@ -90,7 +91,11 @@ pub enum Viewport {
     /// Inline viewports always span the full terminal width.
     ///
     /// For the full inline rendering model, including output inserted above the UI, see the
-    /// "Inline Viewport" section on [`Terminal`] and [`Terminal::insert_before`].
+    /// "Inline Viewport" section on [`Terminal`](crate::terminal::Terminal) and
+    /// [`Terminal::insert_before`](crate::terminal::Terminal::insert_before).
+    ///
+    /// [`Terminal::draw`]: crate::terminal::Terminal::draw
+    /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     Inline(u16),
     /// Draw into a fixed region of the terminal.
     ///

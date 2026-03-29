@@ -5,7 +5,8 @@ use crate::widgets::{StatefulWidget, Widget};
 /// A consistent view into the terminal state for rendering a single frame.
 ///
 /// You usually get a `Frame` from the closure argument of [`Terminal::draw`] /
-/// [`Terminal::try_draw`]. For manual rendering, use [`Terminal::get_frame`].
+/// [`Terminal::try_draw`]. For manual rendering, use
+/// [`Terminal::get_frame`](crate::terminal::Terminal::get_frame).
 ///
 /// A `Frame` is used to render widgets into Ratatui's current buffer and request the cursor state
 /// for the end of the render pass.
@@ -183,11 +184,16 @@ impl Frame<'_> {
 
     /// Gets the buffer that this `Frame` draws into as a mutable reference.
     ///
-    /// This is an escape hatch for direct buffer manipulation. Prefer the widget rendering methods
-    /// when possible so layout and rendering intent stay visible at the call site.
+    /// This is an escape hatch for direct buffer manipulation. Normal applications should prefer
+    /// the widget rendering methods so layout and rendering intent stay visible at the call site.
+    ///
+    /// Use this when tests, custom widgets, or specialized integrations need direct cell access
+    /// during a render pass.
     ///
     /// Changes written here are not visible on the backend until the render pass is applied by
-    /// [`Terminal::flush`] or a full [`Terminal::draw`] / [`Terminal::try_draw`] pass.
+    /// [`Terminal::flush`](crate::terminal::Terminal::flush) or a full
+    /// [`Terminal::draw`](crate::terminal::Terminal::draw) /
+    /// [`Terminal::try_draw`](crate::terminal::Terminal::try_draw) pass.
     ///
     /// # Example
     ///
