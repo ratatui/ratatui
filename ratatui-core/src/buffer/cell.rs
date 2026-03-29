@@ -54,10 +54,20 @@ pub struct Cell {
 
     /// Special option applied when copying (diffing) the buffer to the screen (or another buffer).
     pub diff_option: CellDiffOption,
+
+    /// Whether the cell should be skipped when copying (diffing) the buffer to the screen.
+    ///
+    /// Use [`CellDiffOption::Skip`] via [`set_diff_option`](Self::set_diff_option) instead.
+    #[deprecated(
+        since = "0.30.1",
+        note = "use `set_diff_option(CellDiffOption::Skip)` instead"
+    )]
+    pub skip: bool,
 }
 
 impl Cell {
     /// An empty `Cell`
+    #[allow(deprecated)]
     pub const EMPTY: Self = Self {
         symbol: None,
         fg: Color::Reset,
@@ -66,6 +76,7 @@ impl Cell {
         underline_color: Color::Reset,
         modifier: Modifier::empty(),
         diff_option: CellDiffOption::None,
+        skip: false,
     };
 
     /// Creates a new `Cell` with the given symbol.
@@ -202,17 +213,17 @@ impl Cell {
         }
     }
 
+    /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.
+    ///
+    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
+    /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
     #[deprecated(
-        since = "0.30.0",
+        since = "0.30.1",
         note = "use `set_diff_option(CellDiffOption::Skip)` instead"
     )]
-    /// Set cell diffing option to [`CellDiffOption::Skip`].
+    #[allow(deprecated)]
     pub const fn set_skip(&mut self, skip: bool) -> &mut Self {
-        self.diff_option = if skip {
-            CellDiffOption::Skip
-        } else {
-            CellDiffOption::None
-        };
+        self.skip = skip;
         self
     }
 
@@ -226,6 +237,7 @@ impl Cell {
     }
 
     /// Resets the cell to the empty state.
+    #[allow(deprecated)]
     pub fn reset(&mut self) {
         *self = Self::EMPTY;
     }
@@ -246,8 +258,12 @@ impl PartialEq for Cell {
         #[cfg(not(feature = "underline-color"))]
         let underline_color_eq = true;
 
+        #[allow(deprecated)]
+        let skip_eq = self.skip == other.skip;
+
         symbols_eq
             && underline_color_eq
+            && skip_eq
             && self.fg == other.fg
             && self.bg == other.bg
             && self.modifier == other.modifier
@@ -270,6 +286,8 @@ impl core::hash::Hash for Cell {
         self.underline_color.hash(state);
         self.modifier.hash(state);
         self.diff_option.hash(state);
+        #[allow(deprecated)]
+        self.skip.hash(state);
     }
 }
 
@@ -297,6 +315,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(deprecated)]
     fn new() {
         let cell = Cell::new("あ");
         assert_eq!(
@@ -309,6 +328,7 @@ mod tests {
                 underline_color: Color::Reset,
                 modifier: Modifier::empty(),
                 diff_option: CellDiffOption::None,
+                skip: false,
             }
         );
     }
