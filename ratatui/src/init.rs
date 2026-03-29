@@ -19,6 +19,21 @@
 //! convenience, so you can call `ratatui::run()`, `ratatui::init()`, etc. instead of
 //! `ratatui::init::run()`, `ratatui::init::init()`, etc.
 //!
+//! # Which function should I start with?
+//!
+//! Choose the entry point that matches how you want to structure the app:
+//!
+//! - [`run`] for the normal case: Ratatui owns setup and cleanup around your application closure.
+//! - [`init`] / [`restore`] when you want explicit control over setup, teardown, or event loop
+//!   structure.
+//! - [`try_init`] / [`try_restore`] when you want the same control but need explicit error
+//!   handling instead of panicking or printing cleanup failures.
+//! - [`init_with_options`] / [`try_init_with_options`] when you need a custom [`TerminalOptions`]
+//!   such as inline or fixed viewports.
+//!
+//! If you need a non-default backend or terminal setup that should happen outside these helpers,
+//! construct [`Terminal`] manually instead.
+//!
 //! # Available Types and Functions
 //!
 //! ## Types
@@ -62,6 +77,34 @@
 //! }
 //! ```
 //!
+//! For a typical event loop that redraws after resize events:
+//!
+//! ```rust,no_run
+//! use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+//!
+//! fn main() -> std::io::Result<()> {
+//!     ratatui::run(|terminal| {
+//!         loop {
+//!             terminal.draw(|frame| {
+//!                 frame.render_widget("Resize the terminal or press q to quit", frame.area());
+//!             })?;
+//!
+//!             match event::read()? {
+//!                 Event::Resize(_, _) => {
+//!                     // The next `draw` pass re-renders the UI at the new size.
+//!                 }
+//!                 Event::Key(key)
+//!                     if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') =>
+//!                 {
+//!                     break Ok(());
+//!                 }
+//!                 _ => {}
+//!             }
+//!         }
+//!     })
+//! }
+//! ```
+//!
 //! For standard full-screen applications with manual control over initialization and cleanup:
 //!
 //! ```rust,no_run
@@ -81,15 +124,34 @@
 //! or applications that don't want alternate screen buffer):
 //!
 //! ```rust,no_run
+//! use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+//! use ratatui::widgets::Widget;
 //! use ratatui::{TerminalOptions, Viewport};
 //!
 //! let options = TerminalOptions {
 //!     viewport: Viewport::Inline(10),
 //! };
 //!
-//! // Using init_with_options() - panics on failure
 //! let mut terminal = ratatui::init_with_options(options);
-//! // ... app logic ...
+//!
+//! terminal.insert_before(1, |buf| {
+//!     "> Ready".render(buf.area, buf);
+//! })?;
+//!
+//! loop {
+//!     terminal.draw(|frame| {
+//!         frame.render_widget("Inline UI lives below earlier terminal output", frame.area());
+//!     })?;
+//!
+//!     if matches!(
+//!         event::read()?,
+//!         Event::Key(key)
+//!             if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q')
+//!     ) {
+//!         break;
+//!     }
+//! }
+//!
 //! ratatui::restore();
 //!
 //! // Using try_init_with_options() - returns Result for custom error handling
@@ -97,7 +159,9 @@
 //!     viewport: Viewport::Inline(10),
 //! };
 //! let mut terminal = ratatui::try_init_with_options(options)?;
-//! // ... app logic ...
+//! terminal.draw(|frame| {
+//!     frame.render_widget("Inline UI", frame.area());
+//! })?;
 //! ratatui::try_restore()?;
 //! # Ok::<(), std::io::Error>(())
 //! ```

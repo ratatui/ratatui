@@ -6,8 +6,11 @@ impl<B: Backend> Terminal<B> {
     /// Returns a shared reference to the backend.
     ///
     /// This is primarily useful for backend-specific inspection in tests (e.g. reading
-    /// [`TestBackend`]'s buffer). Most applications should interact with the terminal via
-    /// [`Terminal::draw`] rather than calling backend methods directly.
+    /// [`TestBackend`]'s buffer) or for backend-specific APIs that Ratatui does not model.
+    ///
+    /// Reading from the backend does not desynchronize Ratatui, but values observed here may lag
+    /// behind the current render callback because Ratatui does not apply a frame to the backend
+    /// until the end of [`Terminal::draw`] / [`Terminal::try_draw`].
     ///
     /// [`TestBackend`]: crate::backend::TestBackend
     pub const fn backend(&self) -> &B {
@@ -17,20 +20,31 @@ impl<B: Backend> Terminal<B> {
     /// Returns a mutable reference to the backend.
     ///
     /// This is an advanced escape hatch. Mutating the backend directly can desynchronize Ratatui's
-    /// internal buffers from what's on-screen; if you do this, you may need to call
-    /// [`Terminal::clear`] to force a full redraw.
+    /// internal buffers, cursor tracking, or viewport assumptions from what's on-screen. If you do
+    /// this, call [`Terminal::clear`] or perform a full draw pass before relying on Ratatui's view
+    /// of the terminal again.
+    ///
+    /// [`Terminal::clear`]: crate::terminal::Terminal::clear
+    /// [`Terminal::draw`]: crate::terminal::Terminal::draw
+    /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     pub const fn backend_mut(&mut self) -> &mut B {
         &mut self.backend
     }
 
     /// Queries the real size of the backend.
     ///
-    /// This returns the size of the underlying terminal. The current renderable area depends on
-    /// the configured [`Viewport`]; use [`Frame::area`] inside [`Terminal::draw`] if you want the
-    /// area you should render into.
+    /// This returns the backend's current terminal size and does not update Ratatui's internal
+    /// viewport bookkeeping by itself. The current renderable area depends on the configured
+    /// [`Viewport`]; use [`Frame::area`] inside [`Terminal::draw`] / [`Terminal::try_draw`] if you
+    /// want the area you should render into for the current pass.
+    ///
+    /// To make Ratatui observe backend size changes for fullscreen or inline viewports, see
+    /// [`Terminal::autoresize`].
     ///
     /// [`Frame::area`]: crate::terminal::Frame::area
+    /// [`Terminal::autoresize`]: crate::terminal::Terminal::autoresize
     /// [`Terminal::draw`]: crate::terminal::Terminal::draw
+    /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     /// [`Viewport`]: crate::terminal::Viewport
     pub fn size(&self) -> Result<Size, B::Error> {
         self.backend.size()

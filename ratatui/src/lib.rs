@@ -56,6 +56,20 @@
 //! various [Examples]. There are also several starter [Templates] available to help you get
 //! started quickly with common patterns.
 //!
+//! ## Which setup path should I use?
+//!
+//! Most application authors should start with one of these entry points:
+//!
+//! - Use [`run()`] for normal applications. It initializes the terminal, runs your app, and
+//!   restores the terminal on exit.
+//! - Use [`init()`] / [`restore()`] (or [`try_init()`] / [`try_restore()`]) when you want manual
+//!   control over terminal lifetime and the event loop structure.
+//! - Use [`init_with_options()`] / [`try_init_with_options()`] when you need a custom
+//!   [`Viewport`], such as inline rendering or a fixed drawing region.
+//!
+//! Reach for [`Terminal::new`] or [`Terminal::with_options`] directly only when you need custom
+//! backend construction or terminal setup that Ratatui's convenience functions do not manage.
+//!
 //! # Other documentation
 //!
 //! - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
@@ -173,6 +187,15 @@
 //! for the main loop to ensure that [`restore()`] is always called, even if the `?` operator
 //! causes early return from an error.
 //!
+//! Choose the setup path based on how much control you need:
+//!
+//! - [`run()`]: best default for most applications.
+//! - [`init()`] / [`restore()`]: use when you want explicit control over setup, teardown, or the
+//!   event loop structure.
+//! - [`try_init()`] / [`try_restore()`]: same as above, but with explicit error handling.
+//! - [`init_with_options()`] / [`try_init_with_options()`]: use when the app should not use the
+//!   default fullscreen + alternate-screen setup, for example with inline or fixed viewports.
+//!
 //! For more detailed information about initialization options and when to use each function, see
 //! the [`init` module] documentation.
 //!
@@ -181,7 +204,8 @@
 //! Before the convenience functions were introduced in version 0.28.1 ([`init()`]/[`restore()`])
 //! and 0.30.0 ([`run()`]), applications constructed [`Terminal`] and [`Backend`] instances
 //! manually. This approach is still supported for applications that need fine-grained control over
-//! initialization. See the [`Terminal`] and [`backend`] module documentation for details.
+//! initialization, custom backends, or terminal setup that should happen outside Ratatui's
+//! convenience helpers. See the [`Terminal`] and [`backend`] module documentation for details.
 //!
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
 //! the alternate screen and raw mode. Learn more about different backend options in the [Backend

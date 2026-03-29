@@ -321,7 +321,10 @@ pub trait Backend {
     /// syscall, and the user is also most likely to need columns and rows along with pixel size.
     fn window_size(&mut self) -> Result<WindowSize, Self::Error>;
 
-    /// Flush any buffered content to the terminal screen.
+    /// Flush any backend-buffered output to the terminal screen.
+    ///
+    /// This is distinct from [`Terminal::flush`](crate::terminal::Terminal::flush), which computes
+    /// a diff between Ratatui's screen buffers and sends draw commands to the backend.
     fn flush(&mut self) -> Result<(), Self::Error>;
 
     /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range

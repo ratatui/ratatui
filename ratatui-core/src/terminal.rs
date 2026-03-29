@@ -1,16 +1,25 @@
 #![deny(missing_docs)]
-//! Provides the [`Terminal`], [`Frame`] and related types.
+//! Provides the [`Terminal`], [`Frame`], [`CompletedFrame`], and [`Viewport`] types.
 //!
-//! The [`Terminal`] is the main interface of this library. It is responsible for drawing and
-//! maintaining the state of the different widgets that compose your application.
+//! This module contains Ratatui's rendering surface abstraction. [`Terminal`] ties together a
+//! backend, a viewport, and a double-buffered renderer. In a typical application you create a
+//! `Terminal`, render by calling [`Terminal::draw`] or [`Terminal::try_draw`] in a loop, and let
+//! Ratatui diff successive frames so only changed cells are sent to the backend.
 //!
-//! The [`Frame`] is a consistent view into the terminal state for rendering. It is obtained via
-//! the closure argument of [`Terminal::draw`]. It is used to render widgets to the terminal and
-//! control the cursor position.
+//! [`Frame`] is the mutable view used during one render pass. Widgets write into the current
+//! buffer through it, and cursor state for the end of the pass is requested through
+//! [`Frame::set_cursor_position`]. After rendering completes, Ratatui applies the buffer diff,
+//! updates the cursor, swaps buffers, and flushes any buffered backend output.
+//!
+//! This module focuses on rendering contracts. Process-wide terminal setup such as raw mode,
+//! alternate screen handling, and panic restoration lives in the higher-level `ratatui` crate.
 //!
 //! # Example
 //!
-//! ```rust,ignore
+//! ```rust,no_run
+//! # #![allow(unexpected_cfgs)]
+//! # #[cfg(feature = "crossterm")]
+//! # {
 //! use std::io::stdout;
 //!
 //! use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
@@ -18,10 +27,10 @@
 //! let backend = CrosstermBackend::new(stdout());
 //! let mut terminal = Terminal::new(backend)?;
 //! terminal.draw(|frame| {
-//!     let area = frame.area();
-//!     frame.render_widget(Paragraph::new("Hello world!"), area);
+//!     frame.render_widget(Paragraph::new("Hello world!"), frame.area());
 //! })?;
-//! # std::io::Result::Ok(())
+//! # }
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! [Crossterm]: https://crates.io/crates/crossterm
@@ -50,15 +59,19 @@ use crate::layout::{Position, Rect};
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///
-/// This is the main entry point for Ratatui. It is responsible for drawing and maintaining the
-/// state of the buffers, cursor and viewport.
+/// This is the main entry point for Ratatui's rendering subsystem. It owns the backend-facing
+/// render state: double buffers, viewport bookkeeping, and cursor synchronization for each render
+/// pass.
 ///
 /// If you're building a fullscreen application with the `ratatui` crate's default backend
 /// ([Crossterm]), prefer [`ratatui::run`] (or [`ratatui::init`] + [`ratatui::restore`]) over
 /// constructing `Terminal` directly. These helpers enable common terminal modes (raw mode +
 /// alternate screen) and restore them on exit and on panic.
 ///
-/// ```rust,ignore
+/// ```rust,no_run
+/// # #![allow(unexpected_cfgs)]
+/// # #[cfg(feature = "crossterm")]
+/// # {
 /// ratatui::run(|terminal| {
 ///     let mut should_quit = false;
 ///     while !should_quit {
@@ -70,6 +83,8 @@ use crate::layout::{Position, Rect};
 ///     }
 ///     Ok(())
 /// })?;
+/// # }
+/// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
 /// # Typical Usage
@@ -113,9 +128,15 @@ use crate::layout::{Position, Rect};
 /// the next `draw` is treated as a full redraw.
 ///
 /// Most applications should use [`Terminal::draw`] / [`Terminal::try_draw`]. For manual rendering
-/// (primarily for tests), you can build a frame with [`Terminal::get_frame`], write diffs with
-/// [`Terminal::flush`], then call [`Terminal::swap_buffers`]. If your backend buffers output, also
-/// call [`Backend::flush`].
+/// (primarily for tests), you can build a frame with [`Terminal::get_frame`], apply the current
+/// buffer diff with [`Terminal::flush`], then call [`Terminal::swap_buffers`]. If your backend
+/// buffers output, also call [`Backend::flush`].
+///
+/// [`Terminal::flush`] only knows about Ratatui's two screen buffers. It does not know whether
+/// you have changed terminal modes or switched display surfaces (for example by leaving the
+/// alternate screen). If you call it after such a change, Ratatui may replay a diff computed for
+/// the old surface onto the new one. When you need a complete draw pass that stays synchronized
+/// with cursor updates and backend flushing, prefer [`Terminal::draw`] / [`Terminal::try_draw`].
 ///
 /// ```rust,no_run
 /// # mod ratatui {
@@ -146,22 +167,28 @@ use crate::layout::{Position, Rect};
 /// Most applications use [`Viewport::Fullscreen`], but Ratatui also supports [`Viewport::Inline`]
 /// and [`Viewport::Fixed`].
 ///
+/// Choose a viewport based on how the app should fit into the terminal:
+///
+/// - [`Viewport::Fullscreen`]: the standard TUI case where Ratatui owns the whole terminal window.
+/// - [`Viewport::Inline`]: embed the UI into a larger CLI flow with normal terminal output above
+///   it.
+/// - [`Viewport::Fixed`]: render into one region of a larger terminal layout managed elsewhere.
+///
 /// Choose a viewport at initialization time with [`Terminal::with_options`] and
 /// [`TerminalOptions`].
 ///
-/// In [`Viewport::Fullscreen`], the viewport is the entire terminal and `Frame::area` starts at
-/// (0, 0). Ratatui automatically resizes the internal buffers when the terminal size changes.
+/// `Frame::area` depends on the active viewport. In fullscreen mode it starts at (0, 0); in fixed
+/// and inline mode it may have a non-zero origin, so prefer using `frame.area()` as your root
+/// layout rectangle. The variant docs on [`Viewport`] describe each mode in more detail, and
+/// inline-specific behavior is covered in the "Inline Viewport" section below.
 ///
-/// In [`Viewport::Fixed`], the viewport is a user-provided [`Rect`] in terminal coordinates.
-/// `Frame::area` is that exact rectangle (including its `x`/`y` offset). Fixed viewports are not
-/// automatically resized; if the region should change, call [`Terminal::resize`].
-///
-/// In [`Viewport::Inline`], Ratatui draws into a rectangle anchored to where the UI started. This
-/// mode is described in more detail in the "Inline Viewport" section below.
-///
-/// ```rust,ignore
-/// use ratatui::{layout::Rect, Terminal, TerminalOptions, Viewport};
+/// ```rust,no_run
+/// # #![allow(unexpected_cfgs)]
+/// # #[cfg(feature = "crossterm")]
+/// # {
+/// use ratatui::layout::{Constraint, Layout, Rect};
 /// use ratatui::backend::CrosstermBackend;
+/// use ratatui::{Terminal, TerminalOptions, Viewport};
 ///
 /// // Fullscreen (most common):
 /// let fullscreen = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
@@ -172,28 +199,42 @@ use crate::layout::{Position, Rect};
 ///     CrosstermBackend::new(std::io::stdout()),
 ///     TerminalOptions { viewport },
 /// )?;
+///
+/// fixed.draw(|frame| {
+///     // Split the fixed viewport itself instead of assuming the viewport starts at `(0, 0)`.
+///     let [header, body] =
+///         Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).areas(frame.area());
+///
+///     frame.render_widget("Fixed panel header", header);
+///     frame.render_widget("Render the panel body relative to frame.area()", body);
+/// })?;
+/// # }
+/// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
-/// Applications should detect terminal resizes and call [`Terminal::draw`] to redraw the
-/// application with the new size. This will automatically resize the internal buffers to match the
-/// new size for inline and fullscreen viewports. Fixed viewports are not resized automatically.
+/// Applications should redraw after terminal resizes with [`Terminal::draw`] /
+/// [`Terminal::try_draw`]. Fullscreen and inline viewports resize automatically during those render
+/// passes; fixed viewports do not.
 ///
 /// # Inline Viewport
 ///
 /// Inline mode is designed for applications that want to embed a UI into a larger CLI flow. In
-/// [`Viewport::Inline`], Ratatui anchors the viewport to the backend cursor row at initialization
-/// time and always starts drawing at column 0.
+/// [`Viewport::Inline`], Ratatui anchors the viewport to the backend cursor row and always starts
+/// drawing at column 0.
 ///
 /// To reserve vertical space for the requested height, Ratatui may append lines. When the cursor is
 /// near the bottom edge, terminals scroll; Ratatui accounts for that scrolling by shifting the
 /// computed viewport origin upward so the viewport stays fully visible.
 ///
 /// While running in inline mode, [`Terminal::insert_before`] can be used to print output above the
-/// viewport without disturbing the UI.
-/// When Ratatui is built with the `scrolling-regions` feature, `insert_before` can do this without
-/// clearing and redrawing the viewport.
+/// viewport without disturbing the UI's logical position. When Ratatui is built with the
+/// `scrolling-regions` feature, `insert_before` can do this without clearing and redrawing the
+/// viewport.
 ///
-/// ```rust,ignore
+/// ```rust,no_run
+/// # #![allow(unexpected_cfgs)]
+/// # #[cfg(feature = "crossterm")]
+/// # {
 /// use ratatui::{TerminalOptions, Viewport};
 ///
 /// println!("Some output above the UI");
@@ -207,6 +248,13 @@ use crate::layout::{Position, Rect};
 ///     // Render a single line of output into `buf` before the UI.
 ///     // (For example: logs, status updates, or command output.)
 /// })?;
+///
+/// terminal.draw(|frame| {
+///     // Continue rendering the inline UI relative to the inline viewport.
+///     frame.render_widget("inline ui", frame.area());
+/// })?;
+/// # }
+/// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
 /// # More Information
@@ -331,10 +379,10 @@ where
     /// [`Terminal::draw`]. Accessing the backend can be useful for backend-specific testing and
     /// inspection (see [`Terminal::backend`]).
     backend: B,
-    /// Double-buffered render state.
+    /// Double-buffered render state for the current viewport.
     ///
-    /// [`Terminal::flush`] diffs `buffers[current]` against the other buffer to compute a minimal
-    /// set of updates to send to the backend.
+    /// [`Terminal::flush`] diffs `buffers[current]` against the other buffer to compute the next
+    /// batch of cell updates to send to the backend.
     buffers: [Buffer; 2],
     /// Index of the "current" buffer in [`Terminal::buffers`].
     ///
@@ -361,14 +409,16 @@ where
     /// For fullscreen and inline viewports this tracks the backend-reported terminal size. For
     /// fixed viewports, this tracks the user-provided fixed area.
     ///
-    /// This is used by [`Terminal::autoresize`] and is reported via [`CompletedFrame::area`].
+    /// This is used by [`Terminal::autoresize`] to detect size changes and is reported via
+    /// [`CompletedFrame::area`].
     last_known_area: Rect,
     /// Last known cursor position in terminal coordinates.
     ///
     /// This is updated when:
     ///
     /// - [`Terminal::set_cursor_position`] is called directly.
-    /// - [`Frame::set_cursor_position`] is used during [`Terminal::draw`].
+    /// - [`Frame::set_cursor_position`] is used during [`Terminal::draw`] /
+    ///   [`Terminal::try_draw`].
     /// - [`Terminal::flush`] observes a diff update (used as a proxy for the "last written" cell).
     ///
     /// Inline viewports use this during [`Terminal::resize`] to preserve the cursor's relative
