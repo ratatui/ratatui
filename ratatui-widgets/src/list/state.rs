@@ -85,6 +85,22 @@ impl ListState {
         self
     }
 
+    /// Sets the number of items in the list
+    ///
+    /// Fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::ListState;
+    ///
+    /// let state = ListState::default().with_item_count(Some(5));
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn with_item_count(mut self, count: Option<usize>) -> Self {
+        self.item_count = count;
+        self
+    }
     /// Index of the first item to be displayed
     ///
     /// # Examples
@@ -150,26 +166,6 @@ impl ListState {
         &mut self.selected
     }
 
-    /// Returns the number of items in the list, if known.
-    ///
-    /// This value is set during rendering.
-    /// Returns `None` if the list hasn't been rendered yet.
-    pub const fn item_count(&self) -> Option<usize> {
-        self.item_count
-    }
-
-    /// Sets the number of items in the list.
-    ///
-    /// This value is updated during rendering.
-    /// You can update it manually to enable clamping before the first render,
-    /// or change the upper bound of the clamp between renders.
-    ///
-    /// This will immediately clamp the `selected` to be less than `item_count`.
-    pub(crate) const fn set_item_count(&mut self, count: Option<usize>) {
-        self.item_count = count;
-        self.clamp_selected();
-    }
-
     /// Sets the index of the selected item
     ///
     /// Set to `None` if no item is selected. This will also reset the offset to `0`.
@@ -192,6 +188,59 @@ impl ListState {
         if index.is_none() {
             self.offset = 0;
         }
+        self.clamp_selected();
+    }
+
+    /// Mutable reference of `item_count`.
+    ///
+    /// Returns `None` if `item_count` is not set.
+    ///
+    /// Note: this bypasses clamping. The `selected` value will be clamped on the next render
+    /// or navigation method call.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::ListState;
+    ///
+    /// let mut state = ListState::default();
+    /// *state.item_count_mut() = Some(1);
+    /// ```
+    pub const fn item_count_mut(&mut self) -> &mut Option<usize> {
+        &mut self.item_count
+    }
+
+    /// Returns the number of items in the list, if known.
+    ///
+    /// This value is set during rendering.
+    /// Returns `None` if the list hasn't been rendered yet.
+    pub const fn item_count(&self) -> Option<usize> {
+        self.item_count
+    }
+
+    /// Updates the number of items in the list.
+    ///
+    /// This value is updated during rendering.
+    /// You can update it manually to enable clamping before the first render,
+    /// or change the upper bound of the clamp between renders.
+    ///
+    /// This will immediately clamp the `selected` to be less than `item_count`.
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::ListState;
+    ///
+    /// let mut state = ListState::default();
+    /// state.update_item_count(Some(5));
+    ///
+    /// // Clamping
+    /// let mut state = ListState::default();
+    /// state.select(Some(4));
+    /// state.update_item_count(Some(2));
+    /// assert_eq!(state.selected(), Some(1)); // (0-indexed)
+    /// ```
+    pub const fn update_item_count(&mut self, count: Option<usize>) {
+        self.item_count = count;
         self.clamp_selected();
     }
 

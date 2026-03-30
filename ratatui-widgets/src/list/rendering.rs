@@ -36,7 +36,7 @@ impl StatefulWidget for &List<'_> {
         let list_area = self.block.inner_if_some(area);
 
         // Setter clamps `selected`
-        state.set_item_count(Some(self.items.len()));
+        state.update_item_count(Some(self.items.len()));
 
         if list_area.is_empty() {
             return;
