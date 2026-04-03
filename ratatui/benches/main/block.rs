@@ -36,7 +36,7 @@ fn block(c: &mut Criterion) {
     group.finish();
 }
 
-/// render the block into a buffer of the given `size`
+/// Render the block into a buffer of the given `size`.
 fn render(bencher: &mut Bencher, block: &Block, size: Rect) {
     let mut buffer = Buffer::empty(size);
     // We use `iter_batched` to clone the value in the setup function.

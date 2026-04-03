@@ -8,7 +8,7 @@ rust-version.workspace = true
 [dependencies]
 color-eyre.workspace = true
 crossterm.workspace = true
-rand = "0.9.2"
+rand.workspace = true
 ratatui.workspace = true
 
 [lints]

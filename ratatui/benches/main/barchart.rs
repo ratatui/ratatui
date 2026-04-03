@@ -1,5 +1,5 @@
 use criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
-use rand::Rng;
+use rand::RngExt;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Direction, Rect};
 use ratatui::widgets::{Bar, BarChart, BarGroup, Widget};
@@ -52,7 +52,7 @@ fn barchart(c: &mut Criterion) {
     group.finish();
 }
 
-/// Render the widget in a classical size buffer
+/// Render the widget in a classical size buffer.
 fn render(bencher: &mut Bencher, barchart: &BarChart) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
     // We use `iter_batched` to clone the value in the setup function.

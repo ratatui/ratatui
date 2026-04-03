@@ -5,6 +5,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+use unicode_width::UnicodeWidthStr;
+
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
 use crate::style::{Style, Styled};
@@ -31,6 +33,7 @@ use crate::widgets::Widget;
 /// - [`Text::from`] creates a `Text` from a [`Span`].
 /// - [`Text::from`] creates a `Text` from a [`Line`].
 /// - [`Text::from`] creates a `Text` from a `Vec<Line>`.
+/// - [`Text::from`] creates a `Text` from a `&[Into<Line>]`.
 /// - [`Text::from_iter`] creates a `Text` from an iterator of items that can be converted into
 ///   `Line`.
 ///
@@ -284,7 +287,7 @@ impl<'a> Text<'a> {
     /// assert_eq!(15, text.width());
     /// ```
     pub fn width(&self) -> usize {
-        self.iter().map(Line::width).max().unwrap_or_default()
+        UnicodeWidthStr::width(self)
     }
 
     /// Returns the height.
@@ -297,7 +300,7 @@ impl<'a> Text<'a> {
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
-    pub fn height(&self) -> usize {
+    pub const fn height(&self) -> usize {
         self.lines.len()
     }
 
@@ -559,6 +562,25 @@ impl<'a> Text<'a> {
     }
 }
 
+impl UnicodeWidthStr for Text<'_> {
+    /// Returns the max width of all the lines.
+    fn width(&self) -> usize {
+        self.lines
+            .iter()
+            .map(UnicodeWidthStr::width)
+            .max()
+            .unwrap_or_default()
+    }
+
+    fn width_cjk(&self) -> usize {
+        self.lines
+            .iter()
+            .map(UnicodeWidthStr::width_cjk)
+            .max()
+            .unwrap_or_default()
+    }
+}
+
 impl<'a> IntoIterator for Text<'a> {
     type Item = Line<'a>;
     type IntoIter = alloc::vec::IntoIter<Self::Item>;
@@ -626,6 +648,18 @@ impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     fn from(lines: Vec<Line<'a>>) -> Self {
         Self {
             lines,
+            ..Default::default()
+        }
+    }
+}
+
+impl<'a, 'b, T> From<&'b [T]> for Text<'a>
+where
+    T: Into<Line<'a>> + Clone,
+{
+    fn from(value: &'b [T]) -> Self {
+        Self {
+            lines: value.iter().cloned().map(Into::into).collect(),
             ..Default::default()
         }
     }
@@ -864,6 +898,54 @@ mod tests {
     fn from_line() {
         let text = Text::from(Line::from("The first line"));
         assert_eq!(text.lines, [Line::from("The first line")]);
+    }
+
+    #[test]
+    fn from_slice_of_spans() {
+        let slice = [
+            Span::from("Hello"),
+            Span::from("world!"),
+            Span::from("Extra"),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_lines() {
+        let slice = [
+            Line::from("Hello"),
+            Line::from("world!"),
+            Line::from("Extra"),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strs() {
+        let slice = ["Hello", "world!", "Extra"];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strings() {
+        let slice = [
+            "Hello".to_string(),
+            "world!".to_string(),
+            "Extra".to_string(),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
     }
 
     #[rstest]

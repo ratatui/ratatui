@@ -8,7 +8,7 @@ rust-version.workspace = true
 [dependencies]
 color-eyre.workspace = true
 crossterm.workspace = true
-fakeit = "1.1"
+fakeit.workspace = true
 itertools.workspace = true
 ratatui.workspace = true
 unicode-width.workspace = true

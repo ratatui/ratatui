@@ -10,7 +10,7 @@
 
 use color_eyre::Result;
 use crossterm::event;
-use rand::{Rng, rng};
+use rand::{RngExt, rng};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Style, Stylize};

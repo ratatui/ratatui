@@ -1,7 +1,7 @@
 [package]
 name = "ratatui"
 description = "A library that's all about cooking up terminal user interfaces"
-version = "0.30.0-alpha.5"
+version = "0.30.0"
 authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
@@ -26,25 +26,27 @@ rustdoc-args = ["--cfg", "docsrs"]
 ## By default, we enable the crossterm backend as this is a reasonable choice for most applications
 ## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
 ## which allows you to set the underline color of text, the `macros` feature which provides
-## some useful macros and `layout-cache` which speeds up layout cache calculations
-## in `std`-enabled environments.
+## some useful macros and `layout-cache` which speeds up layout cache calculations.
 default = ["crossterm", "underline-color", "all-widgets", "macros", "layout-cache"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["std", "dep:ratatui-crossterm"]
+## selects the crossterm 0.28.x backend implementation
+crossterm_0_28 = ["crossterm", "ratatui-crossterm/crossterm_0_28"]
+## selects the crossterm 0.29.x backend implementation (default)
+crossterm_0_29 = ["crossterm", "ratatui-crossterm/crossterm_0_29"]
 ## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
 termion = ["std", "dep:ratatui-termion"]
 ## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
 termwiz = ["std", "dep:ratatui-termwiz"]
 
 ## enables std
-std = ["ratatui-core/std", "ratatui-widgets/std"]
+std = ["ratatui-core/std", "ratatui-widgets/std", "serde?/std"]
 
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = [
-  "std",
   "dep:serde",
   "ratatui-core/serde",
   "ratatui-widgets/serde",
@@ -54,10 +56,13 @@ serde = [
 ]
 
 ## enables layout cache
-layout-cache = ["std", "ratatui-core/layout-cache"]
+layout-cache = ["ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
-palette = ["std", "ratatui-core/palette", "dep:palette"]
+palette = ["ratatui-core/palette", "dep:palette"]
+
+## enables portable-atomic integration for targets that don't support atomic types.
+portable-atomic = ["ratatui-core/portable-atomic"]
 
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).

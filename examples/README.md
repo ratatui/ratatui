@@ -1,7 +1,9 @@
 # Examples
 
 This folder contains examples that are more application focused.
-There are also [widget examples] in `ratatui-widgets`.
+
+> [!TIP]
+> There are also [widget examples] in `ratatui-widgets`.
 
 [widget examples]: ../ratatui-widgets/examples
 
@@ -11,9 +13,10 @@ You can run these examples using:
 cargo run -p example-name
 ```
 
-This folder might use unreleased code. Consider viewing the examples in the `latest` branch instead
-of the `main` branch for code which is guaranteed to work with the released ratatui version.
-
+> [!NOTE]
+> This folder might use unreleased code. Consider viewing the examples in the `latest` branch instead
+> of the `main` branch for code which is guaranteed to work with the released Ratatui version.
+<!-- markdownlint-disable-next-line no-blanks-blockquote -->
 > [!WARNING]
 >
 > There may be backwards incompatible changes in these examples, as they are designed to compile
@@ -203,7 +206,7 @@ Shows how to use the [tracing](https://crates.io/crates/tracing) crate to log to
 
 ## User Input
 
-Shows how to handle user input. [Source](./apps/user-input/). [Source](./apps/user-input/).
+Shows how to handle user input. [Source](./apps/user-input/).
 
 ![User input demo][user-input.gif]
 
@@ -213,7 +216,8 @@ Shows how to render weather data using barchart widget. [Source](./apps/weather/
 
 ## WidgetRef Container
 
-Shows how to use [`WidgetRef`](https://docs.rs/ratatui/latest/ratatui/widgets/trait.WidgetRef.html) to store widgets in a container. [Source](./apps/widget-ref-container/).
+Shows how to use [`WidgetRef`](https://docs.rs/ratatui/latest/ratatui/widgets/trait.WidgetRef.html)
+to store widgets in a container. [Source](./apps/widget-ref-container/).
 
 ## Advanced Widget Implementation
 
@@ -253,10 +257,6 @@ vhs/generate.bash
 [constraint-explorer.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraint-explorer.gif?raw=true
 [constraints.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraints.gif?raw=true
 [custom-widget.gif]: https://github.com/ratatui/ratatui/blob/images/examples/custom-widget.gif?raw=true
-[demo2-destroy.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2-destroy.gif?raw=true
-[demo2-social.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2-social.gif?raw=true
-[demo2.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true
-[demo.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true
 [flex.gif]: https://github.com/ratatui/ratatui/blob/images/examples/flex.gif?raw=true
 [hello-world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello-world.gif?raw=true
 [hyperlink.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hyperlink.gif?raw=true

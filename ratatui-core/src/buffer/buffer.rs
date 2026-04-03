@@ -4,9 +4,8 @@ use core::ops::{Index, IndexMut};
 use core::{cmp, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
-use crate::buffer::Cell;
+use crate::buffer::{BufferDiff, Cell, CellWidth};
 use crate::layout::{Position, Rect};
 use crate::style::Style;
 use crate::text::{Line, Span};
@@ -25,7 +24,7 @@ use crate::text::{Line, Span};
 /// use ratatui_core::layout::{Position, Rect};
 /// use ratatui_core::style::{Color, Style};
 ///
-/// # fn foo() -> Option<()> {
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut buf = Buffer::empty(Rect {
 ///     x: 0,
 ///     y: 0,
@@ -39,13 +38,15 @@ use crate::text::{Line, Span};
 ///
 /// // indexing using (x, y) tuple (which is converted to Position)
 /// buf[(0, 1)].set_symbol("B");
-/// assert_eq!(buf[(0, 1)].symbol(), "x");
+/// assert_eq!(buf[(0, 1)].symbol(), "B");
 ///
 /// // getting an Option instead of panicking if the position is outside the buffer
-/// let cell = buf.cell_mut(Position { x: 0, y: 2 })?;
+/// let cell = buf
+///     .cell_mut(Position { x: 0, y: 2 })
+///     .ok_or("cell not found")?;
 /// cell.set_symbol("C");
 ///
-/// let cell = buf.cell(Position { x: 0, y: 2 })?;
+/// let cell = buf.cell(Position { x: 0, y: 2 }).ok_or("cell not found")?;
 /// assert_eq!(cell.symbol(), "C");
 ///
 /// buf.set_string(
@@ -58,7 +59,7 @@ use crate::text::{Line, Span};
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);
 /// assert_eq!(cell.bg, Color::White);
-/// # Some(())
+/// # Ok(())
 /// # }
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
@@ -216,6 +217,9 @@ impl Buffer {
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
     ///
+    /// Usage discouraged, as it exposes `self.content` as a linearly indexable array, which limits
+    /// potential future abstractions. See <https://github.com/ratatui/ratatui/issues/1122>.
+    ///
     /// # Examples
     ///
     /// ```
@@ -269,9 +273,12 @@ impl Buffer {
         Some(y * width + x)
     }
 
-    /// Returns the (global) coordinates of a cell given its index
+    /// Returns the (global) coordinates of a cell given its index.
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+    ///
+    /// Usage discouraged, as it exposes `self.content` as a linearly indexable array, which limits
+    /// potential future abstractions. See <https://github.com/ratatui/ratatui/issues/1122>.
     ///
     /// # Examples
     ///
@@ -342,7 +349,7 @@ impl Buffer {
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
-            .map(|symbol| (symbol, symbol.width() as u16))
+            .map(|symbol| (symbol, symbol.cell_width()))
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
                 remaining_width = remaining_width.checked_sub(width)?;
@@ -453,6 +460,18 @@ impl Buffer {
         self.area = area;
     }
 
+    /// Collects the diff between `self` and `other` into a `Vec`.
+    ///
+    /// This is a convenience wrapper around [`diff_iter`](Self::diff_iter) that collects the
+    /// results. Prefer `diff_iter` to avoid the intermediate allocation.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the two buffers have different `x`, `y`, or `width` values.
+    pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
+        self.diff_iter(other).collect()
+    }
+
     /// Builds a minimal sequence of coordinates and Cells necessary to update the UI from
     /// self to other.
     ///
@@ -481,28 +500,11 @@ impl Buffer {
     /// Next:    `aコ`
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
-    pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
-        let previous_buffer = &self.content;
-        let next_buffer = &other.content;
-
-        let mut updates: Vec<(u16, u16, &Cell)> = vec![];
-        // Cells invalidated by drawing/replacing preceding multi-width characters:
-        let mut invalidated: usize = 0;
-        // Cells from the current buffer to skip due to preceding multi-width characters taking
-        // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
-        let mut to_skip: usize = 0;
-        for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
-            if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
-                let (x, y) = self.pos_of(i);
-                updates.push((x, y, &next_buffer[i]));
-            }
-
-            to_skip = current.symbol().width().saturating_sub(1);
-
-            let affected_width = cmp::max(current.symbol().width(), previous.symbol().width());
-            invalidated = cmp::max(affected_width, invalidated).saturating_sub(1);
-        }
-        updates
+    /// # Panics
+    ///
+    /// Panics if the two buffers have different `x`, `y`, or `width` values.
+    pub fn diff_iter<'prev, 'next>(&'prev self, other: &'next Self) -> BufferDiff<'prev, 'next> {
+        BufferDiff::new(self, other)
     }
 }
 
@@ -584,15 +586,16 @@ impl fmt::Debug for Buffer {
         let mut styles = vec![];
         for (y, line) in self.content.chunks(self.area.width as usize).enumerate() {
             let mut overwritten = vec![];
-            let mut skip: usize = 0;
+            let mut skip: u16 = 0;
             f.write_str("        \"")?;
             for (x, c) in line.iter().enumerate() {
+                let sym = c.symbol();
                 if skip == 0 {
-                    f.write_str(c.symbol())?;
+                    f.write_str(sym)?;
                 } else {
-                    overwritten.push((x, c.symbol()));
+                    overwritten.push((x, sym));
                 }
-                skip = cmp::max(skip, c.symbol().width()).saturating_sub(1);
+                skip = cmp::max(skip, c.cell_width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
@@ -638,15 +641,20 @@ impl fmt::Debug for Buffer {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
+
     use alloc::format;
-    use alloc::string::ToString;
+    use alloc::string::{String, ToString};
     use core::iter;
+    use core::num::NonZeroU16;
     use std::{dbg, println};
 
     use itertools::Itertools;
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::buffer::CellDiffOption;
     use crate::style::{Color, Modifier, Stylize};
 
     #[test]
@@ -878,7 +886,7 @@ mod tests {
 
     #[test]
     fn set_string_zero_width() {
-        assert_eq!("\u{200B}".width(), 0);
+        assert_eq!("\u{200B}".cell_width(), 0);
 
         let area = Rect::new(0, 0, 1, 1);
         let mut buffer = Buffer::empty(area);
@@ -1024,8 +1032,8 @@ mod tests {
         let area = Rect::new(0, 0, 40, 40);
         let prev = Buffer::empty(area);
         let next = Buffer::filled(area, Cell::new("a"));
-        let diff = prev.diff(&next);
-        assert_eq!(diff.len(), 40 * 40);
+        let diff = prev.diff_iter(&next);
+        assert_eq!(diff.count(), 40 * 40);
     }
 
     #[test]
@@ -1107,11 +1115,116 @@ mod tests {
     }
 
     #[test]
+    fn merge_diff_idempotent() {
+        let mut prev = Buffer::with_lines(["123"]);
+        let next = Buffer::with_lines(["456"]);
+        prev.merge(&next);
+
+        let diff = prev.diff(&next);
+        assert_eq!(diff, []);
+    }
+
+    #[test]
+    fn merge_diff_forcedwidth() {
+        let mut prev = Buffer::with_lines(["123"]);
+        let mut next = Buffer::empty(Rect::new(0, 0, 3, 1));
+        next.cell_mut((0, 0))
+            .unwrap()
+            .set_symbol("456")
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(3).unwrap()));
+        prev.merge(&next);
+
+        let diff = prev.diff(&next);
+        assert_eq!(diff, []);
+    }
+
+    #[test]
+    fn merge_diff_link() {
+        let mut prev = Buffer::with_lines(["_".repeat(4)]);
+        let mut next = Buffer::empty(Rect::new(0, 0, 4, 1));
+        // Squeeze everything into the first cell, remaining cells are irrelevant.
+        next.cell_mut((0, 0))
+            .unwrap()
+            .set_symbol("\x1b]8;;http://example.com\x1b\\link\x1b]8;;\x1b\\")
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(4).unwrap()));
+        prev.merge(&next);
+
+        let diff = prev.diff(&next);
+        assert_eq!(diff, []);
+    }
+
+    #[test]
+    fn merge_diff_split_link() {
+        let mut prev = Buffer::with_lines(["_".repeat(8)]);
+        let mut next = Buffer::empty(Rect::new(0, 0, 8, 1));
+        // Squeeze starting sequence and first character in first cell.
+        next.cell_mut((0, 0))
+            .unwrap()
+            .set_symbol("\x1b]8;;http://example.com\x1b\\🔗")
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
+        // Set inner characters normally.
+        next.cell_mut((2, 0)).unwrap().set_symbol("l");
+        next.cell_mut((3, 0)).unwrap().set_symbol("i");
+        next.cell_mut((4, 0)).unwrap().set_symbol("n");
+        next.cell_mut((5, 0)).unwrap().set_symbol("k");
+        // Squeeze closing part into last cell.
+        next.cell_mut((7, 0))
+            .unwrap()
+            .set_symbol("🔗\x1b]8;;\x1b\\")
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
+        prev.merge(&next);
+
+        let diff = prev.diff(&next);
+        assert_eq!(diff, []);
+    }
+
+    #[test]
+    fn merge_diff_image_sequences() {
+        let mut prev = Buffer::empty(Rect::new(0, 0, 20, 1));
+
+        let mut kitty_image_placeholder_start = String::new();
+        // The first control sequence is to store the cursors state, including foreground color.
+        // It is necessary because we need to introduce a foreground color, but restore later to
+        // the previous foreground color, to which we don't have access in this buffer.
+        // At this point, the symbol width is already greater than one and would cause the next
+        // cell to be skipped, if we don't `set_forced_width(Some(1))`.
+        kitty_image_placeholder_start.push_str("\x1b[s");
+        // The second control sequence sets the foreground color to some 24 bit value, which is an
+        // imaginary "kitty protocol image id".
+        kitty_image_placeholder_start.push_str("\x1b[38;2;0;0;0m");
+        // The following are some special (reserved) unicode placeholder symbols.
+        // 10EEEE is the actual placeholder, and the 3 following characters would contain some row,
+        // column, and extra "image id" data.
+        kitty_image_placeholder_start.push_str("\u{10EEEE}\u{305}\u{305}\u{305}");
+
+        prev.cell_mut((0, 0))
+            .unwrap()
+            .set_symbol(&kitty_image_placeholder_start)
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(1).unwrap()));
+
+        // Add two follow up placeholder symbols that have a natural width of 1.
+        prev.cell_mut((1, 0)).unwrap().set_char('\u{10EEEE}');
+        prev.cell_mut((2, 0)).unwrap().set_char('\u{10EEEE}');
+        // The last symbol also has a control sequence which restores the style, so we need to
+        // force the width again to 1 to avoid skipping the next cell.
+        prev.cell_mut((3, 0))
+            .unwrap()
+            .set_symbol("\u{10EEEE}\x1b[u")
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(1).unwrap()));
+
+        let mut buffer = Buffer::filled(Rect::new(0, 0, 20, 1), Cell::new("x"));
+        buffer.merge(&prev);
+
+        let diff = buffer.diff(&prev);
+        assert_eq!(diff, []);
+    }
+
+    #[test]
     fn diff_skip() {
         let prev = Buffer::with_lines(["123"]);
         let mut next = Buffer::with_lines(["456"]);
         for i in 1..3 {
-            next.content[i].set_skip(true);
+            next.content[i].set_diff_option(CellDiffOption::Skip);
         }
 
         let diff = prev.diff(&next);
@@ -1164,9 +1277,13 @@ mod tests {
     }
 
     #[rstest]
-    #[case(false, true, [false, false, true, true, true, true])]
-    #[case(true, false, [true, true, false, false, false, false])]
-    fn merge_skip(#[case] skip_one: bool, #[case] skip_two: bool, #[case] expected: [bool; 6]) {
+    #[case(CellDiffOption::None, CellDiffOption::Skip, [CellDiffOption::None, CellDiffOption::None, CellDiffOption::Skip, CellDiffOption::Skip, CellDiffOption::Skip, CellDiffOption::Skip])]
+    #[case(CellDiffOption::Skip, CellDiffOption::None, [CellDiffOption::Skip, CellDiffOption::Skip, CellDiffOption::None, CellDiffOption::None, CellDiffOption::None, CellDiffOption::None])]
+    fn merge_skip(
+        #[case] skip_one: CellDiffOption,
+        #[case] skip_two: CellDiffOption,
+        #[case] expected: [CellDiffOption; 6],
+    ) {
         let mut one = {
             let area = Rect {
                 x: 0,
@@ -1175,7 +1292,7 @@ mod tests {
                 height: 2,
             };
             let mut cell = Cell::new("1");
-            cell.skip = skip_one;
+            cell.diff_option = skip_one;
             Buffer::filled(area, cell)
         };
         let two = {
@@ -1186,11 +1303,15 @@ mod tests {
                 height: 2,
             };
             let mut cell = Cell::new("2");
-            cell.skip = skip_two;
+            cell.diff_option = skip_two;
             Buffer::filled(area, cell)
         };
         one.merge(&two);
-        let skipped = one.content().iter().map(|c| c.skip).collect::<Vec<_>>();
+        let skipped = one
+            .content()
+            .iter()
+            .map(|c| c.diff_option)
+            .collect::<Vec<_>>();
         assert_eq!(skipped, expected);
     }
 
@@ -1248,6 +1369,9 @@ mod tests {
     // Both eye and speech bubble include a 'display as emoji' variation selector
     // Prior to unicode-width 0.2, this was incorrectly detected as width 4 for some reason
     #[case::eye_speechbubble("👁️‍🗨️", "👁️‍🗨️xxxxx")]
+    // Keyboard keycap emoji: base symbol + VS16 for emoji presentation
+    // This should render as a single grapheme with width 2.
+    #[case::keyboard_emoji("⌨️", "⌨️xxxxx")]
     fn renders_emoji(#[case] input: &str, #[case] expected: &str) {
         use unicode_width::UnicodeWidthChar;
 
@@ -1256,7 +1380,11 @@ mod tests {
         dbg!(
             input
                 .graphemes(true)
-                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
+                .map(|symbol| (
+                    symbol,
+                    symbol.escape_unicode().to_string(),
+                    symbol.cell_width()
+                ))
                 .collect::<Vec<_>>()
         );
         dbg!(
@@ -1296,5 +1424,87 @@ mod tests {
 
         assert_eq!(buffer.index_of(255, 256), 65791);
         assert_eq!(buffer.pos_of(65791), (255, 256)); // previously (255, 0)
+    }
+
+    #[test]
+    fn diff_clears_trailing_cell_for_wide_grapheme() {
+        // Reproduce: write "ab", then overwrite with a wide emoji like "⌨️"
+        let prev = Buffer::with_lines(["ab"]); // width 2 area inferred
+        assert_eq!(prev.area.width, 2);
+
+        let mut next = Buffer::with_lines(["  "]); // start with blanks
+        next.set_string(0, 0, "⌨️", Style::new());
+
+        // The next buffer contains a wide grapheme occupying cell 0 and implicitly cell 1.
+        // The debug formatting shows the hidden trailing space.
+        let expected_next = Buffer::with_lines(["⌨️"]);
+        assert_eq!(next, expected_next);
+
+        // The diff should include an update for (0,0) to draw the emoji. Depending on
+        // terminal behavior, it may or may not be necessary to explicitly clear (1,0).
+        // At minimum, ensure the first cell is updated and nothing incorrect is emitted.
+        let diff = prev.diff(&next);
+        assert!(
+            diff.iter()
+                .any(|(x, y, c)| *x == 0 && *y == 0 && c.symbol() == "⌨️")
+        );
+        // And it should explicitly clear the trailing cell (1,0) to avoid leftovers on terminals
+        // that don't automatically clear the following cell for wide characters.
+        assert!(
+            diff.iter()
+                .any(|(x, y, c)| *x == 1 && *y == 0 && c.symbol() == " ")
+        );
+    }
+
+    /// Regression test for a bug where trailing cells of wide VS16 emojis would generate
+    /// unnecessary diff updates when only the style (not the symbol) changed.
+    ///
+    /// This caused visual artifacts when:
+    /// 1. A previous widget applied a foreground color to the entire area
+    /// 2. A border with VS16 emojis (like ⚠️) was rendered on top
+    /// 3. The trailing cells had different styles but the same symbol (space)
+    ///
+    /// The fix ensures that only symbol changes trigger trailing cell updates,
+    /// not style-only changes, since the style of hidden trailing cells is not visible.
+    #[test]
+    fn diff_ignores_style_only_changes_in_trailing_cells() {
+        use crate::style::Color;
+
+        // Previous buffer: spaces with specific fg color
+        let mut prev = Buffer::empty(Rect::new(0, 0, 3, 1));
+        prev.content[0].set_symbol(" ");
+        prev.content[0].set_fg(Color::LightBlue); // <-- style A
+        prev.content[1].set_symbol(" ");
+        prev.content[1].set_fg(Color::LightBlue);
+        prev.content[2].set_symbol("x");
+
+        // Next buffer: emoji but DIFFERENT style on main cell,
+        // trailing cell has same symbol but different style
+        let mut next = Buffer::empty(Rect::new(0, 0, 3, 1));
+        next.content[0].set_symbol("⚠️"); // emoji symbol
+        next.content[0].set_fg(Color::Reset); // <-- style B (DIFFERENT from prev!)
+        next.content[1].set_symbol(" "); // same symbol (space), trailing cell (hidden by emoji)
+        next.content[1].set_fg(Color::Reset);
+        next.content[2].set_symbol("x");
+
+        let diff = prev.diff(&next);
+
+        // The first cell (0,0) SHOULD be in the diff because the symbol changed
+        assert!(
+            diff.iter().any(|(x, y, _)| *x == 0 && *y == 0),
+            "Diff should include first cell (0,0) because the symbol changed"
+        );
+
+        // The diff should NOT contain an update for the trailing cell (1, 0)
+        // because the symbol is the same (space) - only the style changed,
+        // and the style of a hidden trailing cell is not visible.
+        assert!(
+            !diff.iter().any(|(x, y, _)| *x == 1 && *y == 0),
+            "Diff should not include trailing cell (1,0) when only style changed. \
+             Found updates: {:?}",
+            diff.iter()
+                .map(|(x, y, c)| (x, y, c.symbol(), c.fg))
+                .collect::<Vec<_>>()
+        );
     }
 }

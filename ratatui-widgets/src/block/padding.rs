@@ -159,6 +159,12 @@ impl Padding {
     }
 }
 
+impl From<u16> for Padding {
+    fn from(value: u16) -> Self {
+        Self::uniform(value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,5 +207,11 @@ mod tests {
         const _RIGHT: Padding = Padding::right(1);
         const _TOP: Padding = Padding::top(1);
         const _BOTTOM: Padding = Padding::bottom(1);
+    }
+
+    #[test]
+    fn from_u16() {
+        let m: Padding = 5_u16.into();
+        assert_eq!(m, Padding::uniform(5));
     }
 }

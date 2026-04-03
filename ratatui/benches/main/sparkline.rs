@@ -1,5 +1,5 @@
 use criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
-use rand::Rng;
+use rand::RngExt;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::{Sparkline, Widget};
@@ -25,7 +25,7 @@ fn sparkline(c: &mut Criterion) {
     group.finish();
 }
 
-/// render the block into a buffer of the given `size`
+/// Render the block into a buffer of the given `size`.
 fn render(bencher: &mut Bencher, sparkline: &Sparkline) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
     // We use `iter_batched` to clone the value in the setup function.

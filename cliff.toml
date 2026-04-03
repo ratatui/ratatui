@@ -24,13 +24,17 @@ body = """
 {%- if not version %}
 ## [unreleased]
 {% else -%}
-## {{ package }} - [{{ version }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+{%- if package -%} {# release-plz specific variable #}
+## [{{ version }}+{{ package }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+{%- else -%}
+## [{{ version }}]({{ self::remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+{%- endif %}
 {% endif -%}
 
 {% macro commit(commit) -%}
 - [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui/ratatui/commit/" ~ commit.id }}) \
   *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first | trim }}\
-  {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}\
+  {% if commit.remote.username %} by `@{{ commit.remote.username }}`{%- endif -%}\
   {% if commit.remote.pr_number %} in [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}){%- endif %}\
 {%- if commit.breaking %} [**breaking**]{% endif %}
 {%- if commit.body %}\n\n{{ commit.body | indent(prefix="  > ", first=true, blank=true) }}
@@ -57,16 +61,36 @@ body = """
 {%- endfor -%}
 {%- endfor %}
 
+{%- if not release_link -%}
+{% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+### New Contributors
+{%- endif %}\
+{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+* `@{{ contributor.username }}` made their first contribution
+{%- if contributor.pr_number %} in \
+[#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+{%- endif %}
+{%- endfor -%}
+{%- endif -%}
+
 {% if version %}
 {% if previous.version %}
-**Full Changelog**: {{ release_link }}
+{%- if release_link -%}
+**Full Changelog**: {{ release_link }} {# release-plz specific variable #}
+{%- else -%}
+**Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}
+{% endif %}
 {% endif %}
 {% else -%}
   {% raw %}\n{% endraw %}
 {% endif %}
 
 {%- macro remote_url() -%}
+{%- if remote.owner -%} {# release-plz specific variable #}
 https://github.com/{{ remote.owner }}/{{ remote.repo }}\
+{%- else -%}
+https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
+{%- endif -%}
 {% endmacro %}
 """
 # remove the leading and trailing whitespace from the template
@@ -92,10 +116,16 @@ commit_preprocessors = [
   { pattern = '(Clarify README.md)', replace = "docs(readme): ${1}" },
   { pattern = '(Update README.md)', replace = "docs(readme): ${1}" },
   { pattern = '(fix typos|Fix typos)', replace = "fix: ${1}" },
-  # a small typo that squeaked through and which would otherwise trigger the typos linter.
+  # Typos that squeaked through and which would otherwise trigger the typos linter.
   # Regex obsfucation is to avoid triggering the linter in this file until there's a per file config
   # See https://github.com/crate-ci/typos/issues/724
   { pattern = '\<[d]eatil\>', replace = "detail" },
+  { pattern = '\<[f]eatuers\>', replace = "features" },
+  { pattern = '\<[s]pecically\>', replace = "specially" },
+  { pattern = '\<[g]ague\>', replace = "gauge" },
+  { pattern = '\<[a]rithmentic\>', replace = "arithmetic" },
+  { pattern = '\<[i]ntructions\>', replace = "instructions" },
+  { pattern = '\<[i]mplementated\>', replace = "implemented" },
 ]
 # regex for parsing and grouping commits
 commit_parsers = [
@@ -109,14 +139,16 @@ commit_parsers = [
   { message = "^style", group = "<!-- 05 -->Styling" },
   { message = "^test", group = "<!-- 06 -->Testing" },
   { message = "^chore\\(release\\): prepare for", skip = true },
+  { message = "^chore: release", skip = true },
   { message = "^chore\\(pr\\)", skip = true },
   { message = "^chore\\(pull\\)", skip = true },
   { message = "^chore\\(deps\\)", skip = true },
   { message = "^chore\\(changelog\\)", skip = true },
   { message = "^[cC]hore", group = "<!-- 07 -->Miscellaneous Tasks" },
-  { body = ".*security", group = "<!-- 08 -->Security" },
   { message = "^build\\(deps\\)", skip = true },
-  { message = "^build", group = "<!-- 09 -->Build" },
+  { message = "^build\\(release\\)", skip = true },
+  { message = "^build", group = "<!-- 08 -->Build" },
+  { body = ".*security", group = "<!-- 09 -->Security" },
   { message = "^ci", group = "<!-- 10 -->Continuous Integration" },
   { message = "^revert", group = "<!-- 11 -->Reverted Commits" },
   # handle some old commits styles from pre 0.4
@@ -131,9 +163,9 @@ filter_commits = false
 # glob pattern for matching git tags
 tag_pattern = "v[0-9]*"
 # regex for skipping tags
-skip_tags = "v0.1.0-rc.1"
+skip_tags = "beta|alpha|v0.1.0-rc.1"
 # regex for ignoring tags
-ignore_tags = "alpha"
+ignore_tags = "rc"
 # sort the tags topologically
 topo_order = false
 # sort the commits inside sections by oldest/newest order

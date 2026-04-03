@@ -135,6 +135,14 @@ Changes to project configuration files require special consideration:
 
 Please discuss these changes in an issue before implementing them.
 
+### Collaborative development
+
+We may occasionally make changes directly to your branch—such as force-pushes—to help move a PR
+forward, speed up review, or ensure it meets our quality standards. If you would prefer we do not do
+this, or if your workflow depends on us avoiding force-pushes (for example, if your app points to
+your branch in `Cargo.toml`), please mention this in your PR description and we will respect your
+preference.
+
 ## Implementation Guidelines
 
 ### Setup
@@ -151,6 +159,16 @@ git clone https://github.com/ratatui/ratatui.git
 cd ratatui
 cargo xtask build
 ```
+
+You would need the following packages installed if you want to run the other `cargo xtask` commands:
+
+- [cargo-hack](https://github.com/taiki-e/cargo-hack)
+- [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)
+- [cargo-rdme](https://github.com/orium/cargo-rdme)
+- [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
+- [cargo-docs-rs](https://github.com/dtolnay/cargo-docs-rs)
+- [taplo-cli](https://github.com/tamasfe/taplo)
+- [typos-cli](https://github.com/crate-ci/typos)
 
 ### Architecture
 
@@ -173,7 +191,8 @@ good, but this can always be improved. Focus on keeping the tests simple and obv
 tests for all new or modified code. Beside the usual doc and unit tests, one of the most valuable
 test you can write for Ratatui is a test against the `TestBackend`. It allows you to assert the
 content of the output buffer that would have been flushed to the terminal after a given draw call.
-See `widgets_block_renders` in [tests/widgets_block.rs](./tests/widget_block.rs) for an example.
+See `widgets_block_renders` in [ratatui/tests/widgets_block.rs](./ratatui/tests/widgets_block.rs)
+for an example.
 
 When writing tests, generally prefer to write unit tests and doc tests directly in the code file
 being tested rather than integration tests in the `tests/` folder.

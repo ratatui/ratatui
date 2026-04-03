@@ -6,10 +6,8 @@ use alloc::vec;
 use core::fmt::{self, Write};
 use core::iter;
 
-use unicode_width::UnicodeWidthStr;
-
 use crate::backend::{Backend, ClearType, WindowSize};
-use crate::buffer::{Buffer, Cell};
+use crate::buffer::{Buffer, Cell, CellWidth};
 use crate::layout::{Position, Rect, Size};
 
 /// A [`Backend`] implementation used for integration testing that renders to an memory buffer.
@@ -48,15 +46,16 @@ fn buffer_view(buffer: &Buffer) -> String {
     let mut view = String::with_capacity(buffer.content.len() + buffer.area.height as usize * 3);
     for cells in buffer.content.chunks(buffer.area.width as usize) {
         let mut overwritten = vec![];
-        let mut skip: usize = 0;
+        let mut skip: u16 = 0;
         view.push('"');
         for (x, c) in cells.iter().enumerate() {
+            let sym = c.symbol();
             if skip == 0 {
-                view.push_str(c.symbol());
+                view.push_str(sym);
             } else {
-                overwritten.push((x, c.symbol()));
+                overwritten.push((x, sym));
             }
-            skip = core::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+            skip = core::cmp::max(skip, c.cell_width()).saturating_sub(1);
         }
         view.push('"');
         if !overwritten.is_empty() {
@@ -103,6 +102,19 @@ impl TestBackend {
     /// Returns a reference to the internal buffer of the `TestBackend`.
     pub const fn buffer(&self) -> &Buffer {
         &self.buffer
+    }
+
+    /// Returns whether the cursor is visible.
+    pub const fn cursor_visible(&self) -> bool {
+        self.cursor
+    }
+
+    /// Returns the current cursor position.
+    pub const fn cursor_position(&self) -> Position {
+        Position {
+            x: self.pos.0,
+            y: self.pos.1,
+        }
     }
 
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
@@ -275,12 +287,12 @@ impl Backend for TestBackend {
         let region = match clear_type {
             ClearType::All => return self.clear(),
             ClearType::AfterCursor => {
-                let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
                 &mut self.buffer.content[index..]
             }
             ClearType::BeforeCursor => {
                 let index = self.buffer.index_of(self.pos.0, self.pos.1);
-                &mut self.buffer.content[..index]
+                &mut self.buffer.content[..=index]
             }
             ClearType::CurrentLine => {
                 let line_start_index = self.buffer.index_of(0, self.pos.1);
@@ -620,7 +632,7 @@ mod tests {
         backend.assert_buffer_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
-            "aaaa      ",
+            "aaa       ",
             "          ",
             "          ",
         ]);
@@ -644,7 +656,7 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "     aaaaa",
+            "      aaaa",
             "aaaaaaaaaa",
         ]);
     }

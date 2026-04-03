@@ -220,7 +220,7 @@ impl List<'_> {
         let last_valid_index = self.items.len().saturating_sub(1);
         let selected = selected?.min(last_valid_index);
 
-        // The bellow loop handles situations where the list item sizes may not be consistent,
+        // The below loop handles situations where the list item sizes may not be consistent,
         // where the offset would have excluded some items that we want to include, or could
         // cause the offset value to be set to an inconsistent value each time we render.
         // The padding value will be reduced in case any of these issues would occur
@@ -1219,7 +1219,7 @@ mod tests {
         assert_eq!(buffer, Buffer::with_lines(expected));
     }
 
-    // Tests to make sure when it's pushing back the first visible index value that it doesnt
+    // Tests to make sure when it's pushing back the first visible index value that it doesn't
     // include an item that's too large
     #[test]
     fn padding_offset_pushback_break() {

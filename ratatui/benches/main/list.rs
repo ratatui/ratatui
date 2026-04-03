@@ -39,7 +39,7 @@ fn list(c: &mut Criterion) {
     group.finish();
 }
 
-/// render the list into a common size buffer
+/// Render the list into a common size buffer.
 fn render(bencher: &mut Bencher, list: &List) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
     // We use `iter_batched` to clone the value in the setup function.

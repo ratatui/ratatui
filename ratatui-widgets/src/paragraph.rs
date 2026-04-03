@@ -1,11 +1,10 @@
 //! The [`Paragraph`] widget and related types allows displaying a block of text with optional
 //! wrapping, alignment, and block styling.
-use ratatui_core::buffer::Buffer;
+use ratatui_core::buffer::{Buffer, CellWidth};
 use ratatui_core::layout::{Alignment, Position, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::text::{Line, StyledGrapheme, Text};
 use ratatui_core::widgets::Widget;
-use unicode_width::UnicodeWidthStr;
 
 use crate::block::{Block, BlockExt};
 use crate::reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine};
@@ -151,13 +150,15 @@ impl<'a> Paragraph<'a> {
     where
         T: Into<Text<'a>>,
     {
+        let text: Text = text.into();
+        let alignment = text.alignment.unwrap_or(Alignment::Left);
         Self {
             block: None,
             style: Style::default(),
             wrap: None,
-            text: text.into(),
+            text,
             scroll: Position::ORIGIN,
-            alignment: Alignment::Left,
+            alignment,
         }
     }
 
@@ -460,7 +461,7 @@ fn render_lines<'a, C: LineComposer<'a>>(mut composer: C, area: Rect, buf: &mut 
 fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u16) {
     let mut x = get_line_offset(wrapped.width, area.width, wrapped.alignment);
     for StyledGrapheme { symbol, style } in wrapped.graphemes {
-        let width = symbol.width();
+        let width = symbol.cell_width();
         if width == 0 {
             continue;
         }
@@ -468,7 +469,7 @@ fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u
         let symbol = if symbol.is_empty() { " " } else { symbol };
         let position = Position::new(area.left() + x, area.top() + y);
         buf[position].set_symbol(symbol).set_style(*style);
-        x += u16::try_from(width).unwrap_or(u16::MAX);
+        x += width;
     }
 }
 
@@ -1172,6 +1173,27 @@ mod tests {
     #[test]
     fn right_aligned() {
         let p = Paragraph::new("Hello, world!").right_aligned();
+        assert_eq!(p.alignment, Alignment::Right);
+    }
+
+    #[test]
+    fn inherit_text_alignment_left_aligned() {
+        let text = Text::from(Line::from("Hello, world!")).left_aligned();
+        let p = Paragraph::new(text);
+        assert_eq!(p.alignment, Alignment::Left);
+    }
+
+    #[test]
+    fn inherit_text_alignment_centered() {
+        let text = Text::from(Line::from("Hello, world!")).centered();
+        let p = Paragraph::new(text);
+        assert_eq!(p.alignment, Alignment::Center);
+    }
+
+    #[test]
+    fn inherit_text_alignment_right_aligned() {
+        let text = Text::from(Line::from("Hello, world!")).right_aligned();
+        let p = Paragraph::new(text);
         assert_eq!(p.alignment, Alignment::Right);
     }
 

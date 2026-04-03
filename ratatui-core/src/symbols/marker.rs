@@ -4,6 +4,7 @@ pub const DOT: &str = "•";
 
 /// Marker to use when plotting data points
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
+#[non_exhaustive]
 pub enum Marker {
     /// One point per cell in shape of dot (`•`)
     #[default]
@@ -25,6 +26,35 @@ pub enum Marker {
     /// a grid that is double the resolution of the terminal. Because each terminal cell is
     /// generally about twice as tall as it is wide, this allows for a square grid of pixels.
     HalfBlock,
+    /// Use quadrant characters to represent data points.
+    ///
+    /// Quadrant characters display densely packed and regularly spaced pseudo-pixels with a 2x2
+    /// resolution per character, without visible bands between cells.
+    Quadrant,
+    /// Use sextant characters from the [Unicode Symbols for Legacy Computing
+    /// Supplement](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement) to
+    /// represent data points.
+    ///
+    /// Sextant characters display densely packed and regularly spaced pseudo-pixels with a 2x3
+    /// resolution per character, without visible bands between cells.
+    ///
+    /// Note: the Symbols for Legacy Computing Supplement block is a relatively recent addition to
+    /// unicode that is less broadly supported than Braille dots. If your terminal does not support
+    /// this, you will see unicode replacement characters (`�`) instead of sextants (`🬌`, `🬲`, `🬑`).
+    Sextant,
+    /// Use octant characters from the [Unicode Symbols for Legacy Computing
+    /// Supplement](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement) to
+    /// represent data points.
+    ///
+    /// Octant characters have the same 2x4 resolution as Braille characters but display densely
+    /// packed and regularly spaced pseudo-pixels, without visible bands between cells.
+    ///
+    /// Note: the Symbols for Legacy Computing Supplement block is a relatively recent addition to
+    /// unicode that is less broadly supported than Braille dots. If your terminal does not support
+    /// this, you will see unicode replacement characters (`�`) instead of octants (`𜴇`, `𜷀`, `𜴷`).
+    Octant,
+    /// Custom marker where the supplied char is applied once per cell
+    Custom(char),
 }
 
 #[cfg(test)]
@@ -41,6 +71,7 @@ mod tests {
         assert_eq!(Marker::Block.to_string(), "Block");
         assert_eq!(Marker::Bar.to_string(), "Bar");
         assert_eq!(Marker::Braille.to_string(), "Braille");
+        assert_eq!(Marker::Custom('+').to_string(), "Custom");
     }
 
     #[test]

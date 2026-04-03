@@ -8,7 +8,7 @@ rust-version.workspace = true
 [dependencies]
 color-eyre.workspace = true
 crossterm.workspace = true
-palette = "0.7.6"
+palette.workspace = true
 ratatui.workspace = true
 
 [lints]

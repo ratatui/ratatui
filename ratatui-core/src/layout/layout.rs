@@ -32,20 +32,29 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
-#[cfg(feature = "layout-cache")]
+// With std: cache can store Rc directly (no Send needed thanks to thread_local)
+#[cfg(all(feature = "layout-cache", feature = "std"))]
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
+
+// Without std: cache stores Vec instead (Send-safe for critical_section::Mutex)
+#[cfg(all(feature = "layout-cache", not(feature = "std")))]
+type Cache = LruCache<(Rect, Layout), (Vec<Rect>, Vec<Rect>)>;
 
 // Multiplier that decides floating point precision when rounding.
 // The number of zeros in this number is the precision for the rounding of f64 to u16 in layout
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
-#[cfg(feature = "layout-cache")]
+#[cfg(all(feature = "layout-cache", feature = "std"))]
 std::thread_local! {
     static LAYOUT_CACHE: core::cell::RefCell<Cache> = core::cell::RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
 }
+
+#[cfg(all(feature = "layout-cache", not(feature = "std")))]
+static LAYOUT_CACHE: critical_section::Mutex<core::cell::RefCell<Option<Cache>>> =
+    critical_section::Mutex::new(core::cell::RefCell::new(None));
 
 /// Represents the spacing between segments in a layout.
 ///
@@ -130,7 +139,7 @@ impl From<i16> for Spacing {
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
-/// can be configured using [`Layout::init_cache()`].
+/// can be configured using [`Layout::init_cache()`] when the `layout-cache` feature is enabled.
 ///
 /// # Construction
 ///
@@ -203,8 +212,8 @@ impl Layout {
     /// on my laptop's terminal (171+51 = 222) and doubling it for good measure and then adding a
     /// bit more to make it a round number. This gives enough entries to store a layout for every
     /// row and every column, twice over, which should be enough for most apps. For those that need
-    /// more, the cache size can be set with [`Layout::init_cache()`].
-    /// This const is unused if layout cache is disabled.
+    /// more, the cache size can be set with `Layout::init_cache()` (requires the `layout-cache`
+    /// feature).
     #[cfg(feature = "layout-cache")]
     pub const DEFAULT_CACHE_SIZE: usize = 500;
 
@@ -300,7 +309,23 @@ impl Layout {
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
     #[cfg(feature = "layout-cache")]
     pub fn init_cache(cache_size: NonZeroUsize) {
+        Self::resize_cache(cache_size);
+    }
+
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    fn resize_cache(cache_size: NonZeroUsize) {
         LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
+    }
+
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn resize_cache(cache_size: NonZeroUsize) {
+        critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+            match cache.as_mut() {
+                Some(c) => c.resize(cache_size),
+                None => *cache = Some(Cache::new(cache_size)),
+            }
+        });
     }
 
     /// Set the direction of the layout.
@@ -636,8 +661,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
-    /// is initialized with the [`Layout::init_cache()`] grows until the initialized cache size.
+    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default. If the cache
+    /// is initialized with [`Layout::init_cache()`], it grows until the initialized cache size.
     ///
     /// There is a helper method that can be used to split the whole area into smaller ones based on
     /// the layout: [`Layout::areas()`]. That method is a shortcut for calling this method. It
@@ -673,8 +698,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
-    /// is initialized with the [`Layout::init_cache()`] grows until the initialized cache size.
+    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default. If the cache
+    /// is initialized with [`Layout::init_cache()`], it grows until the initialized cache size.
     ///
     /// # Examples
     ///
@@ -711,18 +736,62 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
-        let split = || self.try_split(area).expect("failed to split");
-
         #[cfg(feature = "layout-cache")]
         {
-            LAYOUT_CACHE.with_borrow_mut(|cache| {
-                let key = (area, self.clone());
-                cache.get_or_insert(key, split).clone()
-            })
+            self.cached_split(area)
         }
 
         #[cfg(not(feature = "layout-cache"))]
-        split()
+        {
+            self.split_layout(area)
+        }
+    }
+
+    // std builds: use a thread-local cache with cheap Rc cloning and no locking.
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
+        LAYOUT_CACHE.with_borrow_mut(|cache| {
+            let key = (area, self.clone());
+            cache.get_or_insert(key, || self.split_layout(area)).clone()
+        })
+    }
+
+    // no_std builds: use a critical-section cache and compute layouts outside locks.
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
+        // Check cache inside critical section, but compute outside to avoid
+        // blocking interrupts during the (expensive) constraint solver.
+        let cached = critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+            let cache = cache.get_or_insert_with(|| {
+                Cache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap())
+            });
+            let key = (area, self.clone());
+            cache
+                .get(&key)
+                .map(|(s, sp)| (Rc::from(s.as_slice()), Rc::from(sp.as_slice())))
+        });
+
+        match cached {
+            Some(result) => result,
+            None => {
+                let result = self.split_layout(area);
+
+                critical_section::with(|cs| {
+                    let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+                    if let Some(cache) = cache.as_mut() {
+                        let key = (area, self.clone());
+                        cache.put(key, (result.0.to_vec(), result.1.to_vec()));
+                    }
+                });
+
+                result
+            }
+        }
+    }
+
+    fn split_layout(&self, area: Rect) -> (Segments, Spacers) {
+        self.try_split(area).expect("failed to split")
     }
 
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
@@ -1329,7 +1398,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "layout-cache")]
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
     fn cache_size() {
         LAYOUT_CACHE.with_borrow(|cache| {
             assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
@@ -1338,6 +1407,25 @@ mod tests {
         Layout::init_cache(NonZeroUsize::new(10).unwrap());
         LAYOUT_CACHE.with_borrow(|cache| {
             assert_eq!(cache.cap().get(), 10);
+        });
+    }
+
+    #[test]
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn cache_size() {
+        Layout::init_cache(NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap());
+        critical_section::with(|cs| {
+            let cache = LAYOUT_CACHE.borrow(cs).borrow();
+            assert_eq!(
+                cache.as_ref().unwrap().cap().get(),
+                Layout::DEFAULT_CACHE_SIZE
+            );
+        });
+
+        Layout::init_cache(NonZeroUsize::new(10).unwrap());
+        critical_section::with(|cs| {
+            let cache = LAYOUT_CACHE.borrow(cs).borrow();
+            assert_eq!(cache.as_ref().unwrap().cap().get(), 10);
         });
     }
 
