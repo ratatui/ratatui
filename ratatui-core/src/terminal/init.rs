@@ -8,6 +8,8 @@ impl<B: Backend> Terminal<B> {
     /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
     ///
     /// This is a convenience for [`Terminal::with_options`] with [`Viewport::Fullscreen`].
+    /// Ratatui initializes two empty buffers sized to the backend's current screen area and treats
+    /// future backend size changes as redraw-triggering resizes during render passes.
     ///
     /// After creating a terminal, call [`Terminal::draw`] (or [`Terminal::try_draw`]) in a loop to
     /// render your UI.
@@ -62,10 +64,16 @@ impl<B: Backend> Terminal<B> {
 
     /// Creates a new [`Terminal`] with the given [`Backend`] and [`TerminalOptions`].
     ///
-    /// The viewport determines what area is exposed to widgets via [`Frame::area`]. See
-    /// [`Viewport`] for an overview of the available modes.
+    /// The viewport determines what area is exposed to widgets via [`Frame::area`] and how Ratatui
+    /// keeps its internal buffers synchronized with the backend. See [`Viewport`] for an overview
+    /// of the available modes.
+    ///
+    /// For viewport behavior after initialization, see [`Terminal::resize`] and
+    /// [`Terminal::autoresize`].
     ///
     /// [`Frame::area`]: crate::terminal::Frame::area
+    /// [`Terminal::autoresize`]: crate::terminal::Terminal::autoresize
+    /// [`Terminal::resize`]: crate::terminal::Terminal::resize
     ///
     /// After creating a terminal, call [`Terminal::draw`] (or [`Terminal::try_draw`]) in a loop to
     /// render your UI.
@@ -73,7 +81,7 @@ impl<B: Backend> Terminal<B> {
     /// Resize behavior depends on the selected viewport:
     ///
     /// - [`Viewport::Fullscreen`] and [`Viewport::Inline`] are automatically resized during
-    ///   [`Terminal::draw`] (via [`Terminal::autoresize`]).
+    ///   [`Terminal::draw`] / [`Terminal::try_draw`] (via [`Terminal::autoresize`]).
     /// - [`Viewport::Fixed`] is not automatically resized; call [`Terminal::resize`] if the region
     ///   should change.
     ///
@@ -108,8 +116,9 @@ impl<B: Backend> Terminal<B> {
     /// ```
     ///
     /// When the viewport is [`Viewport::Inline`], Ratatui anchors the viewport to the current
-    /// cursor row at initialization time (always starting at column 0). Ratatui may scroll the
-    /// terminal to make enough room for the requested height so the viewport stays fully visible.
+    /// cursor row at initialization time (always starting at column 0). Ratatui may append lines
+    /// and thereby scroll the terminal to make enough room for the requested height so the
+    /// viewport stays fully visible.
     pub fn with_options(mut backend: B, options: TerminalOptions) -> Result<Self, B::Error> {
         let area = match options.viewport {
             Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?.into(),
