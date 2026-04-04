@@ -275,7 +275,7 @@ mod tests {
         let prev = Buffer::with_lines(["abcd"]);
         let mut next = Buffer::with_lines(["xbcd"]);
         next.content[0].skip = true;
-        next.content[0].diff_option = CellDiffOption::ForcedWidth(NonZeroUsize::new(2).unwrap());
+        next.content[0].diff_option = CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap());
 
         // ForcedWidth wins over skip=true, so the cell is diffed with forced width
         let diff: CompactString = BufferDiff::new(&prev, &next)
