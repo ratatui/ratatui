@@ -8,8 +8,8 @@ use crate::canvas::{Painter, Shape};
 /// #Examples
 ///
 /// ```rust
-/// use ratatui::widgets::canvas::Line;
-/// use ratatui::style::Color;
+/// use crate::canvas::Line;
+/// use ratatui_core::style::Color;
 ///
 /// let red_line = Line::new(0.0, 0.0, 10.0, 10.0, Color::Red);
 ///
