@@ -6,11 +6,11 @@ use crate::canvas::{Painter, Shape};
 /// A line from `(x1, y1)` to `(x2, y2)` with the given color
 ///
 /// #Examples
-/// 
+///
 /// ```rust
 /// use ratatui::widgets::canvas::Line;
 /// use ratatui_core::style::Color;
-/// 
+///
 /// let line = Line::new(0.0, 0.0, 10.0, 10.0, Color::Red);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
