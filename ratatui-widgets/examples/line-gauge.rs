@@ -23,12 +23,76 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{Length, Min};
 use ratatui::layout::{Layout, Rect};
 use ratatui::style::palette::tailwind;
-use ratatui::style::{Style, Stylize};
+use ratatui::style::{Color, Style, Stylize};
 use ratatui::widgets::{LineGauge, Paragraph, Widget};
+
+// Checks whether truecolor (24-bit color) is supported in the current terminal.
+//
+// Terminals known *not* to support truecolor:
+// - Apple Terminal.app: all versions before 2.15 (build 465)
+//
+// Environment variables used:
+// - "TERM_PROGRAM": identifies the terminal application in use
+// - "TERM_PROGRAM_VERSION": version number of that terminal application
+fn is_true_color_supported() -> bool {
+    let term = std::env::var("TERM_PROGRAM").unwrap_or_default();
+    if term == "Apple_Terminal" {
+        let term_v = std::env::var("TERM_PROGRAM_VERSION")
+            .unwrap_or_default()
+            .parse()
+            .unwrap_or(0);
+        if term_v < 465 {
+            return false;
+        }
+    }
+    true
+}
 
 fn main() -> Result<()> {
     color_eyre::install()?;
     ratatui::run(|terminal| App::default().run(terminal))
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Theme {
+    gauge1_filled: Color,
+    gauge1_unfilled: Color,
+    gauge2_filled: Color,
+    gauge2_unfilled: Color,
+    gauge3_filled: Color,
+    gauge3_unfilled: Color,
+}
+
+impl Theme {
+    fn new() -> Self {
+        if is_true_color_supported() {
+            // Original palette
+            Self {
+                gauge1_filled: tailwind::LIME.c400,
+                gauge1_unfilled: tailwind::LIME.c800,
+                gauge2_filled: tailwind::CYAN.c400,
+                gauge2_unfilled: tailwind::CYAN.c800,
+                gauge3_filled: tailwind::BLUE.c400,
+                gauge3_unfilled: tailwind::BLUE.c800,
+            }
+        } else {
+            // Fall back on ansi indexed color
+            Self {
+                gauge1_filled: Color::Indexed(149),
+                gauge1_unfilled: Color::Indexed(58),
+                gauge2_filled: Color::Indexed(45),
+                gauge2_unfilled: Color::Indexed(24),
+                gauge3_filled: Color::Indexed(75),
+                gauge3_unfilled: Color::Indexed(25),
+            }
+        }
+    }
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -36,6 +100,7 @@ struct App {
     state: AppState,
     progress_columns: u16,
     progress: f64,
+    theme: Theme,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -126,8 +191,8 @@ fn header(area: Rect, buf: &mut Buffer) {
 impl App {
     fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
         LineGauge::default()
-            .filled_style(Style::default().fg(tailwind::LIME.c400))
-            .unfilled_style(Style::default().fg(tailwind::LIME.c800))
+            .filled_style(Style::default().fg(self.theme.gauge1_filled))
+            .unfilled_style(Style::default().fg(self.theme.gauge1_unfilled))
             .ratio(self.progress)
             .render(area, buf);
     }
@@ -136,8 +201,8 @@ impl App {
         LineGauge::default()
             .filled_symbol("⣿")
             .unfilled_symbol("⣿")
-            .filled_style(Style::default().fg(tailwind::CYAN.c400))
-            .unfilled_style(Style::default().fg(tailwind::CYAN.c800))
+            .filled_style(Style::default().fg(self.theme.gauge2_filled))
+            .unfilled_style(Style::default().fg(self.theme.gauge2_unfilled))
             .ratio(self.progress)
             .render(area, buf);
     }
@@ -146,8 +211,8 @@ impl App {
         LineGauge::default()
             .filled_symbol("▰")
             .unfilled_symbol("▱")
-            .filled_style(Style::default().fg(tailwind::BLUE.c400))
-            .unfilled_style(Style::default().fg(tailwind::BLUE.c800))
+            .filled_style(Style::default().fg(self.theme.gauge3_filled))
+            .unfilled_style(Style::default().fg(self.theme.gauge3_unfilled))
             .ratio(self.progress)
             .render(area, buf);
     }
