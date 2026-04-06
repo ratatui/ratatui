@@ -8,14 +8,13 @@ use crate::canvas::{Painter, Shape};
 /// # Examples
 ///
 /// ```rust
-/// use crate::canvas::Line;
-///
-/// let red_line = Line::new(0.0, 0.0, 10.0, 10.0, ratatui_core::style::Color::Red);
-///
-/// let blue_line = Line::new(0.0, 10.0, 10.0, 0.0, ratatui_core::style::Color::Blue);
-///
-/// let mut green_line = Line::new(5.0, 5.0, 15.0, 15.0, ratatui_core::style::Color::Green);
-/// green_line.color = ratatui_core::style::Color::Yellow;
+/// # use ratatui_core::style::Color;
+/// # use ratatui_widgets::canvas::{Canvas, Line};
+/// Canvas::default().paint(|ctx| {
+///     ctx.draw(&Line::new(0.0, 0.0, 1.0, 0.0, Color::Red));
+///     ctx.draw(&Line::new(1.0, 0.0, 0.5, 1.0, Color::Red));
+///     ctx.draw(&Line::new(0.5, 1.0, 0.0, 0.0, Color::Red));
+/// });
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Line {
