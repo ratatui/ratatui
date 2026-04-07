@@ -18,6 +18,12 @@ pub enum CellDiffOption {
     /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
     /// covered by something from an escape sequence, such as graphics or links.
     Skip,
+    /// Always update this cell when diffing.
+    ///
+    /// This bypasses the equality check against the previous buffer. Use it when another
+    /// renderer may draw over the same area, such as an external image pipeline, so Ratatui can
+    /// redraw text there on the next render.
+    AlwaysUpdate,
     /// Force a width regardless of the symbol text width.
     ///
     /// Escape sequences will have some computed width that does match what is written to the
@@ -229,8 +235,9 @@ impl Cell {
 
     /// Sets cell [`CellDiffOption`].
     ///
-    /// The diff options are for dealing with cells that are wider than a unit, or that should not
-    /// be updated at all (skip output due to preceding wider cells).
+    /// The diff options are for dealing with cells that are wider than a unit, that should always
+    /// be updated, or that should not be updated at all (skip output due to preceding wider
+    /// cells).
     pub const fn set_diff_option(&mut self, diff_option: CellDiffOption) -> &mut Self {
         self.diff_option = diff_option;
         self
@@ -390,6 +397,13 @@ mod tests {
         let mut cell = Cell::EMPTY;
         cell.set_diff_option(CellDiffOption::Skip);
         assert_eq!(cell.diff_option, CellDiffOption::Skip);
+    }
+
+    #[test]
+    fn set_always_update() {
+        let mut cell = Cell::EMPTY;
+        cell.set_diff_option(CellDiffOption::AlwaysUpdate);
+        assert_eq!(cell.diff_option, CellDiffOption::AlwaysUpdate);
     }
 
     #[test]
