@@ -56,6 +56,33 @@
 //! various [Examples]. There are also several starter [Templates] available to help you get
 //! started quickly with common patterns.
 //!
+//! ## Which setup path should I use?
+//!
+//! Most application authors should start with one of these entry points:
+//!
+//! - Use [`run()`] for normal applications. It initializes the terminal, runs your app, and
+//!   restores the terminal on exit.
+//! - Use [`init()`] / [`restore()`] (or [`try_init()`] / [`try_restore()`]) when you want manual
+//!   control over terminal lifetime and the event loop structure.
+//! - Use [`init_with_options()`] / [`try_init_with_options()`] when you need a custom [`Viewport`],
+//!   such as inline rendering or a fixed drawing region.
+//!
+//! Reach for [`Terminal::new`] or [`Terminal::with_options`] directly only when you need custom
+//! backend construction or terminal setup that Ratatui's convenience functions do not manage.
+//!
+//! ## Which crate should I use?
+//!
+//! Most application authors should stay in this `ratatui` crate. It is the docs.rs entry point
+//! for building apps and re-exports the pieces most applications need.
+//!
+//! Reach for other crates in the workspace only when you specifically need a lower-level layer:
+//!
+//! - [`ratatui-core`] for widget libraries, custom integrations, and lower-level rendering
+//!   contracts
+//! - [`ratatui-widgets`] when you only need the built-in widgets crate as a dependency
+//! - [`ratatui-crossterm`], [`ratatui-termion`], or [`ratatui-termwiz`] when you need to select and
+//!   depend on a backend crate directly
+//!
 //! # Other documentation
 //!
 //! - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
@@ -92,7 +119,7 @@
 //! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termwiz`]
 //! - **[`ratatui-macros`]**: Macros for simplifying the boilerplate
 //!
-//! **For application developers**: No changes needed - continue using `ratatui` as before.
+//! **For application developers**: `ratatui` remains the recommended starting point.
 //!
 //! **For widget library authors**: Consider depending on [`ratatui-core`] instead of the full
 //! `ratatui` crate for better API stability and reduced dependencies.
@@ -169,19 +196,17 @@
 //! # fn should_quit() -> std::io::Result<bool> { Ok(false) }
 //! ```
 //!
-//! Note that when using [`init()`] and [`restore()`], it's important to use a separate function
-//! for the main loop to ensure that [`restore()`] is always called, even if the `?` operator
-//! causes early return from an error.
-//!
-//! For more detailed information about initialization options and when to use each function, see
-//! the [`init` module] documentation.
+//! Use [`run()`] as the default. Reach for [`init()`] / [`restore()`] when setup and teardown
+//! should surround code outside the application closure, and see the [`init` module] documentation
+//! for the full chooser including `try_*` and `*_with_options`.
 //!
 //! ### Manual Terminal and Backend Construction
 //!
 //! Before the convenience functions were introduced in version 0.28.1 ([`init()`]/[`restore()`])
 //! and 0.30.0 ([`run()`]), applications constructed [`Terminal`] and [`Backend`] instances
 //! manually. This approach is still supported for applications that need fine-grained control over
-//! initialization. See the [`Terminal`] and [`backend`] module documentation for details.
+//! initialization, custom backends, or terminal setup that should happen outside Ratatui's
+//! convenience helpers. See the [`Terminal`] and [`backend`] module documentation for details.
 //!
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
 //! the alternate screen and raw mode. Learn more about different backend options in the [Backend
@@ -218,6 +243,26 @@
 //! }
 //! # fn handle_events() -> std::io::Result<bool> { Ok(false) }
 //! ```
+//!
+//! ### What happens if...
+//!
+//! - **If the terminal is resized:**<br> Ratatui does not redraw automatically when a resize event
+//!   arrives. Your app should continue the event loop and call [`Terminal::draw`] again. During
+//!   that render pass, Ratatui checks the backend's current size instead of assuming the resize
+//!   events were complete or up to date. This keeps layout based on the size that actually exists
+//!   when rendering, even if multiple resize events were coalesced, missed, or delivered before the
+//!   UI redraws. Fullscreen and inline viewports update their internal size during that render
+//!   pass; fixed viewports keep their configured rectangle until you call [`Terminal::resize`].
+//! - **If [`Terminal::try_draw`] returns an error:**<br> The render pass stops early and Ratatui
+//!   does not promise that the terminal, cursor, and internal buffers are still synchronized. In
+//!   most applications, return the error and let the surrounding setup path restore terminal state
+//!   on exit.
+//! - **If you move the cursor directly:**<br> Cursor changes made through backend-specific APIs or
+//!   [`Terminal`] cursor methods can be overwritten by the next render pass if that pass sets
+//!   cursor state through [`Frame`]. Prefer choosing one path and using it consistently.
+//! - **If you mutate the backend directly:**<br> Direct backend changes bypass Ratatui's diffing
+//!   and viewport bookkeeping. After doing that, run a full draw pass or clear the terminal before
+//!   assuming Ratatui's internal view still matches the screen.
 //!
 //! ## Handling events
 //!

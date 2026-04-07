@@ -7,14 +7,19 @@ impl<B: Backend> Terminal<B> {
     /// Updates the Terminal so that internal buffers match the requested area.
     ///
     /// This updates the buffer size used for rendering and triggers a full clear so the next
-    /// [`Terminal::draw`] paints into a consistent area.
+    /// [`Terminal::draw`] / [`Terminal::try_draw`] paints into a consistent area.
     ///
     /// When the viewport is [`Viewport::Inline`], the `area` argument is treated as the new
     /// terminal size and the viewport origin is recomputed relative to the current cursor position.
     /// Ratatui attempts to keep the cursor at the same relative row within the viewport across
     /// resizes.
     ///
-    /// See also: [`Terminal::autoresize`] (automatic resizing during [`Terminal::draw`]).
+    /// See also: [`Terminal::autoresize`] (automatic resizing during [`Terminal::draw`] /
+    /// [`Terminal::try_draw`]).
+    ///
+    /// For [`Viewport::Fixed`] and [`Viewport::Fullscreen`], `area` becomes the new viewport area.
+    /// For [`Viewport::Inline`], `area` is interpreted as the backend's new terminal size and the
+    /// viewport origin may move to preserve the cursor's relative row within the inline UI.
     pub fn resize(&mut self, area: Rect) -> Result<(), B::Error> {
         let mut next_area = match self.viewport {
             Viewport::Inline(height) => {
@@ -48,10 +53,11 @@ impl<B: Backend> Terminal<B> {
 
     /// Queries the backend for size and resizes if it doesn't match the previous size.
     ///
-    /// This is called automatically during [`Terminal::draw`] for fullscreen and inline viewports.
-    /// Fixed viewports are not automatically resized.
+    /// This is called automatically during [`Terminal::draw`] / [`Terminal::try_draw`] for
+    /// fullscreen and inline viewports. Fixed viewports are not automatically resized.
     ///
-    /// If the size changed, this calls [`Terminal::resize`] (which clears the screen).
+    /// If the size changed, this calls [`Terminal::resize`] and therefore clears the affected
+    /// region before the next frame is rendered.
     pub fn autoresize(&mut self) -> Result<(), B::Error> {
         // fixed viewports do not get autoresized
         if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
