@@ -84,10 +84,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: taiki-e/install-action@e9e8e031bcd90cdbe8ac6bb1d376f8596e587fbf # v2
-        with:
-          tool: cargo-machete
-      - run: cargo-machete
+      - uses: bnjbvr/cargo-machete@b81ce1560c5fbd0210cb66d88bf210329ff04266
 
   # Run cargo clippy.
   #
