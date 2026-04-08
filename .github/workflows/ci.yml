@@ -84,7 +84,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: bnjbvr/cargo-machete@7959c845782fed02ee69303126d4a12d64f1db18 # v0.9.1
+      - uses: bnjbvr/cargo-machete@b81ce1560c5fbd0210cb66d88bf210329ff04266
 
   # Run cargo clippy.
   #
