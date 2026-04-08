@@ -10,7 +10,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
 use crate::style::{Style, Styled};
-use crate::text::{Line, Span};
+use crate::text::{Line, Overflow, Span};
 use crate::widgets::Widget;
 
 /// A string split over one or more lines.
@@ -201,6 +201,8 @@ pub struct Text<'a> {
     pub style: Style,
     /// The lines that make up this piece of text.
     pub lines: Vec<Line<'a>>,
+    /// Overflow.
+    pub overflow: Overflow<'a>,
 }
 
 impl fmt::Debug for Text<'_> {
@@ -770,7 +772,7 @@ impl Widget for &Text<'_> {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         for (line, line_area) in self.iter().zip(area.rows()) {
-            line.render_with_alignment(line_area, buf, self.alignment);
+            line.render_with_alignment(line_area, buf, self.alignment, &self.overflow);
         }
     }
 }
@@ -1015,6 +1017,7 @@ mod tests {
                 lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
                 style: Style::new().red(),
                 alignment: None,
+                overflow: Overflow::default()
             }
         );
     }
@@ -1027,6 +1030,7 @@ mod tests {
                 lines: vec![Line::raw("Red"), Line::raw("Blue")],
                 style: Style::new().red(),
                 alignment: None,
+                overflow: Overflow::default()
             }
         );
     }
@@ -1041,6 +1045,7 @@ mod tests {
                 lines: vec![Line::raw("Red"), Line::raw("Blue")],
                 style: Style::new().red(),
                 alignment: None,
+                overflow: Overflow::default()
             }
         );
     }
@@ -1055,6 +1060,7 @@ mod tests {
                 lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
                 style: Style::new().red(),
                 alignment: None,
+                overflow: Overflow::default()
             }
         );
     }
