@@ -1,3 +1,5 @@
+use core::hash::{Hash, Hasher};
+
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Offset, Position, Rect};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -5,11 +7,26 @@ use ratatui_core::symbols::shade;
 use ratatui_core::widgets::Widget;
 
 /// TODO: docs
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Eq)]
 pub struct Shadow {
     filter: fn(Rect, Rect, &mut Buffer),
     style: Style,
     offset: Offset,
+}
+
+// Define equality without comparing the function pointer.
+impl PartialEq for Shadow {
+    fn eq(&self, other: &Self) -> bool {
+        self.style == other.style && self.offset == other.offset
+    }
+}
+
+// Hash only stable fields, without the function pointer.
+impl Hash for Shadow {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.style.hash(state);
+        self.offset.hash(state);
+    }
 }
 
 impl Shadow {
