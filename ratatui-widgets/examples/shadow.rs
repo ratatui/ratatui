@@ -54,7 +54,7 @@ fn render(frame: &mut Frame) {
     render_block(
         frame,
         top_left,
-        "Shadow with overlay",
+        "Overlay shadow",
         Style::new().fg(Color::White).bg(Color::Blue),
         Style::new().black().on_yellow(),
         Shadow::overlay().style(Style::new().bg(Color::DarkGray)),
@@ -62,7 +62,7 @@ fn render(frame: &mut Frame) {
     render_block(
         frame,
         top_right,
-        "Shadow with block symbols",
+        "Block shadow",
         Style::new().fg(Color::White),
         Style::new().black().on_yellow(),
         Shadow::block()
@@ -72,7 +72,7 @@ fn render(frame: &mut Frame) {
     render_block(
         frame,
         bottom_left,
-        "Custom shadow symbol",
+        "Symbol shadow",
         Style::new().fg(Color::White),
         Style::new().white().on_red(),
         Shadow::symbol("$")
