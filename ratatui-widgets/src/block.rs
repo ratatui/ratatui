@@ -708,7 +708,24 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// TODO: docs
+    /// Adds a shadow behind the block.
+    ///
+    /// The shadow is rendered using the block area plus the shadow's configured offset.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::layout::Offset;
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::{Block, Shadow};
+    ///
+    /// let block = Block::bordered().title("Popup").shadow(
+    ///     Shadow::dark_shade()
+    ///         .black()
+    ///         .on_white()
+    ///         .offset(Offset::new(2, 1)),
+    /// );
+    /// ```
     #[must_use]
     pub fn shadow(mut self, shadow: Shadow) -> Self {
         self.shadow = Some(shadow);
