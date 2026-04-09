@@ -18,7 +18,7 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
-pub use self::shadow::{Shadow, dimmed};
+pub use self::shadow::{CellFilter, Dimmed, Shadow, dimmed};
 use crate::borders::{BorderType, Borders};
 
 mod padding;
@@ -710,7 +710,7 @@ impl<'a> Block<'a> {
 
     /// TODO: docs
     #[must_use]
-    pub const fn shadow(mut self, shadow: Shadow) -> Self {
+    pub fn shadow(mut self, shadow: Shadow) -> Self {
         self.shadow = Some(shadow);
         self
     }
@@ -1041,7 +1041,7 @@ impl Block<'_> {
     }
 
     fn render_shadow(&self, base_area: Rect, buf: &mut Buffer) {
-        if let Some(shadow) = self.shadow {
+        if let Some(shadow) = &self.shadow {
             shadow.render(base_area, buf);
         }
     }
