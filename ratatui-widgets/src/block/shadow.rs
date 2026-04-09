@@ -1,7 +1,6 @@
 use alloc::sync::Arc;
-use core::fmt;
 use core::hash::{Hash, Hasher};
-use core::ptr;
+use core::{fmt, ptr};
 
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Offset, Position, Rect};
@@ -74,9 +73,9 @@ impl Hash for Filter {
 
 /// A configurable shadow that can be rendered behind a [`Block`](crate::block::Block).
 ///
-/// A [`Shadow`] is rendered in an offset area relative to the block. Its [`Style`] is applied first,
-/// then an optional cell filter can modify the affected cells, for example by filling them with a
-/// shading symbol or dimming the existing background.
+/// A [`Shadow`] is rendered in an offset area relative to the block. Its [`Style`] is applied
+/// first, then an optional cell filter can modify the affected cells, for example by filling them
+/// with a shading symbol or dimming the existing background.
 #[derive(Debug, Clone, Eq)]
 pub struct Shadow {
     filter: Filter,
@@ -244,7 +243,10 @@ impl Shadow {
     /// use ratatui::widgets::Shadow;
     ///
     /// let shadow = Shadow::overlay().black().on_white();
-    /// assert_eq!(shadow, Shadow::overlay().style(Style::new().black().on_white()));
+    /// assert_eq!(
+    ///     shadow,
+    ///     Shadow::overlay().style(Style::new().black().on_white())
+    /// );
     /// ```
     #[must_use]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
