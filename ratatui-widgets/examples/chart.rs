@@ -49,8 +49,7 @@ fn render(frame: &mut Frame) {
     render_chart(frame, main);
 }
 
-/// Render 2 charts. 1st chart goes upward, 2nd chart goes downward and has filled area underneath
-/// in.
+/// Render 2 charts. 1st chart goes upward, 2nd chart goes downward and has filled area underneath.
 pub fn render_chart(frame: &mut Frame, area: Rect) {
     let dataset_upward = Dataset::default()
         .name("Stonks")
