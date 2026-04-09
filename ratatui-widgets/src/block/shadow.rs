@@ -218,6 +218,23 @@ impl Shadow {
         Self::symbol(shade::DARK)
     }
 
+    /// Creates a shadow filled with the given symbol.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::widgets::{Block, Shadow};
+    ///
+    /// let block = Block::bordered().shadow(Shadow::symbol("░"));
+    /// ```
+    pub fn symbol(symbol: &'static str) -> Self {
+        Self {
+            filter: Filter::Symbol(symbol),
+            style: Style::default(),
+            offset: Offset::new(1, 1),
+        }
+    }
+
     /// Sets the style applied to the shadow area.
     ///
     /// # Example
@@ -243,15 +260,6 @@ impl Shadow {
     pub const fn offset(mut self, offset: Offset) -> Self {
         self.offset = offset;
         self
-    }
-
-    /// Creates a shadow filled with the given symbol.
-    fn symbol(symbol: &'static str) -> Self {
-        Self {
-            filter: Filter::Symbol(symbol),
-            style: Style::default(),
-            offset: Offset::new(1, 1),
-        }
     }
 }
 
