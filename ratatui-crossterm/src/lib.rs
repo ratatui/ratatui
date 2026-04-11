@@ -90,7 +90,7 @@ cfg_if::cfg_if! {
     }
 }
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 
@@ -231,13 +231,17 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<Position> = None;
+        // Track the cursor position *after* the last printed cell, not the
+        // starting coordinate of the last cell.  This is crucial for wide
+        // graphemes (including VS16 emoji): after printing a width-2 cell at
+        // x, the terminal cursor should be considered to be at x+2, not x+1.
+        let mut next_pos: Option<Position> = None;
         for (x, y, cell) in content {
-            // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
+            // Move the cursor if the terminal is not already at the target
+            // position.
+            if !matches!(next_pos, Some(p) if x == p.x && y == p.y) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
-            last_pos = Some(Position { x, y });
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -265,6 +269,12 @@ where
             }
 
             queue!(self.writer, Print(cell.symbol()))?;
+
+            let width = cell.cell_width();
+            next_pos = Some(Position {
+                x: x.saturating_add(width),
+                y,
+            });
         }
 
         #[cfg(feature = "underline-color")]
