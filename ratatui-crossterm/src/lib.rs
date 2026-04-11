@@ -800,6 +800,134 @@ mod tests {
 
     use super::*;
 
+    /// Build a `Cell` whose symbol is `symbol`.
+    fn cell(symbol: &str) -> Cell {
+        let mut c = Cell::EMPTY;
+        c.set_symbol(symbol);
+        c
+    }
+
+    /// Collect the raw bytes queued by `Backend::draw` for the given content iterator.
+    fn draw_bytes<'a>(content: impl Iterator<Item = (u16, u16, &'a Cell)>) -> Vec<u8> {
+        let mut backend = CrosstermBackend::new(Vec::<u8>::new());
+        backend.draw(content).unwrap();
+        backend.writer
+    }
+
+    /// Return the ANSI sequence for `MoveTo(x, y)`.
+    fn move_to(x: u16, y: u16) -> Vec<u8> {
+        let mut buf = Vec::new();
+        queue!(buf, MoveTo(x, y)).unwrap();
+        buf
+    }
+
+    /// Return the ANSI sequence for `Print(s)`.
+    fn print(s: &str) -> Vec<u8> {
+        let mut buf = Vec::new();
+        queue!(buf, Print(s)).unwrap();
+        buf
+    }
+
+    mod draw_cursor_tracking {
+        use super::*;
+
+        /// After a narrow (width-1) cell at (x, y), the next cell at (x+1, y)
+        /// must not emit an extra MoveTo — the cursor is already there.
+        #[test]
+        fn narrow_cell_no_extra_move() {
+            let narrow = cell("A");
+            let next = cell("B");
+            let bytes = draw_bytes([(0, 0, &narrow), (1, 0, &next)].iter().copied());
+
+            // MoveTo(1,0) must NOT appear after the first Print
+            let move_to_1_0 = move_to(1, 0);
+            // Locate the Print("A") bytes and check nothing after them starts with MoveTo(1,0)
+            let print_a = print("A");
+            let pos = bytes
+                .windows(print_a.len())
+                .position(|w| w == print_a.as_slice())
+                .expect("Print(A) not found");
+            let after_a = &bytes[pos + print_a.len()..];
+            assert!(
+                !after_a.starts_with(&move_to_1_0),
+                "unexpected MoveTo(1,0) after narrow cell: {bytes:?}"
+            );
+        }
+
+        /// After a wide (width-2) cell at (0, 0), the next cell at (2, 0) must
+        /// not emit a MoveTo — the cursor is already at column 2.
+        #[test]
+        fn wide_cell_no_extra_move_for_adjacent_cell() {
+            let wide = cell("🚀"); // width 2
+            let next = cell("A");
+            let bytes = draw_bytes([(0, 0, &wide), (2, 0, &next)].iter().copied());
+
+            let move_to_2_0 = move_to(2, 0);
+            let print_rocket = print("🚀");
+            let pos = bytes
+                .windows(print_rocket.len())
+                .position(|w| w == print_rocket.as_slice())
+                .expect("Print(🚀) not found");
+            let after_rocket = &bytes[pos + print_rocket.len()..];
+            assert!(
+                !after_rocket.starts_with(&move_to_2_0),
+                "unexpected MoveTo(2,0) after wide cell: {bytes:?}"
+            );
+        }
+
+        /// After a wide (width-2) cell at (0, 0), a cell at (3, 0) — skipping
+        /// column 2 — must emit MoveTo(3, 0).
+        #[test]
+        fn wide_cell_emits_move_when_gap() {
+            let wide = cell("🚀"); // width 2
+            let next = cell("B");
+            let bytes = draw_bytes([(0, 0, &wide), (3, 0, &next)].iter().copied());
+
+            let move_to_3_0 = move_to(3, 0);
+            assert!(
+                bytes
+                    .windows(move_to_3_0.len())
+                    .any(|w| w == move_to_3_0.as_slice()),
+                "expected MoveTo(3,0) after wide cell with gap, got: {bytes:?}"
+            );
+        }
+
+        /// After a wide (width-2) cell at (0, 0), a cell at (1, 0) — landing
+        /// inside the wide cell — must emit MoveTo(1, 0) to reposition.
+        #[test]
+        fn wide_cell_emits_move_when_overlap() {
+            let wide = cell("🚀"); // width 2
+            let next = cell("C");
+            let bytes = draw_bytes([(0, 0, &wide), (1, 0, &next)].iter().copied());
+
+            let move_to_1_0 = move_to(1, 0);
+            assert!(
+                bytes
+                    .windows(move_to_1_0.len())
+                    .any(|w| w == move_to_1_0.as_slice()),
+                "expected MoveTo(1,0) after wide cell when next cell overlaps, got: {bytes:?}"
+            );
+        }
+
+        /// A cell on a new row must always emit MoveTo even when x happens to
+        /// match the previous column count.
+        #[test]
+        fn new_row_always_emits_move() {
+            let first = cell("A");
+            let second = cell("B");
+            // (1,0) then (0,1) — different row
+            let bytes = draw_bytes([(1, 0, &first), (0, 1, &second)].iter().copied());
+
+            let move_to_0_1 = move_to(0, 1);
+            assert!(
+                bytes
+                    .windows(move_to_0_1.len())
+                    .any(|w| w == move_to_0_1.as_slice()),
+                "expected MoveTo(0,1) for new row, got: {bytes:?}"
+            );
+        }
+    }
+
     #[rstest]
     #[case(CrosstermColor::Reset, Color::Reset)]
     #[case(CrosstermColor::Black, Color::Black)]
