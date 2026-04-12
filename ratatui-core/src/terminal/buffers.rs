@@ -117,11 +117,21 @@ impl<B: Backend> Terminal<B> {
     /// This preserves the cursor position.
     ///
     /// This also resets the "previous" buffer so the next [`Terminal::flush`] redraws the full
-    /// viewport. [`Terminal::resize`] calls this internally.
+    /// viewport.
     ///
     /// Implementation note: this uses [`ClearType::AfterCursor`] starting at the viewport origin.
     pub fn clear(&mut self) -> Result<(), B::Error> {
         let original_cursor = self.backend.get_cursor_position()?;
+        self.clear_viewport()?;
+        self.backend.set_cursor_position(original_cursor)?;
+        Ok(())
+    }
+
+    /// Clears according to the current viewport and resets the back buffer.
+    ///
+    /// Unlike [`Terminal::clear`], this does not snapshot and restore the backend cursor
+    /// position. Callers that need to preserve the cursor should do so outside this helper.
+    pub(super) fn clear_viewport(&mut self) -> Result<(), B::Error> {
         match self.viewport {
             Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
             Viewport::Inline(_) => {
@@ -134,7 +144,6 @@ impl<B: Backend> Terminal<B> {
                 self.clear_fixed_viewport(area)?;
             }
         }
-        self.backend.set_cursor_position(original_cursor)?;
         // Reset the back buffer to make sure the next update will redraw everything.
         self.buffers[1 - self.current].reset();
         Ok(())
@@ -384,6 +393,32 @@ mod tests {
         assert_eq!(
             terminal.backend().cursor_position(),
             Position { x: 3, y: 0 }
+        );
+    }
+
+    #[test]
+    fn clear_viewport_inline_leaves_cursor_at_viewport_origin() {
+        let mut backend = TestBackend::with_lines([
+            "before 1  ",
+            "before 2  ",
+            "viewport 1",
+            "viewport 2",
+            "after 1   ",
+            "after 2   ",
+        ]);
+        backend
+            .set_cursor_position(Position { x: 2, y: 2 })
+            .unwrap();
+        let options = TerminalOptions {
+            viewport: Viewport::Inline(2),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+
+        terminal.clear_viewport().unwrap();
+
+        assert_eq!(
+            terminal.backend().cursor_position(),
+            terminal.viewport_area.as_position()
         );
     }
 }
