@@ -117,11 +117,24 @@ impl<B: Backend> Terminal<B> {
     /// This preserves the cursor position.
     ///
     /// This also resets the "previous" buffer so the next [`Terminal::flush`] redraws the full
-    /// viewport. [`Terminal::resize`] calls this internally.
+    /// viewport.
     ///
     /// Implementation note: this uses [`ClearType::AfterCursor`] starting at the viewport origin.
     pub fn clear(&mut self) -> Result<(), B::Error> {
-        let original_cursor = self.backend.get_cursor_position()?;
+        self.clear_viewport(true)
+    }
+
+    /// Clears according to the current viewport and resets the back buffer.
+    ///
+    /// When `preserve_cursor` is `true`, this snapshots and restores the backend cursor position.
+    /// When `false`, it skips cursor queries (useful in resize paths where querying the cursor can
+    /// fail on some backends).
+    pub(crate) fn clear_viewport(&mut self, preserve_cursor: bool) -> Result<(), B::Error> {
+        let original_cursor = if preserve_cursor {
+            Some(self.backend.get_cursor_position()?)
+        } else {
+            None
+        };
         match self.viewport {
             Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
             Viewport::Inline(_) => {
@@ -134,7 +147,9 @@ impl<B: Backend> Terminal<B> {
                 self.clear_fixed_viewport(area)?;
             }
         }
-        self.backend.set_cursor_position(original_cursor)?;
+        if let Some(original_cursor) = original_cursor {
+            self.backend.set_cursor_position(original_cursor)?;
+        }
         // Reset the back buffer to make sure the next update will redraw everything.
         self.buffers[1 - self.current].reset();
         Ok(())

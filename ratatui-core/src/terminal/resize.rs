@@ -40,7 +40,7 @@ impl<B: Backend> Terminal<B> {
         }
 
         self.set_viewport_area(next_area);
-        self.clear()?;
+        self.clear_viewport(false)?;
 
         self.last_known_area = area;
         Ok(())
