@@ -90,7 +90,7 @@ cfg_if::cfg_if! {
     }
 }
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 
@@ -232,12 +232,14 @@ where
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
         let mut last_pos: Option<Position> = None;
+        let mut last_width: u16 = 1;
         for (x, y, cell) in content {
-            // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
+            // Move the cursor if the previous location was not contiguous
+            if !matches!(last_pos, Some(p) if x == p.x + last_width && y == p.y) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
             last_pos = Some(Position { x, y });
+            last_width = cell.cell_width();
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -1160,5 +1162,34 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(style.into_crossterm(), content_style);
+    }
+
+    /// Wide character at (0,0) advances the cursor to column 2, so the cell at
+    /// (2,0) is contiguous and should NOT require an extra MoveTo.
+    #[test]
+    fn draw_wide_char_no_spurious_move() {
+        fn cell(s: &str) -> Cell {
+            let mut c = Cell::EMPTY;
+            c.set_symbol(s);
+            c
+        }
+
+        let mut buf = Vec::new();
+        let mut backend = CrosstermBackend::new(&mut buf);
+
+        let wide = cell("あ");
+        let narrow = cell("b");
+
+        // (0,0): wide char (width 2), (2,0): narrow char
+        let cells: Vec<(u16, u16, &Cell)> = vec![(0, 0, &wide), (2, 0, &narrow)];
+        backend.draw(cells.into_iter()).unwrap();
+
+        let output = String::from_utf8_lossy(&buf);
+        // Initial MoveTo(0,0) is expected: \x1b[1;1H
+        // A spurious MoveTo(2,0) would be: \x1b[1;3H
+        assert!(
+            !output.contains("\x1b[1;3H"),
+            "found spurious MoveTo(2,0) after wide character: {output:?}"
+        );
     }
 }
