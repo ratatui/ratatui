@@ -185,7 +185,8 @@ impl Widget for &mut App {
         ]);
         let [header_area, content_area, footer_area] = area.layout(&main_layout);
 
-        let content_layout = Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)]);
+        let content_layout =
+            Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)]);
         let [list_area, item_area] = content_area.layout(&content_layout);
 
         App::render_header(header_area, buf);
