@@ -179,13 +179,13 @@ impl App {
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let main_layout = Layout::vertical([
-            Constraint::Length(2),
+            Constraint::Length(1),
             Constraint::Fill(1),
             Constraint::Length(1),
         ]);
         let [header_area, content_area, footer_area] = area.layout(&main_layout);
 
-        let content_layout = Layout::vertical([Constraint::Fill(1), Constraint::Fill(1)]);
+        let content_layout = Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)]);
         let [list_area, item_area] = content_area.layout(&content_layout);
 
         App::render_header(header_area, buf);
