@@ -876,7 +876,7 @@ version = "0.0.0"
 dependencies = [
  "clap",
  "crossterm 0.29.0",
- "rand 0.10.0",
+ "rand 0.10.1",
  "ratatui",
  "termion",
  "termwiz",
@@ -891,7 +891,7 @@ dependencies = [
  "indoc",
  "itertools 0.14.0",
  "palette",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "ratatui",
  "strum",
@@ -1413,6 +1413,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f467dd6dccf739c208452f8014c75c18bb8301b050ad1cfb27153803edb0f51"
+dependencies = [
+ "allocator-api2",
+ "equivalent",
+ "foldhash 0.2.0",
+]
+
+[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1747,7 +1758,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "rand 0.10.0",
+ "rand 0.10.1",
  "ratatui",
 ]
 
@@ -2052,7 +2063,7 @@ dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
  "line_drawing",
- "rand 0.10.0",
+ "rand 0.10.1",
  "ratatui",
 ]
 
@@ -2746,9 +2757,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc266eb313df6c5c09c1c7b1fbe2510961e5bcd3add930c1e31f7ed9da0feff8"
+checksum = "d2e8e8bcc7961af1fdac401278c6a831614941f6164ee3bf4ce61b7edb162207"
 dependencies = [
  "chacha20",
  "getrandom 0.4.1",
@@ -2823,7 +2834,7 @@ dependencies = [
  "instability",
  "palette",
  "pretty_assertions",
- "rand 0.10.0",
+ "rand 0.10.1",
  "rand_chacha 0.10.0",
  "ratatui-core",
  "ratatui-crossterm",
@@ -2850,7 +2861,7 @@ dependencies = [
  "compact_str",
  "critical-section",
  "document-features",
- "hashbrown 0.16.1",
+ "hashbrown 0.17.0",
  "indoc",
  "itertools 0.14.0",
  "kasuari",
@@ -2928,7 +2939,7 @@ dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
  "document-features",
- "hashbrown 0.16.1",
+ "hashbrown 0.17.0",
  "indoc",
  "instability",
  "itertools 0.14.0",
@@ -4245,7 +4256,7 @@ dependencies = [
  "color-eyre",
  "colorgrad",
  "crossterm 0.29.0",
- "rand 0.10.0",
+ "rand 0.10.1",
  "ratatui",
 ]
 
@@ -4408,7 +4419,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "rand 0.10.0",
+ "rand 0.10.1",
  "ratatui",
 ]
 

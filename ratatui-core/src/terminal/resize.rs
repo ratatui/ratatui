@@ -16,21 +16,21 @@ impl<B: Backend> Terminal<B> {
     ///
     /// See also: [`Terminal::autoresize`] (automatic resizing during [`Terminal::draw`]).
     pub fn resize(&mut self, area: Rect) -> Result<(), B::Error> {
-        let mut next_area = match self.viewport {
+        let (mut next_area, cursor_to_restore) = match self.viewport {
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
                     .y
                     .saturating_sub(self.viewport_area.top());
-                compute_inline_size(
+                let (next_area, cursor_position) = compute_inline_size(
                     &mut self.backend,
                     height,
                     area.as_size(),
                     offset_in_previous_viewport,
-                )?
-                .0
+                )?;
+                (next_area, Some(cursor_position))
             }
-            Viewport::Fixed(_) | Viewport::Fullscreen => area,
+            Viewport::Fixed(_) | Viewport::Fullscreen => (area, None),
         };
 
         // clear screen on horizontal shrink to avoid line wrapping issues
@@ -40,7 +40,10 @@ impl<B: Backend> Terminal<B> {
         }
 
         self.set_viewport_area(next_area);
-        self.clear()?;
+        self.clear_viewport()?;
+        if let Some(cursor_position) = cursor_to_restore {
+            self.backend.set_cursor_position(cursor_position)?;
+        }
 
         self.last_known_area = area;
         Ok(())
@@ -258,6 +261,42 @@ mod tests {
         terminal.resize(Rect::new(0, 0, 10, 3)).unwrap();
 
         assert_eq!(terminal.viewport_area, Rect::new(0, 0, 10, 3));
+    }
+
+    #[test]
+    fn resize_inline_preserves_backend_cursor_across_repeated_resizes() {
+        let mut backend = TestBackend::new(10, 10);
+        backend
+            .set_cursor_position(Position { x: 0, y: 4 })
+            .unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(4),
+            },
+        )
+        .unwrap();
+
+        terminal.last_known_cursor_pos = Position { x: 0, y: 5 };
+        terminal
+            .backend_mut()
+            .set_cursor_position(Position { x: 0, y: 6 })
+            .unwrap();
+
+        terminal.resize(Rect::new(0, 0, 10, 12)).unwrap();
+        assert_eq!(terminal.viewport_area, Rect::new(0, 5, 10, 4));
+        assert_eq!(
+            terminal.backend().cursor_position(),
+            Position { x: 0, y: 6 }
+        );
+
+        terminal.resize(Rect::new(0, 0, 10, 14)).unwrap();
+
+        assert_eq!(terminal.viewport_area, Rect::new(0, 6, 10, 4));
+        assert_eq!(
+            terminal.backend().cursor_position(),
+            Position { x: 0, y: 6 }
+        );
     }
 
     // This tests for the case where the new width is smaller than the old
