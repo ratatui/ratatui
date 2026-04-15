@@ -4,7 +4,6 @@ use ratatui_core::style::Color;
 use crate::canvas::{Painter, Shape};
 
 /// A line from `(x1, y1)` to `(x2, y2)` with the given color
-///
 /// # Examples
 ///
 /// ```rust
