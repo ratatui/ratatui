@@ -18,7 +18,7 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
-pub use self::shadow::{CellFilter, Dimmed, Shadow, dimmed};
+pub use self::shadow::{CellEffect, Dimmed, Shadow, dimmed};
 use crate::borders::{BorderType, Borders};
 
 mod padding;
@@ -65,6 +65,7 @@ mod shadow;
 /// # Styling and Layout
 ///
 /// - [`Block::style`] - Sets the base style of the block
+/// - [`Block::shadow`] - Adds a shadow rendered behind the block
 /// - [`Block::padding`] - Adds internal padding within the borders
 /// - [`Block::inner`] - Calculates the inner area available for content
 ///

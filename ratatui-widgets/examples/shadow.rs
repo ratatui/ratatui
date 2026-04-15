@@ -51,66 +51,71 @@ fn render(frame: &mut Frame) {
         &Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]).spacing(1),
     );
 
-    render_block(
-        frame,
-        top_left,
-        "Overlay shadow",
-        Style::new().fg(Color::White).bg(Color::Blue),
-        Style::new().black().on_yellow(),
-        Shadow::overlay().style(Style::new().bg(Color::DarkGray)),
-    );
-    render_block(
-        frame,
-        top_right,
-        "Block shadow",
-        Style::new().fg(Color::White),
-        Style::new().black().on_yellow(),
-        Shadow::block()
-            .style(Style::new().fg(Color::DarkGray))
-            .offset(Offset::new(2, 1)),
-    );
-    render_block(
-        frame,
-        bottom_left,
-        "Symbol shadow",
-        Style::new().fg(Color::White),
-        Style::new().white().on_red(),
-        Shadow::symbol("$")
-            .style(Style::new().fg(Color::DarkGray))
-            .offset(Offset::new(2, 1)),
-    );
-    render_block(
-        frame,
-        bottom_right,
-        "Dimmed shadow",
-        Style::new().fg(Color::White).bg(Color::Blue),
-        Style::new().black().on_green(),
-        Shadow::new(dimmed())
-            .style(Style::new().bg(Color::DarkGray))
-            .offset(Offset::new(2, 1)),
-    );
+    render_overlay_shadow(frame, top_left);
+    render_block_shadow(frame, top_right);
+    render_symbol_shadow(frame, bottom_left);
+    render_dimmed_shadow(frame, bottom_right);
 }
 
-fn render_block(
-    frame: &mut Frame,
-    area: Rect,
-    title: &str,
-    background_style: Style,
-    style: Style,
-    shadow: Shadow,
-) {
+fn render_overlay_shadow(frame: &mut Frame, area: Rect) {
+    render_background_paragraph(frame, area, Style::new().fg(Color::White).bg(Color::Blue));
+    let shadow = Shadow::overlay().style(Style::new().bg(Color::DarkGray));
+    let block = Block::bordered()
+        .title("Overlay shadow")
+        .style(Style::new().black().on_yellow())
+        .shadow(shadow);
+    render_popup(frame, area, block);
+}
+
+fn render_block_shadow(frame: &mut Frame, area: Rect) {
+    render_background_paragraph(frame, area, Style::new().fg(Color::White));
+    let shadow = Shadow::block()
+        .style(Style::new().fg(Color::DarkGray))
+        .offset(Offset::new(2, 1));
+    let block = Block::bordered()
+        .title("Block shadow")
+        .style(Style::new().black().on_yellow())
+        .shadow(shadow);
+    render_popup(frame, area, block);
+}
+
+fn render_symbol_shadow(frame: &mut Frame, area: Rect) {
+    render_background_paragraph(frame, area, Style::new().fg(Color::White));
+    let shadow = Shadow::symbol("$")
+        .style(Style::new().fg(Color::DarkGray))
+        .offset(Offset::new(2, 1));
+    let block = Block::bordered()
+        .title("Symbol shadow")
+        .style(Style::new().white().on_red())
+        .shadow(shadow);
+    render_popup(frame, area, block);
+}
+
+fn render_dimmed_shadow(frame: &mut Frame, area: Rect) {
+    render_background_paragraph(frame, area, Style::new().fg(Color::White).bg(Color::Blue));
+    let shadow = Shadow::custom(dimmed())
+        .style(Style::new().bg(Color::DarkGray))
+        .offset(Offset::new(2, 1));
+    let block = Block::bordered()
+        .title("Dimmed shadow")
+        .style(Style::new().black().on_green())
+        .shadow(shadow);
+    render_popup(frame, area, block);
+}
+
+fn render_background_paragraph(frame: &mut Frame, area: Rect, style: Style) {
     let background = Paragraph::new(background_text(area))
         .block(Block::bordered())
         .wrap(Wrap { trim: true })
-        .style(background_style);
+        .style(style);
     frame.render_widget(background, area);
+}
 
+fn render_popup(frame: &mut Frame, area: Rect, block: Block<'_>) {
     let popup_area = area.centered(
         Constraint::Length(area.width.saturating_sub(18)),
         Constraint::Length(area.height.saturating_sub(8)),
     );
-
-    let block = Block::bordered().title(title).style(style).shadow(shadow);
     frame.render_widget(Clear, popup_area);
     frame.render_widget(block, popup_area);
 }

@@ -666,7 +666,7 @@
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
 pub use ratatui_widgets::barchart::{Bar, BarChart, BarGroup};
 pub use ratatui_widgets::block::{
-    Block, BlockExt, CellFilter, Dimmed, Padding, Shadow, TitlePosition, dimmed,
+    Block, BlockExt, CellEffect, Dimmed, Padding, Shadow, TitlePosition, dimmed,
 };
 pub use ratatui_widgets::borders::{BorderType, Borders};
 #[cfg(feature = "widget-calendar")]

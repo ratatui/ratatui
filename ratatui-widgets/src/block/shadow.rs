@@ -8,27 +8,82 @@ use ratatui_core::style::{Color, Modifier, Style, Styled};
 use ratatui_core::symbols::shade;
 use ratatui_core::widgets::Widget;
 
-/// A filter that modifies the cells covered by a [`Shadow`].
+/// A configurable shadow that can be rendered behind a [`Block`](crate::block::Block).
 ///
-/// See [`Shadow::new`] for how to create a shadow from a custom filter.
-pub trait CellFilter: fmt::Debug {
-    /// Applies the filter to the cells in `shadow_area`.
-    fn apply(&self, shadow_area: Rect, base_area: Rect, buf: &mut Buffer);
+/// A [`Shadow`] is rendered in an offset area relative to the block. Its [`Style`] is applied
+/// first, then an optional cell effect can modify the affected cells, for example by filling them
+/// with a shading symbol or dimming the existing background.
+///
+/// Built-in presets:
+///
+/// - [`Shadow::overlay`] applies only style
+/// - [`Shadow::block`] fills with full block symbols
+/// - [`Shadow::light_shade`], [`Shadow::medium_shade`], and [`Shadow::dark_shade`] fill with shade
+///   symbols
+///
+/// ```plain
+/// ┌Popup─────┐
+/// │content   │▒
+/// └──────────┘▒
+///   ▒▒▒▒▒▒▒▒▒▒▒
+/// ```
+///
+/// # Custom effects
+///
+/// ```
+/// use ratatui::buffer::Buffer;
+/// use ratatui::layout::{Position, Rect};
+/// use ratatui::widgets::{Block, CellEffect, Shadow};
+///
+/// #[derive(Debug)]
+/// struct Checker;
+///
+/// impl CellEffect for Checker {
+///     fn apply(&self, shadow_area: Rect, base_area: Rect, buf: &mut Buffer) {
+///         for y in shadow_area.top()..shadow_area.bottom() {
+///             for x in shadow_area.left()..shadow_area.right() {
+///                 if base_area.contains(Position { x, y }) {
+///                     continue;
+///                 }
+///                 if (x + y) % 2 == 0 {
+///                     buf[(x, y)].set_symbol("░");
+///                 }
+///             }
+///         }
+///     }
+/// }
+///
+/// let shadow = Shadow::custom(Checker);
+/// let block = Block::bordered().shadow(shadow);
+/// ```
+#[derive(Debug, Clone, Eq)]
+pub struct Shadow {
+    effect: Effect,
+    style: Style,
+    offset: Offset,
 }
 
-/// The built-in shadow filters.
+/// The built-in shadow effects.
 #[derive(Debug, Clone)]
-enum Filter {
+enum Effect {
     /// Applies no symbol changes and only keeps the shadow style.
     Overlay,
     /// Fills the shadow area with a single symbol.
     Symbol(&'static str),
-    /// Applies a user-defined shadow filter.
-    Custom(Arc<dyn CellFilter>),
+    /// Applies a user-defined shadow effect.
+    Custom(Arc<dyn CellEffect>),
 }
 
-impl Filter {
-    /// Applies the filter to the shadow area in the buffer.
+/// A cell effect that modifies the cells covered by a [`Shadow`].
+///
+/// See [`Shadow::custom`] for how to create a shadow from a custom effect.
+pub trait CellEffect: fmt::Debug {
+    /// Applies the effect to the cells in `shadow_area`.
+    fn apply(&self, shadow_area: Rect, base_area: Rect, buf: &mut Buffer);
+}
+
+impl Effect {
+    /// Applies the effect to the shadow area in the buffer.
     fn apply(&self, shadow_area: Rect, base_area: Rect, buf: &mut Buffer) {
         match self {
             Self::Overlay => {}
@@ -42,7 +97,7 @@ impl Filter {
     }
 }
 
-impl PartialEq for Filter {
+impl PartialEq for Effect {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Overlay, Self::Overlay) => true,
@@ -53,9 +108,9 @@ impl PartialEq for Filter {
     }
 }
 
-impl Eq for Filter {}
+impl Eq for Effect {}
 
-impl Hash for Filter {
+impl Hash for Effect {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             Self::Overlay => "overlay".hash(state),
@@ -71,73 +126,21 @@ impl Hash for Filter {
     }
 }
 
-/// A configurable shadow that can be rendered behind a [`Block`](crate::block::Block).
-///
-/// A [`Shadow`] is rendered in an offset area relative to the block. Its [`Style`] is applied
-/// first, then an optional cell filter can modify the affected cells, for example by filling them
-/// with a shading symbol or dimming the existing background.
-#[derive(Debug, Clone, Eq)]
-pub struct Shadow {
-    filter: Filter,
-    style: Style,
-    offset: Offset,
-}
-
 impl PartialEq for Shadow {
     fn eq(&self, other: &Self) -> bool {
-        self.filter == other.filter && self.style == other.style && self.offset == other.offset
+        self.effect == other.effect && self.style == other.style && self.offset == other.offset
     }
 }
 
 impl Hash for Shadow {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.filter.hash(state);
+        self.effect.hash(state);
         self.style.hash(state);
         self.offset.hash(state);
     }
 }
 
 impl Shadow {
-    /// Creates a new shadow from a custom cell filter.
-    ///
-    /// The filter receives the shadow area, the original block area, and the target buffer. It is
-    /// called after the shadow style has been applied.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use ratatui::buffer::Buffer;
-    /// use ratatui::layout::{Position, Rect};
-    /// use ratatui::widgets::{CellFilter, Shadow};
-    ///
-    /// #[derive(Debug)]
-    /// struct Checker;
-    ///
-    /// impl CellFilter for Checker {
-    ///     fn apply(&self, shadow_area: Rect, base_area: Rect, buf: &mut Buffer) {
-    ///         for y in shadow_area.top()..shadow_area.bottom() {
-    ///             for x in shadow_area.left()..shadow_area.right() {
-    ///                 if base_area.contains(Position { x, y }) {
-    ///                     continue;
-    ///                 }
-    ///                 if (x + y) % 2 == 0 {
-    ///                     buf[(x, y)].set_symbol("░");
-    ///                 }
-    ///             }
-    ///         }
-    ///     }
-    /// }
-    ///
-    /// let shadow = Shadow::new(Checker);
-    /// ```
-    pub fn new<F: CellFilter + 'static>(filter: F) -> Self {
-        Self {
-            filter: Filter::Custom(Arc::new(filter)),
-            style: Style::default(),
-            offset: Offset::new(1, 1),
-        }
-    }
-
     /// Creates a shadow that only applies style to the offset area.
     ///
     /// This leaves the existing cell symbols unchanged.
@@ -148,11 +151,12 @@ impl Shadow {
     /// use ratatui::style::Stylize;
     /// use ratatui::widgets::{Block, Shadow};
     ///
-    /// let block = Block::bordered().shadow(Shadow::overlay().black().on_white());
+    /// let shadow = Shadow::overlay().black().on_white();
+    /// let block = Block::bordered().shadow(shadow);
     /// ```
     pub fn overlay() -> Self {
         Self {
-            filter: Filter::Overlay,
+            effect: Effect::Overlay,
             style: Style::default(),
             offset: Offset::new(1, 1),
         }
@@ -224,30 +228,37 @@ impl Shadow {
     /// ```
     /// use ratatui::widgets::{Block, Shadow};
     ///
-    /// let block = Block::bordered().shadow(Shadow::symbol("░"));
+    /// let shadow = Shadow::symbol("░");
+    /// let block = Block::bordered().shadow(shadow);
     /// ```
     pub fn symbol(symbol: &'static str) -> Self {
         Self {
-            filter: Filter::Symbol(symbol),
+            effect: Effect::Symbol(symbol),
             style: Style::default(),
             offset: Offset::new(1, 1),
         }
     }
 
+    /// Creates a new shadow from a custom cell effect.
+    ///
+    /// The effect receives the shadow area, the original block area, and the target buffer. It is
+    /// called after the shadow style has been applied.
+    pub fn custom<F: CellEffect + 'static>(effect: F) -> Self {
+        Self {
+            effect: Effect::Custom(Arc::new(effect)),
+            style: Style::default(),
+            offset: Offset::new(1, 1),
+        }
+    }
+
+    /// Creates a new shadow from a custom cell effect.
+    ///
+    /// Alias for [`Shadow::custom`].
+    pub fn new<F: CellEffect + 'static>(effect: F) -> Self {
+        Self::custom(effect)
+    }
+
     /// Sets the style applied to the shadow area.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use ratatui::style::{Style, Stylize};
-    /// use ratatui::widgets::Shadow;
-    ///
-    /// let shadow = Shadow::overlay().black().on_white();
-    /// assert_eq!(
-    ///     shadow,
-    ///     Shadow::overlay().style(Style::new().black().on_white())
-    /// );
-    /// ```
     #[must_use]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -297,19 +308,19 @@ impl Widget for &Shadow {
             }
         }
 
-        // Apply filter
-        self.filter.apply(shadow_area, area, buf);
+        // Apply effect
+        self.effect.apply(shadow_area, area, buf);
     }
 }
 
-/// A [`CellFilter`] that dims the shadow cells by setting the [`DIM`](Modifier::DIM) modifier.
+/// A [`CellEffect`] that dims the shadow cells by setting the [`DIM`](Modifier::DIM) modifier.
 ///
 /// If the cell background is RGB, each channel is halved. Otherwise the background is replaced
 /// with [`Color::Black`].
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash)]
 pub struct Dimmed;
 
-impl CellFilter for Dimmed {
+impl CellEffect for Dimmed {
     fn apply(&self, shadow_area: Rect, base_area: Rect, buf: &mut Buffer) {
         for_each_shadow_cell(shadow_area, base_area, buf, |x, y, buf| {
             buf[(x, y)].modifier.insert(Modifier::DIM);
@@ -322,7 +333,7 @@ impl CellFilter for Dimmed {
     }
 }
 
-/// Creates a [`Dimmed`] shadow filter.
+/// Creates a [`Dimmed`] shadow effect.
 pub const fn dimmed() -> Dimmed {
     Dimmed
 }
@@ -406,7 +417,7 @@ mod tests {
         #[derive(Debug)]
         struct PlusFilter;
 
-        impl CellFilter for PlusFilter {
+        impl CellEffect for PlusFilter {
             fn apply(&self, shadow_area: Rect, base_area: Rect, buf: &mut Buffer) {
                 for_each_shadow_cell(shadow_area, base_area, buf, |x, y, buf| {
                     buf[(x, y)].set_symbol("+");
