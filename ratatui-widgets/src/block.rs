@@ -18,9 +18,11 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
+pub use self::shadow::{CellEffect, Dimmed, Shadow, dimmed};
 use crate::borders::{BorderType, Borders};
 
 mod padding;
+mod shadow;
 
 /// A widget that renders borders, titles, and padding around other widgets.
 ///
@@ -63,6 +65,7 @@ mod padding;
 /// # Styling and Layout
 ///
 /// - [`Block::style`] - Sets the base style of the block
+/// - [`Block::shadow`] - Adds a shadow rendered behind the block
 /// - [`Block::padding`] - Adds internal padding within the borders
 /// - [`Block::inner`] - Calculates the inner area available for content
 ///
@@ -233,6 +236,8 @@ pub struct Block<'a> {
     padding: Padding,
     /// Border merging strategy
     merge_borders: MergeStrategy,
+    /// Block shadow
+    shadow: Option<Shadow>,
 }
 
 /// Defines the position of the title.
@@ -274,6 +279,7 @@ impl<'a> Block<'a> {
             style: Style::new(),
             padding: Padding::ZERO,
             merge_borders: MergeStrategy::Replace,
+            shadow: None,
         }
     }
 
@@ -703,6 +709,30 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// Adds a shadow behind the block.
+    ///
+    /// The shadow is rendered using the block area plus the shadow's configured offset.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::layout::Offset;
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::{Block, Shadow};
+    ///
+    /// let block = Block::bordered().title("Popup").shadow(
+    ///     Shadow::dark_shade()
+    ///         .black()
+    ///         .on_white()
+    ///         .offset(Offset::new(2, 1)),
+    /// );
+    /// ```
+    #[must_use]
+    pub fn shadow(mut self, shadow: Shadow) -> Self {
+        self.shadow = Some(shadow);
+        self
+    }
+
     /// Computes the inner area of a block after subtracting space for borders, titles, and padding.
     ///
     /// # Examples
@@ -783,6 +813,7 @@ impl Widget for &Block<'_> {
         buf.set_style(area, self.style);
         self.render_borders(area, buf);
         self.render_titles(area, buf);
+        self.render_shadow(area, buf);
     }
 }
 
@@ -1024,6 +1055,12 @@ impl Block<'_> {
             // bump the titles area to the right and reduce its width
             titles_area.x = titles_area.x.saturating_add(title_width + 1);
             titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+        }
+    }
+
+    fn render_shadow(&self, base_area: Rect, buf: &mut Buffer) {
+        if let Some(shadow) = &self.shadow {
+            shadow.render(base_area, buf);
         }
     }
 
@@ -1340,6 +1377,7 @@ mod tests {
                 style: Style::new(),
                 padding: Padding::ZERO,
                 merge_borders: MergeStrategy::Replace,
+                shadow: None,
             }
         );
     }
