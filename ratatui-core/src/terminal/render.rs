@@ -27,11 +27,14 @@ impl<B: Backend> Terminal<B> {
     ///
     /// - call [`Terminal::autoresize`] if necessary
     /// - call the render callback, passing it a [`Frame`] reference to render to
-    /// - call [`Terminal::flush`] to write changes to the backend
+    /// - call [`Terminal::flush`] to apply the current buffer diff to the backend
     /// - show/hide the cursor based on [`Frame::set_cursor_position`]
     /// - call [`Terminal::swap_buffers`] to prepare for the next render pass
-    /// - call [`Backend::flush`]
+    /// - call [`Backend::flush`] to flush any buffered backend output
     /// - return a [`CompletedFrame`] with the current buffer and the area used for rendering
+    ///
+    /// If any backend step fails, the error is returned immediately and later steps in the render
+    /// pass are skipped.
     ///
     /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
     /// purposes, but it is often not used in regular applications.
@@ -111,11 +114,14 @@ impl<B: Backend> Terminal<B> {
     ///
     /// - call [`Terminal::autoresize`] if necessary
     /// - call the render callback, passing it a [`Frame`] reference to render to
-    /// - call [`Terminal::flush`] to write changes to the backend
+    /// - call [`Terminal::flush`] to apply the current buffer diff to the backend
     /// - show/hide the cursor based on [`Frame::set_cursor_position`]
     /// - call [`Terminal::swap_buffers`] to prepare for the next render pass
-    /// - call [`Backend::flush`]
+    /// - call [`Backend::flush`] to flush any buffered backend output
     /// - return a [`CompletedFrame`] with the current buffer and the area used for rendering
+    ///
+    /// If the render callback returns an error, Ratatui leaves the backend, buffers, cursor state,
+    /// and frame count unchanged.
     ///
     /// The render callback passed to `try_draw` can return any [`Result`] with an error type that
     /// can be converted into `B::Error` using the [`Into`] trait. This makes it possible to use the
