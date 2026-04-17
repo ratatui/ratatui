@@ -86,9 +86,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                 // The style of hidden trailing cells is not visible, so style
                 // differences alone should not trigger updates that can cause
                 // cursor positioning issues on some terminals.
-                if self.next[j].diff_option != CellDiffOption::Skip
-                    && self.prev[j].symbol() != self.next[j].symbol()
-                {
+                if !is_skip(&self.next[j]) && self.prev[j].symbol() != self.next[j].symbol() {
                     let (tx, ty) = self.pos_of(j);
                     return Some((tx, ty, &self.next[j]));
                 }
@@ -109,14 +107,18 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
             match current.diff_option {
                 CellDiffOption::Skip => {}
+                _ if is_skip(current) => {}
+
                 CellDiffOption::ForcedWidth(width) => {
-                    self.pos += width.get().saturating_sub(1) as usize;
+                    self.pos = self
+                        .pos
+                        .saturating_add(width.get().saturating_sub(1) as usize);
                     if current != previous {
                         let (x, y) = self.pos_of(i);
                         return Some((x, y, &self.next[i]));
                     }
                 }
-                CellDiffOption::None => {
+                CellDiffOption::None | CellDiffOption::AlwaysUpdate => {
                     // If the current cell is multi-width, ensure the trailing cells are
                     // explicitly cleared when they previously contained non-blank content.
                     // Some terminals do not reliably clear the trailing cell(s) when printing
@@ -124,7 +126,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     // characters). Emitting an explicit update for the trailing cells avoids
                     // this.
                     let cell_width = current.cell_width() as usize;
-                    if current == previous {
+                    if matches!(current.diff_option, CellDiffOption::None) && current == previous {
                         // Equal cells still need to account for multi-width skip.
                         self.pos += cell_width.saturating_sub(1);
                         continue;
@@ -159,10 +161,19 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
     }
 }
 
+/// Returns `true` if this cell should be skipped during diffing.
+#[allow(deprecated)]
+const fn is_skip(cell: &Cell) -> bool {
+    matches!(cell.diff_option, CellDiffOption::Skip)
+        || (cell.skip && matches!(cell.diff_option, CellDiffOption::None))
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::vec::Vec;
     use core::num::NonZeroU16;
+
+    use compact_str::CompactString;
 
     use super::*;
     use crate::buffer::Buffer;
@@ -215,6 +226,21 @@ mod tests {
     }
 
     #[test]
+    fn always_update_cells_are_emitted_even_when_identical() {
+        let mut prev = Buffer::with_lines(["abc"]);
+        prev.content[1].diff_option = CellDiffOption::AlwaysUpdate;
+
+        let mut next = Buffer::with_lines(["abc"]);
+        next.content[1].diff_option = CellDiffOption::AlwaysUpdate;
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+        assert_eq!(diff.len(), 1);
+        assert_eq!(diff[0].0, 1);
+        assert_eq!(diff[0].1, 0);
+        assert_eq!(diff[0].2.symbol(), "b");
+    }
+
+    #[test]
     fn forced_width_skips_trailing() {
         let prev = Buffer::with_lines(["abcd"]);
         let mut next = Buffer::with_lines(["xbcd"]);
@@ -244,6 +270,36 @@ mod tests {
         assert_eq!(diff.len(), 1);
         assert_eq!(diff[0].0, 0);
         assert_eq!(diff[0].1, 0);
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn deprecated_skip_field_is_respected() {
+        let prev = Buffer::with_lines(["abc"]);
+        let mut next = Buffer::with_lines(["xyz"]);
+        next.content[1].skip = true;
+
+        let diff: CompactString = BufferDiff::new(&prev, &next)
+            .map(|(_, _, cell)| cell.symbol())
+            .collect();
+
+        assert_eq!(diff, "xz");
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn forced_width_takes_precedence_over_deprecated_skip() {
+        let prev = Buffer::with_lines(["abcd"]);
+        let mut next = Buffer::with_lines(["xbcd"]);
+        next.content[0].skip = true;
+        next.content[0].diff_option = CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap());
+
+        // ForcedWidth wins over skip=true, so the cell is diffed with forced width
+        let diff: CompactString = BufferDiff::new(&prev, &next)
+            .map(|(_, _, cell)| cell.symbol())
+            .collect();
+
+        assert_eq!(diff, "x");
     }
 
     #[test]

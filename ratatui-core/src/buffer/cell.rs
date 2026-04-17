@@ -18,6 +18,12 @@ pub enum CellDiffOption {
     /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
     /// covered by something from an escape sequence, such as graphics or links.
     Skip,
+    /// Always update this cell when diffing.
+    ///
+    /// This bypasses the equality check against the previous buffer. Use it when another
+    /// renderer may draw over the same area, such as an external image pipeline, so Ratatui can
+    /// redraw text there on the next render.
+    AlwaysUpdate,
     /// Force a width regardless of the symbol text width.
     ///
     /// Escape sequences will have some computed width that does match what is written to the
@@ -54,10 +60,20 @@ pub struct Cell {
 
     /// Special option applied when copying (diffing) the buffer to the screen (or another buffer).
     pub diff_option: CellDiffOption,
+
+    /// Whether the cell should be skipped when copying (diffing) the buffer to the screen.
+    ///
+    /// Use [`CellDiffOption::Skip`] via [`set_diff_option`](Self::set_diff_option) instead.
+    #[deprecated(
+        since = "0.30.1",
+        note = "use `set_diff_option(CellDiffOption::Skip)` instead"
+    )]
+    pub skip: bool,
 }
 
 impl Cell {
     /// An empty `Cell`
+    #[allow(deprecated)]
     pub const EMPTY: Self = Self {
         symbol: None,
         fg: Color::Reset,
@@ -66,6 +82,7 @@ impl Cell {
         underline_color: Color::Reset,
         modifier: Modifier::empty(),
         diff_option: CellDiffOption::None,
+        skip: false,
     };
 
     /// Creates a new `Cell` with the given symbol.
@@ -202,30 +219,32 @@ impl Cell {
         }
     }
 
+    /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.
+    ///
+    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
+    /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
     #[deprecated(
-        since = "0.30.0",
+        since = "0.30.1",
         note = "use `set_diff_option(CellDiffOption::Skip)` instead"
     )]
-    /// Set cell diffing option to [`CellDiffOption::Skip`].
+    #[allow(deprecated)]
     pub const fn set_skip(&mut self, skip: bool) -> &mut Self {
-        self.diff_option = if skip {
-            CellDiffOption::Skip
-        } else {
-            CellDiffOption::None
-        };
+        self.skip = skip;
         self
     }
 
     /// Sets cell [`CellDiffOption`].
     ///
-    /// The diff options are for dealing with cells that are wider than a unit, or that should not
-    /// be updated at all (skip output due to preceding wider cells).
+    /// The diff options are for dealing with cells that are wider than a unit, that should always
+    /// be updated, or that should not be updated at all (skip output due to preceding wider
+    /// cells).
     pub const fn set_diff_option(&mut self, diff_option: CellDiffOption) -> &mut Self {
         self.diff_option = diff_option;
         self
     }
 
     /// Resets the cell to the empty state.
+    #[allow(deprecated)]
     pub fn reset(&mut self) {
         *self = Self::EMPTY;
     }
@@ -246,8 +265,12 @@ impl PartialEq for Cell {
         #[cfg(not(feature = "underline-color"))]
         let underline_color_eq = true;
 
+        #[allow(deprecated)]
+        let skip_eq = self.skip == other.skip;
+
         symbols_eq
             && underline_color_eq
+            && skip_eq
             && self.fg == other.fg
             && self.bg == other.bg
             && self.modifier == other.modifier
@@ -270,6 +293,8 @@ impl core::hash::Hash for Cell {
         self.underline_color.hash(state);
         self.modifier.hash(state);
         self.diff_option.hash(state);
+        #[allow(deprecated)]
+        self.skip.hash(state);
     }
 }
 
@@ -297,6 +322,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(deprecated)]
     fn new() {
         let cell = Cell::new("あ");
         assert_eq!(
@@ -309,6 +335,7 @@ mod tests {
                 underline_color: Color::Reset,
                 modifier: Modifier::empty(),
                 diff_option: CellDiffOption::None,
+                skip: false,
             }
         );
     }
@@ -370,6 +397,13 @@ mod tests {
         let mut cell = Cell::EMPTY;
         cell.set_diff_option(CellDiffOption::Skip);
         assert_eq!(cell.diff_option, CellDiffOption::Skip);
+    }
+
+    #[test]
+    fn set_always_update() {
+        let mut cell = Cell::EMPTY;
+        cell.set_diff_option(CellDiffOption::AlwaysUpdate);
+        assert_eq!(cell.diff_option, CellDiffOption::AlwaysUpdate);
     }
 
     #[test]
