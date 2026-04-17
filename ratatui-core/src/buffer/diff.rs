@@ -110,7 +110,9 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                 _ if is_skip(current) => {}
 
                 CellDiffOption::ForcedWidth(width) => {
-                    self.pos += width.get().saturating_sub(1) as usize;
+                    self.pos = self
+                        .pos
+                        .saturating_add(width.get().saturating_sub(1) as usize);
                     if current != previous {
                         let (x, y) = self.pos_of(i);
                         return Some((x, y, &self.next[i]));
