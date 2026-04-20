@@ -27,18 +27,18 @@ rustdoc-args = ["--cfg", "docsrs"]
 ## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
 ## which allows you to set the underline color of text, the `macros` feature which provides
 ## some useful macros and `layout-cache` which speeds up layout cache calculations.
-default = ["crossterm", "underline-color", "all-widgets", "macros", "layout-cache"]
+default = ["all-widgets", "crossterm", "layout-cache", "macros", "underline-color"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
-crossterm = ["std", "dep:ratatui-crossterm"]
+crossterm = ["dep:ratatui-crossterm", "std"]
 ## selects the crossterm 0.28.x backend implementation
 crossterm_0_28 = ["crossterm", "ratatui-crossterm/crossterm_0_28"]
 ## selects the crossterm 0.29.x backend implementation (default)
 crossterm_0_29 = ["crossterm", "ratatui-crossterm/crossterm_0_29"]
 ## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
-termion = ["std", "dep:ratatui-termion"]
+termion = ["dep:ratatui-termion", "std"]
 ## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
-termwiz = ["std", "dep:ratatui-termwiz"]
+termwiz = ["dep:ratatui-termwiz", "std"]
 
 ## enables std
 std = ["ratatui-core/std", "ratatui-widgets/std", "serde?/std"]
@@ -49,17 +49,17 @@ std = ["ratatui-core/std", "ratatui-widgets/std", "serde?/std"]
 serde = [
   "dep:serde",
   "ratatui-core/serde",
-  "ratatui-widgets/serde",
   "ratatui-crossterm?/serde",
   "ratatui-termion?/serde",
   "ratatui-termwiz?/serde",
+  "ratatui-widgets/serde",
 ]
 
 ## enables layout cache
 layout-cache = ["ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
-palette = ["ratatui-core/palette", "dep:palette"]
+palette = ["dep:palette", "ratatui-core/palette"]
 
 ## enables portable-atomic integration for targets that don't support atomic types.
 portable-atomic = ["ratatui-core/portable-atomic"]
@@ -99,7 +99,7 @@ underline-color = [
 #! The following features are unstable and may change in the future:
 
 ## Enable all unstable features.
-unstable = ["unstable-rendered-line-info", "unstable-widget-ref", "unstable-backend-writer"]
+unstable = ["unstable-backend-writer", "unstable-rendered-line-info", "unstable-widget-ref"]
 
 ## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
 ## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
@@ -147,7 +147,7 @@ rand_chacha.workspace = true
 rstest.workspace = true
 serde_json.workspace = true
 time = { workspace = true, features = ["local-offset"] }
-tokio = { workspace = true, features = ["rt", "macros", "time", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "time"] }
 tracing.workspace = true
 tracing-appender.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
