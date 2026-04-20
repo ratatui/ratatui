@@ -64,7 +64,7 @@ impl<B: Backend> Terminal<B> {
     pub fn autoresize(&mut self) -> Result<(), B::Error> {
         // fixed viewports do not get autoresized
         if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
-            let area = self.size()?.into();
+            let area = self.backend.window_size()?.columns_rows.into();
             if area != self.last_known_area {
                 self.resize(area)?;
             }
