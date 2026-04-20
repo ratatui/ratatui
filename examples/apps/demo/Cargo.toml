@@ -7,9 +7,9 @@ rust-version.workspace = true
 
 [features]
 default = ["crossterm"]
-crossterm = ["ratatui/crossterm", "dep:crossterm"]
-termion = ["ratatui/termion", "dep:termion"]
-termwiz = ["ratatui/termwiz", "dep:termwiz"]
+crossterm = ["dep:crossterm", "ratatui/crossterm"]
+termion = ["dep:termion", "ratatui/termion"]
+termwiz = ["dep:termwiz", "ratatui/termwiz"]
 
 [dependencies]
 clap.workspace = true
