@@ -7,7 +7,7 @@ authors = ["The Ratatui Developers"]
 license = "MIT"
 repository = "https://github.com/ratatui/ratatui"
 documentation = "https://docs.rs/ratatui-macros"
-keywords = ["ratatui", "macros", "tui", "ui"]
+keywords = ["macros", "ratatui", "tui", "ui"]
 categories = ["command-line-interface"]
 
 [dependencies]

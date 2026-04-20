@@ -18,5 +18,5 @@ color-eyre.workspace = true
 crossterm = { workspace = true, features = ["event-stream"] }
 octocrab.workspace = true
 ratatui.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream.workspace = true
