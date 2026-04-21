@@ -971,18 +971,19 @@ mod tests {
 
         // Combining dakuten (U+3099): forms 1-cell grapheme cluster with width 1
         let mut buffer1 = Buffer::empty(area);
-        buffer1.set_string(0, 0, "ｶ゙", Style::default());
+        let (x1, _) = buffer1.set_stringn(0, 0, "ｶ゙", usize::MAX, Style::default());
         // The combining dakuten merges with ｶ into a single cell (width 1)
         assert_eq!(buffer1.content[0].symbol(), "ｶ゙");
-        assert_eq!(buffer1.content[1].symbol(), " ");
+        assert_eq!(buffer1.content[0].cell_width(), 1);
+        assert_eq!(x1, 1);
 
         // Non-combining halfwidth dakuten (U+FF9E): grapheme cluster with width 2
         let mut buffer2 = Buffer::empty(area);
-        buffer2.set_string(0, 0, "ｶﾞ", Style::default());
+        let (x2, _) = buffer2.set_stringn(0, 0, "ｶﾞ", usize::MAX, Style::default());
         // The grapheme cluster "ｶﾞ" is stored in cell[0], but takes 2 cells width
         assert_eq!(buffer2.content[0].symbol(), "ｶﾞ");
-        assert_eq!(buffer2.content[1].symbol(), " "); // reset cell (hidden by width 2)
-        assert_eq!(buffer2.content[2].symbol(), " ");
+        assert_eq!(buffer2.content[0].cell_width(), 2);
+        assert_eq!(x2, 2);
     }
 
     #[fixture]
