@@ -497,7 +497,7 @@ impl Styled for Paragraph<'_> {
 mod tests {
     use alloc::vec;
 
-    use ratatui_core::buffer::Buffer;
+    use ratatui_core::buffer::{Buffer, CellWidth};
     use ratatui_core::layout::{Alignment, Rect};
     use ratatui_core::style::{Color, Modifier, Style, Stylize};
     use ratatui_core::text::{Line, Span, Text};
@@ -1017,25 +1017,13 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
         paragraph.render(Rect::new(0, 0, 10, 1), &mut buffer);
 
-        // Check content - should have spaces for skip cells
+        // Check content and effective cell widths for wide cells.
         assert_eq!(buffer[(0, 0)].symbol(), "あ", "Cell 0 should be あ");
-        assert_eq!(
-            buffer[(1, 0)].symbol(),
-            " ",
-            "Cell 1 should be space (skip cell)"
-        );
+        assert_eq!(buffer[(0, 0)].cell_width(), 2, "Cell 0 should be width 2");
         assert_eq!(buffer[(2, 0)].symbol(), "い", "Cell 2 should be い");
-        assert_eq!(
-            buffer[(3, 0)].symbol(),
-            " ",
-            "Cell 3 should be space (skip cell)"
-        );
+        assert_eq!(buffer[(2, 0)].cell_width(), 2, "Cell 2 should be width 2");
         assert_eq!(buffer[(4, 0)].symbol(), "う", "Cell 4 should be う");
-        assert_eq!(
-            buffer[(5, 0)].symbol(),
-            " ",
-            "Cell 5 should be space (skip cell)"
-        );
+        assert_eq!(buffer[(4, 0)].cell_width(), 2, "Cell 4 should be width 2");
 
         // Check background - all cells should have green background from set_style
         // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't
@@ -1058,26 +1046,13 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
         paragraph.render(Rect::new(0, 0, 10, 1), &mut buffer);
 
-        // Check content - should have spaces for wide characters like "あいう"
-        // Expected: "ｶﾞ ｷﾞ ｸﾞ     " (spaces at x=1, 3, 5)
+        // Check content and effective cell widths for wide grapheme clusters.
         assert_eq!(buffer[(0, 0)].symbol(), "ｶﾞ", "Cell 0 should be ｶﾞ");
-        assert_eq!(
-            buffer[(1, 0)].symbol(),
-            " ",
-            "Cell 1 should be space (skip cell)"
-        );
+        assert_eq!(buffer[(0, 0)].cell_width(), 2, "Cell 0 should be width 2");
         assert_eq!(buffer[(2, 0)].symbol(), "ｷﾞ", "Cell 2 should be ｷﾞ");
-        assert_eq!(
-            buffer[(3, 0)].symbol(),
-            " ",
-            "Cell 3 should be space (skip cell)"
-        );
+        assert_eq!(buffer[(2, 0)].cell_width(), 2, "Cell 2 should be width 2");
         assert_eq!(buffer[(4, 0)].symbol(), "ｸﾞ", "Cell 4 should be ｸﾞ");
-        assert_eq!(
-            buffer[(5, 0)].symbol(),
-            " ",
-            "Cell 5 should be space (skip cell)"
-        );
+        assert_eq!(buffer[(4, 0)].cell_width(), 2, "Cell 4 should be width 2");
 
         // Check background - all cells should have green background from set_style
         // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't
