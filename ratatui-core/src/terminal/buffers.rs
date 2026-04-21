@@ -6,13 +6,19 @@ use crate::terminal::{Frame, Terminal, Viewport};
 impl<B: Backend> Terminal<B> {
     /// Returns a [`Frame`] for manual rendering.
     ///
-    /// Most applications should render via [`Terminal::draw`] / [`Terminal::try_draw`]. This method
-    /// exposes the frame construction step used by [`Terminal::try_draw`] so tests and advanced
-    /// callers can render without running the full draw pipeline.
+    /// Most applications should render via [`Terminal::draw`] / [`Terminal::try_draw`]. This is an
+    /// escape hatch that exposes the frame construction step used by [`Terminal::try_draw`] so
+    /// tests and advanced callers can render without running the full draw pipeline.
+    ///
+    /// This is primarily useful for tests, backend adapters, and specialized integrations that
+    /// intentionally manage presentation themselves.
     ///
     /// Unlike `draw` / `try_draw`, this does not call [`Terminal::autoresize`], does not write
     /// updates to the backend, and does not apply any cursor changes. After rendering, you
     /// typically call [`Terminal::flush`], [`Terminal::swap_buffers`], and [`Backend::flush`].
+    ///
+    /// For the full render-pass behavior that also handles resizing, cursor updates, buffer
+    /// swapping, and backend flushing, see [`Terminal::draw`] and [`Terminal::try_draw`].
     ///
     /// The returned `Frame` mutably borrows the current buffer, so it must be dropped before you
     /// can call methods like [`Terminal::flush`]. The example below uses a scope to make that
@@ -55,17 +61,33 @@ impl<B: Backend> Terminal<B> {
     /// Gets the current buffer as a mutable reference.
     ///
     /// This is the buffer that the next [`Frame`] will render into (see [`Terminal::get_frame`]).
-    /// Most applications should render inside [`Terminal::draw`] and access the buffer via
-    /// [`Frame::buffer_mut`] instead.
+    /// This is a low-level escape hatch; normal applications should render inside
+    /// [`Terminal::draw`] and access the buffer through widgets, or through [`Frame::buffer_mut`]
+    /// when they intentionally need direct cell access during a render pass.
+    ///
+    /// Mutating this buffer does not update the backend immediately. The changes become visible
+    /// only after a later [`Terminal::flush`] or full draw pass applies the diff. Because this
+    /// bypasses the usual render callback structure, it is mainly useful for tests and specialized
+    /// integrations that intentionally manage presentation themselves.
     pub const fn current_buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffers[self.current]
     }
 
-    /// Writes the current buffer to the backend using a diff against the previous buffer.
+    /// Applies the current buffer diff to the backend's active display surface.
     ///
-    /// This is one of the building blocks used by [`Terminal::draw`] / [`Terminal::try_draw`]. It
-    /// does not swap buffers or flush the backend; see [`Terminal::swap_buffers`] and
-    /// [`Backend::flush`].
+    /// This compares the current buffer with the previous buffer and passes only the changed cells
+    /// to [`Backend::draw`]. It is one of the building blocks used by [`Terminal::draw`] /
+    /// [`Terminal::try_draw`].
+    ///
+    /// This method does not swap buffers, does not update cursor visibility or position, and does
+    /// not call [`Backend::flush`]. See [`Terminal::swap_buffers`] and [`Backend::flush`].
+    ///
+    /// `Terminal::flush` only reasons about Ratatui's internal buffers. It does not know whether
+    /// the backend's display surface changed since the last render pass. For example, if you leave
+    /// the alternate screen and then call `Terminal::flush`, Ratatui may replay a diff that was
+    /// computed for the alternate screen onto the main screen. In normal applications, prefer
+    /// [`Terminal::draw`] / [`Terminal::try_draw`] unless you are intentionally managing the whole
+    /// render pipeline yourself.
     ///
     /// Implementation note: when there are updates, Ratatui records the position of the last
     /// updated cell as the "last known cursor position". Inline viewports use this to preserve the
@@ -94,8 +116,8 @@ impl<B: Backend> Terminal<B> {
     /// Clears the inactive buffer and swaps it with the current buffer.
     ///
     /// This is part of the standard rendering flow (see [`Terminal::try_draw`]). If you render
-    /// manually using [`Terminal::get_frame`] and [`Terminal::flush`], call this afterward so the
-    /// next flush can compute diffs against the correct "previous" buffer.
+    /// manually using [`Terminal::get_frame`] and [`Terminal::flush`], call this immediately
+    /// afterward so the next flush can compute diffs against the correct "previous" buffer.
     pub fn swap_buffers(&mut self) {
         self.buffers[1 - self.current].reset();
         self.current = 1 - self.current;
@@ -114,14 +136,26 @@ impl<B: Backend> Terminal<B> {
     /// the end of the visible display area, not just the viewport's rectangle. This is an
     /// implementation detail rather than a contract; do not rely on it.
     ///
-    /// This preserves the cursor position.
+    /// This preserves the backend's current cursor position.
     ///
     /// This also resets the "previous" buffer so the next [`Terminal::flush`] redraws the full
-    /// viewport. [`Terminal::resize`] calls this internally.
+    /// viewport.
+    ///
+    /// [`Terminal::resize`]: crate::terminal::Terminal::resize
     ///
     /// Implementation note: this uses [`ClearType::AfterCursor`] starting at the viewport origin.
     pub fn clear(&mut self) -> Result<(), B::Error> {
         let original_cursor = self.backend.get_cursor_position()?;
+        self.clear_viewport()?;
+        self.backend.set_cursor_position(original_cursor)?;
+        Ok(())
+    }
+
+    /// Clears according to the current viewport and resets the back buffer.
+    ///
+    /// Unlike [`Terminal::clear`], this does not snapshot and restore the backend cursor
+    /// position. Callers that need to preserve the cursor should do so outside this helper.
+    pub(super) fn clear_viewport(&mut self) -> Result<(), B::Error> {
         match self.viewport {
             Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
             Viewport::Inline(_) => {
@@ -134,7 +168,6 @@ impl<B: Backend> Terminal<B> {
                 self.clear_fixed_viewport(area)?;
             }
         }
-        self.backend.set_cursor_position(original_cursor)?;
         // Reset the back buffer to make sure the next update will redraw everything.
         self.buffers[1 - self.current].reset();
         Ok(())
@@ -384,6 +417,32 @@ mod tests {
         assert_eq!(
             terminal.backend().cursor_position(),
             Position { x: 3, y: 0 }
+        );
+    }
+
+    #[test]
+    fn clear_viewport_inline_leaves_cursor_at_viewport_origin() {
+        let mut backend = TestBackend::with_lines([
+            "before 1  ",
+            "before 2  ",
+            "viewport 1",
+            "viewport 2",
+            "after 1   ",
+            "after 2   ",
+        ]);
+        backend
+            .set_cursor_position(Position { x: 2, y: 2 })
+            .unwrap();
+        let options = TerminalOptions {
+            viewport: Viewport::Inline(2),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+
+        terminal.clear_viewport().unwrap();
+
+        assert_eq!(
+            terminal.backend().cursor_position(),
+            terminal.viewport_area.as_position()
         );
     }
 }

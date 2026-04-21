@@ -18,9 +18,11 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 pub use self::padding::Padding;
+pub use self::shadow::{CellEffect, Dimmed, Shadow, dimmed};
 use crate::borders::{BorderType, Borders};
 
 mod padding;
+mod shadow;
 
 /// A widget that renders borders, titles, and padding around other widgets.
 ///
@@ -63,6 +65,7 @@ mod padding;
 /// # Styling and Layout
 ///
 /// - [`Block::style`] - Sets the base style of the block
+/// - [`Block::shadow`] - Adds a shadow rendered behind the block
 /// - [`Block::padding`] - Adds internal padding within the borders
 /// - [`Block::inner`] - Calculates the inner area available for content
 ///
@@ -233,6 +236,8 @@ pub struct Block<'a> {
     padding: Padding,
     /// Border merging strategy
     merge_borders: MergeStrategy,
+    /// Block shadow
+    shadow: Option<Shadow>,
 }
 
 /// Defines the position of the title.
@@ -274,6 +279,7 @@ impl<'a> Block<'a> {
             style: Style::new(),
             padding: Padding::ZERO,
             merge_borders: MergeStrategy::Replace,
+            shadow: None,
         }
     }
 
@@ -703,6 +709,30 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// Adds a shadow behind the block.
+    ///
+    /// The shadow is rendered using the block area plus the shadow's configured offset.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::layout::Offset;
+    /// use ratatui::style::Stylize;
+    /// use ratatui::widgets::{Block, Shadow};
+    ///
+    /// let block = Block::bordered().title("Popup").shadow(
+    ///     Shadow::dark_shade()
+    ///         .black()
+    ///         .on_white()
+    ///         .offset(Offset::new(2, 1)),
+    /// );
+    /// ```
+    #[must_use]
+    pub fn shadow(mut self, shadow: Shadow) -> Self {
+        self.shadow = Some(shadow);
+        self
+    }
+
     /// Computes the inner area of a block after subtracting space for borders, titles, and padding.
     ///
     /// # Examples
@@ -751,12 +781,10 @@ impl<'a> Block<'a> {
         inner.x = inner.x.saturating_add(self.padding.left);
         inner.y = inner.y.saturating_add(self.padding.top);
 
-        inner.width = inner
-            .width
-            .saturating_sub(self.padding.left + self.padding.right);
-        inner.height = inner
-            .height
-            .saturating_sub(self.padding.top + self.padding.bottom);
+        let horizontal_padding = self.padding.left.saturating_add(self.padding.right);
+        let vertical_padding = self.padding.top.saturating_add(self.padding.bottom);
+        inner.width = inner.width.saturating_sub(horizontal_padding);
+        inner.height = inner.height.saturating_sub(vertical_padding);
 
         inner
     }
@@ -783,6 +811,7 @@ impl Widget for &Block<'_> {
         buf.set_style(area, self.style);
         self.render_borders(area, buf);
         self.render_titles(area, buf);
+        self.render_shadow(area, buf);
     }
 }
 
@@ -796,18 +825,22 @@ impl Block<'_> {
         let left = area.left();
         let top = area.top();
         // area.right() and area.bottom() are outside the rect, subtract 1 to get the last row/col
-        let right = area.right() - 1;
-        let bottom = area.bottom() - 1;
+        let right = area.right().saturating_sub(1);
+        let bottom = area.bottom().saturating_sub(1);
 
         // The first and last element of each line are not drawn when there is an adjacent line as
         // this would cause the corner to initially be merged with a side character and then a
         // corner character to be drawn on top of it. Some merge strategies would not produce a
         // correct character in that case.
         let is_replace = self.merge_borders != MergeStrategy::Replace;
-        let left_inset = left + u16::from(is_replace && self.borders.contains(Borders::LEFT));
-        let top_inset = top + u16::from(is_replace && self.borders.contains(Borders::TOP));
-        let right_inset = right - u16::from(is_replace && self.borders.contains(Borders::RIGHT));
-        let bottom_inset = bottom - u16::from(is_replace && self.borders.contains(Borders::BOTTOM));
+        let left_inset_amount = u16::from(is_replace && self.borders.contains(Borders::LEFT));
+        let top_inset_amount = u16::from(is_replace && self.borders.contains(Borders::TOP));
+        let right_inset_amount = u16::from(is_replace && self.borders.contains(Borders::RIGHT));
+        let bottom_inset_amount = u16::from(is_replace && self.borders.contains(Borders::BOTTOM));
+        let left_inset = left.saturating_add(left_inset_amount);
+        let top_inset = top.saturating_add(top_inset_amount);
+        let right_inset = right.saturating_sub(right_inset_amount);
+        let bottom_inset = bottom.saturating_sub(bottom_inset_amount);
 
         let sides = [
             (
@@ -852,20 +885,20 @@ impl Block<'_> {
         let corners = [
             (
                 Borders::RIGHT | Borders::BOTTOM,
-                area.right() - 1,
-                area.bottom() - 1,
+                area.right().saturating_sub(1),
+                area.bottom().saturating_sub(1),
                 self.border_set.bottom_right,
             ),
             (
                 Borders::RIGHT | Borders::TOP,
-                area.right() - 1,
+                area.right().saturating_sub(1),
                 area.top(),
                 self.border_set.top_right,
             ),
             (
                 Borders::LEFT | Borders::BOTTOM,
                 area.left(),
-                area.bottom() - 1,
+                area.bottom().saturating_sub(1),
                 self.border_set.bottom_left,
             ),
             (
@@ -912,7 +945,7 @@ impl Block<'_> {
             if titles_area.is_empty() {
                 break;
             }
-            let title_width = title.width() as u16;
+            let title_width = Self::line_width_u16(title);
             let title_area = Rect {
                 x: titles_area
                     .right()
@@ -941,8 +974,8 @@ impl Block<'_> {
         // titles are rendered with a space after each title except the last one
         let total_width = titles
             .iter()
-            .map(|title| title.width() as u16 + 1)
-            .sum::<u16>()
+            .map(|title| Self::line_width_u16(title).saturating_add(1))
+            .fold(0, u16::saturating_add)
             .saturating_sub(1);
 
         if total_width <= area.width {
@@ -960,16 +993,19 @@ impl Block<'_> {
         buf: &mut Buffer,
     ) {
         // titles fit in the area, center them
-        let x = area.left() + area.width.saturating_sub(total_width) / 2;
+        let x = area
+            .left()
+            .saturating_add(area.width.saturating_sub(total_width) / 2);
         let mut area = Rect { x, ..area };
         for title in titles {
-            let width = title.width() as u16;
+            let width = Self::line_width_u16(title);
             let title_area = Rect { width, ..area };
             buf.set_style(title_area, self.titles_style);
             title.render(title_area, buf);
             // Move the rendering cursor to the right, leaving 1 column space.
-            area.x = area.x.saturating_add(width + 1);
-            area.width = area.width.saturating_sub(width + 1);
+            let advance = width.saturating_add(1);
+            area.x = area.x.saturating_add(advance);
+            area.width = area.width.saturating_sub(advance);
         }
     }
 
@@ -987,7 +1023,10 @@ impl Block<'_> {
             if area.is_empty() {
                 break;
             }
-            let width = area.width.min(title.width() as u16).saturating_sub(offset);
+            let width = area
+                .width
+                .min(Self::line_width_u16(title))
+                .saturating_sub(offset);
             let title_area = Rect { width, ..area };
             buf.set_style(title_area, self.titles_style);
             if offset > 0 {
@@ -999,8 +1038,9 @@ impl Block<'_> {
                 title.clone().left_aligned().render(title_area, buf);
             }
             // Leave 1 column of spacing between titles.
-            area.x = area.x.saturating_add(width + 1);
-            area.width = area.width.saturating_sub(width + 1);
+            let advance = width.saturating_add(1);
+            area.x = area.x.saturating_add(advance);
+            area.width = area.width.saturating_sub(advance);
         }
     }
 
@@ -1013,7 +1053,7 @@ impl Block<'_> {
             if titles_area.is_empty() {
                 break;
             }
-            let title_width = title.width() as u16;
+            let title_width = Self::line_width_u16(title);
             let title_area = Rect {
                 width: title_width.min(titles_area.width),
                 ..titles_area
@@ -1022,8 +1062,15 @@ impl Block<'_> {
             title.render(title_area, buf);
 
             // bump the titles area to the right and reduce its width
-            titles_area.x = titles_area.x.saturating_add(title_width + 1);
-            titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+            let advance = title_width.saturating_add(1);
+            titles_area.x = titles_area.x.saturating_add(advance);
+            titles_area.width = titles_area.width.saturating_sub(advance);
+        }
+    }
+
+    fn render_shadow(&self, base_area: Rect, buf: &mut Buffer) {
+        if let Some(shadow) = &self.shadow {
+            shadow.render(base_area, buf);
         }
     }
 
@@ -1040,16 +1087,21 @@ impl Block<'_> {
             .map(|(_, line)| line)
     }
 
+    /// Return the rendered line width clamped to `u16` for layout arithmetic.
+    fn line_width_u16(line: &Line<'_>) -> u16 {
+        line.width().min(u16::MAX as usize) as u16
+    }
+
     /// An area that is one line tall and spans the width of the block excluding the borders and
     /// is positioned at the top or bottom of the block.
     fn titles_area(&self, area: Rect, position: TitlePosition) -> Rect {
         let left_border = u16::from(self.borders.contains(Borders::LEFT));
         let right_border = u16::from(self.borders.contains(Borders::RIGHT));
         Rect {
-            x: area.left() + left_border,
+            x: area.left().saturating_add(left_border),
             y: match position {
                 TitlePosition::Top => area.top(),
-                TitlePosition::Bottom => area.bottom() - 1,
+                TitlePosition::Bottom => area.bottom().saturating_sub(1),
             },
             width: area
                 .width
@@ -1081,10 +1133,10 @@ impl Block<'_> {
     pub(crate) fn vertical_space(&self) -> (u16, u16) {
         let has_top =
             self.borders.contains(Borders::TOP) || self.has_title_at_position(TitlePosition::Top);
-        let top = self.padding.top + u16::from(has_top);
+        let top = self.padding.top.saturating_add(u16::from(has_top));
         let has_bottom = self.borders.contains(Borders::BOTTOM)
             || self.has_title_at_position(TitlePosition::Bottom);
-        let bottom = self.padding.bottom + u16::from(has_bottom);
+        let bottom = self.padding.bottom.saturating_add(u16::from(has_bottom));
         (top, bottom)
     }
 }
@@ -1340,6 +1392,7 @@ mod tests {
                 style: Style::new(),
                 padding: Padding::ZERO,
                 merge_borders: MergeStrategy::Replace,
+                shadow: None,
             }
         );
     }
@@ -2154,5 +2207,165 @@ mod tests {
             .title("I'm too big for this buffer")
             .padding(Padding::uniform(10))
             .render(buffer.area, &mut buffer);
+    }
+
+    /// Regression tests for previously panic-prone arithmetic paths.
+    ///
+    /// These cases intentionally exercise pathological geometry and very large title widths to
+    /// ensure the helper methods stay panic-free and produce bounded results.
+    ///
+    /// This module is gated on `debug_assertions` because Rust wraps primitive integer arithmetic
+    /// in release builds, while debug builds panic on unchecked overflow and underflow. The cases
+    /// here were derived from debug-mode failures and are kept to prevent those edge paths from
+    /// becoming panic-prone again.
+    #[cfg(debug_assertions)]
+    mod regression {
+        use super::*;
+
+        /// Summing large padding values must not overflow before the saturating subtraction.
+        #[rstest]
+        #[case(Padding::new(u16::MAX, 1, 0, 0), Rect::new(u16::MAX, 0, 0, 1))]
+        #[case(Padding::new(0, 0, u16::MAX, 1), Rect::new(0, u16::MAX, 1, 0))]
+        fn inner_saturates_when_padding_sum_overflows(
+            #[case] padding: Padding,
+            #[case] expected: Rect,
+        ) {
+            let block = Block::new().padding(padding);
+            assert_eq!(block.inner(Rect::new(0, 0, 1, 1)), expected);
+        }
+
+        /// Empty areas must not underflow when the side renderer subtracts one from the edges.
+        #[test]
+        fn render_sides_handles_empty_area_without_panicking() {
+            let block = Block::bordered();
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            block.render_sides(Rect::ZERO, &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines(["─"]));
+        }
+
+        /// Empty areas must not underflow when corner coordinates use the right or bottom edge.
+        #[test]
+        fn render_corners_handles_empty_area_without_panicking() {
+            let block = Block::bordered();
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            block.render_corners(Rect::ZERO, &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines(["┌"]));
+        }
+
+        /// Tiny merged-border areas must remain bounded instead of indexing past the buffer.
+        #[rstest]
+        #[case::exact(MergeStrategy::Exact)]
+        #[case::fuzzy(MergeStrategy::Fuzzy)]
+        fn render_merged_borders_in_minimal_buffer_does_not_panic(#[case] strategy: MergeStrategy) {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            Block::bordered()
+                .merge_borders(strategy)
+                .render(buffer.area, &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines(["┼"]));
+        }
+
+        /// A single huge title must not overflow when accounting for the trailing spacer.
+        #[test]
+        fn render_center_titles_handles_title_width_increment_overflow() {
+            let block = Block::new().title(Line::from("a".repeat(u16::MAX as usize)).centered());
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            block.render_center_titles(TitlePosition::Top, Rect::new(0, 0, 1, 1), &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines([" "]));
+        }
+
+        /// Accumulating centered-title widths must not overflow the running total.
+        #[test]
+        fn render_center_titles_handles_total_width_overflow() {
+            let block = Block::new()
+                .title(Line::from("a".repeat(40_000)).centered())
+                .title(Line::from("b".repeat(30_000)).centered());
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            block.render_center_titles(TitlePosition::Top, Rect::new(0, 0, 1, 1), &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines([" "]));
+        }
+
+        /// Centering logic must stay bounded when the input area sits at the maximum x offset.
+        #[test]
+        fn render_centered_titles_without_truncation_handles_maximum_x() {
+            let block = Block::new();
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            block.render_centered_titles_without_truncation(
+                Vec::new(),
+                0,
+                Rect::new(u16::MAX - 1, 0, 1, 1),
+                &mut buffer,
+            );
+            assert_eq!(buffer, Buffer::with_lines([" "]));
+        }
+
+        /// Advancing after a very wide centered title must not overflow `width + 1`.
+        #[test]
+        fn render_centered_titles_without_truncation_handles_title_advance_overflow() {
+            let block = Block::new();
+            let title = Line::from("a".repeat(u16::MAX as usize)).centered();
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            block.render_centered_titles_without_truncation(
+                vec![&title],
+                u16::MAX,
+                Rect::new(0, 0, 1, 1),
+                &mut buffer,
+            );
+            assert_eq!(buffer, Buffer::with_lines(["a"]));
+        }
+
+        /// The truncating centered-title path must also bound `width + 1` when advancing.
+        #[test]
+        fn render_centered_titles_with_truncation_handles_title_advance_overflow() {
+            let block = Block::new();
+            let title = Line::from("a".repeat(u16::MAX as usize)).centered();
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            block.render_centered_titles_with_truncation(
+                vec![&title],
+                u16::MAX,
+                Rect::new(0, 0, u16::MAX, 1),
+                &mut buffer,
+            );
+            assert_eq!(buffer, Buffer::with_lines(["a"]));
+        }
+
+        /// Left-title rendering must bound `title_width + 1` when moving to the next title.
+        #[test]
+        fn render_left_titles_handles_title_advance_overflow() {
+            let block = Block::new().title("a".repeat(u16::MAX as usize));
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+            block.render_left_titles(TitlePosition::Top, Rect::new(0, 0, 1, 1), &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines(["a"]));
+        }
+
+        /// Offsetting the title area by the left border must stay bounded at the `u16` edge.
+        #[test]
+        fn titles_area_saturates_when_left_border_offset_overflows() {
+            let block = Block::new().borders(Borders::LEFT);
+            assert_eq!(
+                block.titles_area(Rect::new(u16::MAX, 0, 1, 1), TitlePosition::Top),
+                Rect::new(u16::MAX, 0, 1, 1)
+            );
+        }
+
+        /// Bottom title positioning must not underflow when the area height is zero.
+        #[test]
+        fn titles_area_handles_empty_area_without_panicking() {
+            let block = Block::new();
+            assert_eq!(
+                block.titles_area(Rect::ZERO, TitlePosition::Bottom),
+                Rect::new(0, 0, 0, 1)
+            );
+        }
+
+        /// Adding title or border space to maximal padding must not overflow.
+        #[rstest]
+        #[case(Block::new().padding(Padding::new(0, 0, u16::MAX, 0)).title_top("T"), (u16::MAX, 0))]
+        #[case(Block::new().padding(Padding::new(0, 0, 0, u16::MAX)).title_bottom("T"), (0, u16::MAX))]
+        fn vertical_space_saturates_when_space_overflows(
+            #[case] block: Block,
+            #[case] expected: (u16, u16),
+        ) {
+            assert_eq!(block.vertical_space(), expected);
+        }
     }
 }

@@ -39,13 +39,13 @@ crossterm = "0.29"
 document-features = "0.2"
 fakeit = "1"
 futures = "0.3"
-hashbrown = "0.16"
+hashbrown = "0.17"
 indoc = "2"
 instability = "0.3"
 itertools = { version = "0.14", default-features = false, features = ["use_alloc"] }
 kasuari = { version = "0.4", default-features = false }
 line-clipping = "0.3"
-lru = "0.16"
+lru = "0.17"
 octocrab = "0.49"
 palette = { version = "0.7.6", default-features = false, features = ["libm"] }
 pretty_assertions = "1"
@@ -75,7 +75,7 @@ trybuild = "1"
 unicode-segmentation = "1"
 unicode-truncate = { version = "2", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
-unicode-width = ">=0.2.0, <=0.2.2"
+unicode-width = ">=0.2.0"
 
 # Improve benchmark consistency
 [profile.bench]

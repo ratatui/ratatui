@@ -19,6 +19,21 @@
 //! convenience, so you can call `ratatui::run()`, `ratatui::init()`, etc. instead of
 //! `ratatui::init::run()`, `ratatui::init::init()`, etc.
 //!
+//! # Which function should I start with?
+//!
+//! Start with the simplest path that fits your application:
+//!
+//! 1. Use [`run`] for the normal case: Ratatui owns setup and cleanup around your application
+//!    closure.
+//! 2. Move to [`init`] / [`restore`] when you want explicit control over setup, teardown, or event
+//!    loop structure.
+//! 3. Use [`try_init`] / [`try_restore`] when you want the same control but need explicit error
+//!    handling instead of panicking or printing cleanup failures.
+//! 4. Use [`init_with_options`] / [`try_init_with_options`] when you need a custom
+//!    [`TerminalOptions`] such as inline or fixed viewports.
+//! 5. Construct [`Terminal`] manually only when these helpers do not match the backend or terminal
+//!    lifecycle you need.
+//!
 //! # Available Types and Functions
 //!
 //! ## Types
@@ -47,7 +62,7 @@
 //!
 //! # Usage Guide
 //!
-//! For the simplest setup with automatic cleanup, use [`run`]:
+//! Start with the normal fullscreen application path:
 //!
 //! ```rust,no_run
 //! fn main() -> std::io::Result<()> {
@@ -62,7 +77,35 @@
 //! }
 //! ```
 //!
-//! For standard full-screen applications with manual control over initialization and cleanup:
+//! Then add resize-aware redraws to the event loop:
+//!
+//! ```rust,no_run
+//! use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+//!
+//! fn main() -> std::io::Result<()> {
+//!     ratatui::run(|terminal| {
+//!         loop {
+//!             terminal.draw(|frame| {
+//!                 frame.render_widget("Resize the terminal or press q to quit", frame.area());
+//!             })?;
+//!
+//!             match event::read()? {
+//!                 Event::Resize(_, _) => {
+//!                     // The next `draw` pass re-renders the UI at the new size.
+//!                 }
+//!                 Event::Key(key)
+//!                     if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') =>
+//!                 {
+//!                     break Ok(());
+//!                 }
+//!                 _ => {}
+//!             }
+//!         }
+//!     })
+//! }
+//! ```
+//!
+//! Reach for [`init`] / [`restore`] when you want manual control over setup and teardown:
 //!
 //! ```rust,no_run
 //! // Using init() - panics on failure
@@ -77,19 +120,38 @@
 //! # Ok::<(), std::io::Error>(())
 //! ```
 //!
-//! For applications that need custom terminal behavior (inline rendering, custom viewport sizes,
-//! or applications that don't want alternate screen buffer):
+//! Use [`init_with_options`] when the UI should not use the normal fullscreen path, for example
+//! for an inline UI that continues to share the terminal with earlier output:
 //!
 //! ```rust,no_run
+//! use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+//! use ratatui::widgets::Widget;
 //! use ratatui::{TerminalOptions, Viewport};
 //!
 //! let options = TerminalOptions {
 //!     viewport: Viewport::Inline(10),
 //! };
 //!
-//! // Using init_with_options() - panics on failure
 //! let mut terminal = ratatui::init_with_options(options);
-//! // ... app logic ...
+//!
+//! terminal.insert_before(1, |buf| {
+//!     "> Ready".render(buf.area, buf);
+//! })?;
+//!
+//! loop {
+//!     terminal.draw(|frame| {
+//!         frame.render_widget("Inline UI lives below earlier terminal output", frame.area());
+//!     })?;
+//!
+//!     if matches!(
+//!         event::read()?,
+//!         Event::Key(key)
+//!             if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q')
+//!     ) {
+//!         break;
+//!     }
+//! }
+//!
 //! ratatui::restore();
 //!
 //! // Using try_init_with_options() - returns Result for custom error handling
@@ -97,10 +159,15 @@
 //!     viewport: Viewport::Inline(10),
 //! };
 //! let mut terminal = ratatui::try_init_with_options(options)?;
-//! // ... app logic ...
+//! terminal.draw(|frame| {
+//!     frame.render_widget("Inline UI", frame.area());
+//! })?;
 //! ratatui::try_restore()?;
 //! # Ok::<(), std::io::Error>(())
 //! ```
+//!
+//! These higher-level helpers are the normal application path. Manual [`Terminal`] construction is
+//! still available for custom backends and specialized integrations, but it is an advanced path.
 //!
 //! For cleanup, use [`restore`] in most cases where you want to attempt restoration but don't need
 //! to handle errors (they are printed to stderr). Use [`try_restore`] when you need to handle
