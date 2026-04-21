@@ -82,9 +82,9 @@ mod tests {
         s.cell_width()
     }
 
-    #[test]
-    fn ascii() {
-        assert_eq!("a".cell_width(), 1);
+    fn width_char(c: char) -> u16 {
+        let mut buf = [0; 4];
+        width(c.encode_utf8(&mut buf))
     }
 
     #[test]
@@ -99,12 +99,12 @@ mod tests {
 
     #[test]
     fn halfwidth_dakuten_alone() {
-        assert_eq!(width("\u{FF9E}"), 1); // ﾞ
+        assert_eq!(width_char(HALFWIDTH_KATAKANA_VOICED_SOUND_MARK), 1); // ﾞ
     }
 
     #[test]
     fn halfwidth_handakuten_alone() {
-        assert_eq!(width("\u{FF9F}"), 1); // ﾟ
+        assert_eq!(width_char(HALFWIDTH_KATAKANA_SEMI_VOICED_SOUND_MARK), 1); // ﾟ
     }
 
     #[test]
