@@ -1045,13 +1045,12 @@ impl Table<'_> {
         if let Some(selected) = state.selected {
             let selected = selected.min(last_row);
 
-            let index_to_display = self
-                .apply_scroll_padding_to_selected_index(
-                    selected,
-                    area.height as usize,
-                    start,
-                    end,
-                );
+            let index_to_display = self.apply_scroll_padding_to_selected_index(
+                selected,
+                area.height as usize,
+                start,
+                end,
+            );
 
             // scroll down until the target index is visible
             while index_to_display >= end {
@@ -1097,7 +1096,9 @@ impl Table<'_> {
         while scroll_padding > 0 {
             let mut height_around_selected: usize = 0;
             let pad_start = selected.saturating_sub(scroll_padding);
-            let pad_end = selected.saturating_add(scroll_padding).min(last_valid_index);
+            let pad_end = selected
+                .saturating_add(scroll_padding)
+                .min(last_valid_index);
             for index in pad_start..=pad_end {
                 height_around_selected += self.rows[index].height_with_margin() as usize;
             }
@@ -2877,7 +2878,9 @@ mod tests {
             let widths = [Constraint::Length(10)];
             let table = Table::new(rows, widths).scroll_padding(padding);
             let mut buf = Buffer::empty(Rect::new(0, 0, 10, render_height));
-            let mut state = TableState::new().with_offset(offset).with_selected(selected);
+            let mut state = TableState::new()
+                .with_offset(offset)
+                .with_selected(selected);
             StatefulWidget::render(table, buf.area, &mut buf, &mut state);
             assert_eq!(state.offset, expected_offset, "offset mismatch");
             assert_eq!(state.selected, expected_selected, "selected mismatch");
@@ -3003,7 +3006,9 @@ mod tests {
             let widths = [Constraint::Length(10)];
             let table = Table::new(rows, widths).scroll_padding(padding);
             let mut buf = Buffer::empty(Rect::new(0, 0, 10, render_height));
-            let mut state = TableState::new().with_offset(offset).with_selected(selected);
+            let mut state = TableState::new()
+                .with_offset(offset)
+                .with_selected(selected);
             StatefulWidget::render(table, buf.area, &mut buf, &mut state);
             assert_eq!(buf, Buffer::with_lines(expected));
         }
