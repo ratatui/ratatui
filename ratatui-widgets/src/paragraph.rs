@@ -497,7 +497,7 @@ impl Styled for Paragraph<'_> {
 mod tests {
     use alloc::vec;
 
-    use ratatui_core::buffer::Buffer;
+    use ratatui_core::buffer::{Buffer, CellWidth};
     use ratatui_core::layout::{Alignment, Rect};
     use ratatui_core::style::{Color, Modifier, Style, Stylize};
     use ratatui_core::text::{Line, Span, Text};
@@ -985,6 +985,83 @@ mod tests {
             test_case(
                 &paragraph,
                 &Buffer::with_lines(["Hello, <world>!", "               "]),
+            );
+        }
+    }
+
+    #[test]
+    fn test_render_paragraph_with_ascii_and_background() {
+        // Test actual Paragraph behavior
+        let text = "abc";
+        let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Green));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        paragraph.render(Rect::new(0, 0, 10, 1), &mut buffer);
+
+        // If all cells have green background, the test passes
+        for x in 0..10 {
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
+            );
+        }
+    }
+
+    #[test]
+    fn test_render_paragraph_with_fullwidth_and_background() {
+        // "あいう" should be width 6 (each character is width 2)
+        let text = "あいう";
+        let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Green));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        paragraph.render(Rect::new(0, 0, 10, 1), &mut buffer);
+
+        // Check content and effective cell widths for wide cells.
+        assert_eq!(buffer[(0, 0)].symbol(), "あ", "Cell 0 should be あ");
+        assert_eq!(buffer[(0, 0)].cell_width(), 2, "Cell 0 should be width 2");
+        assert_eq!(buffer[(2, 0)].symbol(), "い", "Cell 2 should be い");
+        assert_eq!(buffer[(2, 0)].cell_width(), 2, "Cell 2 should be width 2");
+        assert_eq!(buffer[(4, 0)].symbol(), "う", "Cell 4 should be う");
+        assert_eq!(buffer[(4, 0)].cell_width(), 2, "Cell 4 should be width 2");
+
+        // Check background - all cells should have green background from set_style
+        // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't
+        // matter
+        for x in 0..10 {
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
+            );
+        }
+    }
+
+    #[test]
+    fn test_render_paragraph_with_halfwidth_katakana_dakuten_and_background() {
+        // "ｶﾞｷﾞｸﾞ" should be width 6 (each grapheme is width 2)
+        let text = "ｶﾞｷﾞｸﾞ";
+        let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Green));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        paragraph.render(Rect::new(0, 0, 10, 1), &mut buffer);
+
+        // Check content and effective cell widths for wide grapheme clusters.
+        assert_eq!(buffer[(0, 0)].symbol(), "ｶﾞ", "Cell 0 should be ｶﾞ");
+        assert_eq!(buffer[(0, 0)].cell_width(), 2, "Cell 0 should be width 2");
+        assert_eq!(buffer[(2, 0)].symbol(), "ｷﾞ", "Cell 2 should be ｷﾞ");
+        assert_eq!(buffer[(2, 0)].cell_width(), 2, "Cell 2 should be width 2");
+        assert_eq!(buffer[(4, 0)].symbol(), "ｸﾞ", "Cell 4 should be ｸﾞ");
+        assert_eq!(buffer[(4, 0)].cell_width(), 2, "Cell 4 should be width 2");
+
+        // Check background - all cells should have green background from set_style
+        // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't
+        // matter
+        for x in 0..10 {
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
             );
         }
     }
