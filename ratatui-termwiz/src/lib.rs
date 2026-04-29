@@ -42,7 +42,7 @@ use std::error::Error;
 use std::io;
 
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 pub use termwiz;
@@ -149,12 +149,20 @@ impl Backend for TermwizBackend {
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
+        let mut next_pos: Option<Position> = None;
         for (x, y, cell) in content {
-            self.buffered_terminal.add_changes(vec![
-                Change::CursorPosition {
+            // Ignore updates for cells covered by the previous wide symbol.
+            if matches!(next_pos, Some(pos) if y == pos.y && x < pos.x) {
+                continue;
+            }
+            if next_pos != Some(Position { x, y }) {
+                self.buffered_terminal.add_change(Change::CursorPosition {
                     x: TermwizPosition::Absolute(x as usize),
                     y: TermwizPosition::Absolute(y as usize),
-                },
+                });
+            }
+
+            self.buffered_terminal.add_changes(vec![
                 Change::Attribute(AttributeChange::Foreground(cell.fg.into_termwiz())),
                 Change::Attribute(AttributeChange::Background(cell.bg.into_termwiz())),
             ]);
@@ -211,6 +219,10 @@ impl Backend for TermwizBackend {
                 )));
 
             self.buffered_terminal.add_change(cell.symbol());
+            next_pos = Some(Position {
+                x: x.saturating_add(cell.cell_width()),
+                y,
+            });
         }
         Ok(())
     }
