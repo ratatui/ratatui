@@ -41,7 +41,7 @@ use std::fmt;
 use std::io::{self, Write};
 
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 pub use termion;
@@ -218,13 +218,17 @@ where
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<Position> = None;
+        let mut next_pos: Option<Position> = None;
+        let mut skip_covered_cells = false;
         for (x, y, cell) in content {
-            // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
+            // Ignore updates for cells covered by the previous wide symbol.
+            if skip_covered_cells && matches!(next_pos, Some(pos) if y == pos.y && x < pos.x) {
+                continue;
+            }
+            // Move the cursor if the terminal is not expected to already be at this position.
+            if next_pos != Some(Position { x, y }) {
                 write!(string, "{}", termion::cursor::Goto(x + 1, y + 1)).unwrap();
             }
-            last_pos = Some(Position { x, y });
             if cell.modifier != modifier {
                 write!(
                     string,
@@ -246,6 +250,12 @@ where
                 bg = cell.bg;
             }
             string.push_str(cell.symbol());
+            let cell_width = cell.cell_width();
+            next_pos = Some(Position {
+                x: x.saturating_add(cell_width),
+                y,
+            });
+            skip_covered_cells = cell_width > 1 && !cell.symbol().contains('\u{FE0F}');
         }
         write!(
             self.writer,
@@ -741,5 +751,80 @@ mod tests {
         );
         assert_eq!(Modifier::from_termion(tstyle::Blink), Modifier::SLOW_BLINK);
         assert_eq!(Modifier::from_termion(tstyle::Reset), Modifier::empty());
+    }
+
+    #[test]
+    fn draw_does_not_move_cursor_between_adjacent_wide_cells() -> io::Result<()> {
+        let first = Cell::new("中");
+        let second = Cell::new("文");
+        let third = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = TermionBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &first), (2, 0, &second), (4, 0, &third)].into_iter())?;
+
+        let output = std::str::from_utf8(&writer).expect("termion output should be utf-8");
+        assert!(output.contains("中文x"));
+        assert_eq!(output.matches(&goto(0, 0)).count(), 1);
+        assert_eq!(output.matches(&goto(2, 0)).count(), 0);
+        assert_eq!(output.matches(&goto(4, 0)).count(), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn draw_skips_cells_covered_by_a_previous_wide_cell() -> io::Result<()> {
+        let wide = Cell::new("中");
+        let trailing = Cell::new(" ");
+        let next = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = TermionBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &wide), (1, 0, &trailing), (2, 0, &next)].into_iter())?;
+
+        let output = std::str::from_utf8(&writer).expect("termion output should be utf-8");
+        assert!(output.contains("中x"));
+        assert_eq!(output.matches(&goto(1, 0)).count(), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn draw_keeps_vs16_trailing_cell_updates() -> io::Result<()> {
+        let emoji = Cell::new("⌨️");
+        let trailing = Cell::new(" ");
+        let next = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = TermionBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &emoji), (1, 0, &trailing), (2, 0, &next)].into_iter())?;
+
+        let output = std::str::from_utf8(&writer).expect("termion output should be utf-8");
+        assert!(output.contains("⌨️"));
+        assert_eq!(output.matches(&goto(1, 0)).count(), 1);
+        assert_eq!(output.matches(&goto(2, 0)).count(), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_wide_cell_when_next_position_is_not_adjacent() -> io::Result<()> {
+        let first = Cell::new("中");
+        let second = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = TermionBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &first), (3, 0, &second)].into_iter())?;
+
+        let output = std::str::from_utf8(&writer).expect("termion output should be utf-8");
+        assert_eq!(output.matches(&goto(0, 0)).count(), 1);
+        assert_eq!(output.matches(&goto(2, 0)).count(), 0);
+        assert_eq!(output.matches(&goto(3, 0)).count(), 1);
+
+        Ok(())
+    }
+
+    fn goto(x: u16, y: u16) -> String {
+        format!("{}", termion::cursor::Goto(x + 1, y + 1))
     }
 }

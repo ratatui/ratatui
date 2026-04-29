@@ -97,7 +97,7 @@ cfg_if::cfg_if! {
     }
 }
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 
@@ -238,13 +238,17 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<Position> = None;
+        let mut next_pos: Option<Position> = None;
+        let mut skip_covered_cells = false;
         for (x, y, cell) in content {
-            // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
+            // Ignore updates for cells covered by the previous wide symbol.
+            if skip_covered_cells && matches!(next_pos, Some(pos) if y == pos.y && x < pos.x) {
+                continue;
+            }
+            // Move the cursor if the terminal is not expected to already be at this position.
+            if next_pos != Some(Position { x, y }) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
-            last_pos = Some(Position { x, y });
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -272,6 +276,12 @@ where
             }
 
             queue!(self.writer, Print(cell.symbol()))?;
+            let cell_width = cell.cell_width();
+            next_pos = Some(Position {
+                x: x.saturating_add(cell_width),
+                y,
+            });
+            skip_covered_cells = cell_width > 1 && !cell.symbol().contains('\u{FE0F}');
         }
 
         #[cfg(feature = "underline-color")]
@@ -1167,5 +1177,88 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(style.into_crossterm(), content_style);
+    }
+
+    #[test]
+    fn draw_does_not_move_cursor_between_adjacent_wide_cells() -> io::Result<()> {
+        let first = Cell::new("中");
+        let second = Cell::new("文");
+        let third = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = CrosstermBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &first), (2, 0, &second), (4, 0, &third)].into_iter())?;
+
+        let output = std::str::from_utf8(&writer).expect("crossterm output should be utf-8");
+        assert!(output.contains("中文x"));
+        assert_eq!(count_occurrences(&writer, &move_to(0, 0)?), 1);
+        assert_eq!(count_occurrences(&writer, &move_to(2, 0)?), 0);
+        assert_eq!(count_occurrences(&writer, &move_to(4, 0)?), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn draw_skips_cells_covered_by_a_previous_wide_cell() -> io::Result<()> {
+        let wide = Cell::new("中");
+        let trailing = Cell::new(" ");
+        let next = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = CrosstermBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &wide), (1, 0, &trailing), (2, 0, &next)].into_iter())?;
+
+        let output = std::str::from_utf8(&writer).expect("crossterm output should be utf-8");
+        assert!(output.contains("中x"));
+        assert_eq!(count_occurrences(&writer, &move_to(1, 0)?), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn draw_keeps_vs16_trailing_cell_updates() -> io::Result<()> {
+        let emoji = Cell::new("⌨️");
+        let trailing = Cell::new(" ");
+        let next = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = CrosstermBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &emoji), (1, 0, &trailing), (2, 0, &next)].into_iter())?;
+
+        let output = std::str::from_utf8(&writer).expect("crossterm output should be utf-8");
+        assert!(output.contains("⌨️"));
+        assert_eq!(count_occurrences(&writer, &move_to(1, 0)?), 1);
+        assert_eq!(count_occurrences(&writer, &move_to(2, 0)?), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_wide_cell_when_next_position_is_not_adjacent() -> io::Result<()> {
+        let first = Cell::new("中");
+        let second = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = CrosstermBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &first), (3, 0, &second)].into_iter())?;
+
+        assert_eq!(count_occurrences(&writer, &move_to(0, 0)?), 1);
+        assert_eq!(count_occurrences(&writer, &move_to(2, 0)?), 0);
+        assert_eq!(count_occurrences(&writer, &move_to(3, 0)?), 1);
+
+        Ok(())
+    }
+
+    fn move_to(x: u16, y: u16) -> io::Result<Vec<u8>> {
+        let mut bytes = Vec::new();
+        queue!(&mut bytes, MoveTo(x, y))?;
+        Ok(bytes)
+    }
+
+    fn count_occurrences(haystack: &[u8], needle: &[u8]) -> usize {
+        haystack
+            .windows(needle.len())
+            .filter(|window| *window == needle)
+            .count()
     }
 }

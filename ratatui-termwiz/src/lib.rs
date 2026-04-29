@@ -42,7 +42,7 @@ use std::error::Error;
 use std::io;
 
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 pub use termwiz;
@@ -149,69 +149,7 @@ impl Backend for TermwizBackend {
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
-        for (x, y, cell) in content {
-            self.buffered_terminal.add_changes(vec![
-                Change::CursorPosition {
-                    x: TermwizPosition::Absolute(x as usize),
-                    y: TermwizPosition::Absolute(y as usize),
-                },
-                Change::Attribute(AttributeChange::Foreground(cell.fg.into_termwiz())),
-                Change::Attribute(AttributeChange::Background(cell.bg.into_termwiz())),
-            ]);
-
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Intensity(
-                    if cell.modifier.contains(Modifier::BOLD) {
-                        Intensity::Bold
-                    } else if cell.modifier.contains(Modifier::DIM) {
-                        Intensity::Half
-                    } else {
-                        Intensity::Normal
-                    },
-                )));
-
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Italic(
-                    cell.modifier.contains(Modifier::ITALIC),
-                )));
-
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Underline(
-                    if cell.modifier.contains(Modifier::UNDERLINED) {
-                        Underline::Single
-                    } else {
-                        Underline::None
-                    },
-                )));
-
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Reverse(
-                    cell.modifier.contains(Modifier::REVERSED),
-                )));
-
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Invisible(
-                    cell.modifier.contains(Modifier::HIDDEN),
-                )));
-
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::StrikeThrough(
-                    cell.modifier.contains(Modifier::CROSSED_OUT),
-                )));
-
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Blink(
-                    if cell.modifier.contains(Modifier::SLOW_BLINK) {
-                        Blink::Slow
-                    } else if cell.modifier.contains(Modifier::RAPID_BLINK) {
-                        Blink::Rapid
-                    } else {
-                        Blink::None
-                    },
-                )));
-
-            self.buffered_terminal.add_change(cell.symbol());
-        }
+        draw_content(&mut self.buffered_terminal, content);
         Ok(())
     }
 
@@ -337,6 +275,83 @@ impl Backend for TermwizBackend {
             },
         ]);
         Ok(())
+    }
+}
+
+fn draw_content<'a, I>(surface: &mut termwiz::surface::Surface, content: I)
+where
+    I: Iterator<Item = (u16, u16, &'a Cell)>,
+{
+    let mut next_pos: Option<Position> = None;
+    let mut skip_covered_cells = false;
+    for (x, y, cell) in content {
+        // Ignore updates for cells covered by the previous wide symbol.
+        if skip_covered_cells && matches!(next_pos, Some(pos) if y == pos.y && x < pos.x) {
+            continue;
+        }
+        if next_pos != Some(Position { x, y }) {
+            surface.add_change(Change::CursorPosition {
+                x: TermwizPosition::Absolute(x as usize),
+                y: TermwizPosition::Absolute(y as usize),
+            });
+        }
+
+        surface.add_changes(vec![
+            Change::Attribute(AttributeChange::Foreground(cell.fg.into_termwiz())),
+            Change::Attribute(AttributeChange::Background(cell.bg.into_termwiz())),
+        ]);
+
+        surface.add_change(Change::Attribute(AttributeChange::Intensity(
+            if cell.modifier.contains(Modifier::BOLD) {
+                Intensity::Bold
+            } else if cell.modifier.contains(Modifier::DIM) {
+                Intensity::Half
+            } else {
+                Intensity::Normal
+            },
+        )));
+
+        surface.add_change(Change::Attribute(AttributeChange::Italic(
+            cell.modifier.contains(Modifier::ITALIC),
+        )));
+
+        surface.add_change(Change::Attribute(AttributeChange::Underline(
+            if cell.modifier.contains(Modifier::UNDERLINED) {
+                Underline::Single
+            } else {
+                Underline::None
+            },
+        )));
+
+        surface.add_change(Change::Attribute(AttributeChange::Reverse(
+            cell.modifier.contains(Modifier::REVERSED),
+        )));
+
+        surface.add_change(Change::Attribute(AttributeChange::Invisible(
+            cell.modifier.contains(Modifier::HIDDEN),
+        )));
+
+        surface.add_change(Change::Attribute(AttributeChange::StrikeThrough(
+            cell.modifier.contains(Modifier::CROSSED_OUT),
+        )));
+
+        surface.add_change(Change::Attribute(AttributeChange::Blink(
+            if cell.modifier.contains(Modifier::SLOW_BLINK) {
+                Blink::Slow
+            } else if cell.modifier.contains(Modifier::RAPID_BLINK) {
+                Blink::Rapid
+            } else {
+                Blink::None
+            },
+        )));
+
+        surface.add_change(cell.symbol());
+        let cell_width = cell.cell_width();
+        next_pos = Some(Position {
+            x: x.saturating_add(cell_width),
+            y,
+        });
+        skip_covered_cells = cell_width > 1 && !cell.symbol().contains('\u{FE0F}');
     }
 }
 
@@ -887,5 +902,124 @@ mod tests {
             ),
             STYLE.underline_color(Color::Indexed(9))
         );
+    }
+
+    #[test]
+    fn draw_does_not_move_cursor_between_adjacent_wide_cells() {
+        let first = Cell::new("中");
+        let second = Cell::new("文");
+        let third = Cell::new("x");
+
+        let changes = draw_changes([(0, 0, &first), (2, 0, &second), (4, 0, &third)]);
+
+        assert!(changes.contains(&text("中")));
+        assert!(changes.contains(&text("文")));
+        assert!(changes.contains(&text("x")));
+        assert_eq!(count_changes(&changes, &cursor_position(0, 0)), 1);
+        assert_eq!(count_changes(&changes, &cursor_position(2, 0)), 0);
+        assert_eq!(count_changes(&changes, &cursor_position(4, 0)), 0);
+    }
+
+    #[test]
+    fn draw_skips_cells_covered_by_a_previous_wide_cell() {
+        let wide = Cell::new("中");
+        let trailing = Cell::new(" ");
+        let next = Cell::new("x");
+
+        let changes = draw_changes([(0, 0, &wide), (1, 0, &trailing), (2, 0, &next)]);
+
+        assert!(changes.contains(&text("中")));
+        assert!(changes.contains(&text("x")));
+        assert!(!changes.contains(&text(" ")));
+        assert_eq!(count_changes(&changes, &cursor_position(1, 0)), 0);
+    }
+
+    #[test]
+    fn draw_keeps_vs16_trailing_cell_updates() {
+        let emoji = Cell::new("⌨️");
+        let trailing = Cell::new(" ");
+        let next = Cell::new("x");
+
+        let changes = draw_changes([(0, 0, &emoji), (1, 0, &trailing), (2, 0, &next)]);
+
+        assert!(changes.contains(&text("⌨️")));
+        assert!(changes.contains(&text(" ")));
+        assert!(changes.contains(&text("x")));
+        assert_eq!(count_changes(&changes, &cursor_position(1, 0)), 1);
+        assert_eq!(count_changes(&changes, &cursor_position(2, 0)), 0);
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_wide_cell_when_next_position_is_not_adjacent() {
+        let first = Cell::new("中");
+        let second = Cell::new("x");
+
+        let changes = draw_changes([(0, 0, &first), (3, 0, &second)]);
+
+        assert_eq!(count_changes(&changes, &cursor_position(0, 0)), 1);
+        assert_eq!(count_changes(&changes, &cursor_position(2, 0)), 0);
+        assert_eq!(count_changes(&changes, &cursor_position(3, 0)), 1);
+    }
+
+    #[test]
+    fn draw_applies_modifier_attributes() {
+        let mut styled = Cell::new("a");
+        styled.set_style(
+            Style::new()
+                .bold()
+                .italic()
+                .underlined()
+                .reversed()
+                .hidden()
+                .crossed_out()
+                .slow_blink(),
+        );
+        let mut dim = Cell::new("b");
+        dim.set_style(Style::new().dim().rapid_blink());
+
+        let changes = draw_changes([(0, 0, &styled), (1, 0, &dim)]);
+
+        assert!(changes.contains(&attribute(AttributeChange::Intensity(Intensity::Bold))));
+        assert!(changes.contains(&attribute(AttributeChange::Intensity(Intensity::Half))));
+        assert!(changes.contains(&attribute(AttributeChange::Italic(true))));
+        assert!(changes.contains(&attribute(AttributeChange::Underline(Underline::Single))));
+        assert!(changes.contains(&attribute(AttributeChange::Reverse(true))));
+        assert!(changes.contains(&attribute(AttributeChange::Invisible(true))));
+        assert!(changes.contains(&attribute(AttributeChange::StrikeThrough(true))));
+        assert!(changes.contains(&attribute(AttributeChange::Blink(Blink::Slow))));
+        assert!(changes.contains(&attribute(AttributeChange::Blink(Blink::Rapid))));
+    }
+
+    fn draw_changes<'a, I>(content: I) -> Vec<Change>
+    where
+        I: IntoIterator<Item = (u16, u16, &'a Cell)>,
+    {
+        let mut surface = termwiz::surface::Surface::new(80, 24);
+        surface.add_change(Change::Title("seed".into()));
+        let seqno = surface.current_seqno();
+
+        draw_content(&mut surface, content.into_iter());
+
+        let (_, changes) = surface.get_changes(seqno);
+        changes.into_owned()
+    }
+
+    fn cursor_position(x: usize, y: usize) -> Change {
+        Change::CursorPosition {
+            x: TermwizPosition::Absolute(x),
+            y: TermwizPosition::Absolute(y),
+        }
+    }
+
+    fn text(text: &str) -> Change {
+        Change::Text(text.to_string())
+    }
+
+    fn attribute(attribute: AttributeChange) -> Change {
+        Change::Attribute(attribute)
+    }
+
+    fn count_changes(changes: &[Change], needle: &Change) -> usize {
+        changes.iter().filter(|change| *change == needle).count()
     }
 }
