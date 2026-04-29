@@ -231,7 +231,7 @@ impl App {
             .collect();
 
         // Create a List from all list items and highlight the currently selected one
-        let list = List::new(items)
+        let list = List::from(&items)
             .block(block)
             .highlight_style(SELECTED_STYLE)
             .highlight_symbol(">")
