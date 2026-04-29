@@ -239,9 +239,10 @@ where
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
         let mut next_pos: Option<Position> = None;
+        let mut skip_covered_cells = false;
         for (x, y, cell) in content {
             // Ignore updates for cells covered by the previous wide symbol.
-            if matches!(next_pos, Some(pos) if y == pos.y && x < pos.x) {
+            if skip_covered_cells && matches!(next_pos, Some(pos) if y == pos.y && x < pos.x) {
                 continue;
             }
             // Move the cursor if the terminal is not expected to already be at this position.
@@ -275,10 +276,12 @@ where
             }
 
             queue!(self.writer, Print(cell.symbol()))?;
+            let cell_width = cell.cell_width();
             next_pos = Some(Position {
-                x: x.saturating_add(cell.cell_width()),
+                x: x.saturating_add(cell_width),
                 y,
             });
+            skip_covered_cells = cell_width > 1 && !cell.symbol().contains('\u{FE0F}');
         }
 
         #[cfg(feature = "underline-color")]
@@ -1208,6 +1211,24 @@ mod tests {
         let output = std::str::from_utf8(&writer).expect("crossterm output should be utf-8");
         assert!(output.contains("中x"));
         assert_eq!(count_occurrences(&writer, &move_to(1, 0)?), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn draw_keeps_vs16_trailing_cell_updates() -> io::Result<()> {
+        let emoji = Cell::new("⌨️");
+        let trailing = Cell::new(" ");
+        let next = Cell::new("x");
+        let mut writer = Vec::new();
+        let mut backend = CrosstermBackend::new(&mut writer);
+
+        backend.draw([(0, 0, &emoji), (1, 0, &trailing), (2, 0, &next)].into_iter())?;
+
+        let output = std::str::from_utf8(&writer).expect("crossterm output should be utf-8");
+        assert!(output.contains("⌨️"));
+        assert_eq!(count_occurrences(&writer, &move_to(1, 0)?), 1);
+        assert_eq!(count_occurrences(&writer, &move_to(2, 0)?), 0);
 
         Ok(())
     }
