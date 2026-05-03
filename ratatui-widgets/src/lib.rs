@@ -39,6 +39,7 @@
 //! - [`Canvas`]: draws arbitrary shapes using drawing characters.
 //! - [`Chart`]: displays multiple datasets as lines or scatter graphs.
 //! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
+//! - [`Fill`]: paints every cell in its area with a single repeated symbol and style.
 //! - [`Gauge`]: displays progress percentage using block characters.
 //! - [`LineGauge`]: displays progress as a line.
 //! - [`List`]: displays a list of items and allows selection.
@@ -56,6 +57,7 @@
 //! [`Canvas`]: crate::canvas::Canvas
 //! [`Chart`]: crate::chart::Chart
 //! [`Clear`]: crate::clear::Clear
+//! [`Fill`]: crate::fill::Fill
 //! [`Gauge`]: crate::gauge::Gauge
 //! [`LineGauge`]: crate::gauge::LineGauge
 //! [`List`]: crate::list::List
@@ -116,6 +118,7 @@ pub mod borders;
 pub mod canvas;
 pub mod chart;
 pub mod clear;
+pub mod fill;
 pub mod gauge;
 pub mod list;
 pub mod logo;
