@@ -49,6 +49,7 @@
 //! - [`Canvas`]: draws arbitrary shapes using drawing characters.
 //! - [`Chart`]: displays multiple datasets as a lines or scatter graph.
 //! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
+//! - [`Fill`]: paints every cell in its area with a single repeated symbol and style.
 //! - [`Gauge`]: displays progress percentage using block characters.
 //! - [`LineGauge`]: display progress as a line.
 //! - [`List`]: displays a list of items and allows selection.
@@ -674,6 +675,7 @@ pub use ratatui_widgets::calendar;
 pub use ratatui_widgets::canvas;
 pub use ratatui_widgets::chart::{Axis, Chart, Dataset, GraphType, LegendPosition};
 pub use ratatui_widgets::clear::Clear;
+pub use ratatui_widgets::fill::Fill;
 pub use ratatui_widgets::gauge::{Gauge, LineGauge};
 pub use ratatui_widgets::list::{List, ListDirection, ListItem, ListState};
 pub use ratatui_widgets::logo::{RatatuiLogo, Size as RatatuiLogoSize};
