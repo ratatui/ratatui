@@ -40,6 +40,7 @@ cargo add ratatui-widgets
 - [`Canvas`]: draws arbitrary shapes using drawing characters.
 - [`Chart`]: displays multiple datasets as lines or scatter graphs.
 - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
+- [`Fill`]: paints every cell in its area with a single repeated symbol and style.
 - [`Gauge`]: displays progress percentage using block characters.
 - [`LineGauge`]: displays progress as a line.
 - [`List`]: displays a list of items and allows selection.
@@ -57,6 +58,7 @@ cargo add ratatui-widgets
 [`Canvas`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/canvas/struct.Canvas.html
 [`Chart`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/chart/struct.Chart.html
 [`Clear`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/clear/struct.Clear.html
+[`Fill`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/fill/struct.Fill.html
 [`Gauge`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/gauge/struct.Gauge.html
 [`LineGauge`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/gauge/struct.LineGauge.html
 [`List`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/list/struct.List.html
