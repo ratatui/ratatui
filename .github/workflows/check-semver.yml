@@ -1,0 +1,22 @@
+name: Check Semver
+
+# Set the permissions of the github token to the minimum and only enable what is needed
+# See https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions
+permissions: {}
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-semver:
+    name: Check semver
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Check semver
+        uses: obi1kenobi/cargo-semver-checks-action@6b69fcf40e9b5fb17adeb57e4b6ecd020649a239 # v2
