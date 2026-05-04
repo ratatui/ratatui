@@ -31,7 +31,6 @@ use ratatui_core::widgets::Widget;
 /// XXXXXXXXXX
 /// XXXXXXXXXX
 /// XXXXXXXXXX
-///
 /// ```
 ///
 /// [`Fill`] accepts anything that converts into a [`Cow<str>`], so both string literals and
