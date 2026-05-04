@@ -8,7 +8,7 @@ use ratatui_core::widgets::Widget;
 
 /// A widget that fills its render area with a single repeated symbol and style.
 ///
-/// `Fill` is a small building block for painting solid blocks of one symbol — backgrounds,
+/// [`Fill`] is a small building block for painting solid blocks of one symbol — backgrounds,
 /// separators, scrollbar tracks, custom borders, etc. — without writing the nested loop
 /// yourself. It composes naturally with the [`Stylize`] trait so the typical call site is
 /// a one-liner.
@@ -22,10 +22,20 @@ use ratatui_core::widgets::Widget;
 ///
 /// # let mut buf = ratatui::buffer::Buffer::empty(Rect::new(0, 0, 10, 5));
 /// let fill = Fill::new("X").blue().bold();
-/// fill.render(Rect::new(0, 0, 10, 5), &mut buf);
+/// fill.render(Rect::new(0, 0, 10, 3), &mut buf);
 /// ```
 ///
-/// `Fill` accepts anything that converts into a [`Cow<str>`], so both string literals and
+/// This renders as:
+///
+/// ```plain
+/// XXXXXXXXXX
+/// XXXXXXXXXX
+/// XXXXXXXXXX
+///
+///
+/// ```
+///
+/// [`Fill`] accepts anything that converts into a [`Cow<str>`], so both string literals and
 /// owned [`String`](alloc::string::String)s work:
 ///
 /// ```
@@ -46,7 +56,7 @@ pub struct Fill<'a> {
 }
 
 impl<'a> Fill<'a> {
-    /// Create a new `Fill` widget that paints `symbol` into every cell of its render area.
+    /// Create a new [`Fill`] widget that paints `symbol` into every cell of its render area.
     ///
     /// The style defaults to [`Style::default`]; use the [`Stylize`] shorthands or
     /// [`Fill::style`] to customize it.
