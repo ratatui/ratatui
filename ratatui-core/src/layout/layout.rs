@@ -878,7 +878,14 @@ impl Layout {
         configure_variable_in_area_constraints(&mut solver, &variables, area_size)?;
         configure_variable_constraints(&mut solver, &variables)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
-        configure_constraints(&mut solver, area_size, &segments, constraints, flex, spacing)?;
+        configure_constraints(
+            &mut solver,
+            area_size,
+            &segments,
+            constraints,
+            flex,
+            spacing,
+        )?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
 
         if !flex.is_legacy() {
