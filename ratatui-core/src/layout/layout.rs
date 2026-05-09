@@ -878,7 +878,7 @@ impl Layout {
         configure_variable_in_area_constraints(&mut solver, &variables, area_size)?;
         configure_variable_constraints(&mut solver, &variables)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
-        configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
+        configure_constraints(&mut solver, area_size, &segments, constraints, flex, spacing)?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
 
         if !flex.is_legacy() {
@@ -949,7 +949,19 @@ fn configure_constraints(
     segments: &[Element],
     constraints: &[Constraint],
     flex: Flex,
+    spacing: i16,
 ) -> Result<(), AddConstraintError> {
+    // When spacing is negative (overlap), the effective area for proportional constraints
+    // (Ratio and Percentage) is larger than the physical area because segments share cells.
+    // With n segments and overlap o, the effective area = physical_area + (n-1) * o.
+    // Since `spacing` is negative for overlap, we subtract: effective = area - spacing * (n-1).
+    let overlap_adjustment = if spacing < 0 {
+        let num_gaps = segments.len().saturating_sub(1) as f64;
+        f64::from(-spacing) * num_gaps * FLOAT_PRECISION_MULTIPLIER
+    } else {
+        0.0
+    };
+
     for (&constraint, &segment) in constraints.iter().zip(segments.iter()) {
         match constraint {
             Constraint::Max(max) => {
@@ -968,12 +980,14 @@ fn configure_constraints(
                 solver.add_constraint(segment.has_int_size(length, LENGTH_SIZE_EQ))?;
             }
             Constraint::Percentage(p) => {
-                let size = area.size() * f64::from(p) / 100.00;
+                let effective_area = area.size() + overlap_adjustment;
+                let size = effective_area * f64::from(p) / 100.00;
                 solver.add_constraint(segment.has_size(size, PERCENTAGE_SIZE_EQ))?;
             }
             Constraint::Ratio(num, den) => {
                 // avoid division by zero by using 1 when denominator is 0
-                let size = area.size() * f64::from(num) / f64::from(den.max(1));
+                let effective_area = area.size() + overlap_adjustment;
+                let size = effective_area * f64::from(num) / f64::from(den.max(1));
                 solver.add_constraint(segment.has_size(size, RATIO_SIZE_EQ))?;
             }
             Constraint::Fill(_) => {
@@ -2916,6 +2930,42 @@ mod tests {
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints).flex(flex).split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(result, expected);
+        }
+
+        /// Regression test for <https://github.com/ratatui/ratatui/issues/2311>
+        /// Spacing::Overlap and Constraint::Ratio should account for the overlap
+        /// when computing segment sizes.
+        #[rstest]
+        // area=11, overlap=1, 2 segments => effective=12, each gets 12/2=6
+        #[case::ratio_overlap_two(vec![(0, 6), (5, 6)], vec![Ratio(1, 2); 2], Flex::Start, -1)]
+        // area=11, no overlap => each gets 11/2 ~= 5 or 6
+        #[case::ratio_no_overlap(vec![(0, 6), (6, 5)], vec![Ratio(1, 2); 2], Flex::Start, 0)]
+        // area=20, overlap=2, 3 segments => effective=20+2*2=24, each gets 24/3=8
+        #[case::ratio_overlap_three(vec![(0, 8), (6, 8), (12, 8)], vec![Ratio(1, 3); 3], Flex::Start, -2)]
+        // Percentage with overlap: area=11, overlap=1, 2 segments => effective=12
+        // Percentage(50) of 12 = 6
+        #[case::pct_overlap_two(vec![(0, 6), (5, 6)], vec![Percentage(50); 2], Flex::Start, -1)]
+        fn ratio_and_percentage_with_overlap(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: i16,
+        ) {
+            let width = match (&constraints[..], spacing) {
+                _ if spacing == -1 && constraints.len() == 2 => 11,
+                _ if spacing == -2 && constraints.len() == 3 => 20,
+                _ => expected.iter().map(|(x, w)| x + w).max().unwrap_or(0),
+            };
+            let area = Rect::new(0, 0, width, 1);
+            let r = Layout::horizontal(constraints)
+                .flex(flex)
+                .spacing(spacing)
+                .split(area);
             let result = r
                 .iter()
                 .map(|r| (r.x, r.width))
