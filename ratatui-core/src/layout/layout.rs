@@ -962,7 +962,7 @@ fn configure_constraints(
     let uses_fixed_spacers = matches!(flex, Flex::Legacy | Flex::Start | Flex::Center | Flex::End);
     let effective_area = if spacing < 0 && uses_fixed_spacers {
         let num_gaps = segments.len().saturating_sub(1) as f64;
-        area.size() + f64::from(-spacing) * num_gaps * FLOAT_PRECISION_MULTIPLIER
+        area.size() + -(f64::from(spacing)) * num_gaps * FLOAT_PRECISION_MULTIPLIER
     } else {
         area.size()
     };
