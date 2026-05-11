@@ -310,27 +310,27 @@ impl<B: Backend> Terminal<B> {
     ) -> Result<&'a [Cell], B::Error> {
         let width: usize = self.last_known_area.width.into();
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
-        if lines_to_draw > 0 {
-            let mut skip: u16 = 0;
-            let iter = to_draw.iter().enumerate().filter_map(move |(i, c)| {
-                let x = (i % width) as u16;
-                let y = y_offset + (i / width) as u16;
-                // Skip counter is per-row: a wide grapheme cannot straddle a row boundary
-                // (see `Buffer::set_stringn` which drops graphemes that don't fit).
-                if x == 0 {
-                    skip = 0;
-                }
-                if skip > 0 {
-                    skip -= 1;
-                    None
-                } else {
-                    skip = c.cell_width().saturating_sub(1);
-                    Some((x, y, c))
-                }
-            });
-            self.backend.draw(iter)?;
-            self.backend.flush()?;
-        }
+        // When `lines_to_draw == 0`, `to_draw` is empty: the filter_map yields nothing and the
+        // backend.draw + flush calls become harmless no-ops, so no explicit guard is needed.
+        let mut skip: u16 = 0;
+        let iter = to_draw.iter().enumerate().filter_map(move |(i, c)| {
+            let x = (i % width) as u16;
+            let y = y_offset + (i / width) as u16;
+            // Skip counter is per-row: a wide grapheme cannot straddle a row boundary
+            // (see `Buffer::set_stringn` which drops graphemes that don't fit).
+            if x == 0 {
+                skip = 0;
+            }
+            if skip > 0 {
+                skip -= 1;
+                None
+            } else {
+                skip = c.cell_width().saturating_sub(1);
+                Some((x, y, c))
+            }
+        });
+        self.backend.draw(iter)?;
+        self.backend.flush()?;
         Ok(remainder)
     }
 
