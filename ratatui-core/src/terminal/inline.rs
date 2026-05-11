@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::buffer::{Buffer, Cell};
+use crate::buffer::{Buffer, Cell, CellWidth};
 use crate::layout::{Position, Rect, Size};
 use crate::terminal::{Terminal, Viewport};
 
@@ -296,6 +296,12 @@ impl<B: Backend> Terminal<B> {
     ///
     /// This is a small internal helper used by [`Terminal::insert_before`]. It writes cells
     /// directly to the backend in terminal coordinates (not viewport coordinates).
+    ///
+    /// Cells that are the "continuation" half of a preceding wide grapheme (e.g. CJK, emoji)
+    /// are not sent to the backend. The terminal cursor has already advanced past those columns
+    /// after the wide grapheme was emitted, so writing the empty continuation cell would
+    /// overwrite the right half of the grapheme with a space and produce a visible artifact
+    /// (issue #1332).
     fn draw_lines<'a>(
         &mut self,
         y_offset: u16,
@@ -305,10 +311,23 @@ impl<B: Backend> Terminal<B> {
         let width: usize = self.last_known_area.width.into();
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
         if lines_to_draw > 0 {
-            let iter = to_draw
-                .iter()
-                .enumerate()
-                .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
+            let mut skip: u16 = 0;
+            let iter = to_draw.iter().enumerate().filter_map(move |(i, c)| {
+                let x = (i % width) as u16;
+                let y = y_offset + (i / width) as u16;
+                // Skip counter is per-row: a wide grapheme cannot straddle a row boundary
+                // (see `Buffer::set_stringn` which drops graphemes that don't fit).
+                if x == 0 {
+                    skip = 0;
+                }
+                if skip > 0 {
+                    skip -= 1;
+                    None
+                } else {
+                    skip = c.cell_width().saturating_sub(1);
+                    Some((x, y, c))
+                }
+            });
             self.backend.draw(iter)?;
             self.backend.flush()?;
         }
@@ -486,7 +505,10 @@ mod tests {
 
     #[cfg(not(feature = "scrolling-regions"))]
     mod no_scrolling_regions {
+        use alloc::vec::Vec;
+
         use super::*;
+        use crate::buffer::Cell;
 
         #[test]
         fn insert_before_is_noop_for_non_inline_viewports() {
@@ -719,6 +741,210 @@ mod tests {
                 "BBBBBBBBBB",
                 "BBBBBBBBBB",
             ]);
+        }
+
+        /// Backend wrapper that delegates everything to a `TestBackend` while recording the
+        /// `(x, y)` coordinates that the inner backend is asked to draw to. Used to verify that
+        /// `insert_before` does not write the empty "continuation" slot of a wide grapheme
+        /// (see issue #1332).
+        struct RecordingBackend {
+            inner: TestBackend,
+            writes: Vec<(u16, u16)>,
+        }
+
+        impl RecordingBackend {
+            fn new(width: u16, height: u16) -> Self {
+                Self {
+                    inner: TestBackend::new(width, height),
+                    writes: Vec::new(),
+                }
+            }
+        }
+
+        impl Backend for RecordingBackend {
+            type Error = core::convert::Infallible;
+
+            fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+            where
+                I: Iterator<Item = (u16, u16, &'a Cell)>,
+            {
+                let collected: Vec<_> = content.collect();
+                for (x, y, _) in &collected {
+                    self.writes.push((*x, *y));
+                }
+                self.inner.draw(collected.into_iter())
+            }
+
+            fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+                self.inner.hide_cursor()
+            }
+            fn show_cursor(&mut self) -> Result<(), Self::Error> {
+                self.inner.show_cursor()
+            }
+            fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+                self.inner.get_cursor_position()
+            }
+            fn set_cursor_position<P: Into<Position>>(
+                &mut self,
+                position: P,
+            ) -> Result<(), Self::Error> {
+                self.inner.set_cursor_position(position)
+            }
+            fn clear(&mut self) -> Result<(), Self::Error> {
+                self.inner.clear()
+            }
+            fn clear_region(
+                &mut self,
+                clear_type: crate::backend::ClearType,
+            ) -> Result<(), Self::Error> {
+                self.inner.clear_region(clear_type)
+            }
+            fn append_lines(&mut self, n: u16) -> Result<(), Self::Error> {
+                self.inner.append_lines(n)
+            }
+            fn size(&self) -> Result<Size, Self::Error> {
+                self.inner.size()
+            }
+            fn window_size(&mut self) -> Result<crate::backend::WindowSize, Self::Error> {
+                self.inner.window_size()
+            }
+            fn flush(&mut self) -> Result<(), Self::Error> {
+                self.inner.flush()
+            }
+        }
+
+        #[test]
+        fn insert_before_skips_wide_grapheme_continuation_at_left() {
+            // Regression for ratatui#1332. The `insert_before` non-scrolling-regions path used
+            // to emit every cell linearly, including the empty continuation slot that follows
+            // a wide grapheme (CJK / emoji / fullwidth punctuation). Real terminals respond to
+            // that by overwriting the right half of the wide grapheme with a space, which
+            // shows up as visible spacing after the emoji.
+            //
+            // After the fix, the continuation slot is not written: the wide grapheme is
+            // emitted once and the cursor naturally advances past the column it claims.
+            let backend = RecordingBackend::new(20, 4);
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(2),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "📂abc", Style::default());
+                })
+                .unwrap();
+
+            let row_writes: Vec<u16> = terminal
+                .backend()
+                .writes
+                .iter()
+                .filter(|(_, y)| *y == 0)
+                .map(|(x, _)| *x)
+                .collect();
+
+            // The wide grapheme occupies columns 0 and 1; only column 0 should be written.
+            assert!(
+                row_writes.contains(&0),
+                "expected a write at the wide-grapheme column 0 in row 0; writes: {row_writes:?}",
+            );
+            assert!(
+                !row_writes.contains(&1),
+                "wide-grapheme continuation at column 1 of row 0 must not be written, \
+                 but draw_lines emitted it; writes: {row_writes:?}",
+            );
+            // ASCII characters that follow must still be written.
+            for col in 2..=4 {
+                assert!(
+                    row_writes.contains(&col),
+                    "expected ASCII character at column {col} of row 0; writes: {row_writes:?}",
+                );
+            }
+        }
+
+        #[test]
+        fn insert_before_skips_continuation_for_wide_grapheme_in_middle_of_row() {
+            // Same class of bug as above, but with the wide grapheme appearing mid-line. The
+            // continuation slot index moves with the grapheme; verify the per-row skip
+            // counter tracks correctly.
+            let backend = RecordingBackend::new(20, 4);
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(2),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(1, |buf| {
+                    // "ab字cd": 字 occupies columns 2 and 3, continuation at column 3.
+                    buf.set_string(0, 0, "ab字cd", Style::default());
+                })
+                .unwrap();
+
+            let row_writes: Vec<u16> = terminal
+                .backend()
+                .writes
+                .iter()
+                .filter(|(_, y)| *y == 0)
+                .map(|(x, _)| *x)
+                .collect();
+
+            assert!(row_writes.contains(&0), "writes: {row_writes:?}");
+            assert!(row_writes.contains(&1), "writes: {row_writes:?}");
+            assert!(
+                row_writes.contains(&2),
+                "wide grapheme at column 2 must be emitted; writes: {row_writes:?}",
+            );
+            assert!(
+                !row_writes.contains(&3),
+                "continuation of wide grapheme at column 3 must be skipped; writes: {row_writes:?}",
+            );
+            assert!(row_writes.contains(&4), "writes: {row_writes:?}");
+            assert!(row_writes.contains(&5), "writes: {row_writes:?}");
+        }
+
+        #[test]
+        fn insert_before_skip_counter_resets_at_each_row() {
+            // A wide grapheme cannot straddle a row boundary, so the skip state from row N
+            // must not leak into row N+1. Render two rows where the first ends with a wide
+            // grapheme, and assert the leftmost column of the next row is still written.
+            let backend = RecordingBackend::new(10, 6);
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(2),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    // Row 0: 8 chars + "字" at columns 8..9 — fits exactly, no continuation
+                    // beyond the row.
+                    buf.set_string(0, 0, "12345678字", Style::default());
+                    // Row 1: starts with an ASCII char at column 0.
+                    buf.set_string(0, 1, "abcdefghij", Style::default());
+                })
+                .unwrap();
+
+            let row1_writes: Vec<u16> = terminal
+                .backend()
+                .writes
+                .iter()
+                .filter(|(_, y)| *y == 1)
+                .map(|(x, _)| *x)
+                .collect();
+
+            assert!(
+                row1_writes.contains(&0),
+                "row 1 column 0 must be written (skip counter must reset between rows); \
+                 writes: {row1_writes:?}",
+            );
         }
     }
 
