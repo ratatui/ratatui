@@ -1081,5 +1081,66 @@ mod tests {
                 .backend()
                 .assert_scrollback_lines(["INSERTED00", "INSERTED01"]);
         }
+
+        #[test]
+        fn insert_before_skips_wide_grapheme_continuation_in_fullscreen_mode() {
+            // Regression for ratatui#1332 on the scrolling-regions code path. When the viewport
+            // takes the whole screen, `insert_before` uses `draw_lines` (not
+            // `draw_lines_over_cleared`) for the first inserted line — so the wide-grapheme
+            // skip in `draw_lines` must be exercised here too.
+            //
+            // The viewport is pre-filled with "VIEWLINE00" so the cell at column 1 of row 0
+            // reads "I" before the insert. After insert_before, the inserted line is pushed
+            // into scrollback. With the fix, `draw_lines` skips the wide-grapheme continuation
+            // at column 1, so scrollback (1, 0) keeps "I". Without the fix, the iterator
+            // writes Cell::EMPTY at column 1, which scrolls into scrollback as a space.
+            let mut backend = TestBackend::new(10, 4);
+            backend
+                .set_cursor_position(Position { x: 0, y: 0 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .draw(|frame| {
+                    let area = frame.area();
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y, "VIEWLINE00", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 1, "VIEWLINE01", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 2, "VIEWLINE02", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 3, "VIEWLINE03", Style::default());
+                })
+                .unwrap();
+
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "📂abc", Style::default());
+                })
+                .unwrap();
+
+            let sb = terminal.backend().scrollback();
+            assert_eq!(sb[(0, 0)].symbol(), "📂");
+            assert_eq!(
+                sb[(1, 0)].symbol(),
+                "I",
+                "wide-grapheme continuation at scrollback (1, 0) was clobbered — \
+                 `draw_lines` must skip that column",
+            );
+            assert_eq!(sb[(2, 0)].symbol(), "a");
+            assert_eq!(sb[(3, 0)].symbol(), "b");
+            assert_eq!(sb[(4, 0)].symbol(), "c");
+        }
     }
 }
