@@ -38,7 +38,7 @@
 //! # std::io::Result::Ok(())
 //! ```
 //!
-//! See the the [Examples] directory for more examples.
+//! See the [Examples] directory for more examples.
 //!
 //! # Raw Mode
 //!
