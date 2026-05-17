@@ -195,13 +195,13 @@ impl<'a> Scrollbar<'a> {
         Self {
             orientation,
             thumb_symbol: symbols.thumb,
-            thumb_style: Style::new(),
+            thumb_style: Style::reset(),
             track_symbol: Some(symbols.track),
-            track_style: Style::new(),
+            track_style: Style::reset(),
             begin_symbol: Some(symbols.begin),
-            begin_style: Style::new(),
+            begin_style: Style::reset(),
             end_symbol: Some(symbols.end),
-            end_style: Style::new(),
+            end_style: Style::reset(),
         }
     }
 
@@ -1151,6 +1151,24 @@ mod tests {
 
         let (start, thumb_len, end) = scrollbar.part_lengths(area, &state);
         assert_eq!((start, thumb_len, end), (0, 0, 0));
+    }
+
+    #[test]
+    fn default_styles_reset_underlying_cell_colors() {
+        use ratatui_core::style::Color;
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 3));
+        buffer[(0, 0)].set_bg(Color::Red);
+        buffer[(0, 1)].set_bg(Color::Blue);
+        buffer[(0, 2)].set_bg(Color::Green);
+
+        let scrollbar = Scrollbar::default();
+        let mut state = ScrollbarState::new(10).position(3);
+        scrollbar.render(buffer.area, &mut buffer, &mut state);
+
+        let track_fg = buffer[(0, 0)].fg;
+        assert_eq!(buffer[(0, 1)].fg, track_fg);
+        assert_eq!(buffer[(0, 2)].fg, track_fg);
     }
 
     #[test]
