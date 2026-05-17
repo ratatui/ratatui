@@ -179,6 +179,20 @@ impl ListState {
         self.select(Some(next));
     }
 
+    /// Selects the next item, clamping to the last index when `item_count` is known.
+    ///
+    /// When `item_count` is `0`, clears the selection. Prefer this over [`select_next`](Self::select_next)
+    /// when using [`selected`](Self::selected) before the list is rendered.
+    pub fn select_next_in(&mut self, item_count: usize) {
+        if item_count == 0 {
+            self.select(None);
+            return;
+        }
+        let last = item_count - 1;
+        let next = self.selected.map_or(0, |i| i.saturating_add(1).min(last));
+        self.select(Some(next));
+    }
+
     /// Selects the previous item or the last one if no item is selected
     ///
     /// Note: until the list is rendered, the number of items is not known, so the index is set to
@@ -194,6 +208,21 @@ impl ListState {
     /// ```
     pub fn select_previous(&mut self) {
         let previous = self.selected.map_or(usize::MAX, |i| i.saturating_sub(1));
+        self.select(Some(previous));
+    }
+
+    /// Selects the previous item, clamping to the first index when `item_count` is known.
+    ///
+    /// When `item_count` is `0`, clears the selection. When nothing is selected, selects the
+    /// last item. Prefer this over [`select_previous`](Self::select_previous) when using
+    /// [`selected`](Self::selected) before the list is rendered.
+    pub fn select_previous_in(&mut self, item_count: usize) {
+        if item_count == 0 {
+            self.select(None);
+            return;
+        }
+        let last = item_count - 1;
+        let previous = self.selected.map_or(last, |i| i.saturating_sub(1));
         self.select(Some(previous));
     }
 
@@ -333,6 +362,19 @@ mod tests {
         let mut state = ListState::default();
         state.select_next();
         assert_eq!(state.selected, Some(0));
+
+        let mut state = ListState::default();
+        state.select_next_in(3);
+        assert_eq!(state.selected, Some(0));
+        state.select_next_in(3);
+        state.select_next_in(3);
+        assert_eq!(state.selected, Some(2));
+        state.select_next_in(3);
+        assert_eq!(state.selected, Some(2));
+
+        let mut state = ListState::default();
+        state.select_previous_in(3);
+        assert_eq!(state.selected, Some(2));
 
         let mut state = ListState::default();
         state.select_previous();
