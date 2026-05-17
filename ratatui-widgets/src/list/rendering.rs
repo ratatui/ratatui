@@ -1171,6 +1171,15 @@ mod tests {
     /// up and down every frame if something isn't done about it. This code tests to make sure that
     /// isn't currently happening
     #[test]
+    fn clamps_selected_index_to_last_item() {
+        let list = List::new(["Item 0", "Item 1", "Item 2"]);
+        let mut state = ListState::default();
+        state.select(Some(10));
+        stateful_widget(list, &mut state, 10, 5);
+        assert_eq!(state.selected(), Some(2));
+    }
+
+    #[test]
     fn padding_flicker() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
         let mut state = ListState::default();
