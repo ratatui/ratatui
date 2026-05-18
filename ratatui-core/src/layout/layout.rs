@@ -2948,7 +2948,7 @@ mod tests {
         }
 
         /// Regression test for <https://github.com/ratatui/ratatui/issues/2311>
-        /// Spacing::Overlap and Constraint::Ratio should account for the overlap
+        /// `Spacing::Overlap` and `Constraint::Ratio` should account for the overlap
         /// when computing segment sizes.
         #[rstest]
         // Fixed-spacing flex modes: overlap adjustment applies
@@ -2983,7 +2983,7 @@ mod tests {
             assert_eq!(result, expected);
         }
 
-        /// For distributed flex modes (SpaceBetween, SpaceEvenly, SpaceAround), negative
+        /// For distributed flex modes (`SpaceBetween`, `SpaceEvenly`, `SpaceAround`), negative
         /// spacing is a minimum/growth input, not a fixed gap. The overlap adjustment
         /// should NOT apply, so proportional constraints use the physical area size.
         #[test]
