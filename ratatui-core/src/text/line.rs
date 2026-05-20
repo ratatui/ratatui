@@ -39,6 +39,8 @@ use crate::widgets::Widget;
 /// - [`Line::from`] creates a `Line` from single [`Span`].
 /// - [`String::from`] converts a line into a [`String`].
 /// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
+/// - [`ToLine::to_line`] converts any `Display` value to a `Line`.
+/// - [`ToLine::to_centered_line`] converts any `Display` value to a centered `Line`.
 ///
 /// # Setter Methods
 ///
@@ -819,10 +821,47 @@ fn spans_after_width<'a>(
 /// such, `ToLine` shouldn't be implemented directly: [`Display`] should be implemented instead, and
 /// you get the `ToLine` implementation for free.
 ///
+/// For values that implement [`Display`], this trait also provides convenience methods for
+/// converting directly into aligned lines.
+///
+/// # Examples
+///
+/// ```rust
+/// use ratatui_core::layout::Alignment;
+/// use ratatui_core::text::ToLine;
+///
+/// let line = "Hello, world!".to_centered_line();
+/// assert_eq!(line.alignment, Some(Alignment::Center));
+/// ```
+///
 /// [`Display`]: std::fmt::Display
 pub trait ToLine {
     /// Converts the value to a [`Line`].
     fn to_line(&self) -> Line<'_>;
+
+    /// Converts the value to a left-aligned [`Line`].
+    fn to_left_aligned_line(&self) -> Line<'static>
+    where
+        Self: fmt::Display,
+    {
+        Line::from(self.to_string()).left_aligned()
+    }
+
+    /// Converts the value to a center-aligned [`Line`].
+    fn to_centered_line(&self) -> Line<'static>
+    where
+        Self: fmt::Display,
+    {
+        Line::from(self.to_string()).centered()
+    }
+
+    /// Converts the value to a right-aligned [`Line`].
+    fn to_right_aligned_line(&self) -> Line<'static>
+    where
+        Self: fmt::Display,
+    {
+        Line::from(self.to_string()).right_aligned()
+    }
 }
 
 /// # Panics
@@ -1021,6 +1060,49 @@ mod tests {
     fn to_line() {
         let line = 42.to_line();
         assert_eq!(line.spans, [Span::from("42")]);
+    }
+
+    #[test]
+    fn to_line_from_str() {
+        let line = "Hello, world!".to_line();
+
+        assert_eq!(line, Line::from("Hello, world!"));
+    }
+
+    #[test]
+    fn to_line_from_string() {
+        let string = String::from("Hello, world!");
+        let line = string.to_line();
+
+        assert_eq!(line, Line::from("Hello, world!"));
+    }
+
+    #[test]
+    fn to_left_aligned_line() {
+        let line = "Hello, world!".to_left_aligned_line();
+
+        assert_eq!(line, Line::from("Hello, world!").left_aligned());
+    }
+
+    #[test]
+    fn to_centered_line() {
+        let line = "Hello, world!".to_centered_line();
+
+        assert_eq!(line, Line::from("Hello, world!").centered());
+    }
+
+    #[test]
+    fn to_centered_line_from_string() {
+        let line = String::from("Hello, world!").to_centered_line();
+
+        assert_eq!(line, Line::from("Hello, world!").centered());
+    }
+
+    #[test]
+    fn to_right_aligned_line() {
+        let line = "Hello, world!".to_right_aligned_line();
+
+        assert_eq!(line, Line::from("Hello, world!").right_aligned());
     }
 
     #[test]

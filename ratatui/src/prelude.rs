@@ -14,6 +14,15 @@
 //! use ratatui::prelude::*;
 //! ```
 //!
+//! This also brings common extension traits into scope:
+//!
+//! ```rust
+//! use ratatui::prelude::*;
+//!
+//! let line = "Hello, world!".to_centered_line();
+//! assert_eq!(line.alignment, Some(Alignment::Center));
+//! ```
+//!
 //! Aside from the main types that are used in the library, this prelude also re-exports several
 //! modules to make it easy to qualify types that would otherwise collide. E.g.:
 //!
@@ -42,6 +51,6 @@ pub use crate::layout::{
     Size, VerticalAlignment,
 };
 pub use crate::style::{self, Color, Modifier, Style, Stylize};
-pub use crate::text::{self, Line, Masked, Span, Text};
+pub use crate::text::{self, Line, Masked, Span, Text, ToLine};
 pub use crate::widgets::{BlockExt, StatefulWidget, Widget};
 pub use crate::{Frame, Terminal, symbols};
