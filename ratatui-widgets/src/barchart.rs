@@ -453,11 +453,17 @@ impl BarChart<'_> {
                         .bars
                         .iter()
                         .take(n as usize)
-                        .map(|bar| bar.value * u64::from(bar_max_length) * 8 / max)
+                        .map(|bar| Self::scale_ticks(bar.value, max, bar_max_length))
                         .collect()
                 })
             })
             .collect()
+    }
+
+    fn scale_ticks(value: u64, max: u64, max_length: u16) -> u64 {
+        let max_ticks = u128::from(max_length) * 8;
+        let ticks = u128::from(value) * max_ticks / u128::from(max);
+        ticks.min(max_ticks) as u64
     }
 
     /// Get label information.
@@ -1426,6 +1432,27 @@ mod tests {
             "a  b   ",
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_handles_u64_max_value() {
+        let chart = BarChart::new([Bar::new(u64::MAX)]).max(u64::MAX);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 5));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(["█    "; 5]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_keeps_integer_precision_for_large_values() {
+        let chart = BarChart::new([Bar::new(u64::MAX - 1)]).max(u64::MAX);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(["▇"]));
     }
 
     #[test]

@@ -386,9 +386,7 @@ impl Sparkline<'_> {
                     value: Some(value),
                     style,
                 } => {
-                    let height = (*value * u64::from(spark_area.height) * 8)
-                        .checked_div(max_height)
-                        .unwrap_or(0);
+                    let height = Self::scale_height(*value, max_height, spark_area.height);
                     (height, None, *style)
                 }
                 _ => (
@@ -431,6 +429,16 @@ impl Sparkline<'_> {
             7 => self.bar_set.seven_eighths,
             _ => self.bar_set.full,
         }
+    }
+
+    fn scale_height(value: u64, max: u64, max_height: u16) -> u64 {
+        if max == 0 {
+            return 0;
+        }
+
+        let max_ticks = u128::from(max_height) * 8;
+        let ticks = u128::from(value) * max_ticks / u128::from(max);
+        ticks.min(max_ticks) as u64
     }
 }
 
@@ -576,6 +584,28 @@ mod tests {
         let mut buffer = Buffer::filled(area, Cell::new("x"));
         widget.render(area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["     ▂▄▆█xxx", " ▂▄▆█████xxx"]));
+    }
+
+    #[test]
+    fn render_handles_u64_max_value() {
+        let widget = Sparkline::default().data([u64::MAX]).max(u64::MAX);
+        let area = Rect::new(0, 0, 1, 3);
+        let mut buffer = Buffer::empty(area);
+
+        widget.render(area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(["█"; 3]));
+    }
+
+    #[test]
+    fn render_keeps_integer_precision_for_large_values() {
+        let widget = Sparkline::default().data([u64::MAX - 1]).max(u64::MAX);
+        let area = Rect::new(0, 0, 1, 1);
+        let mut buffer = Buffer::empty(area);
+
+        widget.render(area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(["▇"]));
     }
 
     #[test]
