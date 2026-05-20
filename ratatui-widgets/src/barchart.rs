@@ -142,7 +142,7 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn new<T: Into<Vec<Bar<'a>>>>(bars: T) -> Self {
         Self {
-            data: vec![BarGroup::new(bars.into())],
+            data: Self::non_empty_groups(vec![BarGroup::new(bars.into())]),
             direction: Direction::Vertical,
             ..Default::default()
         }
@@ -166,7 +166,7 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn horizontal(bars: impl Into<Vec<Bar<'a>>>) -> Self {
         Self {
-            data: vec![BarGroup::new(bars.into())],
+            data: Self::non_empty_groups(vec![BarGroup::new(bars.into())]),
             direction: Direction::Horizontal,
             ..Default::default()
         }
@@ -192,9 +192,16 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn grouped<T: Into<Vec<BarGroup<'a>>>>(groups: T) -> Self {
         Self {
-            data: groups.into(),
+            data: Self::non_empty_groups(groups.into()),
             ..Default::default()
         }
+    }
+
+    fn non_empty_groups(groups: Vec<BarGroup<'a>>) -> Vec<BarGroup<'a>> {
+        groups
+            .into_iter()
+            .filter(|group| !group.bars.is_empty())
+            .collect()
     }
 
     /// Add group of bars to the `BarChart`
@@ -739,6 +746,26 @@ mod tests {
         let widget = BarChart::default();
         widget.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["          "; 3]));
+    }
+
+    #[test]
+    fn horizontal_empty_barchart_does_not_panic() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        let widget = BarChart::horizontal(Vec::<Bar>::new());
+
+        widget.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn constructors_ignore_empty_groups() {
+        assert!(BarChart::new(Vec::<Bar>::new()).data.is_empty());
+        assert!(BarChart::horizontal(Vec::<Bar>::new()).data.is_empty());
+
+        let chart = BarChart::grouped([
+            BarGroup::new(Vec::<Bar>::new()),
+            BarGroup::new([Bar::new(1)]),
+        ]);
+        assert_eq!(chart.data, vec![BarGroup::new([Bar::new(1)])]);
     }
 
     #[test]
