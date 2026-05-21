@@ -190,7 +190,7 @@ impl<'a> Sparkline<'a> {
     /// # }
     /// ```
     ///
-    /// Create a [`Sparkline`] from a a Vec of [`SparklineBar`] such that some bars are styled:
+    /// Create a [`Sparkline`] from a Vec of [`SparklineBar`] such that some bars are styled:
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
