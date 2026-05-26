@@ -4,7 +4,7 @@
 //! This module contains Ratatui's rendering surface abstraction. [`Terminal`] ties together a
 //! backend, a viewport, and a double-buffered renderer. In a typical application you create a
 //! `Terminal`, render by calling [`Terminal::draw`] or [`Terminal::try_draw`] in a loop, and let
-//! Ratatui diff successive frames so only changed cells are sent to the backend.
+//! Ratatui diffs successive frames so only changed cells are sent to the backend.
 //!
 //! [`Frame`] is the mutable view used during one render pass. Widgets write into the current
 //! buffer through it, and cursor state for the end of the pass is requested through
