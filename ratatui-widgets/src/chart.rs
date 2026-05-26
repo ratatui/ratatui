@@ -82,9 +82,9 @@ impl<'a> Axis<'a> {
     /// - For the X axis, the labels are displayed left to right.
     /// - For the Y axis, the labels are displayed bottom to top.
     ///
-    /// Currently, you need to give at least two labels or the render will panic. Also, giving
-    /// more than 3 labels is currently broken and the middle labels won't be in the correct
-    /// position, see [issue 334].
+    /// Currently, you need to give at least two labels for them to be rendered. Also, giving more
+    /// than 3 labels is currently broken and the middle labels won't be in the correct position,
+    /// see [issue 334].
     ///
     /// [issue 334]: https://github.com/ratatui/ratatui/issues/334
     ///
@@ -972,6 +972,10 @@ impl<'a> Chart<'a> {
         let Some(x) = layout.label_y else { return };
         let labels = &self.y_axis.labels;
         let labels_len = labels.len() as u16;
+        if labels_len < 2 {
+            return;
+        }
+
         for (i, label) in labels.iter().enumerate() {
             let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
             if dy < graph_area.bottom() {
@@ -1296,6 +1300,14 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 4));
         widget.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]));
+    }
+
+    #[test]
+    fn it_does_not_panic_if_y_axis_has_one_label() {
+        let widget = Chart::new(vec![]).y_axis(Axis::default().bounds([0.0, 1.0]).labels(["only"]));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 5));
+
+        widget.render(buffer.area, &mut buffer);
     }
 
     #[test]
