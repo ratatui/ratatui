@@ -197,6 +197,7 @@ impl<'a> BarChart<'a> {
         }
     }
 
+    /// Returns a new vector of groups without the empty ones.
     fn non_empty_groups(groups: Vec<BarGroup<'a>>) -> Vec<BarGroup<'a>> {
         groups
             .into_iter()
