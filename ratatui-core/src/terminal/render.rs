@@ -1,4 +1,5 @@
 use crate::backend::Backend;
+use crate::layout::Position;
 use crate::terminal::{CompletedFrame, Frame, Terminal};
 
 impl<B: Backend> Terminal<B> {
@@ -198,15 +199,64 @@ impl<B: Backend> Terminal<B> {
 
         render_callback(&mut frame).map_err(Into::into)?;
 
-        // We can't change the cursor position right away because we have to flush the frame to
-        // stdout first. But we also can't keep the frame around, since it holds a &mut to
-        // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
         let cursor_position = frame.cursor_position;
 
+        self.apply_buffer(cursor_position)
+    }
+
+    /// A low-level function that applies and flushes the current buffer to the backend. This
+    /// function is useful if you need to manage your own custom draw lifecycle and buffer.
+    ///
+    /// Returns [`Result::Ok`] containing a [`CompletedFrame`] if successful, otherwise
+    /// [`Result::Err`] containing the backend error (`B::Error`) that caused the failure.
+    ///
+    /// This method will:
+    ///
+    /// - show/hide the cursor based on `cursor_position`
+    /// - call [`Terminal::swap_buffers`] to prepare for the next render pass
+    /// - call [`Backend::flush`] to flush any buffered backend output
+    /// - return a [`CompletedFrame`] with the current buffer and the area used for rendering
+    ///
+    /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
+    /// purposes, but it is often not used in regular applications.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # #![allow(unexpected_cfgs)]
+    /// # #[cfg(feature = "crossterm")]
+    /// # {
+    /// use std::io;
+    ///
+    /// use ratatui::Terminal;
+    /// use ratatui::backend::CrosstermBackend;
+    /// use ratatui::buffer::Buffer;
+    /// use ratatui::widgets::Widget;
+    ///
+    /// let backend = CrosstermBackend::new(io::stdout());
+    /// let mut terminal = Terminal::new(backend)?;
+    ///
+    /// terminal.autoresize()?;
+    ///
+    /// let mut custom_buffer = Buffer::default();
+    /// custom_buffer.resize(terminal.get_frame().area());
+    /// custom_buffer.reset();
+    ///
+    /// "Hello World!".render(custom_buffer.area, &mut custom_buffer);
+    ///
+    /// terminal.current_buffer_mut().merge(&custom_buffer);
+    /// terminal.apply_buffer(None)?;
+    /// # }
+    /// ```
+    pub fn apply_buffer(
+        &mut self,
+        cursor_position: Option<Position>,
+    ) -> Result<CompletedFrame<'_>, B::Error> {
         // Apply the buffer diff to the backend (this is the terminal's "flush" step, distinct
         // from `Backend::flush` below which flushes the backend's output).
         self.flush()?;
 
+        // The cursor position can only be changed after the frame is flushed to stdout.
         match cursor_position {
             None => self.hide_cursor()?,
             Some(position) => {
