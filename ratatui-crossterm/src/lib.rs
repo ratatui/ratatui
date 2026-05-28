@@ -148,7 +148,7 @@ use ratatui_core::style::{Color, Modifier, Style};
 /// # std::io::Result::Ok(())
 /// ```
 ///
-/// See the the [Examples] directory for more examples. See the [`backend`] module documentation
+/// See the [Examples] directory for more examples. See the [`backend`] module documentation
 /// for more details on raw mode and alternate screen.
 ///
 /// [`Write`]: std::io::Write
