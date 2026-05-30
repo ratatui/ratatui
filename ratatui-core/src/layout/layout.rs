@@ -1386,7 +1386,7 @@ mod tests {
         use strengths::*;
         assert!(SPACER_SIZE_EQ > MAX_SIZE_LE);
         assert!(MAX_SIZE_LE > MAX_SIZE_EQ);
-        assert!(MIN_SIZE_GE == MAX_SIZE_LE);
+        assert_eq!(MIN_SIZE_GE, MAX_SIZE_LE);
         assert!(MAX_SIZE_LE > LENGTH_SIZE_EQ);
         assert!(LENGTH_SIZE_EQ > PERCENTAGE_SIZE_EQ);
         assert!(PERCENTAGE_SIZE_EQ > RATIO_SIZE_EQ);
