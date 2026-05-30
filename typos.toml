@@ -4,6 +4,7 @@
 ratatui = "ratatui"
 sectore = "sectore" # https://github.com/sectore
 consts = "consts"   # consts module
+licker = "licker"   # github.com/floor-licker
 
 [type.md]
 extend-ignore-re = [
