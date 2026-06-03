@@ -5996,7 +5996,7 @@ Adds conversions for various Color and Modifier combinations
 
   ```text
   Link to the contributing, changelog, and breaking changes docs at the
-  top of the page instead of just in in the main part of the doc. This
+  top of the page instead of just in the main part of the doc. This
   makes it easier to find them.
 
   Rearrange the links to be in a more logical order.
@@ -6370,7 +6370,7 @@ Also, we renewed our website and updated our documentation/tutorials to get star
   _(tabs)_ Tab widget now supports custom padding ([#629](https://github.com/ratatui/ratatui/issues/629))
 
   ````text
-  The Tab widget now contains padding_left and and padding_right
+  The Tab widget now contains padding_left and padding_right
   properties. Those values can be set with functions `padding_left()`,
   `padding_right()`, and `padding()` which all accept `Into<Line>`.
 
