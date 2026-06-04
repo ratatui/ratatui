@@ -212,7 +212,7 @@ impl<B: Backend> Terminal<B> {
     ///
     /// This method will:
     ///
-    /// - show/hide the cursor based on `cursor_position`
+    /// - show/hide the cursor based on `cursor_position` ([`None`] will hide the cursor)
     /// - call [`Terminal::swap_buffers`] to prepare for the next render pass
     /// - call [`Backend::flush`] to flush any buffered backend output
     /// - return a [`CompletedFrame`] with the current buffer and the area used for rendering
