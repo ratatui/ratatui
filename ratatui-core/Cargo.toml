@@ -26,15 +26,15 @@ default = []
 
 ## enables std
 std = [
-  "itertools/use_std",
-  "thiserror/std",
-  "kasuari/std",
   "bitflags/std",
   "compact_str/std",
-  "unicode-truncate/std",
-  "strum/std",
-  "serde?/std",
+  "itertools/use_std",
+  "kasuari/std",
   "palette?/std",
+  "serde?/std",
+  "strum/std",
+  "thiserror/std",
+  "unicode-truncate/std",
 ]
 
 ## enables layout cache; uses thread_local when std is available,
@@ -60,7 +60,7 @@ scrolling-regions = []
 
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
+serde = ["bitflags/serde", "compact_str/serde", "dep:serde"]
 
 [dependencies]
 anstyle = { workspace = true, optional = true }
