@@ -22,7 +22,7 @@ use ratatui::text::Line;
 use ratatui::widgets::{Block, BorderType, Padding, Paragraph, RatatuiLogo};
 use ratatui::{DefaultTerminal, Frame, TerminalOptions, Viewport};
 
-const SEMVER: &str = "0.30.0";
+const SEMVER: &str = "0.30.1";
 const RELEASE_NAME: &str = "Bryndza";
 
 const MAIN_DISHES: [&str; 4] = [
