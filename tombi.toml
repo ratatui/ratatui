@@ -1,0 +1,21 @@
+toml-version = "v1.0.0"
+
+[files]
+include = ["**/*.toml"]
+
+[format.rules]
+line-width = 100
+
+# Preserve the existing Cargo manifest section order. Schema-driven sorting creates large diffs,
+# and keeping `[features]` before dependency sections makes feature-gated behavior easier to scan.
+[[schemas]]
+path = "tombi://www.schemastore.org/cargo.json"
+include = ["**/Cargo.toml"]
+format.rules.table-keys-order.enabled = false
+
+[[overrides]]
+files.include = ["**/Cargo.toml"]
+
+[overrides.lint.rules]
+# Keep VS Code diagnostics aligned with the preserved Cargo manifest order above.
+tables-out-of-order = "off"

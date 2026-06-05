@@ -1,7 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["ratatui", "ratatui-*", "xtask", "examples/apps/*", "examples/concepts/*"]
+members = ["examples/apps/*", "examples/concepts/*", "ratatui", "ratatui-*", "xtask"]
 default-members = [
+  "examples/apps/*",
+  "examples/concepts/*",
   "ratatui",
   "ratatui-core",
   "ratatui-crossterm",
@@ -10,8 +12,6 @@ default-members = [
   "ratatui-macros",
   "ratatui-termwiz",
   "ratatui-widgets",
-  "examples/apps/*",
-  "examples/concepts/*",
 ]
 
 [workspace.package]
@@ -19,11 +19,11 @@ authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
 repository = "https://github.com/ratatui/ratatui"
 homepage = "https://ratatui.rs"
-keywords = ["tui", "terminal", "dashboard"]
+keywords = ["dashboard", "terminal", "tui"]
 categories = ["command-line-interface"]
 readme = "README.md"
 license = "MIT"
-exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
+exclude = ["*.log", ".github", "CONTRIBUTING.md", "Makefile.toml", "assets/*", "tags"]
 edition = "2024"
 rust-version = "1.88.0"
 
@@ -77,16 +77,10 @@ unicode-truncate = { version = "2", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width = ">=0.2.0"
 
-# Improve benchmark consistency
-[profile.bench]
-codegen-units = 1
-lto = true
-
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
 [workspace.lints.clippy]
-pedantic = { level = "warn", priority = -1 }
 cast_possible_truncation = "allow"
 cast_possible_wrap = "allow"
 cast_precision_loss = "allow"
@@ -95,6 +89,7 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
+pedantic = { level = "warn", priority = -1 }
 
 # we often split up a module into multiple files with the main type in a file named after the
 # module, so we want to allow this pattern
@@ -122,3 +117,8 @@ string_lit_chars_any = "warn"
 string_slice = "warn"
 unnecessary_self_imports = "warn"
 use_self = "warn"
+
+# Improve benchmark consistency
+[profile.bench]
+codegen-units = 1
+lto = true
