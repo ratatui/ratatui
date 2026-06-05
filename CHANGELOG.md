@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
-## [0.30.1](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.0...ratatui-v0.30.1) - 2026-06-05
+## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1) - 2026-06-05
 
 > _"Rats, we're rats; we're the rats." – [Rat Movie](https://www.youtube.com/watch?v=OXQwx1EolD8)_
 
