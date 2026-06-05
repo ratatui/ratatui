@@ -199,6 +199,42 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
 
 - [1e0ab0c](https://github.com/ratatui/ratatui/commit/1e0ab0c54935c27a9729e7a1c4a918d3e5a10c21) *(ratatui-crossterm)* Add IntoCrossterm<ContentStyle> for Style by @0xferrous in [#2323](https://github.com/ratatui/ratatui/pull/2323)
 
+- [101a63e](https://github.com/ratatui/ratatui/commit/101a63e112188cbccef968053dee8bbd332cb8c3) *(render)* Add function for applying buffer by @musjj in [#2566](https://github.com/ratatui/ratatui/pull/2566)
+
+  > Add a public API for applying and flushing the terminal buffer.
+  >
+  > A minimal usage will look something like this:
+  >
+  > ```rust
+  > use ratatui::Terminal;
+  > use ratatui::backend::CrosstermBackend;
+  > use ratatui::buffer::Buffer;
+  > use ratatui::widgets::Widget;
+  >
+  > let backend = CrosstermBackend::new(io::stdout());
+  > let mut terminal = Terminal::new(backend)?;
+  >
+  > terminal.autoresize()?;
+  >
+  > let mut custom_buffer = Buffer::default();
+  > custom_buffer.resize(terminal.get_frame().area());
+  > custom_buffer.reset();
+  >
+  > "Hello World!".render(custom_buffer.area, &mut custom_buffer);
+  >
+  > terminal.current_buffer_mut().merge(&custom_buffer);
+  > terminal.apply_buffer()?;
+  > ```
+  >
+  > My primary motivation for this PR is to improve the ECS ergonomics in
+  > [`bevy_ratatui`](https://github.com/ratatui/bevy_ratatui). But this
+  > should be useful for anyone who wants to commit incremental writes to
+  > the buffer without having to do everything in one monolithic
+  > [`Terminal::draw`](https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html#method.draw)
+  > closure.
+  >
+  > ---------
+
 - [09a3027](https://github.com/ratatui/ratatui/commit/09a3027bfce906b86bf20bdcf36fc5e365892b7c) *(symbol)* Add custom marker by @BenFradet in [#2356](https://github.com/ratatui/ratatui/pull/2356)
 
 - [f9d066f](https://github.com/ratatui/ratatui/commit/f9d066f4d74684bb13fbbac6c02fb1178d9c0b15) *(table)* Let Cells span multiple columns by @karkhaz in [#2150](https://github.com/ratatui/ratatui/pull/2150)
@@ -766,6 +802,10 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
   > documentation and help new users understand how to render lines with
   > color.
 
+- [83c1579](https://github.com/ratatui/ratatui/commit/83c157965759bf660eb81f47bdedf96b886b9fd3) *(changelog)* Fix doubled words in two entries by @adv0r in [#2578](https://github.com/ratatui/ratatui/pull/2578)
+  >
+  > Typo:`in in` → `in` and `and and` → `and` in `CHANGELOG.md`
+
 - [fff27e8](https://github.com/ratatui/ratatui/commit/fff27e8d50e72558a791e9ce146bcfff117ac424) *(contributing)* Add packages needed to run xtasks by @alabhyajindal in [#2409](https://github.com/ratatui/ratatui/pull/2409)
   >
   > Fixes #2408
@@ -952,6 +992,167 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
 
 - [b6dfafd](https://github.com/ratatui/ratatui/commit/b6dfafd062893963d352c5a3e623475f3bc778e4) *(markdown)* Fix linting issues reported by xtask lint by @Logan-Ruf in [#2435](https://github.com/ratatui/ratatui/pull/2435)
 
+- [fba4448](https://github.com/ratatui/ratatui/commit/fba44486e04b3abf2c3899955ea8cf5daedee7bd) *(ratatui)* Unleash the rats v0.30.1
+
+- [0b03fe4](https://github.com/ratatui/ratatui/commit/0b03fe47f1a941fccf9dd694f2531157e312f330) *(toml)* Migrate from taplo to tombi by @joshka in [#2501](https://github.com/ratatui/ratatui/pull/2501)
+
+  > ## Summary
+  >
+  > This migrates the repo's TOML tooling from
+  > [Taplo](https://github.com/tamasfe/taplo) to
+  > [Tombi](https://github.com/tombi-toml/tombi).
+  >
+  > The main motivation is maintenance and installability:
+  >
+  > - Ratatui previously used [Taplo](https://github.com/tamasfe/taplo) for
+  > TOML formatting.
+  > - Taplo's maintenance future has been uncertain; see
+  > <https://github.com/tamasfe/taplo/issues/715>.
+  > - Taplo's current release artifacts are not friendly to
+  > `cargo-binstall`, which means some setups fall back to building from
+  > source.
+  > - That source-build path is awkward for CI and was also a blocker while
+  > exploring a future Docker/devcontainer setup because of image size and
+  > install cost.
+  >
+  > [Tombi](https://github.com/tombi-toml/tombi) is actively maintained,
+  > publishes prebuilt binaries, and has a VS Code extension that lets us
+  > keep editor behavior aligned with CI.
+  >
+  > ## What Changed
+  >
+  > ### Tooling and CI
+  >
+  > - Replace `taplo` with `tombi` in `cargo xtask format`.
+  > - Use
+  > [`tombi-toml/setup-tombi`](https://github.com/tombi-toml/setup-tombi) in
+  > the formatting CI job.
+  > - Replace `.taplo.toml` with `tombi.toml`.
+  >
+  > ### Formatting policy
+  >
+  > - Keep the existing 100-column TOML line width.
+  > - Disable schema-driven top-level table ordering for `Cargo.toml`.
+  > - Disable the corresponding `tables-out-of-order` lint for `Cargo.toml`.
+  >
+  > Why disable Cargo schema ordering:
+  >
+  > - Tombi can order keys and tables according to schema metadata; see
+  > <https://tombi-toml.github.io/tombi/docs/comment-directive/tombi-value-directive/#format-rules-table-keys-order>.
+  > - The schema order moved sections like `[features]` below dependency
+  > sections.
+  > - That made feature-gated behavior harder to scan.
+  > - It also created noisy migration churn that was not central to the tool
+  > switch itself.
+  >
+  > Why disable the Cargo lint warning:
+  >
+  > - The VS Code warning came from Tombi's `tables-out-of-order` lint
+  > rather than from formatting.
+  > - Since we are intentionally preserving the existing Cargo manifest
+  > section order, we also disable that lint for `Cargo.toml` to keep
+  > diagnostics aligned with the formatter configuration.
+  > - Related docs:
+  > <https://tombi-toml.github.io/tombi/docs/configuration/>.
+  >
+  > ### Installation note
+  >
+  > - Tombi is better positioned for binary installs than Taplo today, but
+  > it is still not fully in the generic `cargo-binstall` /
+  > `taiki-e/install-action` path.
+  > - Relevant upstream context:
+  > - binary naming / generic installer compatibility:
+  > <https://github.com/tombi-toml/tombi/issues/1164>
+  > - crates.io publishing for `cargo-binstall` fallback:
+  > <https://github.com/tombi-toml/tombi/issues/1686>
+  > - earlier crates.io publishing discussion:
+  > <https://github.com/tombi-toml/tombi/issues/632>
+  > - In practice, this still leaves some rough edges around the generic
+  > Rust installer path, but Tombi already has usable prebuilt binaries and
+  > an official installer action, which is a better place for Ratatui than
+  > Taplo's current install story.
+  > - CI now uses
+  > [`tombi-toml/setup-tombi`](https://github.com/tombi-toml/setup-tombi)
+  > with a pinned version, which avoids the GitHub token path by not asking
+  > the action to resolve `latest` at runtime.
+  >
+  > ### Docs and editor setup
+  >
+  > - Update contributor docs to point to Tombi's repo, docs, and
+  > installation guide.
+  > - Note that the repo previously used Taplo and link the upstream
+  > maintenance discussion at <https://github.com/tamasfe/taplo/issues/715>.
+  > - Add VS Code extension recommendations for
+  > [`rust-lang.rust-analyzer`](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+  > and
+  > [`tombi-toml.tombi`](https://marketplace.visualstudio.com/items?itemName=tombi-toml.tombi).
+  > - Add committed VS Code workspace settings for shared repo defaults,
+  > mainly so the workspace can define formatter behavior that matches CI,
+  > including TOML formatter selection and nightly rustfmt args.
+  > - Add a dedicated formatting section to `CONTRIBUTING.md` covering Rust
+  > formatting, TOML formatting, nightly `rustfmt`, and the VS Code
+  > workspace override workaround.
+  >
+  > ## Why Commit VS Code Settings
+  >
+  > This PR adds committed VS Code workspace settings for shared repo
+  > defaults only.
+  >
+  > The goal is to:
+  >
+  > - recommend the expected extensions
+  > - make local editor formatting behave more like CI
+  > - avoid formatter drift between editor usage and the repo's checked-in
+  > tooling
+  >
+  > This is not intended to standardize everyone's full editor setup.
+  >
+  > ## Nightly rustfmt
+  >
+  > The repo already uses unstable rustfmt options in
+  > [`rustfmt.toml`](./rustfmt.toml), so formatting Rust code with `cargo
+  > xtask format` works best with nightly Rust. This is already how CI
+  > behaves.
+  >
+  > The docs now call this out more clearly:
+  >
+  > - install nightly if you want local formatting to match CI
+  > - the reason is to pick up the unstable formatting options configured in
+  > `rustfmt.toml`
+  >
+  > For contributors who cannot or do not want to install nightly, the docs
+  > also point to a workaround: use a personal VS Code workspace file with
+  > override settings instead of changing the tracked workspace config.
+  >
+  > ## Notes From Implementation
+  >
+  > - Tombi `v0.9.19` added config support to disable schema-defined
+  > ordering per schema, which let us preserve existing `Cargo.toml` section
+  > order cleanly.
+  > - The `tables-out-of-order` warning seen in VS Code came from Tombi
+  > lint, not formatting, so that needed a separate config change.
+  > - After disabling Cargo section ordering, the remaining TOML churn was
+  > much smaller and mostly mechanical.
+  >
+  > ## Files of Interest
+  >
+  > - `.github/workflows/ci.yml`
+  > - `xtask/src/commands/format.rs`
+  > - `tombi.toml`
+  > - `.vscode/settings.json`
+  > - `.vscode/extensions.json`
+  > - `CONTRIBUTING.md`
+  >
+  > ## Verification
+  >
+  > - `cargo xtask format --check`
+  > - `cargo metadata --format-version 1`
+  > - `markdownlint-cli2 CONTRIBUTING.md`
+
+- [ed46fef](https://github.com/ratatui/ratatui/commit/ed46fefb3f26f3786381843fe7f7cce47254781d) *(uncategorized)* Update versions
+
+- [f30bab9](https://github.com/ratatui/ratatui/commit/f30bab9ef0c089e3200237029cdf750cb09e5fcf) *(uncategorized)* Ignore licker as typo
+
 - [c7746e9](https://github.com/ratatui/ratatui/commit/c7746e90d0c10ea450356edac9715dd3f1b02a4a) *(uncategorized)* Bump MSRV to 1.88.0 by @orhun in [#2396](https://github.com/ratatui/ratatui/pull/2396)
 
 - [b0a7703](https://github.com/ratatui/ratatui/commit/b0a7703c0002c53bbaa432f04a342f63f75e2219) *(uncategorized)* Escape usernames in changelog with backticks by @kdheepak in [#2377](https://github.com/ratatui/ratatui/pull/2377)
@@ -1012,7 +1213,8 @@ We are excited to announce the new version of `ratatui` - a Rust library that's 
 
 ### New Contributors
 
-* @adv0r made their first contribution in [#2564](https://github.com/ratatui/ratatui/pull/2564)
+* @musjj made their first contribution in [#2566](https://github.com/ratatui/ratatui/pull/2566)
+* @adv0r made their first contribution in [#2578](https://github.com/ratatui/ratatui/pull/2578)
 * @fallintoplace made their first contribution in [#2550](https://github.com/ratatui/ratatui/pull/2550)
 * @Zacxxx made their first contribution in [#2555](https://github.com/ratatui/ratatui/pull/2555)
 * @lphuc2250gma made their first contribution in [#2535](https://github.com/ratatui/ratatui/pull/2535)
