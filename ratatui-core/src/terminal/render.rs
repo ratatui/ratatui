@@ -838,4 +838,39 @@ mod tests {
             "second frame's buffer contains the second render output"
         );
     }
+
+    #[test]
+    fn apply_buffer_hides_cursor() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal.show_cursor().unwrap();
+        terminal.autoresize().unwrap();
+
+        let mut external_buffer = Buffer::default();
+        external_buffer.resize(terminal.get_frame().area());
+        external_buffer[(0, 0)] = Cell::new("b");
+
+        terminal.current_buffer_mut().merge(&external_buffer);
+        let completed = terminal.apply_buffer().unwrap();
+
+        assert_eq!(completed.count, 0, "first draw returns count 0");
+        assert_eq!(
+            completed.area,
+            Rect::new(0, 0, 3, 2),
+            "completed area matches terminal size in fullscreen mode"
+        );
+        assert_eq!(
+            completed.buffer,
+            &Buffer::with_lines(["b  ", "   "]),
+            "completed buffer contains the rendered content"
+        );
+
+        assert!(terminal.hidden_cursor);
+        assert!(!terminal.backend().cursor_visible());
+        assert_eq!(
+            terminal.frame_count, 1,
+            "successful draw increments frame_count"
+        );
+    }
 }
