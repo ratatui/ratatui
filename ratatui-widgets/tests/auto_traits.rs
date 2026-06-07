@@ -1,11 +1,18 @@
 use core::panic::{RefUnwindSafe, UnwindSafe};
 
-use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
-use ratatui::widgets::canvas::{Canvas, Context};
-use ratatui::widgets::{
-    BarChart, Block, Chart, Gauge, LineGauge, List, Paragraph, Sparkline, Table, Tabs,
-};
+use ratatui_widgets::barchart::BarChart;
+use ratatui_widgets::block::Block;
+use ratatui_widgets::calendar::{CalendarEventStore, Monthly};
+use ratatui_widgets::canvas::{Canvas, Context};
+use ratatui_widgets::chart::Chart;
+use ratatui_widgets::gauge::{Gauge, LineGauge};
+use ratatui_widgets::list::List;
+use ratatui_widgets::paragraph::Paragraph;
+use ratatui_widgets::sparkline::Sparkline;
+use ratatui_widgets::table::Table;
+use ratatui_widgets::tabs::Tabs;
 
+/// A compile-time assertion for checking that the given type implements the auto traits.
 const fn assert_auto_traits<T: Send + Sync + UnwindSafe + RefUnwindSafe>() {}
 
 #[test]
