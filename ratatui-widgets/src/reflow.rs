@@ -282,7 +282,7 @@ where
             return None;
         }
 
-        self.current_line.truncate(0);
+        self.current_line.clear();
         let mut current_line_width = 0;
 
         let mut lines_exhausted = true;

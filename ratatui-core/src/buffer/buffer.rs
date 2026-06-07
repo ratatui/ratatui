@@ -575,7 +575,7 @@ impl fmt::Debug for Buffer {
     /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
     ///   modifier: Modifier::BOLD }` only showing a value when there is a change in style.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("Buffer {{\n    area: {:?}", &self.area))?;
+        f.write_fmt(format_args!("Buffer {{\n    area: {:?}", self.area))?;
 
         if self.area.is_empty() {
             return f.write_str("\n}");
