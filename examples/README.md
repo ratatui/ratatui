@@ -148,6 +148,17 @@ Shows how to use the inlined viewport to render in a specific area of the screen
 
 ![Inline demo][inline.gif]
 
+## Layout Workspace Inspector
+
+Shows a release-board application built with `ratatui-layout` frame-local coordination primitives.
+It demonstrates layout plans, focus plans, mouse targets, selection state, virtualized lists and
+tables, viewports, cursor requests, and modal overlays working together. [Source](./apps/layout-workspace-inspector/).
+
+## Layout Routing Lab
+
+Shows a nested `ratatui-layout` app with app-owned route paths, local focus scopes, inline row
+controls, modal routing, and pointer capture. [Source](./apps/layout-routing-lab/).
+
 ## Input Form
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).

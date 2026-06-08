@@ -7,6 +7,7 @@ default-members = [
   "ratatui",
   "ratatui-core",
   "ratatui-crossterm",
+  "ratatui-layout",
   # this is not included as it doesn't compile on windows
   # "ratatui-termion",
   "ratatui-macros",
@@ -54,6 +55,7 @@ rand_chacha = "0.10"
 ratatui = { path = "ratatui", version = "0.30.1" }
 ratatui-core = { path = "ratatui-core", version = "0.1.1" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.1" }
+ratatui-layout = { path = "ratatui-layout", version = "0.0.1-alpha.0" }
 ratatui-macros = { path = "ratatui-macros", version = "0.7.1" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.1" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.1" }
