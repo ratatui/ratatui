@@ -3,9 +3,9 @@ use ratatui::layout::{Position, Rect, Size};
 use ratatui::style::{Color, Style};
 use ratatui::text::Text;
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{
-    FrameSnapshot, FrameTargets, ScrollMetrics, Viewport, ViewportLayout, ViewportState,
-};
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
+use ratatui_layout::scroll::ScrollMetrics;
+use ratatui_layout::viewport::{Viewport, ViewportLayout, ViewportState};
 
 use crate::DETAILS_FOCUS;
 use crate::domain::DetailView;

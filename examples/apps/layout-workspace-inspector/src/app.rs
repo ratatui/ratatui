@@ -8,7 +8,9 @@ use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEvent};
 use ratatui::layout::Rect;
 use ratatui::{DefaultTerminal, Frame};
-use ratatui_layout::{FocusFallback, FocusState, FrameSnapshot, PointerState};
+use ratatui_layout::focus::{FocusFallback, FocusState};
+use ratatui_layout::frame::FrameSnapshot;
+use ratatui_layout::pointer::PointerState;
 
 use crate::components::{
     CommandStrip, DetailsPane, DialogOutcome, EditDialog, HelpOverlay, ProjectTree, StatusBar,
@@ -584,7 +586,7 @@ mod tests {
     fn mouse_scroll_routes_without_changing_queue_selection() {
         use crate::app::mouse_action::MouseInput;
         use ratatui::layout::Rect;
-        use ratatui_layout::FrameSnapshot;
+        use ratatui_layout::frame::FrameSnapshot;
 
         let mut app = App::new();
         let queue_area = Rect::new(0, 0, 20, 10);

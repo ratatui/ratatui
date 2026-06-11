@@ -5,7 +5,7 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{FocusFallback, FocusState, FocusTargets};
+use ratatui_layout::focus::{FocusFallback, FocusState, FocusTargets};
 
 use crate::details::{DetailsAction, DetailsPane};
 use crate::help::HelpModal;

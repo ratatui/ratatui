@@ -1,34 +1,40 @@
 //! Grid regions and typed cell coordinates.
 //!
-//! A [`Grid`] composes Ratatui row and column constraints into a row-major [`Regions`]. It is a
-//! geometry helper, not a table widget: it does not own rows, cells, headers, styles, or selection.
-//! Callers use the resulting regions to render their own content.
+//! A [`Grid`](crate::grid::Grid) composes Ratatui row and column constraints into a row-major
+//! [`Regions`](crate::regions::Regions). It is a geometry helper, not a table widget: it does not
+//! own rows, cells, headers, styles, or selection. Callers use the resulting regions to render
+//! their own content.
 //!
 //! For a static grid that is rendered immediately, nested Ratatui [`Layout`] calls are usually
-//! enough. `Grid` is useful when cells need row-major ids, hit testing, or one [`Regions`] value
-//! that can be inspected before rendering.
+//! enough. `Grid` is useful when cells need row-major ids, hit testing, or one
+//! [`Regions`](crate::regions::Regions) value that can be inspected before rendering.
 //! Use Ratatui's built-in table widget when the content is genuinely tabular data with row/column
 //! styling handled by the widget; this module solves cell regions for app-owned content.
 //!
 //! # Common uses
 //!
 //! - Render a palette, dashboard, or toolbar where each cell is app-owned content.
-//! - Use row-major [`Grid::regions`] when simple indexed ids are enough.
-//! - Use typed [`Grid::layout`] when focus, pointer, or selection state should talk in
-//!   [`GridPosition`] values instead of encoded indexes.
+//! - Use row-major [`Grid::regions`](crate::grid::Grid::regions) when simple indexed ids are
+//!   enough.
+//! - Use typed [`Grid::layout`](crate::grid::Grid::layout) when focus, pointer, or selection state
+//!   should talk in [`GridPosition`](crate::grid::GridPosition) values instead of encoded indexes.
 //! - Inspect row and column areas for decorations that span an entire row or column.
 //!
 //! # Types
 //!
-//! - [`GridPosition`] is a typed `{ row, column }` cell id for focus, pointer, and selection state.
-//! - [`GridLayout`] is the solved typed-grid layout with row areas, column areas, and cell regions.
-//! - [`Grid`] stores row and column constraints and can solve either indexed or typed cell values.
+//! - [`GridPosition`](crate::grid::GridPosition) is a typed `{ row, column }` cell id for focus,
+//!   pointer, and selection state.
+//! - [`GridLayout`](crate::grid::GridLayout) is the solved typed-grid layout with row areas, column
+//!   areas, and cell regions.
+//! - [`Grid`](crate::grid::Grid) stores row and column constraints and can solve either indexed or
+//!   typed cell values.
 //!
 //! # Examples
 //!
 //! ```rust
 //! use ratatui_core::layout::{Constraint, Rect};
-//! use ratatui_layout::{Grid, GridPosition, SelectionMode, SelectionState};
+//! use ratatui_layout::grid::{Grid, GridPosition};
+//! use ratatui_layout::selection::{SelectionMode, SelectionState};
 //!
 //! let row_heights = [Constraint::Length(1), Constraint::Length(1)];
 //! let column_widths = [Constraint::Length(4), Constraint::Length(4)];
@@ -50,7 +56,7 @@
 //! focus, pointer, and selection state.
 //!
 //! [`Layout`]: ratatui_core::layout::Layout
-//! [`Regions`]: crate::regions::Regions
+//! [`Regions`](crate::regions::Regions): crate::regions::Regions
 
 use alloc::vec::Vec;
 
@@ -60,20 +66,22 @@ use crate::regions::{Region, Regions};
 
 /// Typed row-column identity for a grid cell.
 ///
-/// [`GridPosition`] exists when a cell id should say what it means instead of encoding row-major
-/// math in a `usize`. It owns no cell data; it is only the frame-local identity used by
-/// [`GridLayout`].
+/// [`GridPosition`](crate::grid::GridPosition) exists when a cell id should say what it means
+/// instead of encoding row-major math in a `usize`. It owns no cell data; it is only the
+/// frame-local identity used by [`GridLayout`](crate::grid::GridLayout).
 ///
 /// # Common uses
 ///
 /// - Store selected or focused palette cells without decoding `usize` math.
-/// - Route pointer hits from [`GridLayout::cell_at`] to app state using row and column fields.
-/// - Use the same id type across [`crate::FocusTargets`], [`crate::PointerTargets`], and
-///   [`crate::SelectionState`].
+/// - Route pointer hits from [`GridLayout::cell_at`](crate::grid::GridLayout::cell_at) to app state
+///   using row and column fields.
+/// - Use the same id type across [`crate::focus::FocusTargets`],
+///   [`crate::pointer::PointerTargets`], and [`crate::selection::SelectionState`].
 ///
 /// # Constructor
 ///
-/// - [`GridPosition::new`] creates a typed cell id from zero-based row and column indexes.
+/// - [`GridPosition::new`](crate::grid::GridPosition::new) creates a typed cell id from zero-based
+///   row and column indexes.
 ///
 /// # Examples
 ///
@@ -81,9 +89,9 @@ use crate::regions::{Region, Regions};
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{
-///     GridPosition, PointerTarget, PointerTargets, SelectionMode, SelectionState,
-/// };
+/// use ratatui_layout::grid::GridPosition;
+/// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
+/// use ratatui_layout::selection::{SelectionMode, SelectionState};
 ///
 /// let cell = GridPosition::new(1, 2);
 /// let mouse = PointerTargets::new().target(PointerTarget::new(cell, Rect::new(8, 1, 4, 1)));
@@ -101,11 +109,11 @@ use crate::regions::{Region, Regions};
 pub struct GridPosition {
     /// Zero-based row index.
     ///
-    /// This indexes the row constraints passed to [`Grid::new`].
+    /// This indexes the row constraints passed to [`Grid::new`](crate::grid::Grid::new).
     pub row: usize,
     /// Zero-based column index.
     ///
-    /// This indexes the column constraints passed to [`Grid::new`].
+    /// This indexes the column constraints passed to [`Grid::new`](crate::grid::Grid::new).
     pub column: usize,
 }
 
@@ -119,7 +127,8 @@ impl GridPosition {
     /// Store selection using a typed cell identity instead of row-major math:
     ///
     /// ```rust
-    /// use ratatui_layout::{GridPosition, SelectionMode, SelectionState};
+    /// use ratatui_layout::grid::GridPosition;
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut selection = SelectionState::new(SelectionMode::Single);
     /// selection.select(GridPosition::new(1, 2));
@@ -136,30 +145,38 @@ impl GridPosition {
 
 /// Solved grid geometry for one frame.
 ///
-/// [`GridLayout`] owns row areas, column areas, and a typed cell [`Regions`]. It does not own
-/// table data, headers, selection, or rendering state. Use it when app logic wants to talk about
-/// cells as `{ row, column }` rather than row-major indexes.
+/// [`GridLayout`](crate::grid::GridLayout) owns row areas, column areas, and a typed cell
+/// [`Regions`](crate::regions::Regions). It does not own table data, headers, selection, or
+/// rendering state. Use it when app logic wants to talk about cells as `{ row, column }` rather
+/// than row-major indexes.
 ///
 /// # Common uses
 ///
-/// - Build a [`crate::FocusTargets`] or [`crate::PointerTargets`] from [`GridLayout::cells`].
-/// - Draw row or column decorations using [`GridLayout::row_areas`] and
-///   [`GridLayout::column_areas`].
-/// - Hit test cells with [`GridLayout::cell_at`] and update app-owned selection.
+/// - Build a [`crate::focus::FocusTargets`] or [`crate::pointer::PointerTargets`] from
+///   [`GridLayout::cells`](crate::grid::GridLayout::cells).
+/// - Draw row or column decorations using
+///   [`GridLayout::row_areas`](crate::grid::GridLayout::row_areas) and
+///   [`GridLayout::column_areas`](crate::grid::GridLayout::column_areas).
+/// - Hit test cells with [`GridLayout::cell_at`](crate::grid::GridLayout::cell_at) and update
+///   app-owned selection.
 ///
 /// # Inspection and routing
 ///
-/// - [`GridLayout::area`] returns the area the grid was solved against.
-/// - [`GridLayout::row_areas`] returns row-spanning rectangles.
-/// - [`GridLayout::column_areas`] returns column-spanning rectangles.
-/// - [`GridLayout::cells`] returns the typed [`Regions`] of cell regions.
-/// - [`GridLayout::cell_at`] hit-tests a terminal position and returns a [`GridPosition`].
+/// - [`GridLayout::area`](crate::grid::GridLayout::area) returns the area the grid was solved
+///   against.
+/// - [`GridLayout::row_areas`](crate::grid::GridLayout::row_areas) returns row-spanning rectangles.
+/// - [`GridLayout::column_areas`](crate::grid::GridLayout::column_areas) returns column-spanning
+///   rectangles.
+/// - [`GridLayout::cells`](crate::grid::GridLayout::cells) returns the typed
+///   [`Regions`](crate::regions::Regions) of cell regions.
+/// - [`GridLayout::cell_at`](crate::grid::GridLayout::cell_at) hit-tests a terminal position and
+///   returns a [`GridPosition`](crate::grid::GridPosition).
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::{Constraint, Rect};
-/// use ratatui_layout::{Grid, GridPosition};
+/// use ratatui_layout::grid::{Grid, GridPosition};
 ///
 /// let row_heights = [Constraint::Length(1), Constraint::Length(1)];
 /// let column_widths = [Constraint::Length(3), Constraint::Length(3)];
@@ -188,7 +205,7 @@ impl GridLayout {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Grid;
+    /// use ratatui_layout::grid::Grid;
     ///
     /// let layout =
     ///     Grid::new([Constraint::Length(1)], [Constraint::Length(4)]).layout(Rect::new(2, 3, 10, 4));
@@ -209,7 +226,7 @@ impl GridLayout {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Grid;
+    /// use ratatui_layout::grid::Grid;
     ///
     /// let row_heights = [Constraint::Length(1), Constraint::Length(2)];
     /// let column_widths = [Constraint::Fill(1)];
@@ -231,7 +248,7 @@ impl GridLayout {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Grid;
+    /// use ratatui_layout::grid::Grid;
     ///
     /// let row_heights = [Constraint::Fill(1)];
     /// let column_widths = [Constraint::Length(3), Constraint::Length(5)];
@@ -253,7 +270,7 @@ impl GridLayout {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::{Grid, GridPosition};
+    /// use ratatui_layout::grid::{Grid, GridPosition};
     ///
     /// let row_heights = [Constraint::Length(1)];
     /// let column_widths = [Constraint::Length(2), Constraint::Length(2)];
@@ -273,7 +290,8 @@ impl GridLayout {
 
     /// Returns the topmost cell at a terminal position.
     ///
-    /// This is a convenience wrapper around [`Regions::hit_test`] for callers that only need the
+    /// This is a convenience wrapper around
+    /// [`Regions::hit_test`](crate::regions::Regions::hit_test) for callers that only need the
     /// typed cell id.
     ///
     /// # Examples
@@ -282,7 +300,7 @@ impl GridLayout {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::{Grid, GridPosition};
+    /// use ratatui_layout::grid::{Grid, GridPosition};
     ///
     /// let row_heights = [Constraint::Length(1), Constraint::Length(1)];
     /// let column_widths = [Constraint::Length(4), Constraint::Length(4)];
@@ -297,27 +315,29 @@ impl GridLayout {
 
 /// Grid configuration that assigns one region for each row-column cell.
 ///
-/// Use [`Grid`] when a cell layout needs ids and hit testing but not a full table widget. For
-/// example, a dashboard of app-owned tiles can use `Grid` to assign one region per tile, then
-/// render each tile from application data.
+/// Use [`Grid`](crate::grid::Grid) when a cell layout needs ids and hit testing but not a full
+/// table widget. For example, a dashboard of app-owned tiles can use `Grid` to assign one region
+/// per tile, then render each tile from application data.
 ///
 /// Grid regions are assigned in row-major order. For `r` rows and `c` columns, the id for
 /// `(row, column)` is `row * c + column`.
 ///
-/// Use [`Grid::layout`] instead when the caller would otherwise need to repeatedly encode and
-/// decode row/column pairs.
+/// Use [`Grid::layout`](crate::grid::Grid::layout) instead when the caller would otherwise need to
+/// repeatedly encode and decode row/column pairs.
 ///
 /// # Constructors and solving
 ///
-/// - [`Grid::new`] stores row and column constraints.
-/// - [`Grid::regions`] returns a row-major [`Regions`] with integer ids.
-/// - [`Grid::layout`] returns [`GridLayout`] with typed [`GridPosition`] ids plus row/column areas.
+/// - [`Grid::new`](crate::grid::Grid::new) stores row and column constraints.
+/// - [`Grid::regions`](crate::grid::Grid::regions) returns a row-major
+///   [`Regions`](crate::regions::Regions) with integer ids.
+/// - [`Grid::layout`](crate::grid::Grid::layout) returns [`GridLayout`](crate::grid::GridLayout)
+///   with typed [`GridPosition`](crate::grid::GridPosition) ids plus row/column areas.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::{Constraint, Rect};
-/// use ratatui_layout::Grid;
+/// use ratatui_layout::grid::Grid;
 ///
 /// let row_heights = [Constraint::Length(1), Constraint::Length(1)];
 /// let column_widths = [Constraint::Length(4), Constraint::Fill(1)];
@@ -346,7 +366,7 @@ impl Grid {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Grid;
+    /// use ratatui_layout::grid::Grid;
     ///
     /// let row_heights = [Constraint::Length(1)];
     /// let column_widths = [Constraint::Length(4), Constraint::Fill(1)];
@@ -380,7 +400,7 @@ impl Grid {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Grid;
+    /// use ratatui_layout::grid::Grid;
     ///
     /// let row_heights = [Constraint::Length(1), Constraint::Length(1)];
     /// let column_widths = [Constraint::Length(3), Constraint::Length(3)];
@@ -418,7 +438,8 @@ impl Grid {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::{Grid, GridPosition, SelectionMode, SelectionState};
+    /// use ratatui_layout::grid::{Grid, GridPosition};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let row_heights = [Constraint::Length(1), Constraint::Length(1)];
     /// let column_widths = [Constraint::Length(2), Constraint::Length(2)];

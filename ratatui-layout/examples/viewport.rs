@@ -8,7 +8,7 @@ use crossterm::event::{self, KeyCode};
 use ratatui::Frame;
 use ratatui::layout::{Rect, Size};
 use ratatui::widgets::Paragraph;
-use ratatui_layout::{Viewport, ViewportState};
+use ratatui_layout::viewport::{Viewport, ViewportState};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

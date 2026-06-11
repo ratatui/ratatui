@@ -10,7 +10,9 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{FocusFallback, FocusState, FrameSnapshot, FrameTargets, Row};
+use ratatui_layout::focus::{FocusFallback, FocusState};
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
+use ratatui_layout::linear::Row;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

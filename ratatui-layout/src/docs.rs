@@ -15,7 +15,8 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{FrameSnapshot, PointerTarget, PointerTargets};
+//! use ratatui_layout::frame::FrameSnapshot;
+//! use ratatui_layout::pointer::{PointerTarget, PointerTargets};
 //!
 //! let frame = FrameSnapshot::new(Rect::new(0, 0, 20, 1))
 //!     .mouse(PointerTargets::new().target(PointerTarget::new("save", Rect::new(0, 0, 6, 1))));
@@ -32,9 +33,9 @@
 /// rectangles need to survive the render function: a later pointer event must hit a row, a test
 /// wants to inspect visible cells, or a parent container needs to merge child regions.
 ///
-/// [`crate::Regions`] turns solved rectangles into a region set. It stores the parent area plus
-/// ordered [`crate::Region`] values with ids, clipping metadata, and z-order. It does not store
-/// widgets or application data.
+/// [`crate::regions::Regions`] turns solved rectangles into a region set. It stores the parent area
+/// plus ordered [`crate::regions::Region`] values with ids, clipping metadata, and z-order. It does
+/// not store widgets or application data.
 ///
 /// The area/region distinction is deliberate. An area is a [`ratatui_core::layout::Rect`], so it
 /// answers "where can I draw?" A region answers "what app-owned thing was drawn there, and how
@@ -44,15 +45,15 @@
 ///
 /// # Current behavior
 ///
-/// Region sets can be built directly, returned by [`crate::Row`], [`crate::Column`], or
-/// [`crate::Grid`], translated, clipped, merged, mapped to another id type, and hit tested.
-/// Generic `Id` parameters are the bridge back to app state: integers work for generated order,
-/// strings make examples and diagnostics readable, enums are usually best for named app controls,
-/// and stable record keys fit filtered or reordered data.
+/// Region sets can be built directly, returned by [`crate::linear::Row`],
+/// [`crate::linear::Column`], or [`crate::grid::Grid`], translated, clipped, merged, mapped to
+/// another id type, and hit tested. Generic `Id` parameters are the bridge back to app state:
+/// integers work for generated order, strings make examples and diagnostics readable, enums are
+/// usually best for named app controls, and stable record keys fit filtered or reordered data.
 ///
 /// ```rust
 /// use ratatui_core::layout::{Constraint, Rect};
-/// use ratatui_layout::Row;
+/// use ratatui_layout::linear::Row;
 ///
 /// let row_regions = Row::new([Constraint::Length(8), Constraint::Fill(1)])
 ///     .spacing(1)
@@ -77,13 +78,14 @@ pub mod regions {}
 ///
 /// # Current behavior
 ///
-/// [`crate::Container`] computes outer and inner areas with per-edge [`crate::Padding`].
-/// [`crate::Overlay`] stacks explicit regions. [`crate::Row`], [`crate::Column`], and
-/// [`crate::Grid`] delegate to Ratatui's layout solver and expose the solved rectangles as values.
+/// [`crate::container::Container`] computes outer and inner areas with per-edge
+/// [`crate::container::Padding`]. [`crate::overlay::Overlay`] stacks explicit regions.
+/// [`crate::linear::Row`], [`crate::linear::Column`], and [`crate::grid::Grid`] delegate to
+/// Ratatui's layout solver and expose the solved rectangles as values.
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Container, Padding};
+/// use ratatui_layout::container::{Container, Padding};
 ///
 /// let layout = Container::new()
 ///     .padding(Padding::symmetric(2, 1))
@@ -109,17 +111,18 @@ pub mod containers {}
 ///
 /// # Current behavior
 ///
-/// [`crate::FocusTargets`] stores keyboard targets while [`crate::FocusState`] stores the
-/// persistent focused id. [`crate::FocusFallback`] repairs stale focus after filtering or disabling
-/// controls. [`crate::PointerTargets`] stores pointer targets while [`crate::PointerState`] stores
-/// hover and pressed ids. [`crate::PointerPhase`] lets apps convert backend mouse events into
-/// backend-agnostic hover, press, and release transitions without putting crossterm or another
-/// backend in the crate. [`crate::SelectionState`] stores selection separately from geometry.
-/// [`crate::CursorRequests`] collects cursor requests produced during rendering.
+/// [`crate::focus::FocusTargets`] stores keyboard targets while [`crate::focus::FocusState`] stores
+/// the persistent focused id. [`crate::focus::FocusFallback`] repairs stale focus after filtering
+/// or disabling controls. [`crate::pointer::PointerTargets`] stores pointer targets while
+/// [`crate::pointer::PointerState`] stores hover and pressed ids. [`crate::pointer::PointerPhase`]
+/// lets apps convert backend mouse events into backend-agnostic hover, press, and release
+/// transitions without putting crossterm or another backend in the crate.
+/// [`crate::selection::SelectionState`] stores selection separately from geometry.
+/// [`crate::cursor::CursorRequests`] collects cursor requests produced during rendering.
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{PointerPhase, PointerState, PointerTarget, PointerTargets};
+/// use ratatui_layout::pointer::{PointerPhase, PointerState, PointerTarget, PointerTargets};
 ///
 /// let targets = PointerTargets::from_targets([PointerTarget::new("save", Rect::new(0, 0, 6, 1))]);
 /// let mut state = PointerState::default();
@@ -150,18 +153,19 @@ pub mod interaction {}
 ///
 /// # Current behavior
 ///
-/// [`crate::Viewport`] clamps a content offset against a viewport. [`crate::ScrollMetrics`] reports
-/// thumb size and position for status displays. [`crate::list::VirtualList`] and
-/// [`crate::table::VirtualTable`] compute visible app-owned rows and cells without storing the row
-/// or cell widgets. Their state types distinguish selection reveal from viewport movement:
-/// selecting a row or cell asks layout to keep it visible, while viewport-scroll helpers move the
-/// viewport without changing selection. That split is important for mouse wheels, where users
-/// expect the pane under the pointer to scroll without changing the selected item that commands
-/// operate on.
+/// [`crate::viewport::Viewport`] clamps a content offset against a viewport.
+/// [`crate::scroll::ScrollMetrics`] reports thumb size and position for status displays.
+/// [`crate::list::VirtualList`] and [`crate::table::VirtualTable`] compute visible app-owned rows
+/// and cells without storing the row or cell widgets. Their state types distinguish selection
+/// reveal from viewport movement: selecting a row or cell asks layout to keep it visible, while
+/// viewport-scroll helpers move the viewport without changing selection. That split is important
+/// for mouse wheels, where users expect the pane under the pointer to scroll without changing the
+/// selected item that commands operate on.
 ///
 /// ```rust
 /// use ratatui_core::layout::{Position, Rect, Size};
-/// use ratatui_layout::{ScrollMetrics, Viewport, ViewportState};
+/// use ratatui_layout::scroll::ScrollMetrics;
+/// use ratatui_layout::viewport::{Viewport, ViewportState};
 ///
 /// let mut state = ViewportState::new(Position::new(0, 10));
 /// let layout = Viewport::new(Size::new(20, 100)).layout(Rect::new(0, 0, 20, 10), &mut state);
@@ -198,33 +202,36 @@ pub mod virtualization {}
 /// A complete screen can produce several kinds of visible data at once: regions, keyboard targets,
 /// pointer targets, and cursor requests. Returning each concern separately works, but component
 /// boundaries often want one value to merge into a parent. The important choice is the boundary:
-/// a pane that only routes wheel input can store a [`crate::PointerTargets`], while a child
-/// component that returns layout, pointer, focus, and cursor requests together is a better fit for
-/// [`crate::FrameSnapshot`].
+/// a pane that only routes wheel input can store a [`crate::pointer::PointerTargets`], while a
+/// child component that returns layout, pointer, focus, and cursor requests together is a better
+/// fit for [`crate::frame::FrameSnapshot`].
 ///
 /// # Current behavior
 ///
-/// [`crate::FrameSnapshot`] aggregates [`crate::Regions`], [`crate::FocusTargets`],
-/// [`crate::PointerTargets`], and [`crate::CursorRequests`]. It can merge child values and map,
-/// translate, or clip their ids and rectangles. [`crate::FrameTargets::from_regions`] adds
-/// disabled, focusable, mouseable, and z-order policy to solved regions.
-/// [`crate::FrameSnapshot::route_position`] is the broad geometry query; click, hover, and wheel
-/// helpers use explicit pointer targets when present.
+/// [`crate::frame::FrameSnapshot`] aggregates [`crate::regions::Regions`],
+/// [`crate::focus::FocusTargets`], [`crate::pointer::PointerTargets`], and
+/// [`crate::cursor::CursorRequests`]. It can merge child values and map, translate, or clip their
+/// ids and rectangles. [`crate::frame::FrameTargets::from_regions`] adds disabled, focusable,
+/// mouseable, and z-order policy to solved regions. [`crate::frame::FrameSnapshot::route_position`]
+/// is the broad geometry query; click, hover, and wheel helpers use explicit pointer targets when
+/// present.
 ///
 /// Use smaller values directly when they describe the whole coordination problem:
 ///
-/// - [`crate::Regions`] when geometry and hit testing are enough;
-/// - [`crate::FocusTargets`] when only keyboard traversal needs previous-frame targets;
-/// - [`crate::PointerTargets`] when pointer routing is independent of focus or cursor placement;
-/// - [`crate::CursorRequests`] when rendering only needs to negotiate the terminal cursor.
+/// - [`crate::regions::Regions`] when geometry and hit testing are enough;
+/// - [`crate::focus::FocusTargets`] when only keyboard traversal needs previous-frame targets;
+/// - [`crate::pointer::PointerTargets`] when pointer routing is independent of focus or cursor
+///   placement;
+/// - [`crate::cursor::CursorRequests`] when rendering only needs to negotiate the terminal cursor.
 ///
-/// Use [`crate::FrameSnapshot`] when regions, focus targets, pointer targets, and cursor requests
-/// must be mapped, translated, clipped, or merged as one component result. That keeps aggregation
-/// useful without making it the default return type for every surface.
+/// Use [`crate::frame::FrameSnapshot`] when regions, focus targets, pointer targets, and cursor
+/// requests must be mapped, translated, clipped, or merged as one component result. That keeps
+/// aggregation useful without making it the default return type for every surface.
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{FrameSnapshot, Region, Regions};
+/// use ratatui_layout::frame::FrameSnapshot;
+/// use ratatui_layout::regions::{Region, Regions};
 ///
 /// let frame = FrameSnapshot::from_layout(Regions::from_regions(
 ///     Rect::new(0, 0, 10, 1),
@@ -238,7 +245,7 @@ pub mod virtualization {}
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::PointerTargets;
+/// use ratatui_layout::pointer::PointerTargets;
 ///
 /// let previous_mouse = PointerTargets::new()
 ///     .region("queue", Rect::new(0, 0, 20, 10))
@@ -252,7 +259,7 @@ pub mod virtualization {}
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::FrameSnapshot;
+/// use ratatui_layout::frame::FrameSnapshot;
 ///
 /// let frame = FrameSnapshot::new(Rect::new(0, 0, 20, 5))
 ///     .scroll_region("log-pane", Rect::new(0, 0, 20, 5));
@@ -261,9 +268,9 @@ pub mod virtualization {}
 /// ```
 ///
 /// The examples show both sides of this choice. `pointer_only_scroll_region` routes wheel input
-/// with only [`crate::PointerTargets`]. `component_frames` returns child [`crate::FrameSnapshot`]
-/// values because the parent needs to map ids, place children, clip hidden data, and merge cursor
-/// requests.
+/// with only [`crate::pointer::PointerTargets`]. `component_frames` returns child
+/// [`crate::frame::FrameSnapshot`] values because the parent needs to map ids, place children, clip
+/// hidden data, and merge cursor requests.
 ///
 /// # Future direction
 ///
@@ -282,16 +289,16 @@ pub mod frame_snapshots {}
 /// # Current behavior
 ///
 /// This crate does not change `ratatui-core` or `ratatui-widgets`. Existing widgets render into
-/// rectangles produced by these values. [`crate::LayoutParticipant`] is an experiment for measured,
-/// app-owned children, while [`crate::FrameSnapshot`] is an experiment for collecting coordination
-/// data after rendering.
+/// rectangles produced by these values. [`crate::participant::LayoutParticipant`] is an experiment
+/// for measured, app-owned children, while [`crate::frame::FrameSnapshot`] is an experiment for
+/// collecting coordination data after rendering.
 ///
 /// ```rust
 /// use ratatui_core::buffer::Buffer;
 /// use ratatui_core::layout::{Rect, Size};
-/// use ratatui_layout::{
-///     LayoutParticipant, MeasureConstraint, MeasureContext, ParticipantFn, RenderContext,
-///     SizeHint,
+/// use ratatui_layout::measure::{MeasureConstraint, SizeHint};
+/// use ratatui_layout::participant::{
+///     LayoutParticipant, MeasureContext, ParticipantFn, RenderContext,
 /// };
 ///
 /// let mut label = ParticipantFn::new(
@@ -347,9 +354,9 @@ pub mod widget_contracts {}
 /// 2. Show multiple common uses for core primitives.
 ///
 ///    The more primitive a type is, the more likely it supports several workflows. A core type like
-///    [`crate::Regions`] should explain at least a few uses: input routing, app-owned rendering,
-///    child composition, testing, diagnostics, or clipping. Narrow helper methods can stay shorter,
-///    but should still say when a caller would reach for them.
+///    [`crate::regions::Regions`] should explain at least a few uses: input routing, app-owned
+///    rendering, child composition, testing, diagnostics, or clipping. Narrow helper methods can
+///    stay shorter, but should still say when a caller would reach for them.
 ///
 /// 3. Couple uses to examples where possible.
 ///
@@ -366,9 +373,9 @@ pub mod widget_contracts {}
 ///
 ///    Most type pages should have a few examples that cover the workflows a reader is likely to
 ///    compare while browsing. More examples are useful for broad primitives such as
-///    [`crate::Regions`], [`crate::PointerTargets`], or [`crate::list::VirtualList`]. Fewer
-///    examples are enough for simple enums, field containers, or accessors when the surrounding
-///    type already explains the workflow.
+///    [`crate::regions::Regions`], [`crate::pointer::PointerTargets`], or
+///    [`crate::list::VirtualList`]. Fewer examples are enough for simple enums, field containers,
+///    or accessors when the surrounding type already explains the workflow.
 ///
 /// 5. Explain generic id choices at the right level.
 ///
@@ -380,8 +387,9 @@ pub mod widget_contracts {}
 /// 6. Explain ownership boundaries.
 ///
 ///    Every coordination type should say what it owns and what it deliberately does not own. For
-///    example, [`crate::PointerTargets`] owns visible pointer targets; [`crate::PointerState`] owns
-///    hover and press state; neither owns callbacks or backend events.
+///    example, [`crate::pointer::PointerTargets`] owns visible pointer targets;
+///    [`crate::pointer::PointerState`] owns hover and press state; neither owns callbacks or
+///    backend events.
 ///
 /// 7. Name the simpler Ratatui alternative.
 ///
@@ -397,9 +405,9 @@ pub mod widget_contracts {}
 /// 9. Keep related concepts navigable.
 ///
 ///    Related snapshot, state, target, and layout values should link to each other:
-///    [`crate::FrameSnapshot`] to its child values, [`crate::FocusTargets`] to
-///    [`crate::FocusState`], [`crate::PointerTargets`] to [`crate::PointerState`],
-///    [`crate::list::VirtualList`] to
+///    [`crate::frame::FrameSnapshot`] to its child values, [`crate::focus::FocusTargets`] to
+///    [`crate::focus::FocusState`], [`crate::pointer::PointerTargets`] to
+///    [`crate::pointer::PointerState`], [`crate::list::VirtualList`] to
 ///    [`crate::list::VirtualListState`] and [`crate::list::ListLayout`], and so on.
 ///
 /// 10. Provide scan-friendly API maps.

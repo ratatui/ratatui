@@ -6,21 +6,24 @@
 //! records those pointer-specific data without depending on crossterm, termion, or any other event
 //! backend.
 //!
-//! [`PointerTargets`] is the pointer counterpart to [`crate::regions::Regions`]. It records the
-//! visible regions that can receive pointer events during the current frame, while persistent
-//! pressed and hover state stays in [`PointerState`]. Use it when a previous render pass should
+//! [`PointerTargets`](crate::pointer::PointerTargets) is the pointer counterpart to
+//! [`crate::regions::Regions`]. It records the visible regions that can receive pointer events
+//! during the current frame, while persistent pressed and hover state stays in
+//! [`PointerState`](crate::pointer::PointerState). Use it when a previous render pass should
 //! route the next pointer event back to app-owned data.
 //!
 //! The module separates the pointer workflow into three levels:
 //!
-//! - [`PointerTarget`] names one rectangular region that can receive pointer input. It adds
-//!   pointer-specific data, such as disabled state and z-order, that a plain [`crate::Region`] does
-//!   not carry.
-//! - [`PointerTargets`] is rebuilt during rendering from the targets that are actually visible. It
-//!   can merge child values, translate child-local coordinates into parent coordinates, clip
-//!   targets to a viewport, and hit test terminal positions.
-//! - [`PointerState`] is application state that survives between events. It remembers hover and
-//!   press state so an app can distinguish a click from a press that was released somewhere else.
+//! - [`PointerTarget`](crate::pointer::PointerTarget) names one rectangular region that can receive
+//!   pointer input. It adds pointer-specific data, such as disabled state and z-order, that a plain
+//!   [`crate::regions::Region`] does not carry.
+//! - [`PointerTargets`](crate::pointer::PointerTargets) is rebuilt during rendering from the
+//!   targets that are actually visible. It can merge child values, translate child-local
+//!   coordinates into parent coordinates, clip targets to a viewport, and hit test terminal
+//!   positions.
+//! - [`PointerState`](crate::pointer::PointerState) is application state that survives between
+//!   events. It remembers hover and press state so an app can distinguish a click from a press that
+//!   was released somewhere else.
 //!
 //! This is enough for backend-agnostic routing without making the target set know about crossterm,
 //! termion, mouse buttons, or callbacks. The backend converts its event position into
@@ -29,10 +32,13 @@
 //!
 //! # Types
 //!
-//! - [`PointerTarget`] describes one pointer-sensitive rectangle.
-//! - [`PointerTargets`] stores the visible targets from one frame and performs hit testing.
-//! - [`PointerState`] stores hover and pressed ids across input events.
-//! - [`PointerPhase`] describes backend-agnostic hover, press, and release phases.
+//! - [`PointerTarget`](crate::pointer::PointerTarget) describes one pointer-sensitive rectangle.
+//! - [`PointerTargets`](crate::pointer::PointerTargets) stores the visible targets from one frame
+//!   and performs hit testing.
+//! - [`PointerState`](crate::pointer::PointerState) stores hover and pressed ids across input
+//!   events.
+//! - [`PointerPhase`](crate::pointer::PointerPhase) describes backend-agnostic hover, press, and
+//!   release phases.
 //!
 //! Normal Ratatui widgets remain the better tool when pointer input is not needed, or when the
 //! input can be handled by one known widget without hit testing a set of visible targets.
@@ -46,7 +52,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{PointerTarget, PointerTargets};
+//! use ratatui_layout::pointer::{PointerTarget, PointerTargets};
 //!
 //! let targets = PointerTargets::from_targets([
 //!     PointerTarget::new("content", Rect::new(0, 0, 10, 1)),
@@ -62,7 +68,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{PointerState, PointerTarget, PointerTargets};
+//! use ratatui_layout::pointer::{PointerState, PointerTarget, PointerTargets};
 //!
 //! let targets = PointerTargets::from_targets([
 //!     PointerTarget::new("left", Rect::new(0, 0, 5, 1)),
@@ -83,35 +89,43 @@ use crate::regions::{Hit, Region};
 
 /// A rectangular pointer target for app-owned content.
 ///
-/// [`PointerTarget`] exists so pointer routing can be described without depending on a terminal
-/// backend's event type. It owns only frame-local data: the app id, area, disabled state, and
-/// z-order. It does not store callbacks, widgets, or persistent hover/pressed state; that belongs
-/// in [`PointerState`].
+/// [`PointerTarget`](crate::pointer::PointerTarget) exists so pointer routing can be described
+/// without depending on a terminal backend's event type. It owns only frame-local data: the app id,
+/// area, disabled state, and z-order. It does not store callbacks, widgets, or persistent
+/// hover/pressed state; that belongs in [`PointerState`](crate::pointer::PointerState).
 ///
-/// Use a [`PointerTarget`] instead of relying only on [`crate::Region`] when a visible region has
-/// pointer-specific behavior: disabled state, different z-order, or an area that should accept
-/// pointer events even though it is not a render region.
+/// Use a [`PointerTarget`](crate::pointer::PointerTarget) instead of relying only on
+/// [`crate::regions::Region`] when a visible region has pointer-specific behavior: disabled state,
+/// different z-order, or an area that should accept pointer events even though it is not a render
+/// region.
 ///
 /// # Constructors and setters
 ///
-/// - [`PointerTarget::new`] creates an enabled target at z-order zero.
-/// - [`PointerTarget::from_region`] converts a [`Region`] when layout regions and pointer targets
-///   match.
-/// - [`PointerTarget::z`] changes hit-test priority for overlays or floating controls.
-/// - [`PointerTarget::disabled`] keeps a target visible while skipping real routing.
+/// - [`PointerTarget::new`](crate::pointer::PointerTarget::new) creates an enabled target at
+///   z-order zero.
+/// - [`PointerTarget::from_region`](crate::pointer::PointerTarget::from_region) converts a
+///   [`Region`](crate::regions::Region) when layout regions and pointer targets match.
+/// - [`PointerTarget::z`](crate::pointer::PointerTarget::z) changes hit-test priority for overlays
+///   or floating controls.
+/// - [`PointerTarget::disabled`](crate::pointer::PointerTarget::disabled) keeps a target visible
+///   while skipping real routing.
 ///
 /// # Geometry helpers
 ///
-/// - [`PointerTarget::contains`] checks whether a terminal position falls inside the target.
-/// - [`PointerTarget::local_position`] converts terminal coordinates into target-local coordinates.
-/// - [`PointerTarget::translate`] places a child-local target in parent coordinates.
-/// - [`PointerTarget::clip_to`] trims a target to a viewport and drops it when fully hidden.
+/// - [`PointerTarget::contains`](crate::pointer::PointerTarget::contains) checks whether a terminal
+///   position falls inside the target.
+/// - [`PointerTarget::local_position`](crate::pointer::PointerTarget::local_position) converts
+///   terminal coordinates into target-local coordinates.
+/// - [`PointerTarget::translate`](crate::pointer::PointerTarget::translate) places a child-local
+///   target in parent coordinates.
+/// - [`PointerTarget::clip_to`](crate::pointer::PointerTarget::clip_to) trims a target to a
+///   viewport and drops it when fully hidden.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::PointerTarget;
+/// use ratatui_layout::pointer::PointerTarget;
 ///
 /// let target = PointerTarget::new("save", Rect::new(10, 2, 8, 1)).z(2);
 ///
@@ -138,7 +152,7 @@ pub struct PointerTarget<Id = usize> {
     /// Whether pointer routing should skip this target.
     ///
     /// Disabled targets remain in the target set for diagnostics and stable structure, but
-    /// [`PointerTargets::hit_test`] ignores them.
+    /// [`PointerTargets::hit_test`](crate::pointer::PointerTargets::hit_test) ignores them.
     pub disabled: bool,
 }
 
@@ -153,7 +167,7 @@ impl<Id> PointerTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let plan =
     ///     PointerTargets::new().target(PointerTarget::new("save-button", Rect::new(10, 2, 6, 1)));
@@ -180,7 +194,7 @@ impl<Id> PointerTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([
     ///     PointerTarget::new("editor", Rect::new(0, 0, 20, 5)),
@@ -206,7 +220,7 @@ impl<Id> PointerTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([
     ///     PointerTarget::new("fallback", Rect::new(0, 0, 10, 1)),
@@ -226,8 +240,8 @@ impl<Id> PointerTarget<Id> {
     /// Creates a pointer target from a layout region.
     ///
     /// This is the quickest path when every rendered region is also interactive. The target copies
-    /// the region id, area, and z-order, but starts enabled because [`crate::Region`] has no
-    /// pointer disabled state.
+    /// the region id, area, and z-order, but starts enabled because [`crate::regions::Region`] has
+    /// no pointer disabled state.
     ///
     /// # Examples
     ///
@@ -235,7 +249,8 @@ impl<Id> PointerTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets, Region, Regions};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let layout = Regions::from_regions(
     ///     Rect::new(0, 0, 12, 1),
@@ -266,8 +281,10 @@ impl<Id> PointerTarget<Id> {
 
     /// Returns true when the target area contains the position.
     ///
-    /// This checks geometry only. It does not consider [`PointerTarget::disabled`]; use
-    /// [`PointerTargets::hit_test`] when routing real events.
+    /// This checks geometry only. It does not consider
+    /// [`PointerTarget::disabled`](crate::pointer::PointerTarget::disabled); use
+    /// [`PointerTargets::hit_test`](crate::pointer::PointerTargets::hit_test) when routing real
+    /// events.
     ///
     /// # Examples
     ///
@@ -275,7 +292,7 @@ impl<Id> PointerTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::PointerTarget;
+    /// use ratatui_layout::pointer::PointerTarget;
     ///
     /// let tab = PointerTarget::new("settings", Rect::new(8, 0, 10, 1)).disabled(true);
     ///
@@ -297,7 +314,7 @@ impl<Id> PointerTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Position, Rect};
-    /// use ratatui_layout::PointerTarget;
+    /// use ratatui_layout::pointer::PointerTarget;
     ///
     /// let row = PointerTarget::new("row-42", Rect::new(5, 10, 30, 1));
     ///
@@ -325,7 +342,7 @@ impl<Id> PointerTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::PointerTarget;
+    /// use ratatui_layout::pointer::PointerTarget;
     ///
     /// let local_button = PointerTarget::new("ok", Rect::new(0, 0, 4, 1));
     /// let placed = local_button.translate(10, 3);
@@ -348,7 +365,7 @@ impl<Id> PointerTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::PointerTarget;
+    /// use ratatui_layout::pointer::PointerTarget;
     ///
     /// let row = PointerTarget::new("row", Rect::new(0, 2, 20, 1));
     /// let visible = row.clip_to(Rect::new(4, 0, 8, 4)).unwrap();
@@ -364,42 +381,52 @@ impl<Id> PointerTarget<Id> {
 
 /// Pointer targets produced by one render pass.
 ///
-/// [`PointerTargets`] owns no application state and has no backend-specific event knowledge. Store
-/// it after rendering, then route the next event by converting its coordinates to a
-/// [`ratatui_core::layout::Position`].
+/// [`PointerTargets`](crate::pointer::PointerTargets) owns no application state and has no
+/// backend-specific event knowledge. Store it after rendering, then route the next event by
+/// converting its coordinates to a [`ratatui_core::layout::Position`].
 ///
 /// A target set is rebuilt every frame from visible targets. The app should keep long-lived
-/// interaction data, such as the target currently pressed, in [`PointerState`].
+/// interaction data, such as the target currently pressed, in
+/// [`PointerState`](crate::pointer::PointerState).
 ///
 /// # Constructors and builders
 ///
-/// - [`PointerTargets::new`] creates an empty target set for incremental construction.
-/// - [`PointerTargets::from_targets`] creates a target set from targets already collected during
-///   rendering.
-/// - [`PointerTargets::target`] appends one target in builder style.
-/// - [`PointerTargets::region`] appends a whole-region target, which is useful for scrollable pane
-///   backgrounds and blank viewport space.
-/// - [`PointerTargets::extend`] appends many targets to an existing target set.
-/// - [`PointerTargets::merge`] combines child values while preserving ordering.
+/// - [`PointerTargets::new`](crate::pointer::PointerTargets::new) creates an empty target set for
+///   incremental construction.
+/// - [`PointerTargets::from_targets`](crate::pointer::PointerTargets::from_targets) creates a
+///   target set from targets already collected during rendering.
+/// - [`PointerTargets::target`](crate::pointer::PointerTargets::target) appends one target in
+///   builder style.
+/// - [`PointerTargets::region`](crate::pointer::PointerTargets::region) appends a whole-region
+///   target, which is useful for scrollable pane backgrounds and blank viewport space.
+/// - [`PointerTargets::extend`](crate::pointer::PointerTargets::extend) appends many targets to an
+///   existing target set.
+/// - [`PointerTargets::merge`](crate::pointer::PointerTargets::merge) combines child values while
+///   preserving ordering.
 ///
 /// # Inspection and routing
 ///
-/// - [`PointerTargets::targets`] and [`PointerTargets::iter`] expose the visible targets for
+/// - [`PointerTargets::targets`](crate::pointer::PointerTargets::targets) and
+///   [`PointerTargets::iter`](crate::pointer::PointerTargets::iter) expose the visible targets for
 ///   diagnostics or derived state.
-/// - [`PointerTargets::hit_test`] routes a terminal position to the topmost enabled target and
-///   returns a [`crate::Hit`] with local coordinates.
+/// - [`PointerTargets::hit_test`](crate::pointer::PointerTargets::hit_test) routes a terminal
+///   position to the topmost enabled target and returns a [`crate::regions::Hit`] with local
+///   coordinates.
 ///
 /// # Composition
 ///
-/// - [`PointerTargets::map_id`] converts child ids into parent app ids.
-/// - [`PointerTargets::translate`] places child-local targets in parent coordinates.
-/// - [`PointerTargets::clip_to`] removes hidden target regions before storing targets for input.
+/// - [`PointerTargets::map_id`](crate::pointer::PointerTargets::map_id) converts child ids into
+///   parent app ids.
+/// - [`PointerTargets::translate`](crate::pointer::PointerTargets::translate) places child-local
+///   targets in parent coordinates.
+/// - [`PointerTargets::clip_to`](crate::pointer::PointerTargets::clip_to) removes hidden target
+///   regions before storing targets for input.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{PointerTarget, PointerTargets};
+/// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
 ///
 /// let local = PointerTargets::from_targets([PointerTarget::new(0, Rect::new(0, 0, 10, 1))]);
 /// let parent = local.translate(5, 2).map_id(|id| ("toolbar", id));
@@ -431,7 +458,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::new()
     ///     .target(PointerTarget::new("open", Rect::new(0, 0, 6, 1)))
@@ -456,7 +483,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let rendered_targets = vec![
     ///     PointerTarget::new("row-1", Rect::new(0, 0, 20, 1)),
@@ -482,7 +509,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let row_area = Rect::new(0, 3, 40, 1);
     /// let plan = PointerTargets::new().target(PointerTarget::new(3, row_area));
@@ -508,7 +535,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::PointerTargets;
+    /// use ratatui_layout::pointer::PointerTargets;
     ///
     /// let plan = PointerTargets::new().region("queue-pane", Rect::new(0, 0, 30, 10));
     ///
@@ -527,7 +554,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([
     ///     PointerTarget::new("open", Rect::new(0, 0, 4, 1)),
@@ -549,7 +576,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([
     ///     PointerTarget::new("enabled", Rect::new(0, 0, 8, 1)),
@@ -572,7 +599,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let mut plan =
     ///     PointerTargets::from_targets([PointerTarget::new("content", Rect::new(0, 0, 10, 3))]);
@@ -595,7 +622,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let list =
     ///     PointerTargets::from_targets([PointerTarget::new("list-row", Rect::new(0, 0, 20, 1))]);
@@ -621,7 +648,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum Region {
@@ -658,7 +685,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let child = PointerTargets::from_targets([PointerTarget::new("item", Rect::new(0, 0, 8, 1))]);
     /// let placed = child.translate(10, 4);
@@ -686,7 +713,7 @@ impl<Id> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([
     ///     PointerTarget::new("visible", Rect::new(0, 1, 10, 1)),
@@ -720,7 +747,7 @@ impl<Id: Copy> PointerTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([PointerTarget::new(
     ///     "status-command",
@@ -764,23 +791,25 @@ impl<'a, Id> IntoIterator for &'a PointerTargets<Id> {
 
 /// Backend-agnostic pointer event phase.
 ///
-/// [`PointerPhase`] is the small piece of event information that [`PointerState::route`] needs to
-/// update hover and press state. Terminal backends still own their full event types, button data,
-/// modifiers, drag policy, and scroll events. Convert only the phases that should use ordinary
-/// hover/press/release routing into this enum.
+/// [`PointerPhase`](crate::pointer::PointerPhase) is the small piece of event information that
+/// [`PointerState::route`](crate::pointer::PointerState::route) needs to update hover and press
+/// state. Terminal backends still own their full event types, button data, modifiers, drag policy,
+/// and scroll events. Convert only the phases that should use ordinary hover/press/release routing
+/// into this enum.
 ///
 /// # Variants
 ///
-/// - [`PointerPhase::Hover`] updates the hovered target.
-/// - [`PointerPhase::Press`] records the target where a click or drag began.
-/// - [`PointerPhase::Release`] clears the pressed target and returns a hit only when release lands
-///   on the same target.
+/// - [`PointerPhase::Hover`](crate::pointer::PointerPhase::Hover) updates the hovered target.
+/// - [`PointerPhase::Press`](crate::pointer::PointerPhase::Press) records the target where a click
+///   or drag began.
+/// - [`PointerPhase::Release`](crate::pointer::PointerPhase::Release) clears the pressed target and
+///   returns a hit only when release lands on the same target.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{PointerPhase, PointerState, PointerTarget, PointerTargets};
+/// use ratatui_layout::pointer::{PointerPhase, PointerState, PointerTarget, PointerTargets};
 ///
 /// let targets =
 ///     PointerTargets::from_targets([PointerTarget::new("button", Rect::new(0, 0, 8, 1))]);
@@ -809,29 +838,36 @@ pub enum PointerPhase {
 
 /// Persistent pointer state for an app or component.
 ///
-/// [`PointerState`] stores event-to-event data: the currently hovered target and the target that
-/// was pressed. It does not own target geometry; pair it with the current or previous
-/// [`PointerTargets`] to update that data from terminal coordinates.
+/// [`PointerState`](crate::pointer::PointerState) stores event-to-event data: the currently hovered
+/// target and the target that was pressed. It does not own target geometry; pair it with the
+/// current or previous [`PointerTargets`](crate::pointer::PointerTargets) to update that data from
+/// terminal coordinates.
 ///
 /// The state is intentionally small because different backends report different event details. Apps
 /// can keep backend-specific button, modifier, or drag information next to this state when needed.
 ///
 /// # Accessors and updates
 ///
-/// - [`PointerState::hovered`] returns the id most recently hit by hover, press, or release.
-/// - [`PointerState::pressed`] returns the id where the current press began.
-/// - [`PointerState::clear`] resets state when a view closes or the pointer leaves the terminal.
-/// - [`PointerState::hover`] updates hover from a [`PointerTargets`] and terminal position.
-/// - [`PointerState::press`] records where a click or drag began.
-/// - [`PointerState::release`] clears the press and returns a hit only when press and release
-///   match.
-/// - [`PointerState::route`] applies a backend-agnostic [`PointerPhase`] to the state.
+/// - [`PointerState::hovered`](crate::pointer::PointerState::hovered) returns the id most recently
+///   hit by hover, press, or release.
+/// - [`PointerState::pressed`](crate::pointer::PointerState::pressed) returns the id where the
+///   current press began.
+/// - [`PointerState::clear`](crate::pointer::PointerState::clear) resets state when a view closes
+///   or the pointer leaves the terminal.
+/// - [`PointerState::hover`](crate::pointer::PointerState::hover) updates hover from a
+///   [`PointerTargets`](crate::pointer::PointerTargets) and terminal position.
+/// - [`PointerState::press`](crate::pointer::PointerState::press) records where a click or drag
+///   began.
+/// - [`PointerState::release`](crate::pointer::PointerState::release) clears the press and returns
+///   a hit only when press and release match.
+/// - [`PointerState::route`](crate::pointer::PointerState::route) applies a backend-agnostic
+///   [`PointerPhase`](crate::pointer::PointerPhase) to the state.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{PointerState, PointerTarget, PointerTargets};
+/// use ratatui_layout::pointer::{PointerState, PointerTarget, PointerTargets};
 ///
 /// let targets =
 ///     PointerTargets::from_targets([PointerTarget::new("button", Rect::new(0, 0, 6, 1))]);
@@ -859,8 +895,9 @@ impl<Id> Default for PointerState<Id> {
 impl<Id> PointerState<Id> {
     /// Returns the currently hovered target id.
     ///
-    /// This is updated by [`PointerState::hover`], [`PointerState::press`], and
-    /// [`PointerState::release`].
+    /// This is updated by [`PointerState::hover`](crate::pointer::PointerState::hover),
+    /// [`PointerState::press`](crate::pointer::PointerState::press), and
+    /// [`PointerState::release`](crate::pointer::PointerState::release).
     ///
     /// # Examples
     ///
@@ -868,7 +905,7 @@ impl<Id> PointerState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerState, PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerState, PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([PointerTarget::new("delete", Rect::new(0, 0, 8, 1))]);
     /// let mut mouse = PointerState::default();
@@ -893,7 +930,7 @@ impl<Id> PointerState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerState, PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerState, PointerTarget, PointerTargets};
     ///
     /// let plan =
     ///     PointerTargets::from_targets([PointerTarget::new("drag-handle", Rect::new(0, 0, 4, 1))]);
@@ -920,7 +957,7 @@ impl<Id> PointerState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerState, PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerState, PointerTarget, PointerTargets};
     ///
     /// let plan =
     ///     PointerTargets::from_targets([PointerTarget::new("popup-ok", Rect::new(0, 0, 8, 1))]);
@@ -941,9 +978,10 @@ impl<Id> PointerState<Id> {
 impl<Id: Copy + Eq> PointerState<Id> {
     /// Routes a backend-agnostic pointer phase through a pointer target collection.
     ///
-    /// Use this after converting a terminal backend event into [`PointerPhase`] plus terminal
-    /// coordinates. The method centralizes the ordinary hover, press, and release state transitions
-    /// while leaving scroll, drag, buttons, and modifiers to the application.
+    /// Use this after converting a terminal backend event into
+    /// [`PointerPhase`](crate::pointer::PointerPhase) plus terminal coordinates. The method
+    /// centralizes the ordinary hover, press, and release state transitions while leaving
+    /// scroll, drag, buttons, and modifiers to the application.
     ///
     /// # Examples
     ///
@@ -951,7 +989,7 @@ impl<Id: Copy + Eq> PointerState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerPhase, PointerState, PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerPhase, PointerState, PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([
     ///     PointerTarget::new("open", Rect::new(0, 0, 6, 1)),
@@ -992,7 +1030,7 @@ impl<Id: Copy + Eq> PointerState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerState, PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerState, PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([
     ///     PointerTarget::new("row-0", Rect::new(0, 0, 20, 1)),
@@ -1017,8 +1055,8 @@ impl<Id: Copy + Eq> PointerState<Id> {
 
     /// Records a press from a position and returns the hit target.
     ///
-    /// The pressed id is stored so [`PointerState::release`] can distinguish a click from a press
-    /// that moved to another target before release.
+    /// The pressed id is stored so [`PointerState::release`](crate::pointer::PointerState::release)
+    /// can distinguish a click from a press that moved to another target before release.
     ///
     /// # Examples
     ///
@@ -1026,7 +1064,7 @@ impl<Id: Copy + Eq> PointerState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerState, PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerState, PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([PointerTarget::new("save", Rect::new(0, 0, 6, 1))]);
     /// let mut mouse = PointerState::default();
@@ -1052,7 +1090,7 @@ impl<Id: Copy + Eq> PointerState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{PointerState, PointerTarget, PointerTargets};
+    /// use ratatui_layout::pointer::{PointerState, PointerTarget, PointerTargets};
     ///
     /// let plan = PointerTargets::from_targets([
     ///     PointerTarget::new("open", Rect::new(0, 0, 6, 1)),

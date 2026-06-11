@@ -1,19 +1,22 @@
 //! Scrollable pane coordination.
 //!
 //! A pane often needs to scroll even when the pointer is over blank space below the last visible
-//! row. [`ScrollablePane`] solves that small but common problem: it computes scroll metrics for a
-//! viewport and creates a whole-pane pointer target for wheel routing. Rendering remains app-owned.
+//! row. [`ScrollablePane`](crate::pane::ScrollablePane) solves that small but common problem: it
+//! computes scroll metrics for a viewport and creates a whole-pane pointer target for wheel
+//! routing. Rendering remains app-owned.
 //!
 //! # Types
 //!
-//! - [`ScrollablePane`] stores the pane id and optional status-line reservation.
-//! - [`ScrollablePaneLayout`] exposes the content area, optional status area, metrics, and frame.
+//! - [`ScrollablePane`](crate::pane::ScrollablePane) stores the pane id and optional status-line
+//!   reservation.
+//! - [`ScrollablePaneLayout`](crate::pane::ScrollablePaneLayout) exposes the content area, optional
+//!   status area, metrics, and frame.
 //!
 //! # Examples
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::ScrollablePane;
+//! use ratatui_layout::pane::ScrollablePane;
 //!
 //! let layout =
 //!     ScrollablePane::new("log")
@@ -33,8 +36,9 @@ use crate::scroll::ScrollMetrics;
 
 /// Pointer and metrics policy for one scrollable pane.
 ///
-/// [`ScrollablePane`] does not know what content is drawn. It only records which id should receive
-/// wheel events across the pane and how a logical content length maps into the visible viewport.
+/// [`ScrollablePane`](crate::pane::ScrollablePane) does not know what content is drawn. It only
+/// records which id should receive wheel events across the pane and how a logical content length
+/// maps into the visible viewport.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ScrollablePane<Id = usize> {
     id: Id,
@@ -71,7 +75,8 @@ impl<Id> ScrollablePane<Id> {
     /// Computes scroll metrics and a whole-pane pointer target.
     ///
     /// `content_length` is the logical number of rows or records, and `offset` is the desired
-    /// starting index. The returned [`ScrollMetrics`] clamps the offset to the visible range.
+    /// starting index. The returned [`ScrollMetrics`](crate::scroll::ScrollMetrics) clamps the
+    /// offset to the visible range.
     pub fn layout(
         self,
         area: Rect,

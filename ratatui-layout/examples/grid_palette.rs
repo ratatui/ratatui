@@ -9,10 +9,10 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{
-    FocusFallback, FocusState, FocusTargets, Grid, GridPosition, PointerPhase, PointerState,
-    PointerTarget, PointerTargets, SelectionMode, SelectionState,
-};
+use ratatui_layout::focus::{FocusFallback, FocusState, FocusTargets};
+use ratatui_layout::grid::{Grid, GridPosition};
+use ratatui_layout::pointer::{PointerPhase, PointerState, PointerTarget, PointerTargets};
+use ratatui_layout::selection::{SelectionMode, SelectionState};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

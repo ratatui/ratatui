@@ -14,7 +14,7 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{PointerPhase, PointerState, PointerTarget, PointerTargets};
+use ratatui_layout::pointer::{PointerPhase, PointerState, PointerTarget, PointerTargets};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

@@ -10,7 +10,7 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::Paragraph;
-use ratatui_layout::Row;
+use ratatui_layout::linear::Row;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

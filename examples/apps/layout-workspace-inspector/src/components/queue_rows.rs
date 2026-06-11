@@ -2,7 +2,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Paragraph, Widget};
-use ratatui_layout::{CellPosition, TableCellContext, TableItems};
+use ratatui_layout::table::{CellPosition, TableCellContext, TableItems};
 
 use crate::domain::ReleaseItem;
 

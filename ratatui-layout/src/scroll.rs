@@ -1,9 +1,9 @@
 //! Scroll metrics for app-owned scrollbars and status displays.
 //!
-//! Layout primitives such as [`crate::Viewport`] and [`crate::list::VirtualList`] expose content
-//! length and offset, but applications often need the same derived scrollbar values.
-//! [`ScrollMetrics`] keeps that math in one inspectable value without making this crate render a
-//! scrollbar widget.
+//! Layout primitives such as [`crate::viewport::Viewport`] and [`crate::list::VirtualList`] expose
+//! content length and offset, but applications often need the same derived scrollbar values.
+//! [`ScrollMetrics`](crate::scroll::ScrollMetrics) keeps that math in one inspectable value without
+//! making this crate render a scrollbar widget.
 //!
 //! Use a fixed status string or no scrollbar at all when the content always fits. Use this module
 //! when the app renders its own scrollbar, minimap, or scroll status from frame-local viewport
@@ -11,8 +11,8 @@
 //!
 //! # Type
 //!
-//! - [`ScrollMetrics`] stores one-axis content length, viewport length, clamped offset, maximum
-//!   offset, and scrollbar thumb geometry.
+//! - [`ScrollMetrics`](crate::scroll::ScrollMetrics) stores one-axis content length, viewport
+//!   length, clamped offset, maximum offset, and scrollbar thumb geometry.
 //!
 //! See [`crate::docs::virtualization`] for how scroll metrics fit with viewports, virtual lists,
 //! and virtual tables.
@@ -25,7 +25,8 @@
 //! use ratatui_core::buffer::Buffer;
 //! use ratatui_core::layout::Rect;
 //! use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
-//! use ratatui_layout::{MeasureContext, ScrollMetrics};
+//! use ratatui_layout::participant::MeasureContext;
+//! use ratatui_layout::scroll::ScrollMetrics;
 //!
 //! struct Rows;
 //! impl ListItems for Rows {
@@ -54,27 +55,31 @@ use crate::viewport::ViewportLayout;
 
 /// Derived scrollbar geometry for one scroll axis.
 ///
-/// Use [`ScrollMetrics`] when an app-owned scrollbar, minimap, or status line needs to describe a
-/// scroll position. It stores the full logical content length, visible viewport length, current
-/// offset, and the thumb range within the viewport.
+/// Use [`ScrollMetrics`](crate::scroll::ScrollMetrics) when an app-owned scrollbar, minimap, or
+/// status line needs to describe a scroll position. It stores the full logical content length,
+/// visible viewport length, current offset, and the thumb range within the viewport.
 ///
 /// # Constructors
 ///
-/// - [`ScrollMetrics::new`] computes metrics directly for one scroll axis.
-/// - [`ScrollMetrics::from_list`] derives vertical metrics from a [`ListLayout`].
-/// - [`ScrollMetrics::horizontal`] and [`ScrollMetrics::vertical`] derive metrics from a
-///   [`ViewportLayout`].
+/// - [`ScrollMetrics::new`](crate::scroll::ScrollMetrics::new) computes metrics directly for one
+///   scroll axis.
+/// - [`ScrollMetrics::from_list`](crate::scroll::ScrollMetrics::from_list) derives vertical metrics
+///   from a [`ListLayout`].
+/// - [`ScrollMetrics::horizontal`](crate::scroll::ScrollMetrics::horizontal) and
+///   [`ScrollMetrics::vertical`](crate::scroll::ScrollMetrics::vertical) derive metrics from a
+///   [`ViewportLayout`](crate::viewport::ViewportLayout).
 ///
 /// # Inspection
 ///
-/// - [`ScrollMetrics::fits`] reports whether the content fits without scrolling.
-/// - [`ScrollMetrics::visible_range`] returns the clamped content indexes visible in a simple
-///   fixed-height pane.
+/// - [`ScrollMetrics::fits`](crate::scroll::ScrollMetrics::fits) reports whether the content fits
+///   without scrolling.
+/// - [`ScrollMetrics::visible_range`](crate::scroll::ScrollMetrics::visible_range) returns the
+///   clamped content indexes visible in a simple fixed-height pane.
 ///
 /// # Examples
 ///
 /// ```rust
-/// use ratatui_layout::ScrollMetrics;
+/// use ratatui_layout::scroll::ScrollMetrics;
 ///
 /// let metrics = ScrollMetrics::new(100, 10, 30);
 ///
@@ -112,7 +117,7 @@ impl ScrollMetrics {
     /// Compute the scrollbar thumb for a list with more rows than the viewport can show:
     ///
     /// ```rust
-    /// use ratatui_layout::ScrollMetrics;
+    /// use ratatui_layout::scroll::ScrollMetrics;
     ///
     /// let metrics = ScrollMetrics::new(50, 10, 15);
     ///
@@ -144,7 +149,7 @@ impl ScrollMetrics {
     /// Hide scrollbar chrome when all content is visible:
     ///
     /// ```rust
-    /// use ratatui_layout::ScrollMetrics;
+    /// use ratatui_layout::scroll::ScrollMetrics;
     ///
     /// let metrics = ScrollMetrics::new(5, 10, 0);
     ///
@@ -165,7 +170,7 @@ impl ScrollMetrics {
     /// Render the lines visible in a simple scroll pane:
     ///
     /// ```rust
-    /// use ratatui_layout::ScrollMetrics;
+    /// use ratatui_layout::scroll::ScrollMetrics;
     ///
     /// let rows = ["zero", "one", "two", "three", "four"];
     /// let metrics = ScrollMetrics::new(rows.len() as u32, 2, 3);
@@ -197,7 +202,8 @@ impl ScrollMetrics {
     /// use ratatui_layout::list::{
     ///     ListItemContext, ListItems, ScrollPosition, VirtualList, VirtualListState,
     /// };
-    /// use ratatui_layout::{MeasureContext, ScrollMetrics};
+    /// use ratatui_layout::participant::MeasureContext;
+    /// use ratatui_layout::scroll::ScrollMetrics;
     ///
     /// struct Rows;
     /// impl ListItems for Rows {
@@ -234,7 +240,8 @@ impl ScrollMetrics {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Position, Rect, Size};
-    /// use ratatui_layout::{ScrollMetrics, Viewport, ViewportState};
+    /// use ratatui_layout::scroll::ScrollMetrics;
+    /// use ratatui_layout::viewport::{Viewport, ViewportState};
     ///
     /// let mut state = ViewportState::new(Position::new(20, 0));
     /// let layout = Viewport::new(Size::new(100, 10)).layout(Rect::new(0, 0, 20, 5), &mut state);
@@ -260,7 +267,8 @@ impl ScrollMetrics {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Position, Rect, Size};
-    /// use ratatui_layout::{ScrollMetrics, Viewport, ViewportState};
+    /// use ratatui_layout::scroll::ScrollMetrics;
+    /// use ratatui_layout::viewport::{Viewport, ViewportState};
     ///
     /// let mut state = ViewportState::new(Position::new(0, 30));
     /// let layout = Viewport::new(Size::new(20, 100)).layout(Rect::new(0, 0, 20, 10), &mut state);

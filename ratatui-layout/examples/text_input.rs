@@ -12,7 +12,8 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{FrameSnapshot, TextEdit, TextInput, TextInputLayout, TextInputState};
+use ratatui_layout::frame::FrameSnapshot;
+use ratatui_layout::text_input::{TextEdit, TextInput, TextInputLayout, TextInputState};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

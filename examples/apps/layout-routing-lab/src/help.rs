@@ -5,7 +5,7 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
-use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
 
 use crate::route::{FocusScope, RouteMap, Target};
 

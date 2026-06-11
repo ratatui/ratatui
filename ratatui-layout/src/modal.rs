@@ -2,19 +2,23 @@
 //!
 //! Dialog-like overlays usually need three pieces before any field-specific code runs: a centered
 //! outer area, an inner content area, and an optional backdrop target that can route clicks outside
-//! the dialog. [`ModalShell`] provides those pieces without rendering a border, dimming the
-//! background, owning fields, or deciding whether outside clicks dismiss the dialog.
+//! the dialog. [`ModalShell`](crate::modal::ModalShell) provides those pieces without rendering a
+//! border, dimming the background, owning fields, or deciding whether outside clicks dismiss the
+//! dialog.
 //!
 //! # Types
 //!
-//! - [`ModalShell`] stores size, padding, z-order, and optional backdrop id.
-//! - [`ModalLayout`] exposes the solved outer, inner, and backdrop areas plus frame-local routing.
+//! - [`ModalShell`](crate::modal::ModalShell) stores size, padding, z-order, and optional backdrop
+//!   id.
+//! - [`ModalLayout`](crate::modal::ModalLayout) exposes the solved outer, inner, and backdrop areas
+//!   plus frame-local routing.
 //!
 //! # Examples
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{ModalShell, Padding};
+//! use ratatui_layout::container::Padding;
+//! use ratatui_layout::modal::ModalShell;
 //!
 //! let layout = ModalShell::new(20, 5)
 //!     .padding(Padding::all(1))
@@ -34,9 +38,10 @@ use crate::pointer::{PointerTarget, PointerTargets};
 
 /// Geometry policy for a centered modal surface.
 ///
-/// [`ModalShell`] owns only the overlay shell: desired size, padding, z-order, and optional
-/// backdrop routing. Child forms, command rows, focus state, validation, and rendering remain
-/// app-owned. Use the returned [`ModalLayout::inner`] as the area for the dialog contents.
+/// [`ModalShell`](crate::modal::ModalShell) owns only the overlay shell: desired size, padding,
+/// z-order, and optional backdrop routing. Child forms, command rows, focus state, validation, and
+/// rendering remain app-owned. Use the returned
+/// [`ModalLayout::inner`](crate::modal::ModalLayout::inner) as the area for the dialog contents.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ModalShell<Id = usize> {
     width: u16,
@@ -49,7 +54,8 @@ pub struct ModalShell<Id = usize> {
 impl ModalShell {
     /// Creates a modal shell with a desired width and height.
     ///
-    /// The actual area is clamped by the screen area passed to [`ModalShell::layout`].
+    /// The actual area is clamped by the screen area passed to
+    /// [`ModalShell::layout`](crate::modal::ModalShell::layout).
     pub const fn new(width: u16, height: u16) -> Self {
         Self {
             width,
@@ -121,8 +127,9 @@ impl<Id> ModalShell<Id> {
 
 /// Solved modal geometry for one frame.
 ///
-/// Render the modal border or block into [`ModalLayout::outer`], render dialog contents into
-/// [`ModalLayout::inner`], and store or merge [`ModalLayout::frame`] so the next pointer event can
+/// Render the modal border or block into [`ModalLayout::outer`](crate::modal::ModalLayout::outer),
+/// render dialog contents into [`ModalLayout::inner`](crate::modal::ModalLayout::inner), and store
+/// or merge [`ModalLayout::frame`](crate::modal::ModalLayout::frame) so the next pointer event can
 /// distinguish outside clicks from dialog controls.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ModalLayout<Id = usize> {
@@ -185,7 +192,7 @@ mod tests {
     use ratatui_core::layout::Rect;
 
     use super::ModalShell;
-    use crate::Padding;
+    use crate::container::Padding;
 
     #[test]
     fn modal_centers_and_applies_padding() {

@@ -9,10 +9,11 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
-use ratatui_layout::{
-    CursorRequests, FocusFallback, FocusState, FocusTarget, FocusTargets, Overlay, Region,
-    TextFieldState,
-};
+use ratatui_layout::cursor::CursorRequests;
+use ratatui_layout::focus::{FocusFallback, FocusState, FocusTarget, FocusTargets};
+use ratatui_layout::input::TextFieldState;
+use ratatui_layout::overlay::Overlay;
+use ratatui_layout::regions::{Region, Regions};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -145,13 +146,7 @@ impl App {
         }
     }
 
-    fn render_field(
-        &self,
-        frame: &mut Frame,
-        plan: &ratatui_layout::Regions<Field>,
-        field: Field,
-        label: &str,
-    ) {
+    fn render_field(&self, frame: &mut Frame, plan: &Regions<Field>, field: Field, label: &str) {
         let area = plan
             .regions()
             .iter()
@@ -167,7 +162,7 @@ impl App {
         frame.render_widget(Paragraph::new(text).style(style), area);
     }
 
-    fn place_cursor(&self, frame: &mut Frame, plan: &ratatui_layout::Regions<Field>) {
+    fn place_cursor(&self, frame: &mut Frame, plan: &Regions<Field>) {
         let Some(field) = self.focus.focused() else {
             return;
         };
@@ -185,7 +180,7 @@ impl App {
         }
     }
 
-    fn focus_plan(plan: &ratatui_layout::Regions<Field>) -> FocusTargets<Field> {
+    fn focus_plan(plan: &Regions<Field>) -> FocusTargets<Field> {
         FocusTargets::from_regions(plan.regions().iter().copied())
     }
 

@@ -7,16 +7,19 @@
 //!
 //! # Types
 //!
-//! - [`TextEdit`] is a rendering-agnostic edit command.
-//! - [`TextInputState`] owns the persistent cursor state for one editable string.
-//! - [`TextInput`] describes the current frame's target id, prefix width, focus order, and z-order.
-//! - [`TextInputLayout`] exposes the field area, editable area, cursor request, and frame snapshot.
+//! - [`TextEdit`](crate::text_input::TextEdit) is a rendering-agnostic edit command.
+//! - [`TextInputState`](crate::text_input::TextInputState) owns the persistent cursor state for one
+//!   editable string.
+//! - [`TextInput`](crate::text_input::TextInput) describes the current frame's target id, prefix
+//!   width, focus order, and z-order.
+//! - [`TextInputLayout`](crate::text_input::TextInputLayout) exposes the field area, editable area,
+//!   cursor request, and frame snapshot.
 //!
 //! # Examples
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{TextEdit, TextInput, TextInputState};
+//! use ratatui_layout::text_input::{TextEdit, TextInput, TextInputState};
 //!
 //! let mut value = String::from("ops");
 //! let mut state = TextInputState::at_end(&value);
@@ -33,15 +36,16 @@ use alloc::string::String;
 
 use ratatui_core::layout::{Position, Rect};
 
-use crate::cursor::CursorRequests;
+use crate::cursor::{CursorRequest, CursorRequests};
 use crate::frame::{FrameSnapshot, FrameTargets};
 use crate::input::TextFieldState;
 
-/// Edit command understood by [`TextInputState`].
+/// Edit command understood by [`TextInputState`](crate::text_input::TextInputState).
 ///
 /// This enum is deliberately backend-agnostic. An app maps crossterm, termwiz, or custom key
-/// events into these commands, then calls [`TextInputState::apply`] to mutate the string and cursor
-/// together.
+/// events into these commands, then calls
+/// [`TextInputState::apply`](crate::text_input::TextInputState::apply) to mutate the string and
+/// cursor together.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum TextEdit {
     /// Insert one character at the cursor.
@@ -62,8 +66,9 @@ pub enum TextEdit {
 
 /// Persistent cursor state for one editable string.
 ///
-/// [`TextInputState`] wraps [`TextFieldState`] with a command-level API. The app still owns the
-/// text value so validation, persistence, undo, and domain conversion stay in application code.
+/// [`TextInputState`](crate::text_input::TextInputState) wraps
+/// [`TextFieldState`](crate::input::TextFieldState) with a command-level API. The app still owns
+/// the text value so validation, persistence, undo, and domain conversion stay in application code.
 /// Store one state per editable value.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -91,7 +96,7 @@ impl TextInputState {
     /// Returns the underlying cursor state.
     ///
     /// Use this when interoperating with lower-level helpers that already accept
-    /// [`TextFieldState`].
+    /// [`TextFieldState`](crate::input::TextFieldState).
     pub const fn field(&self) -> &TextFieldState {
         &self.field
     }
@@ -136,9 +141,9 @@ impl TextInputState {
 
 /// Frame-local layout policy for a single-line text input.
 ///
-/// [`TextInput`] identifies the field, reserves optional prefix columns for a label, and produces
-/// focus, pointer, and cursor data for the current frame. It does not render the label or text and
-/// does not own the edited string.
+/// [`TextInput`](crate::text_input::TextInput) identifies the field, reserves optional prefix
+/// columns for a label, and produces focus, pointer, and cursor data for the current frame. It does
+/// not render the label or text and does not own the edited string.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct TextInput<Id = usize> {
     id: Id,
@@ -214,17 +219,18 @@ impl<Id> TextInput<Id> {
     }
 }
 
-/// Solved frame-local data for one [`TextInput`].
+/// Solved frame-local data for one [`TextInput`](crate::text_input::TextInput).
 ///
-/// Use this value to render text into [`TextInputLayout::edit_area`], store
-/// [`TextInputLayout::frame`] for routing, place the terminal cursor, and map pointer positions
-/// back to cursor indexes.
+/// Use this value to render text into
+/// [`TextInputLayout::edit_area`](crate::text_input::TextInputLayout::edit_area), store
+/// [`TextInputLayout::frame`](crate::text_input::TextInputLayout::frame) for routing, place the
+/// terminal cursor, and map pointer positions back to cursor indexes.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TextInputLayout<Id = usize> {
     id: Id,
     area: Rect,
     edit_area: Rect,
-    cursor_request: crate::CursorRequest,
+    cursor_request: CursorRequest,
     frame: FrameSnapshot<Id>,
 }
 
@@ -248,7 +254,7 @@ impl<Id> TextInputLayout<Id> {
     ///
     /// The request is available even when the field is not focused. Only focused layouts add it to
     /// the returned frame snapshot.
-    pub const fn cursor_request(&self) -> &crate::CursorRequest {
+    pub const fn cursor_request(&self) -> &CursorRequest {
         &self.cursor_request
     }
 

@@ -3,19 +3,23 @@
 //! [`crate::list::VirtualList`] works in source indexes because measurement and rendering need to
 //! ask an app-owned collection for item `n`. Real apps often want selection and input routing to
 //! use stable record ids instead, especially when rows can be filtered, sorted, inserted, or
-//! removed. [`VirtualRecordList`] bridges those two identities.
+//! removed. [`VirtualRecordList`](crate::record_list::VirtualRecordList) bridges those two
+//! identities.
 //!
 //! # Types
 //!
-//! - [`VirtualRecordListState`] stores index-based list state plus durable-id selection.
-//! - [`VirtualRecordList`] computes or renders a list and produces durable-id row regions.
-//! - [`VirtualRecordListLayout`] exposes the underlying list layout and durable row regions.
+//! - [`VirtualRecordListState`](crate::record_list::VirtualRecordListState) stores index-based list
+//!   state plus durable-id selection.
+//! - [`VirtualRecordList`](crate::record_list::VirtualRecordList) computes or renders a list and
+//!   produces durable-id row regions.
+//! - [`VirtualRecordListLayout`](crate::record_list::VirtualRecordListLayout) exposes the
+//!   underlying list layout and durable row regions.
 //!
 //! # Examples
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::VirtualRecordListState;
+//! use ratatui_layout::record_list::VirtualRecordListState;
 //!
 //! let ids = ["api", "worker", "docs"];
 //! let mut state = VirtualRecordListState::new();
@@ -33,12 +37,13 @@ use crate::list::{ListItems, ListLayout, VirtualList, VirtualListState};
 use crate::regions::{Hit, Regions};
 use crate::selection::VisibleSelection;
 
-/// Persistent state for a [`VirtualRecordList`].
+/// Persistent state for a [`VirtualRecordList`](crate::record_list::VirtualRecordList).
 ///
 /// The state keeps two related views of selection:
 ///
 /// - [`VirtualListState`] stores the source index needed by measurement and rendering.
-/// - [`VisibleSelection`] stores the durable record id used by application commands.
+/// - [`VisibleSelection`](crate::selection::VisibleSelection) stores the durable record id used by
+///   application commands.
 ///
 /// Keep this state beside the app collection and pass the current ordered id slice on each input or
 /// render pass. The adapter repairs stale ids and indexes against that slice.
@@ -211,10 +216,11 @@ impl VirtualRecordList {
     }
 }
 
-/// Solved output for a [`VirtualRecordList`] pass.
+/// Solved output for a [`VirtualRecordList`](crate::record_list::VirtualRecordList) pass.
 ///
 /// The underlying [`ListLayout`] remains available for scroll metrics and visible-row metadata.
-/// [`VirtualRecordListLayout::regions`] gives pointer and hit-test code durable record ids.
+/// [`VirtualRecordListLayout::regions`](crate::record_list::VirtualRecordListLayout::regions) gives
+/// pointer and hit-test code durable record ids.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct VirtualRecordListLayout<Id = usize> {
     layout: ListLayout,
@@ -272,8 +278,8 @@ mod tests {
     use ratatui_core::layout::Rect;
 
     use super::{VirtualRecordList, VirtualRecordListState};
-    use crate::MeasureContext;
     use crate::list::{ListItemContext, ListItems};
+    use crate::participant::MeasureContext;
 
     struct Rows(usize);
 

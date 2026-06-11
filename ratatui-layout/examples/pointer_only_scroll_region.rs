@@ -13,7 +13,8 @@ use crossterm::execute;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{PointerTargets, ScrollMetrics};
+use ratatui_layout::pointer::PointerTargets;
+use ratatui_layout::scroll::ScrollMetrics;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

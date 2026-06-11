@@ -64,8 +64,8 @@
 //! use ratatui_core::layout::Rect;
 //! use ratatui_core::text::Line;
 //! use ratatui_core::widgets::Widget;
-//! use ratatui_layout::MeasureContext;
 //! use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
+//! use ratatui_layout::participant::MeasureContext;
 //!
 //! struct Rows(&'static [&'static str]);
 //!
@@ -505,8 +505,8 @@ impl VirtualListState {
 /// use ratatui_core::layout::Rect;
 /// use ratatui_core::text::Line;
 /// use ratatui_core::widgets::Widget;
-/// use ratatui_layout::MeasureContext;
 /// use ratatui_layout::list::{ListItemContext, ListItems};
+/// use ratatui_layout::participant::MeasureContext;
 ///
 /// struct Rows(&'static [&'static str]);
 ///
@@ -536,8 +536,8 @@ pub trait ListItems {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItemContext, ListItems};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows(&'static [&'static str]);
     ///
@@ -564,8 +564,8 @@ pub trait ListItems {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItemContext, ListItems};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows;
     ///
@@ -597,8 +597,8 @@ pub trait ListItems {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItemContext, ListItems};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows(&'static [&'static str]);
     ///
@@ -631,8 +631,8 @@ pub trait ListItems {
     /// use ratatui_core::layout::Rect;
     /// use ratatui_core::text::Line;
     /// use ratatui_core::widgets::Widget;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItemContext, ListItems};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows(&'static [&'static str]);
     ///
@@ -682,8 +682,8 @@ pub trait ListItems {
 /// ```rust
 /// use ratatui_core::buffer::Buffer;
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::MeasureContext;
 /// use ratatui_layout::list::{ListItems, ListItemsFn, VirtualList, VirtualListState};
+/// use ratatui_layout::participant::MeasureContext;
 ///
 /// let rows = ["open", "save", "close"];
 /// let mut items = ListItemsFn::new(
@@ -717,8 +717,8 @@ impl<L, H, R> ListItemsFn<L, H, R> {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItems, ListItemsFn};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// let rows = ["open", "save"];
     /// let items = ListItemsFn::new(
@@ -763,8 +763,8 @@ where
 /// assigned area. It tells the row whether it is selected, which visible row it is, and whether it
 /// was clipped by the viewport.
 ///
-/// [`ListItemContext`] combines common [`RenderContext`] state with list-specific metadata. It is
-/// passed only to visible items during rendering.
+/// [`ListItemContext`] combines common [`RenderContext`](crate::participant::RenderContext) state
+/// with list-specific metadata. It is passed only to visible items during rendering.
 ///
 /// # Fields
 ///
@@ -780,8 +780,8 @@ where
 /// Use context fields together to render selected and clipped rows differently:
 ///
 /// ```rust
-/// use ratatui_layout::RenderContext;
 /// use ratatui_layout::list::ListItemContext;
+/// use ratatui_layout::participant::RenderContext;
 ///
 /// let context = ListItemContext {
 ///     render: RenderContext::selected(true),
@@ -925,10 +925,12 @@ impl VisibleItem {
 /// - [`ListLayout::visible_items`] is the ordered list of visible row slices.
 /// - [`ListLayout::selected`] is the selected row when it is visible.
 /// - [`ListLayout::visible_indices`] returns only the visible source row indexes.
-/// - [`ListLayout::row_regions`] converts visible rows into a generic [`Regions`].
+/// - [`ListLayout::row_regions`] converts visible rows into a generic
+///   [`Regions`](crate::regions::Regions).
 /// - [`ListLayout::hit_test`] maps a terminal position to the visible source item index.
 /// - [`ListLayout::hit_index`] returns only the source item index for common click handling.
-/// - [`ListLayout::select_hit`] selects a durable id through [`VisibleSelection`] after a click.
+/// - [`ListLayout::select_hit`] selects a durable id through
+///   [`VisibleSelection`](crate::selection::VisibleSelection) after a click.
 ///
 /// # Examples
 ///
@@ -937,8 +939,8 @@ impl VisibleItem {
 /// ```rust
 /// use ratatui_core::buffer::Buffer;
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::MeasureContext;
 /// use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
+/// use ratatui_layout::participant::MeasureContext;
 ///
 /// struct Rows;
 /// impl ListItems for Rows {
@@ -991,7 +993,7 @@ impl ListLayout {
     /// ```rust
     /// use ratatui_core::layout::Rect;
     /// use ratatui_layout::list::{ListLayout, ScrollPosition, VisibleItem};
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let layout = ListLayout {
     ///     viewport: Rect::new(0, 0, 10, 2),
@@ -1032,14 +1034,14 @@ impl ListLayout {
     /// Converts visible rows into a generic region set keyed by source item index.
     ///
     /// Use this when a virtual list needs to participate in APIs that understand
-    /// [`Regions`] rather than [`ListLayout`]. The list layout remains the richer source of
-    /// truth for scroll offsets, measured heights, and clipped row slices; the returned
-    /// [`Regions`] value is the geometry projection used for generic composition,
-    /// pointer routing, or diagnostics.
+    /// [`Regions`](crate::regions::Regions) rather than [`ListLayout`]. The list layout remains the
+    /// richer source of truth for scroll offsets, measured heights, and clipped row slices; the
+    /// returned [`Regions`](crate::regions::Regions) value is the geometry projection used for
+    /// generic composition, pointer routing, or diagnostics.
     ///
-    /// Clipping metadata is preserved in each [`Region`]. A row that starts above the viewport gets
-    /// a top clip equal to [`VisibleItem::y_offset`], and a row that continues below the
-    /// viewport gets a bottom clip for the hidden tail.
+    /// Clipping metadata is preserved in each [`Region`](crate::regions::Region). A row that starts
+    /// above the viewport gets a top clip equal to [`VisibleItem::y_offset`], and a row that
+    /// continues below the viewport gets a bottom clip for the hidden tail.
     ///
     /// Use [`ListLayout::rows_regions`] when app code needs stable record ids instead of source
     /// item indexes.
@@ -1090,9 +1092,10 @@ impl ListLayout {
     ///
     /// Use this when a virtual list renders source indexes but the rest of the app routes input
     /// through semantic ids. For example, a filtered task list can map each source index to a
-    /// `TaskId`, then merge the resulting regions into a [`FrameSnapshot`](crate::FrameSnapshot) or
-    /// [`PointerTargets`](crate::PointerTargets). This keeps row measurement in [`ListLayout`]
-    /// while letting outer coordination code speak in application terms.
+    /// `TaskId`, then merge the resulting regions into a
+    /// [`FrameSnapshot`](crate::frame::FrameSnapshot) or
+    /// [`PointerTargets`](crate::pointer::PointerTargets). This keeps row measurement in
+    /// [`ListLayout`] while letting outer coordination code speak in application terms.
     ///
     /// The mapper receives the source index from [`VisibleItem::index`]. If an app has filtered or
     /// sorted rows, the mapper should use the same row order as the [`ListItems`] implementation
@@ -1248,8 +1251,8 @@ impl ListLayout {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::VisibleSelection;
     /// use ratatui_layout::list::{ListLayout, ScrollPosition, VisibleItem};
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let ids = ["api", "docs"];
     /// let layout = ListLayout {
@@ -1343,8 +1346,8 @@ impl VisibleItem {
 /// ```rust
 /// use ratatui_core::buffer::Buffer;
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::MeasureContext;
 /// use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
+/// use ratatui_layout::participant::MeasureContext;
 ///
 /// struct Rows;
 /// impl ListItems for Rows {
@@ -1380,8 +1383,8 @@ impl VirtualList {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows;
     /// impl ListItems for Rows {
@@ -1416,8 +1419,8 @@ impl VirtualList {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows;
     /// impl ListItems for Rows {
@@ -1460,8 +1463,8 @@ impl VirtualList {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows;
     /// impl ListItems for Rows {
@@ -1503,10 +1506,10 @@ impl VirtualList {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{
     ///     ListHeightCache, ListItemContext, ListItems, VirtualList, VirtualListState,
     /// };
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows;
     /// impl ListItems for Rows {
@@ -1613,8 +1616,8 @@ impl VirtualList {
     /// use ratatui_core::layout::Rect;
     /// use ratatui_core::text::Line;
     /// use ratatui_core::widgets::Widget;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows(&'static [&'static str]);
     /// impl ListItems for Rows {
@@ -1657,10 +1660,10 @@ impl VirtualList {
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::MeasureContext;
     /// use ratatui_layout::list::{
     ///     ListHeightCache, ListItemContext, ListItems, VirtualList, VirtualListState,
     /// };
+    /// use ratatui_layout::participant::MeasureContext;
     ///
     /// struct Rows;
     /// impl ListItems for Rows {
@@ -1738,10 +1741,10 @@ fn render_visible_items<I: ListItems>(
 /// ```rust
 /// use ratatui_core::buffer::Buffer;
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::MeasureContext;
 /// use ratatui_layout::list::{
 ///     ListHeightCache, ListItemContext, ListItems, VirtualList, VirtualListState,
 /// };
+/// use ratatui_layout::participant::MeasureContext;
 ///
 /// struct Rows;
 /// impl ListItems for Rows {

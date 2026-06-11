@@ -1,8 +1,9 @@
 //! Linear row and column regions.
 //!
-//! This module adapts Ratatui's existing [`Layout`] solver into inspectable [`Regions`] values.
-//! It does not replace [`Layout`]. Instead, it keeps the same constraint behavior and adds region
-//! identifiers, render-order metadata, and hit testing through the returned region set.
+//! This module adapts Ratatui's existing [`Layout`] solver into inspectable
+//! [`Regions`](crate::regions::Regions) values. It does not replace [`Layout`]. Instead, it keeps
+//! the same constraint behavior and adds region identifiers, render-order metadata, and hit testing
+//! through the returned region set.
 //!
 //! If the solved rectangles are consumed immediately and never inspected again, use [`Layout`]
 //! directly. Use this module when the result needs to be passed around as data, hit tested, or
@@ -12,15 +13,19 @@
 //!
 //! # Types
 //!
-//! - [`RegionsExt`] adds [`RegionsExt::regions`] to Ratatui [`Layout`] for incremental adoption.
-//! - [`Row`] is a horizontal wrapper that can return indexed or named left-to-right regions.
-//! - [`Column`] is a vertical wrapper that can return indexed or named top-to-bottom regions.
+//! - [`RegionsExt`](crate::linear::RegionsExt) adds
+//!   [`RegionsExt::regions`](crate::linear::RegionsExt::regions) to Ratatui [`Layout`] for
+//!   incremental adoption.
+//! - [`Row`](crate::linear::Row) is a horizontal wrapper that can return indexed or named
+//!   left-to-right regions.
+//! - [`Column`](crate::linear::Column) is a vertical wrapper that can return indexed or named
+//!   top-to-bottom regions.
 //!
 //! See [`crate::docs::regions`] for the frame-local geometry model and
 //! [`crate::docs::containers`] for how rows and columns fit into larger container composition.
 //!
 //! [`Layout`]: ratatui_core::layout::Layout
-//! [`Regions`]: crate::regions::Regions
+//! [`Regions`](crate::regions::Regions): crate::regions::Regions
 //!
 //! # Examples
 //!
@@ -29,7 +34,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::{Constraint, Rect};
-//! use ratatui_layout::{Column, Row};
+//! use ratatui_layout::linear::{Column, Row};
 //!
 //! #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 //! enum PageSlot {
@@ -68,17 +73,19 @@ use crate::regions::{Region, Regions};
 /// Extension methods for producing inspectable region sets from Ratatui layouts.
 ///
 /// This trait is the lowest-friction bridge from existing Ratatui code. Any [`Layout`] can still be
-/// used normally with `split` or `areas`; calling [`RegionsExt::regions`] returns the same solved
-/// rectangles wrapped in a [`Regions`] with `usize` region ids.
+/// used normally with `split` or `areas`; calling
+/// [`RegionsExt::regions`](crate::linear::RegionsExt::regions) returns the same solved rectangles
+/// wrapped in a [`Regions`](crate::regions::Regions) with `usize` region ids.
 ///
 /// This is useful for incremental adoption: start with the layout you already have, then switch the
-/// call from `areas` or `split` to [`RegionsExt::regions`] only where the solved rectangles need
-/// hit testing or metadata.
+/// call from `areas` or `split` to [`RegionsExt::regions`](crate::linear::RegionsExt::regions) only
+/// where the solved rectangles need hit testing or metadata.
 ///
 /// # Method
 ///
-/// - [`RegionsExt::regions`] solves a Ratatui [`Layout`] and wraps the rectangles in a [`Regions`]
-///   with region ids assigned by split order.
+/// - [`RegionsExt::regions`](crate::linear::RegionsExt::regions) solves a Ratatui [`Layout`] and
+///   wraps the rectangles in a [`Regions`](crate::regions::Regions) with region ids assigned by
+///   split order.
 ///
 /// # Examples
 ///
@@ -86,7 +93,7 @@ use crate::regions::{Region, Regions};
 ///
 /// ```rust
 /// use ratatui_core::layout::{Constraint, Layout, Rect};
-/// use ratatui_layout::RegionsExt;
+/// use ratatui_layout::linear::RegionsExt;
 ///
 /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
 /// let regions = layout.regions(Rect::new(0, 0, 20, 5));
@@ -95,7 +102,7 @@ use crate::regions::{Region, Regions};
 /// assert_eq!(regions.regions()[1].id, 1);
 /// ```
 pub trait RegionsExt {
-    /// Splits an area and returns the result as a [`Regions`].
+    /// Splits an area and returns the result as a [`Regions`](crate::regions::Regions).
     ///
     /// Region ids are assigned by split order starting at zero.
     ///
@@ -103,7 +110,7 @@ pub trait RegionsExt {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Layout, Rect};
-    /// use ratatui_layout::RegionsExt;
+    /// use ratatui_layout::linear::RegionsExt;
     ///
     /// let layout = Layout::horizontal([Constraint::Length(4), Constraint::Fill(1)]);
     /// let plan = layout.regions(Rect::new(0, 0, 10, 1));
@@ -127,34 +134,42 @@ impl RegionsExt for Layout {
     }
 }
 
-/// Horizontal region builder that produces [`Regions`] values.
+/// Horizontal region builder that produces [`Regions`](crate::regions::Regions) values.
 ///
-/// Use [`Row`] when a horizontal split needs to become inspectable regions. A common case is a row
-/// with left content and a right status label: normal [`Layout`] can split the row, while [`Row`]
-/// returns those split rectangles as regions that can be rendered, tested, or hit-tested.
+/// Use [`Row`](crate::linear::Row) when a horizontal split needs to become inspectable regions. A
+/// common case is a row with left content and a right status label: normal [`Layout`] can split the
+/// row, while [`Row`](crate::linear::Row) returns those split rectangles as regions that can be
+/// rendered, tested, or hit-tested.
 ///
 /// `Row` is a small convenience wrapper around a horizontal Ratatui [`Layout`]. It is useful when
 /// code wants to speak in terms of row regions instead of generic direction-based layout.
 ///
 /// # Constructors and setters
 ///
-/// - [`Row::new`] creates horizontal regions from Ratatui constraints and assigns `usize` ids.
-/// - [`Row::named`] creates horizontal regions from `(id, constraint)` pairs.
-/// - [`Row::margin`], [`Row::horizontal_margin`], and [`Row::vertical_margin`] delegate to the
-///   wrapped [`Layout`] margin behavior.
-/// - [`Row::flex`] delegates excess-space placement to Ratatui's solver.
-/// - [`Row::spacing`] delegates fixed spacing or overlap between cells.
+/// - [`Row::new`](crate::linear::Row::new) creates horizontal regions from Ratatui constraints and
+///   assigns `usize` ids.
+/// - [`Row::named`](crate::linear::Row::named) creates horizontal regions from `(id, constraint)`
+///   pairs.
+/// - [`Row::margin`](crate::linear::Row::margin),
+///   [`Row::horizontal_margin`](crate::linear::Row::horizontal_margin), and
+///   [`Row::vertical_margin`](crate::linear::Row::vertical_margin) delegate to the wrapped
+///   [`Layout`] margin behavior.
+/// - [`Row::flex`](crate::linear::Row::flex) delegates excess-space placement to Ratatui's solver.
+/// - [`Row::spacing`](crate::linear::Row::spacing) delegates fixed spacing or overlap between
+///   cells.
 ///
 /// # Inspection and solving
 ///
-/// - [`Row::layout`] returns the wrapped Ratatui [`Layout`] for APIs not mirrored here.
-/// - [`Row::regions`] solves the row and returns a [`Regions`] with left-to-right ids.
+/// - [`Row::layout`](crate::linear::Row::layout) returns the wrapped Ratatui [`Layout`] for APIs
+///   not mirrored here.
+/// - [`Row::regions`](crate::linear::Row::regions) solves the row and returns a
+///   [`Regions`](crate::regions::Regions) with left-to-right ids.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::{Constraint, Rect};
-/// use ratatui_layout::Row;
+/// use ratatui_layout::linear::Row;
 ///
 /// let row = Row::new([Constraint::Length(8), Constraint::Fill(1)]).spacing(1);
 /// let regions = row.regions(Rect::new(0, 0, 20, 1));
@@ -179,7 +194,7 @@ impl Row {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let plan = Row::new([Constraint::Fill(1), Constraint::Length(6)])
     ///     .spacing(1)
@@ -209,8 +224,8 @@ impl<Id> Row<Id> {
     /// its constraint is declared. Pairing the id with the constraint keeps the layout
     /// vocabulary local and avoids fragile numeric indexing such as `regions()[1]`.
     ///
-    /// For repeated generated regions, [`Row::new`] is still a good fit because numeric ids often
-    /// line up naturally with item indexes.
+    /// For repeated generated regions, [`Row::new`](crate::linear::Row::new) is still a good fit
+    /// because numeric ids often line up naturally with item indexes.
     ///
     /// # Examples
     ///
@@ -218,7 +233,7 @@ impl<Id> Row<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum BodySlot {
@@ -262,7 +277,7 @@ impl<Id> Row<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let row = Row::new([Constraint::Length(4), Constraint::Fill(1)]);
     /// let areas = row.layout().split(Rect::new(0, 0, 10, 1));
@@ -281,7 +296,7 @@ impl<Id> Row<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let plan = Row::new([Constraint::Fill(1)])
     ///     .margin(1)
@@ -303,7 +318,7 @@ impl<Id> Row<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let plan = Row::new([Constraint::Fill(1)])
     ///     .horizontal_margin(2)
@@ -325,7 +340,7 @@ impl<Id> Row<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let plan = Row::new([Constraint::Fill(1)])
     ///     .vertical_margin(1)
@@ -347,7 +362,7 @@ impl<Id> Row<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Flex, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let plan = Row::new([Constraint::Length(4), Constraint::Length(4)])
     ///     .flex(Flex::Center)
@@ -369,7 +384,7 @@ impl<Id> Row<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let plan = Row::new([Constraint::Length(4), Constraint::Length(4)])
     ///     .spacing(1)
@@ -396,7 +411,7 @@ impl<Id> Row<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Row;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let previous_frame =
     ///     Row::new([Constraint::Length(6), Constraint::Length(6)]).regions(Rect::new(0, 0, 12, 1));
@@ -419,28 +434,37 @@ impl<Id> Row<Id> {
     }
 }
 
-/// Vertical region builder that produces [`Regions`] values.
+/// Vertical region builder that produces [`Regions`](crate::regions::Regions) values.
 ///
-/// Use [`Column`] when a vertical stack of app-owned items needs stable region ids. For ordinary
-/// page structure, [`Layout::vertical`](ratatui_core::layout::Layout::vertical) followed by
-/// `areas(area)` is simpler. [`Column`] is useful when each visible row is handed to an external
-/// participant or later hit tested.
+/// Use [`Column`](crate::linear::Column) when a vertical stack of app-owned items needs stable
+/// region ids. For ordinary page structure,
+/// [`Layout::vertical`](ratatui_core::layout::Layout::vertical) followed by `areas(area)` is
+/// simpler. [`Column`](crate::linear::Column) is useful when each visible row is handed to an
+/// external participant or later hit tested.
 ///
-/// `Column` is the vertical counterpart to [`Row`]. It assigns region ids from top to bottom.
+/// `Column` is the vertical counterpart to [`Row`](crate::linear::Row). It assigns region ids from
+/// top to bottom.
 ///
 /// # Constructors and setters
 ///
-/// - [`Column::new`] creates vertical regions from Ratatui constraints and assigns `usize` ids.
-/// - [`Column::named`] creates vertical regions from `(id, constraint)` pairs.
-/// - [`Column::margin`], [`Column::horizontal_margin`], and [`Column::vertical_margin`] delegate to
-///   the wrapped [`Layout`] margin behavior.
-/// - [`Column::flex`] delegates excess-space placement to Ratatui's solver.
-/// - [`Column::spacing`] delegates fixed spacing or overlap between cells.
+/// - [`Column::new`](crate::linear::Column::new) creates vertical regions from Ratatui constraints
+///   and assigns `usize` ids.
+/// - [`Column::named`](crate::linear::Column::named) creates vertical regions from `(id,
+///   constraint)` pairs.
+/// - [`Column::margin`](crate::linear::Column::margin),
+///   [`Column::horizontal_margin`](crate::linear::Column::horizontal_margin), and
+///   [`Column::vertical_margin`](crate::linear::Column::vertical_margin) delegate to the wrapped
+///   [`Layout`] margin behavior.
+/// - [`Column::flex`](crate::linear::Column::flex) delegates excess-space placement to Ratatui's
+///   solver.
+/// - [`Column::spacing`](crate::linear::Column::spacing) delegates fixed spacing or overlap between
+///   cells.
 ///
 /// # Inspection and solving
 ///
-/// - [`Column::layout`] returns the wrapped Ratatui [`Layout`].
-/// - [`Column::regions`] solves the column and returns a [`Regions`] with top-to-bottom ids.
+/// - [`Column::layout`](crate::linear::Column::layout) returns the wrapped Ratatui [`Layout`].
+/// - [`Column::regions`](crate::linear::Column::regions) solves the column and returns a
+///   [`Regions`](crate::regions::Regions) with top-to-bottom ids.
 ///
 /// # Examples
 ///
@@ -448,7 +472,7 @@ impl<Id> Row<Id> {
 ///
 /// ```rust
 /// use ratatui_core::layout::{Constraint, Rect};
-/// use ratatui_layout::{Column, Row};
+/// use ratatui_layout::linear::{Column, Row};
 ///
 /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 /// enum PageSlot {
@@ -486,7 +510,7 @@ impl Column {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// let rows = [
     ///     Constraint::Length(1),
@@ -516,10 +540,11 @@ impl<Id> Column<Id> {
     ///
     /// Use this for page structure, dialogs, and other vertical layouts where each row has a stable
     /// role. The id travels with the constraint, so later code can ask for
-    /// [`Regions::area_for`] by enum value instead of relying on numeric region positions.
+    /// [`Regions::area_for`](crate::regions::Regions::area_for) by enum value instead of relying on
+    /// numeric region positions.
     ///
-    /// Keep using [`Column::new`] for repeated generated rows where an index is already the natural
-    /// identity.
+    /// Keep using [`Column::new`](crate::linear::Column::new) for repeated generated rows where an
+    /// index is already the natural identity.
     ///
     /// # Examples
     ///
@@ -527,7 +552,7 @@ impl<Id> Column<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum PageSlot {
@@ -565,14 +590,15 @@ impl<Id> Column<Id> {
 
     /// Returns the inner Ratatui layout.
     ///
-    /// Use this when code needs Ratatui's full [`Layout`] API while still using [`Column`] in the
-    /// places that need [`Regions`] output.
+    /// Use this when code needs Ratatui's full [`Layout`] API while still using
+    /// [`Column`](crate::linear::Column) in the places that need
+    /// [`Regions`](crate::regions::Regions) output.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// let column = Column::new([Constraint::Length(1), Constraint::Fill(1)]);
     /// let areas = column.layout().split(Rect::new(0, 0, 10, 4));
@@ -591,7 +617,7 @@ impl<Id> Column<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// let plan = Column::new([Constraint::Fill(1)])
     ///     .margin(1)
@@ -613,7 +639,7 @@ impl<Id> Column<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// let plan = Column::new([Constraint::Fill(1)])
     ///     .horizontal_margin(2)
@@ -635,7 +661,7 @@ impl<Id> Column<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// let plan = Column::new([Constraint::Fill(1)])
     ///     .vertical_margin(1)
@@ -657,7 +683,7 @@ impl<Id> Column<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Flex, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// let plan = Column::new([Constraint::Length(1), Constraint::Length(1)])
     ///     .flex(Flex::Center)
@@ -679,7 +705,7 @@ impl<Id> Column<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// let plan = Column::new([Constraint::Length(1), Constraint::Length(1)])
     ///     .spacing(1)
@@ -706,7 +732,7 @@ impl<Id> Column<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// let previous_frame =
     ///     Column::new([Constraint::Length(1), Constraint::Length(1)]).regions(Rect::new(0, 0, 10, 2));

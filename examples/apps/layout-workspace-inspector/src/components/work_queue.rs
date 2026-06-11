@@ -3,10 +3,11 @@ use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{
-    CellPosition, FrameSnapshot, FrameTargets, PointerState, Region, VisibleSelection,
-};
-use ratatui_layout::{TableLayout, VirtualTable, VirtualTableState};
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
+use ratatui_layout::pointer::PointerState;
+use ratatui_layout::regions::Region;
+use ratatui_layout::selection::VisibleSelection;
+use ratatui_layout::table::{CellPosition, TableLayout, VirtualTable, VirtualTableState};
 
 use crate::QUEUE_FOCUS;
 use crate::domain::{ItemId, QueueView, ReleaseItem};

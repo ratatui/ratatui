@@ -11,7 +11,7 @@ mod render;
 mod state;
 
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui_layout::{ButtonRow, TextFieldState};
+use ratatui_layout::input::{ButtonRow, TextFieldState};
 
 use self::fields::{DialogFieldKind, TextFieldId, button_fields};
 use self::navigation::{DialogNavigation, focused_text_field};
@@ -354,7 +354,7 @@ impl EditDialog {
 mod tests {
     use crossterm::event::{KeyCode, KeyEvent};
     use ratatui::layout::Rect;
-    use ratatui_layout::TextFieldState;
+    use ratatui_layout::input::TextFieldState;
 
     use super::fields::{DIALOG_HEIGHT, DIALOG_WIDTH};
     use super::{DialogKeyAction, DialogOutcome, DialogState, EditDialog};

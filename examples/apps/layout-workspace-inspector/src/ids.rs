@@ -1,4 +1,4 @@
-use ratatui_layout::CellPosition;
+use ratatui_layout::table::CellPosition;
 
 /// Stable target identities for frame-local routing.
 ///

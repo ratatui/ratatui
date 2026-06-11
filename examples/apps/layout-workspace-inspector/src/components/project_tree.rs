@@ -2,9 +2,11 @@ use super::tree_rows::TreeRows;
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::widgets::{Block, Borders};
+use ratatui_layout::container::{Container, ContainerLayout, Padding};
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
 use ratatui_layout::list::{ListHeightCache, ListLayout, VirtualList, VirtualListState};
-use ratatui_layout::{Container, ContainerLayout, FrameSnapshot, FrameTargets, PointerState};
-use ratatui_layout::{Padding, SelectionMode, SelectionState};
+use ratatui_layout::pointer::PointerState;
+use ratatui_layout::selection::{SelectionMode, SelectionState};
 
 use crate::TREE_FOCUS;
 use crate::domain::{NavigationView, VisibleNode};

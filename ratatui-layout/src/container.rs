@@ -7,32 +7,37 @@
 //!
 //! The usual flow is higher level than a single rectangle calculation:
 //!
-//! 1. Configure a [`Container`] with [`Padding`] and, when the inner area should be named, a child
-//!    id.
-//! 2. Call [`Container::layout`] during rendering to get a [`ContainerLayout`] for that frame.
-//! 3. Render ordinary Ratatui widgets into [`ContainerLayout::outer`] and
-//!    [`ContainerLayout::inner`].
-//! 4. Convert the optional child region into a [`Regions`] with [`ContainerLayout::regions`], or
-//!    clip child regions with [`ContainerLayout::clip_child_regions`] before merging them into a
-//!    parent [`crate::FrameSnapshot`].
+//! 1. Configure a [`Container`](crate::container::Container) with
+//!    [`Padding`](crate::container::Padding) and, when the inner area should be named, a child id.
+//! 2. Call [`Container::layout`](crate::container::Container::layout) during rendering to get a
+//!    [`ContainerLayout`](crate::container::ContainerLayout) for that frame.
+//! 3. Render ordinary Ratatui widgets into
+//!    [`ContainerLayout::outer`](crate::container::ContainerLayout::outer) and
+//!    [`ContainerLayout::inner`](crate::container::ContainerLayout::inner).
+//! 4. Convert the optional child region into a [`Regions`](crate::regions::Regions) with
+//!    [`ContainerLayout::regions`](crate::container::ContainerLayout::regions), or clip child
+//!    regions with
+//!    [`ContainerLayout::clip_child_regions`](crate::container::ContainerLayout::clip_child_regions)
+//!    before merging them into a parent [`crate::frame::FrameSnapshot`].
 //!
 //! This separation keeps the container useful for common UI shapes without asking it to own child
 //! widgets. A dialog can use a `Block` for its border, a form widget for its body, a
-//! [`crate::FocusTargets`] for tab order, and this module only for the outer/inner/clipping
+//! [`crate::focus::FocusTargets`] for tab order, and this module only for the outer/inner/clipping
 //! geometry that later input events need.
 //!
 //! # Types
 //!
-//! - [`Padding`] stores per-edge cell counts and can derive the inner rectangle for any
-//!   [`ratatui_core::layout::Rect`].
-//! - [`Container`] is reusable configuration: padding plus an optional app-owned child id.
-//! - [`ContainerLayout`] is the solved frame-local result: outer area, inner area, clip boundary,
-//!   and optional child [`Region`].
+//! - [`Padding`](crate::container::Padding) stores per-edge cell counts and can derive the inner
+//!   rectangle for any [`ratatui_core::layout::Rect`].
+//! - [`Container`](crate::container::Container) is reusable configuration: padding plus an optional
+//!   app-owned child id.
+//! - [`ContainerLayout`](crate::container::ContainerLayout) is the solved frame-local result: outer
+//!   area, inner area, clip boundary, and optional child [`Region`](crate::regions::Region).
 //!
 //! Use this module when padding, child regions, or clipping boundaries need to become frame-local
-//! data that can be merged into a [`crate::FrameSnapshot`] or inspected in tests. For a one-off
-//! split inside a render function, Ratatui's `Block::inner` or `Rect::inner` is usually simpler
-//! because there is no need to name or store the geometry.
+//! data that can be merged into a [`crate::frame::FrameSnapshot`] or inspected in tests. For a
+//! one-off split inside a render function, Ratatui's `Block::inner` or `Rect::inner` is usually
+//! simpler because there is no need to name or store the geometry.
 //!
 //! See [`crate::docs::containers`] for the broader composition model and examples that combine
 //! containers with ordinary Ratatui widgets.
@@ -43,7 +48,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{Container, Padding};
+//! use ratatui_layout::container::{Container, Padding};
 //!
 //! let dialog = Container::<()>::new()
 //!     .padding(Padding::symmetric(2, 1))
@@ -57,7 +62,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{Container, Padding};
+//! use ratatui_layout::container::{Container, Padding};
 //!
 //! let layout = Container::new()
 //!     .padding(Padding::all(1))
@@ -74,24 +79,27 @@ use crate::regions::{Region, Regions};
 
 /// Per-edge padding used to derive an inner content rectangle.
 ///
-/// [`Padding`] exists when horizontal/vertical margins are not expressive enough. It owns only cell
-/// counts for the four edges and does not render any visual decoration. Use it with
-/// [`Container::padding`] or [`Padding::inner`] when edge-specific spacing should be part of the
-/// frame-local geometry.
+/// [`Padding`](crate::container::Padding) exists when horizontal/vertical margins are not
+/// expressive enough. It owns only cell counts for the four edges and does not render any visual
+/// decoration. Use it with [`Container::padding`](crate::container::Container::padding) or
+/// [`Padding::inner`](crate::container::Padding::inner) when edge-specific spacing should be part
+/// of the frame-local geometry.
 ///
 /// # Methods
 ///
-/// - [`Padding::new`] creates edge-specific padding for asymmetric chrome.
-/// - [`Padding::all`] creates a uniform inset for simple panels.
-/// - [`Padding::symmetric`] creates a common terminal inset with separate horizontal and vertical
-///   values.
-/// - [`Padding::inner`] applies the padding to a [`Rect`] with saturating resize behavior.
+/// - [`Padding::new`](crate::container::Padding::new) creates edge-specific padding for asymmetric
+///   chrome.
+/// - [`Padding::all`](crate::container::Padding::all) creates a uniform inset for simple panels.
+/// - [`Padding::symmetric`](crate::container::Padding::symmetric) creates a common terminal inset
+///   with separate horizontal and vertical values.
+/// - [`Padding::inner`](crate::container::Padding::inner) applies the padding to a [`Rect`] with
+///   saturating resize behavior.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::Padding;
+/// use ratatui_layout::container::Padding;
 ///
 /// let inner = Padding::new(1, 2, 3, 4).inner(Rect::new(0, 0, 20, 10));
 /// assert_eq!(inner, Rect::new(1, 2, 16, 4));
@@ -121,7 +129,7 @@ impl Padding {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::Padding;
+    /// use ratatui_layout::container::Padding;
     ///
     /// let area = Rect::new(0, 0, 30, 8);
     /// let content = Padding::new(1, 2, 1, 1).inner(area);
@@ -147,7 +155,7 @@ impl Padding {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Container, Padding};
+    /// use ratatui_layout::container::{Container, Padding};
     ///
     /// let panel = Container::<()>::new()
     ///     .padding(Padding::all(1))
@@ -170,7 +178,7 @@ impl Padding {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Container, Padding};
+    /// use ratatui_layout::container::{Container, Padding};
     ///
     /// let dialog = Container::<()>::new()
     ///     .padding(Padding::symmetric(2, 1))
@@ -194,7 +202,7 @@ impl Padding {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::Padding;
+    /// use ratatui_layout::container::Padding;
     ///
     /// let content = Padding::all(3).inner(Rect::new(0, 0, 4, 2));
     ///
@@ -224,8 +232,9 @@ impl Padding {
 
 /// A geometry-only container configuration for one child region.
 ///
-/// [`Container`] owns [`Padding`] and an optional child id. It does not own child widgets, blocks,
-/// titles, focus, or input state. A render pass asks it to produce [`ContainerLayout`], then
+/// [`Container`](crate::container::Container) owns [`Padding`](crate::container::Padding) and an
+/// optional child id. It does not own child widgets, blocks, titles, focus, or input state. A
+/// render pass asks it to produce [`ContainerLayout`](crate::container::ContainerLayout), then
 /// renders normal Ratatui widgets into the outer or inner areas as needed.
 ///
 /// The optional child id is useful when the container is part of a larger screen snapshot and the
@@ -234,22 +243,25 @@ impl Padding {
 ///
 /// # Constructors and setters
 ///
-/// - [`Container::new`] creates reusable geometry configuration with no padding or child region.
-/// - [`Container::padding`] sets the [`Padding`] applied when solving a frame.
-/// - [`Container::child`] names the inner area so it can become a [`Region`] in a [`Regions`].
-/// - [`Container::padding_value`] returns the configured padding for diagnostics or aligned
-///   decoration.
+/// - [`Container::new`](crate::container::Container::new) creates reusable geometry configuration
+///   with no padding or child region.
+/// - [`Container::padding`](crate::container::Container::padding) sets the
+///   [`Padding`](crate::container::Padding) applied when solving a frame.
+/// - [`Container::child`](crate::container::Container::child) names the inner area so it can become
+///   a [`Region`](crate::regions::Region) in a [`Regions`](crate::regions::Regions).
+/// - [`Container::padding_value`](crate::container::Container::padding_value) returns the
+///   configured padding for diagnostics or aligned decoration.
 ///
 /// # Solving
 ///
-/// - [`Container::layout`] solves the configuration against a frame area and returns
-///   [`ContainerLayout`].
+/// - [`Container::layout`](crate::container::Container::layout) solves the configuration against a
+///   frame area and returns [`ContainerLayout`](crate::container::ContainerLayout).
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Container, Padding};
+/// use ratatui_layout::container::{Container, Padding};
 ///
 /// let layout = Container::new()
 ///     .padding(Padding::all(1))
@@ -277,7 +289,7 @@ impl<Id> Container<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Container, Padding};
+    /// use ratatui_layout::container::{Container, Padding};
     ///
     /// let layout = Container::new()
     ///     .padding(Padding::all(1))
@@ -295,8 +307,8 @@ impl<Id> Container<Id> {
 
     /// Sets per-edge padding.
     ///
-    /// Padding is applied when [`Container::layout`] is called; it does not affect the supplied
-    /// outer area itself.
+    /// Padding is applied when [`Container::layout`](crate::container::Container::layout) is
+    /// called; it does not affect the supplied outer area itself.
     ///
     /// # Examples
     ///
@@ -304,7 +316,7 @@ impl<Id> Container<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Container, Padding};
+    /// use ratatui_layout::container::{Container, Padding};
     ///
     /// let area = Rect::new(2, 1, 16, 5);
     /// let layout = Container::<()>::new()
@@ -322,9 +334,10 @@ impl<Id> Container<Id> {
 
     /// Sets an optional child id for the inner area.
     ///
-    /// The id is copied into the [`Region`] stored in [`ContainerLayout::child`]. This lets a
-    /// parent merge the container into a larger [`Regions`] without requiring the container to
-    /// know what the child actually renders.
+    /// The id is copied into the [`Region`](crate::regions::Region) stored in
+    /// [`ContainerLayout::child`](crate::container::ContainerLayout::child). This lets a parent
+    /// merge the container into a larger [`Regions`](crate::regions::Regions) without requiring the
+    /// container to know what the child actually renders.
     ///
     /// # Examples
     ///
@@ -332,7 +345,7 @@ impl<Id> Container<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Container, Padding};
+    /// use ratatui_layout::container::{Container, Padding};
     ///
     /// let plan = Container::new()
     ///     .padding(Padding::all(1))
@@ -358,7 +371,7 @@ impl<Id> Container<Id> {
     /// Reuse the configured inset when aligning a title or status line with the content area:
     ///
     /// ```rust
-    /// use ratatui_layout::{Container, Padding};
+    /// use ratatui_layout::container::{Container, Padding};
     ///
     /// let container = Container::<()>::new().padding(Padding::symmetric(2, 1));
     /// let padding = container.padding_value();
@@ -372,8 +385,9 @@ impl<Id> Container<Id> {
 
     /// Solves the container against an outer area.
     ///
-    /// The returned [`ContainerLayout`] is the frame-local value to keep. The [`Container`] itself
-    /// is just reusable configuration and can be rebuilt each frame.
+    /// The returned [`ContainerLayout`](crate::container::ContainerLayout) is the frame-local value
+    /// to keep. The [`Container`](crate::container::Container) itself is just reusable
+    /// configuration and can be rebuilt each frame.
     ///
     /// # Examples
     ///
@@ -381,7 +395,7 @@ impl<Id> Container<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Container, Padding};
+    /// use ratatui_layout::container::{Container, Padding};
     ///
     /// let layout = Container::new()
     ///     .padding(Padding::all(1))
@@ -409,20 +423,25 @@ impl<Id> Container<Id> {
 
 /// Solved container geometry for one frame.
 ///
-/// [`ContainerLayout`] is the frame-local artifact returned by [`Container::layout`]. It records
-/// the outer area, inner area, clipping boundary, and optional child [`Region`]. It does not
+/// [`ContainerLayout`](crate::container::ContainerLayout) is the frame-local artifact returned by
+/// [`Container::layout`](crate::container::Container::layout). It records the outer area, inner
+/// area, clipping boundary, and optional child [`Region`](crate::regions::Region). It does not
 /// remember the container configuration or any rendered widget.
 ///
 /// # Fields and methods
 ///
-/// - [`ContainerLayout::outer`] is the area for chrome such as a border, background, or clear pass.
-/// - [`ContainerLayout::inner`] is the padded content area for ordinary widgets.
-/// - [`ContainerLayout::clip`] is the boundary used when child values must not expose hidden
-///   regions.
-/// - [`ContainerLayout::child`] is the optional named inner [`Region`].
-/// - [`ContainerLayout::regions`] converts the child region into a [`Regions`] for parent
-///   composition.
-/// - [`ContainerLayout::clip_child_regions`] clips child regions to the inner area.
+/// - [`ContainerLayout::outer`](crate::container::ContainerLayout::outer) is the area for chrome
+///   such as a border, background, or clear pass.
+/// - [`ContainerLayout::inner`](crate::container::ContainerLayout::inner) is the padded content
+///   area for ordinary widgets.
+/// - [`ContainerLayout::clip`](crate::container::ContainerLayout::clip) is the boundary used when
+///   child values must not expose hidden regions.
+/// - [`ContainerLayout::child`](crate::container::ContainerLayout::child) is the optional named
+///   inner [`Region`](crate::regions::Region).
+/// - [`ContainerLayout::regions`](crate::container::ContainerLayout::regions) converts the child
+///   region into a [`Regions`](crate::regions::Regions) for parent composition.
+/// - [`ContainerLayout::clip_child_regions`](crate::container::ContainerLayout::clip_child_regions)
+///   clips child regions to the inner area.
 ///
 /// # Examples
 ///
@@ -430,7 +449,8 @@ impl<Id> Container<Id> {
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Container, Padding, Region, Regions};
+/// use ratatui_layout::container::{Container, Padding};
+/// use ratatui_layout::regions::{Region, Regions};
 ///
 /// let container = Container::<()>::new()
 ///     .padding(Padding::all(1))
@@ -456,18 +476,20 @@ pub struct ContainerLayout<Id = usize> {
     pub inner: Rect,
     /// Boundary used to clip child values.
     ///
-    /// This currently matches [`ContainerLayout::inner`]. It is named separately because clipping
-    /// is the behavior downstream code cares about when composing child values.
+    /// This currently matches
+    /// [`ContainerLayout::inner`](crate::container::ContainerLayout::inner). It is named
+    /// separately because clipping is the behavior downstream code cares about when composing
+    /// child values.
     pub clip: Rect,
     /// Optional child region covering the inner area.
     ///
-    /// This is present only when the source [`Container`] was configured with
-    /// [`Container::child`].
+    /// This is present only when the source [`Container`](crate::container::Container) was
+    /// configured with [`Container::child`](crate::container::Container::child).
     pub child: Option<Region<Id>>,
 }
 
 impl<Id> ContainerLayout<Id> {
-    /// Returns a [`Regions`] containing the child region when one exists.
+    /// Returns a [`Regions`](crate::regions::Regions) containing the child region when one exists.
     ///
     /// Use this when the container itself should contribute a child region to a parent region set.
     /// If there is no child id, the returned region set still records the outer area but has no
@@ -479,7 +501,7 @@ impl<Id> ContainerLayout<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Container, Padding};
+    /// use ratatui_layout::container::{Container, Padding};
     ///
     /// let dialog_plan = Container::new()
     ///     .padding(Padding::all(1))
@@ -497,7 +519,7 @@ impl<Id> ContainerLayout<Id> {
         }
     }
 
-    /// Clips a child [`Regions`] to the inner clipping boundary.
+    /// Clips a child [`Regions`](crate::regions::Regions) to the inner clipping boundary.
     ///
     /// Use this when a child was solved against a larger logical area but should only expose
     /// visible targets inside the container.
@@ -508,7 +530,8 @@ impl<Id> ContainerLayout<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Container, Padding, Region, Regions};
+    /// use ratatui_layout::container::{Container, Padding};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let container = Container::<()>::new()
     ///     .padding(Padding::all(1))

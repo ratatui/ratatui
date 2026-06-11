@@ -5,10 +5,11 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{
-    ButtonRow, Column, CursorRequests, FocusState, FocusTarget, FocusTargets, Regions, Row,
-    TextFieldState,
-};
+use ratatui_layout::cursor::CursorRequests;
+use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
+use ratatui_layout::input::{ButtonRow, TextFieldState};
+use ratatui_layout::linear::{Column, Row};
+use ratatui_layout::regions::Regions;
 
 use crate::model::Task;
 use crate::route::{FocusScope, RouteMap, Target};

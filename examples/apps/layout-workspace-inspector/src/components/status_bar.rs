@@ -3,10 +3,11 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Flex, Rect, Size};
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, Paragraph, Widget};
-use ratatui_layout::{
-    FrameSnapshot, LayoutParticipant, MeasureConstraint, MeasureContext, Regions, RenderContext,
-    Row, SizeHint,
-};
+use ratatui_layout::frame::FrameSnapshot;
+use ratatui_layout::linear::Row;
+use ratatui_layout::measure::{MeasureConstraint, SizeHint};
+use ratatui_layout::participant::{LayoutParticipant, MeasureContext, RenderContext};
+use ratatui_layout::regions::Regions;
 
 use crate::domain::BoardSummary;
 use crate::ids::{PaneId, TargetId};

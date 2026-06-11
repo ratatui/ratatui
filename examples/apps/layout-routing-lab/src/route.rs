@@ -6,7 +6,8 @@
 use std::fmt::{self, Display, Formatter};
 
 use ratatui::layout::{Position, Rect};
-use ratatui_layout::{FocusFallback, FocusState, FocusTargets, PointerTarget, PointerTargets};
+use ratatui_layout::focus::{FocusFallback, FocusState, FocusTargets};
+use ratatui_layout::pointer::{PointerTarget, PointerTargets};
 
 use crate::details::{FormCommand, FormField};
 use crate::model::TaskId;

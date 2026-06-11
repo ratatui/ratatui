@@ -10,7 +10,7 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::VisibleSelection;
+use ratatui_layout::selection::VisibleSelection;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

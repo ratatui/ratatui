@@ -10,16 +10,19 @@
 //!
 //! # Types and traits
 //!
-//! - [`CellPosition`] is the frame-local id for header and body cells.
-//! - [`VirtualTableState`] stores selected cell plus row and column scroll offsets.
-//! - [`TableItems`] is the trait for app-owned table data that can render visible cells.
-//! - [`TableCellContext`] is passed to cell renderers with interaction and visible-position
-//!   metadata.
-//! - [`VisibleCell`] describes one header or body cell visible in the current frame.
-//! - [`TableLayout`] is the solved frame-local layout for visible cells, hit testing, and scroll
-//!   metrics.
-//! - [`VirtualTable`] is the reusable table configuration that computes or renders a
-//!   [`TableLayout`].
+//! - [`CellPosition`](crate::table::CellPosition) is the frame-local id for header and body cells.
+//! - [`VirtualTableState`](crate::table::VirtualTableState) stores selected cell plus row and
+//!   column scroll offsets.
+//! - [`TableItems`](crate::table::TableItems) is the trait for app-owned table data that can render
+//!   visible cells.
+//! - [`TableCellContext`](crate::table::TableCellContext) is passed to cell renderers with
+//!   interaction and visible-position metadata.
+//! - [`VisibleCell`](crate::table::VisibleCell) describes one header or body cell visible in the
+//!   current frame.
+//! - [`TableLayout`](crate::table::TableLayout) is the solved frame-local layout for visible cells,
+//!   hit testing, and scroll metrics.
+//! - [`VirtualTable`](crate::table::VirtualTable) is the reusable table configuration that computes
+//!   or renders a [`TableLayout`](crate::table::TableLayout).
 //!
 //! See [`crate::docs::virtualization`] for the broader virtualization model and
 //! [`crate::docs::interaction`] for how table cell ids can feed focus, pointer, and selection
@@ -74,13 +77,13 @@ use crate::scroll::ScrollMetrics;
 
 /// A table cell coordinate.
 ///
-/// Use [`CellPosition`] as the stable frame-local id for a virtual table cell. Header cells use
-/// `row: None`; body cells use `row: Some(index)`.
+/// Use [`CellPosition`](crate::table::CellPosition) as the stable frame-local id for a virtual
+/// table cell. Header cells use `row: None`; body cells use `row: Some(index)`.
 ///
 /// # Constructors
 ///
-/// - [`CellPosition::body`] creates a source body-cell id.
-/// - [`CellPosition::header`] creates a pinned header-cell id.
+/// - [`CellPosition::body`](crate::table::CellPosition::body) creates a source body-cell id.
+/// - [`CellPosition::header`](crate::table::CellPosition::header) creates a pinned header-cell id.
 ///
 /// # Examples
 ///
@@ -162,33 +165,42 @@ impl CellPosition {
 
 /// Persistent state for a virtual table.
 ///
-/// Use [`VirtualTableState`] next to the table's data. It stores selection plus vertical and
-/// horizontal scroll positions. [`VirtualTable`] clamps this state during layout.
+/// Use [`VirtualTableState`](crate::table::VirtualTableState) next to the table's data. It stores
+/// selection plus vertical and horizontal scroll positions.
+/// [`VirtualTable`](crate::table::VirtualTable) clamps this state during layout.
 ///
 /// # Selection
 ///
-/// - [`VirtualTableState::selected`] reads the selected cell.
-/// - [`VirtualTableState::select`] sets or clears the selected cell and asks layout to reveal it.
-/// - [`VirtualTableState::select_relative`] moves selection by row and column deltas and asks
-///   layout to reveal it.
-/// - [`VirtualTableState::select_without_scrolling`] sets selection for styling or commands without
+/// - [`VirtualTableState::selected`](crate::table::VirtualTableState::selected) reads the selected
+///   cell.
+/// - [`VirtualTableState::select`](crate::table::VirtualTableState::select) sets or clears the
+///   selected cell and asks layout to reveal it.
+/// - [`VirtualTableState::select_relative`](crate::table::VirtualTableState::select_relative) moves
+///   selection by row and column deltas and asks layout to reveal it.
+/// - [`VirtualTableState::select_without_scrolling`](crate::table::VirtualTableState::select_without_scrolling) sets selection for styling or commands without
 ///   moving the viewport.
-/// - [`VirtualTableState::scroll_to_selected`] asks the next layout to reveal the selected cell.
-/// - [`VirtualTableState::scrolls_selected_into_view`] reports which selection policy the next
+/// - [`VirtualTableState::scroll_to_selected`](crate::table::VirtualTableState::scroll_to_selected)
+///   asks the next layout to reveal the selected cell.
+/// - [`VirtualTableState::scrolls_selected_into_view`](crate::table::VirtualTableState::scrolls_selected_into_view) reports which selection policy the next
 ///   layout pass will use.
 ///
 /// # Scrolling
 ///
-/// - [`VirtualTableState::row_scroll`] and [`VirtualTableState::set_row_scroll`] read and write the
-///   first visible body row.
-/// - [`VirtualTableState::column_scroll`] and [`VirtualTableState::set_column_scroll`] read and
-///   write the first visible column.
-/// - [`VirtualTableState::scroll_rows_by`], [`VirtualTableState::scroll_columns_by`], and
-///   [`VirtualTableState::scroll_viewport_by`] move the viewport without changing selection.
+/// - [`VirtualTableState::row_scroll`](crate::table::VirtualTableState::row_scroll) and
+///   [`VirtualTableState::set_row_scroll`](crate::table::VirtualTableState::set_row_scroll) read
+///   and write the first visible body row.
+/// - [`VirtualTableState::column_scroll`](crate::table::VirtualTableState::column_scroll) and
+///   [`VirtualTableState::set_column_scroll`](crate::table::VirtualTableState::set_column_scroll)
+///   read and write the first visible column.
+/// - [`VirtualTableState::scroll_rows_by`](crate::table::VirtualTableState::scroll_rows_by),
+///   [`VirtualTableState::scroll_columns_by`](crate::table::VirtualTableState::scroll_columns_by),
+///   and [`VirtualTableState::scroll_viewport_by`](crate::table::VirtualTableState::scroll_viewport_by)
+///   move the viewport without changing selection.
 ///
 /// # Examples
 ///
-/// Store two-axis table state between frames while rebuilding [`VirtualTable`] as a value:
+/// Store two-axis table state between frames while rebuilding
+/// [`VirtualTable`](crate::table::VirtualTable) as a value:
 ///
 /// ```rust
 /// use ratatui_layout::table::{CellPosition, VirtualTableState};
@@ -233,9 +245,12 @@ impl VirtualTableState {
     /// Returns whether layout should keep the selected body cell visible.
     ///
     /// This flag lets callers distinguish keyboard/click selection from viewport-only scrolling.
-    /// Calling [`VirtualTableState::select`] turns it on. Calling
-    /// [`VirtualTableState::scroll_rows_by`], [`VirtualTableState::scroll_columns_by`], or
-    /// [`VirtualTableState::scroll_viewport_by`] turns it off so wheel input can move the viewport
+    /// Calling [`VirtualTableState::select`](crate::table::VirtualTableState::select) turns it on.
+    /// Calling
+    /// [`VirtualTableState::scroll_rows_by`](crate::table::VirtualTableState::scroll_rows_by),
+    /// [`VirtualTableState::scroll_columns_by`](crate::table::VirtualTableState::scroll_columns_by),
+    /// or
+    /// [`VirtualTableState::scroll_viewport_by`](crate::table::VirtualTableState::scroll_viewport_by) turns it off so wheel input can move the viewport
     /// without snapping back to the selected cell.
     ///
     /// # Examples
@@ -257,7 +272,7 @@ impl VirtualTableState {
     /// Sets the selected body cell.
     ///
     /// Selecting a body cell also asks the next layout pass to keep that cell visible. Use
-    /// [`VirtualTableState::select_without_scrolling`] when selection should be retained for
+    /// [`VirtualTableState::select_without_scrolling`](crate::table::VirtualTableState::select_without_scrolling) when selection should be retained for
     /// styling or commands but viewport-only input should not move back to it.
     ///
     /// # Examples
@@ -285,8 +300,10 @@ impl VirtualTableState {
     /// selects the top-left body cell. Movement is clamped to the table bounds and the next layout
     /// pass will reveal the selected cell.
     ///
-    /// This changes selection. Use [`VirtualTableState::scroll_viewport_by`] for wheel or page
-    /// scrolling that should move the viewport without changing the selected cell.
+    /// This changes selection. Use
+    /// [`VirtualTableState::scroll_viewport_by`](crate::table::VirtualTableState::scroll_viewport_by)
+    /// for wheel or page scrolling that should move the viewport without changing the selected
+    /// cell.
     ///
     /// # Examples
     ///
@@ -363,7 +380,8 @@ impl VirtualTableState {
     ///
     /// This is useful after restoring selection without scrolling and then receiving keyboard input
     /// that should reveal the selected cell. The exact row and column offsets are still solved by
-    /// [`VirtualTable::layout`] because they depend on viewport size and column constraints.
+    /// [`VirtualTable::layout`](crate::table::VirtualTable::layout) because they depend on viewport
+    /// size and column constraints.
     ///
     /// # Examples
     ///
@@ -519,16 +537,20 @@ impl VirtualTableState {
     }
 }
 
-/// Externally owned cells rendered by a [`VirtualTable`].
+/// Externally owned cells rendered by a [`VirtualTable`](crate::table::VirtualTable).
 ///
-/// Implement [`TableItems`] for application data or a small adapter. [`VirtualTable`] asks for
-/// dimensions and renders only visible header/body cells into assigned rectangles.
+/// Implement [`TableItems`](crate::table::TableItems) for application data or a small adapter.
+/// [`VirtualTable`](crate::table::VirtualTable) asks for dimensions and renders only visible
+/// header/body cells into assigned rectangles.
 ///
 /// # Required methods
 ///
-/// - [`TableItems::row_count`] returns the current source body-row count.
-/// - [`TableItems::column_count`] returns the current source column count.
-/// - [`TableItems::render_cell`] renders one visible header or body cell into its assigned area.
+/// - [`TableItems::row_count`](crate::table::TableItems::row_count) returns the current source
+///   body-row count.
+/// - [`TableItems::column_count`](crate::table::TableItems::column_count) returns the current
+///   source column count.
+/// - [`TableItems::render_cell`](crate::table::TableItems::render_cell) renders one visible header
+///   or body cell into its assigned area.
 ///
 /// # Examples
 ///
@@ -626,7 +648,8 @@ pub trait TableItems {
     ///
     /// # Examples
     ///
-    /// Render only the cells that [`VirtualTable::render`] determined are visible:
+    /// Render only the cells that [`VirtualTable::render`](crate::table::VirtualTable::render)
+    /// determined are visible:
     ///
     /// ```rust
     /// use ratatui_core::buffer::Buffer;
@@ -670,22 +693,28 @@ pub trait TableItems {
 
 /// Render context for a visible table cell.
 ///
-/// [`TableCellContext`] combines common [`RenderContext`] state with table-specific coordinates.
-/// It is passed to [`TableItems::render_cell`] for visible cells only.
+/// [`TableCellContext`](crate::table::TableCellContext) combines common
+/// [`RenderContext`](crate::participant::RenderContext) state with table-specific coordinates.
+/// It is passed to [`TableItems::render_cell`](crate::table::TableItems::render_cell) for visible
+/// cells only.
 ///
 /// # Fields
 ///
-/// - [`TableCellContext::render`] carries shared interaction flags such as selection.
-/// - [`TableCellContext::position`] is the source cell being rendered.
-/// - [`TableCellContext::visible_column`] is the column's visible index after horizontal scrolling.
-/// - [`TableCellContext::visible_row`] is the visible body row index, or `None` for headers.
+/// - [`TableCellContext::render`](crate::table::TableCellContext::render) carries shared
+///   interaction flags such as selection.
+/// - [`TableCellContext::position`](crate::table::TableCellContext::position) is the source cell
+///   being rendered.
+/// - [`TableCellContext::visible_column`](crate::table::TableCellContext::visible_column) is the
+///   column's visible index after horizontal scrolling.
+/// - [`TableCellContext::visible_row`](crate::table::TableCellContext::visible_row) is the visible
+///   body row index, or `None` for headers.
 ///
 /// # Examples
 ///
 /// Render headers, selected cells, and scrolled body cells from the same context:
 ///
 /// ```rust
-/// use ratatui_layout::RenderContext;
+/// use ratatui_layout::participant::RenderContext;
 /// use ratatui_layout::table::{CellPosition, TableCellContext};
 ///
 /// let context = TableCellContext {
@@ -717,15 +746,20 @@ pub struct TableCellContext {
 
 /// Metadata for a visible table cell.
 ///
-/// Use [`VisibleCell`] for hit testing, diagnostics, focus target collections, or custom rendering
-/// outside the high-level [`VirtualTable::render`] method.
+/// Use [`VisibleCell`](crate::table::VisibleCell) for hit testing, diagnostics, focus target
+/// collections, or custom rendering outside the high-level
+/// [`VirtualTable::render`](crate::table::VirtualTable::render) method.
 ///
 /// # Fields
 ///
-/// - [`VisibleCell::position`] is the source header or body cell id.
-/// - [`VisibleCell::area`] is the terminal-space rectangle assigned to the cell.
-/// - [`VisibleCell::visible_column`] is the visible column index after horizontal scrolling.
-/// - [`VisibleCell::visible_row`] is the visible body row index, or `None` for headers.
+/// - [`VisibleCell::position`](crate::table::VisibleCell::position) is the source header or body
+///   cell id.
+/// - [`VisibleCell::area`](crate::table::VisibleCell::area) is the terminal-space rectangle
+///   assigned to the cell.
+/// - [`VisibleCell::visible_column`](crate::table::VisibleCell::visible_column) is the visible
+///   column index after horizontal scrolling.
+/// - [`VisibleCell::visible_row`](crate::table::VisibleCell::visible_row) is the visible body row
+///   index, or `None` for headers.
 ///
 /// # Examples
 ///
@@ -783,25 +817,40 @@ impl VisibleCell {
 
 /// Solved table layout.
 ///
-/// Use [`TableLayout`] when code needs to inspect what a [`VirtualTable`] did during a frame:
-/// visible [`VisibleCell`] values, selected cell area, hit testing, and [`ScrollMetrics`].
+/// Use [`TableLayout`](crate::table::TableLayout) when code needs to inspect what a
+/// [`VirtualTable`](crate::table::VirtualTable) did during a frame:
+/// visible [`VisibleCell`](crate::table::VisibleCell) values, selected cell area, hit testing, and
+/// [`ScrollMetrics`](crate::scroll::ScrollMetrics).
 ///
 /// # Fields and methods
 ///
-/// - [`TableLayout::area`] is the full terminal area assigned to the table.
-/// - [`TableLayout::header_area`] is the pinned header area when headers are enabled and visible.
-/// - [`TableLayout::body_area`] is the body viewport.
-/// - [`TableLayout::row_count`] and [`TableLayout::column_count`] are source dimensions.
-/// - [`TableLayout::row_scroll`] and [`TableLayout::column_scroll`] are clamped scroll offsets.
-/// - [`TableLayout::visible_cells`] stores visible header and body cells in render order.
-/// - [`TableLayout::selected`] is the selected body cell when visible.
-/// - [`TableLayout::visible_positions`] returns only visible cell ids for traversal or diagnostics.
-/// - [`TableLayout::cell_regions`] converts visible cells into a generic [`Regions`].
-/// - [`TableLayout::hit_test`] maps terminal positions to [`CellPosition`] values.
-/// - [`TableLayout::hit_position`] returns only the clicked cell position.
-/// - [`TableLayout::select_hit`] selects a clicked body cell in [`VirtualTableState`].
-/// - [`TableLayout::vertical_metrics`] and [`TableLayout::horizontal_metrics`] compute scrollbar
-///   data for app-owned scrollbars or status displays.
+/// - [`TableLayout::area`](crate::table::TableLayout::area) is the full terminal area assigned to
+///   the table.
+/// - [`TableLayout::header_area`](crate::table::TableLayout::header_area) is the pinned header area
+///   when headers are enabled and visible.
+/// - [`TableLayout::body_area`](crate::table::TableLayout::body_area) is the body viewport.
+/// - [`TableLayout::row_count`](crate::table::TableLayout::row_count) and
+///   [`TableLayout::column_count`](crate::table::TableLayout::column_count) are source dimensions.
+/// - [`TableLayout::row_scroll`](crate::table::TableLayout::row_scroll) and
+///   [`TableLayout::column_scroll`](crate::table::TableLayout::column_scroll) are clamped scroll
+///   offsets.
+/// - [`TableLayout::visible_cells`](crate::table::TableLayout::visible_cells) stores visible header
+///   and body cells in render order.
+/// - [`TableLayout::selected`](crate::table::TableLayout::selected) is the selected body cell when
+///   visible.
+/// - [`TableLayout::visible_positions`](crate::table::TableLayout::visible_positions) returns only
+///   visible cell ids for traversal or diagnostics.
+/// - [`TableLayout::cell_regions`](crate::table::TableLayout::cell_regions) converts visible cells
+///   into a generic [`Regions`](crate::regions::Regions).
+/// - [`TableLayout::hit_test`](crate::table::TableLayout::hit_test) maps terminal positions to
+///   [`CellPosition`](crate::table::CellPosition) values.
+/// - [`TableLayout::hit_position`](crate::table::TableLayout::hit_position) returns only the
+///   clicked cell position.
+/// - [`TableLayout::select_hit`](crate::table::TableLayout::select_hit) selects a clicked body cell
+///   in [`VirtualTableState`](crate::table::VirtualTableState).
+/// - [`TableLayout::vertical_metrics`](crate::table::TableLayout::vertical_metrics) and
+///   [`TableLayout::horizontal_metrics`](crate::table::TableLayout::horizontal_metrics) compute
+///   scrollbar data for app-owned scrollbars or status displays.
 ///
 /// # Examples
 ///
@@ -878,7 +927,7 @@ impl TableLayout {
     ///
     /// Positions are returned in render order and include header cells when headers are enabled.
     /// Use this when selection, diagnostics, or target construction only needs the ids that the
-    /// table made visible, not the full [`VisibleCell`] metadata.
+    /// table made visible, not the full [`VisibleCell`](crate::table::VisibleCell) metadata.
     ///
     /// # Examples
     ///
@@ -922,16 +971,18 @@ impl TableLayout {
         self.visible_cells.iter().map(|cell| cell.position)
     }
 
-    /// Converts visible cells into a generic region set keyed by [`CellPosition`].
+    /// Converts visible cells into a generic region set keyed by
+    /// [`CellPosition`](crate::table::CellPosition).
     ///
     /// Use this when a virtual table needs to participate in APIs that understand
-    /// [`Regions`] rather than [`TableLayout`]. The table layout remains the richer source of
-    /// truth for pinned headers, scroll offsets, visible row/column indexes, and scroll metrics;
-    /// the returned [`Regions`] value is the geometry projection used for generic
+    /// [`Regions`](crate::regions::Regions) rather than [`TableLayout`](crate::table::TableLayout).
+    /// The table layout remains the richer source of truth for pinned headers, scroll offsets,
+    /// visible row/column indexes, and scroll metrics; the returned
+    /// [`Regions`](crate::regions::Regions) value is the geometry projection used for generic
     /// composition, pointer routing, or diagnostics.
     ///
-    /// Use [`TableLayout::cells_regions`] when outer coordination code should route through domain
-    /// ids instead of table coordinates.
+    /// Use [`TableLayout::cells_regions`](crate::table::TableLayout::cells_regions) when outer
+    /// coordination code should route through domain ids instead of table coordinates.
     ///
     /// # Examples
     ///
@@ -975,10 +1026,11 @@ impl TableLayout {
 
     /// Converts visible cells into a generic region set with caller-chosen ids.
     ///
-    /// Use this when a table renders by [`CellPosition`] but the rest of the app routes input
-    /// through semantic ids. A release board might map `CellPosition::body(row, column)` to a
-    /// `(TaskId, FieldId)` pair, while keeping header cells as sort actions. The mapper receives
-    /// each visible source cell position in render order.
+    /// Use this when a table renders by [`CellPosition`](crate::table::CellPosition) but the rest
+    /// of the app routes input through semantic ids. A release board might map
+    /// `CellPosition::body(row, column)` to a `(TaskId, FieldId)` pair, while keeping header
+    /// cells as sort actions. The mapper receives each visible source cell position in render
+    /// order.
     ///
     /// # Examples
     ///
@@ -1081,7 +1133,8 @@ impl TableLayout {
     /// Returns the cell position hit by the terminal position.
     ///
     /// This is the common click path when an app only needs the header or body cell coordinate.
-    /// Use [`TableLayout::hit_test`] when the cell renderer also needs local coordinates.
+    /// Use [`TableLayout::hit_test`](crate::table::TableLayout::hit_test) when the cell renderer
+    /// also needs local coordinates.
     ///
     /// # Examples
     ///
@@ -1115,8 +1168,10 @@ impl TableLayout {
     /// Selects the body cell hit by the terminal position.
     ///
     /// Header hits and blank-space hits leave state unchanged and return `None`. This keeps
-    /// [`VirtualTableState`] focused on body-cell selection while still letting apps use
-    /// [`TableLayout::hit_position`] for header actions such as sorting.
+    /// [`VirtualTableState`](crate::table::VirtualTableState) focused on body-cell selection while
+    /// still letting apps use
+    /// [`TableLayout::hit_position`](crate::table::TableLayout::hit_position) for header actions
+    /// such as sorting.
     ///
     /// # Examples
     ///
@@ -1270,16 +1325,22 @@ impl TableLayout {
 ///
 /// # Constructors and setters
 ///
-/// - [`VirtualTable::new`] creates a table layout configuration from column constraints.
-/// - [`VirtualTable::row_height`] sets fixed body-row height.
-/// - [`VirtualTable::header_height`] sets pinned header height or hides headers with zero.
-/// - [`VirtualTable::scroll_padding`] keeps space around the selected cell when possible.
+/// - [`VirtualTable::new`](crate::table::VirtualTable::new) creates a table layout configuration
+///   from column constraints.
+/// - [`VirtualTable::row_height`](crate::table::VirtualTable::row_height) sets fixed body-row
+///   height.
+/// - [`VirtualTable::header_height`](crate::table::VirtualTable::header_height) sets pinned header
+///   height or hides headers with zero.
+/// - [`VirtualTable::scroll_padding`](crate::table::VirtualTable::scroll_padding) keeps space
+///   around the selected cell when possible.
 ///
 /// # Layout and rendering
 ///
-/// - [`VirtualTable::layout`] computes [`TableLayout`] and clamps [`VirtualTableState`] without
-///   drawing.
-/// - [`VirtualTable::render`] computes layout, renders visible cells, and returns the layout.
+/// - [`VirtualTable::layout`](crate::table::VirtualTable::layout) computes
+///   [`TableLayout`](crate::table::TableLayout) and clamps
+///   [`VirtualTableState`](crate::table::VirtualTableState) without drawing.
+/// - [`VirtualTable::render`](crate::table::VirtualTable::render) computes layout, renders visible
+///   cells, and returns the layout.
 ///
 /// # Examples
 ///

@@ -15,7 +15,8 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph, Widget};
 use ratatui_layout::list::{ListItemContext, ListItems, ListLayout, VirtualList, VirtualListState};
-use ratatui_layout::{MeasureContext, VisibleSelection};
+use ratatui_layout::participant::MeasureContext;
+use ratatui_layout::selection::VisibleSelection;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

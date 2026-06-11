@@ -2,10 +2,11 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{
-    FrameSnapshot, FrameTargets, Grid, GridLayout, GridPosition, PointerState, Region, Regions,
-};
-use ratatui_layout::{SelectionMode, SelectionState};
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
+use ratatui_layout::grid::{Grid, GridLayout, GridPosition};
+use ratatui_layout::pointer::PointerState;
+use ratatui_layout::regions::{Region, Regions};
+use ratatui_layout::selection::{SelectionMode, SelectionState};
 
 use crate::COMMAND_FOCUS;
 use crate::ids::{CommandId, TargetId};

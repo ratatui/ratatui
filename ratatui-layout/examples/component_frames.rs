@@ -14,10 +14,10 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Position, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{
-    CursorRequest, CursorRequests, FocusFallback, FocusState, FrameSnapshot, FrameTargets, Region,
-    Regions,
-};
+use ratatui_layout::cursor::{CursorRequest, CursorRequests};
+use ratatui_layout::focus::{FocusFallback, FocusState};
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
+use ratatui_layout::regions::{Region, Regions};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

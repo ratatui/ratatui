@@ -13,9 +13,10 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
-use ratatui_layout::{
-    Container, FocusFallback, FocusState, FrameSnapshot, FrameTargets, Padding, Row,
-};
+use ratatui_layout::container::{Container, Padding};
+use ratatui_layout::focus::{FocusFallback, FocusState};
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
+use ratatui_layout::linear::Row;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

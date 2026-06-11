@@ -15,10 +15,10 @@ use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Paragraph, Widget};
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
 use ratatui_layout::list::{ListItemContext, ListItems};
-use ratatui_layout::{
-    FrameSnapshot, FrameTargets, MeasureContext, VirtualRecordList, VirtualRecordListState,
-};
+use ratatui_layout::participant::MeasureContext;
+use ratatui_layout::record_list::{VirtualRecordList, VirtualRecordListState};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

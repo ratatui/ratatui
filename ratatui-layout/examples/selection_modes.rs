@@ -9,7 +9,8 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{Column, SelectionMode, SelectionState};
+use ratatui_layout::linear::Column;
+use ratatui_layout::selection::{SelectionMode, SelectionState};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

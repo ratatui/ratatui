@@ -1,9 +1,9 @@
 //! Overlay regions for overlapping UI.
 //!
-//! An [`Overlay`] collects explicit regions that may overlap. It is useful for popups, floating
-//! controls, drag previews, or debug layers where the caller already knows each layer's rectangle.
-//! The overlay does not sort or clip regions; it preserves insertion order and z-order metadata for
-//! the returned [`Regions`].
+//! An [`Overlay`](crate::overlay::Overlay) collects explicit regions that may overlap. It is useful
+//! for popups, floating controls, drag previews, or debug layers where the caller already knows
+//! each layer's rectangle. The overlay does not sort or clip regions; it preserves insertion order
+//! and z-order metadata for the returned [`Regions`](crate::regions::Regions).
 //!
 //! Use ordinary direct rendering when an overlay has one known rectangle and no need for hit
 //! testing or later inspection. Use this module when several explicit layers need to become one
@@ -14,10 +14,11 @@
 //!
 //! # Type
 //!
-//! - [`Overlay`] collects explicit [`Region`] values and returns one [`Regions`] for hit testing,
-//!   diagnostics, or parent composition.
+//! - [`Overlay`](crate::overlay::Overlay) collects explicit [`Region`](crate::regions::Region)
+//!   values and returns one [`Regions`](crate::regions::Regions) for hit testing, diagnostics, or
+//!   parent composition.
 //!
-//! [`Regions`]: crate::regions::Regions
+//! [`Regions`](crate::regions::Regions): crate::regions::Regions
 //!
 //! # Examples
 //!
@@ -25,7 +26,8 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{Overlay, Region};
+//! use ratatui_layout::overlay::Overlay;
+//! use ratatui_layout::regions::Region;
 //!
 //! let overlay_regions = Overlay::new()
 //!     .region(Region::new("content", Rect::new(0, 0, 40, 10)))
@@ -43,24 +45,29 @@ use crate::regions::{Region, Regions};
 
 /// Z-ordered region builder for explicit overlay layers.
 ///
-/// Use [`Overlay`] when the caller already knows each layer's rectangle and needs those layers in
-/// one hit-testable [`Regions`]. Popups, floating command palettes, drag previews, and debug
-/// overlays all have positioning policy outside the overlay itself.
+/// Use [`Overlay`](crate::overlay::Overlay) when the caller already knows each layer's rectangle
+/// and needs those layers in one hit-testable [`Regions`](crate::regions::Regions). Popups,
+/// floating command palettes, drag previews, and debug overlays all have positioning policy outside
+/// the overlay itself.
 ///
-/// [`Overlay`] is intentionally small. It provides a fluent way to build a [`Regions`] from
-/// already-solved regions and leaves all positioning policy to the caller.
+/// [`Overlay`](crate::overlay::Overlay) is intentionally small. It provides a fluent way to build a
+/// [`Regions`](crate::regions::Regions) from already-solved regions and leaves all positioning
+/// policy to the caller.
 ///
 /// # Constructors and solving
 ///
-/// - [`Overlay::new`] creates an empty overlay.
-/// - [`Overlay::region`] appends an explicit layer in render order.
-/// - [`Overlay::regions`] returns the collected regions as a [`Regions`].
+/// - [`Overlay::new`](crate::overlay::Overlay::new) creates an empty overlay.
+/// - [`Overlay::region`](crate::overlay::Overlay::region) appends an explicit layer in render
+///   order.
+/// - [`Overlay::regions`](crate::overlay::Overlay::regions) returns the collected regions as a
+///   [`Regions`](crate::regions::Regions).
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Overlay, Region};
+/// use ratatui_layout::overlay::Overlay;
+/// use ratatui_layout::regions::Region;
 ///
 /// let overlay_regions = Overlay::new()
 ///     .region(Region::new("content", Rect::new(0, 0, 20, 5)))
@@ -91,7 +98,8 @@ impl<Id> Overlay<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Overlay, Region};
+    /// use ratatui_layout::overlay::Overlay;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let overlay = Overlay::new().region(Region::new("tooltip", Rect::new(2, 1, 8, 1)));
     ///
@@ -114,7 +122,8 @@ impl<Id> Overlay<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Overlay, Region};
+    /// use ratatui_layout::overlay::Overlay;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let overlay = Overlay::new()
     ///     .region(Region::new("base", Rect::new(0, 0, 30, 10)))
@@ -145,7 +154,8 @@ impl<Id> Overlay<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Overlay, Region};
+    /// use ratatui_layout::overlay::Overlay;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let previous_frame = Overlay::new()
     ///     .region(Region::new("drag-preview", Rect::new(10, 4, 6, 2)).z(20))

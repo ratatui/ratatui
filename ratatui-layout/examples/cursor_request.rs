@@ -10,9 +10,9 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{
-    CursorRequests, FocusFallback, FocusState, FocusTarget, FocusTargets, TextFieldState,
-};
+use ratatui_layout::cursor::CursorRequests;
+use ratatui_layout::focus::{FocusFallback, FocusState, FocusTarget, FocusTargets};
+use ratatui_layout::input::TextFieldState;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

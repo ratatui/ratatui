@@ -10,10 +10,11 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Position, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
-use ratatui_layout::{
-    Column, Container, CursorRequest, CursorRequests, FocusFallback, FocusState, FocusTarget,
-    FocusTargets, Padding,
-};
+use ratatui_layout::container::{Container, Padding};
+use ratatui_layout::cursor::{CursorRequest, CursorRequests};
+use ratatui_layout::focus::{FocusFallback, FocusState, FocusTarget, FocusTargets};
+use ratatui_layout::linear::Column;
+use ratatui_layout::regions::Regions;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -97,7 +98,7 @@ impl App {
         );
     }
 
-    fn place_cursor(&self, frame: &mut Frame, fields: &ratatui_layout::Regions<Field>) {
+    fn place_cursor(&self, frame: &mut Frame, fields: &Regions<Field>) {
         let Some(field) = self.focus.focused() else {
             return;
         };

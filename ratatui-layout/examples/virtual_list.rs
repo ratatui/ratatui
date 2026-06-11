@@ -10,8 +10,8 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Paragraph, Widget};
-use ratatui_layout::MeasureContext;
 use ratatui_layout::list::{ListItemContext, ListItems, VirtualList, VirtualListState};
+use ratatui_layout::participant::MeasureContext;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

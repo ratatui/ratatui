@@ -9,10 +9,11 @@ use ratatui::layout::{Constraint, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
-use ratatui_layout::{
-    Column, Container, ContainerLayout, CursorRequests, FrameSnapshot, FrameTargets, Padding,
-    Region, Regions, Row,
-};
+use ratatui_layout::container::{Container, ContainerLayout, Padding};
+use ratatui_layout::cursor::CursorRequests;
+use ratatui_layout::frame::{FrameSnapshot, FrameTargets};
+use ratatui_layout::linear::{Column, Row};
+use ratatui_layout::regions::{Region, Regions};
 
 use super::EditDialog;
 use super::fields::{

@@ -5,7 +5,7 @@
 //! rendering instead of interleaving every constraint with every pane.
 
 use ratatui::layout::{Constraint, Rect};
-use ratatui_layout::{Column, Row};
+use ratatui_layout::linear::{Column, Row};
 
 use crate::ids::{BodySlot, PageSlot};
 

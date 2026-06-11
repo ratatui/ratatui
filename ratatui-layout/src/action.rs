@@ -5,16 +5,20 @@
 //! disabled actions for input, and routes pointer hits back to app-owned ids. This module packages
 //! that pattern without choosing labels, colors, shortcuts, or command effects.
 //!
-//! Use [`ActionSurface`] when the app already owns persistent focus or selection state and only
-//! needs the current frame's regions and targets. Use [`CommandRow`] when a horizontal command
-//! surface also needs a small focused-button cursor for left/right keyboard movement.
+//! Use [`ActionSurface`](crate::action::ActionSurface) when the app already owns persistent focus
+//! or selection state and only needs the current frame's regions and targets. Use
+//! [`CommandRow`](crate::action::CommandRow) when a horizontal command surface also needs a small
+//! focused-button cursor for left/right keyboard movement.
 //!
 //! # Types
 //!
-//! - [`ActionOrientation`] chooses horizontal or vertical layout.
-//! - [`ActionSurface`] stores action ids, constraints, spacing, flex policy, and target policy.
-//! - [`ActionSurfaceLayout`] is the solved frame-local output for one render pass.
-//! - [`CommandRow`] combines a horizontal [`ActionSurface`] with [`crate::ButtonRowState`].
+//! - [`ActionOrientation`](crate::action::ActionOrientation) chooses horizontal or vertical layout.
+//! - [`ActionSurface`](crate::action::ActionSurface) stores action ids, constraints, spacing, flex
+//!   policy, and target policy.
+//! - [`ActionSurfaceLayout`](crate::action::ActionSurfaceLayout) is the solved frame-local output
+//!   for one render pass.
+//! - [`CommandRow`](crate::action::CommandRow) combines a horizontal
+//!   [`ActionSurface`](crate::action::ActionSurface) with [`crate::input::ButtonRowState`].
 //!
 //! # Examples
 //!
@@ -23,7 +27,8 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::{Constraint, Rect};
-//! use ratatui_layout::{ActionSurface, FocusFallback, FocusState};
+//! use ratatui_layout::action::ActionSurface;
+//! use ratatui_layout::focus::{FocusFallback, FocusState};
 //!
 //! #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 //! enum Command {
@@ -55,7 +60,7 @@ use crate::input::ButtonRowState;
 use crate::linear::{Column, Row};
 use crate::regions::Regions;
 
-/// Direction used to solve an [`ActionSurface`].
+/// Direction used to solve an [`ActionSurface`](crate::action::ActionSurface).
 ///
 /// The same action model appears in horizontal controls such as command rows and tabs and in
 /// vertical controls such as menus. The orientation changes layout only; ids, disabled policy,
@@ -72,10 +77,11 @@ pub enum ActionOrientation {
 
 /// Layout and target policy for a visible set of actions.
 ///
-/// [`ActionSurface`] owns the frame-invariant description of an action strip: app-owned ids, size
-/// constraints, spacing, flex policy, focus order, and z-order. It does not own labels, styles,
-/// command callbacks, selected values, or persistent focus. Rendering code uses the returned
-/// [`ActionSurfaceLayout`] to draw labels and stores its [`FrameSnapshot`] for the next input
+/// [`ActionSurface`](crate::action::ActionSurface) owns the frame-invariant description of an
+/// action strip: app-owned ids, size constraints, spacing, flex policy, focus order, and z-order.
+/// It does not own labels, styles, command callbacks, selected values, or persistent focus.
+/// Rendering code uses the returned [`ActionSurfaceLayout`](crate::action::ActionSurfaceLayout) to
+/// draw labels and stores its [`FrameSnapshot`](crate::frame::FrameSnapshot) for the next input
 /// event.
 ///
 /// Common uses include:
@@ -184,7 +190,8 @@ impl<Id> ActionSurface<Id> {
     /// Solves action regions and creates enabled focus and pointer targets for every action.
     ///
     /// This is the common path when all visible actions are available. Use
-    /// [`ActionSurface::layout_with`] when some actions should remain visible while disabled.
+    /// [`ActionSurface::layout_with`](crate::action::ActionSurface::layout_with) when some actions
+    /// should remain visible while disabled.
     pub fn layout(&self, area: Rect) -> ActionSurfaceLayout<Id>
     where
         Id: Copy,
@@ -194,9 +201,10 @@ impl<Id> ActionSurface<Id> {
 
     /// Solves action regions and creates targets while marking disabled actions.
     ///
-    /// Disabled actions remain in [`ActionSurfaceLayout::regions`] so rendering can draw them, but
-    /// generated focus and pointer targets are disabled so keyboard traversal and pointer routing
-    /// skip them.
+    /// Disabled actions remain in
+    /// [`ActionSurfaceLayout::regions`](crate::action::ActionSurfaceLayout::regions) so rendering
+    /// can draw them, but generated focus and pointer targets are disabled so keyboard
+    /// traversal and pointer routing skip them.
     pub fn layout_with(&self, area: Rect, disabled: impl Fn(Id) -> bool) -> ActionSurfaceLayout<Id>
     where
         Id: Copy,
@@ -219,11 +227,11 @@ impl<Id> ActionSurface<Id> {
     }
 }
 
-/// Solved output for one [`ActionSurface`] render pass.
+/// Solved output for one [`ActionSurface`](crate::action::ActionSurface) render pass.
 ///
-/// The layout exposes both the regions used for drawing labels and the [`FrameSnapshot`] that the
-/// app stores for the next event. It owns no persistent state; rebuild it every frame from the
-/// visible action surface.
+/// The layout exposes both the regions used for drawing labels and the
+/// [`FrameSnapshot`](crate::frame::FrameSnapshot) that the app stores for the next event. It owns
+/// no persistent state; rebuild it every frame from the visible action surface.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ActionSurfaceLayout<Id = usize> {
     regions: Regions<Id>,
@@ -251,8 +259,9 @@ impl<Id> ActionSurfaceLayout<Id> {
 
 /// Horizontal action surface with persistent button-row focus state.
 ///
-/// [`CommandRow`] covers the common toolbar and command-strip case. It uses [`ActionSurface`] for
-/// the current frame's geometry and targets, and [`ButtonRowState`] for keyboard movement among
+/// [`CommandRow`](crate::action::CommandRow) covers the common toolbar and command-strip case. It
+/// uses [`ActionSurface`](crate::action::ActionSurface) for the current frame's geometry and
+/// targets, and [`ButtonRowState`](crate::input::ButtonRowState) for keyboard movement among
 /// buttons. Rendering remains application-owned so command labels, shortcuts, and styles can match
 /// the app.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -361,8 +370,9 @@ impl<Id> CommandRow<Id> {
 
     /// Moves focus to the previous enabled command.
     ///
-    /// This is the mirror of [`CommandRow::move_next_enabled`] for left-arrow or shift-tab style
-    /// movement inside a command row.
+    /// This is the mirror of
+    /// [`CommandRow::move_next_enabled`](crate::action::CommandRow::move_next_enabled) for
+    /// left-arrow or shift-tab style movement inside a command row.
     pub fn move_previous_enabled(&mut self, disabled: impl Fn(Id) -> bool)
     where
         Id: Copy,

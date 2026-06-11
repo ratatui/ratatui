@@ -10,9 +10,9 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Rect, Size};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Paragraph, Widget};
-use ratatui_layout::{
-    Column, LayoutParticipant, MeasureConstraint, MeasureContext, RenderContext, SizeHint,
-};
+use ratatui_layout::linear::Column;
+use ratatui_layout::measure::{MeasureConstraint, SizeHint};
+use ratatui_layout::participant::{LayoutParticipant, MeasureContext, RenderContext};
 
 fn main() -> Result<()> {
     color_eyre::install()?;

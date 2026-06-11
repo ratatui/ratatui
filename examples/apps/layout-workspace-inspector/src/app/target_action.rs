@@ -4,7 +4,7 @@
 //! ids into app-level intent so `App` can keep hit testing, focus movement, and domain mutation in
 //! separate steps.
 
-use ratatui_layout::CellPosition;
+use ratatui_layout::table::CellPosition;
 
 use crate::ids::{CommandId, DialogField, NodeId, PaneId, TargetId};
 
@@ -89,7 +89,7 @@ pub(super) const fn target_action_for_id(id: TargetId) -> TargetAction {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_layout::CellPosition;
+    use ratatui_layout::table::CellPosition;
 
     use super::{FocusedRegion, TargetAction, target_action_for_id};
     use crate::ids::{CommandId, DialogField, NodeId, PaneId, TargetId};

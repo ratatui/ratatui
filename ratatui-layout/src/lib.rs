@@ -5,6 +5,9 @@
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
 )]
 #![warn(missing_docs)]
+// Explicit module targets keep prose links aligned with the owning modules now that the crate root
+// no longer re-exports every public type.
+#![allow(rustdoc::redundant_explicit_links)]
 //! Experimental frame-local UI coordination primitives for Ratatui.
 //!
 //! This is a `0.0.1-alpha.0` experiment. The crate exists to validate ideas, examples, and API
@@ -54,10 +57,10 @@
 //! splitting a page into rectangles.
 //!
 //! This crate uses "region" for a rectangle that has become part of frame-local coordination. A
-//! [`Region`] contains an area plus an app-owned id, clipping metadata, and z-order. A
-//! [`Regions`] value stores those records together so a later input event can route back to the
-//! thing that was visible. Put another way: render into areas, store regions when those areas need
-//! identity or behavior after rendering.
+//! [`Region`](crate::regions::Region) contains an area plus an app-owned id, clipping metadata, and
+//! z-order. A [`Regions`](crate::regions::Regions) value stores those records together so a later
+//! input event can route back to the thing that was visible. Put another way: render into areas,
+//! store regions when those areas need identity or behavior after rendering.
 //!
 //! # Choosing what to store
 //!
@@ -65,23 +68,34 @@
 //! it needs for the next event, not a retained widget tree.
 //!
 //! Frame-local data is produced by rendering or layout and describes what was visible in one frame.
-//! It is safe to rebuild every draw and store for the next input event. [`Regions`],
-//! [`FocusTargets`], [`PointerTargets`], [`CursorRequests`], and [`FrameSnapshot`] are
-//! frame-local outputs. Rich layout outputs such as [`ContainerLayout`], [`GridLayout`],
-//! [`list::ListLayout`], [`table::TableLayout`], and [`ViewportLayout`] are also frame-local data.
+//! It is safe to rebuild every draw and store for the next input event.
+//! [`Regions`](crate::regions::Regions), [`FocusTargets`](crate::focus::FocusTargets),
+//! [`PointerTargets`](crate::pointer::PointerTargets),
+//! [`CursorRequests`](crate::cursor::CursorRequests), and
+//! [`FrameSnapshot`](crate::frame::FrameSnapshot) are frame-local outputs. Rich layout outputs such
+//! as [`ContainerLayout`](crate::container::ContainerLayout),
+//! [`GridLayout`](crate::grid::GridLayout), [`list::ListLayout`], [`table::TableLayout`], and
+//! [`ViewportLayout`](crate::viewport::ViewportLayout) are also frame-local data.
 //!
-//! Persistent state belongs to the app or to small app-owned helpers. [`FocusState`],
-//! [`PointerState`], [`SelectionState`], [`VisibleSelection`], [`TextFieldState`],
-//! [`ButtonRowState`], [`ViewportState`], [`list::VirtualListState`], and
+//! Persistent state belongs to the app or to small app-owned helpers.
+//! [`FocusState`](crate::focus::FocusState), [`PointerState`](crate::pointer::PointerState),
+//! [`SelectionState`](crate::selection::SelectionState),
+//! [`VisibleSelection`](crate::selection::VisibleSelection),
+//! [`TextFieldState`](crate::input::TextFieldState),
+//! [`ButtonRowState`](crate::input::ButtonRowState),
+//! [`ViewportState`](crate::viewport::ViewportState), [`list::VirtualListState`], and
 //! [`table::VirtualTableState`] survive across frames and feed the next render pass.
 //!
-//! Render and measure contexts are callback inputs, not frame outputs. [`MeasureContext`],
-//! [`RenderContext`], [`list::ListItemContext`], and [`table::TableCellContext`] describe the
-//! current item or cell while external application content is being measured or drawn.
+//! Render and measure contexts are callback inputs, not frame outputs.
+//! [`MeasureContext`](crate::participant::MeasureContext),
+//! [`RenderContext`](crate::participant::RenderContext), [`list::ListItemContext`], and
+//! [`table::TableCellContext`] describe the current item or cell while external application content
+//! is being measured or drawn.
 //!
-//! Use [`FrameSnapshot`] when a component boundary needs regions, focus targets, pointer targets,
-//! and cursor requests to travel together. Use the smaller values directly when a surface only
-//! needs one concern, such as a pointer-only scroll region or a focus-only field set.
+//! Use [`FrameSnapshot`](crate::frame::FrameSnapshot) when a component boundary needs regions,
+//! focus targets, pointer targets, and cursor requests to travel together. Use the smaller values
+//! directly when a surface only needs one concern, such as a pointer-only scroll region or a
+//! focus-only field set.
 //!
 //! # Frame-local model
 //!
@@ -92,33 +106,50 @@
 //!
 //! This crate makes those intermediate results explicit:
 //!
-//! - [`Regions`] stores solved [`Region`] values for geometry.
-//! - [`FocusTargets`], [`FocusState`], and [`FocusFallback`] expose focus traversal over visible
-//!   regions and repair stale focus after a frame changes.
-//! - [`PointerTargets`], [`PointerState`], and [`PointerPhase`] route pointer positions through
-//!   visible targets.
-//! - [`FrameTargets`] turns visible regions into aligned regions, pointer targets, and focus target
+//! - [`Regions`](crate::regions::Regions) stores solved [`Region`](crate::regions::Region) values
+//!   for geometry.
+//! - [`FocusTargets`](crate::focus::FocusTargets), [`FocusState`](crate::focus::FocusState), and
+//!   [`FocusFallback`](crate::focus::FocusFallback) expose focus traversal over visible regions and
+//!   repair stale focus after a frame changes.
+//! - [`PointerTargets`](crate::pointer::PointerTargets),
+//!   [`PointerState`](crate::pointer::PointerState), and
+//!   [`PointerPhase`](crate::pointer::PointerPhase) route pointer positions through visible
+//!   targets.
+//! - [`FrameTargets`](crate::frame::FrameTargets) turns visible regions into aligned regions,
+//!   pointer targets, and focus target data.
+//! - [`RegionTargets`](crate::frame::RegionTargets) starts from an existing
+//!   [`Regions`](crate::regions::Regions) and adds disabled, focusable, mouseable, and z-order
+//!   policy.
+//! - [`SelectionState`](crate::selection::SelectionState) stores app-owned selection independently
+//!   from geometry.
+//! - [`VisibleSelection`](crate::selection::VisibleSelection) bridges durable selected ids to
+//!   visible positions in virtualized views.
+//! - [`CursorRequests`](crate::cursor::CursorRequests) records cursor placement requests produced
+//!   during rendering.
+//! - [`FrameSnapshot`](crate::frame::FrameSnapshot) optionally aggregates one frame's coordination
 //!   data.
-//! - [`RegionTargets`] starts from an existing [`Regions`] and adds disabled, focusable, mouseable,
-//!   and z-order policy.
-//! - [`SelectionState`] stores app-owned selection independently from geometry.
-//! - [`VisibleSelection`] bridges durable selected ids to visible positions in virtualized views.
-//! - [`CursorRequests`] records cursor placement requests produced during rendering.
-//! - [`FrameSnapshot`] optionally aggregates one frame's coordination data.
-//! - [`Row`], [`Column`], [`Grid`], and [`Overlay`] produce region sets for common arrangements.
-//! - [`Container`] computes outer, inner, clipping, and child-region geometry.
-//! - [`Viewport`] computes clamped scroll metadata for rectangular content.
+//! - [`Row`](crate::linear::Row), [`Column`](crate::linear::Column), [`Grid`](crate::grid::Grid),
+//!   and [`Overlay`](crate::overlay::Overlay) produce region sets for common arrangements.
+//! - [`Container`](crate::container::Container) computes outer, inner, clipping, and child-region
+//!   geometry.
+//! - [`Viewport`](crate::viewport::Viewport) computes clamped scroll metadata for rectangular
+//!   content.
 //! - [`list::VirtualList`] measures and renders externally owned list items by index.
 //! - [`table::VirtualTable`] lays out app-owned cells with pinned headers and two-axis scrolling.
-//! - [`TextFieldState`], [`ButtonRowState`], and [`ButtonRow`] handle small rendering-agnostic
-//!   control state.
-//! - [`ActionSurface`], [`CommandRow`], [`TextInput`], [`ModalShell`], [`ScrollablePane`], and
-//!   [`VirtualRecordList`] package common app-level patterns on top of the lower-level primitives.
+//! - [`TextFieldState`](crate::input::TextFieldState),
+//!   [`ButtonRowState`](crate::input::ButtonRowState), and [`ButtonRow`](crate::input::ButtonRow)
+//!   handle small rendering-agnostic control state.
+//! - [`ActionSurface`](crate::action::ActionSurface), [`CommandRow`](crate::action::CommandRow),
+//!   [`TextInput`](crate::text_input::TextInput), [`ModalShell`](crate::modal::ModalShell),
+//!   [`ScrollablePane`](crate::pane::ScrollablePane), and
+//!   [`VirtualRecordList`](crate::record_list::VirtualRecordList) package common app-level patterns
+//!   on top of the lower-level primitives.
 //!
 //! The application still owns its data, row state, and widget state. The layout primitive owns only
 //! the geometry calculation and the state needed to keep that geometry stable.
-//! [`Row`] and [`Column`] are intentionally thin adapters over the existing Ratatui [`Layout`]
-//! solver; their value is the returned [`Regions`], not different split behavior.
+//! [`Row`](crate::linear::Row) and [`Column`](crate::linear::Column) are intentionally thin
+//! adapters over the existing Ratatui [`Layout`] solver; their value is the returned
+//! [`Regions`](crate::regions::Regions), not different split behavior.
 //!
 //! # Choosing id types
 //!
@@ -126,8 +157,9 @@
 //! route back to application data without owning that data. Pick the id type that matches how
 //! stable the identity must be:
 //!
-//! - Use integers for generated positions where order is the contract, such as [`Row`] regions,
-//!   [`Column`] regions, simple indexed lists, or row-major [`Grid::regions`] cells.
+//! - Use integers for generated positions where order is the contract, such as
+//!   [`Row`](crate::linear::Row) regions, [`Column`](crate::linear::Column) regions, simple indexed
+//!   lists, or row-major [`Grid::regions`](crate::grid::Grid::regions) cells.
 //! - Use string names in examples, tests, diagnostics, and small prototypes where readable output
 //!   matters more than exhaustively modeling app state.
 //! - Use enums for most application controls. An enum makes routing explicit, gives the compiler a
@@ -138,7 +170,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{Region, Regions};
+//! use ratatui_layout::regions::{Region, Regions};
 //!
 //! #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 //! enum Command {
@@ -166,7 +198,7 @@
 //! use ratatui_core::layout::{Constraint, Rect};
 //! use ratatui_core::text::Line;
 //! use ratatui_core::widgets::Widget;
-//! use ratatui_layout::Row;
+//! use ratatui_layout::linear::Row;
 //!
 //! let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 1));
 //! let row_regions = Row::new([Constraint::Min(0), Constraint::Length(5)]).regions(buffer.area);
@@ -262,30 +294,3 @@ pub mod table;
 pub mod text_input;
 /// Generic viewport layout.
 pub mod viewport;
-
-pub use action::{ActionOrientation, ActionSurface, ActionSurfaceLayout, CommandRow};
-pub use container::{Container, ContainerLayout, Padding};
-pub use cursor::{CursorRequest, CursorRequests};
-pub use focus::{FocusFallback, FocusState, FocusTarget, FocusTargets};
-pub use frame::{FrameSnapshot, FrameTargets, RegionTargets};
-pub use grid::{Grid, GridLayout, GridPosition};
-pub use input::{ButtonRow, ButtonRowState, TextFieldState};
-pub use linear::{Column, RegionsExt, Row};
-pub use measure::{MeasureConstraint, SizeHint};
-pub use modal::{ModalLayout, ModalShell};
-pub use overlay::Overlay;
-pub use pane::{ScrollablePane, ScrollablePaneLayout};
-pub use participant::{
-    LayoutParticipant, MeasureContext, ParticipantFn, RenderContext, RenderState,
-};
-pub use pointer::{PointerPhase, PointerState, PointerTarget, PointerTargets};
-pub use record_list::{VirtualRecordList, VirtualRecordListLayout, VirtualRecordListState};
-pub use regions::{Clip, Hit, Region, Regions};
-pub use scroll::ScrollMetrics;
-pub use selection::{SelectionMode, SelectionState, VisibleSelection};
-pub use table::{
-    CellPosition, TableCellContext, TableItems, TableLayout, VirtualTable, VirtualTableState,
-    VisibleCell,
-};
-pub use text_input::{TextEdit, TextInput, TextInputLayout, TextInputState};
-pub use viewport::{Viewport, ViewportLayout, ViewportState};

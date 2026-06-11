@@ -7,14 +7,15 @@
 //!
 //! The most common terminal layout question is "how tall is this item at this width?" A virtual
 //! list asks that question for every item it may need to show. More general participant-based
-//! layouts use [`MeasureConstraint`] and [`SizeHint`] to keep that conversation explicit.
+//! layouts use [`MeasureConstraint`](crate::measure::MeasureConstraint) and
+//! [`SizeHint`](crate::measure::SizeHint) to keep that conversation explicit.
 //!
 //! # Types
 //!
-//! - [`MeasureConstraint`] describes which dimensions the parent already knows before asking a
-//!   child to measure itself.
-//! - [`SizeHint`] reports minimum, preferred, and maximum useful sizes for externally owned
-//!   content.
+//! - [`MeasureConstraint`](crate::measure::MeasureConstraint) describes which dimensions the parent
+//!   already knows before asking a child to measure itself.
+//! - [`SizeHint`](crate::measure::SizeHint) reports minimum, preferred, and maximum useful sizes
+//!   for externally owned content.
 //!
 //! See [`crate::docs::widget_contracts`] for how measurement fits into the future participant and
 //! component direction. Use ordinary fixed `Rect` rendering when child content does not need to
@@ -26,7 +27,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Size;
-//! use ratatui_layout::{MeasureConstraint, SizeHint};
+//! use ratatui_layout::measure::{MeasureConstraint, SizeHint};
 //!
 //! fn measure_label(text: &str, constraint: MeasureConstraint) -> SizeHint {
 //!     match constraint {
@@ -48,21 +49,25 @@ use ratatui_core::layout::Size;
 
 /// Constraints supplied when asking external content to measure itself.
 ///
-/// Use [`MeasureConstraint`] when a parent needs to ask a child-sized concept a specific sizing
-/// question. A virtual list asks "how tall are you at this width?" A grid-like parent might ask for
-/// a preferred size under an exact cell size. The constraint records which dimensions are already
-/// known before the child returns a [`SizeHint`].
+/// Use [`MeasureConstraint`](crate::measure::MeasureConstraint) when a parent needs to ask a
+/// child-sized concept a specific sizing question. A virtual list asks "how tall are you at this
+/// width?" A grid-like parent might ask for a preferred size under an exact cell size. The
+/// constraint records which dimensions are already known before the child returns a
+/// [`SizeHint`](crate::measure::SizeHint).
 ///
 /// A constraint does not force the child to return a particular value by itself; the child still
 /// returns a hint that describes its useful range.
 ///
 /// # Variants
 ///
-/// - [`MeasureConstraint::Unbounded`] asks for the child's natural size.
-/// - [`MeasureConstraint::Width`] fixes width so the child can compute height, common for wrapped
-///   text or list rows.
-/// - [`MeasureConstraint::Height`] fixes height so the child can compute width.
-/// - [`MeasureConstraint::Exact`] fixes both dimensions when a parent has already solved the cell.
+/// - [`MeasureConstraint::Unbounded`](crate::measure::MeasureConstraint::Unbounded) asks for the
+///   child's natural size.
+/// - [`MeasureConstraint::Width`](crate::measure::MeasureConstraint::Width) fixes width so the
+///   child can compute height, common for wrapped text or list rows.
+/// - [`MeasureConstraint::Height`](crate::measure::MeasureConstraint::Height) fixes height so the
+///   child can compute width.
+/// - [`MeasureConstraint::Exact`](crate::measure::MeasureConstraint::Exact) fixes both dimensions
+///   when a parent has already solved the cell.
 ///
 /// # Examples
 ///
@@ -70,7 +75,7 @@ use ratatui_core::layout::Size;
 ///
 /// ```rust
 /// use ratatui_core::layout::Size;
-/// use ratatui_layout::{MeasureConstraint, SizeHint};
+/// use ratatui_layout::measure::{MeasureConstraint, SizeHint};
 ///
 /// fn measure_wrapped(text: &str, constraint: MeasureConstraint) -> SizeHint {
 ///     match constraint {
@@ -104,29 +109,33 @@ pub enum MeasureConstraint {
 
 /// Minimum, preferred, and maximum size information for external content.
 ///
-/// Use [`SizeHint`] when external content has a natural size but the parent still owns final
-/// layout. A toolbar button might have a preferred label width, a minimum icon width, and a maximum
-/// useful width. The parent can compare those hints before assigning concrete regions.
+/// Use [`SizeHint`](crate::measure::SizeHint) when external content has a natural size but the
+/// parent still owns final layout. A toolbar button might have a preferred label width, a minimum
+/// icon width, and a maximum useful width. The parent can compare those hints before assigning
+/// concrete regions.
 ///
-/// [`SizeHint`] is intentionally a hint, not a solved rectangle. The final assigned area is still
-/// communicated later through a [`crate::regions::Region`] or render callback.
+/// [`SizeHint`](crate::measure::SizeHint) is intentionally a hint, not a solved rectangle. The
+/// final assigned area is still communicated later through a [`crate::regions::Region`] or render
+/// callback.
 ///
 /// # Constructors
 ///
-/// - [`SizeHint::exact`] creates a fixed-size hint where min, preferred, and max match.
-/// - [`SizeHint::preferred`] creates flexible bounds around a natural size.
-/// - [`SizeHint::bounded`] creates a fully specified range.
+/// - [`SizeHint::exact`](crate::measure::SizeHint::exact) creates a fixed-size hint where min,
+///   preferred, and max match.
+/// - [`SizeHint::preferred`](crate::measure::SizeHint::preferred) creates flexible bounds around a
+///   natural size.
+/// - [`SizeHint::bounded`](crate::measure::SizeHint::bounded) creates a fully specified range.
 ///
 /// # Inspection
 ///
-/// - [`SizeHint::clamped_preferred`] returns the preferred size after applying the advertised
-///   minimum and maximum bounds.
+/// - [`SizeHint::clamped_preferred`](crate::measure::SizeHint::clamped_preferred) returns the
+///   preferred size after applying the advertised minimum and maximum bounds.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Size;
-/// use ratatui_layout::SizeHint;
+/// use ratatui_layout::measure::SizeHint;
 ///
 /// let fixed = SizeHint::exact(Size::new(8, 1));
 /// assert_eq!(fixed.min, fixed.max);
@@ -157,7 +166,7 @@ impl SizeHint {
     ///
     /// ```rust
     /// use ratatui_core::layout::Size;
-    /// use ratatui_layout::SizeHint;
+    /// use ratatui_layout::measure::SizeHint;
     ///
     /// let row = SizeHint::exact(Size::new(20, 1));
     ///
@@ -183,7 +192,7 @@ impl SizeHint {
     ///
     /// ```rust
     /// use ratatui_core::layout::Size;
-    /// use ratatui_layout::SizeHint;
+    /// use ratatui_layout::measure::SizeHint;
     ///
     /// let label = SizeHint::preferred(Size::new(12, 1));
     ///
@@ -201,7 +210,8 @@ impl SizeHint {
     /// Creates a fully specified size hint.
     ///
     /// This constructor does not reorder the bounds. Callers should pass coherent values where
-    /// `min <= preferred <= max` for each dimension, or use [`SizeHint::clamped_preferred`] before
+    /// `min <= preferred <= max` for each dimension, or use
+    /// [`SizeHint::clamped_preferred`](crate::measure::SizeHint::clamped_preferred) before
     /// relying on the preferred size.
     ///
     /// # Examples
@@ -210,7 +220,7 @@ impl SizeHint {
     ///
     /// ```rust
     /// use ratatui_core::layout::Size;
-    /// use ratatui_layout::SizeHint;
+    /// use ratatui_layout::measure::SizeHint;
     ///
     /// let panel = SizeHint::bounded(Size::new(20, 5), Size::new(40, 10), Size::new(80, 20));
     ///
@@ -235,7 +245,7 @@ impl SizeHint {
     ///
     /// ```rust
     /// use ratatui_core::layout::Size;
-    /// use ratatui_layout::SizeHint;
+    /// use ratatui_layout::measure::SizeHint;
     ///
     /// let hint = SizeHint::bounded(Size::new(10, 1), Size::new(5, 4), Size::new(20, 3));
     ///

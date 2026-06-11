@@ -11,7 +11,8 @@ use crossterm::execute;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui_layout::{FrameSnapshot, ScrollablePane};
+use ratatui_layout::frame::FrameSnapshot;
+use ratatui_layout::pane::ScrollablePane;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

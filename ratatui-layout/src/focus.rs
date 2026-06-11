@@ -1,7 +1,8 @@
 //! Focus targets and persistent focus state for app-owned controls.
 //!
-//! [`FocusTargets`] is the keyboard counterpart to hit testing. A layout can expose the regions
-//! that may receive focus, and [`FocusState`] can move between those targets without the container
+//! [`FocusTargets`](crate::focus::FocusTargets) is the keyboard counterpart to hit testing. A
+//! layout can expose the regions that may receive focus, and
+//! [`FocusState`](crate::focus::FocusState) can move between those targets without the container
 //! owning child widgets.
 //!
 //! Keep focus handling local when one widget or one field owns the keyboard interaction. Use this
@@ -14,22 +15,26 @@
 //!   actual input state.
 //! - Keep focus on a selected table cell or palette swatch as filtering, scrolling, or resizing
 //!   changes which targets are visible.
-//! - Focus a control under the pointer by using [`FocusState::focus_at`] with the previous frame's
-//!   focus target collection.
+//! - Focus a control under the pointer by using
+//!   [`FocusState::focus_at`](crate::focus::FocusState::focus_at) with the previous frame's focus
+//!   target collection.
 //!
 //! # Types
 //!
-//! - [`FocusTarget`] describes one focusable region visible in the current frame.
-//! - [`FocusTargets`] stores current-frame focus targets in traversal order.
-//! - [`FocusState`] stores the app-owned focused id between events and frames.
-//! - [`FocusFallback`] names what should happen when stored focus no longer points at an enabled
-//!   visible target.
+//! - [`FocusTarget`](crate::focus::FocusTarget) describes one focusable region visible in the
+//!   current frame.
+//! - [`FocusTargets`](crate::focus::FocusTargets) stores current-frame focus targets in traversal
+//!   order.
+//! - [`FocusState`](crate::focus::FocusState) stores the app-owned focused id between events and
+//!   frames.
+//! - [`FocusFallback`](crate::focus::FocusFallback) names what should happen when stored focus no
+//!   longer points at an enabled visible target.
 //!
 //! # Examples
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+//! use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
 //!
 //! let targets = FocusTargets::from_targets([
 //!     FocusTarget::new("title", Rect::new(0, 0, 20, 1), 0),
@@ -54,9 +59,9 @@ use crate::regions::Region;
 
 /// A focusable region in a rendered layout.
 ///
-/// Use [`FocusTarget`] when a button, input, tab, table cell, or row should participate in keyboard
-/// traversal. The id belongs to the application; the target only records where that id was rendered
-/// and whether traversal should currently skip it.
+/// Use [`FocusTarget`](crate::focus::FocusTarget) when a button, input, tab, table cell, or row
+/// should participate in keyboard traversal. The id belongs to the application; the target only
+/// records where that id was rendered and whether traversal should currently skip it.
 ///
 /// # Common uses
 ///
@@ -66,17 +71,22 @@ use crate::regions::Region;
 ///
 /// # Constructors and geometry
 ///
-/// - [`FocusTarget::new`] creates an enabled focus target with a traversal order.
-/// - [`FocusTarget::from_region`] derives one focus target from a layout [`Region`].
-/// - [`FocusTarget::disabled`] keeps a target visible but skipped by traversal.
-/// - [`FocusTarget::translate`] moves child-local target geometry into parent coordinates.
-/// - [`FocusTarget::clip_to`] clips target geometry to a viewport and drops hidden targets.
+/// - [`FocusTarget::new`](crate::focus::FocusTarget::new) creates an enabled focus target with a
+///   traversal order.
+/// - [`FocusTarget::from_region`](crate::focus::FocusTarget::from_region) derives one focus target
+///   from a layout [`Region`](crate::regions::Region).
+/// - [`FocusTarget::disabled`](crate::focus::FocusTarget::disabled) keeps a target visible but
+///   skipped by traversal.
+/// - [`FocusTarget::translate`](crate::focus::FocusTarget::translate) moves child-local target
+///   geometry into parent coordinates.
+/// - [`FocusTarget::clip_to`](crate::focus::FocusTarget::clip_to) clips target geometry to a
+///   viewport and drops hidden targets.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+/// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
 ///
 /// let targets = FocusTargets::from_targets([
 ///     FocusTarget::new("disabled", Rect::new(0, 0, 10, 1), 0).disabled(true),
@@ -126,7 +136,7 @@ impl<Id> FocusTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("name", Rect::new(0, 0, 20, 1), 0),
@@ -154,7 +164,7 @@ impl<Id> FocusTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("save", Rect::new(0, 0, 6, 1), 0).disabled(true),
@@ -182,7 +192,8 @@ impl<Id> FocusTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, Region};
+    /// use ratatui_layout::focus::FocusTarget;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let region = Region::new("search", Rect::new(0, 0, 20, 1));
     /// let target = FocusTarget::from_region(region, 0);
@@ -205,7 +216,7 @@ impl<Id> FocusTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FocusTarget;
+    /// use ratatui_layout::focus::FocusTarget;
     ///
     /// let placed = FocusTarget::new("field", Rect::new(0, 0, 10, 1), 0).translate(5, 3);
     ///
@@ -227,7 +238,7 @@ impl<Id> FocusTarget<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FocusTarget;
+    /// use ratatui_layout::focus::FocusTarget;
     ///
     /// let target = FocusTarget::new("row", Rect::new(0, 5, 20, 1), 0);
     ///
@@ -245,39 +256,52 @@ impl<Id> FocusTarget<Id> {
 
 /// Focusable targets for one frame.
 ///
-/// Use [`FocusTargets`] after solving layout when the app needs to move focus or route keyboard
-/// input. The target set is rebuilt each frame from visible [`FocusTarget`] values. Persistent
-/// focus lives in [`FocusState`].
+/// Use [`FocusTargets`](crate::focus::FocusTargets) after solving layout when the app needs to move
+/// focus or route keyboard input. The target set is rebuilt each frame from visible
+/// [`FocusTarget`](crate::focus::FocusTarget) values. Persistent focus lives in
+/// [`FocusState`](crate::focus::FocusState).
 ///
 /// # Common uses
 ///
-/// - Build from a dialog's visible fields and call [`FocusState::next`] on Tab.
-/// - Build from a grid's visible cells and call [`FocusState::focus_at`] after a mouse press.
+/// - Build from a dialog's visible fields and call
+///   [`FocusState::next`](crate::focus::FocusState::next) on Tab.
+/// - Build from a grid's visible cells and call
+///   [`FocusState::focus_at`](crate::focus::FocusState::focus_at) after a mouse press.
 /// - Clip or translate a child focus target collection before merging it into a parent
-///   [`crate::FrameSnapshot`].
+///   [`crate::frame::FrameSnapshot`].
 ///
 /// # Constructors and builders
 ///
-/// - [`FocusTargets::new`] creates an empty target set.
-/// - [`FocusTargets::from_targets`] creates a target set and sorts by traversal order.
-/// - [`FocusTargets::from_regions`] creates targets from layout regions in iterator order.
-/// - [`FocusTargets::target`] appends one target and keeps traversal sorted.
-/// - [`FocusTargets::extend`] and [`FocusTargets::merge`] combine child target lists.
+/// - [`FocusTargets::new`](crate::focus::FocusTargets::new) creates an empty target set.
+/// - [`FocusTargets::from_targets`](crate::focus::FocusTargets::from_targets) creates a target set
+///   and sorts by traversal order.
+/// - [`FocusTargets::from_regions`](crate::focus::FocusTargets::from_regions) creates targets from
+///   layout regions in iterator order.
+/// - [`FocusTargets::target`](crate::focus::FocusTargets::target) appends one target and keeps
+///   traversal sorted.
+/// - [`FocusTargets::extend`](crate::focus::FocusTargets::extend) and
+///   [`FocusTargets::merge`](crate::focus::FocusTargets::merge) combine child target lists.
 ///
 /// # Composition and inspection
 ///
-/// - [`FocusTargets::targets`] returns focus targets in traversal order.
-/// - [`FocusTargets::map_id`] converts child ids into app-level ids.
-/// - [`FocusTargets::translate`] moves child-local targets into parent coordinates.
-/// - [`FocusTargets::clip_to`] removes hidden targets.
-/// - [`FocusTargets::first_enabled`] and [`FocusTargets::last_enabled`] find traversal endpoints.
-/// - [`FocusTargets::target_at`] routes a terminal position to an enabled focus target.
+/// - [`FocusTargets::targets`](crate::focus::FocusTargets::targets) returns focus targets in
+///   traversal order.
+/// - [`FocusTargets::map_id`](crate::focus::FocusTargets::map_id) converts child ids into app-level
+///   ids.
+/// - [`FocusTargets::translate`](crate::focus::FocusTargets::translate) moves child-local targets
+///   into parent coordinates.
+/// - [`FocusTargets::clip_to`](crate::focus::FocusTargets::clip_to) removes hidden targets.
+/// - [`FocusTargets::first_enabled`](crate::focus::FocusTargets::first_enabled) and
+///   [`FocusTargets::last_enabled`](crate::focus::FocusTargets::last_enabled) find traversal
+///   endpoints.
+/// - [`FocusTargets::target_at`](crate::focus::FocusTargets::target_at) routes a terminal position
+///   to an enabled focus target.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{FocusTarget, FocusTargets};
+/// use ratatui_layout::focus::{FocusTarget, FocusTargets};
 ///
 /// let local = FocusTargets::from_targets([FocusTarget::new(0, Rect::new(0, 0, 10, 1), 0)]);
 /// let parent = local.translate(5, 2).map_id(|id| ("dialog", id));
@@ -309,7 +333,7 @@ impl<Id> FocusTargets<Id> {
     /// Store an empty target set before the first render has produced focus targets:
     ///
     /// ```rust
-    /// use ratatui_layout::FocusTargets;
+    /// use ratatui_layout::focus::FocusTargets;
     ///
     /// let previous_frame = FocusTargets::<()>::new();
     ///
@@ -323,8 +347,8 @@ impl<Id> FocusTargets<Id> {
 
     /// Creates a focus target collection from targets.
     ///
-    /// The targets are sorted by [`FocusTarget::order`] so traversal follows the declared order
-    /// rather than the input iterator.
+    /// The targets are sorted by [`FocusTarget::order`](crate::focus::FocusTarget::order) so
+    /// traversal follows the declared order rather than the input iterator.
     ///
     /// # Examples
     ///
@@ -332,7 +356,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("second", Rect::new(0, 1, 10, 1), 1),
@@ -358,7 +382,8 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTargets, Region, Regions};
+    /// use ratatui_layout::focus::FocusTargets;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let fields = Regions::from_regions(
     ///     Rect::new(0, 0, 20, 2),
@@ -392,7 +417,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::new()
     ///     .target(FocusTarget::new("title", Rect::new(0, 0, 20, 1), 0))
@@ -415,7 +440,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("a", Rect::new(0, 0, 1, 1), 0),
@@ -439,7 +464,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let mut plan =
     ///     FocusTargets::from_targets([FocusTarget::new("field", Rect::new(0, 0, 20, 1), 0)]);
@@ -463,7 +488,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let form = FocusTargets::from_targets([FocusTarget::new("name", Rect::new(0, 0, 10, 1), 0)]);
     /// let footer = FocusTargets::from_targets([FocusTarget::new("save", Rect::new(0, 2, 6, 1), 1)]);
@@ -487,7 +512,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum Region {
@@ -524,7 +549,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let child = FocusTargets::from_targets([FocusTarget::new("field", Rect::new(0, 0, 12, 1), 0)]);
     /// let placed = child.translate(4, 2);
@@ -549,7 +574,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("visible", Rect::new(0, 1, 20, 1), 0),
@@ -579,7 +604,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("disabled", Rect::new(0, 0, 10, 1), 0).disabled(true),
@@ -602,7 +627,7 @@ impl<Id> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("first", Rect::new(0, 0, 10, 1), 0),
@@ -651,7 +676,7 @@ impl<Id: Copy + Eq> FocusTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([FocusTarget::new("name", Rect::new(0, 0, 20, 1), 0)]);
     ///
@@ -689,20 +714,26 @@ impl<Id: Copy + Eq> FocusTargets<Id> {
 
 /// Fallback policy for stale focus.
 ///
-/// [`FocusState`] persists between frames, while [`FocusTargets`] is rebuilt from visible targets.
-/// Filtering, resizing, or disabling a control can make the stored id stale. This enum names the
-/// repair policy used by [`FocusState::ensure_visible`].
+/// [`FocusState`](crate::focus::FocusState) persists between frames, while
+/// [`FocusTargets`](crate::focus::FocusTargets) is rebuilt from visible targets. Filtering,
+/// resizing, or disabling a control can make the stored id stale. This enum names the repair policy
+/// used by [`FocusState::ensure_visible`](crate::focus::FocusState::ensure_visible).
 ///
-/// Use [`FocusFallback::First`] for ordinary forms, toolbars, and menus where focus should remain
-/// usable after a target disappears. Use [`FocusFallback::Last`] for reverse traversal or footer
-/// controls that should keep focus near the end. Use [`FocusFallback::Clear`] when a view should
-/// stop receiving keyboard input until the app explicitly focuses something else.
+/// Use [`FocusFallback::First`](crate::focus::FocusFallback::First) for ordinary forms, toolbars,
+/// and menus where focus should remain usable after a target disappears. Use
+/// [`FocusFallback::Last`](crate::focus::FocusFallback::Last) for reverse traversal or footer
+/// controls that should keep focus near the end. Use
+/// [`FocusFallback::Clear`](crate::focus::FocusFallback::Clear) when a view should stop receiving
+/// keyboard input until the app explicitly focuses something else.
 ///
 /// # Variants
 ///
-/// - [`FocusFallback::Clear`] removes focus when the stored id is stale.
-/// - [`FocusFallback::First`] moves stale focus to the first enabled target.
-/// - [`FocusFallback::Last`] moves stale focus to the last enabled target.
+/// - [`FocusFallback::Clear`](crate::focus::FocusFallback::Clear) removes focus when the stored id
+///   is stale.
+/// - [`FocusFallback::First`](crate::focus::FocusFallback::First) moves stale focus to the first
+///   enabled target.
+/// - [`FocusFallback::Last`](crate::focus::FocusFallback::Last) moves stale focus to the last
+///   enabled target.
 ///
 /// # Examples
 ///
@@ -710,7 +741,7 @@ impl<Id: Copy + Eq> FocusTargets<Id> {
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{FocusFallback, FocusState, FocusTarget, FocusTargets};
+/// use ratatui_layout::focus::{FocusFallback, FocusState, FocusTarget, FocusTargets};
 ///
 /// let targets = FocusTargets::from_targets([
 ///     FocusTarget::new("save", Rect::new(0, 0, 6, 1), 0).disabled(true),
@@ -742,32 +773,40 @@ pub enum FocusFallback {
 
 /// Persistent focus state for an app or component.
 ///
-/// Use [`FocusState`] next to the data it controls. Each frame, pair it with the current
-/// [`FocusTargets`] to clamp stale focus and move to the next visible enabled target.
+/// Use [`FocusState`](crate::focus::FocusState) next to the data it controls. Each frame, pair it
+/// with the current [`FocusTargets`](crate::focus::FocusTargets) to clamp stale focus and move to
+/// the next visible enabled target.
 ///
 /// # Common uses
 ///
 /// - Store the focused form field while the form is redrawn every frame.
-/// - Keep focus stable across resizes by clamping it to the current [`FocusTargets`].
-/// - Move focus from a mouse click by pairing [`FocusState::focus_at`] with the previous frame's
-///   target set.
+/// - Keep focus stable across resizes by clamping it to the current
+///   [`FocusTargets`](crate::focus::FocusTargets).
+/// - Move focus from a mouse click by pairing
+///   [`FocusState::focus_at`](crate::focus::FocusState::focus_at) with the previous frame's target
+///   set.
 ///
 /// # Accessors and updates
 ///
-/// - [`FocusState::focused`] returns the current focused id.
-/// - [`FocusState::focus`] sets focus directly.
-/// - [`FocusState::clear`] removes focus.
-/// - [`FocusState::first`] and [`FocusState::last`] jump to traversal endpoints.
-/// - [`FocusState::next`] and [`FocusState::previous`] move through enabled targets.
-/// - [`FocusState::focus_at`] moves focus to the enabled target under a position.
-/// - [`FocusState::ensure_visible`] repairs stale focus with an explicit [`FocusFallback`].
-/// - [`FocusState::clamp_to`] clears stale focus after filtering, scrolling, or disabling targets.
+/// - [`FocusState::focused`](crate::focus::FocusState::focused) returns the current focused id.
+/// - [`FocusState::focus`](crate::focus::FocusState::focus) sets focus directly.
+/// - [`FocusState::clear`](crate::focus::FocusState::clear) removes focus.
+/// - [`FocusState::first`](crate::focus::FocusState::first) and
+///   [`FocusState::last`](crate::focus::FocusState::last) jump to traversal endpoints.
+/// - [`FocusState::next`](crate::focus::FocusState::next) and
+///   [`FocusState::previous`](crate::focus::FocusState::previous) move through enabled targets.
+/// - [`FocusState::focus_at`](crate::focus::FocusState::focus_at) moves focus to the enabled target
+///   under a position.
+/// - [`FocusState::ensure_visible`](crate::focus::FocusState::ensure_visible) repairs stale focus
+///   with an explicit [`FocusFallback`](crate::focus::FocusFallback).
+/// - [`FocusState::clamp_to`](crate::focus::FocusState::clamp_to) clears stale focus after
+///   filtering, scrolling, or disabling targets.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+/// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
 ///
 /// let targets =
 ///     FocusTargets::from_targets([FocusTarget::new("field", Rect::new(4, 2, 10, 1), 0)]);
@@ -799,7 +838,7 @@ impl<Id> FocusState<Id> {
     /// Read the focused id while deciding which input receives a key event:
     ///
     /// ```rust
-    /// use ratatui_layout::FocusState;
+    /// use ratatui_layout::focus::FocusState;
     ///
     /// let mut focus = FocusState::default();
     /// focus.focus(Some("search"));
@@ -815,7 +854,8 @@ impl<Id> FocusState<Id> {
 
     /// Sets the focused id.
     ///
-    /// This does not validate against a target set. Call [`FocusState::clamp_to`] after rendering
+    /// This does not validate against a target set. Call
+    /// [`FocusState::clamp_to`](crate::focus::FocusState::clamp_to) after rendering
     /// if the focused id may have become hidden or disabled.
     ///
     /// # Examples
@@ -823,7 +863,7 @@ impl<Id> FocusState<Id> {
     /// Restore focus from app state before the next frame clamps it:
     ///
     /// ```rust
-    /// use ratatui_layout::FocusState;
+    /// use ratatui_layout::focus::FocusState;
     ///
     /// let mut focus = FocusState::default();
     /// focus.focus(Some("email"));
@@ -844,7 +884,7 @@ impl<Id> FocusState<Id> {
     /// Clear stale focus when a modal closes:
     ///
     /// ```rust
-    /// use ratatui_layout::FocusState;
+    /// use ratatui_layout::focus::FocusState;
     ///
     /// let mut focus = FocusState::default();
     /// focus.focus(Some("modal-field"));
@@ -866,7 +906,7 @@ impl<Id: Copy + Eq> FocusState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([FocusTarget::new("first", Rect::new(0, 0, 1, 1), 0)]);
     /// let mut focus = FocusState::default();
@@ -886,7 +926,7 @@ impl<Id: Copy + Eq> FocusState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("first", Rect::new(0, 0, 1, 1), 0),
@@ -909,7 +949,7 @@ impl<Id: Copy + Eq> FocusState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("a", Rect::new(0, 0, 1, 1), 0),
@@ -936,7 +976,7 @@ impl<Id: Copy + Eq> FocusState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("a", Rect::new(0, 0, 1, 1), 0),
@@ -963,7 +1003,7 @@ impl<Id: Copy + Eq> FocusState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([FocusTarget::new("field", Rect::new(2, 0, 10, 1), 0)]);
     /// let mut focus = FocusState::default();
@@ -977,7 +1017,8 @@ impl<Id: Copy + Eq> FocusState<Id> {
 
     /// Keeps valid focus or applies a fallback.
     ///
-    /// Call this after a render pass builds the current [`FocusTargets`].
+    /// Call this after a render pass builds the current
+    /// [`FocusTargets`](crate::focus::FocusTargets).
     ///
     /// # Examples
     ///
@@ -985,7 +1026,7 @@ impl<Id: Copy + Eq> FocusState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusFallback, FocusState, FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusFallback, FocusState, FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([
     ///     FocusTarget::new("run", Rect::new(0, 0, 5, 1), 0).disabled(true),
@@ -1011,7 +1052,9 @@ impl<Id: Copy + Eq> FocusState<Id> {
 
     /// Clears stale focus.
     ///
-    /// This is shorthand for [`FocusState::ensure_visible`] with [`FocusFallback::Clear`].
+    /// This is shorthand for
+    /// [`FocusState::ensure_visible`](crate::focus::FocusState::ensure_visible) with
+    /// [`FocusFallback::Clear`](crate::focus::FocusFallback::Clear).
     ///
     /// # Examples
     ///
@@ -1019,7 +1062,7 @@ impl<Id: Copy + Eq> FocusState<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusState, FocusTarget, FocusTargets};
+    /// use ratatui_layout::focus::{FocusState, FocusTarget, FocusTargets};
     ///
     /// let plan = FocusTargets::from_targets([FocusTarget::new("visible", Rect::new(0, 0, 1, 1), 0)]);
     /// let mut focus = FocusState::default();

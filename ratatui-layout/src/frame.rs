@@ -2,25 +2,30 @@
 //!
 //! Immediate-mode apps usually handle input after the previous frame was drawn. That means a click,
 //! focus movement, or cursor decision often needs the data produced by the last render pass, not a
-//! retained widget tree. [`FrameSnapshot`] is the value a component can return when it wants to
-//! expose that data as data.
+//! retained widget tree. [`FrameSnapshot`](crate::frame::FrameSnapshot) is the value a component
+//! can return when it wants to expose that data as data.
 //!
-//! A [`FrameSnapshot`] is the optional coordination layer above individual [`Regions`],
-//! [`FocusTargets`], [`PointerTargets`], and [`CursorRequests`] values. A render pass builds it
-//! from visible UI data, the app stores it, and the next input event can route through the previous
+//! A [`FrameSnapshot`](crate::frame::FrameSnapshot) is the optional coordination layer above
+//! individual [`Regions`](crate::regions::Regions), [`FocusTargets`](crate::focus::FocusTargets),
+//! [`PointerTargets`](crate::pointer::PointerTargets), and
+//! [`CursorRequests`](crate::cursor::CursorRequests) values. A render pass builds it from visible
+//! UI data, the app stores it, and the next input event can route through the previous
 //! frame without requiring a retained widget tree.
 //!
-//! Use the smaller values directly when only one concern is needed. [`FrameSnapshot`] is useful
-//! when a component boundary needs to return several concerns together.
+//! Use the smaller values directly when only one concern is needed.
+//! [`FrameSnapshot`](crate::frame::FrameSnapshot) is useful when a component boundary needs to
+//! return several concerns together.
 //!
 //! # Type
 //!
-//! - [`FrameSnapshot`] aggregates the frame-local data produced by rendering: geometry, keyboard
-//!   focus targets, pointer targets, and cursor requests.
-//! - [`FrameTargets`] builds a [`FrameSnapshot`] from visible regions when layout, pointer, and
+//! - [`FrameSnapshot`](crate::frame::FrameSnapshot) aggregates the frame-local data produced by
+//!   rendering: geometry, keyboard focus targets, pointer targets, and cursor requests.
+//! - [`FrameTargets`](crate::frame::FrameTargets) builds a
+//!   [`FrameSnapshot`](crate::frame::FrameSnapshot) from visible regions when layout, pointer, and
 //!   focus target data should stay aligned.
-//! - [`RegionTargets`] starts from an existing [`Regions`] and adds focus, pointer, disabled, and
-//!   z-order policy before building a [`FrameSnapshot`].
+//! - [`RegionTargets`](crate::frame::RegionTargets) starts from an existing
+//!   [`Regions`](crate::regions::Regions) and adds focus, pointer, disabled, and z-order policy
+//!   before building a [`FrameSnapshot`](crate::frame::FrameSnapshot).
 //!
 //! # Common uses
 //!
@@ -39,7 +44,8 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{FrameSnapshot, Region, Regions};
+//! use ratatui_layout::frame::FrameSnapshot;
+//! use ratatui_layout::regions::{Region, Regions};
 //!
 //! let previous_frame = FrameSnapshot::from_layout(Regions::from_regions(
 //!     Rect::new(0, 0, 20, 1),
@@ -54,7 +60,9 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{FrameSnapshot, PointerTarget, PointerTargets, Region, Regions};
+//! use ratatui_layout::frame::FrameSnapshot;
+//! use ratatui_layout::pointer::{PointerTarget, PointerTargets};
+//! use ratatui_layout::regions::{Region, Regions};
 //!
 //! let layout_regions = Regions::from_regions(
 //!     Rect::new(0, 0, 10, 1),
@@ -82,44 +90,58 @@ use crate::regions::{Hit, Region, Regions};
 
 /// UI coordination data produced by one render pass.
 ///
-/// [`FrameSnapshot`] owns frame-local geometry, focus targets, pointer targets, and cursor
-/// requests. It does not own app data, widgets, event callbacks, selection, or retained children.
-/// Store it after rendering when the next event should use the previous frame's visible data.
+/// [`FrameSnapshot`](crate::frame::FrameSnapshot) owns frame-local geometry, focus targets, pointer
+/// targets, and cursor requests. It does not own app data, widgets, event callbacks, selection, or
+/// retained children. Store it after rendering when the next event should use the previous frame's
+/// visible data.
 ///
 /// The type is intentionally an aggregate, not a replacement for the smaller values. A component
-/// that only needs hit testing should return [`Regions`] or [`PointerTargets`] directly. Use
-/// [`FrameSnapshot`] when a boundary would otherwise need to return several independent region and
-/// target values and the caller must keep their ids aligned.
+/// that only needs hit testing should return [`Regions`](crate::regions::Regions) or
+/// [`PointerTargets`](crate::pointer::PointerTargets) directly. Use
+/// [`FrameSnapshot`](crate::frame::FrameSnapshot) when a boundary would otherwise need to return
+/// several independent region and target values and the caller must keep their ids aligned.
 ///
 /// # Constructors and setters
 ///
-/// - [`FrameSnapshot::new`] creates an empty aggregate for a solved area.
-/// - [`FrameSnapshot::from_layout`] starts from geometry and adds interaction data later.
-/// - [`FrameSnapshot::focus`] attaches a [`FocusTargets`] produced by the same render pass.
-/// - [`FrameSnapshot::mouse`] attaches a [`PointerTargets`] for pointer routing.
-/// - [`FrameSnapshot::mouse_target`] adds one pointer target to an existing frame.
-/// - [`FrameSnapshot::scroll_region`] adds a whole-region pointer target, commonly for wheel
-///   routing over blank pane space.
-/// - [`FrameSnapshot::cursor`] attaches a [`CursorRequests`] for terminal cursor placement.
+/// - [`FrameSnapshot::new`](crate::frame::FrameSnapshot::new) creates an empty aggregate for a
+///   solved area.
+/// - [`FrameSnapshot::from_layout`](crate::frame::FrameSnapshot::from_layout) starts from geometry
+///   and adds interaction data later.
+/// - [`FrameSnapshot::focus`](crate::frame::FrameSnapshot::focus) attaches a
+///   [`FocusTargets`](crate::focus::FocusTargets) produced by the same render pass.
+/// - [`FrameSnapshot::mouse`](crate::frame::FrameSnapshot::mouse) attaches a
+///   [`PointerTargets`](crate::pointer::PointerTargets) for pointer routing.
+/// - [`FrameSnapshot::mouse_target`](crate::frame::FrameSnapshot::mouse_target) adds one pointer
+///   target to an existing frame.
+/// - [`FrameSnapshot::scroll_region`](crate::frame::FrameSnapshot::scroll_region) adds a
+///   whole-region pointer target, commonly for wheel routing over blank pane space.
+/// - [`FrameSnapshot::cursor`](crate::frame::FrameSnapshot::cursor) attaches a
+///   [`CursorRequests`](crate::cursor::CursorRequests) for terminal cursor placement.
 ///
 /// # Composition
 ///
-/// - [`FrameSnapshot::merge`] appends a child frame's data to a parent frame.
-/// - [`FrameSnapshot::merge_child`] translates, clips, and merges a local child frame in one call.
-/// - [`FrameSnapshot::place_child`] places a local child frame in an already solved screen area.
-/// - [`FrameSnapshot::translate`] moves child-local layout, focus, pointer, and cursor requests
-///   into parent coordinates.
-/// - [`FrameSnapshot::clip_to`] removes hidden child data before the snapshot is stored for input.
-/// - [`FrameSnapshot::map_id`] converts child ids into application-level ids while preserving
-///   geometry and interaction behavior.
+/// - [`FrameSnapshot::merge`](crate::frame::FrameSnapshot::merge) appends a child frame's data to a
+///   parent frame.
+/// - [`FrameSnapshot::merge_child`](crate::frame::FrameSnapshot::merge_child) translates, clips,
+///   and merges a local child frame in one call.
+/// - [`FrameSnapshot::place_child`](crate::frame::FrameSnapshot::place_child) places a local child
+///   frame in an already solved screen area.
+/// - [`FrameSnapshot::translate`](crate::frame::FrameSnapshot::translate) moves child-local layout,
+///   focus, pointer, and cursor requests into parent coordinates.
+/// - [`FrameSnapshot::clip_to`](crate::frame::FrameSnapshot::clip_to) removes hidden child data
+///   before the snapshot is stored for input.
+/// - [`FrameSnapshot::map_id`](crate::frame::FrameSnapshot::map_id) converts child ids into
+///   application-level ids while preserving geometry and interaction behavior.
 ///
 /// # Routing
 ///
-/// - [`FrameSnapshot::route_position`] routes broad position queries through pointer targets first
-///   and layout regions second, returning local coordinates in a [`crate::Hit`].
-/// - [`FrameSnapshot::route_click`], [`FrameSnapshot::route_hover`], and
-///   [`FrameSnapshot::route_scroll`] are intent-named routes that use explicit pointer policy when
-///   a pointer target collection exists.
+/// - [`FrameSnapshot::route_position`](crate::frame::FrameSnapshot::route_position) routes broad
+///   position queries through pointer targets first and layout regions second, returning local
+///   coordinates in a [`crate::regions::Hit`].
+/// - [`FrameSnapshot::route_click`](crate::frame::FrameSnapshot::route_click),
+///   [`FrameSnapshot::route_hover`](crate::frame::FrameSnapshot::route_hover), and
+///   [`FrameSnapshot::route_scroll`](crate::frame::FrameSnapshot::route_scroll) are intent-named
+///   routes that use explicit pointer policy when a pointer target collection exists.
 ///
 /// # Examples
 ///
@@ -127,7 +149,8 @@ use crate::regions::{Hit, Region, Regions};
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{FrameSnapshot, Region, Regions};
+/// use ratatui_layout::frame::FrameSnapshot;
+/// use ratatui_layout::regions::{Region, Regions};
 ///
 /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 /// enum AppRegion {
@@ -158,18 +181,18 @@ use crate::regions::{Hit, Region, Regions};
 pub struct FrameSnapshot<Id = usize> {
     /// Geometry data for visible regions.
     ///
-    /// This is the broadest hit-test fallback and the source of renderable [`crate::Region`]
-    /// values.
+    /// This is the broadest hit-test fallback and the source of renderable
+    /// [`crate::regions::Region`] values.
     pub layout: Regions<Id>,
     /// Keyboard traversal targets for visible controls.
     ///
-    /// Persistent focused id remains in [`crate::FocusState`]; this field records only the targets
-    /// visible in this frame.
+    /// Persistent focused id remains in [`crate::focus::FocusState`]; this field records only the
+    /// targets visible in this frame.
     pub focus: FocusTargets<Id>,
     /// Pointer routing targets for visible controls.
     ///
-    /// Persistent hover and pressed ids remain in [`crate::PointerState`]; this field records only
-    /// where pointer events can route for this frame.
+    /// Persistent hover and pressed ids remain in [`crate::pointer::PointerState`]; this field
+    /// records only where pointer events can route for this frame.
     pub mouse: PointerTargets<Id>,
     /// Cursor requests emitted during rendering.
     ///
@@ -181,14 +204,16 @@ pub struct FrameSnapshot<Id = usize> {
 ///
 /// Many components produce the same three data from the same solved rectangles: layout regions for
 /// geometry, pointer targets for pointer routing, and focus targets for keyboard traversal.
-/// [`FrameTargets`] packages that pattern so component code can describe policy instead of
-/// manually keeping three values aligned.
+/// [`FrameTargets`](crate::frame::FrameTargets) packages that pattern so component code can
+/// describe policy instead of manually keeping three values aligned.
 ///
 /// The builder does not render and does not own application state. It consumes regions produced by
 /// a layout helper, maps local region ids into app ids, and records which regions are focusable or
-/// disabled for this frame. Use [`FrameSnapshot`] directly when a component has only one or two
-/// ad-hoc targets; use [`FrameTargets`] when a repeated list, grid, toolbar, or dialog field set
-/// would otherwise build [`Regions`], [`PointerTargets`], and [`FocusTargets`] in parallel.
+/// disabled for this frame. Use [`FrameSnapshot`](crate::frame::FrameSnapshot) directly when a
+/// component has only one or two ad-hoc targets; use [`FrameTargets`](crate::frame::FrameTargets)
+/// when a repeated list, grid, toolbar, or dialog field set would otherwise build
+/// [`Regions`](crate::regions::Regions), [`PointerTargets`](crate::pointer::PointerTargets), and
+/// [`FocusTargets`](crate::focus::FocusTargets) in parallel.
 ///
 /// # Common Uses
 ///
@@ -204,7 +229,8 @@ pub struct FrameSnapshot<Id = usize> {
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{FrameTargets, Region};
+/// use ratatui_layout::frame::FrameTargets;
+/// use ratatui_layout::regions::Region;
 ///
 /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 /// enum Target {
@@ -250,7 +276,7 @@ impl<Id> FrameTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameTargets;
+    /// use ratatui_layout::frame::FrameTargets;
     ///
     /// let targets = FrameTargets::<&str>::new(Rect::new(0, 0, 10, 1), 20);
     ///
@@ -271,7 +297,7 @@ impl<Id> FrameTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameTargets;
+    /// use ratatui_layout::frame::FrameTargets;
     ///
     /// let area = Rect::new(0, 0, 10, 1);
     /// let targets = FrameTargets::<()>::new(area, 0);
@@ -288,7 +314,7 @@ impl<Id> FrameTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameTargets;
+    /// use ratatui_layout::frame::FrameTargets;
     ///
     /// let targets = FrameTargets::<()>::new(Rect::new(0, 0, 1, 1), 7);
     ///
@@ -307,7 +333,8 @@ impl<Id> FrameTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Region};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let frame = FrameTargets::new(Rect::new(0, 0, 4, 1), 0)
     ///     .z(10)
@@ -330,11 +357,11 @@ impl<Id> FrameTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameTargets;
+    /// use ratatui_layout::frame::FrameTargets;
     ///
     /// let area = Rect::new(0, 0, 20, 5);
     /// let frame = FrameTargets::new(area, 0).mouse_region("pane", area).build(
-    ///     core::iter::empty::<ratatui_layout::Region<&str>>(),
+    ///     core::iter::empty::<ratatui_layout::regions::Region<&str>>(),
     ///     |id| id,
     ///     |_| false,
     ///     |_| false,
@@ -350,10 +377,12 @@ impl<Id> FrameTargets<Id> {
 
     /// Starts a target builder from a solved region set.
     ///
-    /// Use this after [`Row`](crate::Row), [`Column`](crate::Column), [`Grid`](crate::Grid),
-    /// [`Overlay`](crate::Overlay), a viewport, or a custom component has already produced
-    /// geometry. The returned [`RegionTargets`] adds policy that [`Regions`] does not store:
-    /// disabled, focusable, pointer routing, whole-region pointer routing, and z-order.
+    /// Use this after [`Row`](crate::linear::Row), [`Column`](crate::linear::Column),
+    /// [`Grid`](crate::grid::Grid), [`Overlay`](crate::overlay::Overlay), a viewport, or a
+    /// custom component has already produced geometry. The returned
+    /// [`RegionTargets`](crate::frame::RegionTargets) adds policy that
+    /// [`Regions`](crate::regions::Regions) does not store: disabled, focusable, pointer routing,
+    /// whole-region pointer routing, and z-order.
     ///
     /// # Examples
     ///
@@ -361,7 +390,9 @@ impl<Id> FrameTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::{FocusFallback, FocusState, FrameTargets, Row};
+    /// use ratatui_layout::focus::{FocusFallback, FocusState};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::linear::Row;
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum Command {
@@ -394,8 +425,9 @@ impl<Id> FrameTargets<Id> {
 
 /// Builder that derives frame-local targets from solved regions.
 ///
-/// [`Regions`] stores visible ids and rectangles. [`RegionTargets`] adds interaction policy
-/// while keeping layout, focus, and pointer targets aligned on the same ids.
+/// [`Regions`](crate::regions::Regions) stores visible ids and rectangles.
+/// [`RegionTargets`](crate::frame::RegionTargets) adds interaction policy while keeping layout,
+/// focus, and pointer targets aligned on the same ids.
 ///
 /// Use this builder when rendering and routing share solved regions:
 ///
@@ -408,14 +440,18 @@ impl<Id> FrameTargets<Id> {
 ///
 /// # Methods
 ///
-/// - [`RegionTargets::disabled`] marks visible regions unavailable for focus traversal and pointer
-///   activation.
-/// - [`RegionTargets::focusable`] chooses which regions join keyboard traversal.
-/// - [`RegionTargets::mouseable`] chooses which regions receive pointer routing.
-/// - [`RegionTargets::mouse_region`] adds a whole-region pointer target for blank pane space or
-///   wheel routing.
-/// - [`RegionTargets::z`] assigns one z-order to generated layout and pointer targets.
-/// - [`RegionTargets::build`] produces the [`FrameSnapshot`] stored after rendering.
+/// - [`RegionTargets::disabled`](crate::frame::RegionTargets::disabled) marks visible regions
+///   unavailable for focus traversal and pointer activation.
+/// - [`RegionTargets::focusable`](crate::frame::RegionTargets::focusable) chooses which regions
+///   join keyboard traversal.
+/// - [`RegionTargets::mouseable`](crate::frame::RegionTargets::mouseable) chooses which regions
+///   receive pointer routing.
+/// - [`RegionTargets::mouse_region`](crate::frame::RegionTargets::mouse_region) adds a whole-region
+///   pointer target for blank pane space or wheel routing.
+/// - [`RegionTargets::z`](crate::frame::RegionTargets::z) assigns one z-order to generated layout
+///   and pointer targets.
+/// - [`RegionTargets::build`](crate::frame::RegionTargets::build) produces the
+///   [`FrameSnapshot`](crate::frame::FrameSnapshot) stored after rendering.
 ///
 /// # Examples
 ///
@@ -423,7 +459,8 @@ impl<Id> FrameTargets<Id> {
 ///
 /// ```rust
 /// use ratatui_core::layout::{Constraint, Rect};
-/// use ratatui_layout::{FrameTargets, Row};
+/// use ratatui_layout::frame::FrameTargets;
+/// use ratatui_layout::linear::Row;
 ///
 /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 /// enum Command {
@@ -484,7 +521,8 @@ impl<Id> RegionTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::{FrameTargets, Row};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::linear::Row;
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum Command {
@@ -527,7 +565,8 @@ impl<Id> RegionTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Region, Regions};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let plan = Regions::from_regions(
     ///     Rect::new(0, 0, 20, 2),
@@ -557,7 +596,8 @@ impl<Id> RegionTargets<Id> {
     /// Chooses which regions receive pointer routing.
     ///
     /// Non-pointer-routable regions remain renderable and can still be found by broad
-    /// [`FrameSnapshot::route_position`] geometry queries.
+    /// [`FrameSnapshot::route_position`](crate::frame::FrameSnapshot::route_position) geometry
+    /// queries.
     ///
     /// # Examples
     ///
@@ -565,7 +605,8 @@ impl<Id> RegionTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Region, Regions};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let plan = Regions::from_regions(
     ///     Rect::new(0, 0, 20, 1),
@@ -602,7 +643,8 @@ impl<Id> RegionTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Regions};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::Regions;
     ///
     /// let pane = Rect::new(0, 0, 20, 5);
     /// let frame = FrameTargets::from_regions(Regions::new(pane), 0)
@@ -627,7 +669,8 @@ impl<Id> RegionTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Region, Regions};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let popup = Regions::from_regions(
     ///     Rect::new(0, 0, 8, 1),
@@ -658,7 +701,8 @@ impl<Id> RegionTargets<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::{FrameTargets, Row};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::linear::Row;
     ///
     /// let segment_slots = [
     ///     ("queued", Constraint::Length(8)),
@@ -714,7 +758,7 @@ where
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameTargets;
+    /// use ratatui_layout::frame::FrameTargets;
     ///
     /// let frame =
     ///     FrameTargets::new(Rect::new(0, 0, 10, 3), 0).region("details", Rect::new(0, 0, 10, 3));
@@ -734,7 +778,8 @@ where
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Region};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let frame = FrameTargets::new(Rect::new(0, 0, 8, 1), 0)
     ///     .build_focusable([Region::new("save", Rect::new(0, 0, 8, 1))], |id| id);
@@ -761,7 +806,8 @@ where
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Region};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let regions = [
     ///     Region::new(None, Rect::new(0, 0, 10, 1)),
@@ -797,7 +843,8 @@ where
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Region};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let frame = FrameTargets::new(Rect::new(0, 0, 8, 1), 0).build_with_disabled(
     ///     [Region::new("save", Rect::new(0, 0, 8, 1))],
@@ -831,7 +878,8 @@ where
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameTargets, Region};
+    /// use ratatui_layout::frame::FrameTargets;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let frame = FrameTargets::new(Rect::new(0, 0, 10, 2), 5).build(
     ///     [
@@ -893,7 +941,7 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameSnapshot;
+    /// use ratatui_layout::frame::FrameSnapshot;
     ///
     /// let frame = FrameSnapshot::<()>::new(Rect::new(0, 0, 80, 24));
     /// assert!(frame.layout.is_empty());
@@ -917,7 +965,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let layout = Regions::from_regions(
     ///     Rect::new(0, 0, 10, 1),
@@ -939,13 +988,15 @@ impl<Id> FrameSnapshot<Id> {
     /// Sets the focus target collection.
     ///
     /// This replaces the current focus target collection rather than merging. Use
-    /// [`FrameSnapshot::merge`] when a child frame should be appended to existing data.
+    /// [`FrameSnapshot::merge`](crate::frame::FrameSnapshot::merge) when a child frame should be
+    /// appended to existing data.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FocusTarget, FocusTargets, FrameSnapshot};
+    /// use ratatui_layout::focus::{FocusTarget, FocusTargets};
+    /// use ratatui_layout::frame::FrameSnapshot;
     ///
     /// let frame = FrameSnapshot::new(Rect::new(0, 0, 10, 1)).focus(FocusTargets::from_targets([
     ///     FocusTarget::new("field", Rect::new(0, 0, 10, 1), 0),
@@ -969,7 +1020,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, PointerTarget, PointerTargets};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
     ///
     /// let frame = FrameSnapshot::new(Rect::new(0, 0, 10, 1)).mouse(PointerTargets::from_targets([
     ///     PointerTarget::new("button", Rect::new(0, 0, 10, 1)),
@@ -985,14 +1037,16 @@ impl<Id> FrameSnapshot<Id> {
 
     /// Sets the cursor request list.
     ///
-    /// This replaces the current cursor request list. During composition, [`FrameSnapshot::merge`]
-    /// preserves render order so later visible cursor requests can win.
+    /// This replaces the current cursor request list. During composition,
+    /// [`FrameSnapshot::merge`](crate::frame::FrameSnapshot::merge) preserves render order so
+    /// later visible cursor requests can win.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui_core::layout::{Position, Rect};
-    /// use ratatui_layout::{CursorRequest, CursorRequests, FrameSnapshot};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::frame::FrameSnapshot;
     ///
     /// let frame = FrameSnapshot::<()>::new(Rect::default())
     ///     .cursor(CursorRequests::new().request(CursorRequest::visible(Position::new(4, 2))));
@@ -1010,9 +1064,10 @@ impl<Id> FrameSnapshot<Id> {
 
     /// Adds one pointer target to the frame's pointer target collection.
     ///
-    /// This is the aggregate equivalent of [`PointerTargets::target`]. It is useful when a
-    /// component already has a [`FrameSnapshot`] and wants to add a pointer-only region without
-    /// constructing a temporary pointer target collection.
+    /// This is the aggregate equivalent of
+    /// [`PointerTargets::target`](crate::pointer::PointerTargets::target). It is useful when a
+    /// component already has a [`FrameSnapshot`](crate::frame::FrameSnapshot) and wants to add a
+    /// pointer-only region without constructing a temporary pointer target collection.
     ///
     /// # Examples
     ///
@@ -1020,7 +1075,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, PointerTarget};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::pointer::PointerTarget;
     ///
     /// let frame = FrameSnapshot::new(Rect::new(0, 0, 20, 5))
     ///     .mouse_target(PointerTarget::new("pane", Rect::new(0, 0, 20, 5)));
@@ -1046,7 +1102,7 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameSnapshot;
+    /// use ratatui_layout::frame::FrameSnapshot;
     ///
     /// let frame = FrameSnapshot::new(Rect::new(0, 0, 20, 5))
     ///     .scroll_region("list-pane", Rect::new(0, 0, 20, 5));
@@ -1068,7 +1124,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let base = FrameSnapshot::from_layout(Regions::from_regions(
     ///     Rect::new(0, 0, 10, 1),
@@ -1098,8 +1155,10 @@ impl<Id> FrameSnapshot<Id> {
     /// This is a convenience for the common parent/child composition sequence: a child solves local
     /// coordinates, the parent translates those coordinates to the child's screen position, clips
     /// them to a viewport, and then merges them into the parent aggregate. Use the lower-level
-    /// [`FrameSnapshot::translate`], [`FrameSnapshot::clip_to`], and [`FrameSnapshot::merge`]
-    /// methods when each step needs to be inspected separately.
+    /// [`FrameSnapshot::translate`](crate::frame::FrameSnapshot::translate),
+    /// [`FrameSnapshot::clip_to`](crate::frame::FrameSnapshot::clip_to), and
+    /// [`FrameSnapshot::merge`](crate::frame::FrameSnapshot::merge) methods when each step
+    /// needs to be inspected separately.
     ///
     /// # Examples
     ///
@@ -1107,7 +1166,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let child = FrameSnapshot::from_layout(Regions::from_regions(
     ///     Rect::new(0, 0, 10, 1),
@@ -1125,10 +1185,11 @@ impl<Id> FrameSnapshot<Id> {
 
     /// Places a child frame in an absolute screen area and merges it into this frame.
     ///
-    /// This is the common form of [`FrameSnapshot::merge_child`] when the parent has already solved
-    /// the child area. The child is translated by `area.x` and `area.y`, then clipped to
-    /// `area`, so layout, focus, pointer, and cursor requests match the region the child actually
-    /// rendered into.
+    /// This is the common form of
+    /// [`FrameSnapshot::merge_child`](crate::frame::FrameSnapshot::merge_child) when the parent has
+    /// already solved the child area. The child is translated by `area.x` and `area.y`, then
+    /// clipped to `area`, so layout, focus, pointer, and cursor requests match the region the
+    /// child actually rendered into.
     ///
     /// # Examples
     ///
@@ -1136,7 +1197,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let child_area = Rect::new(4, 2, 10, 1);
     /// let child = FrameSnapshot::from_layout(Regions::from_regions(
@@ -1163,7 +1225,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let frame = FrameSnapshot::from_layout(Regions::from_regions(
     ///     Rect::new(0, 0, 5, 1),
@@ -1193,7 +1256,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let frame = FrameSnapshot::from_layout(Regions::from_regions(
     ///     Rect::new(0, 0, 10, 3),
@@ -1221,7 +1285,8 @@ impl<Id> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let frame = FrameSnapshot::from_layout(Regions::from_regions(
     ///     Rect::new(0, 0, 5, 1),
@@ -1255,7 +1320,9 @@ impl<Id: Copy> FrameSnapshot<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, PointerTarget, PointerTargets, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::pointer::{PointerTarget, PointerTargets};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let frame = FrameSnapshot::from_layout(Regions::from_regions(
     ///     Rect::new(0, 0, 10, 1),
@@ -1288,14 +1355,15 @@ impl<Id: Copy> FrameSnapshot<Id> {
     ///
     /// When the frame has explicit pointer targets, wheel routing uses those targets so disabled or
     /// non-pointer regions do not fall through to layout geometry. When the frame has no pointer
-    /// targets, it falls back to [`FrameSnapshot::route_position`] behavior and routes through
-    /// layout regions.
+    /// targets, it falls back to
+    /// [`FrameSnapshot::route_position`](crate::frame::FrameSnapshot::route_position) behavior and
+    /// routes through layout regions.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameSnapshot;
+    /// use ratatui_layout::frame::FrameSnapshot;
     ///
     /// let frame =
     ///     FrameSnapshot::new(Rect::new(0, 0, 20, 5)).scroll_region("details", Rect::new(0, 0, 20, 5));
@@ -1310,14 +1378,16 @@ impl<Id: Copy> FrameSnapshot<Id> {
     ///
     /// When the frame has explicit pointer targets, click routing uses those targets so disabled or
     /// non-pointer regions do not fall through to layout geometry. When the frame has no pointer
-    /// targets, it falls back to [`FrameSnapshot::route_position`] behavior and routes through
-    /// layout regions.
+    /// targets, it falls back to
+    /// [`FrameSnapshot::route_position`](crate::frame::FrameSnapshot::route_position) behavior and
+    /// routes through layout regions.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{FrameSnapshot, Region, Regions};
+    /// use ratatui_layout::frame::FrameSnapshot;
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let frame = FrameSnapshot::from_layout(Regions::from_regions(
     ///     Rect::new(0, 0, 10, 1),
@@ -1334,14 +1404,15 @@ impl<Id: Copy> FrameSnapshot<Id> {
     ///
     /// When the frame has explicit pointer targets, hover routing uses those targets so disabled or
     /// non-pointer regions do not fall through to layout geometry. When the frame has no pointer
-    /// targets, it falls back to [`FrameSnapshot::route_position`] behavior and routes through
-    /// layout regions.
+    /// targets, it falls back to
+    /// [`FrameSnapshot::route_position`](crate::frame::FrameSnapshot::route_position) behavior and
+    /// routes through layout regions.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::FrameSnapshot;
+    /// use ratatui_layout::frame::FrameSnapshot;
     ///
     /// let frame =
     ///     FrameSnapshot::new(Rect::new(0, 0, 10, 3)).scroll_region("pane", Rect::new(0, 0, 10, 3));

@@ -2,15 +2,16 @@
 //!
 //! Selection is often durable application state: a selected row may stay selected while it scrolls
 //! out of view, and a selected command may matter independently from hover or keyboard focus.
-//! [`SelectionState`] is therefore deliberately not a widget state type. It has no geometry and
-//! does not know how rows, cells, or buttons are rendered. Pair it with a frame-local ordered list
-//! of visible ids from a layout, grid, list, or table when keyboard or pointer input changes
-//! selection.
+//! [`SelectionState`](crate::selection::SelectionState) is therefore deliberately not a widget
+//! state type. It has no geometry and does not know how rows, cells, or buttons are rendered. Pair
+//! it with a frame-local ordered list of visible ids from a layout, grid, list, or table when
+//! keyboard or pointer input changes selection.
 //!
 //! The shared idea in this module is that selection is about application meaning, not terminal
-//! coordinates. A [`crate::Regions`], [`crate::PointerTargets`], [`crate::FocusTargets`], grid,
-//! list, or table can tell the app which ids are visible this frame. [`SelectionState`] decides
-//! which of those ids are selected and keeps that decision after the frame is gone.
+//! coordinates. A [`crate::regions::Regions`], [`crate::pointer::PointerTargets`],
+//! [`crate::focus::FocusTargets`], grid, list, or table can tell the app which ids are visible this
+//! frame. [`SelectionState`](crate::selection::SelectionState) decides which of those ids are
+//! selected and keeps that decision after the frame is gone.
 //!
 //! Use existing Ratatui widget state when that widget fully owns the list or table selection
 //! behavior. Use this module when selection belongs to application data and must coordinate with
@@ -18,21 +19,27 @@
 //!
 //! That split is useful for common UI workflows:
 //!
-//! - a list can render the selected row differently while using [`SelectionState::select_next`] and
-//!   [`SelectionState::select_previous`] to move through only currently visible ids;
-//! - a pointer click can route through [`crate::PointerTargets`] and then call
-//!   [`SelectionState::select`] or [`SelectionState::toggle`] with the hit id;
-//! - a palette can use [`crate::FocusState`] for keyboard focus and [`SelectionState`] for the
-//!   chosen item, avoiding a single overloaded state value;
+//! - a list can render the selected row differently while using
+//!   [`SelectionState::select_next`](crate::selection::SelectionState::select_next) and
+//!   [`SelectionState::select_previous`](crate::selection::SelectionState::select_previous) to move
+//!   through only currently visible ids;
+//! - a pointer click can route through [`crate::pointer::PointerTargets`] and then call
+//!   [`SelectionState::select`](crate::selection::SelectionState::select) or
+//!   [`SelectionState::toggle`](crate::selection::SelectionState::toggle) with the hit id;
+//! - a palette can use [`crate::focus::FocusState`] for keyboard focus and
+//!   [`SelectionState`](crate::selection::SelectionState) for the chosen item, avoiding a single
+//!   overloaded state value;
 //! - a multi-select table can preserve selected ids even when filtering or scrolling temporarily
 //!   hides them.
 //!
 //! # Types
 //!
-//! - [`SelectionMode`] describes whether selection is disabled, single-choice, or multi-choice.
-//! - [`SelectionState`] stores selected ids in insertion order and applies the mode rules.
-//! - [`VisibleSelection`] bridges one durable selected id to the visible position used by a
-//!   virtualized view.
+//! - [`SelectionMode`](crate::selection::SelectionMode) describes whether selection is disabled,
+//!   single-choice, or multi-choice.
+//! - [`SelectionState`](crate::selection::SelectionState) stores selected ids in insertion order
+//!   and applies the mode rules.
+//! - [`VisibleSelection`](crate::selection::VisibleSelection) bridges one durable selected id to
+//!   the visible position used by a virtualized view.
 //!
 //! See [`crate::docs::interaction`] for how selection differs from focus and hover, and why it
 //! remains app-owned rather than part of a region set.
@@ -42,7 +49,7 @@
 //! Single selection replaces the previous id:
 //!
 //! ```rust
-//! use ratatui_layout::{SelectionMode, SelectionState};
+//! use ratatui_layout::selection::{SelectionMode, SelectionState};
 //!
 //! let mut selection = SelectionState::new(SelectionMode::Single);
 //! selection.select("open");
@@ -54,7 +61,7 @@
 //! Multi-selection keeps insertion order and supports toggling:
 //!
 //! ```rust
-//! use ratatui_layout::{SelectionMode, SelectionState};
+//! use ratatui_layout::selection::{SelectionMode, SelectionState};
 //!
 //! let mut selection = SelectionState::new(SelectionMode::Multi);
 //! selection.toggle("alpha");
@@ -68,21 +75,25 @@ use alloc::vec::Vec;
 
 /// Selection behavior for a collection of app-owned ids.
 ///
-/// The mode explains how [`SelectionState`] should interpret [`SelectionState::select`] and
-/// [`SelectionState::toggle`]. It does not decide which ids are visible or enabled; callers pass
-/// the ordered visible ids used for traversal.
+/// The mode explains how [`SelectionState`](crate::selection::SelectionState) should interpret
+/// [`SelectionState::select`](crate::selection::SelectionState::select) and
+/// [`SelectionState::toggle`](crate::selection::SelectionState::toggle). It does not decide which
+/// ids are visible or enabled; callers pass the ordered visible ids used for traversal.
 ///
-/// Use [`SelectionMode::None`] when a component should keep the same input code but temporarily
-/// avoid retaining a selection, [`SelectionMode::Single`] for menus and palettes where one choice
-/// replaces another, and [`SelectionMode::Multi`] for checklist or table workflows where several
-/// ids can be active at once.
+/// Use [`SelectionMode::None`](crate::selection::SelectionMode::None) when a component should keep
+/// the same input code but temporarily avoid retaining a selection,
+/// [`SelectionMode::Single`](crate::selection::SelectionMode::Single) for menus and palettes where
+/// one choice replaces another, and
+/// [`SelectionMode::Multi`](crate::selection::SelectionMode::Multi) for checklist or table
+/// workflows where several ids can be active at once.
 ///
 /// # Examples
 ///
-/// Pick the mode from the interaction model, then let [`SelectionState`] enforce it:
+/// Pick the mode from the interaction model, then let
+/// [`SelectionState`](crate::selection::SelectionState) enforce it:
 ///
 /// ```rust
-/// use ratatui_layout::{SelectionMode, SelectionState};
+/// use ratatui_layout::selection::{SelectionMode, SelectionState};
 ///
 /// let mut menu = SelectionState::new(SelectionMode::Single);
 /// menu.select("open");
@@ -117,41 +128,50 @@ pub enum SelectionMode {
 
 /// Persistent selection for app-owned ids.
 ///
-/// [`SelectionState`] owns only the selected ids and the [`SelectionMode`]. It does not own layout
-/// rectangles, item data, focus, or hover state. Use the current frame's visible ids to move the
-/// selection with [`select_next`](Self::select_next) or [`select_previous`](Self::select_previous).
+/// [`SelectionState`](crate::selection::SelectionState) owns only the selected ids and the
+/// [`SelectionMode`](crate::selection::SelectionMode). It does not own layout rectangles, item
+/// data, focus, or hover state. Use the current frame's visible ids to move the selection with
+/// [`select_next`](Self::select_next) or [`select_previous`](Self::select_previous).
 ///
 /// The id type should match the ids emitted by the frame-local data that drive the view, such as
-/// [`crate::GridPosition`] for a grid palette or [`crate::table::CellPosition`] for a virtual
+/// [`crate::grid::GridPosition`] for a grid palette or [`crate::table::CellPosition`] for a virtual
 /// table.
 ///
 /// # Constructors and configuration
 ///
-/// - [`SelectionState::new`] creates empty state in a chosen [`SelectionMode`].
-/// - [`SelectionState::mode`] returns the current behavior.
-/// - [`SelectionState::set_mode`] changes behavior and drops selections that no longer fit.
+/// - [`SelectionState::new`](crate::selection::SelectionState::new) creates empty state in a chosen
+///   [`SelectionMode`](crate::selection::SelectionMode).
+/// - [`SelectionState::mode`](crate::selection::SelectionState::mode) returns the current behavior.
+/// - [`SelectionState::set_mode`](crate::selection::SelectionState::set_mode) changes behavior and
+///   drops selections that no longer fit.
 ///
 /// # Reading and clearing selection
 ///
-/// - [`SelectionState::selected`] returns all selected ids in insertion order.
-/// - [`SelectionState::primary`] returns the representative selected id for rendering status text
-///   or moving from the current item.
-/// - [`SelectionState::is_selected`] checks one id while rendering rows, cells, or commands.
-/// - [`SelectionState::clear`] removes all selected ids, commonly for Escape or filter changes.
+/// - [`SelectionState::selected`](crate::selection::SelectionState::selected) returns all selected
+///   ids in insertion order.
+/// - [`SelectionState::primary`](crate::selection::SelectionState::primary) returns the
+///   representative selected id for rendering status text or moving from the current item.
+/// - [`SelectionState::is_selected`](crate::selection::SelectionState::is_selected) checks one id
+///   while rendering rows, cells, or commands.
+/// - [`SelectionState::clear`](crate::selection::SelectionState::clear) removes all selected ids,
+///   commonly for Escape or filter changes.
 ///
 /// # User actions
 ///
-/// - [`SelectionState::select`] applies normal selection rules for click, Enter, or focus commit.
-/// - [`SelectionState::toggle`] applies checkbox-like or modifier-click behavior.
-/// - [`SelectionState::select_next`] and [`SelectionState::select_previous`] move over the ordered
-///   ids visible in the current frame.
+/// - [`SelectionState::select`](crate::selection::SelectionState::select) applies normal selection
+///   rules for click, Enter, or focus commit.
+/// - [`SelectionState::toggle`](crate::selection::SelectionState::toggle) applies checkbox-like or
+///   modifier-click behavior.
+/// - [`SelectionState::select_next`](crate::selection::SelectionState::select_next) and
+///   [`SelectionState::select_previous`](crate::selection::SelectionState::select_previous) move
+///   over the ordered ids visible in the current frame.
 ///
 /// # Examples
 ///
 /// Traverse over the ids visible in the current frame:
 ///
 /// ```rust
-/// use ratatui_layout::{SelectionMode, SelectionState};
+/// use ratatui_layout::selection::{SelectionMode, SelectionState};
 ///
 /// let visible_ids = ["first", "second", "third"];
 /// let mut selection = SelectionState::new(SelectionMode::Single);
@@ -181,13 +201,14 @@ impl<Id> Default for SelectionState<Id> {
 impl<Id> SelectionState<Id> {
     /// Creates selection state for the given mode.
     ///
-    /// New state starts empty. Call [`SelectionState::select`] or one of the traversal methods
-    /// after the first frame has produced visible ids.
+    /// New state starts empty. Call
+    /// [`SelectionState::select`](crate::selection::SelectionState::select) or one of the traversal
+    /// methods after the first frame has produced visible ids.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let selection = SelectionState::<usize>::new(SelectionMode::None);
     /// assert!(selection.selected().is_empty());
@@ -206,7 +227,7 @@ impl<Id> SelectionState<Id> {
     /// Branch input behavior based on whether the current view supports multi-select:
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let selection = SelectionState::<usize>::new(SelectionMode::Multi);
     /// let uses_checkbox_gutter = selection.mode() == SelectionMode::Multi;
@@ -219,13 +240,14 @@ impl<Id> SelectionState<Id> {
 
     /// Sets the current selection mode and removes selections that cannot be represented.
     ///
-    /// Switching to [`SelectionMode::None`] clears all ids. Switching to [`SelectionMode::Single`]
+    /// Switching to [`SelectionMode::None`](crate::selection::SelectionMode::None) clears all ids.
+    /// Switching to [`SelectionMode::Single`](crate::selection::SelectionMode::Single)
     /// keeps only the primary id.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut selection = SelectionState::new(SelectionMode::Multi);
     /// selection.select("a");
@@ -252,7 +274,7 @@ impl<Id> SelectionState<Id> {
     /// Read selected ids when applying a bulk action:
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut selection = SelectionState::new(SelectionMode::Multi);
     /// selection.select("alpha");
@@ -272,7 +294,7 @@ impl<Id> SelectionState<Id> {
     /// Clear row selection when Escape closes selection mode:
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut selection = SelectionState::new(SelectionMode::Single);
     /// selection.select("row-4");
@@ -297,7 +319,7 @@ impl<Id: Copy + Eq> SelectionState<Id> {
     /// Show a stable representative item in status text even when multiple ids are selected:
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut selection = SelectionState::new(SelectionMode::Multi);
     /// selection.select("first");
@@ -316,7 +338,7 @@ impl<Id: Copy + Eq> SelectionState<Id> {
     /// Check each rendered row id while choosing its visual style:
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let rows = ["alpha", "beta"];
     /// let mut selection = SelectionState::new(SelectionMode::Single);
@@ -341,7 +363,7 @@ impl<Id: Copy + Eq> SelectionState<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut single = SelectionState::new(SelectionMode::Single);
     /// single.select(1);
@@ -371,7 +393,7 @@ impl<Id: Copy + Eq> SelectionState<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut multi = SelectionState::new(SelectionMode::Multi);
     /// multi.toggle("debug");
@@ -407,7 +429,7 @@ impl<Id: Copy + Eq> SelectionState<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut selection = SelectionState::new(SelectionMode::Single);
     /// selection.select("third");
@@ -424,7 +446,7 @@ impl<Id: Copy + Eq> SelectionState<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::{SelectionMode, SelectionState};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let mut selection = SelectionState::new(SelectionMode::Single);
     /// selection.select("first");
@@ -468,7 +490,8 @@ enum Direction {
 ///
 /// Virtualized views often need two identities for the same selection. Application commands should
 /// operate on a durable id such as a record key, while render and focus code often need a visible
-/// position such as a row index or table cell. [`VisibleSelection`] stores both values together and
+/// position such as a row index or table cell.
+/// [`VisibleSelection`](crate::selection::VisibleSelection) stores both values together and
 /// provides small helpers for the common conversions.
 ///
 /// The type does not know how to look up data. Callers provide closures that map a visible position
@@ -476,8 +499,9 @@ enum Direction {
 /// for lists, tables, grids, and filtered views without making it depend on any one collection
 /// type.
 ///
-/// Use [`SelectionState`] when selection is simply a set of ids. Use [`VisibleSelection`] when a
-/// component must also keep a rendered position synchronized with a durable application id.
+/// Use [`SelectionState`](crate::selection::SelectionState) when selection is simply a set of ids.
+/// Use [`VisibleSelection`](crate::selection::VisibleSelection) when a component must also keep a
+/// rendered position synchronized with a durable application id.
 ///
 /// # Common uses
 ///
@@ -490,17 +514,20 @@ enum Direction {
 /// # Visible id helpers
 ///
 /// When the visible positions are ordinary indexes into a slice of ids, use
-/// [`VisibleSelection::sync_ids`], [`VisibleSelection::select_index`], and
-/// [`VisibleSelection::move_by`]. Keep [`VisibleSelection::sync`] and
-/// [`VisibleSelection::select_position`] for custom projections such as tables, grouped rows, or
-/// views where a visible position is not a `usize` index.
+/// [`VisibleSelection::sync_ids`](crate::selection::VisibleSelection::sync_ids),
+/// [`VisibleSelection::select_index`](crate::selection::VisibleSelection::select_index), and
+/// [`VisibleSelection::move_by`](crate::selection::VisibleSelection::move_by). Keep
+/// [`VisibleSelection::sync`](crate::selection::VisibleSelection::sync) and
+/// [`VisibleSelection::select_position`](crate::selection::VisibleSelection::select_position) for
+/// custom projections such as tables, grouped rows, or views where a visible position is not a
+/// `usize` index.
 ///
 /// # Examples
 ///
 /// Synchronize a durable id after filtering changes the visible rows:
 ///
 /// ```rust
-/// use ratatui_layout::VisibleSelection;
+/// use ratatui_layout::selection::VisibleSelection;
 ///
 /// let rows = [(0, "api"), (1, "docs")];
 /// let mut selection = VisibleSelection::new();
@@ -536,7 +563,7 @@ impl<Id, Position> VisibleSelection<Id, Position> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let selection = VisibleSelection::<&str>::new();
     ///
@@ -554,7 +581,7 @@ impl<Id, Position> VisibleSelection<Id, Position> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let mut selection = VisibleSelection::new();
     /// selection.select_visible(2, "row-2");
@@ -577,7 +604,7 @@ impl<Id: Copy, Position: Copy> VisibleSelection<Id, Position> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let mut selection = VisibleSelection::new();
     /// selection.select_visible(0, "api");
@@ -595,7 +622,7 @@ impl<Id: Copy, Position: Copy> VisibleSelection<Id, Position> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let mut selection = VisibleSelection::new();
     /// selection.select_visible(3, "docs");
@@ -614,7 +641,7 @@ impl<Id: Copy, Position: Copy> VisibleSelection<Id, Position> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let mut selection = VisibleSelection::new();
     /// let position = selection.select_visible(4, "release-4");
@@ -637,7 +664,7 @@ impl<Id: Copy, Position: Copy> VisibleSelection<Id, Position> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let rows = ["api", "docs"];
     /// let mut selection = VisibleSelection::new();
@@ -666,7 +693,7 @@ impl<Id: Copy, Position: Copy> VisibleSelection<Id, Position> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let mut selection = VisibleSelection::new();
     /// selection.select_visible(2, "docs");
@@ -702,15 +729,16 @@ impl<Id: Copy + Eq> VisibleSelection<Id, usize> {
     /// visible index is refreshed. If the selected id is missing or there is no selection yet, the
     /// first visible id becomes selected. Empty visible slices clear the selection.
     ///
-    /// Use [`VisibleSelection::sync`] when visible positions are not ordinary indexes or when the
-    /// fallback should be something other than the first visible id.
+    /// Use [`VisibleSelection::sync`](crate::selection::VisibleSelection::sync) when visible
+    /// positions are not ordinary indexes or when the fallback should be something other than
+    /// the first visible id.
     ///
     /// # Examples
     ///
     /// Keep a selected record id valid after filtering hides some rows:
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let mut selection = VisibleSelection::new();
     /// selection.select_visible(1, "docs");
@@ -744,7 +772,7 @@ impl<Id: Copy + Eq> VisibleSelection<Id, usize> {
     /// Select the record id at the clicked visible row:
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let visible_ids = ["api", "docs"];
     /// let mut selection = VisibleSelection::new();
@@ -770,7 +798,7 @@ impl<Id: Copy + Eq> VisibleSelection<Id, usize> {
     /// Move through filtered ids without losing the durable selected id:
     ///
     /// ```rust
-    /// use ratatui_layout::VisibleSelection;
+    /// use ratatui_layout::selection::VisibleSelection;
     ///
     /// let visible_ids = ["api", "docs", "ops"];
     /// let mut selection = VisibleSelection::new();
@@ -809,7 +837,7 @@ mod tests {
 
     #[test]
     fn none_mode_ignores_selection() {
-        let mut state = SelectionState::new(SelectionMode::None);
+        let mut state = SelectionState::new(crate::selection::SelectionMode::None);
         state.select(1);
         state.toggle(2);
         state.select_next(&[1, 2]);
@@ -819,7 +847,7 @@ mod tests {
 
     #[test]
     fn single_mode_replaces_and_toggles() {
-        let mut state = SelectionState::new(SelectionMode::Single);
+        let mut state = SelectionState::new(crate::selection::SelectionMode::Single);
         state.select(1);
         state.select(2);
         assert_eq!(state.selected(), &[2]);
@@ -830,7 +858,7 @@ mod tests {
 
     #[test]
     fn multi_mode_toggles_in_insertion_order() {
-        let mut state = SelectionState::new(SelectionMode::Multi);
+        let mut state = SelectionState::new(crate::selection::SelectionMode::Multi);
         state.toggle("a");
         state.toggle("b");
         state.toggle("a");
@@ -840,7 +868,7 @@ mod tests {
 
     #[test]
     fn traversal_wraps_visible_ids() {
-        let mut state = SelectionState::new(SelectionMode::Single);
+        let mut state = SelectionState::new(crate::selection::SelectionMode::Single);
         state.select_next(&[1, 2, 3]);
         assert_eq!(state.primary(), Some(1));
         state.select_previous(&[1, 2, 3]);
@@ -849,7 +877,7 @@ mod tests {
 
     #[test]
     fn multi_traversal_uses_most_recent_selection() {
-        let mut state = SelectionState::new(SelectionMode::Multi);
+        let mut state = SelectionState::new(crate::selection::SelectionMode::Multi);
         state.select_next(&[1, 2, 3]);
         state.select_next(&[1, 2, 3]);
         state.select_next(&[1, 2, 3]);

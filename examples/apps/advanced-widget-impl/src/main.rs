@@ -137,7 +137,7 @@ impl Default for Timer {
 /// state and be updated over time.
 ///
 /// This approach was probably always available in Ratatui, but it wasn't widely used until `Widget`
-/// was implemented on references in [PR #903] (merged in Ratatui 0.26.0). This is because all the
+/// was implemented on references in PR #903 (merged in Ratatui 0.26.0). This is because all the
 /// built-in widgets previously would consume themselves when rendered.
 impl Widget for &Timer {
     fn render(self, area: Rect, buf: &mut Buffer) {

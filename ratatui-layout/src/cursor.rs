@@ -15,9 +15,10 @@
 //!
 //! # Types
 //!
-//! - [`CursorRequest`] is one frame-local request to show or hide the terminal cursor at a
-//!   [`ratatui_core::layout::Position`].
-//! - [`CursorRequests`] stores requests in render order and reports the final visible cursor.
+//! - [`CursorRequest`](crate::cursor::CursorRequest) is one frame-local request to show or hide the
+//!   terminal cursor at a [`ratatui_core::layout::Position`].
+//! - [`CursorRequests`](crate::cursor::CursorRequests) stores requests in render order and reports
+//!   the final visible cursor.
 //!
 //! See [`crate::docs::interaction`] for how cursor requests fit with focus, selection, hover, and
 //! disabled state in the frame-local model.
@@ -28,7 +29,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Position;
-//! use ratatui_layout::{CursorRequest, CursorRequests};
+//! use ratatui_layout::cursor::{CursorRequest, CursorRequests};
 //!
 //! let input = CursorRequests::new().request(CursorRequest::visible(Position::new(3, 1)));
 //! let popup = CursorRequests::new().request(CursorRequest::visible(Position::new(12, 4)));
@@ -43,21 +44,22 @@ use ratatui_core::layout::{Position, Rect};
 
 /// A request to place or hide the terminal cursor.
 ///
-/// Use [`CursorRequest`] when a focused input, editor, or table cell computes a local cursor
-/// position during rendering. The app can collect these requests in a [`CursorRequests`] and apply
-/// the final one to the frame.
+/// Use [`CursorRequest`](crate::cursor::CursorRequest) when a focused input, editor, or table cell
+/// computes a local cursor position during rendering. The app can collect these requests in a
+/// [`CursorRequests`](crate::cursor::CursorRequests) and apply the final one to the frame.
 ///
 /// # Constructors
 ///
-/// - [`CursorRequest::visible`] records the terminal position that should show the cursor.
-/// - [`CursorRequest::hidden`] records that a component considered cursor placement but should not
-///   show a cursor.
+/// - [`CursorRequest::visible`](crate::cursor::CursorRequest::visible) records the terminal
+///   position that should show the cursor.
+/// - [`CursorRequest::hidden`](crate::cursor::CursorRequest::hidden) records that a component
+///   considered cursor placement but should not show a cursor.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Position;
-/// use ratatui_layout::{CursorRequest, CursorRequests};
+/// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
 ///
 /// let cursor_requests = CursorRequests::new()
 ///     .request(CursorRequest::visible(Position::new(4, 2)))
@@ -87,7 +89,7 @@ impl CursorRequest {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let plan = CursorRequests::new().request(CursorRequest::visible(Position::new(12, 3)));
     ///
@@ -108,7 +110,7 @@ impl CursorRequest {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let plan = CursorRequests::new().request(CursorRequest::hidden(Position::new(0, 0)));
     ///
@@ -125,31 +127,38 @@ impl CursorRequest {
 
 /// Cursor requests produced during a render pass.
 ///
-/// Use [`CursorRequests`] when multiple app-owned participants may request cursor placement. The
-/// last visible [`CursorRequest`] wins, matching normal render-order expectations.
+/// Use [`CursorRequests`](crate::cursor::CursorRequests) when multiple app-owned participants may
+/// request cursor placement. The last visible [`CursorRequest`](crate::cursor::CursorRequest) wins,
+/// matching normal render-order expectations.
 ///
 /// # Constructors and builders
 ///
-/// - [`CursorRequests::new`] creates an empty request list.
-/// - [`CursorRequests::push`] appends a request to an existing request list.
-/// - [`CursorRequests::request`] appends a request in builder style.
+/// - [`CursorRequests::new`](crate::cursor::CursorRequests::new) creates an empty request list.
+/// - [`CursorRequests::push`](crate::cursor::CursorRequests::push) appends a request to an existing
+///   request list.
+/// - [`CursorRequests::request`](crate::cursor::CursorRequests::request) appends a request in
+///   builder style.
 ///
 /// # Composition and inspection
 ///
-/// - [`CursorRequests::requests`] returns all requests in render order for diagnostics or custom
-///   policies.
-/// - [`CursorRequests::translate`] moves child-local cursor positions into parent coordinates.
-/// - [`CursorRequests::clip_to`] hides cursor requests outside a viewport.
-/// - [`CursorRequests::extend`] appends another request list.
-/// - [`CursorRequests::merge`] returns a combined request list.
-/// - [`CursorRequests::final_cursor`] returns the last visible request to apply to the terminal
-///   frame.
+/// - [`CursorRequests::requests`](crate::cursor::CursorRequests::requests) returns all requests in
+///   render order for diagnostics or custom policies.
+/// - [`CursorRequests::translate`](crate::cursor::CursorRequests::translate) moves child-local
+///   cursor positions into parent coordinates.
+/// - [`CursorRequests::clip_to`](crate::cursor::CursorRequests::clip_to) hides cursor requests
+///   outside a viewport.
+/// - [`CursorRequests::extend`](crate::cursor::CursorRequests::extend) appends another request
+///   list.
+/// - [`CursorRequests::merge`](crate::cursor::CursorRequests::merge) returns a combined request
+///   list.
+/// - [`CursorRequests::final_cursor`](crate::cursor::CursorRequests::final_cursor) returns the last
+///   visible request to apply to the terminal frame.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Position;
-/// use ratatui_layout::{CursorRequest, CursorRequests};
+/// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
 ///
 /// let form = CursorRequests::new().request(CursorRequest::visible(Position::new(2, 1)));
 /// let popup = CursorRequests::new().request(CursorRequest::visible(Position::new(10, 4)));
@@ -171,7 +180,7 @@ impl CursorRequests {
     /// Use an empty request list before the first draw or for screens without focused text input:
     ///
     /// ```rust
-    /// use ratatui_layout::CursorRequests;
+    /// use ratatui_layout::cursor::CursorRequests;
     ///
     /// let cursor_requests = CursorRequests::new();
     /// assert!(cursor_requests.requests().is_empty());
@@ -191,7 +200,7 @@ impl CursorRequests {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let mut plan = CursorRequests::new();
     /// plan.push(CursorRequest::visible(Position::new(6, 1)));
@@ -210,7 +219,7 @@ impl CursorRequests {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let plan = CursorRequests::new().request(CursorRequest::visible(Position::new(1, 1)));
     /// assert_eq!(plan.final_cursor().unwrap().position, Position::new(1, 1));
@@ -229,7 +238,7 @@ impl CursorRequests {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let plan = CursorRequests::new()
     ///     .request(CursorRequest::visible(Position::new(1, 1)))
@@ -245,8 +254,8 @@ impl CursorRequests {
     ///
     /// Use this when a child component computed cursor positions in local coordinates and the
     /// parent places that child at a screen offset. This mirrors
-    /// [`crate::FrameSnapshot::translate`], which translates layout, focus, pointer, and cursor
-    /// requests together.
+    /// [`crate::frame::FrameSnapshot::translate`], which translates layout, focus, pointer, and
+    /// cursor requests together.
     ///
     /// # Examples
     ///
@@ -254,7 +263,7 @@ impl CursorRequests {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let local = CursorRequests::new().request(CursorRequest::visible(Position::new(2, 1)));
     /// let screen = local.translate(10, 3);
@@ -284,7 +293,7 @@ impl CursorRequests {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Position, Rect};
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let plan = CursorRequests::new()
     ///     .request(CursorRequest::visible(Position::new(2, 1)))
@@ -317,7 +326,7 @@ impl CursorRequests {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let mut parent = CursorRequests::new().request(CursorRequest::visible(Position::new(1, 1)));
     /// let child = CursorRequests::new().request(CursorRequest::visible(Position::new(5, 5)));
@@ -338,7 +347,7 @@ impl CursorRequests {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let left = CursorRequests::new().request(CursorRequest::visible(Position::new(2, 0)));
     /// let right = CursorRequests::new().request(CursorRequest::visible(Position::new(20, 0)));
@@ -362,7 +371,7 @@ impl CursorRequests {
     ///
     /// ```rust
     /// use ratatui_core::layout::Position;
-    /// use ratatui_layout::{CursorRequest, CursorRequests};
+    /// use ratatui_layout::cursor::{CursorRequest, CursorRequests};
     ///
     /// let plan = CursorRequests::new()
     ///     .request(CursorRequest::visible(Position::new(1, 1)))

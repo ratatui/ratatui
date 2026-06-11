@@ -11,10 +11,12 @@
 //!
 //! # Types
 //!
-//! - [`TextFieldState`] stores a character cursor and edits an externally owned
-//!   [`String`](alloc::string::String).
-//! - [`ButtonRowState`] stores the focused button position for a row of app-owned ids.
-//! - [`ButtonRow`] stores a fixed row of button ids with its [`ButtonRowState`].
+//! - [`TextFieldState`](crate::input::TextFieldState) stores a character cursor and edits an
+//!   externally owned [`String`](alloc::string::String).
+//! - [`ButtonRowState`](crate::input::ButtonRowState) stores the focused button position for a row
+//!   of app-owned ids.
+//! - [`ButtonRow`](crate::input::ButtonRow) stores a fixed row of button ids with its
+//!   [`ButtonRowState`](crate::input::ButtonRowState).
 //!
 //! Use full widgets or application-specific state when the control owns validation, completion,
 //! history, undo, or other domain behavior. Use these helpers when the problem is just editing a
@@ -29,10 +31,10 @@ use crate::cursor::CursorRequest;
 
 /// Cursor and edit state for an externally owned text value.
 ///
-/// [`TextFieldState`] owns only the cursor position. The text itself stays in application state, so
-/// cancel/save flows can copy values into a temporary dialog struct and apply them later. Cursor
-/// positions are measured in characters rather than bytes, which keeps insertion and deletion from
-/// splitting a UTF-8 code point.
+/// [`TextFieldState`](crate::input::TextFieldState) owns only the cursor position. The text itself
+/// stays in application state, so cancel/save flows can copy values into a temporary dialog struct
+/// and apply them later. Cursor positions are measured in characters rather than bytes, which keeps
+/// insertion and deletion from splitting a UTF-8 code point.
 ///
 /// # Common uses
 ///
@@ -43,17 +45,26 @@ use crate::cursor::CursorRequest;
 ///
 /// # Methods
 ///
-/// - [`TextFieldState::new`] starts with the cursor at the beginning.
-/// - [`TextFieldState::at_end`] starts with the cursor after the current value.
-/// - [`TextFieldState::cursor`] reads the character cursor.
-/// - [`TextFieldState::set_cursor`] stores a cursor clamped to a value.
-/// - [`TextFieldState::clamp_to`] clamps the cursor after a value changed externally.
-/// - [`TextFieldState::move_left`], [`TextFieldState::move_right`], [`TextFieldState::move_home`],
-///   and [`TextFieldState::move_end`] implement ordinary cursor navigation.
-/// - [`TextFieldState::cursor_request_after_prefix`] converts the text cursor into a terminal
+/// - [`TextFieldState::new`](crate::input::TextFieldState::new) starts with the cursor at the
+///   beginning.
+/// - [`TextFieldState::at_end`](crate::input::TextFieldState::at_end) starts with the cursor after
+///   the current value.
+/// - [`TextFieldState::cursor`](crate::input::TextFieldState::cursor) reads the character cursor.
+/// - [`TextFieldState::set_cursor`](crate::input::TextFieldState::set_cursor) stores a cursor
+///   clamped to a value.
+/// - [`TextFieldState::clamp_to`](crate::input::TextFieldState::clamp_to) clamps the cursor after a
+///   value changed externally.
+/// - [`TextFieldState::move_left`](crate::input::TextFieldState::move_left),
+///   [`TextFieldState::move_right`](crate::input::TextFieldState::move_right),
+///   [`TextFieldState::move_home`](crate::input::TextFieldState::move_home), and
+///   [`TextFieldState::move_end`](crate::input::TextFieldState::move_end) implement ordinary cursor
+///   navigation.
+/// - [`TextFieldState::cursor_request_after_prefix`](crate::input::TextFieldState::cursor_request_after_prefix) converts the text cursor into a terminal
 ///   cursor request for a rendered field.
-/// - [`TextFieldState::insert_char`], [`TextFieldState::backspace`], and [`TextFieldState::delete`]
-///   implement canonical single-character editing.
+/// - [`TextFieldState::insert_char`](crate::input::TextFieldState::insert_char),
+///   [`TextFieldState::backspace`](crate::input::TextFieldState::backspace), and
+///   [`TextFieldState::delete`](crate::input::TextFieldState::delete) implement canonical
+///   single-character editing.
 ///
 /// # Examples
 ///
@@ -62,7 +73,7 @@ use crate::cursor::CursorRequest;
 /// ```rust
 /// use std::string::String;
 ///
-/// use ratatui_layout::TextFieldState;
+/// use ratatui_layout::input::TextFieldState;
 ///
 /// let mut value = String::from("abcd");
 /// let mut field = TextFieldState::new();
@@ -88,7 +99,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let field = TextFieldState::new();
     ///
@@ -106,7 +117,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let field = TextFieldState::at_end("owner");
     ///
@@ -126,7 +137,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let field = TextFieldState::at_end("ab");
     ///
@@ -141,7 +152,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut field = TextFieldState::new();
     /// field.set_cursor(10, "abc");
@@ -160,7 +171,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut field = TextFieldState::at_end("abcdef");
     /// field.clamp_to("ab");
@@ -176,7 +187,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut field = TextFieldState::at_end("ab");
     /// field.move_left();
@@ -192,7 +203,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut field = TextFieldState::new();
     /// field.move_right("ab");
@@ -208,7 +219,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut field = TextFieldState::at_end("ab");
     /// field.move_home();
@@ -224,7 +235,7 @@ impl TextFieldState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut field = TextFieldState::new();
     /// field.move_end("abc");
@@ -247,7 +258,7 @@ impl TextFieldState {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Position, Rect};
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let field = TextFieldState::at_end("abc");
     /// let request = field.cursor_request_after_prefix(Rect::new(10, 2, 20, 1), 7);
@@ -270,7 +281,7 @@ impl TextFieldState {
     /// ```rust
     /// use std::string::String;
     ///
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut value = String::from("ac");
     /// let mut field = TextFieldState::new();
@@ -293,7 +304,7 @@ impl TextFieldState {
     /// ```rust
     /// use std::string::String;
     ///
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut value = String::from("abc");
     /// let mut field = TextFieldState::at_end(&value);
@@ -321,7 +332,7 @@ impl TextFieldState {
     /// ```rust
     /// use std::string::String;
     ///
-    /// use ratatui_layout::TextFieldState;
+    /// use ratatui_layout::input::TextFieldState;
     ///
     /// let mut value = String::from("abc");
     /// let mut field = TextFieldState::new();
@@ -343,9 +354,10 @@ impl TextFieldState {
 
 /// Focus state for a horizontal row of buttons.
 ///
-/// [`ButtonRowState`] owns the focused position inside a row, while the application owns the button
-/// ids and actions. This is the small state helper behind a common modal pattern: left and right
-/// keys move between `Cancel` and `Save`, while Enter or Space activates the focused id.
+/// [`ButtonRowState`](crate::input::ButtonRowState) owns the focused position inside a row, while
+/// the application owns the button ids and actions. This is the small state helper behind a common
+/// modal pattern: left and right keys move between `Cancel` and `Save`, while Enter or Space
+/// activates the focused id.
 ///
 /// The helper is intentionally index-based internally. Callers pass the current visible button ids
 /// when reading or changing focus, which keeps it useful for enum ids, integer ids, and filtered or
@@ -353,20 +365,25 @@ impl TextFieldState {
 ///
 /// # Methods
 ///
-/// - [`ButtonRowState::new`] starts at the first button.
-/// - [`ButtonRowState::focused_index`] reads the current position.
-/// - [`ButtonRowState::focused_id`] maps the current position to the caller's id slice.
-/// - [`ButtonRowState::focus_index`] stores a clamped position.
-/// - [`ButtonRowState::focus_id`] stores the position of a specific id.
-/// - [`ButtonRowState::move_next`] and [`ButtonRowState::move_previous`] move horizontally with
-///   wrapping.
+/// - [`ButtonRowState::new`](crate::input::ButtonRowState::new) starts at the first button.
+/// - [`ButtonRowState::focused_index`](crate::input::ButtonRowState::focused_index) reads the
+///   current position.
+/// - [`ButtonRowState::focused_id`](crate::input::ButtonRowState::focused_id) maps the current
+///   position to the caller's id slice.
+/// - [`ButtonRowState::focus_index`](crate::input::ButtonRowState::focus_index) stores a clamped
+///   position.
+/// - [`ButtonRowState::focus_id`](crate::input::ButtonRowState::focus_id) stores the position of a
+///   specific id.
+/// - [`ButtonRowState::move_next`](crate::input::ButtonRowState::move_next) and
+///   [`ButtonRowState::move_previous`](crate::input::ButtonRowState::move_previous) move
+///   horizontally with wrapping.
 ///
 /// # Examples
 ///
 /// Keep a dialog button row aligned with enum ids:
 ///
 /// ```rust
-/// use ratatui_layout::ButtonRowState;
+/// use ratatui_layout::input::ButtonRowState;
 ///
 /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 /// enum Action {
@@ -394,7 +411,7 @@ impl ButtonRowState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRowState;
+    /// use ratatui_layout::input::ButtonRowState;
     ///
     /// let row = ButtonRowState::new();
     ///
@@ -409,7 +426,7 @@ impl ButtonRowState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRowState;
+    /// use ratatui_layout::input::ButtonRowState;
     ///
     /// let row = ButtonRowState::new();
     ///
@@ -427,7 +444,7 @@ impl ButtonRowState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRowState;
+    /// use ratatui_layout::input::ButtonRowState;
     ///
     /// let row = ButtonRowState::new();
     ///
@@ -444,7 +461,7 @@ impl ButtonRowState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRowState;
+    /// use ratatui_layout::input::ButtonRowState;
     ///
     /// let mut row = ButtonRowState::new();
     /// row.focus_index(10, 2);
@@ -469,7 +486,7 @@ impl ButtonRowState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRowState;
+    /// use ratatui_layout::input::ButtonRowState;
     ///
     /// let mut row = ButtonRowState::new();
     /// row.focus_id(&["cancel", "save"], &"save");
@@ -487,7 +504,7 @@ impl ButtonRowState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRowState;
+    /// use ratatui_layout::input::ButtonRowState;
     ///
     /// let mut row = ButtonRowState::new();
     /// row.move_next(2);
@@ -508,7 +525,7 @@ impl ButtonRowState {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRowState;
+    /// use ratatui_layout::input::ButtonRowState;
     ///
     /// let mut row = ButtonRowState::new();
     /// row.move_previous(2);
@@ -526,32 +543,41 @@ impl ButtonRowState {
 
 /// Button-row focus state that owns the row's ids.
 ///
-/// [`ButtonRowState`] is intentionally minimal: callers pass the current visible id slice every
-/// time they move or read focus. [`ButtonRow`] is the convenience wrapper for fixed or mostly fixed
-/// rows where the same ids are used repeatedly. Dialogs with `Cancel` and `Save` buttons are the
+/// [`ButtonRowState`](crate::input::ButtonRowState) is intentionally minimal: callers pass the
+/// current visible id slice every time they move or read focus.
+/// [`ButtonRow`](crate::input::ButtonRow) is the convenience wrapper for fixed or mostly fixed rows
+/// where the same ids are used repeatedly. Dialogs with `Cancel` and `Save` buttons are the
 /// canonical case: rendering owns labels and styles, while this helper owns only the row ids and
 /// horizontal focus position.
 ///
-/// Use [`ButtonRowState`] directly when the visible id slice is produced fresh each frame, filtered
-/// by permissions, or borrowed from another component. Use [`ButtonRow`] when a component would
-/// otherwise have to rebuild the same id vector for every left/right movement.
+/// Use [`ButtonRowState`](crate::input::ButtonRowState) directly when the visible id slice is
+/// produced fresh each frame, filtered by permissions, or borrowed from another component. Use
+/// [`ButtonRow`](crate::input::ButtonRow) when a component would otherwise have to rebuild the same
+/// id vector for every left/right movement.
 ///
 /// # Methods
 ///
-/// - [`ButtonRow::new`] stores ids and starts focused on the first id.
-/// - [`ButtonRow::ids`] exposes the owned ids for rendering or frame-snapshot construction.
-/// - [`ButtonRow::focused_id`] returns the currently focused id.
-/// - [`ButtonRow::focus_id`] synchronizes local button focus with global app focus.
-/// - [`ButtonRow::move_next`] and [`ButtonRow::move_previous`] move horizontally with wrapping.
-/// - [`ButtonRow::state`] and [`ButtonRow::state_mut`] expose the inner [`ButtonRowState`] when a
-///   caller needs index-level control.
+/// - [`ButtonRow::new`](crate::input::ButtonRow::new) stores ids and starts focused on the first
+///   id.
+/// - [`ButtonRow::ids`](crate::input::ButtonRow::ids) exposes the owned ids for rendering or
+///   frame-snapshot construction.
+/// - [`ButtonRow::focused_id`](crate::input::ButtonRow::focused_id) returns the currently focused
+///   id.
+/// - [`ButtonRow::focus_id`](crate::input::ButtonRow::focus_id) synchronizes local button focus
+///   with global app focus.
+/// - [`ButtonRow::move_next`](crate::input::ButtonRow::move_next) and
+///   [`ButtonRow::move_previous`](crate::input::ButtonRow::move_previous) move horizontally with
+///   wrapping.
+/// - [`ButtonRow::state`](crate::input::ButtonRow::state) and
+///   [`ButtonRow::state_mut`](crate::input::ButtonRow::state_mut) expose the inner
+///   [`ButtonRowState`](crate::input::ButtonRowState) when a caller needs index-level control.
 ///
 /// # Examples
 ///
 /// Store fixed dialog button ids once and move through them with left/right keys:
 ///
 /// ```rust
-/// use ratatui_layout::ButtonRow;
+/// use ratatui_layout::input::ButtonRow;
 ///
 /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 /// enum DialogButton {
@@ -582,7 +608,7 @@ impl<Id> ButtonRow<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRow;
+    /// use ratatui_layout::input::ButtonRow;
     ///
     /// let row = ButtonRow::new(["cancel", "save"]);
     ///
@@ -600,7 +626,7 @@ impl<Id> ButtonRow<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRow;
+    /// use ratatui_layout::input::ButtonRow;
     ///
     /// let row = ButtonRow::new([1, 2]);
     ///
@@ -617,7 +643,7 @@ impl<Id> ButtonRow<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRow;
+    /// use ratatui_layout::input::ButtonRow;
     ///
     /// let row = ButtonRow::new(["cancel", "save"]);
     ///
@@ -630,12 +656,12 @@ impl<Id> ButtonRow<Id> {
     /// Returns mutable access to the inner position-based state.
     ///
     /// Use this when a caller has a reason to set the focused index directly while still keeping
-    /// the ids owned by [`ButtonRow`].
+    /// the ids owned by [`ButtonRow`](crate::input::ButtonRow).
     ///
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRow;
+    /// use ratatui_layout::input::ButtonRow;
     ///
     /// let mut row = ButtonRow::new(["cancel", "save"]);
     /// row.state_mut().focus_index(1, 2);
@@ -651,7 +677,7 @@ impl<Id> ButtonRow<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRow;
+    /// use ratatui_layout::input::ButtonRow;
     ///
     /// let mut row = ButtonRow::new(["cancel", "save"]);
     /// row.move_next();
@@ -667,7 +693,7 @@ impl<Id> ButtonRow<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRow;
+    /// use ratatui_layout::input::ButtonRow;
     ///
     /// let mut row = ButtonRow::new(["cancel", "save"]);
     /// row.move_previous();
@@ -685,7 +711,7 @@ impl<Id: Copy> ButtonRow<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRow;
+    /// use ratatui_layout::input::ButtonRow;
     ///
     /// let row = ButtonRow::new(["cancel", "save"]);
     ///
@@ -704,7 +730,7 @@ impl<Id: Eq> ButtonRow<Id> {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::ButtonRow;
+    /// use ratatui_layout::input::ButtonRow;
     ///
     /// let mut row = ButtonRow::new(["cancel", "save"]);
     /// row.focus_id(&"save");

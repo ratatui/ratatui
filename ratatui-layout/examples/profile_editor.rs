@@ -12,10 +12,11 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
-use ratatui_layout::{
-    ButtonRow, Column, CursorRequests, FocusFallback, FocusState, FocusTarget, FocusTargets,
-    Regions, Row, TextFieldState,
-};
+use ratatui_layout::cursor::CursorRequests;
+use ratatui_layout::focus::{FocusFallback, FocusState, FocusTarget, FocusTargets};
+use ratatui_layout::input::{ButtonRow, TextFieldState};
+use ratatui_layout::linear::{Column, Row};
+use ratatui_layout::regions::Regions;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

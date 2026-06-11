@@ -1,9 +1,10 @@
 //! Layout values and hit testing.
 //!
 //! A region set is the reusable result of a container's geometry calculation. It contains the area
-//! the container solved against and an ordered set of [`Region`] values for externally owned
-//! content. The value is useful even when the caller does not render immediately: it can drive hit
-//! testing, status text, scrollbars, pointer handling, debugging output, or custom render passes.
+//! the container solved against and an ordered set of [`Region`](crate::regions::Region) values for
+//! externally owned content. The value is useful even when the caller does not render immediately:
+//! it can drive hit testing, status text, scrollbars, pointer handling, debugging output, or custom
+//! render passes.
 //!
 //! This module uses "area" and "region" for related but different ideas. An area is a
 //! [`ratatui_core::layout::Rect`]: geometry only. A region is a frame-local record built from an
@@ -21,28 +22,33 @@
 //!
 //! # Common uses
 //!
-//! - **Route input from the previous frame.** Store a [`Regions`] after drawing, then call
-//!   [`Regions::hit_test`] when the next pointer event arrives.
-//! - **Render app-owned children.** A parent can solve a list of [`Region`] values while the
-//!   application keeps ownership of rows, cells, or controls.
+//! - **Route input from the previous frame.** Store a [`Regions`](crate::regions::Regions) after
+//!   drawing, then call [`Regions::hit_test`](crate::regions::Regions::hit_test) when the next
+//!   pointer event arrives.
+//! - **Render app-owned children.** A parent can solve a list of [`Region`](crate::regions::Region)
+//!   values while the application keeps ownership of rows, cells, or controls.
 //! - **Compose child components.** A child can solve local geometry, then a parent can
-//!   [`translate`](Regions::translate), [`clip`](Regions::clip_to), [`map`](Regions::map_id), and
-//!   [`merge`](Regions::merge) it into a larger region set.
+//!   [`translate`](crate::regions::Regions::translate), [`clip`](crate::regions::Regions::clip_to),
+//!   [`map`](crate::regions::Regions::map_id), and [`merge`](crate::regions::Regions::merge) it
+//!   into a larger region set.
 //! - **Make layout testable.** Tests can assert on assigned rectangles, clipping, and z-order
 //!   without rendering a terminal buffer.
 //!
 //! # Types
 //!
-//! - [`Clip`] stores per-edge clipping metadata for partially visible regions.
-//! - [`Region`] names one visible rectangle with an app-owned id, clip metadata, and z-order.
-//! - [`Hit`] is returned by hit testing and includes the winning id plus local coordinates.
-//! - [`Regions`] stores a parent area and ordered regions for one frame.
+//! - [`Clip`](crate::regions::Clip) stores per-edge clipping metadata for partially visible
+//!   regions.
+//! - [`Region`](crate::regions::Region) names one visible rectangle with an app-owned id, clip
+//!   metadata, and z-order.
+//! - [`Hit`](crate::regions::Hit) is returned by hit testing and includes the winning id plus local
+//!   coordinates.
+//! - [`Regions`](crate::regions::Regions) stores a parent area and ordered regions for one frame.
 //!
 //! A stored region set can route a later input event back to app data:
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{Region, Regions};
+//! use ratatui_layout::regions::{Region, Regions};
 //!
 //! let previous_frame = Regions::from_regions(
 //!     Rect::new(0, 0, 30, 1),
@@ -59,7 +65,7 @@
 //!
 //! ```rust
 //! use ratatui_core::layout::Rect;
-//! use ratatui_layout::{Region, Regions};
+//! use ratatui_layout::regions::{Region, Regions};
 //!
 //! #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 //! enum AppRegion {
@@ -97,10 +103,10 @@ use ratatui_core::layout::{Position, Rect};
 
 /// Clipping metadata for a partially visible region.
 ///
-/// Use [`Clip`] when a renderer needs to know that its assigned rectangle is only part of a larger
-/// logical item. A virtual list row, for example, may start above the viewport and receive only its
-/// visible tail. The region area tells the renderer where to draw; the clip metadata explains which
-/// edges were omitted.
+/// Use [`Clip`](crate::regions::Clip) when a renderer needs to know that its assigned rectangle is
+/// only part of a larger logical item. A virtual list row, for example, may start above the
+/// viewport and receive only its visible tail. The region area tells the renderer where to draw;
+/// the clip metadata explains which edges were omitted.
 ///
 /// Linear layouts usually leave this empty. Viewports and virtualized containers use it to preserve
 /// enough information for continuation markers, clipped-line rendering, or hit-test adjustment.
@@ -110,19 +116,19 @@ use ratatui_core::layout::{Position, Rect};
 /// - A virtual list can tell a row renderer that the first two logical lines were scrolled off the
 ///   top of the viewport.
 /// - A clipped overlay can preserve that an item continues beyond the right edge, even though the
-///   visible [`Region::area`] is smaller.
+///   visible [`Region::area`](crate::regions::Region::area) is smaller.
 /// - Tests can assert that a container dropped hidden regions and correctly recorded the visible
 ///   edges of partially visible regions.
 ///
 /// # Method
 ///
-/// - [`Clip::is_empty`] reports whether any edge was clipped.
+/// - [`Clip::is_empty`](crate::regions::Clip::is_empty) reports whether any edge was clipped.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Clip, Region};
+/// use ratatui_layout::regions::{Clip, Region};
 ///
 /// let region = Region::new("row", Rect::new(0, 0, 10, 3))
 ///     .clip_to(Rect::new(0, 1, 10, 1))
@@ -152,7 +158,7 @@ impl Clip {
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui_layout::Clip;
+    /// use ratatui_layout::regions::Clip;
     ///
     /// assert!(Clip::default().is_empty());
     /// assert!(
@@ -170,19 +176,22 @@ impl Clip {
 
 /// A frame-local region for externally owned content.
 ///
-/// Use [`Region`] when the parent layout knows where something belongs but the application still
-/// owns the thing itself. For example, a grid can return a region with id `row * column_count +
-/// column`, and the app can use that id to look up and render the corresponding cell.
+/// Use [`Region`](crate::regions::Region) when the parent layout knows where something belongs but
+/// the application still owns the thing itself. For example, a grid can return a region with id
+/// `row * column_count + column`, and the app can use that id to look up and render the
+/// corresponding cell.
 ///
-/// A [`Region`] is the smallest unit in a [`Regions`]. It answers: "render the external item with
-/// this id in this area, at this z-order, with this clipping metadata." The region does not store
-/// the external item or any widget state.
+/// A [`Region`](crate::regions::Region) is the smallest unit in a
+/// [`Regions`](crate::regions::Regions). It answers: "render the external item with this id in this
+/// area, at this z-order, with this clipping metadata." The region does not store the external item
+/// or any widget state.
 ///
-/// The [`Region::area`] field is still a plain [`ratatui_core::layout::Rect`]. That is intentional:
-/// rendering code should pass the area to Ratatui widgets exactly as it would any other rectangle.
-/// The surrounding [`Region`] exists only when the rectangle also needs an id, clipping metadata,
-/// or z-order for later coordination. A local variable named `area` should usually be a `Rect`; a
-/// value named `region` should usually be a `Region<Id>`.
+/// The [`Region::area`](crate::regions::Region::area) field is still a plain
+/// [`ratatui_core::layout::Rect`]. That is intentional: rendering code should pass the area to
+/// Ratatui widgets exactly as it would any other rectangle. The surrounding
+/// [`Region`](crate::regions::Region) exists only when the rectangle also needs an id, clipping
+/// metadata, or z-order for later coordination. A local variable named `area` should usually be a
+/// `Rect`; a value named `region` should usually be a `Region<Id>`.
 ///
 /// # Type parameter
 ///
@@ -203,22 +212,27 @@ impl Clip {
 ///
 /// # Constructors and setters
 ///
-/// - [`Region::new`] creates a fully visible z-zero region.
-/// - [`Region::clip`] sets clipping metadata when a viewport has already computed it.
-/// - [`Region::z`] sets hit-test priority for overlays and floating regions.
+/// - [`Region::new`](crate::regions::Region::new) creates a fully visible z-zero region.
+/// - [`Region::clip`](crate::regions::Region::clip) sets clipping metadata when a viewport has
+///   already computed it.
+/// - [`Region::z`](crate::regions::Region::z) sets hit-test priority for overlays and floating
+///   regions.
 ///
 /// # Geometry helpers
 ///
-/// - [`Region::contains`] checks geometry without z-order.
-/// - [`Region::local_position`] converts terminal coordinates to region-local coordinates.
-/// - [`Region::translate`] moves child-local geometry into parent coordinates.
-/// - [`Region::clip_to`] clips a region to a viewport and records omitted edges.
+/// - [`Region::contains`](crate::regions::Region::contains) checks geometry without z-order.
+/// - [`Region::local_position`](crate::regions::Region::local_position) converts terminal
+///   coordinates to region-local coordinates.
+/// - [`Region::translate`](crate::regions::Region::translate) moves child-local geometry into
+///   parent coordinates.
+/// - [`Region::clip_to`](crate::regions::Region::clip_to) clips a region to a viewport and records
+///   omitted edges.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Region, Regions};
+/// use ratatui_layout::regions::{Region, Regions};
 ///
 /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 /// enum Button {
@@ -246,7 +260,8 @@ pub struct Region<Id = usize> {
     /// The assigned area.
     ///
     /// Render app-owned content into this rectangle. The area is already clipped when the region
-    /// came from [`Region::clip_to`] or [`Regions::clip_to`].
+    /// came from [`Region::clip_to`](crate::regions::Region::clip_to) or
+    /// [`Regions::clip_to`](crate::regions::Regions::clip_to).
     pub area: Rect,
     /// Clipping metadata for the assigned area.
     ///
@@ -269,7 +284,7 @@ impl<Id> Region<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::Region;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let region = Region::new("status", Rect::new(0, 0, 10, 1));
     /// assert_eq!(region.id, "status");
@@ -298,7 +313,7 @@ impl<Id> Region<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Clip, Region};
+    /// use ratatui_layout::regions::{Clip, Region};
     ///
     /// let region = Region::new("item", Rect::new(0, 0, 5, 1)).clip(Clip {
     ///     left: 2,
@@ -322,7 +337,7 @@ impl<Id> Region<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let plan = Regions::from_regions(
     ///     Rect::new(0, 0, 10, 1),
@@ -343,13 +358,14 @@ impl<Id> Region<Id> {
     /// Returns true when the region area contains the position.
     ///
     /// This is a geometry-only check. It ignores z-order and disabled state. Use
-    /// [`Regions::hit_test`] or [`crate::PointerTargets::hit_test`] when routing real input.
+    /// [`Regions::hit_test`](crate::regions::Regions::hit_test) or
+    /// [`crate::pointer::PointerTargets::hit_test`] when routing real input.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::Region;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let region = Region::new("button", Rect::new(4, 2, 8, 1));
     /// assert!(region.contains((5, 2)));
@@ -368,7 +384,7 @@ impl<Id> Region<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Position, Rect};
-    /// use ratatui_layout::Region;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let region = Region::new("cell", Rect::new(10, 5, 4, 2));
     /// assert_eq!(region.local_position((12, 6)), Some(Position::new(2, 1)));
@@ -392,7 +408,7 @@ impl<Id> Region<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::Region;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let region = Region::new("field", Rect::new(1, 1, 10, 1)).translate(20, 3);
     /// assert_eq!(region.area, Rect::new(21, 4, 10, 1));
@@ -412,7 +428,7 @@ impl<Id> Region<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::Region;
+    /// use ratatui_layout::regions::Region;
     ///
     /// let visible = Region::new("row", Rect::new(0, 0, 10, 3))
     ///     .clip_to(Rect::new(0, 1, 10, 2))
@@ -446,31 +462,37 @@ impl<Id> Region<Id> {
 
 /// A hit-tested region with coordinates relative to the region area.
 ///
-/// Use [`Hit`] when a pointer position needs to be routed back to application data. The id
-/// identifies the external item, and the relative coordinates let the item interpret the event in
-/// its own local coordinate system.
+/// Use [`Hit`](crate::regions::Hit) when a pointer position needs to be routed back to application
+/// data. The id identifies the external item, and the relative coordinates let the item interpret
+/// the event in its own local coordinate system.
 ///
-/// [`Hit`] is returned by [`Regions::hit_test`]. It carries the external id and both the absolute
-/// region area and the pointer position relative to that area.
+/// [`Hit`](crate::regions::Hit) is returned by
+/// [`Regions::hit_test`](crate::regions::Regions::hit_test). It carries the external id and both
+/// the absolute region area and the pointer position relative to that area.
 ///
 /// # Common uses
 ///
-/// - Route a click to an app-owned row or cell using [`Hit::id`].
-/// - Interpret pointer position inside a row using [`Hit::relative_x`] and [`Hit::relative_y`].
-/// - Keep the absolute [`Hit::area`] around when drawing feedback such as hover or selection
-///   styling on the next frame.
+/// - Route a click to an app-owned row or cell using [`Hit::id`](crate::regions::Hit::id).
+/// - Interpret pointer position inside a row using
+///   [`Hit::relative_x`](crate::regions::Hit::relative_x) and
+///   [`Hit::relative_y`](crate::regions::Hit::relative_y).
+/// - Keep the absolute [`Hit::area`](crate::regions::Hit::area) around when drawing feedback such
+///   as hover or selection styling on the next frame.
 ///
 /// # Fields
 ///
-/// - [`Hit::id`] is the app-owned id copied from the winning region or target.
-/// - [`Hit::area`] is the terminal-space rectangle that was hit.
-/// - [`Hit::relative_x`] and [`Hit::relative_y`] are coordinates inside [`Hit::area`].
+/// - [`Hit::id`](crate::regions::Hit::id) is the app-owned id copied from the winning region or
+///   target.
+/// - [`Hit::area`](crate::regions::Hit::area) is the terminal-space rectangle that was hit.
+/// - [`Hit::relative_x`](crate::regions::Hit::relative_x) and
+///   [`Hit::relative_y`](crate::regions::Hit::relative_y) are coordinates inside
+///   [`Hit::area`](crate::regions::Hit::area).
 ///
 /// # Examples
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Region, Regions};
+/// use ratatui_layout::regions::{Region, Regions};
 ///
 /// let row_regions = Regions::from_regions(
 ///     Rect::new(0, 0, 20, 2),
@@ -486,8 +508,8 @@ impl<Id> Region<Id> {
 pub struct Hit<Id = usize> {
     /// The external identifier hit.
     ///
-    /// This is copied from the winning [`Region`] and should be enough for the app to route the
-    /// event.
+    /// This is copied from the winning [`Region`](crate::regions::Region) and should be enough for
+    /// the app to route the event.
     pub id: Id,
     /// The region area.
     ///
@@ -505,53 +527,65 @@ pub struct Hit<Id = usize> {
 
 /// A reusable layout result with inspectable regions and hit testing.
 ///
-/// Use [`Regions`] when a layout result needs to cross a boundary. A render function that
-/// immediately destructures rectangles can use Ratatui's built-in `Layout` directly. A component
-/// that needs to render app-owned items, route pointer events, test geometry, or report visible
-/// regions benefits from carrying a region set.
+/// Use [`Regions`](crate::regions::Regions) when a layout result needs to cross a boundary. A
+/// render function that immediately destructures rectangles can use Ratatui's built-in `Layout`
+/// directly. A component that needs to render app-owned items, route pointer events, test geometry,
+/// or report visible regions benefits from carrying a region set.
 ///
-/// A [`Regions`] is a value object. It does not borrow the layout that produced it and it does not
-/// borrow the external content identified by its regions. Callers can pass it to render code,
-/// inspect it in tests, or keep it around until the next frame to route input.
+/// A [`Regions`](crate::regions::Regions) is a value object. It does not borrow the layout that
+/// produced it and it does not borrow the external content identified by its regions. Callers can
+/// pass it to render code, inspect it in tests, or keep it around until the next frame to route
+/// input.
 ///
 /// # Common uses
 ///
 /// 1. **Hit-test app-owned content.** A virtual list can expose visible row regions, and the app
-///    can route a pointer event to the row id returned by [`Regions::hit_test`].
+///    can route a pointer event to the row id returned by
+///    [`Regions::hit_test`](crate::regions::Regions::hit_test).
 /// 2. **Build parent regions from children.** A dialog can solve its fields locally, map field ids
 ///    into an app enum, translate them into the dialog area, and merge them with overlay regions.
 /// 3. **Clip nested UI.** A scroll viewport can clip child regions so hidden rows do not receive
 ///    input or appear in diagnostics.
-/// 4. **Assert layout behavior.** A test can compare [`Regions::regions`] against expected
-///    rectangles without constructing widgets.
+/// 4. **Assert layout behavior.** A test can compare
+///    [`Regions::regions`](crate::regions::Regions::regions) against expected rectangles without
+///    constructing widgets.
 ///
 /// # Constructors and builders
 ///
-/// - [`Regions::new`] creates an empty region set for a solved parent area.
-/// - [`Regions::from_regions`] creates a region set from precomputed regions.
-/// - [`Regions::push`] and [`Regions::region`] append regions.
-/// - [`Regions::extend`] and [`Regions::merge`] combine child regions.
+/// - [`Regions::new`](crate::regions::Regions::new) creates an empty region set for a solved parent
+///   area.
+/// - [`Regions::from_regions`](crate::regions::Regions::from_regions) creates a region set from
+///   precomputed regions.
+/// - [`Regions::push`](crate::regions::Regions::push) and
+///   [`Regions::region`](crate::regions::Regions::region) append regions.
+/// - [`Regions::extend`](crate::regions::Regions::extend) and
+///   [`Regions::merge`](crate::regions::Regions::merge) combine child regions.
 ///
 /// # Inspection and routing
 ///
-/// - [`Regions::area`] returns the solved parent area.
-/// - [`Regions::regions`] and [`Regions::iter`] expose regions in render order.
-/// - [`Regions::ids`] exposes only region ids for selection traversal or diagnostics.
-/// - [`Regions::is_empty`] reports whether the set has regions.
-/// - [`Regions::hit_test`] routes a terminal position to the topmost region and returns a [`Hit`].
+/// - [`Regions::area`](crate::regions::Regions::area) returns the solved parent area.
+/// - [`Regions::regions`](crate::regions::Regions::regions) and
+///   [`Regions::iter`](crate::regions::Regions::iter) expose regions in render order.
+/// - [`Regions::ids`](crate::regions::Regions::ids) exposes only region ids for selection traversal
+///   or diagnostics.
+/// - [`Regions::is_empty`](crate::regions::Regions::is_empty) reports whether the set has regions.
+/// - [`Regions::hit_test`](crate::regions::Regions::hit_test) routes a terminal position to the
+///   topmost region and returns a [`Hit`](crate::regions::Hit).
 ///
 /// # Composition
 ///
-/// - [`Regions::map_id`] converts local ids into app-level ids.
-/// - [`Regions::translate`] moves child-local geometry into parent coordinates.
-/// - [`Regions::clip_to`] removes hidden regions and records clipping metadata.
+/// - [`Regions::map_id`](crate::regions::Regions::map_id) converts local ids into app-level ids.
+/// - [`Regions::translate`](crate::regions::Regions::translate) moves child-local geometry into
+///   parent coordinates.
+/// - [`Regions::clip_to`](crate::regions::Regions::clip_to) removes hidden regions and records
+///   clipping metadata.
 ///
 /// The following example shows the render-loop shape without requiring a terminal buffer: app data
 /// stays in a slice, while the region set only stores ids and rectangles.
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Region, Regions};
+/// use ratatui_layout::regions::{Region, Regions};
 ///
 /// let labels = ["open", "save"];
 /// let label_regions = Regions::from_regions(
@@ -575,7 +609,7 @@ pub struct Hit<Id = usize> {
 ///
 /// ```rust
 /// use ratatui_core::layout::Rect;
-/// use ratatui_layout::{Region, Regions};
+/// use ratatui_layout::regions::{Region, Regions};
 ///
 /// let field_regions = Regions::from_regions(
 ///     Rect::new(0, 0, 20, 1),
@@ -595,7 +629,8 @@ impl<Id> Regions<Id> {
     /// Creates an empty region set for the given area.
     ///
     /// Use this when a container has no visible children but the solved area is still meaningful
-    /// for diagnostics, hit testing, or later mutation with [`Regions::push`].
+    /// for diagnostics, hit testing, or later mutation with
+    /// [`Regions::push`](crate::regions::Regions::push).
     ///
     /// # Examples
     ///
@@ -603,7 +638,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let mut screen_regions = Regions::new(Rect::new(0, 0, 20, 1));
     /// screen_regions.push(Region::new("status", Rect::new(0, 0, 20, 1)));
@@ -623,7 +658,7 @@ impl<Id> Regions<Id> {
     /// that order is part of hit-test tie-breaking when z-order is equal.
     ///
     /// Use this when a layout helper has already solved every child rectangle and wants to return
-    /// one inspectable [`Regions`] value to the caller.
+    /// one inspectable [`Regions`](crate::regions::Regions) value to the caller.
     ///
     /// # Examples
     ///
@@ -631,7 +666,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let button_regions = Regions::from_regions(
     ///     Rect::new(0, 0, 16, 1),
@@ -661,7 +696,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::Regions;
+    /// use ratatui_layout::regions::Regions;
     ///
     /// let plan = Regions::<()>::new(Rect::new(0, 0, 80, 24));
     ///
@@ -677,7 +712,8 @@ impl<Id> Regions<Id> {
     /// hit-test ties.
     ///
     /// This is the main render loop API: iterate the regions, look up app-owned data by
-    /// [`Region::id`], and render into [`Region::area`].
+    /// [`Region::id`](crate::regions::Region::id), and render into
+    /// [`Region::area`](crate::regions::Region::area).
     ///
     /// # Examples
     ///
@@ -685,7 +721,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let labels = ["open", "save"];
     /// let plan = Regions::from_regions(
@@ -711,8 +747,8 @@ impl<Id> Regions<Id> {
     ///
     /// Use this when another state object needs only the visible identities, not the rectangles.
     /// The most common case is selection traversal: a region set already knows which controls or
-    /// rows are visible, and [`crate::SelectionState`] can move through those ids without learning
-    /// about geometry.
+    /// rows are visible, and [`crate::selection::SelectionState`] can move through those ids
+    /// without learning about geometry.
     ///
     /// # Examples
     ///
@@ -720,7 +756,8 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions, SelectionMode, SelectionState};
+    /// use ratatui_layout::regions::{Region, Regions};
+    /// use ratatui_layout::selection::{SelectionMode, SelectionState};
     ///
     /// let plan = Regions::from_regions(
     ///     Rect::new(0, 0, 10, 2),
@@ -742,8 +779,8 @@ impl<Id> Regions<Id> {
     /// Pairs regions with another id list in render order.
     ///
     /// Use this when a layout helper emits structural positions but rendering and routing should
-    /// use application ids. A toolbar is the common case: a [`Grid`](crate::Grid) may produce
-    /// [`GridPosition`](crate::GridPosition) regions, while the app wants to render and route
+    /// use application ids. A toolbar is the common case: a [`Grid`](crate::grid::Grid) may produce
+    /// [`GridPosition`](crate::grid::GridPosition) regions, while the app wants to render and route
     /// `Command` enum values. Pairing regions and ids in one iterator keeps render code and
     /// frame-snapshot construction from each rebuilding the same index mapping.
     ///
@@ -757,7 +794,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::{Grid, GridPosition};
+    /// use ratatui_layout::grid::{Grid, GridPosition};
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum Command {
@@ -788,9 +825,10 @@ impl<Id> Regions<Id> {
     /// Returns the first region with the requested id.
     ///
     /// This is the structural-layout lookup API. Use it when a region set represents named areas
-    /// such as a page header, body, and footer. Iterating [`Regions::regions`] remains the
-    /// better tool for repeated rows where duplicate ids are expected or where render order
-    /// matters more than direct lookup.
+    /// such as a page header, body, and footer. Iterating
+    /// [`Regions::regions`](crate::regions::Regions::regions) remains the better tool for
+    /// repeated rows where duplicate ids are expected or where render order matters more than
+    /// direct lookup.
     ///
     /// If a region set contains duplicate ids, this returns the first matching region in render
     /// order. For fixed page structure, prefer unique ids so the lookup reads like a total map
@@ -802,7 +840,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::Column;
+    /// use ratatui_layout::linear::Column;
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum PageSlot {
@@ -831,9 +869,11 @@ impl<Id> Regions<Id> {
 
     /// Returns the area of the first region with the requested id.
     ///
-    /// This is a convenience wrapper around [`Regions::region_for`] for the common case where a
-    /// parent layout only needs a child region's rectangle. Use [`Regions::region_for`] when code
-    /// also needs clipping or z-order metadata.
+    /// This is a convenience wrapper around
+    /// [`Regions::region_for`](crate::regions::Regions::region_for) for the common case where a
+    /// parent layout only needs a child region's rectangle. Use
+    /// [`Regions::region_for`](crate::regions::Regions::region_for) when code also needs
+    /// clipping or z-order metadata.
     ///
     /// # Examples
     ///
@@ -841,7 +881,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::{Constraint, Rect};
-    /// use ratatui_layout::{Column, Row};
+    /// use ratatui_layout::linear::{Column, Row};
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum PageSlot {
@@ -876,7 +916,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let plan = Regions::from_regions(
     ///     Rect::new(0, 0, 10, 2),
@@ -899,7 +939,7 @@ impl<Id> Regions<Id> {
     /// over earlier regions.
     ///
     /// This is useful for incremental builders, overlays, or tests that want to start from
-    /// [`Regions::new`] and add regions one at a time.
+    /// [`Regions::new`](crate::regions::Regions::new) and add regions one at a time.
     ///
     /// # Examples
     ///
@@ -907,7 +947,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let mut plan = Regions::from_regions(
     ///     Rect::new(0, 0, 10, 2),
@@ -931,7 +971,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let plan =
     ///     Regions::new(Rect::new(0, 0, 8, 1)).region(Region::new("button", Rect::new(0, 0, 8, 1)));
@@ -955,7 +995,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let mut plan = Regions::new(Rect::new(0, 0, 10, 2));
     /// plan.extend((0..2).map(|row| Region::new(row, Rect::new(0, row as u16, 10, 1))));
@@ -975,7 +1015,7 @@ impl<Id> Regions<Id> {
     /// hit-test tie-breaking behavior.
     ///
     /// Use this when a parent aggregates child component values. If the child was solved in local
-    /// coordinates, call [`Regions::translate`] before merging.
+    /// coordinates, call [`Regions::translate`](crate::regions::Regions::translate) before merging.
     ///
     /// # Examples
     ///
@@ -983,7 +1023,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let content = Regions::from_regions(
     ///     Rect::new(0, 0, 20, 3),
@@ -1017,7 +1057,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     /// enum AppRegion {
@@ -1062,7 +1102,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let child = Regions::from_regions(
     ///     Rect::new(0, 0, 8, 1),
@@ -1098,7 +1138,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let child = Regions::from_regions(
     ///     Rect::new(0, 0, 10, 5),
@@ -1134,7 +1174,7 @@ impl<Id> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::Regions;
+    /// use ratatui_layout::regions::Regions;
     ///
     /// let plan = Regions::<usize>::new(Rect::new(0, 0, 20, 4));
     ///
@@ -1187,8 +1227,8 @@ impl<Id: Copy> Regions<Id> {
     /// rendered later.
     ///
     /// Use this when layout geometry is enough to route input. If pointer behavior has disabled
-    /// state or pointer-only regions, build a [`crate::PointerTargets`] and route through that
-    /// instead.
+    /// state or pointer-only regions, build a [`crate::pointer::PointerTargets`] and route through
+    /// that instead.
     ///
     /// # Examples
     ///
@@ -1196,7 +1236,7 @@ impl<Id: Copy> Regions<Id> {
     ///
     /// ```rust
     /// use ratatui_core::layout::Rect;
-    /// use ratatui_layout::{Region, Regions};
+    /// use ratatui_layout::regions::{Region, Regions};
     ///
     /// let plan = Regions::from_regions(
     ///     Rect::new(0, 0, 20, 2),

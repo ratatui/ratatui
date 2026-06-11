@@ -2,7 +2,10 @@ use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph, Wrap};
-use ratatui_layout::{FrameSnapshot, Overlay, PointerTarget, PointerTargets, Region};
+use ratatui_layout::frame::FrameSnapshot;
+use ratatui_layout::overlay::Overlay;
+use ratatui_layout::pointer::{PointerTarget, PointerTargets};
+use ratatui_layout::regions::Region;
 
 use crate::HELP_Z;
 use crate::ids::{PaneId, TargetId};
@@ -59,7 +62,8 @@ impl HelpOverlay {
 #[cfg(test)]
 mod tests {
     use ratatui::layout::Rect;
-    use ratatui_layout::{FrameSnapshot, Region, Regions};
+    use ratatui_layout::frame::FrameSnapshot;
+    use ratatui_layout::regions::{Region, Regions};
 
     use super::HelpOverlay;
     use crate::ids::{PaneId, TargetId};

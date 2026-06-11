@@ -13,7 +13,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Paragraph, Widget};
-use ratatui_layout::{
+use ratatui_layout::table::{
     CellPosition, TableCellContext, TableItems, TableLayout, VirtualTable, VirtualTableState,
 };
 

@@ -2,8 +2,8 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Paragraph, Widget};
-use ratatui_layout::MeasureContext;
 use ratatui_layout::list::{ListItemContext, ListItems};
+use ratatui_layout::participant::MeasureContext;
 
 use crate::domain::VisibleNode;
 use crate::ids::NodeId;
