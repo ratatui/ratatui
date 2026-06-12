@@ -7,6 +7,7 @@
 //! Supported terminal backends:
 //! - [Crossterm]: enable the `crossterm` feature (enabled by default) and use [`CrosstermBackend`]
 //! - [Termion]: enable the `termion` feature and use [`TermionBackend`]
+//! - [Termina]: enable the `termina` feature and use [`TerminaBackend`]
 //! - [Termwiz]: enable the `termwiz` feature and use [`TermwizBackend`]
 //!
 //! Additionally, a [`TestBackend`] is provided for testing purposes.
@@ -92,10 +93,12 @@
 //!
 //! [`CrosstermBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.CrosstermBackend.html
 //! [`TermionBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermionBackend.html
+//! [`TerminaBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TerminaBackend.html
 //! [`TermwizBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermwizBackend.html
 //! [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
+//! [Termina]: https://crates.io/crates/termina
 //! [Termwiz]: https://crates.io/crates/termwiz
 //! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/

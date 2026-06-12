@@ -31,9 +31,10 @@ const MAIN_DISHES: [&str; 4] = [
     "> ratatui-widgets",
     "> ratatui-macros",
 ];
-const BACKENDS: [&str; 3] = [
+const BACKENDS: [&str; 4] = [
     "> ratatui-crossterm",
     "> ratatui-termion",
+    "> ratatui-termina",
     "> ratatui-termwiz",
 ];
 

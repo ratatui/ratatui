@@ -279,7 +279,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        backend: [crossterm, termion, termwiz]
+        backend: [crossterm, termion, termina, termwiz]
         exclude:
           # termion is not supported on windows
           - os: windows-latest

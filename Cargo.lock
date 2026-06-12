@@ -2849,6 +2849,7 @@ dependencies = [
  "ratatui-core",
  "ratatui-crossterm",
  "ratatui-macros",
+ "ratatui-termina",
  "ratatui-termion",
  "ratatui-termwiz",
  "ratatui-widgets",
@@ -2917,6 +2918,19 @@ dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
  "ratatui",
+]
+
+[[package]]
+name = "ratatui-termina"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "document-features",
+ "instability",
+ "ratatui",
+ "ratatui-core",
+ "rstest",
+ "termina",
 ]
 
 [[package]]
@@ -3667,6 +3681,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "termina"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "293183c87e43cc765b7210627e150b14f30609b214eba4a106e46a9954d41c5c"
+dependencies = [
+ "bitflags 2.12.1",
+ "parking_lot",
+ "rustix 1.0.8",
+ "signal-hook",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

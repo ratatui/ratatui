@@ -1,0 +1,54 @@
+[package]
+name = "ratatui-termina"
+version = "0.1.0"
+description = "Termina backend for the Ratatui Terminal UI library."
+documentation = "https://docs.rs/ratatui-termina"
+readme = "README.md"
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+exclude.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["underline-color"]
+
+## Reserved for serde compatibility. Termina currently has no serde feature.
+serde = []
+
+## Enables SGR underline-color writes from cell underline colors.
+underline-color = ["ratatui-core/underline-color"]
+
+## Enables terminal scrolling regions for Terminal::insert_before.
+scrolling-regions = ["ratatui-core/scrolling-regions"]
+
+#! The following features are unstable and may change in the future:
+
+## Enable all unstable features.
+unstable = ["unstable-backend-writer"]
+
+## Enables accessors for the wrapped terminal.
+unstable-backend-writer = []
+
+[dependencies]
+document-features = { workspace = true, optional = true }
+instability.workspace = true
+ratatui-core = { workspace = true }
+termina.workspace = true
+
+[dev-dependencies]
+color-eyre.workspace = true
+ratatui = { path = "../ratatui", features = ["termina"], default-features = false }
+rstest.workspace = true
+
+[lints]
+workspace = true

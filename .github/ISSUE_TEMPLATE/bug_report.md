@@ -56,7 +56,7 @@ Add a description of the systems where you are observing the issue. For example:
 - Terminal Emulator: xterm
 - Font: Inconsolata (Patched)
 - Crate version: 0.7
-- Backend: termion
+- Backend: crossterm / termion / termina / termwiz
 -->
 
 - OS:
