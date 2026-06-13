@@ -1196,4 +1196,24 @@ mod tests {
             "parts must sum to the track length"
         );
     }
+
+    /// Visual regression for <https://github.com/ratatui/ratatui/issues/2582>: with an end symbol
+    /// set, a large thumb at the end must render the end symbol rather than overwriting it.
+    #[rstest]
+    #[case::large_thumb_at_end("<-----#################>", 8, 9)]
+    fn render_scrollbar_keeps_end_symbol_for_large_thumb(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+    ) {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::HorizontalTop)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("-"))
+            .thumb_symbol("#");
+        let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
+        let mut state = ScrollbarState::new(content_length).position(position);
+        scrollbar.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines([expected]));
+    }
 }
