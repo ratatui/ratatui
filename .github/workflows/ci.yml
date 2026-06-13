@@ -293,3 +293,35 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2
       - run: cargo xtask test-backend ${{ matrix.backend }}
+
+  required:
+    runs-on: ubuntu-latest
+    needs:
+      - lint-formatting
+      - lint-typos
+      - cargo-deny
+      - cargo-machete
+      - lint-clippy
+      - lint-markdown
+      - coverage
+      - check
+      - build-no-std
+      - check-readme
+      - lint-docs
+      - test-docs
+      - test-libs
+      - test-backends
+    if: ${{ always() }}
+    steps:
+      - name: Check required jobs
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+          HAS_FAILED_JOB: >-
+            ${{
+              contains(needs.*.result, 'failure')
+              || contains(needs.*.result, 'cancelled')
+              || contains(needs.*.result, 'skipped')
+            }}
+        run: |
+          echo "$NEEDS_JSON"
+          test "$HAS_FAILED_JOB" = "false"
