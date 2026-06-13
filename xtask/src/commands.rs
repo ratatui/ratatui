@@ -152,7 +152,12 @@ fn lint_markdown() -> Result<()> {
 /// Run tests for libs, backends, and docs
 fn test() -> Result<()> {
     test_libs()?;
-    for backend in [Backend::Crossterm, Backend::Termion, Backend::Termwiz] {
+    for backend in [
+        Backend::Crossterm,
+        Backend::Termion,
+        Backend::Termina,
+        Backend::Termwiz,
+    ] {
         TestBackend { backend }.run()?;
     }
     test_docs::test_docs()?; // run last because it's slow
