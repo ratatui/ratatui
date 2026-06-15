@@ -2839,13 +2839,11 @@ dependencies = [
  "crossterm 0.29.0",
  "document-features",
  "fakeit",
- "futures",
  "indoc",
  "instability",
  "palette",
  "pretty_assertions",
  "rand 0.10.1",
- "rand_chacha 0.10.0",
  "ratatui-core",
  "ratatui-crossterm",
  "ratatui-macros",
@@ -2857,10 +2855,6 @@ dependencies = [
  "serde",
  "serde_json",
  "time",
- "tokio",
- "tracing 0.1.44",
- "tracing-appender",
- "tracing-subscriber",
 ]
 
 [[package]]
