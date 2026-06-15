@@ -146,18 +146,12 @@ color-eyre.workspace = true
 criterion.workspace = true
 crossterm = { workspace = true, features = ["event-stream"] }
 fakeit.workspace = true
-futures.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
 rand.workspace = true
-rand_chacha.workspace = true
 rstest.workspace = true
 serde_json.workspace = true
 time = { workspace = true, features = ["local-offset"] }
-tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "time"] }
-tracing.workspace = true
-tracing-appender.workspace = true
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [lints]
 workspace = true
