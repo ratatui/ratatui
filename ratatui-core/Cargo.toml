@@ -21,6 +21,10 @@ rust-version.workspace = true
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["critical-section"]
+development = ["critical-section"]
+
 [features]
 default = []
 

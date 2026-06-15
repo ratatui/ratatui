@@ -142,7 +142,6 @@ serde = { workspace = true, optional = true }
 ratatui-termion = { workspace = true, optional = true }
 
 [dev-dependencies]
-color-eyre.workspace = true
 criterion.workspace = true
 crossterm = { workspace = true, features = ["event-stream"] }
 fakeit.workspace = true

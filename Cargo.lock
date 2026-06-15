@@ -2830,7 +2830,6 @@ checksum = "0c8d0fd677905edcbeedbf2edb6494d676f0e98d54d5cf9bda0b061cb8fb8aba"
 name = "ratatui"
 version = "0.30.1"
 dependencies = [
- "color-eyre",
  "criterion",
  "crossterm 0.29.0",
  "document-features",
@@ -2919,7 +2918,6 @@ dependencies = [
  "instability",
  "ratatui",
  "ratatui-core",
- "rstest",
  "termina",
 ]
 
@@ -2930,7 +2928,6 @@ dependencies = [
  "document-features",
  "instability",
  "ratatui-core",
- "rstest",
  "termion",
 ]
 
@@ -2941,7 +2938,6 @@ dependencies = [
  "document-features",
  "ratatui",
  "ratatui-core",
- "rstest",
  "termwiz",
 ]
 
