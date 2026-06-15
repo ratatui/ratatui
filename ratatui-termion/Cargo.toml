@@ -36,8 +36,5 @@ instability.workspace = true
 ratatui-core = { workspace = true }
 termion.workspace = true
 
-[dev-dependencies]
-rstest.workspace = true
-
 [lints]
 workspace = true

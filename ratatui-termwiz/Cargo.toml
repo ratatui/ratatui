@@ -19,6 +19,9 @@ all-features = true
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
+[package.metadata.cargo-udeps.ignore]
+development = ["ratatui"]
+
 [features]
 default = []
 
@@ -39,7 +42,6 @@ termwiz.workspace = true
 
 [dev-dependencies]
 ratatui = { path = "../ratatui", features = ["termwiz"], default-features = false }
-rstest.workspace = true
 
 [lints]
 workspace = true

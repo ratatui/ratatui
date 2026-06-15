@@ -86,6 +86,24 @@ jobs:
           persist-credentials: false
       - uses: bnjbvr/cargo-machete@ac30a525c0a8d163a92d727b3ff079ee3f6ecb08 # v0.9.2
 
+  # Check for unused dependencies that static source scanning cannot distinguish.
+  # This complements cargo-machete by compiling the workspace and checking rustc dep-info.
+  cargo-udeps:
+    name: Check Compiled Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
+        with:
+          toolchain: nightly
+      - uses: taiki-e/install-action@0631aa6515c7d545823c67cfae7ef4fc7f490154 # v2.81.8
+        with:
+          tool: cargo-udeps
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+      - run: cargo xtask udeps
+
   # Run cargo clippy.
   #
   # We check for clippy warnings on beta, but these are not hard failures. They should often be
@@ -301,6 +319,7 @@ jobs:
       - lint-typos
       - cargo-deny
       - cargo-machete
+      - cargo-udeps
       - lint-clippy
       - lint-markdown
       - coverage

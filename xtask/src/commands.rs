@@ -13,7 +13,7 @@ use self::clippy::Clippy;
 use self::docs::Docs;
 use self::format::Format;
 use self::typos::Typos;
-use crate::{CROSSTERM_COMMON_FEATURES, ExpressionExt, Run, run_cargo};
+use crate::{CROSSTERM_COMMON_FEATURES, ExpressionExt, Run, run_cargo, run_cargo_nightly};
 
 mod backend;
 mod check;
@@ -77,6 +77,9 @@ pub enum Command {
     #[command(visible_alias = "ty")]
     Typos(Typos),
 
+    /// Check for unused dependencies with cargo-udeps
+    Udeps,
+
     /// Test backend
     #[command(visible_alias = "tb")]
     TestBackend(TestBackend),
@@ -108,6 +111,7 @@ impl Run for Command {
             Command::Docs(command) => command.run(),
             Command::Format(command) => command.run(),
             Command::Typos(command) => command.run(),
+            Command::Udeps => udeps(),
             Command::LintMarkdown => lint_markdown(),
             Command::Test => test(),
             Command::TestBackend(command) => command.run(),
@@ -147,6 +151,17 @@ fn lint() -> Result<()> {
 fn lint_markdown() -> Result<()> {
     cmd!("markdownlint-cli2", "**/*.md", "!target").run_with_trace()?;
     Ok(())
+}
+
+/// Check for unused dependencies using rustc dep-info.
+fn udeps() -> Result<()> {
+    run_cargo_nightly(vec![
+        "udeps",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+    ])
 }
 
 /// Run tests for libs, backends, and docs

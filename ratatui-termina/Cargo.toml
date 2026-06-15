@@ -48,7 +48,6 @@ termina.workspace = true
 [dev-dependencies]
 color-eyre.workspace = true
 ratatui = { path = "../ratatui", features = ["termina"], default-features = false }
-rstest.workspace = true
 
 [lints]
 workspace = true
