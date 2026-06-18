@@ -183,6 +183,56 @@
 //! [tracking issue](https://github.com/ratatui/ratatui/issues/1287) for ongoing discussions and
 //! design considerations.
 //!
+//! ### Choosing Between Enum Dispatch and `WidgetRef`
+//!
+//! When an application needs to render one of several widget types in the same area, prefer a
+//! simple enum and `match` when the set of possible widgets is known by the application. This keeps
+//! ownership and state explicit:
+//!
+//! ```rust
+//! # use ratatui::{Frame, layout::Rect, widgets::Paragraph};
+//! enum Panel {
+//!     Details,
+//!     Help,
+//!     Logs,
+//! }
+//!
+//! # struct App { panel: Panel }
+//! # fn render(frame: &mut Frame, app: &App, area: Rect) {
+//! match &app.panel {
+//!     Panel::Details => frame.render_widget(Paragraph::new("details"), area),
+//!     Panel::Help => frame.render_widget(Paragraph::new("help"), area),
+//!     Panel::Logs => frame.render_widget(Paragraph::new("logs"), area),
+//! }
+//! # }
+//! ```
+//!
+//! Reach for [`WidgetRef`] when you specifically need dynamic dispatch, such as a container that
+//! stores heterogeneous widgets behind `Box<dyn WidgetRef>`. Use [`WidgetRef::render_ref`] because
+//! [`Widget::render`] consumes `self` and is not object safe for `dyn Widget`:
+//!
+//! ```rust
+//! # #[cfg(feature = "unstable-widget-ref")] {
+//! # use ratatui::widgets::WidgetRef;
+//! # struct Details;
+//! # struct Help;
+//! # impl WidgetRef for Details {
+//! #     fn render_ref(&self, _: ratatui::layout::Rect, _: &mut ratatui::buffer::Buffer) {}
+//! # }
+//! # impl WidgetRef for Help {
+//! #     fn render_ref(&self, _: ratatui::layout::Rect, _: &mut ratatui::buffer::Buffer) {}
+//! # }
+//! let widgets: Vec<Box<dyn WidgetRef>> = vec![Box::new(Details), Box::new(Help)];
+//! # }
+//! ```
+//!
+//! See [Using Trait Objects for Dynamic Collections](#using-trait-objects-for-dynamic-collections)
+//! below and the [`widget-ref-container` example] for complete examples that store and render
+//! heterogeneous widgets.
+//!
+//! [`widget-ref-container` example]:
+//!     https://github.com/ratatui/ratatui/tree/main/examples/apps/widget-ref-container
+//!
 //! # Rendering Widgets
 //!
 //! Widgets are typically rendered using the [`Frame`] type, which provides methods for rendering
