@@ -4,12 +4,6 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
-## [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2) - 2026-06-19
-
-**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2
-
-
-
 ## [0.30.2](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.2) - 2026-06-19
 
 ![a gift](https://github.com/ratatui/ratatui-website/raw/refs/heads/main/src/assets/a-gift.png)
