@@ -2828,7 +2828,7 @@ checksum = "0c8d0fd677905edcbeedbf2edb6494d676f0e98d54d5cf9bda0b061cb8fb8aba"
 
 [[package]]
 name = "ratatui"
-version = "0.30.1"
+version = "0.30.2"
 dependencies = [
  "criterion",
  "crossterm 0.29.0",
@@ -2854,7 +2854,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-core"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anstyle",
  "bitflags 2.13.0",
@@ -2880,7 +2880,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-crossterm"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "cfg-if",
  "crossterm 0.28.1",
@@ -2893,7 +2893,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-macros"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "ratatui-core",
  "ratatui-widgets",
@@ -2923,7 +2923,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-termion"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "document-features",
  "instability",
@@ -2933,7 +2933,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-termwiz"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "document-features",
  "ratatui",
@@ -2943,7 +2943,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-widgets"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "bitflags 2.13.0",
  "color-eyre",
