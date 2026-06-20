@@ -16,7 +16,6 @@ default-members = [
 ]
 
 [workspace.package]
-authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
 repository = "https://github.com/ratatui/ratatui"
 homepage = "https://ratatui.rs"

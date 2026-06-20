@@ -6,7 +6,6 @@ version = "0.3.2"
 description = "A collection of Ratatui widgets for building terminal user interfaces using Ratatui."
 documentation = "https://docs.rs/ratatui-widgets"
 readme = "README.md"
-authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
