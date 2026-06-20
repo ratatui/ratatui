@@ -4,7 +4,6 @@ version = "0.1.2"
 description = "Crossterm backend for the Ratatui Terminal UI library."
 documentation = "https://docs.rs/ratatui-crossterm"
 readme = "README.md"
-authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
