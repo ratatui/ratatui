@@ -1,5 +1,6 @@
 use alloc::sync::Arc;
 use core::hash::{Hash, Hasher};
+use core::panic::{RefUnwindSafe, UnwindSafe};
 use core::{fmt, ptr};
 
 use ratatui_core::buffer::Buffer;
@@ -76,8 +77,12 @@ enum Effect {
 
 /// A cell effect that modifies the cells covered by a [`Shadow`].
 ///
+/// Custom effects must keep the same auto-trait guarantees as the widgets that store them:
+/// [`Send`], [`Sync`], [`UnwindSafe`], and [`RefUnwindSafe`]. This preserves the thread-safety
+/// and panic-safety behavior of widgets that contain a [`Block`](crate::block::Block).
+///
 /// See [`Shadow::custom`] for how to create a shadow from a custom effect.
-pub trait CellEffect: fmt::Debug {
+pub trait CellEffect: fmt::Debug + Send + Sync + UnwindSafe + RefUnwindSafe {
     /// Applies the effect to the cells in `shadow_area`.
     fn apply(&self, shadow_area: Rect, base_area: Rect, buf: &mut Buffer);
 }

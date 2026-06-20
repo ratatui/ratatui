@@ -1,13 +1,12 @@
 [package]
 name = "ratatui-core"
-version = "0.1.0"
+version = "0.1.2"
 description = """
     Core types and traits for the Ratatui Terminal UI library.
     Widget libraries should use this crate. Applications should use the main Ratatui crate.
 """
 documentation = "https://docs.rs/ratatui-core"
 readme = "README.md"
-authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
@@ -21,20 +20,24 @@ rust-version.workspace = true
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["critical-section"]
+development = ["critical-section"]
+
 [features]
 default = []
 
 ## enables std
 std = [
-  "itertools/use_std",
-  "thiserror/std",
-  "kasuari/std",
   "bitflags/std",
   "compact_str/std",
-  "unicode-truncate/std",
-  "strum/std",
-  "serde?/std",
+  "itertools/use_std",
+  "kasuari/std",
   "palette?/std",
+  "serde?/std",
+  "strum/std",
+  "thiserror/std",
+  "unicode-truncate/std",
 ]
 
 ## enables layout cache; uses thread_local when std is available,
@@ -60,7 +63,7 @@ scrolling-regions = []
 
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
+serde = ["bitflags/serde", "compact_str/serde", "dep:serde"]
 
 [dependencies]
 anstyle = { workspace = true, optional = true }
@@ -69,7 +72,6 @@ compact_str.workspace = true
 critical-section = { workspace = true, optional = true }
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
-indoc.workspace = true
 itertools.workspace = true
 kasuari = { workspace = true, default-features = false }
 lru.workspace = true
@@ -83,6 +85,7 @@ unicode-width.workspace = true
 
 [dev-dependencies]
 critical-section = { workspace = true, features = ["std"] }
+indoc.workspace = true
 pretty_assertions.workspace = true
 rstest.workspace = true
 serde_json.workspace = true

@@ -1,35 +1,35 @@
 [workspace]
 resolver = "2"
-members = ["ratatui", "ratatui-*", "xtask", "examples/apps/*", "examples/concepts/*"]
+members = ["examples/apps/*", "examples/concepts/*", "ratatui", "ratatui-*", "xtask"]
 default-members = [
+  "examples/apps/*",
+  "examples/concepts/*",
   "ratatui",
   "ratatui-core",
   "ratatui-crossterm",
+  "ratatui-macros",
   # this is not included as it doesn't compile on windows
   # "ratatui-termion",
-  "ratatui-macros",
+  "ratatui-termina",
   "ratatui-termwiz",
   "ratatui-widgets",
-  "examples/apps/*",
-  "examples/concepts/*",
 ]
 
 [workspace.package]
-authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
 repository = "https://github.com/ratatui/ratatui"
 homepage = "https://ratatui.rs"
-keywords = ["tui", "terminal", "dashboard"]
+keywords = ["dashboard", "terminal", "tui"]
 categories = ["command-line-interface"]
 readme = "README.md"
 license = "MIT"
-exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
+exclude = ["*.log", ".github", "CONTRIBUTING.md", "Makefile.toml", "assets/*", "tags"]
 edition = "2024"
 rust-version = "1.88.0"
 
 [workspace.dependencies]
 anstyle = "1"
-bitflags = "2.11"
+bitflags = "2.12"
 clap = { version = "4.6", features = ["derive"] }
 color-eyre = "0.6"
 compact_str = { version = "0.9", default-features = false }
@@ -46,22 +46,24 @@ itertools = { version = "0.14", default-features = false, features = ["use_alloc
 kasuari = { version = "0.4", default-features = false }
 line-clipping = "0.3"
 lru = "0.18"
-octocrab = "0.50"
+octocrab = "0.53"
 palette = { version = "0.7.6", default-features = false, features = ["libm"] }
 pretty_assertions = "1"
 rand = "0.10"
 rand_chacha = "0.10"
-ratatui = { path = "ratatui", version = "0.30.0" }
-ratatui-core = { path = "ratatui-core", version = "0.1.0" }
-ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0" }
-ratatui-macros = { path = "ratatui-macros", version = "0.7.0" }
-ratatui-termion = { path = "ratatui-termion", version = "0.1.0" }
-ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0" }
-ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0", default-features = false }
+ratatui = { path = "ratatui", version = "0.30.2" }
+ratatui-core = { path = "ratatui-core", version = "0.1.2" }
+ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.2" }
+ratatui-macros = { path = "ratatui-macros", version = "0.7.2" }
+ratatui-termina = { path = "ratatui-termina", version = "0.1.0" }
+ratatui-termion = { path = "ratatui-termion", version = "0.1.2" }
+ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.2" }
+ratatui-widgets = { path = "ratatui-widgets", version = "0.3.2", default-features = false }
 rstest = "0.26"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = "1"
 strum = { version = "0.28", default-features = false, features = ["derive"] }
+termina = "0.3"
 termion = "4"
 termwiz = "0.23"
 thiserror = { version = "2", default-features = false }
@@ -77,16 +79,10 @@ unicode-truncate = { version = "2", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width = ">=0.2.0"
 
-# Improve benchmark consistency
-[profile.bench]
-codegen-units = 1
-lto = true
-
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
 [workspace.lints.clippy]
-pedantic = { level = "warn", priority = -1 }
 cast_possible_truncation = "allow"
 cast_possible_wrap = "allow"
 cast_precision_loss = "allow"
@@ -95,6 +91,7 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
+pedantic = { level = "warn", priority = -1 }
 
 # we often split up a module into multiple files with the main type in a file named after the
 # module, so we want to allow this pattern
@@ -122,3 +119,8 @@ string_lit_chars_any = "warn"
 string_slice = "warn"
 unnecessary_self_imports = "warn"
 use_self = "warn"
+
+# Improve benchmark consistency
+[profile.bench]
+codegen-units = 1
+lto = true

@@ -83,7 +83,7 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// # std::result::Result::Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
-/// See the the [Examples] directory for more examples. See the [`backend`] module documentation
+/// See the [Examples] directory for more examples. See the [`backend`] module documentation
 /// for more details on raw mode and alternate screen.
 ///
 /// [`backend`]: ratatui_core::backend

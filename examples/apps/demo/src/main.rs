@@ -21,6 +21,8 @@ use clap::Parser;
 mod app;
 #[cfg(feature = "crossterm")]
 mod crossterm;
+#[cfg(feature = "termina")]
+mod termina;
 #[cfg(all(not(windows), feature = "termion"))]
 mod termion;
 #[cfg(feature = "termwiz")]
@@ -45,11 +47,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     let tick_rate = Duration::from_millis(cli.tick_rate);
     #[cfg(feature = "crossterm")]
     crate::crossterm::run(tick_rate, cli.unicode)?;
-    #[cfg(all(not(windows), feature = "termion", not(feature = "crossterm")))]
+    #[cfg(all(feature = "termina", not(feature = "crossterm")))]
+    crate::termina::run(tick_rate, cli.unicode)?;
+    #[cfg(all(
+        not(windows),
+        feature = "termion",
+        not(feature = "crossterm"),
+        not(feature = "termina")
+    ))]
     crate::termion::run(tick_rate, cli.unicode)?;
     #[cfg(all(
         feature = "termwiz",
         not(feature = "crossterm"),
+        not(feature = "termina"),
         not(feature = "termion")
     ))]
     crate::termwiz::run(tick_rate, cli.unicode)?;
