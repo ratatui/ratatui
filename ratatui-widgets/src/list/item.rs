@@ -112,6 +112,7 @@ impl<'a> ListItem<'a> {
     ///
     /// - [`List::new`](super::List::new) to create a list of items that can be converted to
     ///   [`ListItem`]
+    #[must_use = "constructor"]
     pub fn new<T>(content: T) -> Self
     where
         T: Into<Text<'a>>,
