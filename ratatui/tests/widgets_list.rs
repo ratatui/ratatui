@@ -369,3 +369,28 @@ fn widgets_list_enable_always_highlight_spacing<'line, Lines>(
         .backend()
         .assert_buffer(&Buffer::with_lines(expected));
 }
+
+#[test]
+fn widgets_list_select_next_should_not_exceed_item_count() {
+    let backend = TestBackend::new(10, 3);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let mut state = ListState::default();
+    let items = vec!["Item 0", "Item 1", "Item 2"];
+    state.select(Some(2)); // select last item
+
+    terminal
+        .draw(|f| {
+            let list = List::new(items.clone()).highlight_symbol(">> ");
+            f.render_stateful_widget(list, f.area(), &mut state);
+        })
+        .unwrap();
+
+    state.select_next(); // clamped to last item
+
+    let selected = state.selected().unwrap();
+    assert!(
+        selected < items.len(),
+        "selected index ({selected}) should be within bounds (len: {})",
+        items.len(),
+    );
+}
