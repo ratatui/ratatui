@@ -125,6 +125,8 @@ pub struct List<'a> {
     pub(crate) highlight_spacing: HighlightSpacing,
     /// How many items to try to keep visible before and after the selected item
     pub(crate) scroll_padding: usize,
+    /// Whether to truncate the last item if too large to fit in frame
+    pub(crate) truncate: bool,
 }
 
 /// Defines the direction in which the list will be rendered.
@@ -414,6 +416,17 @@ impl<'a> List<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn scroll_padding(mut self, padding: usize) -> Self {
         self.scroll_padding = padding;
+        self
+    }
+
+    /// Indicates whether the last item should be truncated if it is too long to fit in the frame.
+    ///
+    /// This is `false` by default.
+    ///
+    /// The direction of the list will determine which side gets truncated.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn truncate(mut self, truncate: bool) -> Self {
+        self.truncate = truncate;
         self
     }
 
