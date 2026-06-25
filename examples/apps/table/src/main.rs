@@ -12,8 +12,8 @@ use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{self, Color, Modifier, Style, Stylize};
 use ratatui::text::Text;
 use ratatui::widgets::{
-    Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
-    ScrollbarState, Table, TableState,
+    Block, BorderType, Cell, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
+    Table, TableHighlightSpacing, TableState,
 };
 use ratatui::{DefaultTerminal, Frame};
 use style::palette::tailwind;
@@ -260,7 +260,7 @@ impl App {
             "".into(),
         ]))
         .bg(self.colors.buffer_bg)
-        .highlight_spacing(HighlightSpacing::Always);
+        .highlight_spacing(TableHighlightSpacing::Always);
         frame.render_stateful_widget(t, area, &mut self.state);
     }
 
