@@ -42,7 +42,7 @@ futures = "0.3"
 hashbrown = "0.17"
 indoc = "2"
 instability = "0.3"
-itertools = { version = "0.14", default-features = false, features = ["use_alloc"] }
+itertools = { version = "0.15", default-features = false, features = ["use_alloc"] }
 kasuari = { version = "0.4", default-features = false }
 line-clipping = "0.3"
 lru = "0.18"

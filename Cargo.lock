@@ -301,7 +301,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "ratatui",
 ]
 
@@ -482,7 +482,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "ratatui",
 ]
 
@@ -566,7 +566,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "ratatui",
  "strum",
 ]
@@ -889,7 +889,7 @@ dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
  "indoc",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "palette",
  "rand 0.10.1",
  "rand_chacha 0.10.0",
@@ -1586,7 +1586,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "ratatui",
 ]
 
@@ -1828,6 +1828,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2059,7 +2068,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "ratatui",
 ]
 
@@ -2863,7 +2872,7 @@ dependencies = [
  "document-features",
  "hashbrown 0.17.1",
  "indoc",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "kasuari",
  "lru",
  "palette",
@@ -2952,7 +2961,7 @@ dependencies = [
  "hashbrown 0.17.1",
  "indoc",
  "instability",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "line-clipping",
  "pretty_assertions",
  "ratatui",
@@ -3649,7 +3658,7 @@ dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
  "fakeit",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "ratatui",
  "unicode-width",
 ]
