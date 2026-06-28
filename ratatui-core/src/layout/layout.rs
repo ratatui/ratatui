@@ -1124,7 +1124,10 @@ fn configure_fill_constraints(
     constraints: &[Constraint],
     flex: Flex,
 ) -> Result<(), AddConstraintError> {
-    for [(&left_constraint, &left_segment), (&right_constraint, &right_segment)] in constraints
+    for [
+        (&left_constraint, &left_segment),
+        (&right_constraint, &right_segment),
+    ] in constraints
         .iter()
         .zip(segments.iter())
         .filter(|(c, _)| c.is_fill() || (!flex.is_legacy() && c.is_min()))
