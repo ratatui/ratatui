@@ -1012,7 +1012,7 @@ fn configure_flex_constraints(
         Flex::SpaceAround => {
             if spacers.len() <= 2 {
                 // If there are two or less spacers, fallback to Flex::SpaceEvenly
-                for (left, right) in spacers.iter().tuple_combinations() {
+                for [left, right] in spacers.iter().array_combinations() {
                     solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
                 }
                 for spacer in spacers {
@@ -1025,7 +1025,7 @@ fn configure_flex_constraints(
                 let (last, middle) = rest.split_last().unwrap();
 
                 // All middle spacers should be equal in size
-                for (left, right) in middle.iter().tuple_combinations() {
+                for [left, right] in middle.iter().array_combinations() {
                     solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
                 }
 
@@ -1046,7 +1046,7 @@ fn configure_flex_constraints(
         // All spacers are the same size and will grow to fill any remaining space after the
         // constraints are satisfied
         Flex::SpaceEvenly => {
-            for (left, right) in spacers.iter().tuple_combinations() {
+            for [left, right] in spacers.iter().array_combinations() {
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
             }
             for spacer in spacers {
@@ -1059,7 +1059,7 @@ fn configure_flex_constraints(
         // any remaining space after the constraints are satisfied.
         // The first and last spacers are zero size.
         Flex::SpaceBetween => {
-            for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
+            for [left, right] in spacers_except_first_and_last.iter().array_combinations() {
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?;
             }
             for spacer in spacers_except_first_and_last {
@@ -1124,11 +1124,14 @@ fn configure_fill_constraints(
     constraints: &[Constraint],
     flex: Flex,
 ) -> Result<(), AddConstraintError> {
-    for ((&left_constraint, &left_segment), (&right_constraint, &right_segment)) in constraints
+    for [
+        (&left_constraint, &left_segment),
+        (&right_constraint, &right_segment),
+    ] in constraints
         .iter()
         .zip(segments.iter())
         .filter(|(c, _)| c.is_fill() || (!flex.is_legacy() && c.is_min()))
-        .tuple_combinations()
+        .array_combinations()
     {
         let left_scaling_factor = match left_constraint {
             Constraint::Fill(scale) => f64::from(scale).max(1e-6),
