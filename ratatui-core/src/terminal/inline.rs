@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::buffer::{Buffer, Cell};
+use crate::buffer::{Buffer, Cell, CellWidth};
 use crate::layout::{Position, Rect, Size};
 use crate::terminal::{Terminal, Viewport};
 
@@ -296,6 +296,12 @@ impl<B: Backend> Terminal<B> {
     ///
     /// This is a small internal helper used by [`Terminal::insert_before`]. It writes cells
     /// directly to the backend in terminal coordinates (not viewport coordinates).
+    ///
+    /// Cells that are the "continuation" half of a preceding wide grapheme (e.g. CJK, emoji)
+    /// are not sent to the backend. The terminal cursor has already advanced past those columns
+    /// after the wide grapheme was emitted, so writing the empty continuation cell would
+    /// overwrite the right half of the grapheme with a space and produce a visible artifact
+    /// (issue #1332).
     fn draw_lines<'a>(
         &mut self,
         y_offset: u16,
@@ -304,14 +310,27 @@ impl<B: Backend> Terminal<B> {
     ) -> Result<&'a [Cell], B::Error> {
         let width: usize = self.last_known_area.width.into();
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
-        if lines_to_draw > 0 {
-            let iter = to_draw
-                .iter()
-                .enumerate()
-                .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
-            self.backend.draw(iter)?;
-            self.backend.flush()?;
-        }
+        // When `lines_to_draw == 0`, `to_draw` is empty: the filter_map yields nothing and the
+        // backend.draw + flush calls become harmless no-ops, so no explicit guard is needed.
+        let mut skip: u16 = 0;
+        let iter = to_draw.iter().enumerate().filter_map(move |(i, c)| {
+            let x = (i % width) as u16;
+            let y = y_offset + (i / width) as u16;
+            // Skip counter is per-row: a wide grapheme cannot straddle a row boundary
+            // (see `Buffer::set_stringn` which drops graphemes that don't fit).
+            if x == 0 {
+                skip = 0;
+            }
+            if skip > 0 {
+                skip -= 1;
+                None
+            } else {
+                skip = c.cell_width().saturating_sub(1);
+                Some((x, y, c))
+            }
+        });
+        self.backend.draw(iter)?;
+        self.backend.flush()?;
         Ok(remainder)
     }
 
@@ -487,6 +506,7 @@ mod tests {
     #[cfg(not(feature = "scrolling-regions"))]
     mod no_scrolling_regions {
         use super::*;
+        use crate::buffer::Cell;
 
         #[test]
         fn insert_before_is_noop_for_non_inline_viewports() {
@@ -720,6 +740,142 @@ mod tests {
                 "BBBBBBBBBB",
             ]);
         }
+
+        /// Constructs a `TestBackend` with a sentinel cell pre-populated at `(sentinel_x,
+        /// sentinel_y)` and the cursor positioned at the start of the row that `insert_before`
+        /// will paint into. Tests use this to detect whether `draw_lines` clobbered a specific
+        /// column — if the continuation slot was skipped correctly, the sentinel survives.
+        fn backend_with_sentinel(
+            width: u16,
+            height: u16,
+            sentinel_x: u16,
+            sentinel_y: u16,
+            sentinel: &'static str,
+        ) -> TestBackend {
+            let mut backend = TestBackend::new(width, height);
+            let cell = Cell::new(sentinel);
+            backend
+                .draw([(sentinel_x, sentinel_y, &cell)].into_iter())
+                .unwrap();
+            backend
+                .set_cursor_position(Position::new(0, sentinel_y))
+                .unwrap();
+            backend
+        }
+
+        #[test]
+        fn insert_before_skips_wide_grapheme_continuation_at_left() {
+            // Regression for ratatui#1332. The non-scrolling-regions `insert_before` used to
+            // emit every cell linearly, including the empty continuation slot that follows a
+            // wide grapheme. Real terminals already advance the cursor past that column, so
+            // writing it again clobbers the right half of the grapheme with a space and
+            // produces a visible spacing artifact.
+            //
+            // Sentinel-based check: pre-populate the continuation column with a non-blank
+            // character. With the fix, the iterator skips that column entirely and the
+            // sentinel survives. Without the fix, the iterator writes Cell::EMPTY there and
+            // overwrites the sentinel with a space.
+            let backend = backend_with_sentinel(10, 10, 1, 3, "X");
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(2),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "📂abc", Style::default());
+                })
+                .unwrap();
+
+            let buf = terminal.backend().buffer();
+            assert_eq!(
+                buf[(1, 3)].symbol(),
+                "X",
+                "wide-grapheme continuation slot at (1, 3) was clobbered — `draw_lines` \
+                 must skip that column",
+            );
+            assert_eq!(buf[(0, 3)].symbol(), "📂");
+            assert_eq!(buf[(2, 3)].symbol(), "a");
+            assert_eq!(buf[(3, 3)].symbol(), "b");
+            assert_eq!(buf[(4, 3)].symbol(), "c");
+        }
+
+        #[test]
+        fn insert_before_skips_continuation_for_wide_grapheme_in_middle_of_row() {
+            // Same class of bug, but with the wide grapheme appearing mid-line. The
+            // continuation slot index moves with the grapheme; verify the per-row skip
+            // counter tracks correctly.
+            //
+            // In "ab字cd", `字` occupies columns 2 and 3; the sentinel sits at column 3.
+            let backend = backend_with_sentinel(10, 10, 3, 3, "Y");
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(2),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "ab字cd", Style::default());
+                })
+                .unwrap();
+
+            let buf = terminal.backend().buffer();
+            assert_eq!(
+                buf[(3, 3)].symbol(),
+                "Y",
+                "wide-grapheme continuation slot at (3, 3) was clobbered",
+            );
+            assert_eq!(buf[(0, 3)].symbol(), "a");
+            assert_eq!(buf[(1, 3)].symbol(), "b");
+            assert_eq!(buf[(2, 3)].symbol(), "字");
+            assert_eq!(buf[(4, 3)].symbol(), "c");
+            assert_eq!(buf[(5, 3)].symbol(), "d");
+        }
+
+        #[test]
+        fn insert_before_skip_counter_resets_at_each_row() {
+            // A wide grapheme cannot straddle a row boundary, so the skip state from row N
+            // must not leak into row N+1. Row 0 of the inserted buffer ends with a wide
+            // grapheme at columns 8-9; row 1 starts with an ASCII char at column 0. If the
+            // per-row skip counter leaked, the leading 'a' of row 1 would be skipped and the
+            // sentinel pre-populated there would survive.
+            //
+            // Cursor at row 3 + Inline(2) viewport + insert 2 rows: inserted content lands at
+            // terminal rows 3 and 4. Sentinel sits at (0, 4) — row 1's leading column.
+            let mut backend = TestBackend::new(10, 10);
+            let cell = Cell::new("Z");
+            backend.draw([(0, 4, &cell)].into_iter()).unwrap();
+            backend.set_cursor_position(Position::new(0, 3)).unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(2),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf.set_string(0, 0, "12345678字", Style::default());
+                    buf.set_string(0, 1, "abcdefghij", Style::default());
+                })
+                .unwrap();
+
+            let buf = terminal.backend().buffer();
+            assert_eq!(
+                buf[(0, 4)].symbol(),
+                "a",
+                "row 4 column 0 must be written from row 1 of the inserted buffer; \
+                 if it still reads 'Z' the per-row skip counter leaked across rows",
+            );
+            assert_eq!(buf[(8, 3)].symbol(), "字");
+        }
     }
 
     #[cfg(feature = "scrolling-regions")]
@@ -924,6 +1080,67 @@ mod tests {
             terminal
                 .backend()
                 .assert_scrollback_lines(["INSERTED00", "INSERTED01"]);
+        }
+
+        #[test]
+        fn insert_before_skips_wide_grapheme_continuation_in_fullscreen_mode() {
+            // Regression for ratatui#1332 on the scrolling-regions code path. When the viewport
+            // takes the whole screen, `insert_before` uses `draw_lines` (not
+            // `draw_lines_over_cleared`) for the first inserted line — so the wide-grapheme
+            // skip in `draw_lines` must be exercised here too.
+            //
+            // The viewport is pre-filled with "VIEWLINE00" so the cell at column 1 of row 0
+            // reads "I" before the insert. After insert_before, the inserted line is pushed
+            // into scrollback. With the fix, `draw_lines` skips the wide-grapheme continuation
+            // at column 1, so scrollback (1, 0) keeps "I". Without the fix, the iterator
+            // writes Cell::EMPTY at column 1, which scrolls into scrollback as a space.
+            let mut backend = TestBackend::new(10, 4);
+            backend
+                .set_cursor_position(Position { x: 0, y: 0 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .draw(|frame| {
+                    let area = frame.area();
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y, "VIEWLINE00", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 1, "VIEWLINE01", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 2, "VIEWLINE02", Style::default());
+                    frame
+                        .buffer
+                        .set_string(area.x, area.y + 3, "VIEWLINE03", Style::default());
+                })
+                .unwrap();
+
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "📂abc", Style::default());
+                })
+                .unwrap();
+
+            let sb = terminal.backend().scrollback();
+            assert_eq!(sb[(0, 0)].symbol(), "📂");
+            assert_eq!(
+                sb[(1, 0)].symbol(),
+                "I",
+                "wide-grapheme continuation at scrollback (1, 0) was clobbered — \
+                 `draw_lines` must skip that column",
+            );
+            assert_eq!(sb[(2, 0)].symbol(), "a");
+            assert_eq!(sb[(3, 0)].symbol(), "b");
+            assert_eq!(sb[(4, 0)].symbol(), "c");
         }
     }
 }
