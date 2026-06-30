@@ -191,6 +191,23 @@ jobs:
         env:
           RUSTUP_TOOLCHAIN: ${{ matrix.toolchain }}
 
+  # Check that dependency lower bounds are accurate.
+  minimal-versions:
+    name: Check Minimal Versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: stable
+      - uses: taiki-e/install-action@9e1e5806d4a4822de933115878265be9aaa786d9 # v2.82.2
+        with:
+          tool: cargo-minimal-versions,cargo-hack
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+      - run: cargo minimal-versions check --direct --workspace --all-features --all-targets
+
   build-no-std:
     name: Build No-Std
     runs-on: ubuntu-latest
@@ -324,6 +341,7 @@ jobs:
       - lint-markdown
       - coverage
       - check
+      - minimal-versions
       - build-no-std
       - check-readme
       - lint-docs
