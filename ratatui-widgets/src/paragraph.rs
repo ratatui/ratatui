@@ -1335,4 +1335,141 @@ mod tests {
         // This should not panic, even if the buffer has zero size.
         paragraph.render(buffer.area, &mut buffer);
     }
+
+    /// Tests covering how the six style layers interact when rendering a [`Paragraph`]:
+    /// existing buffer style, [`Paragraph::style`], [`Block::style`], [`Text::style`],
+    /// [`Line::style`], and [`Span::style`]. Issue #1015 asked for this matrix to be
+    /// pinned down with named tests so future changes have an explicit baseline.
+    mod style_precedence {
+        use super::*;
+
+        /// `Paragraph::style` patches the styles of the rendering area on top of whatever
+        /// style the buffer already carried — so a pre-existing background survives wherever
+        /// `Paragraph::style` does not set it.
+        #[test]
+        fn paragraph_style_patches_existing_buffer_style() {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 1));
+            // Pre-fill the buffer with a green background — simulates the parent widget
+            // (or a previously rendered widget) setting a base style on the area.
+            buffer.set_style(buffer.area, Style::new().bg(Color::Green));
+
+            // Paragraph::style only sets the foreground; the green bg should survive.
+            Paragraph::new("hello world")
+                .style(Style::new().fg(Color::Yellow))
+                .render(buffer.area, &mut buffer);
+
+            let mut expected = Buffer::with_lines(["hello world"]);
+            expected.set_style(
+                expected.area,
+                Style::new().fg(Color::Yellow).bg(Color::Green),
+            );
+            assert_eq!(buffer, expected);
+        }
+
+        /// `Span::style` overrides `Line::style`, which in turn overrides `Text::style`,
+        /// which overrides `Paragraph::style`. The deepest style wins per grapheme.
+        #[test]
+        fn deeper_style_layers_override_shallower_ones() {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 14, 1));
+
+            let line = Line::default()
+                .spans([
+                    Span::raw("text "),                                 // inherits from Line/Text
+                    Span::raw("line "),                                 // inherits from Line/Text
+                    Span::styled("span", Style::new().fg(Color::Cyan)), // overrides
+                ])
+                .style(Style::new().fg(Color::Red)); // overrides Text/Paragraph
+            let text = Text::from(line).style(Style::new().fg(Color::Magenta));
+            let paragraph = Paragraph::new(text).style(Style::new().fg(Color::Yellow));
+
+            paragraph.render(buffer.area, &mut buffer);
+
+            let mut expected = Buffer::with_lines(["text line span"]);
+            // Whole area first gets Paragraph::style (yellow fg).
+            expected.set_style(expected.area, Style::new().fg(Color::Yellow));
+            // The "text line " portion picks up Line::style (red overrides text/paragraph fg).
+            expected.set_style(Rect::new(0, 0, 10, 1), Style::new().fg(Color::Red));
+            // The styled span (cyan) overrides Line::style for those columns.
+            expected.set_style(Rect::new(10, 0, 4, 1), Style::new().fg(Color::Cyan));
+            assert_eq!(buffer, expected);
+        }
+
+        /// When a [`Paragraph`] is wrapped in a [`Block`], the paragraph's style patches the
+        /// outer area first (so its fg ends up on the block's borders too), then the Block
+        /// is rendered (its own style further patches both the borders and the inner), and
+        /// finally the paragraph's style patches the inner content area once more on top.
+        ///
+        /// The user-visible consequence: setting `fg` on the paragraph also colors the block
+        /// borders, while `bg` is overwritten on the borders by the block's own bg. This is
+        /// load-bearing behavior — the original PR ratatui-org/ratatui#956 deliberately
+        /// preserved it. The test pins it down so future refactors don't silently regress.
+        #[test]
+        fn paragraph_style_propagates_to_block_borders_then_inner_wins() {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 9, 3));
+
+            let block = Block::bordered().style(Style::new().bg(Color::Blue));
+            let paragraph = Paragraph::new("hi")
+                .block(block)
+                .style(Style::new().fg(Color::Yellow).bg(Color::Red));
+
+            paragraph.render(buffer.area, &mut buffer);
+
+            let mut expected = Buffer::with_lines(["┌───────┐", "│hi     │", "└───────┘"]);
+            // Outer area: paragraph fg yellow leaks onto borders; block's bg blue wins
+            // because block renders after the initial paragraph patch.
+            expected.set_style(
+                expected.area,
+                Style::new().fg(Color::Yellow).bg(Color::Blue),
+            );
+            // Inner content area: paragraph's full style (fg yellow, bg red) patches over
+            // the block's blue bg.
+            expected.set_style(
+                Rect::new(1, 1, 7, 1),
+                Style::new().fg(Color::Yellow).bg(Color::Red),
+            );
+            assert_eq!(buffer, expected);
+        }
+
+        /// A `Style` that only sets `bg` does not clear the `fg` set by a later layer:
+        /// `set_style` is a patch, not a replace. This pins down the patching semantics
+        /// so future refactors don't accidentally regress to `style = ...`.
+        #[test]
+        fn span_style_only_patches_named_attributes() {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+
+            let span_with_only_bg = Span::styled("hello", Style::new().bg(Color::Blue));
+            let paragraph =
+                Paragraph::new(Line::from(span_with_only_bg)).style(Style::new().fg(Color::Yellow));
+
+            paragraph.render(buffer.area, &mut buffer);
+
+            let mut expected = Buffer::with_lines(["hello"]);
+            // Yellow fg from Paragraph::style survives because span only patched bg.
+            expected.set_style(
+                expected.area,
+                Style::new().fg(Color::Yellow).bg(Color::Blue),
+            );
+            assert_eq!(buffer, expected);
+        }
+
+        /// Modifiers on `Span::style` (e.g. `BOLD`) accumulate with foreground colors set
+        /// by an outer layer — the patch combines, it does not clobber.
+        #[test]
+        fn modifiers_and_colors_combine_across_layers() {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
+
+            let span_bold = Span::styled("loud", Style::new().add_modifier(Modifier::BOLD));
+            let paragraph =
+                Paragraph::new(Line::from(span_bold)).style(Style::new().fg(Color::Cyan));
+
+            paragraph.render(buffer.area, &mut buffer);
+
+            let mut expected = Buffer::with_lines(["loud"]);
+            expected.set_style(
+                expected.area,
+                Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            );
+            assert_eq!(buffer, expected);
+        }
+    }
 }
