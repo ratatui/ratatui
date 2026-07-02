@@ -13,7 +13,7 @@
 //! terminal capabilities. This crate is the backend layer, not the primary docs.rs entry point for
 //! building applications.
 //!
-//! [`Backend`]: trait.Backend.html
+//! [`Backend`]: ratatui_core::backend::Backend
 //! [Termwiz]: https://crates.io/crates/termwiz
 //!
 //! # Crate Organization
