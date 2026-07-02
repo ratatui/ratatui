@@ -242,6 +242,7 @@ jobs:
       - uses: taiki-e/install-action@16b05812d776ae1dfaabc8277e421fb6d2506419 # v2
         with:
           tool: cargo-rdme
+      - run: cargo rdme install-rust-toolchain-for-intralinks
       - run: cargo xtask readme --check
 
   # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account the
