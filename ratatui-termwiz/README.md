@@ -2,7 +2,7 @@
 
 <!-- cargo-rdme start -->
 
-This module provides the [`TermwizBackend`] implementation for the [`Backend`] trait. It uses
+This module provides the [`TermwizBackend`](https://docs.rs/ratatui-termwiz/latest/ratatui_termwiz/struct.TermwizBackend.html) implementation for the `Backend` trait. It uses
 the [Termwiz] crate to interact with the terminal.
 
 Most application authors should start with the main [`ratatui`] crate and only depend on
@@ -10,7 +10,6 @@ Most application authors should start with the main [`ratatui`] crate and only d
 terminal capabilities. This crate is the backend layer, not the primary docs.rs entry point for
 building applications.
 
-[`Backend`]: trait.Backend.html
 [Termwiz]: https://crates.io/crates/termwiz
 
 ## Crate Organization

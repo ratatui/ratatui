@@ -57,8 +57,8 @@ foundational types and traits that other crates in the workspace depend on.
 For detailed information about the workspace organization, see [ARCHITECTURE.md].
 
 [`ratatui`]: https://crates.io/crates/ratatui
-[`Widget`]: widgets::Widget
-[`StatefulWidget`]: widgets::StatefulWidget
+[`Widget`]: https://docs.rs/ratatui-core/latest/ratatui_core/widgets/widget/trait.Widget.html
+[`StatefulWidget`]: https://docs.rs/ratatui-core/latest/ratatui_core/widgets/stateful_widget/trait.StatefulWidget.html
 [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
 
 ## Contributing

@@ -2,7 +2,7 @@
 
 <!-- cargo-rdme start -->
 
-This crate provides [`CrosstermBackend`], an implementation of the [`Backend`] trait for the
+This crate provides [`CrosstermBackend`](https://docs.rs/ratatui-crossterm/latest/ratatui_crossterm/struct.CrosstermBackend.html), an implementation of the [`Backend`] trait for the
 [Ratatui] library. It uses the [Crossterm] library for all terminal manipulation.
 
 Most application authors should start with the main [`ratatui`] crate, which re-exports this
@@ -37,11 +37,11 @@ For example, if your application's `Cargo.toml` enables the `crossterm_0_29` fea
 version of Crossterm.
 
 For more information on how to use the backend, see the documentation for the
-[`CrosstermBackend`] struct.
+[`CrosstermBackend`](https://docs.rs/ratatui-crossterm/latest/ratatui_crossterm/struct.CrosstermBackend.html) struct.
 
 [Ratatui]: https://ratatui.rs
 [Crossterm]: https://crates.io/crates/crossterm
-[`Backend`]: ratatui_core::backend::Backend
+[`Backend`]: https://docs.rs/ratatui_core/latest/ratatui_core/backend/trait.Backend.html
 
 ## Crate Organization
 
