@@ -5,7 +5,7 @@ use ratatui_core::layout::Rect;
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::text::Line;
 use ratatui_core::widgets::Widget;
-use unicode_width::UnicodeWidthStr;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 /// A bar to be shown by the [`BarChart`](super::BarChart) widget.
 ///
@@ -209,32 +209,50 @@ impl<'a> Bar<'a> {
         let value = self.value.to_string();
         let text = self.text_value.as_ref().unwrap_or(&value);
 
-        if !text.is_empty() {
-            let style = default_value_style.patch(self.value_style);
-            // Since the value may be longer than the bar itself, we need to use 2 different styles
-            // while rendering. Render the first part with the default value style
-            buf.set_stringn(area.x, area.y, text, bar_length, style);
-            // render the second part with the bar_style
-            if text.len() > bar_length {
-                // Find the last character boundary at or before bar_length
-                let bar_length = text
-                    .char_indices()
-                    .take_while(|(i, _)| *i < bar_length)
-                    .last()
-                    .map_or(0, |(i, c)| i + c.len_utf8());
-
-                let (first, second) = text.split_at(bar_length);
-
-                let style = bar_style.patch(self.style);
-                buf.set_stringn(
-                    area.x + first.len() as u16,
-                    area.y,
-                    second,
-                    area.width as usize - first.len(),
-                    style,
-                );
-            }
+        if text.is_empty() {
+            return;
         }
+
+        let style = default_value_style.patch(self.value_style);
+        // Since the value may be longer than the bar itself, we need to use 2 different styles
+        // while rendering. Render the first part with the default value style
+        buf.set_stringn(area.x, area.y, text, bar_length, style);
+
+        // `bar_length` and `Buffer::set_stringn` both work in terminal cells. Split the overflow
+        // by display width (not UTF-8 byte length) so multi-byte and wide characters stay aligned.
+        let text_width = text.width();
+        if text_width <= bar_length {
+            return;
+        }
+
+        let mut used_width = 0usize;
+        let mut split_byte = None;
+        for (i, ch) in text.char_indices() {
+            let ch_width = UnicodeWidthChar::width(ch).unwrap_or(0);
+            if used_width.saturating_add(ch_width) > bar_length {
+                split_byte = Some(i);
+                break;
+            }
+            used_width = used_width.saturating_add(ch_width);
+        }
+
+        // `char_indices` always yields char boundaries, so `get` cannot fail here.
+        let Some(second) = split_byte.and_then(|i| text.get(i..)) else {
+            return;
+        };
+        if second.is_empty() {
+            return;
+        }
+
+        let style = bar_style.patch(self.style);
+        let remaining = (area.width as usize).saturating_sub(used_width);
+        buf.set_stringn(
+            area.x.saturating_add(used_width as u16),
+            area.y,
+            second,
+            remaining,
+            style,
+        );
     }
 
     pub(super) fn render_value(
