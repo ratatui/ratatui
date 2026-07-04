@@ -1574,6 +1574,18 @@ mod tests {
         assert_eq!(buffer, Buffer::with_lines(["████████", "██中文██"]));
     }
 
+    /// Empty `text_value` skips value painting and leaves only the bar fill.
+    #[test]
+    fn horizontal_empty_text_value_skips_value_paint() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(BarGroup::default().bars(&[Bar::default().value(5).text_value("")]));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["█████"]));
+    }
+
     /// Multi-byte single-width characters must be split by display width on
     /// horizontal bars, not by UTF-8 byte length.
     ///

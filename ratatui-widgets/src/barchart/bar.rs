@@ -225,27 +225,24 @@ impl<'a> Bar<'a> {
             return;
         }
 
+        // `text_width > bar_length` means some character cannot fit in the bar, so the loop
+        // always breaks with `split_byte` at a `char_indices` boundary and a non-empty suffix.
         let mut used_width = 0usize;
-        let mut split_byte = None;
+        let mut split_byte = 0usize;
         for (i, ch) in text.char_indices() {
             let ch_width = UnicodeWidthChar::width(ch).unwrap_or(0);
             if used_width.saturating_add(ch_width) > bar_length {
-                split_byte = Some(i);
+                split_byte = i;
                 break;
             }
             used_width = used_width.saturating_add(ch_width);
         }
 
-        // `char_indices` always yields char boundaries, so `get` cannot fail here.
-        let Some(second) = split_byte.and_then(|i| text.get(i..)) else {
-            return;
-        };
-        if second.is_empty() {
-            return;
-        }
-
         let style = bar_style.patch(self.style);
         let remaining = (area.width as usize).saturating_sub(used_width);
+        // `split_byte` comes from `char_indices`, so it is always a char boundary.
+        #[allow(clippy::string_slice)]
+        let second = &text[split_byte..];
         buf.set_stringn(
             area.x.saturating_add(used_width as u16),
             area.y,
