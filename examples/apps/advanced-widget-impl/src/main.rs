@@ -139,6 +139,8 @@ impl Default for Timer {
 /// This approach was probably always available in Ratatui, but it wasn't widely used until `Widget`
 /// was implemented on references in [PR #903] (merged in Ratatui 0.26.0). This is because all the
 /// built-in widgets previously would consume themselves when rendered.
+///
+/// [PR #903]: https://github.com/ratatui/ratatui/pull/903
 impl Widget for &Timer {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let elapsed = self.start.elapsed().as_secs_f32();

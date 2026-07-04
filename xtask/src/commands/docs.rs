@@ -1,6 +1,9 @@
-use color_eyre::Result;
+use std::env;
 
-use crate::{Run, run_cargo_nightly};
+use color_eyre::Result;
+use duct::cmd;
+
+use crate::{ExpressionExt, Run, run_cargo_nightly};
 
 /// Check documentation for errors and warnings
 #[derive(Clone, Debug, clap::Args)]
@@ -12,6 +15,8 @@ pub struct Docs {
 
 impl Run for Docs {
     fn run(self) -> Result<()> {
+        lint_workspace_docs()?;
+
         // cargo +nightly hack --all --ignore-private docs-rs
         let mut args = vec!["hack", "--all", "--ignore-private", "docs-rs"];
         if self.open {
@@ -19,4 +24,16 @@ impl Run for Docs {
         }
         run_cargo_nightly(args)
     }
+}
+
+fn lint_workspace_docs() -> Result<()> {
+    let rustdocflags = match env::var("RUSTDOCFLAGS") {
+        Ok(flags) if !flags.is_empty() => format!("{flags} -Dwarnings"),
+        _ => "-Dwarnings".to_string(),
+    };
+
+    cmd!("cargo", "doc", "--all-features", "--no-deps")
+        .env("RUSTDOCFLAGS", rustdocflags)
+        .run_with_trace()?;
+    Ok(())
 }
