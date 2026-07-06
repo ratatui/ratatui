@@ -29,7 +29,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Add comment indicating we require pull request titles to follow conventional commits specification
-      - uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
+      - uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         if: always() && (steps.check_pr_title.outputs.error_message != null)
         with:
           header: pr-title-lint-error
@@ -44,7 +44,7 @@ jobs:
 
       # Delete a previous comment when the issue has been resolved
       - if: ${{ steps.check_pr_title.outputs.error_message == null }}
-        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           header: pr-title-lint-error
           delete: true
