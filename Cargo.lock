@@ -876,7 +876,7 @@ version = "0.0.0"
 dependencies = [
  "clap",
  "crossterm 0.29.0",
- "rand 0.10.1",
+ "rand 0.10.2",
  "ratatui",
  "termion",
  "termwiz",
@@ -891,7 +891,7 @@ dependencies = [
  "indoc",
  "itertools 0.15.0",
  "palette",
- "rand 0.10.1",
+ "rand 0.10.2",
  "rand_chacha 0.10.0",
  "ratatui",
  "strum",
@@ -1765,7 +1765,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "rand 0.10.1",
+ "rand 0.10.2",
  "ratatui",
 ]
 
@@ -2079,7 +2079,7 @@ dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
  "line_drawing",
- "rand 0.10.1",
+ "rand 0.10.2",
  "ratatui",
 ]
 
@@ -2772,9 +2772,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2e8e8bcc7961af1fdac401278c6a831614941f6164ee3bf4ce61b7edb162207"
+checksum = "c7f5fa3a058cd35567ef9bfa5e75732bee0f9e4c55fa90477bef2dfcdbc4be80"
 dependencies = [
  "chacha20",
  "getrandom 0.4.1",
@@ -2847,7 +2847,7 @@ dependencies = [
  "instability",
  "palette",
  "pretty_assertions",
- "rand 0.10.1",
+ "rand 0.10.2",
  "ratatui-core",
  "ratatui-crossterm",
  "ratatui-macros",
@@ -4294,7 +4294,7 @@ dependencies = [
  "color-eyre",
  "colorgrad",
  "crossterm 0.29.0",
- "rand 0.10.1",
+ "rand 0.10.2",
  "ratatui",
 ]
 
@@ -4457,7 +4457,7 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "rand 0.10.1",
+ "rand 0.10.2",
  "ratatui",
 ]
 
