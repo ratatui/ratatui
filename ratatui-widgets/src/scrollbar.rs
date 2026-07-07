@@ -585,11 +585,14 @@ impl Scrollbar<'_> {
         )
         .clamp(1, track_length);
 
+        // Clamp so the thumb always fits within the track (`thumb_start + thumb_length <=
+        // track_length`). Clamping to `track_length - 1` instead let a large thumb overrun the
+        // track at the end, pushing the end symbol out of the rendered area. See issue #2582.
         let thumb_start = rounding_divide(
             start_position.saturating_mul(track_length),
             max_viewport_position,
         )
-        .clamp(0, track_length.saturating_sub(1));
+        .clamp(0, track_length.saturating_sub(thumb_length));
 
         let track_end = track_length.saturating_sub(thumb_start + thumb_length);
         (thumb_start, thumb_length, track_end)
@@ -1167,5 +1170,50 @@ mod tests {
 
         let (start, thumb_len, end) = scrollbar.part_lengths(Rect::new(0, 0, 0, 1), &state);
         assert_eq!((start, thumb_len, end), (0, 0, 0));
+    }
+
+    /// Regression test for <https://github.com/ratatui/ratatui/issues/2582>.
+    ///
+    /// A thumb that is large relative to the track (content shorter than the viewport) must not
+    /// overrun the track when the position is at the end. Otherwise the rendered thumb pushes the
+    /// end symbol out of the area, leaving a thumb cell where the end arrow should be.
+    #[test]
+    fn thumb_stays_within_track_for_large_thumb_at_end() {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+        // height 24 minus the two arrow heads leaves a track of 22.
+        let area = Rect::new(0, 0, 1, 24);
+        let state = ScrollbarState::new(9).position(8);
+
+        let (start, thumb_len, end) = scrollbar.part_lengths(area, &state);
+
+        assert!(
+            start + thumb_len <= 22,
+            "thumb overruns the track: start={start} + thumb_len={thumb_len} > 22"
+        );
+        assert_eq!(
+            start + thumb_len + end,
+            22,
+            "parts must sum to the track length"
+        );
+    }
+
+    /// Visual regression for <https://github.com/ratatui/ratatui/issues/2582>: with an end symbol
+    /// set, a large thumb at the end must render the end symbol rather than overwriting it.
+    #[rstest]
+    #[case::large_thumb_at_end("<-----#################>", 8, 9)]
+    fn render_scrollbar_keeps_end_symbol_for_large_thumb(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+    ) {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::HorizontalTop)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("-"))
+            .thumb_symbol("#");
+        let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
+        let mut state = ScrollbarState::new(content_length).position(position);
+        scrollbar.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 }

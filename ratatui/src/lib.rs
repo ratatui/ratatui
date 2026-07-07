@@ -80,8 +80,8 @@
 //! - [`ratatui-core`] for widget libraries, custom integrations, and lower-level rendering
 //!   contracts
 //! - [`ratatui-widgets`] when you only need the built-in widgets crate as a dependency
-//! - [`ratatui-crossterm`], [`ratatui-termion`], or [`ratatui-termwiz`] when you need to select and
-//!   depend on a backend crate directly
+//! - [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termina`], or [`ratatui-termwiz`] when
+//!   your application needs backend-specific APIs or a direct backend dependency
 //!
 //! # Other documentation
 //!
@@ -116,7 +116,8 @@
 //! - **[`ratatui`](crate)**: Main crate with complete functionality (recommended for apps)
 //! - **[`ratatui-core`]**: Core traits and types for widget libraries
 //! - **[`ratatui-widgets`]**: Built-in widget implementations
-//! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termwiz`]
+//! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termina`],
+//!   [`ratatui-termwiz`]
 //! - **[`ratatui-macros`]**: Macros for simplifying the boilerplate
 //!
 //! **For application developers**: `ratatui` remains the recommended starting point.
@@ -434,6 +435,7 @@
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
 //! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
 //! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
+//! [`ratatui-termina`]: https://crates.io/crates/ratatui-termina
 //! [`ratatui-termwiz`]: https://crates.io/crates/ratatui-termwiz
 //! [`ratatui-macros`]: https://crates.io/crates/ratatui-macros
 //! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
@@ -458,6 +460,7 @@
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
 //! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
 //! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
+//! [`ratatui-termina`]: https://crates.io/crates/ratatui-termina
 //! [`ratatui-termwiz`]: https://crates.io/crates/ratatui-termwiz
 //! [`ratatui-macros`]: https://crates.io/crates/ratatui-macros
 //! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
@@ -480,6 +483,9 @@ pub use ratatui_core::{buffer, layout};
 pub use ratatui_crossterm::crossterm;
 #[cfg(feature = "macros")]
 pub use ratatui_macros as macros;
+/// re-export the `termina` crate so that users don't have to add it as a dependency
+#[cfg(feature = "termina")]
+pub use ratatui_termina::termina;
 /// re-export the `termion` crate so that users don't have to add it as a dependency
 #[cfg(all(not(windows), feature = "termion"))]
 pub use ratatui_termion::termion;
@@ -499,6 +505,8 @@ pub mod backend {
     pub use ratatui_core::backend::{Backend, ClearType, TestBackend, WindowSize};
     #[cfg(feature = "crossterm")]
     pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
+    #[cfg(feature = "termina")]
+    pub use ratatui_termina::{FromTermina, IntoTermina, TerminaBackend};
     #[cfg(all(not(windows), feature = "termion"))]
     pub use ratatui_termion::{FromTermion, IntoTermion, TermionBackend};
     #[cfg(feature = "termwiz")]

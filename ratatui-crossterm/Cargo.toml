@@ -1,10 +1,9 @@
 [package]
 name = "ratatui-crossterm"
-version = "0.1.1"
+version = "0.1.2"
 description = "Crossterm backend for the Ratatui Terminal UI library."
 documentation = "https://docs.rs/ratatui-crossterm"
 readme = "README.md"
-authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
@@ -17,6 +16,9 @@ rust-version.workspace = true
 [package.metadata.docs.rs]
 features = ["document-features"]
 rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["crossterm_0_28"]
 
 [features]
 default = ["crossterm_0_29", "underline-color"]

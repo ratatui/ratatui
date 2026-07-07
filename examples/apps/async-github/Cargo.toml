@@ -1,7 +1,6 @@
 [package]
 name = "async-github"
 publish = false
-authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
 homepage.workspace = true

@@ -65,6 +65,13 @@ The Ratatui project is now organized as a Cargo workspace containing the followi
 - **Contents**: Unix-specific terminal backend using the `termion` crate
 - **Target Users**: Unix-specific applications requiring low-level control
 
+#### `ratatui-termina`
+
+- **Purpose**: Termina backend implementation
+- **Contents**: Backend for values implementing `termina::Terminal`
+- **Target Users**: Applications that use Termina events or typed escape sequences alongside
+  Ratatui rendering
+
 #### `ratatui-termwiz`
 
 - **Purpose**: Termwiz backend implementation
@@ -87,6 +94,7 @@ ratatui
 ├── ratatui-widgets → ratatui-core
 ├── ratatui-crossterm → ratatui-core
 ├── ratatui-termion → ratatui-core
+├── ratatui-termina → ratatui-core
 ├── ratatui-termwiz → ratatui-core
 └── ratatui-macros
 ```

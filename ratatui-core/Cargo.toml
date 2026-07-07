@@ -1,13 +1,12 @@
 [package]
 name = "ratatui-core"
-version = "0.1.1"
+version = "0.1.2"
 description = """
     Core types and traits for the Ratatui Terminal UI library.
     Widget libraries should use this crate. Applications should use the main Ratatui crate.
 """
 documentation = "https://docs.rs/ratatui-core"
 readme = "README.md"
-authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
@@ -20,6 +19,10 @@ rust-version.workspace = true
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["critical-section"]
+development = ["critical-section"]
 
 [features]
 default = []
@@ -69,7 +72,6 @@ compact_str.workspace = true
 critical-section = { workspace = true, optional = true }
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
-indoc.workspace = true
 itertools.workspace = true
 kasuari = { workspace = true, default-features = false }
 lru.workspace = true
@@ -83,6 +85,7 @@ unicode-width.workspace = true
 
 [dev-dependencies]
 critical-section = { workspace = true, features = ["std"] }
+indoc.workspace = true
 pretty_assertions.workspace = true
 rstest.workspace = true
 serde_json.workspace = true

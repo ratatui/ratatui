@@ -2,14 +2,14 @@
 
 <!-- cargo-rdme start -->
 
-This module provides the [`TermionBackend`] implementation for the [`Backend`] trait. It uses
+This module provides the [`TermionBackend`](https://docs.rs/ratatui-termion/latest/ratatui_termion/struct.TermionBackend.html) implementation for the [`Backend`] trait. It uses
 the [Termion] crate to interact with the terminal.
 
 Most application authors should start with the main [`ratatui`] crate and only depend on
 `ratatui-termion` directly when they specifically want the Termion backend. This crate is the
 backend layer, not the primary docs.rs entry point for building applications.
 
-[`Backend`]: ratatui_core::backend::Backend
+[`Backend`]: https://docs.rs/ratatui_core/latest/ratatui_core/backend/trait.Backend.html
 [Termion]: https://docs.rs/termion
 
 ## Crate Organization

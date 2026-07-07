@@ -98,7 +98,7 @@
 //! # Contributing
 //!
 //! Contributions are welcome! Please open an issue or submit a pull request on GitHub. For more
-//! details on contributing, please see the [CONTRIBUTING](CONTRIBUTING.md) document.
+//! details on contributing, please see the [CONTRIBUTING](../CONTRIBUTING.md) document.
 //!
 //! # License
 //!

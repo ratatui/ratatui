@@ -4,6 +4,276 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+## [0.30.2](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.2) - 2026-06-19
+
+![a gift](https://github.com/ratatui/ratatui-website/raw/refs/heads/main/src/assets/a-gift.png)
+
+We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 👨‍🍳🐀
+
+✨ **Release highlights**: <https://ratatui.rs/highlights/v0302/>
+
+⚠️ List of breaking changes can be found [here](https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md).
+
+### Features
+
+- [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a) *(uncategorized)* Add Termina backend by `@joshka` in [#2561](https://github.com/ratatui/ratatui/pull/2561)
+
+  > ## Summary
+  >
+  > - add the `ratatui-termina` backend crate using the published `termina`
+  > crate
+  > - expose the backend through the `termina` feature and Ratatui
+  > prelude/backend re-exports
+  > - add a small Termina event-loop example and wire the backend into CI,
+  > xtask, README generation, and docs
+  >
+  > Refs #1784
+  >
+  > ## Validation
+  >
+  > - `cargo +nightly fmt`
+  > - `cargo check -p ratatui-termina --all-features --all-targets`
+  > - `cargo check -p ratatui --no-default-features --features termina`
+  > - `cargo check -p xtask`
+  > - `cargo check -p release-header`
+  > - `cargo xtask check-backend termina`
+  > - `cargo xtask test-backend termina`
+  > - `cargo xtask rdme --check`
+  > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  > .github/ISSUE_TEMPLATE/bug_report.md`
+  >
+  > ---------
+
+### Bug Fixes
+
+- [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c) *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](https://github.com/ratatui/ratatui/pull/2584)
+
+  > ## Summary
+  >
+  > - require custom shadow effects to preserve the auto traits expected by
+  > Block-backed widgets
+  > - document the CellEffect auto-trait contract
+  > - add a public widget regression test for the affected ratatui::widgets
+  > re-exports
+  >
+  > Fixes #2583
+  >
+  > ---------
+
+- [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79) *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in [#2587](https://github.com/ratatui/ratatui/pull/2587)
+
+  > When a wide cell from the previous buffer is replaced by a short/normal
+  > cell, the trailing cell does not get an update if its content does not
+  > change. But if the wide cell has a background (or other) style, the
+  > terminal *did* render the trailing cell with that style.
+  >
+  > Force trailing cells to update if background, underline, or modifiers
+  > are different than the wide cell. We can ignore foreground.
+  >
+  > Fixes #2585 (see that for the detailed visual reports)
+
+- [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409) *(scrollbar)* Keep a large thumb within the track at the end by `@satyakwok` in [#2594](https://github.com/ratatui/ratatui/pull/2594)
+  >
+  > Closes #2582.
+  >
+  > ## Problem
+  >
+  > When the content is shorter than the viewport, the thumb is large
+  > relative to the track. With the position at the end, `part_lengths`
+  > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  > clamped independently to `[1, track_length]`, so `thumb_start +
+  > thumb_length` could exceed `track_length`.
+  >
+  > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > and zips it against the cells of the area. When the thumb overruns the
+  > track, `track_end` saturates to `0` but the thumb still emits more cells
+  > than the track can hold, so the trailing `end` symbol is pushed past the
+  > end of the area. The last visible cell ends up being a thumb (`█`) where
+  > the end arrow (`▼`) should be.
+  >
+  > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >
+  > This is a regression from v0.30.0, where `thumb_length` was derived as
+  > `thumb_end - thumb_start` and therefore always fit within the track.
+  >
+  > ## Fix
+  >
+  > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > `track_length - 1`) so the thumb always fits within the track and the
+  > end symbol is preserved.
+  >
+  > ## Test
+  >
+  > Two regression tests, both fail on `main` and pass with the fix:
+  >
+  > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  > `part_lengths` directly with the issue's parameters — asserts
+  > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  > the track length.
+  > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the #2582
+  > case (both arrows, large thumb at the end) and asserts the end symbol is
+  > drawn rather than overwritten by a thumb cell.
+  >
+  > All existing scrollbar tests still pass.
+
+
+### Miscellaneous Tasks
+
+- [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0) *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](https://github.com/ratatui/ratatui/pull/2599)
+
+  > Adds cargo xtask udeps and runs it from CI as a required job.
+  >
+  > This complements cargo-machete rather than replacing it. cargo-machete
+  > is a fast static source scan, which is why it missed the package-level
+  > unused deps fixed in #2598 when the same dependency names were still
+  > referenced by example crates. cargo-udeps compiles the workspace and
+  > checks rustc dep-info, so it can catch unused dependency declarations
+  > for the package being checked.
+  >
+  > To make the new job pass, this also removes the remaining true-positive
+  > unused dev-deps and records explicit cargo-udeps ignores for current
+  > false positives / intentional cases: ratatui-core critical-section,
+  > ratatui-crossterm's duplicate crossterm version feature shape, and
+  > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >
+  > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  > udeps". I did not find prior ratatui discussion about adopting
+  > cargo-udeps; the only hits were Dependabot PR bodies for
+  > taiki-e/install-action release notes mentioning cargo-udeps version
+  > updates, for example #1971, #2095, #2194, and #2522.
+  >
+  > Validation:- cargo xtask udeps
+  > - cargo xtask format --check
+  >
+  > ---------
+
+- [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4) *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](https://github.com/ratatui/ratatui/pull/2598)
+
+  > Audit removes these dependencies that are not used:
+  >
+  >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   - futures
+  >   - rand_chacha
+  >   - tokio
+  >   - tracing
+  >   - tracing-appender
+  >   - tracing-subscriber
+  >
+  > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  > [dev-dependencies]:
+  >   - indoc
+  >
+  > ---------
+
+### Continuous Integration
+
+- [36854ef](https://github.com/ratatui/ratatui/commit/36854ef4f1af3dd551988e0af000e4eec43ebc74) *(uncategorized)* Add auto-merge required gate by `@joshka` in [#2596](https://github.com/ratatui/ratatui/pull/2596)
+
+  > ## Summary
+  >
+  > This makes GitHub auto-merge usable for Ratatui PRs once maintainers are
+  > happy with the change but CI is still running.
+  >
+  > The workflow change adds a single aggregate `required` job to the main
+  > CI workflow. The repository now has [auto-merge
+  > enabled](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository)
+  > and an `ensure checks pass`
+  > [ruleset](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)
+  > that requires that `required` status context on `main`.
+  >
+  > ## Why
+  >
+  > Without a required status context, GitHub's auto-merge button is not
+  > useful for the maintainer flow we want. The goal is to let a maintainer
+  > review a PR, decide it is ready, click auto-merge, and move on without
+  > coming back later just to check whether the remaining jobs finished.
+  >
+  > This does not relax the merge policy. GitHub's own auto-merge behavior
+  > is to merge only after all required reviews and required status checks
+  > are satisfied. This change gives GitHub a stable required status to wait
+  > on automatically.
+  >
+  > ## Precedent
+  >
+  > I have been using this same auto-merge pattern in
+  > [`ratatui/tui-widgets`](https://github.com/ratatui/tui-widgets), where
+  > it has worked well for the intended maintainer flow: once a PR looks
+  > ready, I can enable auto-merge and let GitHub merge it after the
+  > remaining checks and review requirements are satisfied.
+  >
+  > ## How it works
+  >
+  > The new `required` job depends on the main CI jobs in
+  > `.github/workflows/ci.yml` and always runs after them. It fails if any
+  > required dependency fails, is cancelled, or is skipped.
+  >
+  > The repository ruleset requires only this aggregate `required` context
+  > instead of requiring every individual matrix job separately. That gives
+  > GitHub one stable status to wait on while preserving the existing CI
+  > coverage.
+  >
+  > ## Things to know
+  >
+  > - Auto-merge is opt-in per PR. Maintainers still choose when to click
+  > it.
+  > - It does not skip review requirements, status checks, labels, or any
+  > other protection rule.
+  > - A PR with auto-merge enabled can still show as blocked while checks or
+  > required reviews are pending. That is expected.
+  > - If something needs to merge normally, maintainers can still use the
+  > regular merge path or an allowed ruleset bypass. This is a convenience
+  > path, not a hard blocker.
+  > - Existing open PRs may need a rebase or synchronize event after this
+  > lands so they pick up the new `required` workflow job.
+  > - If a new required CI job is added later, it should be added to the
+  > `required.needs` list or it will not be represented by the aggregate
+  > gate.
+  > - Jobs that are intentionally allowed to fail should be handled
+  > carefully before adding them to `required.needs`, because skipped,
+  > cancelled, and failed dependencies make the aggregate fail.
+  >
+  > ## Current PR state
+  >
+  > Auto-merge is already enabled on this PR. If you approve it and the
+  > required checks pass, GitHub will squash-merge it automatically;
+  > approving it is enough to let the PR merge once the remaining
+  > requirements are satisfied.
+  >
+  > ## GitHub docs
+  >
+  > - [Automatically merging a pull
+  > request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request)
+  > - [Managing auto-merge for pull requests in your
+  > repository](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository)
+  > - [About
+  > rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)
+  > - [Require status checks to pass before
+  > merging](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#require-status-checks-to-pass-before-merging)
+  > - [About status
+  > checks](https://docs.github.com/articles/about-status-checks)
+  > - [Troubleshooting required status
+  > checks](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
+  >
+  > ## Validation
+  >
+  > - `ruby -e 'require "yaml"; YAML.load_file(".github/workflows/ci.yml");
+  > puts "ok"'`
+  > - `actionlint .github/workflows/ci.yml`
+  > - Verified `ratatui/ratatui` has `allow_auto_merge: true`
+  > - Verified the active `ensure checks pass` ruleset requires status
+  > context `required`
+  > - Verified this PR has squash auto-merge enabled and is blocked pending
+  > checks/review
+
+### New Contributors
+
+* `@satyakwok` made their first contribution in [#2594](https://github.com/ratatui/ratatui/pull/2594)
+* `@KikiKian` made their first contribution in [#2598](https://github.com/ratatui/ratatui/pull/2598)
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1) - 2026-06-05
 
 > _"Rats, we're rats; we're the rats." – [Rat Movie](https://www.youtube.com/watch?v=OXQwx1EolD8)_
