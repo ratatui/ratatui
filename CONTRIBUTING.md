@@ -131,9 +131,36 @@ Changes to project configuration files require special consideration:
 - Linting configuration (`.clippy.toml`, `rustfmt.toml`): Affects all contributors.
 - CI configuration (`.github/workflows/`): Affects build and deployment.
 - Build system (`xtask/`, `Cargo.toml` workspace config): Affects development workflow.
-- Dependencies: Consider MSRV compatibility and licensing.
 
 Please discuss these changes in an issue before implementing them.
+
+### Performance changes
+
+Performance changes require measured evidence. Optimizations often make code harder to understand,
+test, and change, while providing little or no improvement in representative applications. They can
+also move costs between workloads, introduce platform-specific regressions, or constrain public
+APIs.
+
+Before changing an implementation, define the affected workload, establish a baseline, locate the
+cost, and state why the proposed change should improve it. Performance pull requests should compare
+equivalent baseline and candidate measurements, verify correctness, and explain why the measured
+benefit is worth the resulting tradeoffs.
+
+See [Performance engineering](./PERFORMANCE.md) for the expected process, measurement techniques,
+and evidence to include in a pull request.
+
+### Dependencies and supply chain
+
+New dependencies carry compatibility, maintenance, security, and supply-chain costs in addition to
+their immediate functionality. Consider the dependency's MSRV, license, maturity, maintenance
+history, real-world use, target support, unsafe code, transitive dependencies, and how difficult it
+would be to replace. Dependencies used in core data structures or frequently used code paths require
+additional scrutiny because they affect more of Ratatui's downstream users.
+
+Keep dependency updates separate from behavioral changes when either change needs independent
+evaluation. Explain why a new dependency is preferable to the existing implementation or a small
+local implementation, and record any effects on public behavior, compilation, binary size, and
+supported targets.
 
 ### Collaborative development
 
