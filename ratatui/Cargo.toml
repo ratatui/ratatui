@@ -76,7 +76,7 @@ scrolling-regions = [
   "ratatui-termwiz?/scrolling-regions",
 ]
 
-## enables the [`macros`](macros) module which provides some useful macros for creating spans,
+## enables the [`macros`] module which provides some useful macros for creating spans,
 ## lines, text, and layouts
 macros = ["dep:ratatui-macros"]
 
