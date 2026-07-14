@@ -1,6 +1,6 @@
 use core::num::NonZeroU16;
 
-use compact_str::CompactString;
+use sinstr::SinStr;
 
 use crate::buffer::cell_width::CellWidth;
 use crate::style::{Color, Modifier, Style};
@@ -39,11 +39,11 @@ pub struct Cell {
     ///
     /// This accepts unicode grapheme clusters which might take up more than one cell.
     ///
-    /// This is a [`CompactString`] which is a wrapper around [`String`] that uses a small inline
+    /// This is a [`SinStr`] which is a wrapper around [`String`] that uses a small inline
     /// buffer for short strings.
     ///
     /// See <https://github.com/ratatui/ratatui/pull/601> for more information.
-    symbol: Option<CompactString>,
+    symbol: Option<SinStr>,
 
     /// The foreground color of the cell.
     pub fg: Color,
@@ -89,11 +89,11 @@ impl Cell {
     ///
     /// This works at compile time and puts the symbol onto the stack. Fails to build when the
     /// symbol doesn't fit onto the stack and requires to be placed on the heap. Use
-    /// `Self::default().set_symbol()` in that case. See [`CompactString::const_new`] for more
+    /// `Self::default().set_symbol()` in that case. See [`SinStr::new_const`] for more
     /// details on this.
     pub const fn new(symbol: &'static str) -> Self {
         Self {
-            symbol: Some(CompactString::const_new(symbol)),
+            symbol: Some(SinStr::new_const(symbol)),
             ..Self::EMPTY
         }
     }
@@ -148,13 +148,13 @@ impl Cell {
             .symbol
             .as_ref()
             .map_or(symbol, |s| strategy.merge(s, symbol));
-        self.symbol = Some(CompactString::new(merged_symbol));
+        self.symbol = Some(SinStr::new(merged_symbol));
         self
     }
 
     /// Sets the symbol of the cell.
     pub fn set_symbol(&mut self, symbol: &str) -> &mut Self {
-        self.symbol = Some(CompactString::new(symbol));
+        self.symbol = Some(SinStr::new(symbol));
         self
     }
 
@@ -169,7 +169,7 @@ impl Cell {
     /// Sets the symbol of the cell to a single character.
     pub fn set_char(&mut self, ch: char) -> &mut Self {
         let mut buf = [0; 4];
-        self.symbol = Some(CompactString::new(ch.encode_utf8(&mut buf)));
+        self.symbol = Some(SinStr::new(ch.encode_utf8(&mut buf)));
         self
     }
 
@@ -328,7 +328,7 @@ mod tests {
         assert_eq!(
             cell,
             Cell {
-                symbol: Some(CompactString::const_new("あ")),
+                symbol: Some(SinStr::new("あ")),
                 fg: Color::Reset,
                 bg: Color::Reset,
                 #[cfg(feature = "underline-color")]

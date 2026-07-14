@@ -30,7 +30,6 @@ default = []
 ## enables std
 std = [
   "bitflags/std",
-  "compact_str/std",
   "itertools/use_std",
   "kasuari/std",
   "palette?/std",
@@ -63,12 +62,11 @@ scrolling-regions = []
 
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
-serde = ["bitflags/serde", "compact_str/serde", "dep:serde"]
+serde = ["bitflags/serde", "dep:serde", "sinstr/serde"]
 
 [dependencies]
 anstyle = { workspace = true, optional = true }
 bitflags.workspace = true
-compact_str.workspace = true
 critical-section = { workspace = true, optional = true }
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
@@ -77,6 +75,7 @@ kasuari = { workspace = true, default-features = false }
 lru.workspace = true
 palette = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
+sinstr.workspace = true
 strum.workspace = true
 thiserror = { workspace = true, default-features = false }
 unicode-segmentation.workspace = true
