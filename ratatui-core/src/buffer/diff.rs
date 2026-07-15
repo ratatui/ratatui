@@ -207,10 +207,9 @@ const fn is_skip(cell: &Cell) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
     use alloc::vec::Vec;
     use core::num::NonZeroU16;
-
-    use compact_str::CompactString;
 
     use super::*;
     use crate::buffer::Buffer;
@@ -317,7 +316,7 @@ mod tests {
         let mut next = Buffer::with_lines(["xyz"]);
         next.content[1].skip = true;
 
-        let diff: CompactString = BufferDiff::new(&prev, &next)
+        let diff: String = BufferDiff::new(&prev, &next)
             .map(|(_, _, cell)| cell.symbol())
             .collect();
 
@@ -333,11 +332,11 @@ mod tests {
         next.content[0].diff_option = CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap());
 
         // ForcedWidth wins over skip=true, so the cell is diffed with forced width
-        let diff: CompactString = BufferDiff::new(&prev, &next)
+        let diff: String = BufferDiff::new(&prev, &next)
             .map(|(_, _, cell)| cell.symbol())
             .collect();
 
-        assert_eq!(diff, "x");
+        assert_eq!(diff.as_str(), "x");
     }
 
     /// Regression test for the "uncovered trailing cell" bug.

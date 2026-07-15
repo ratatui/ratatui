@@ -62,6 +62,7 @@ ratatui-widgets = { path = "ratatui-widgets", version = "0.3.2", default-feature
 rstest = "0.26"
 serde = { version = "1.0.219", default-features = false, features = ["derive"] }
 serde_json = "1.0.142"
+sinstr = "0.4.4"
 strum = { version = "0.28", default-features = false, features = ["derive"] }
 termina = "0.3"
 termion = "4"
