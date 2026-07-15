@@ -35,7 +35,7 @@ serde = ["dep:serde", "ratatui-core/serde"]
 ## enables all widgets.
 all-widgets = ["calendar"]
 
-## enables the [`calendar`](calendar) widget module and adds a dependency on [`time`].
+## enables the [`calendar`] widget module and adds a dependency on [`time`].
 calendar = ["dep:time"]
 
 ## Enable all unstable features.
