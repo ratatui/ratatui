@@ -189,7 +189,7 @@ type OctoPullRequest = octocrab::models::pulls::PullRequest;
 impl PullRequest {
     fn from_octo(pr: &OctoPullRequest) -> Option<Self> {
         Some(Self {
-            id: pr.number?.to_string(),
+            id: pr.number.to_string(),
             title: pr.title.clone()?,
             url: pr.html_url.as_ref()?.to_string(),
         })
