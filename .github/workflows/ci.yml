@@ -91,13 +91,16 @@ jobs:
   cargo-udeps:
     name: Check Unused Dependencies
     runs-on: ubuntu-latest
+    # cargo-udeps requires nightly; pin it so nightly lint changes do not break CI unexpectedly.
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2026-07-14
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88 # master
         with:
-          toolchain: nightly
+          toolchain: ${{ env.RUSTUP_TOOLCHAIN }}
       - uses: taiki-e/install-action@43aecc8d72668fbcfe75c31400bc4f890f1c5853 # v2.83.2
         with:
           tool: cargo-udeps
