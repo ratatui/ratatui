@@ -82,7 +82,8 @@ fn run_cargo(args: Vec<&str>) -> Result<()> {
 
 /// Run a cargo subcommand with the selected toolchain, defaulting to nightly
 fn run_cargo_nightly(args: Vec<&str>) -> Result<()> {
-    let toolchain = std::env::var("RUSTUP_TOOLCHAIN").unwrap_or_else(|_| "nightly".to_string());
+    let toolchain =
+        std::env::var("RATATUI_NIGHTLY_TOOLCHAIN").unwrap_or_else(|_| "nightly".to_string());
     cmd("cargo", args)
         // CARGO env var is set because we're running in a cargo subcommand
         .env_remove("CARGO")
