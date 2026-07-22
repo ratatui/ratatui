@@ -1573,4 +1573,74 @@ mod tests {
         widget.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["████████", "██中文██"]));
     }
+
+    /// Empty `text_value` skips value painting and leaves only the bar fill.
+    #[test]
+    fn horizontal_empty_text_value_skips_value_paint() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(BarGroup::default().bars(&[Bar::default().value(5).text_value("")]));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["█████"]));
+    }
+
+    /// Multi-byte single-width characters must be split by display width on
+    /// horizontal bars, not by UTF-8 byte length.
+    ///
+    /// `"α"` is two bytes and one cell. With `bar_length == 3` the value
+    /// `"ααααα"` must paint all five cells; the first three use `value_style`
+    /// and the rest use the bar style. Splitting on byte indices leaves a
+    /// filled-block cell in the middle and mis-styles the overflow.
+    #[test]
+    fn horizontal_multibyte_text_value_split_by_display_width() {
+        let bar = Bar::default()
+            .value(3)
+            .text_value("ααααα")
+            .value_style(Style::default().red());
+        let chart = BarChart::default()
+            .data(BarGroup::default().bars(&[bar, Bar::default().value(5)]))
+            .direction(Direction::Horizontal)
+            .bar_style(Style::default().yellow())
+            .value_style(Style::default().italic())
+            .bar_gap(0);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 2));
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["ααααα", "5████"]);
+        for x in 0..3 {
+            let cell = &mut expected[(x, 0)];
+            cell.set_fg(Color::Red);
+            cell.modifier.insert(Modifier::ITALIC);
+        }
+        for x in 3..5 {
+            expected[(x, 0)].set_fg(Color::Yellow);
+        }
+        expected[(0, 1)].modifier.insert(Modifier::ITALIC);
+        for x in 0..5 {
+            expected[(x, 1)].set_fg(Color::Yellow);
+        }
+        assert_eq!(buffer, expected);
+    }
+
+    /// CJK text values are multi-byte and double-width. On a full-width bar the
+    /// old byte-length split could subtract a larger byte count from
+    /// `area.width`, overflowing in debug builds.
+    #[test]
+    fn horizontal_cjk_text_value_does_not_panic_when_longer_than_bar() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(
+                BarGroup::default()
+                    .bars(&[Bar::default().value(10).text_value("一二三四五六七八九十")]),
+            );
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        chart.render(buffer.area, &mut buffer);
+        // First five CJK glyphs fill the 10-wide area (2 cells each); the rest
+        // is truncated by the buffer width.
+        assert_eq!(buffer, Buffer::with_lines(["一二三四五"]));
+    }
 }
