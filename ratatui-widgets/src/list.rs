@@ -1,6 +1,7 @@
 //! The [`List`] widget is used to display a list of items and allows selecting one or multiple
 //! items.
 
+use alloc::borrow::Cow;
 use alloc::vec::Vec;
 
 use ratatui_core::style::{Style, Styled};
@@ -25,6 +26,9 @@ mod state;
 /// *bottom to top*) whereas a [`Table`] cannot.
 ///
 /// [`Table`]: crate::table::Table
+///
+/// List items can be created on the stack with the macro `list_items!` and used via
+/// [`List::from`] to avoid dynamic allocations.
 ///
 /// List items can be aligned using [`Text::alignment`], for more details see [`ListItem`].
 ///
@@ -72,15 +76,18 @@ mod state;
 /// ```rust
 /// use ratatui::Frame;
 /// use ratatui::layout::Rect;
+/// use ratatui::macros::list_items;
 /// use ratatui::style::{Style, Stylize};
 /// use ratatui::widgets::{Block, List, ListState};
 ///
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
+///
 /// // This should be stored outside of the function in your application state.
 /// let mut state = ListState::default();
-/// let items = ["Item 1", "Item 2", "Item 3"];
-/// let list = List::new(items)
+/// let items = list_items!["Item 1", "Item 2", "Item 3"];
+///
+/// let list = List::from(&items)
 ///     .block(Block::bordered().title("List"))
 ///     .highlight_style(Style::new().reversed())
 ///     .highlight_symbol(">>")
@@ -105,12 +112,12 @@ mod state;
 /// [`Text::alignment`]: ratatui_core::text::Text::alignment
 /// [`StatefulWidget`]: ratatui_core::widgets::StatefulWidget
 /// [`Widget`]: ratatui_core::widgets::Widget
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+#[derive(Debug, Clone, Default, Eq, Hash, PartialEq)]
 pub struct List<'a> {
     /// An optional block to wrap the widget in
     pub(crate) block: Option<Block<'a>>,
     /// The items in the list
-    pub(crate) items: Vec<ListItem<'a>>,
+    pub(crate) items: Cow<'a, [ListItem<'a>]>,
     /// Style used as a base style for the widget
     pub(crate) style: Style,
     /// List display direction
@@ -153,19 +160,21 @@ impl<'a> List<'a> {
     /// From a slice of [`&str`]
     ///
     /// ```
+    /// use ratatui::macros::list_items;
     /// use ratatui::widgets::List;
     ///
-    /// let list = List::new(["Item 1", "Item 2"]);
+    /// let list = List::new(list_items!["Item 1", "Item 2"]);
     /// ```
     ///
     /// From [`Text`]
     ///
     /// ```
+    /// use ratatui::macros::list_items;
     /// use ratatui::style::{Style, Stylize};
     /// use ratatui::text::Text;
     /// use ratatui::widgets::List;
     ///
-    /// let list = List::new([
+    /// let list = List::new(list_items![
     ///     Text::styled("Item 1", Style::new().red()),
     ///     Text::styled("Item 2", Style::new().red()),
     /// ]);
@@ -182,6 +191,7 @@ impl<'a> List<'a> {
     /// ```
     ///
     /// [`Text`]: ratatui_core::text::Text
+    #[must_use = "constructor"]
     pub fn new<T>(items: T) -> Self
     where
         T: IntoIterator,
@@ -426,6 +436,51 @@ impl<'a> List<'a> {
     pub const fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
+
+    /// Returns whether the list owns its items.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::widgets::List;
+    ///
+    /// let list = List::new(["Item 1", "Item 2", "Item 3"]);
+    /// assert!(list.is_owned());
+    /// ```
+    pub const fn is_owned(&self) -> bool {
+        match self.items {
+            Cow::Owned(_) => true,
+            Cow::Borrowed(_) => false,
+        }
+    }
+
+    /// Returns whether the list borrows its items.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::widgets::{List, ListItem};
+    ///
+    /// let items = [
+    ///     ListItem::new("Item 1"),
+    ///     ListItem::new("Item 2"),
+    ///     ListItem::new("Item 3"),
+    /// ];
+    /// let list = List::from(&items);
+    /// assert!(list.is_borrowed());
+    /// ```
+    ///
+    /// ```
+    /// use ratatui::macros::list_items;
+    /// use ratatui::widgets::List;
+    ///
+    /// let items = list_items!["Item 1", "Item 2", "Item 3"];
+    /// let list = List::from(&items);
+    /// assert!(list.is_borrowed());
+    /// ```
+    pub const fn is_borrowed(&self) -> bool {
+        !self.is_owned()
+    }
 }
 
 impl Styled for List<'_> {
@@ -457,7 +512,53 @@ where
     Item: Into<ListItem<'a>>,
 {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
-        Self::new(iter)
+        let items = iter.into_iter().map(Into::into).collect();
+        Self::from(Cow::Owned(items))
+    }
+}
+
+impl<'a> From<Cow<'a, [ListItem<'a>]>> for List<'a> {
+    fn from(value: Cow<'a, [ListItem<'a>]>) -> Self {
+        Self {
+            items: value,
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<Vec<ListItem<'a>>> for List<'a> {
+    fn from(value: Vec<ListItem<'a>>) -> Self {
+        Self {
+            items: Cow::Owned(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<&'a Vec<ListItem<'a>>> for List<'a> {
+    fn from(value: &'a Vec<ListItem<'a>>) -> Self {
+        Self {
+            items: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a, const N: usize> From<&'a [ListItem<'a>; N]> for List<'a> {
+    fn from(value: &'a [ListItem<'a>; N]) -> Self {
+        Self {
+            items: Cow::Borrowed(value),
+            ..Self::default()
+        }
+    }
+}
+
+impl<'a> From<&'a [ListItem<'a>]> for List<'a> {
+    fn from(value: &'a [ListItem<'a>]) -> Self {
+        Self {
+            items: Cow::Borrowed(value),
+            ..Self::default()
+        }
     }
 }
 
@@ -479,6 +580,19 @@ mod tests {
         let collected: List = (0..3).map(|i| format!("Item{i}")).collect();
         let expected = List::new(["Item0", "Item1", "Item2"]);
         assert_eq!(collected, expected);
+    }
+
+    #[test]
+    fn fluent_items() {
+        let collected: List = (0..3).map(|i| format!("Item{i}")).collect();
+        assert_eq!(
+            collected.items,
+            Cow::<[ListItem]>::Owned(vec![
+                ListItem::from("Item0"),
+                "Item1".into(),
+                "Item2".into(),
+            ])
+        );
     }
 
     #[test]
@@ -653,5 +767,85 @@ mod tests {
         let list = List::new(items);
         // This should not panic, even if the buffer has zero size.
         list.render(buffer.area, &mut buffer, &mut state);
+    }
+
+    #[test]
+    fn from_cow_borrowed() {
+        let items = [ListItem::from("Item0")];
+        let cow: Cow<[ListItem<'_>]> = Cow::Borrowed(&items);
+        let list = List::from(cow);
+        assert_eq!(
+            list.items,
+            Cow::Borrowed(&[ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }])
+        );
+    }
+
+    #[test]
+    fn from_cow_owned() {
+        let items: Vec<_> = [ListItem::from("Item0")].to_vec();
+        let cow: Cow<[ListItem<'_>]> = Cow::Owned(items);
+        let list = List::from(cow);
+        assert_eq!(
+            list.items,
+            Cow::<[ListItem]>::Owned(vec![ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }])
+        );
+    }
+
+    #[test]
+    fn from_slice_borrowed() {
+        let items = [ListItem::from("Item0")];
+        let list = List::from(&items);
+        assert_eq!(
+            list.items,
+            Cow::Borrowed(&[ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }])
+        );
+    }
+
+    #[test]
+    fn from_slice_owned() {
+        let items: Vec<_> = [ListItem::from("Item0")].to_vec();
+        let list = List::from(items.as_slice());
+        assert_eq!(
+            list.items,
+            Cow::<[ListItem]>::Owned(vec![ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }])
+        );
+    }
+
+    #[test]
+    fn from_vec_borrowed() {
+        let items: Vec<_> = [ListItem::from("Item0")].to_vec();
+        let list = List::from(&items);
+        assert_eq!(
+            list.items,
+            Cow::Borrowed(&[ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }])
+        );
+    }
+
+    #[test]
+    fn from_vec_owned() {
+        let items: Vec<_> = [ListItem::from("Item0")].to_vec();
+        let list = List::from(items);
+        assert_eq!(
+            list.items,
+            Cow::<[ListItem]>::Owned(vec![ListItem {
+                content: Text::from(Line::from("Item0")),
+                style: Style::new(),
+            }])
+        );
     }
 }

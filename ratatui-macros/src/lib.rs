@@ -171,8 +171,11 @@ pub use alloc::{format, vec};
 
 mod layout;
 mod line;
+mod list_items;
 mod row;
+mod row_cells;
 mod span;
+mod table_rows;
 mod text;
 
 // Re-export the core crate to use the types in macros
