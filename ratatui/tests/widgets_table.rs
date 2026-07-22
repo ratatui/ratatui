@@ -6,7 +6,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Cell, HighlightSpacing, Row, Table, TableState};
+use ratatui::widgets::{Block, Borders, Cell, Row, Table, TableHighlightSpacing, TableState};
 use rstest::rstest;
 
 #[rstest]
@@ -526,7 +526,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
 }
 
 #[rstest]
-#[case::none_when_selected(None, HighlightSpacing::WhenSelected, [
+#[case::none_when_selected(None, TableHighlightSpacing::WhenSelected, [
     "┌────────────────────────────┐",
     "│Head1 Head2 Head3           │",
     "│                            │",
@@ -537,7 +537,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
     "└────────────────────────────┘",
 ])]
 #[case::none_always(
-    None, HighlightSpacing::Always, [
+    None, TableHighlightSpacing::Always, [
     "┌────────────────────────────┐",
     "│   Head1 Head2 Head3        │",
     "│                            │",
@@ -547,7 +547,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
     "│   Row31 Row32 Row33        │",
     "└────────────────────────────┘",
 ])]
-#[case::none_never(None, HighlightSpacing::Never, [
+#[case::none_never(None, TableHighlightSpacing::Never, [
     "┌────────────────────────────┐",
     "│Head1 Head2 Head3           │",
     "│                            │",
@@ -557,7 +557,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
     "│Row31 Row32 Row33           │",
     "└────────────────────────────┘",
 ])]
-#[case::first_when_selected(Some(0), HighlightSpacing::WhenSelected, [
+#[case::first_when_selected(Some(0), TableHighlightSpacing::WhenSelected, [
     "┌────────────────────────────┐",
     "│   Head1 Head2 Head3        │",
     "│                            │",
@@ -567,7 +567,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
     "│   Row31 Row32 Row33        │",
     "└────────────────────────────┘",
 ])]
-#[case::first_always(Some(0), HighlightSpacing::Always, [
+#[case::first_always(Some(0), TableHighlightSpacing::Always, [
     "┌────────────────────────────┐",
     "│   Head1 Head2 Head3        │",
     "│                            │",
@@ -577,7 +577,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
     "│   Row31 Row32 Row33        │",
     "└────────────────────────────┘",
 ])]
-#[case::first_never(Some(0), HighlightSpacing::Never, [
+#[case::first_never(Some(0), TableHighlightSpacing::Never, [
     "┌────────────────────────────┐",
     "│Head1 Head2 Head3           │",
     "│                            │",
@@ -589,7 +589,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
 ])]
 fn widgets_table_enable_always_highlight_spacing<'line, Lines>(
     #[case] selected: Option<usize>,
-    #[case] space: HighlightSpacing,
+    #[case] space: TableHighlightSpacing,
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
