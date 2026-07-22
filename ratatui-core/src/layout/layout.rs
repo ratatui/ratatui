@@ -878,7 +878,14 @@ impl Layout {
         configure_variable_in_area_constraints(&mut solver, &variables, area_size)?;
         configure_variable_constraints(&mut solver, &variables)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
-        configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
+        configure_constraints(
+            &mut solver,
+            area_size,
+            &segments,
+            constraints,
+            flex,
+            spacing,
+        )?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
 
         if !flex.is_legacy() {
@@ -949,7 +956,24 @@ fn configure_constraints(
     segments: &[Element],
     constraints: &[Constraint],
     flex: Flex,
+    spacing: i16,
 ) -> Result<(), AddConstraintError> {
+    // When spacing is negative (overlap) and the flex mode uses fixed inter-segment spacers
+    // (Legacy, Start, Center, End), the effective area for proportional constraints (Ratio and
+    // Percentage) is larger than the physical area because segments share cells.
+    // With n segments and overlap o, the effective area = physical_area + (n-1) * o.
+    //
+    // For distributed flex modes (SpaceBetween, SpaceAround, SpaceEvenly), the spacer size is
+    // not fixed to the configured spacing value -- it grows to fill remaining space -- so the
+    // overlap adjustment does not apply.
+    let uses_fixed_spacers = matches!(flex, Flex::Legacy | Flex::Start | Flex::Center | Flex::End);
+    let effective_area = if spacing < 0 && uses_fixed_spacers {
+        let num_gaps = segments.len().saturating_sub(1) as f64;
+        area.size() + -(f64::from(spacing)) * num_gaps * FLOAT_PRECISION_MULTIPLIER
+    } else {
+        area.size()
+    };
+
     for (&constraint, &segment) in constraints.iter().zip(segments.iter()) {
         match constraint {
             Constraint::Max(max) => {
@@ -968,12 +992,12 @@ fn configure_constraints(
                 solver.add_constraint(segment.has_int_size(length, LENGTH_SIZE_EQ))?;
             }
             Constraint::Percentage(p) => {
-                let size = area.size() * f64::from(p) / 100.00;
+                let size = effective_area.clone() * f64::from(p) / 100.00;
                 solver.add_constraint(segment.has_size(size, PERCENTAGE_SIZE_EQ))?;
             }
             Constraint::Ratio(num, den) => {
                 // avoid division by zero by using 1 when denominator is 0
-                let size = area.size() * f64::from(num) / f64::from(den.max(1));
+                let size = effective_area.clone() * f64::from(num) / f64::from(den.max(1));
                 solver.add_constraint(segment.has_size(size, RATIO_SIZE_EQ))?;
             }
             Constraint::Fill(_) => {
@@ -2924,6 +2948,70 @@ mod tests {
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(result, expected);
+        }
+
+        /// Regression test for <https://github.com/ratatui/ratatui/issues/2311>
+        /// `Spacing::Overlap` and `Constraint::Ratio` should account for the overlap
+        /// when computing segment sizes.
+        #[rstest]
+        // Fixed-spacing flex modes: overlap adjustment applies
+        // area=11, overlap=1, 2 segments => effective=12, each gets 12/2=6
+        #[case::ratio_start(11, vec![(0, 6), (5, 6)], vec![Ratio(1, 2); 2], Flex::Start, -1)]
+        #[case::ratio_end(11, vec![(0, 6), (5, 6)], vec![Ratio(1, 2); 2], Flex::End, -1)]
+        #[case::ratio_center(11, vec![(0, 6), (5, 6)], vec![Ratio(1, 2); 2], Flex::Center, -1)]
+        #[case::ratio_legacy(11, vec![(0, 6), (5, 6)], vec![Ratio(1, 2); 2], Flex::Legacy, -1)]
+        // No overlap baseline
+        #[case::ratio_no_overlap(11, vec![(0, 6), (6, 5)], vec![Ratio(1, 2); 2], Flex::Start, 0)]
+        // 3 segments: area=20, overlap=2 => effective=24, each gets 24/3=8
+        #[case::ratio_three_start(20, vec![(0, 8), (6, 8), (12, 8)], vec![Ratio(1, 3); 3], Flex::Start, -2)]
+        // Percentage with overlap
+        #[case::pct_start(11, vec![(0, 6), (5, 6)], vec![Percentage(50); 2], Flex::Start, -1)]
+        #[case::pct_center(11, vec![(0, 6), (5, 6)], vec![Percentage(50); 2], Flex::Center, -1)]
+        fn ratio_and_percentage_with_overlap(
+            #[case] width: u16,
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: i16,
+        ) {
+            let area = Rect::new(0, 0, width, 1);
+            let r = Layout::horizontal(constraints)
+                .flex(flex)
+                .spacing(spacing)
+                .split(area);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(result, expected);
+        }
+
+        /// For distributed flex modes (`SpaceBetween`, `SpaceEvenly`, `SpaceAround`), negative
+        /// spacing is a minimum/growth input, not a fixed gap. The overlap adjustment
+        /// should NOT apply, so proportional constraints use the physical area size.
+        #[test]
+        fn distributed_flex_overlap_uses_physical_area() {
+            // With area=100 and Ratio(1,2)*2, each segment should target 50 (physical area / 2),
+            // not 50.5 (which would be (100 + 1) / 2 if overlap adjustment applied).
+            for flex in [Flex::SpaceBetween, Flex::SpaceEvenly, Flex::SpaceAround] {
+                let area = Rect::new(0, 0, 100, 1);
+                let r = Layout::horizontal([Constraint::Ratio(1, 2); 2])
+                    .flex(flex)
+                    .spacing(-1)
+                    .split(area);
+                let result: Vec<(u16, u16)> = r.iter().map(|r| (r.x, r.width)).collect();
+                // Each segment should be 50, same as without overlap
+                let no_overlap = Layout::horizontal([Constraint::Ratio(1, 2); 2])
+                    .flex(flex)
+                    .spacing(0)
+                    .split(area);
+                let no_overlap_result: Vec<(u16, u16)> =
+                    no_overlap.iter().map(|r| (r.x, r.width)).collect();
+                assert_eq!(
+                    result, no_overlap_result,
+                    "distributed flex {flex:?} should not apply overlap adjustment"
+                );
+            }
         }
     }
 }
