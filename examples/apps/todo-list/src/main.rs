@@ -161,7 +161,7 @@ impl App {
         self.todo_list.state.select_first();
     }
 
-    const fn select_last(&mut self) {
+    fn select_last(&mut self) {
         self.todo_list.state.select_last();
     }
 
