@@ -155,6 +155,26 @@ fn widgets_gauge_applies_styles() {
 }
 
 #[test]
+fn widgets_gauge_fills_cell_immediately_after_label() {
+    // Regression: the filled-area condition treated the cell at `label_col +
+    // label_width` as part of the label background, leaving a stray empty cell
+    // inside the filled area. See https://github.com/ratatui/ratatui/issues/2547.
+    let backend = TestBackend::new(10, 1);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let gauge = Gauge::default().percent(100).use_unicode(false);
+            f.render_widget(gauge, f.area());
+        })
+        .unwrap();
+
+    // Label "100%" (4 cells) is centered at columns 3..7. With a fully-filled
+    // gauge, columns 0..3 and 7..10 must render as full blocks.
+    terminal.backend().assert_buffer_lines(["███100%███"]);
+}
+
+#[test]
 fn widgets_gauge_supports_large_labels() {
     let backend = TestBackend::new(10, 1);
     let mut terminal = Terminal::new(backend).unwrap();

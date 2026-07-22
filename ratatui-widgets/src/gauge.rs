@@ -195,7 +195,7 @@ impl Gauge<'_> {
                 // Use full block for the filled part of the gauge and spaces for the part that is
                 // covered by the label. Note that the background and foreground colors are swapped
                 // for the label part, otherwise the gauge will be inverted
-                if x < label_col || x > label_col + clamped_label_width || y != label_row {
+                if x < label_col || x >= label_col + clamped_label_width || y != label_row {
                     buf[(x, y)]
                         .set_symbol(symbols::block::FULL)
                         .set_fg(self.gauge_style.fg.unwrap_or(Color::Reset))
