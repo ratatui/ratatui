@@ -1,8 +1,12 @@
 //! The [`Table`] widget is used to display multiple rows and columns in a grid and allows selecting
 //! one or multiple cells.
 
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::hash::Hasher;
+use core::panic::RefUnwindSafe;
+use core::{fmt, ptr};
 
 use itertools::Itertools;
 use ratatui_core::buffer::Buffer;
@@ -21,6 +25,198 @@ mod cell;
 mod highlight_spacing;
 mod row;
 mod state;
+
+/// Supplies the height of a lazy row *without* building it.
+///
+/// Scrolling has to know the geometry of rows that are never drawn (for instance the rows between
+/// the current offset and a selection further down the table), so heights are described separately
+/// from the rows themselves. This is what keeps variable-height lazy tables correct: the scroll
+/// calculation asks for heights, not for rows.
+enum LazyRowHeights<'a> {
+    /// Every row occupies the same number of lines.
+    Uniform(u16),
+    /// Row heights are computed on demand from the row index.
+    PerRow(Arc<dyn Fn(usize) -> u16 + Send + Sync + RefUnwindSafe + 'a>),
+}
+
+impl LazyRowHeights<'_> {
+    /// The number of lines occupied by the row at `index`.
+    fn height_of(&self, index: usize) -> u16 {
+        match self {
+            Self::Uniform(height) => *height,
+            Self::PerRow(heights) => heights(index),
+        }
+    }
+}
+
+impl fmt::Debug for LazyRowHeights<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Uniform(height) => f.debug_tuple("Uniform").field(height).finish(),
+            Self::PerRow(_) => f.debug_tuple("PerRow").finish(),
+        }
+    }
+}
+
+impl Clone for LazyRowHeights<'_> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Uniform(height) => Self::Uniform(*height),
+            Self::PerRow(heights) => Self::PerRow(Arc::clone(heights)),
+        }
+    }
+}
+
+impl PartialEq for LazyRowHeights<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Uniform(left), Self::Uniform(right)) => left == right,
+            (Self::PerRow(left), Self::PerRow(right)) => Arc::ptr_eq(left, right),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for LazyRowHeights<'_> {}
+
+impl core::hash::Hash for LazyRowHeights<'_> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Uniform(height) => {
+                "uniform".hash(state);
+                height.hash(state);
+            }
+            Self::PerRow(heights) => {
+                "per_row".hash(state);
+                ptr::hash(Arc::as_ptr(heights), state);
+            }
+        }
+    }
+}
+
+/// Stores the parameters needed to build rows on demand for a lazy table.
+struct LazyRowProvider<'a> {
+    count: usize,
+    heights: LazyRowHeights<'a>,
+    factory: Arc<dyn Fn(usize) -> Row<'a> + Send + Sync + RefUnwindSafe + 'a>,
+}
+
+impl LazyRowProvider<'_> {
+    /// The number of lines occupied by the row at `index`.
+    fn height_of(&self, index: usize) -> u16 {
+        self.heights.height_of(index)
+    }
+
+    /// Return the indexes of the visible rows, as [`Table::visible_rows`] does for eager rows.
+    ///
+    /// The algorithm is the same, and produces the same window, but it only ever consults
+    /// [`LazyRowProvider::height_of`] instead of inspecting rows, so no row outside the returned
+    /// range is ever built. In particular, when the selection sits below the window the range is
+    /// anchored *at the selection and grown upwards* rather than scrolled down one row at a time,
+    /// which keeps the work proportional to the visible area rather than to the distance scrolled.
+    ///
+    /// The one case where the two differ is a selected row taller than the whole area: growing the
+    /// window upwards keeps such a row on screen (clipped), where scrolling down one row at a time
+    /// walks past it and leaves it off screen entirely.
+    fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
+        if self.count == 0 || area.height == 0 {
+            return (0, 0);
+        }
+        let last_row = self.count - 1;
+        let selected = state.selected.map(|selected| selected.min(last_row));
+
+        let mut start = state.offset.min(last_row);
+        if let Some(selected) = selected {
+            start = start.min(selected);
+        }
+
+        // Fill the area downwards from the start with the rows that fit in it completely.
+        let mut end = start;
+        let mut height = 0_u16;
+        while end < self.count {
+            let row_height = self.height_of(end);
+            if height.saturating_add(row_height) > area.height {
+                break;
+            }
+            height += row_height;
+            end += 1;
+            if window_is_full(start, end, area) {
+                break;
+            }
+        }
+
+        // Scroll down until the selected row is visible, by anchoring the window at the selection
+        // and growing it upwards until the area is full.
+        if let Some(selected) = selected
+            && selected >= end
+        {
+            start = selected;
+            end = selected + 1;
+            height = self.height_of(selected);
+            while start > 0 && !window_is_full(start, end, area) {
+                let row_height = self.height_of(start - 1);
+                if height.saturating_add(row_height) > area.height {
+                    break;
+                }
+                height += row_height;
+                start -= 1;
+            }
+        }
+
+        // Include a partial row if there is space
+        if height < area.height && end < self.count && !window_is_full(start, end, area) {
+            end += 1;
+        }
+
+        (start, end)
+    }
+}
+
+/// Whether a window of lazy rows can be grown no further.
+///
+/// A window never holds more rows than the area has lines, plus one partial row. Rows are free to
+/// report a height of zero, so this bound is what keeps [`LazyRowProvider::visible_rows`]
+/// proportional to the area rather than to the number of rows.
+const fn window_is_full(start: usize, end: usize, area: Rect) -> bool {
+    end - start > area.height as usize
+}
+
+impl fmt::Debug for LazyRowProvider<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LazyRowProvider")
+            .field("count", &self.count)
+            .field("heights", &self.heights)
+            .finish_non_exhaustive()
+    }
+}
+
+impl Clone for LazyRowProvider<'_> {
+    fn clone(&self) -> Self {
+        Self {
+            count: self.count,
+            heights: self.heights.clone(),
+            factory: Arc::clone(&self.factory),
+        }
+    }
+}
+
+impl PartialEq for LazyRowProvider<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.count == other.count
+            && self.heights == other.heights
+            && Arc::ptr_eq(&self.factory, &other.factory)
+    }
+}
+
+impl Eq for LazyRowProvider<'_> {}
+
+impl core::hash::Hash for LazyRowProvider<'_> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.count.hash(state);
+        self.heights.hash(state);
+        ptr::hash(Arc::as_ptr(&self.factory), state);
+    }
+}
 
 /// A widget to display data in formatted columns.
 ///
@@ -269,6 +465,9 @@ pub struct Table<'a> {
 
     /// Controls how to distribute extra space among the columns
     flex: Flex,
+
+    /// Optional lazy row provider used instead of `rows` when set
+    lazy: Option<LazyRowProvider<'a>>,
 }
 
 impl Default for Table<'_> {
@@ -287,6 +486,7 @@ impl Default for Table<'_> {
             highlight_symbol: Text::default(),
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
+            lazy: None,
         }
     }
 }
@@ -343,6 +543,8 @@ impl<'a> Table<'a> {
     /// This method does not currently set the column widths. You will need to set them manually by
     /// calling [`Table::widths`].
     ///
+    /// Setting rows explicitly replaces the rows of a table created with [`Table::lazy_rows`].
+    ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// # Examples
@@ -362,6 +564,7 @@ impl<'a> Table<'a> {
         T: IntoIterator<Item = Row<'a>>,
     {
         self.rows = rows.into_iter().collect();
+        self.lazy = None;
         self
     }
 
@@ -720,6 +923,128 @@ impl<'a> Table<'a> {
         self.flex = flex;
         self
     }
+
+    /// Creates a [`Table`] that builds rows lazily, calling the factory only for visible rows.
+    ///
+    /// Unlike [`Table::new`], which eagerly collects all rows into a `Vec`, this constructor stores
+    /// only the total row count and a factory closure. During rendering the factory is called
+    /// exclusively for the rows that fall within the visible viewport, so memory allocation and
+    /// processing work scale with the visible area rather than the total dataset size.
+    ///
+    /// Rows are one line tall by default. Use [`Table::row_height`] for taller rows, or
+    /// [`Table::row_height_with`] when rows have individual heights.
+    ///
+    /// The `widths` parameter works exactly like [`Table::widths`] and must be provided because
+    /// column layout cannot be inferred from rows that have not yet been built.
+    ///
+    /// # Row geometry
+    ///
+    /// The height configured on the table is authoritative: [`Row::height`], [`Row::top_margin`]
+    /// and [`Row::bottom_margin`] set on rows returned by the factory are ignored, because
+    /// scrolling has to reason about rows that are never built. Include any spacing you want in
+    /// the row height.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{Row, Table};
+    ///
+    /// let table = Table::lazy_rows(
+    ///     10_000,
+    ///     [Constraint::Length(20), Constraint::Fill(1)],
+    ///     |index| Row::new([format!("item {index}"), format!("value {index}")]),
+    /// );
+    /// ```
+    pub fn lazy_rows<C, F>(row_count: usize, widths: C, row: F) -> Self
+    where
+        C: IntoIterator,
+        C::Item: Into<Constraint>,
+        F: Fn(usize) -> Row<'a> + Send + Sync + RefUnwindSafe + 'a,
+    {
+        let widths: Vec<Constraint> = widths.into_iter().map(Into::into).collect();
+        ensure_percentages_less_than_100(&widths);
+        Self {
+            lazy: Some(LazyRowProvider {
+                count: row_count,
+                heights: LazyRowHeights::Uniform(1),
+                factory: Arc::new(row),
+            }),
+            widths,
+            ..Default::default()
+        }
+    }
+
+    /// Set the height, in lines, of every lazily built row.
+    ///
+    /// Use [`Table::row_height_with`] when rows have individual heights.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Note
+    ///
+    /// This only affects rows built by [`Table::lazy_rows`]; rows set with [`Table::new`] or
+    /// [`Table::rows`] carry their own [`Row::height`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{Row, Table};
+    ///
+    /// let table = Table::lazy_rows(10_000, [Constraint::Length(20)], |index| {
+    ///     Row::new([format!("item {index}")])
+    /// })
+    /// .row_height(2);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn row_height(mut self, height: u16) -> Self {
+        if let Some(ref mut lazy) = self.lazy {
+            lazy.heights = LazyRowHeights::Uniform(height);
+        }
+        self
+    }
+
+    /// Set the height, in lines, of each lazily built row individually.
+    ///
+    /// This is the varying-height counterpart of [`Table::row_height`].
+    ///
+    /// Scrolling needs the geometry of rows that are not on screen — for instance to work out how
+    /// far to scroll back when the selection is below the viewport — which is why heights are
+    /// supplied separately from the rows. `height` should therefore be cheap: it is called for the
+    /// rows in the viewport (and, while anchoring a selection, for a viewport's worth of rows
+    /// around it), but never allocates a [`Row`]. The row factory itself is still only called for
+    /// rows that are actually drawn.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Note
+    ///
+    /// This only affects rows built by [`Table::lazy_rows`]; rows set with [`Table::new`] or
+    /// [`Table::rows`] carry their own [`Row::height`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::layout::Constraint;
+    /// use ratatui::widgets::{Row, Table};
+    ///
+    /// // Every tenth row is a double-height separator.
+    /// let table = Table::lazy_rows(10_000, [Constraint::Length(20)], |index| {
+    ///     Row::new([format!("item {index}")])
+    /// })
+    /// .row_height_with(|index| if index % 10 == 0 { 2 } else { 1 });
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn row_height_with<H>(mut self, height: H) -> Self
+    where
+        H: Fn(usize) -> u16 + Send + Sync + RefUnwindSafe + 'a,
+    {
+        if let Some(ref mut lazy) = self.lazy {
+            lazy.heights = LazyRowHeights::PerRow(Arc::new(height));
+        }
+        self
+    }
 }
 
 impl Widget for Table<'_> {
@@ -754,11 +1079,12 @@ impl StatefulWidget for &Table<'_> {
             return;
         }
 
-        if state.selected.is_some_and(|s| s >= self.rows.len()) {
-            state.select(Some(self.rows.len().saturating_sub(1)));
+        let row_count = self.row_count();
+        if state.selected.is_some_and(|s| s >= row_count) {
+            state.select(Some(row_count.saturating_sub(1)));
         }
 
-        if self.rows.is_empty() {
+        if row_count == 0 {
             state.select(None);
         }
 
@@ -848,6 +1174,11 @@ impl Table<'_> {
         state: &mut TableState,
         columns_widths: &[Rect],
     ) {
+        if let Some(ref provider) = self.lazy {
+            self.render_lazy_rows(area, buf, selection_width, state, columns_widths, provider);
+            return;
+        }
+
         if self.rows.is_empty() {
             return;
         }
@@ -881,6 +1212,64 @@ impl Table<'_> {
             y_offset += row.height_with_margin();
         }
 
+        self.apply_highlight_styles(buf, area, selected_row_area, state, columns_widths);
+    }
+
+    /// Render visible rows from a lazy provider, calling the factory only for the visible range.
+    fn render_lazy_rows(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        selection_width: u16,
+        state: &mut TableState,
+        columns_widths: &[Rect],
+        provider: &LazyRowProvider,
+    ) {
+        if provider.count == 0 {
+            return;
+        }
+
+        let (start_index, end_index) = provider.visible_rows(state, area);
+        state.offset = start_index;
+
+        let mut y = area.y;
+        let mut selected_row_area = None;
+
+        for index in start_index..end_index {
+            let row = (provider.factory)(index);
+            // The provider owns the geometry: a height or margin set on the row would make what is
+            // drawn disagree with the scroll calculation, which never sees the row itself.
+            let row_height = provider.height_of(index);
+            let height = y
+                .saturating_add(row_height)
+                .min(area.bottom())
+                .saturating_sub(y);
+            let row_area = Rect { y, height, ..area };
+            buf.set_style(row_area, row.style);
+
+            let is_selected = state.selected == Some(index);
+            if selection_width > 0 && is_selected {
+                self.set_selection_style(buf, selection_width, row_area, &row);
+            }
+            self.render_row_cells(buf, columns_widths.iter().collect(), &row.cells, row_area);
+            if is_selected {
+                selected_row_area = Some(row_area);
+            }
+            y = y.saturating_add(row_height);
+        }
+
+        self.apply_highlight_styles(buf, area, selected_row_area, state, columns_widths);
+    }
+
+    /// Apply row, column, and cell highlight styles after rows have been rendered.
+    fn apply_highlight_styles(
+        &self,
+        buf: &mut Buffer,
+        area: Rect,
+        selected_row_area: Option<Rect>,
+        state: &TableState,
+        columns_widths: &[Rect],
+    ) {
         let selected_column_area = state.selected_column.and_then(|s| {
             // The selection is clamped by the column count. Since a user can manually specify an
             // incorrect number of widths, we should use panic free methods.
@@ -1064,12 +1453,27 @@ impl Table<'_> {
             .collect()
     }
 
+    /// The number of rows in the table, whether they are stored eagerly or built lazily.
+    fn row_count(&self) -> usize {
+        self.lazy
+            .as_ref()
+            .map_or_else(|| self.rows.len(), |provider| provider.count)
+    }
+
     fn column_count(&self) -> usize {
+        // Lazy rows cannot be inspected without building them, so the column count comes from the
+        // widths (which `Table::lazy_rows` requires) and from the header and footer.
+        let lazy_columns = if self.lazy.is_some() {
+            self.widths.len()
+        } else {
+            0
+        };
         self.rows
             .iter()
             .chain(self.footer.iter())
             .chain(self.header.iter())
             .map(|r| r.cells.len())
+            .chain(Some(lazy_columns))
             .max()
             .unwrap_or_default()
     }

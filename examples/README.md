@@ -152,6 +152,11 @@ Shows how to use the inlined viewport to render in a specific area of the screen
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
 
+## Lazy Table
+
+Shows how to display a table with ten million rows that are built on demand.
+[Source](./apps/lazy-table/).
+
 ## Modifiers
 
 Shows different types of modifiers. [Source](./apps/modifiers/).
