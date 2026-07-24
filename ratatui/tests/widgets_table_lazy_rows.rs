@@ -1,3 +1,4 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::panic::RefUnwindSafe;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -642,6 +643,42 @@ fn lazy_table_rows_no_rows_built_for_zero_height_area() {
 }
 
 #[test]
+fn lazy_table_rows_keep_their_offset_when_the_header_fills_the_area() {
+    // The table area is not empty, but the header leaves no room for rows at all.
+    let (built, rows) = recording_rows();
+    let table = Table::lazy_rows(5_000, [Constraint::Length(10)], rows).header(Row::new(["head"]));
+    let mut state = TableState::default().with_offset(42);
+
+    let buffer = render_table(table, &mut state, 12, 1);
+
+    assert_content(&buffer, ["head        "]);
+    assert!(
+        built.lock().unwrap().is_empty(),
+        "factory must not be called when no row can be shown"
+    );
+    assert_eq!(
+        state.offset(),
+        42,
+        "an area too small to show a row must not discard the offset"
+    );
+}
+
+#[test]
+fn lazy_table_rows_clamp_their_offset_when_the_header_fills_the_area() {
+    // As above, but the offset is past the end of the table, so it is clamped like it would be if
+    // there were room to draw.
+    let (built, rows) = recording_rows();
+    let table = Table::lazy_rows(10, [Constraint::Length(10)], rows).header(Row::new(["head"]));
+    let mut state = TableState::default().with_offset(500);
+
+    let buffer = render_table(table, &mut state, 12, 1);
+
+    assert_content(&buffer, ["head        "]);
+    assert!(built.lock().unwrap().is_empty());
+    assert_eq!(state.offset(), 9, "the offset is clamped to the last row");
+}
+
+#[test]
 fn lazy_table_rows_multiline_scroll_uses_floor_not_ceil() {
     let built = Arc::new(Mutex::new(Vec::new()));
     let rows = {
@@ -1110,6 +1147,71 @@ fn lazy_tables_are_cloneable_and_comparable() {
     let (_built, other_rows) = recording_rows();
     let other = Table::lazy_rows(100, [Constraint::Length(10)], other_rows);
     assert_ne!(table, other, "different factories are different tables");
+}
+
+#[test]
+fn lazy_tables_with_per_row_heights_are_cloneable_and_comparable() {
+    let (_built, rows) = recording_rows();
+    let table = Table::lazy_rows(100, [Constraint::Length(10)], rows).row_height_with(|_| 2);
+
+    assert_eq!(
+        table.clone(),
+        table,
+        "a clone shares the same height closure"
+    );
+    assert!(
+        !format!("{table:?}").is_empty(),
+        "a table with a height closure stays Debug"
+    );
+
+    let other_heights = table.clone().row_height_with(|_| 2);
+    assert_ne!(
+        table, other_heights,
+        "different height closures are different tables"
+    );
+
+    // Uniform and per-row heights are never equal, whatever they compute.
+    let uniform = table.clone().row_height(2);
+    assert_ne!(
+        table, uniform,
+        "a height closure never equals a uniform height"
+    );
+    assert_ne!(
+        uniform, table,
+        "a uniform height never equals a height closure"
+    );
+}
+
+#[test]
+fn lazy_tables_hash_consistently_with_equality() {
+    let (_built, rows) = recording_rows();
+    let uniform = Table::lazy_rows(100, [Constraint::Length(10)], rows).row_height(2);
+    assert_eq!(
+        hash_of(&uniform.clone()),
+        hash_of(&uniform),
+        "equal tables with a uniform height must hash equally"
+    );
+
+    // Cloning shares the row factory, so the height is the only thing left to tell these apart.
+    assert_ne!(
+        hash_of(&uniform.clone().row_height(1)),
+        hash_of(&uniform),
+        "the row height must take part in the hash"
+    );
+
+    let (_built, rows) = recording_rows();
+    let per_row = Table::lazy_rows(100, [Constraint::Length(10)], rows).row_height_with(|_| 2);
+    assert_eq!(
+        hash_of(&per_row.clone()),
+        hash_of(&per_row),
+        "equal tables with a height closure must hash equally"
+    );
+}
+
+fn hash_of(table: &Table<'_>) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    table.hash(&mut hasher);
+    hasher.finish()
 }
 
 #[test]

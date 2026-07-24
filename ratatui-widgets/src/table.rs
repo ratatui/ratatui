@@ -119,7 +119,7 @@ impl LazyRowProvider<'_> {
     /// window upwards keeps such a row on screen (clipped), where scrolling down one row at a time
     /// walks past it and leaves it off screen entirely.
     fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
-        if self.count == 0 || area.height == 0 {
+        if self.count == 0 {
             return (0, 0);
         }
         let last_row = self.count - 1;
@@ -128,6 +128,12 @@ impl LazyRowProvider<'_> {
         let mut start = state.offset.min(last_row);
         if let Some(selected) = selected {
             start = start.min(selected);
+        }
+
+        // An area with no lines shows no rows, but the offset is still where the table would
+        // resume from, so it is returned unchanged rather than reset.
+        if area.height == 0 {
+            return (start, start);
         }
 
         // Fill the area downwards from the start with the rows that fit in it completely.
