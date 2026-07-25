@@ -342,7 +342,9 @@ impl Rect {
 
     /// Returns true if the given position is inside the `Rect`.
     ///
-    /// The position is considered inside the `Rect` if it is on the `Rect`'s border.
+    /// A `Rect` covers the half-open range `x..right()` by `y..bottom()`, so the top and left
+    /// edges are inside while the right and bottom edges are not. A position is contained when
+    /// `x..right()` includes its `x` and `y..bottom()` includes its `y`.
     ///
     /// # Examples
     ///
@@ -350,7 +352,10 @@ impl Rect {
     /// use ratatui_core::layout::{Position, Rect};
     ///
     /// let rect = Rect::new(1, 2, 3, 4);
+    /// // The top-left corner is inside.
     /// assert!(rect.contains(Position { x: 1, y: 2 }));
+    /// // The cell just past the right edge is not.
+    /// assert!(!rect.contains(Position { x: 4, y: 2 }));
     /// ````
     pub const fn contains(self, position: Position) -> bool {
         position.x >= self.x
