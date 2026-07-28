@@ -95,22 +95,22 @@ where
             }
 
             let word_found = non_whitespace_previous && is_whitespace;
+            let line_has_no_width = line_width == 0;
             // current word would overflow after removing whitespace
-            let trimmed_overflow = pending_line.is_empty()
-                && self.trim
-                && word_width + symbol_width > self.max_line_width;
+            let trimmed_overflow =
+                line_has_no_width && self.trim && word_width + symbol_width > self.max_line_width;
             // separated whitespace would overflow on its own
-            let whitespace_overflow = pending_line.is_empty()
+            let whitespace_overflow = line_has_no_width
                 && self.trim
                 && whitespace_width + symbol_width > self.max_line_width;
             // current full word (including whitespace) would overflow
-            let untrimmed_overflow = pending_line.is_empty()
+            let untrimmed_overflow = line_has_no_width
                 && !self.trim
                 && word_width + whitespace_width + symbol_width > self.max_line_width;
 
             // append finished segment to current line
             if word_found || trimmed_overflow || whitespace_overflow || untrimmed_overflow {
-                if !pending_line.is_empty() || !self.trim {
+                if !line_has_no_width || !self.trim {
                     pending_line.extend(self.pending_whitespace.drain(..));
                     line_width += whitespace_width;
                 }
@@ -125,12 +125,12 @@ where
 
             // pending line fills up limit
             let line_full = line_width >= self.max_line_width;
-            // pending word would overflow line limit
-            let pending_word_overflow = symbol_width > 0
-                && line_width + whitespace_width + word_width >= self.max_line_width;
+            // pending content and current symbol would overflow line limit
+            let pending_content_overflow = symbol_width > 0
+                && line_width + whitespace_width + word_width + symbol_width > self.max_line_width;
 
             // add finished wrapped line to remaining lines
-            if line_full || pending_word_overflow {
+            if line_full || pending_content_overflow {
                 let mut remaining_width = u16::saturating_sub(self.max_line_width, line_width);
 
                 self.wrapped_lines.push_back(mem::take(&mut pending_line));
@@ -559,6 +559,30 @@ mod tests {
         ];
         assert_eq!(word_wrapper, wrapped);
         assert_eq!(word_wrapper_width, [width, width, width, width, 4]);
+    }
+
+    #[test]
+    fn line_composer_mixed_width_word() {
+        for trim in [false, true] {
+            let (word_wrapper, word_wrapper_width, _) =
+                run_composer(Composer::WordWrapper { trim }, "a🌞b", 2);
+            assert_eq!(word_wrapper, ["a", "🌞", "b"]);
+            assert_eq!(word_wrapper_width, [1, 2, 1]);
+        }
+    }
+
+    #[test]
+    fn line_composer_leading_combining_mark() {
+        let text = "\u{0301} 🌞日日日🌞🌞a";
+        let (untrimmed, untrimmed_widths, _) =
+            run_composer(Composer::WordWrapper { trim: false }, text, 8);
+        assert_eq!(untrimmed, ["\u{0301} 🌞日日", "日🌞🌞a"]);
+        assert_eq!(untrimmed_widths, [7, 7]);
+
+        let (trimmed, trimmed_widths, _) =
+            run_composer(Composer::WordWrapper { trim: true }, text, 8);
+        assert_eq!(trimmed, ["\u{0301}", "🌞日日日", "🌞🌞a"]);
+        assert_eq!(trimmed_widths, [0, 8, 5]);
     }
 
     #[test]
