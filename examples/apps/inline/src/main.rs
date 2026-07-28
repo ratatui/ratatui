@@ -103,10 +103,12 @@ fn input_handling(tx: mpsc::Sender<Event>) {
             // poll for tick rate duration, if no events, sent tick event.
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout).unwrap() {
-                match event::read().unwrap() {
-                    event::Event::Key(key) => tx.send(Event::Input(key)).unwrap(),
-                    event::Event::Resize(_, _) => tx.send(Event::Resize).unwrap(),
-                    _ => {}
+                let event = event::read().unwrap();
+                if let Some(key) = event.as_key_press_event() {
+                    tx.send(Event::Input(key)).unwrap();
+                }
+                if matches!(event, event::Event::Resize(_, _)) {
+                    tx.send(Event::Resize).unwrap();
                 }
             }
             if last_tick.elapsed() >= tick_rate {
