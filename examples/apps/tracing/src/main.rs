@@ -50,11 +50,10 @@ fn main() -> Result<()> {
 }
 
 fn should_exit(events: &[Event]) -> bool {
-    events.iter().any(|event| {
-        event
-            .as_key_press_event()
-            .is_some_and(|key| key.code == KeyCode::Char('q'))
-    })
+    events
+        .iter()
+        .map(Event::as_key_press_event)
+        .any(|key| key.is_some_and(|key| key.code == KeyCode::Char('q')))
 }
 
 /// Handle events and insert them into the events vector keeping only the last 10 events
