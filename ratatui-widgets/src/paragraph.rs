@@ -1,11 +1,10 @@
 //! The [`Paragraph`] widget and related types allows displaying a block of text with optional
 //! wrapping, alignment, and block styling.
-use ratatui_core::buffer::Buffer;
+use ratatui_core::buffer::{Buffer, CellWidth};
 use ratatui_core::layout::{Alignment, Position, Rect};
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::text::{Line, StyledGrapheme, Text};
 use ratatui_core::widgets::Widget;
-use unicode_width::UnicodeWidthStr;
 
 use crate::block::{Block, BlockExt};
 use crate::reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine};
@@ -151,13 +150,15 @@ impl<'a> Paragraph<'a> {
     where
         T: Into<Text<'a>>,
     {
+        let text: Text = text.into();
+        let alignment = text.alignment.unwrap_or(Alignment::Left);
         Self {
             block: None,
             style: Style::default(),
             wrap: None,
-            text: text.into(),
+            text,
             scroll: Position::ORIGIN,
-            alignment: Alignment::Left,
+            alignment,
         }
     }
 
@@ -460,7 +461,7 @@ fn render_lines<'a, C: LineComposer<'a>>(mut composer: C, area: Rect, buf: &mut 
 fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u16) {
     let mut x = get_line_offset(wrapped.width, area.width, wrapped.alignment);
     for StyledGrapheme { symbol, style } in wrapped.graphemes {
-        let width = symbol.width();
+        let width = symbol.cell_width();
         if width == 0 {
             continue;
         }
@@ -468,7 +469,7 @@ fn render_line(wrapped: &WrappedLine<'_, '_>, area: Rect, buf: &mut Buffer, y: u
         let symbol = if symbol.is_empty() { " " } else { symbol };
         let position = Position::new(area.left() + x, area.top() + y);
         buf[position].set_symbol(symbol).set_style(*style);
-        x += u16::try_from(width).unwrap_or(u16::MAX);
+        x += width;
     }
 }
 
@@ -496,7 +497,7 @@ impl Styled for Paragraph<'_> {
 mod tests {
     use alloc::vec;
 
-    use ratatui_core::buffer::Buffer;
+    use ratatui_core::buffer::{Buffer, CellWidth};
     use ratatui_core::layout::{Alignment, Rect};
     use ratatui_core::style::{Color, Modifier, Style, Stylize};
     use ratatui_core::text::{Line, Span, Text};
@@ -989,6 +990,83 @@ mod tests {
     }
 
     #[test]
+    fn test_render_paragraph_with_ascii_and_background() {
+        // Test actual Paragraph behavior
+        let text = "abc";
+        let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Green));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        paragraph.render(Rect::new(0, 0, 10, 1), &mut buffer);
+
+        // If all cells have green background, the test passes
+        for x in 0..10 {
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
+            );
+        }
+    }
+
+    #[test]
+    fn test_render_paragraph_with_fullwidth_and_background() {
+        // "あいう" should be width 6 (each character is width 2)
+        let text = "あいう";
+        let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Green));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        paragraph.render(Rect::new(0, 0, 10, 1), &mut buffer);
+
+        // Check content and effective cell widths for wide cells.
+        assert_eq!(buffer[(0, 0)].symbol(), "あ", "Cell 0 should be あ");
+        assert_eq!(buffer[(0, 0)].cell_width(), 2, "Cell 0 should be width 2");
+        assert_eq!(buffer[(2, 0)].symbol(), "い", "Cell 2 should be い");
+        assert_eq!(buffer[(2, 0)].cell_width(), 2, "Cell 2 should be width 2");
+        assert_eq!(buffer[(4, 0)].symbol(), "う", "Cell 4 should be う");
+        assert_eq!(buffer[(4, 0)].cell_width(), 2, "Cell 4 should be width 2");
+
+        // Check background - all cells should have green background from set_style
+        // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't
+        // matter
+        for x in 0..10 {
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
+            );
+        }
+    }
+
+    #[test]
+    fn test_render_paragraph_with_halfwidth_katakana_dakuten_and_background() {
+        // "ｶﾞｷﾞｸﾞ" should be width 6 (each grapheme is width 2)
+        let text = "ｶﾞｷﾞｸﾞ";
+        let paragraph = Paragraph::new(text).style(Style::default().bg(Color::Green));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        paragraph.render(Rect::new(0, 0, 10, 1), &mut buffer);
+
+        // Check content and effective cell widths for wide grapheme clusters.
+        assert_eq!(buffer[(0, 0)].symbol(), "ｶﾞ", "Cell 0 should be ｶﾞ");
+        assert_eq!(buffer[(0, 0)].cell_width(), 2, "Cell 0 should be width 2");
+        assert_eq!(buffer[(2, 0)].symbol(), "ｷﾞ", "Cell 2 should be ｷﾞ");
+        assert_eq!(buffer[(2, 0)].cell_width(), 2, "Cell 2 should be width 2");
+        assert_eq!(buffer[(4, 0)].symbol(), "ｸﾞ", "Cell 4 should be ｸﾞ");
+        assert_eq!(buffer[(4, 0)].cell_width(), 2, "Cell 4 should be width 2");
+
+        // Check background - all cells should have green background from set_style
+        // Skip cells are not rendered to terminal (excluded by diff), so their bg color doesn't
+        // matter
+        for x in 0..10 {
+            assert_eq!(
+                buffer[(x, 0)].bg,
+                Color::Green,
+                "Cell {x} should have green bg"
+            );
+        }
+    }
+
+    #[test]
     fn test_render_paragraph_with_unicode_characters() {
         let text = "こんにちは, 世界! 😃";
         let truncated_paragraph = Paragraph::new(text);
@@ -1172,6 +1250,27 @@ mod tests {
     #[test]
     fn right_aligned() {
         let p = Paragraph::new("Hello, world!").right_aligned();
+        assert_eq!(p.alignment, Alignment::Right);
+    }
+
+    #[test]
+    fn inherit_text_alignment_left_aligned() {
+        let text = Text::from(Line::from("Hello, world!")).left_aligned();
+        let p = Paragraph::new(text);
+        assert_eq!(p.alignment, Alignment::Left);
+    }
+
+    #[test]
+    fn inherit_text_alignment_centered() {
+        let text = Text::from(Line::from("Hello, world!")).centered();
+        let p = Paragraph::new(text);
+        assert_eq!(p.alignment, Alignment::Center);
+    }
+
+    #[test]
+    fn inherit_text_alignment_right_aligned() {
+        let text = Text::from(Line::from("Hello, world!")).right_aligned();
+        let p = Paragraph::new(text);
         assert_eq!(p.alignment, Alignment::Right);
     }
 

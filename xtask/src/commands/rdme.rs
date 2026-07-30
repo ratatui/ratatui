@@ -19,6 +19,7 @@ const PROJECTS: &[&str] = &[
     "ratatui-crossterm",
     "ratatui-macros",
     "ratatui-termion",
+    "ratatui-termina",
     "ratatui-termwiz",
     "ratatui-widgets",
 ];

@@ -4,6 +4,18 @@ use ratatui_core::style::Color;
 use crate::canvas::{Painter, Shape};
 
 /// A line from `(x1, y1)` to `(x2, y2)` with the given color
+///
+/// # Examples
+///
+/// ```rust
+/// # use ratatui_core::style::Color;
+/// # use ratatui_widgets::canvas::{Canvas, Line};
+/// Canvas::default().paint(|ctx| {
+///     ctx.draw(&Line::new(0.0, 0.0, 1.0, 0.0, Color::Red));
+///     ctx.draw(&Line::new(1.0, 0.0, 0.5, 1.0, Color::Red));
+///     ctx.draw(&Line::new(0.5, 1.0, 0.0, 0.0, Color::Red));
+/// });
+/// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Line {
     /// `x` of the starting point
@@ -83,11 +95,7 @@ pub(super) fn draw_line(
     for_each_line_point(x1, y1, x2, y2, |x, y| painter.paint(x, y, color));
 }
 
-/// Iterate over each point on a line using Bresenham's algorithm.
-///
-/// Using a callback allows us to reuse the algorithm without duplicating code:
-/// - `Line` just paints each point
-/// - `FilledLine` paints a vertical column from each point to `fill_to_y`
+/// Calls `f(x, y)` for each pixel on the Bresenham line from `(x1, y1)` to `(x2, y2)`.  
 pub(super) fn for_each_line_point<F>(x1: usize, y1: usize, x2: usize, y2: usize, mut f: F)
 where
     F: FnMut(usize, usize),

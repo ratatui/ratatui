@@ -22,8 +22,7 @@ use ratatui::DefaultTerminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Constraint::{Length, Min};
 use ratatui::layout::{Layout, Rect};
-use ratatui::style::palette::tailwind;
-use ratatui::style::{Style, Stylize};
+use ratatui::style::{Color, Style, Stylize};
 use ratatui::widgets::{LineGauge, Paragraph, Widget};
 
 fn main() -> Result<()> {
@@ -126,8 +125,8 @@ fn header(area: Rect, buf: &mut Buffer) {
 impl App {
     fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
         LineGauge::default()
-            .filled_style(Style::default().fg(tailwind::LIME.c400))
-            .unfilled_style(Style::default().fg(tailwind::LIME.c800))
+            .filled_style(Style::default().fg(Color::Indexed(149)))
+            .unfilled_style(Style::default().fg(Color::Indexed(58)))
             .ratio(self.progress)
             .render(area, buf);
     }
@@ -136,8 +135,8 @@ impl App {
         LineGauge::default()
             .filled_symbol("⣿")
             .unfilled_symbol("⣿")
-            .filled_style(Style::default().fg(tailwind::CYAN.c400))
-            .unfilled_style(Style::default().fg(tailwind::CYAN.c800))
+            .filled_style(Style::default().fg(Color::Indexed(45)))
+            .unfilled_style(Style::default().fg(Color::Indexed(24)))
             .ratio(self.progress)
             .render(area, buf);
     }
@@ -146,8 +145,8 @@ impl App {
         LineGauge::default()
             .filled_symbol("▰")
             .unfilled_symbol("▱")
-            .filled_style(Style::default().fg(tailwind::BLUE.c400))
-            .unfilled_style(Style::default().fg(tailwind::BLUE.c800))
+            .filled_style(Style::default().fg(Color::Indexed(75)))
+            .unfilled_style(Style::default().fg(Color::Indexed(25)))
             .ratio(self.progress)
             .render(area, buf);
     }

@@ -16,7 +16,8 @@ impl<B: Backend> Terminal<B> {
     ///
     /// When Ratatui is built with the `scrolling-regions` feature, this can be done without
     /// clearing and redrawing the viewport. Without `scrolling-regions`, Ratatui falls back to a
-    /// more portable approach and clears the viewport so the next [`Terminal::draw`] repaints it.
+    /// more portable approach and clears the viewport so the next [`Terminal::draw`] /
+    /// [`Terminal::try_draw`] repaints it.
     ///
     /// If the viewport isn't yet at the bottom of the screen, inserted lines will push it towards
     /// the bottom. Once the viewport is at the bottom of the screen, inserted lines will scroll
@@ -383,7 +384,8 @@ impl<B: Backend> Terminal<B> {
 /// Related viewport code lives in:
 ///
 /// - [`Terminal::with_options`] (selects the viewport and computes the initial area)
-/// - [`Terminal::autoresize`] (detects backend size changes during [`Terminal::draw`])
+/// - [`Terminal::autoresize`] (detects backend size changes during [`Terminal::draw`] /
+///   [`Terminal::try_draw`])
 /// - [`Terminal::resize`] (recomputes the viewport and clears before the next draw)
 pub(crate) fn compute_inline_size<B: Backend>(
     backend: &mut B,

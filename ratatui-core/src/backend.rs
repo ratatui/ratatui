@@ -7,6 +7,7 @@
 //! Supported terminal backends:
 //! - [Crossterm]: enable the `crossterm` feature (enabled by default) and use [`CrosstermBackend`]
 //! - [Termion]: enable the `termion` feature and use [`TermionBackend`]
+//! - [Termina]: enable the `termina` feature and use [`TerminaBackend`]
 //! - [Termwiz]: enable the `termwiz` feature and use [`TermwizBackend`]
 //!
 //! Additionally, a [`TestBackend`] is provided for testing purposes.
@@ -38,7 +39,7 @@
 //! # std::io::Result::Ok(())
 //! ```
 //!
-//! See the the [Examples] directory for more examples.
+//! See the [Examples] directory for more examples.
 //!
 //! # Raw Mode
 //!
@@ -92,10 +93,12 @@
 //!
 //! [`CrosstermBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.CrosstermBackend.html
 //! [`TermionBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermionBackend.html
+//! [`TerminaBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TerminaBackend.html
 //! [`TermwizBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermwizBackend.html
 //! [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
+//! [Termina]: https://crates.io/crates/termina
 //! [Termwiz]: https://crates.io/crates/termwiz
 //! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
@@ -321,7 +324,10 @@ pub trait Backend {
     /// syscall, and the user is also most likely to need columns and rows along with pixel size.
     fn window_size(&mut self) -> Result<WindowSize, Self::Error>;
 
-    /// Flush any buffered content to the terminal screen.
+    /// Flush any backend-buffered output to the terminal screen.
+    ///
+    /// This is distinct from [`Terminal::flush`](crate::terminal::Terminal::flush), which computes
+    /// a diff between Ratatui's screen buffers and sends draw commands to the backend.
     fn flush(&mut self) -> Result<(), Self::Error>;
 
     /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range

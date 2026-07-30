@@ -9,15 +9,22 @@
 //! providing the essential building blocks for creating rich terminal user interfaces in Rust.
 //!
 //! [ratatui]: https://github.com/ratatui/ratatui
-//! <!-- markdownlint-disable-next-line heading-increment -->
-//! ## Why `ratatui-core`?
 //!
-//! The `ratatui-core` crate is split from the main [`ratatui`](https://crates.io/crates/ratatui) crate
-//! to offer better stability for widget library authors. Widget libraries should generally depend
-//! on `ratatui-core`, benefiting from a stable API and reducing the need for frequent updates.
+//! # Why `ratatui-core`?
 //!
-//! Applications, on the other hand, should depend on the main `ratatui` crate, which includes
-//! built-in widgets and additional features.
+//! The `ratatui-core` crate is split from the main [`ratatui`](https://crates.io/crates/ratatui)
+//! crate to offer better stability for widget library authors and advanced integrations. Widget
+//! libraries should generally depend on `ratatui-core`, benefiting from a stable API and reducing
+//! the need for frequent updates.
+//!
+//! Most applications, on the other hand, should depend on the main `ratatui` crate, which
+//! includes built-in widgets, backend re-exports, and higher-level setup helpers.
+//!
+//! In practice:
+//!
+//! - Use [`ratatui`] to build applications.
+//! - Use `ratatui-core` to implement widgets, backend integrations, or other code that needs the
+//!   core rendering and layout contracts directly.
 //!
 //! # Installation
 //!
@@ -36,15 +43,14 @@
 //! **When to use `ratatui-core`:**
 //!
 //! - Building widget libraries that implement [`Widget`] or [`StatefulWidget`]
-//! - Creating lightweight applications that don't need built-in widgets
+//! - Building custom integrations on top of Ratatui's core rendering contracts
 //! - You want minimal dependencies and faster compilation times
 //! - You need maximum API stability (core types change less frequently)
 //!
 //! **When to use the main [`ratatui`] crate:**
 //!
-//! - Building applications that use built-in widgets
-//! - You want convenience and don't mind slightly longer compilation times
-//! - You need backend implementations and terminal management utilities
+//! - Building applications
+//! - You want built-in widgets, backend re-exports, and setup helpers such as `ratatui::run`
 //!
 //! For detailed information about the workspace organization, see [ARCHITECTURE.md].
 //!

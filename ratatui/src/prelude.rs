@@ -32,6 +32,8 @@ pub use ratatui_core::backend::{self, Backend};
 #[cfg(feature = "crossterm")]
 pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
 
+#[cfg(feature = "termina")]
+pub use crate::backend::{FromTermina, IntoTermina, TerminaBackend};
 #[cfg(all(not(windows), feature = "termion"))]
 pub use crate::backend::{FromTermion, IntoTermion, TermionBackend};
 #[cfg(feature = "termwiz")]

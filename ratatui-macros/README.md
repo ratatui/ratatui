@@ -37,7 +37,7 @@ use ratatui_macros::{constraint, constraints, horizontal, line, row, span, text,
 
 ## Text Macros
 
-The [`span!`] macro creates raw or styled [`Span`]s.
+The [`span!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.span.html) macro creates raw or styled [`Span`]s.
 
 ```rust
 let name = "world!";
@@ -47,8 +47,8 @@ let colored_greeting = span!(Color::Green; "hello {name}");
 let modified_greeting = span!(Modifier::BOLD; "hello {name}");
 ```
 
-The [`line!`] macro creates a [`Line`] that contains a sequence of [`Span`]s. It is similar to
-the [`vec!`] macro. Each element is converted into a [`Span`] using [`Into::into`].
+The [`line!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.line.html) macro creates a [`Line`] that contains a sequence of [`Span`]s. It is similar to
+the [`vec!`](https://doc.rust-lang.org/stable/alloc/macro.vec.html) macro. Each element is converted into a [`Span`] using [`Into::into`].
 
 ```rust
 let name = "world!";
@@ -58,8 +58,8 @@ let line = line!["Name: ".bold(), "Remy".italic()];
 let line = line!["bye"; 2];
 ```
 
-The [`text!`] macro creates a [`Text`] that contains a sequence of [`Line`]. It is similar to
-the [`vec!`] macro. Each element is converted to a [`Line`] using [`Into::into`].
+The [`text!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.text.html) macro creates a [`Text`] that contains a sequence of [`Line`]. It is similar to
+the [`vec!`](https://doc.rust-lang.org/stable/alloc/macro.vec.html) macro. Each element is converted to a [`Line`] using [`Into::into`].
 
 ```rust
 let name = "world!";
@@ -74,19 +74,19 @@ let text = text![line!["hello", "world".bold()], span!(Modifier::BOLD; "{name}")
 If you are new to Ratatui, check out the [Layout concepts] article on the Ratatui website before
 proceeding.
 
-The [`constraints!`] macro defines an array of [`Constraint`]s:
+The [`constraints!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.constraints.html) macro defines an array of [`Constraint`]s:
 
 ```rust
 let layout = Layout::horizontal(constraints![==50, ==30%, >=3, <=1, ==1/2, *=1]);
 ```
 
-The [`constraint!`] macro defines individual [`Constraint`]s:
+The [`constraint!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.constraint.html) macro defines individual [`Constraint`]s:
 
 ```rust
 let layout = Layout::horizontal([constraint!(==50)]);
 ```
 
-The [`vertical!`] and [`horizontal!`] macros are a shortcut to defining a [`Layout`]:
+The [`vertical!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.vertical.html) and [`horizontal!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.horizontal.html) macros are a shortcut to defining a [`Layout`]:
 
 ```rust
 let [top, main, bottom] = vertical![==1, *=1, >=3].areas(area);
@@ -95,8 +95,8 @@ let [left, main, right] = horizontal![>=20, *=1, >=20].areas(main);
 
 ## Table Macros
 
-The [`row!`] macro creates a [`Row`] for a [`Table`] that contains a sequence of [`Cell`]s. It
-is similar to the [`vec!`] macro.
+The [`row!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.row.html) macro creates a [`Row`] for a [`Table`] that contains a sequence of [`Cell`]s. It
+is similar to the [`vec!`](https://doc.rust-lang.org/stable/alloc/macro.vec.html) macro.
 
 ```rust
 let rows = [
@@ -139,23 +139,21 @@ For detailed information about the workspace organization, see [ARCHITECTURE.md]
 
 [Crates.io badge]: https://img.shields.io/crates/v/ratatui-macros?logo=rust&style=flat-square
 [License badge]: https://img.shields.io/crates/l/ratatui-macros
-[CI Badge]:
-  https://img.shields.io/github/actions/workflow/status/ratatui/ratatui/ci.yml?logo=github&style=flat-square
+[CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui/ratatui/ci.yml?logo=github&style=flat-square
 [Docs.rs badge]: https://img.shields.io/docsrs/ratatui-macros?logo=rust&style=flat-square
-[Crate Downloads badge]:
-    https://img.shields.io/crates/d/ratatui-macros?logo=rust&style=flat-square
+[Crate Downloads badge]: https://img.shields.io/crates/d/ratatui-macros?logo=rust&style=flat-square
 [ratatui_macros crate]: https://crates.io/crates/ratatui-macros
 [API Docs]: https://docs.rs/ratatui-macros
 [CI Status]: https://github.com/ratatui/ratatui/actions
 [Ratatui]: https://github.com/ratatui/ratatui
 [Layout concepts]: https://ratatui.rs/concepts/layout
-[`Constraint`]: ratatui_core::layout::Constraint
-[`Layout`]: ratatui_core::layout::Layout
-[`Span`]: ratatui_core::text::Span
-[`Line`]: ratatui_core::text::Line
-[`Text`]: ratatui_core::text::Text
-[`Row`]: ratatui_widgets::table::Row
-[`Cell`]: ratatui_widgets::table::Cell
-[`Table`]: ratatui_widgets::table::Table
+[`Constraint`]: https://docs.rs/ratatui_core/latest/ratatui_core/layout/constraint/enum.Constraint.html
+[`Layout`]: https://docs.rs/ratatui_core/latest/ratatui_core/layout/layout/struct.Layout.html
+[`Span`]: https://docs.rs/ratatui_core/latest/ratatui_core/text/span/struct.Span.html
+[`Line`]: https://docs.rs/ratatui_core/latest/ratatui_core/text/line/struct.Line.html
+[`Text`]: https://docs.rs/ratatui_core/latest/ratatui_core/text/text/struct.Text.html
+[`Row`]: https://docs.rs/ratatui_widgets/latest/ratatui_widgets/table/row/struct.Row.html
+[`Cell`]: https://docs.rs/ratatui_widgets/latest/ratatui_widgets/table/cell/struct.Cell.html
+[`Table`]: https://docs.rs/ratatui_widgets/latest/ratatui_widgets/table/struct.Table.html
 
 <!-- cargo-rdme end -->

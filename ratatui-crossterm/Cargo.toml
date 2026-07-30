@@ -1,10 +1,9 @@
 [package]
 name = "ratatui-crossterm"
-version = "0.1.0"
+version = "0.1.2"
 description = "Crossterm backend for the Ratatui Terminal UI library."
 documentation = "https://docs.rs/ratatui-crossterm"
 readme = "README.md"
-authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
@@ -18,8 +17,11 @@ rust-version.workspace = true
 features = ["document-features"]
 rustdoc-args = ["--cfg", "docsrs"]
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["crossterm_0_28"]
+
 [features]
-default = ["underline-color", "crossterm_0_29"]
+default = ["crossterm_0_29", "underline-color"]
 
 #! One of the following versions of crossterm must be enabled. By default, the latest version is
 #! enabled. This will always default to the most recent version of crossterm, but you can override
@@ -54,7 +56,6 @@ unstable = ["unstable-backend-writer"]
 
 ## Enables getting access to backends' writers.
 unstable-backend-writer = []
-
 
 [dependencies]
 cfg-if = "1.0.1"
