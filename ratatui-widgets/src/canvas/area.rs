@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
-use core::ops::RangeInclusive;
 
+use polygon_clipping::{Point, Polygon, Window, sutherland_hodgman};
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape, line};
@@ -55,28 +55,30 @@ impl Shape for Area<'_> {
         let y_min_bound = painter.bounds().1[0];
         let y_max_bound = painter.bounds().1[1];
 
-        let clipped = clip_polygon(
-            self.vertices,
-            x_min_bound,
-            x_max_bound,
-            y_min_bound,
-            y_max_bound,
+        let vertices: Vec<Point> = self
+            .vertices
+            .iter()
+            .map(|&(x, y)| Point::new(x, y))
+            .collect();
+
+        let clipped = sutherland_hodgman::clip_polygon(
+            &Polygon::new(&vertices),
+            Window::new(x_min_bound, x_max_bound, y_min_bound, y_max_bound),
         );
 
-        if clipped.is_empty() {
+        if clipped.vertices.is_empty() {
             return;
         }
 
-        let len = clipped.len();
-
-        let (x_min, x_max, y_min, y_max) = clipped.iter().fold(
+        // Get the polygon bounds
+        let (x_min, x_max, y_min, y_max) = clipped.vertices.iter().fold(
             (
                 f64::INFINITY,
                 f64::NEG_INFINITY,
                 f64::INFINITY,
                 f64::NEG_INFINITY,
             ),
-            |(x_min, x_max, y_min, y_max), &(x, y)| {
+            |(x_min, x_max, y_min, y_max), &Point { x, y }| {
                 (x_min.min(x), x_max.max(x), y_min.min(y), y_max.max(y))
             },
         );
@@ -88,22 +90,21 @@ impl Shape for Area<'_> {
             return;
         };
 
+        let len = clipped.vertices.len();
+
+        // Scanline algorithm
         for y in y_min_bound..=y_max_bound {
-            let mut intersections = if self.fill {
-                Vec::new()
-            } else {
-                Vec::with_capacity(0)
-            };
+            let mut intersections = Vec::new();
 
             for i in 0..len {
-                let p1 = clipped[i];
+                let p1 = clipped.vertices[i];
                 // % len to connect last and first vertices
-                let p2 = clipped[(i + 1) % len];
+                let p2 = clipped.vertices[(i + 1) % len];
 
-                let Some((x1, y1)) = painter.get_point(p1.0, p1.1) else {
+                let Some((x1, y1)) = painter.get_point(p1.x, p1.y) else {
                     continue;
                 };
-                let Some((x2, y2)) = painter.get_point(p2.0, p2.1) else {
+                let Some((x2, y2)) = painter.get_point(p2.x, p2.y) else {
                     continue;
                 };
 
@@ -113,6 +114,9 @@ impl Shape for Area<'_> {
                     continue;
                 }
 
+                // Get an intersection of a scanline with a polygon edge
+                // Only used when fill because otherwise we don't need to know an intersection
+                // point, just draw_line
                 if self.fill && ((y1 <= y && y < y2) || (y2 <= y && y < y1)) {
                     let cross = (x1 as isize
                         + (y as isize - y1 as isize) * (x2 as isize - x1 as isize)
@@ -127,107 +131,20 @@ impl Shape for Area<'_> {
                 continue;
             }
 
+            // Fill polygon. Even-odd rule. E.g. if we have intersections like this
+            // ----|---|------|----|
+            //     5   8      14   18
+            // We should only paint intervals 5-8 and 14-18, not 8-14.
+            // This is useful when a polygon is concave.
             intersections.sort_unstable();
 
-            let ranges: Vec<RangeInclusive<usize>> = intersections
-                .chunks(2)
-                .map(|chunk| chunk[0]..=chunk[1])
-                .collect();
-
-            for range in ranges {
-                for x in range {
+            for chunk in intersections.as_chunks::<2>().0 {
+                for x in chunk[0]..=chunk[1] {
                     painter.paint(x, y, self.color);
                 }
             }
         }
     }
-}
-
-fn clip_polygon(
-    vertices: &[(f64, f64)],
-    x_min_bound: f64,
-    x_max_bound: f64,
-    y_min_bound: f64,
-    y_max_bound: f64,
-) -> Vec<(f64, f64)> {
-    let clipped = vertices.to_vec();
-    let clipped = clip_left(&clipped, x_min_bound);
-    let clipped = clip_right(&clipped, x_max_bound);
-    let clipped = clip_bottom(&clipped, y_min_bound);
-    clip_top(&clipped, y_max_bound)
-}
-
-fn clip_top(clipped: &[(f64, f64)], y_max_bound: f64) -> Vec<(f64, f64)> {
-    clip_edge(
-        clipped,
-        |(_, y)| y <= y_max_bound,
-        |(x1, y1), (x2, y2)| {
-            let t = (y_max_bound - y1) / (y2 - y1);
-            (x1 + t * (x2 - x1), y_max_bound)
-        },
-    )
-}
-
-fn clip_bottom(clipped: &[(f64, f64)], y_min_bound: f64) -> Vec<(f64, f64)> {
-    clip_edge(
-        clipped,
-        |(_, y)| y >= y_min_bound,
-        |(x1, y1), (x2, y2)| {
-            let t = (y_min_bound - y1) / (y2 - y1);
-            (x1 + t * (x2 - x1), y_min_bound)
-        },
-    )
-}
-
-fn clip_right(clipped: &[(f64, f64)], x_max_bound: f64) -> Vec<(f64, f64)> {
-    clip_edge(
-        clipped,
-        |(x, _)| x <= x_max_bound,
-        |(x1, y1), (x2, y2)| {
-            let t = (x_max_bound - x1) / (x2 - x1);
-            (x_max_bound, (y1 + t * (y2 - y1)))
-        },
-    )
-}
-
-fn clip_left(clipped: &[(f64, f64)], x_min_bound: f64) -> Vec<(f64, f64)> {
-    clip_edge(
-        clipped,
-        |(x, _)| x >= x_min_bound,
-        |(x1, y1), (x2, y2)| {
-            let t = (x_min_bound - x1) / (x2 - x1);
-            (x_min_bound, (y1 + t * (y2 - y1)))
-        },
-    )
-}
-
-fn clip_edge<F, I>(vertices: &[(f64, f64)], is_inside: F, get_intersection: I) -> Vec<(f64, f64)>
-where
-    F: Fn((f64, f64)) -> bool,
-    I: Fn((f64, f64), (f64, f64)) -> (f64, f64),
-{
-    let mut result = Vec::new();
-    let len = vertices.len();
-    for i in 0..len {
-        let p1 = vertices[i];
-        // % len to connect last and first vertices
-        let p2 = vertices[(i + 1) % len];
-
-        let p1_inside = is_inside(p1);
-        let p2_inside = is_inside(p2);
-
-        if p2_inside {
-            if !p1_inside {
-                result.push(get_intersection(p1, p2));
-            }
-            result.push(p2);
-        } else if p1_inside {
-            result.push(get_intersection(p1, p2));
-        } else {
-            // we don't care if none of the points is inside
-        }
-    }
-    result
 }
 
 #[cfg(test)]
