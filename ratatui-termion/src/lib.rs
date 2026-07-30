@@ -1,6 +1,5 @@
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
@@ -8,6 +7,10 @@
 #![warn(missing_docs)]
 //! This module provides the [`TermionBackend`] implementation for the [`Backend`] trait. It uses
 //! the [Termion] crate to interact with the terminal.
+//!
+//! Most application authors should start with the main [`ratatui`] crate and only depend on
+//! `ratatui-termion` directly when they specifically want the Termion backend. This crate is the
+//! backend layer, not the primary docs.rs entry point for building applications.
 //!
 //! [`Backend`]: ratatui_core::backend::Backend
 //! [Termion]: https://docs.rs/termion
@@ -19,15 +22,13 @@
 //!
 //! **When to use `ratatui-termion`:**
 //!
-//! - You need fine-grained control over dependencies
-//! - Building a widget library that needs backend functionality
-//! - You want to use only the Termion backend without other backends
+//! - You want to depend on the Termion backend crate directly
 //! - You prefer Termion's Unix-focused approach
 //!
 //! **When to use the main [`ratatui`] crate:**
 //!
-//! - Building applications (recommended - includes termion backend when enabled)
-//! - You want the convenience of having everything available
+//! - Building applications
+//! - You want backend selection to stay behind Ratatui's re-exports
 //!
 //! For detailed information about the workspace organization, see [ARCHITECTURE.md].
 //!
@@ -66,7 +67,7 @@ use termion::{color as tcolor, style as tstyle};
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use std::io::{stderr, stdout};
 ///
 /// use ratatui::Terminal;
@@ -113,7 +114,7 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use std::io::stdout;
     ///
     /// use ratatui::backend::TermionBackend;

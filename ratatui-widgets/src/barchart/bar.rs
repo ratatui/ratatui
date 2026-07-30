@@ -255,7 +255,7 @@ impl<'a> Bar<'a> {
             // then print the value
             if width < max_width || (width == max_width && ticks >= TICKS_PER_LINE) {
                 buf.set_string(
-                    x + (max_width.saturating_sub(value_label.len() as u16) >> 1),
+                    x + (max_width.saturating_sub(width) >> 1),
                     y,
                     value_label,
                     default_value_style.patch(self.value_style),

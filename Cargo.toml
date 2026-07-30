@@ -1,88 +1,88 @@
 [workspace]
 resolver = "2"
-members = ["ratatui", "ratatui-*", "xtask", "examples/apps/*", "examples/concepts/*"]
+members = ["examples/apps/*", "examples/concepts/*", "ratatui", "ratatui-*", "xtask"]
 default-members = [
+  "examples/apps/*",
+  "examples/concepts/*",
   "ratatui",
   "ratatui-core",
   "ratatui-crossterm",
+  "ratatui-macros",
   # this is not included as it doesn't compile on windows
   # "ratatui-termion",
-  "ratatui-macros",
+  "ratatui-termina",
   "ratatui-termwiz",
   "ratatui-widgets",
-  "examples/apps/*",
-  "examples/concepts/*",
 ]
 
 [workspace.package]
-authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
 repository = "https://github.com/ratatui/ratatui"
 homepage = "https://ratatui.rs"
-keywords = ["tui", "terminal", "dashboard"]
+keywords = ["dashboard", "terminal", "tui"]
 categories = ["command-line-interface"]
 readme = "README.md"
 license = "MIT"
-exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
+exclude = ["*.log", ".github", "CONTRIBUTING.md", "Makefile.toml", "assets/*", "tags"]
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.88.0"
 
 [workspace.dependencies]
-anstyle = "1"
+anstyle = "1.0.3"
 bitflags = "2.9"
+clap = { version = "4.5", features = ["derive"] }
 color-eyre = "0.6"
-compact_str = { version = "0.9", default-features = false }
-criterion = { version = "0.5", features = ["html_reports"] }
+compact_str = { version = "0.10", default-features = false }
+criterion = { version = "0.8", features = ["html_reports"] }
+critical-section = "1.2"
 crossterm = "0.29"
-document-features = "0.2"
+document-features = "0.2.11"
 fakeit = "1"
 futures = "0.3"
-hashbrown = "0.15"
-indoc = "2"
-instability = "0.3"
-itertools = { version = "0.14", default-features = false, features = ["use_alloc"] }
-kasuari = { version = "0.4", default-features = false }
+hashbrown = "0.17"
+indoc = "2.0.5"
+instability = "0.3.7"
+itertools = { version = "0.15", default-features = false, features = ["use_alloc"] }
+kasuari = { version = "0.4.9", default-features = false }
 line-clipping = "0.3"
-lru = "0.14"
-palette = "0.7"
+lru = "0.18"
+octocrab = "0.54"
+palette = { version = "0.7.6", default-features = false, features = ["libm"] }
 pretty_assertions = "1"
-rand = "0.9"
-rand_chacha = "0.9"
-ratatui = { path = "ratatui", version = "0.30.0-beta.0" }
-ratatui-core = { path = "ratatui-core", version = "0.1.0-beta.0" }
-ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.0-beta.0" }
-ratatui-macros = { path = "ratatui-macros", version = "0.7.0-beta.0" }
-ratatui-termion = { path = "ratatui-termion", version = "0.1.0-beta.0" }
-ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.0-beta.0" }
-ratatui-widgets = { path = "ratatui-widgets", version = "0.3.0-beta.0" }
-rstest = "0.25"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-strum = { version = "0.27", default-features = false, features = ["derive"] }
+rand = "0.10"
+rand_chacha = "0.10"
+ratatui = { path = "ratatui", version = "0.30.2" }
+ratatui-core = { path = "ratatui-core", version = "0.1.2" }
+ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.2" }
+ratatui-macros = { path = "ratatui-macros", version = "0.7.2" }
+ratatui-termina = { path = "ratatui-termina", version = "0.1.0" }
+ratatui-termion = { path = "ratatui-termion", version = "0.1.2" }
+ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.2" }
+ratatui-widgets = { path = "ratatui-widgets", version = "0.3.2", default-features = false }
+rstest = "0.26"
+serde = { version = "1.0.219", default-features = false, features = ["derive"] }
+serde_json = "1.0.142"
+strum = { version = "0.28", default-features = false, features = ["derive"] }
+termina = "0.3"
 termion = "4"
 termwiz = "0.23"
-thiserror = { version = "2", default-features = false }
-time = { version = "0.3", default-features = false }
-tokio = "1"
-tracing = "0.1"
+thiserror = { version = "2.0.12", default-features = false }
+time = { version = "0.3.37", default-features = false }
+tokio = "1.35"
+tokio-stream = "0.1"
+tracing = "0.1.37"
 tracing-appender = "0.2"
-tracing-subscriber = "0.3"
-trybuild = "1"
-unicode-segmentation = "1"
+tracing-subscriber = "0.3.10"
+trybuild = "1.0.19"
+unicode-segmentation = "1.9"
 unicode-truncate = { version = "2", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
-unicode-width = ">=0.2.0, <=0.2.1"
-
-# Improve benchmark consistency
-[profile.bench]
-codegen-units = 1
-lto = true
+unicode-width = ">=0.2.0"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
 [workspace.lints.clippy]
-pedantic = { level = "warn", priority = -1 }
 cast_possible_truncation = "allow"
 cast_possible_wrap = "allow"
 cast_precision_loss = "allow"
@@ -91,6 +91,7 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
+pedantic = { level = "warn", priority = -1 }
 
 # we often split up a module into multiple files with the main type in a file named after the
 # module, so we want to allow this pattern
@@ -104,6 +105,7 @@ empty_line_after_doc_comments = "warn"
 equatable_if_let = "warn"
 fn_to_numeric_cast_any = "warn"
 format_push_string = "warn"
+implicit_clone = "warn"
 map_err_ignore = "warn"
 missing_const_for_fn = "warn"
 mixed_read_write_in_expression = "warn"
@@ -115,6 +117,10 @@ redundant_type_annotations = "warn"
 rest_pat_in_fully_bound_structs = "warn"
 string_lit_chars_any = "warn"
 string_slice = "warn"
-string_to_string = "warn"
 unnecessary_self_imports = "warn"
 use_self = "warn"
+
+# Improve benchmark consistency
+[profile.bench]
+codegen-units = 1
+lto = true

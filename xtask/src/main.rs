@@ -16,6 +16,22 @@ use duct::cmd;
 
 mod commands;
 
+/// The available feature flags for ratatui-crossterm.
+///
+/// These will be enabled for both crossterm 0.28 and 0.29 runs. `underline-color` is part of
+/// default features for ratatui-crossterm, but with `--no-default-features`, we must add it
+/// explicitly if desired.
+const CROSSTERM_COMMON_FEATURES: &[&str] = &[
+    "serde",
+    "underline-color",
+    "scrolling-regions",
+    "unstable",
+    "unstable-backend-writer",
+];
+
+/// The available feature flags for crossterm versions.
+const CROSSTERM_VERSION_FEATURES: [&str; 2] = ["crossterm_0_28", "crossterm_0_29"];
+
 pub trait Run {
     fn run(self) -> Result<()>;
 }
@@ -64,12 +80,14 @@ fn run_cargo(args: Vec<&str>) -> Result<()> {
     Ok(())
 }
 
-/// Run a cargo subcommand with the nightly toolchain
+/// Run a cargo subcommand with the selected toolchain, defaulting to nightly
 fn run_cargo_nightly(args: Vec<&str>) -> Result<()> {
+    let toolchain =
+        std::env::var("RATATUI_NIGHTLY_TOOLCHAIN").unwrap_or_else(|_| "nightly".to_string());
     cmd("cargo", args)
         // CARGO env var is set because we're running in a cargo subcommand
         .env_remove("CARGO")
-        .env("RUSTUP_TOOLCHAIN", "nightly")
+        .env("RUSTUP_TOOLCHAIN", toolchain)
         .run_with_trace()?;
     Ok(())
 }

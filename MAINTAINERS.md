@@ -5,7 +5,7 @@ This file documents current and past maintainers.
 - [orhun](https://github.com/orhun)
 - [joshka](https://github.com/joshka)
 - [kdheepak](https://github.com/kdheepak)
-- [Valentin271](https://github.com/Valentin271)
+- [j-g00da](https://github.com/j-g00da)
 
 ## Past Maintainers
 
@@ -13,3 +13,4 @@ This file documents current and past maintainers.
 - [mindoodoo](https://github.com/mindoodoo)
 - [sayanarijit](https://github.com/sayanarijit)
 - [EdJoPaTo](https://github.com/EdJoPaTo)
+- [Valentin271](https://github.com/Valentin271)

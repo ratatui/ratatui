@@ -2,6 +2,9 @@
 
 [default.extend-words]
 ratatui = "ratatui"
+sectore = "sectore"  # https://github.com/sectore
+licker = "licker"  # https://github.com/floor-licker
+consts = "consts"  # consts module
 
 [type.md]
 extend-ignore-re = [

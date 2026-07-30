@@ -1,6 +1,5 @@
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
@@ -9,7 +8,12 @@
 //! This module provides the [`TermwizBackend`] implementation for the [`Backend`] trait. It uses
 //! the [Termwiz] crate to interact with the terminal.
 //!
-//! [`Backend`]: trait.Backend.html
+//! Most application authors should start with the main [`ratatui`] crate and only depend on
+//! `ratatui-termwiz` directly when they specifically want the Termwiz backend or its advanced
+//! terminal capabilities. This crate is the backend layer, not the primary docs.rs entry point for
+//! building applications.
+//!
+//! [`Backend`]: ratatui_core::backend::Backend
 //! [Termwiz]: https://crates.io/crates/termwiz
 //!
 //! # Crate Organization
@@ -19,15 +23,13 @@
 //!
 //! **When to use `ratatui-termwiz`:**
 //!
-//! - You need fine-grained control over dependencies
-//! - Building a widget library that needs backend functionality
-//! - You want to use only the Termwiz backend without other backends
+//! - You want to depend on the Termwiz backend crate directly
 //! - You need Termwiz's advanced terminal capabilities
 //!
 //! **When to use the main [`ratatui`] crate:**
 //!
-//! - Building applications (recommended - includes termwiz backend when enabled)
-//! - You want the convenience of having everything available
+//! - Building applications
+//! - You want backend selection to stay behind Ratatui's re-exports
 //!
 //! For detailed information about the workspace organization, see [ARCHITECTURE.md].
 //!
@@ -81,7 +83,7 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// # std::result::Result::Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
-/// See the the [Examples] directory for more examples. See the [`backend`] module documentation
+/// See the [Examples] directory for more examples. See the [`backend`] module documentation
 /// for more details on raw mode and alternate screen.
 ///
 /// [`backend`]: ratatui_core::backend

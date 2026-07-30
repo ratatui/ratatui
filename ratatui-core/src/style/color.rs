@@ -157,7 +157,7 @@ impl<'de> serde::Deserialize<'de> for Color {
     ///
     /// This implementation uses the `FromStr` trait to deserialize strings, so named colours, RGB,
     /// and indexed values are able to be deserialized. In addition, values that were produced by
-    /// the the older serialization implementation of Color are also able to be deserialized.
+    /// the older serialization implementation of Color are also able to be deserialized.
     ///
     /// Prior to v0.26.0, Ratatui would be serialized using a map for indexed and RGB values, for
     /// examples in json `{"Indexed": 10}` and `{"Rgb": [255, 0, 255]}` respectively. Now they are
@@ -655,8 +655,8 @@ mod tests {
             "abcdef0",       // 7 chars is not a color
             " bcdefa",       // doesn't start with a '#'
             "#abcdef00",     // too many chars
-            "#1🦀2",         // len 7 but on char boundaries shouldnt panic
-            "resett",        // typo
+            "#1🦀2",         // len 7 but on char boundaries shouldn't panic
+            "resets",        // typo
             "lightblackk",   // typo
         ];
 

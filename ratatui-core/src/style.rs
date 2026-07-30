@@ -238,16 +238,51 @@ impl fmt::Debug for Modifier {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
     /// The foreground color.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub fg: Option<Color>,
     /// The background color.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub bg: Option<Color>,
     /// The underline color.
     #[cfg(feature = "underline-color")]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub underline_color: Option<Color>,
     /// The modifiers to add.
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            default,
+            skip_serializing_if = "Modifier::is_empty",
+            deserialize_with = "deserialize_modifier"
+        )
+    )]
     pub add_modifier: Modifier,
     /// The modifiers to remove.
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            default,
+            skip_serializing_if = "Modifier::is_empty",
+            deserialize_with = "deserialize_modifier"
+        )
+    )]
     pub sub_modifier: Modifier,
+}
+
+#[cfg(feature = "serde")]
+/// Deserialize a [`Modifier`] while treating missing or `null` values as empty.
+///
+/// This helper is used with serde to coerce absent or `null` modifier fields to
+/// [`Modifier::empty`], allowing configuration files to omit these fields
+/// without triggering deserialization errors.
+fn deserialize_modifier<'de, D>(deserializer: D) -> Result<Modifier, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+
+    Option::<Modifier>::deserialize(deserializer)
+        .map(|modifier| modifier.unwrap_or_else(Modifier::empty))
 }
 
 /// A custom debug implementation that prints only the fields that are not the default, and unwraps
@@ -396,6 +431,22 @@ impl Style {
         self.add_modifier = self.add_modifier.difference(modifier);
         self.sub_modifier = self.sub_modifier.union(modifier);
         self
+    }
+
+    /// Returns `true` if the style has the given modifier set.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use ratatui_core::style::{Modifier, Style};
+    ///
+    /// let style = Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+    /// assert!(style.has_modifier(Modifier::BOLD));
+    /// assert!(style.has_modifier(Modifier::ITALIC));
+    /// assert!(!style.has_modifier(Modifier::UNDERLINED));
+    /// ```
+    pub const fn has_modifier(self, modifier: Modifier) -> bool {
+        self.add_modifier.contains(modifier) && !self.sub_modifier.contains(modifier)
     }
 
     /// Results in a combined style that is equivalent to applying the two individual styles to
@@ -777,6 +828,28 @@ mod tests {
         assert_eq!(ALL, ALL_SHORT);
     }
 
+    #[test]
+    fn has_modifier_checks() {
+        // basic presence
+        let style = Style::new().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+        assert!(style.has_modifier(Modifier::BOLD));
+        assert!(style.has_modifier(Modifier::ITALIC));
+        assert!(!style.has_modifier(Modifier::UNDERLINED));
+
+        // removal prevents the modifier from being reported as present
+        let style = Style::new()
+            .add_modifier(Modifier::BOLD | Modifier::ITALIC)
+            .remove_modifier(Modifier::ITALIC);
+        assert!(style.has_modifier(Modifier::BOLD));
+        assert!(!style.has_modifier(Modifier::ITALIC));
+
+        // patching with a style that removes a modifier clears it
+        let style = Style::new().add_modifier(Modifier::BOLD | Modifier::ITALIC);
+        let patched = style.patch(Style::new().remove_modifier(Modifier::ITALIC));
+        assert!(patched.has_modifier(Modifier::BOLD));
+        assert!(!patched.has_modifier(Modifier::ITALIC));
+    }
+
     #[rstest]
     #[case(Style::new().black(), Color::Black)]
     #[case(Style::new().red(), Color::Red)]
@@ -922,5 +995,75 @@ mod tests {
                 .add_modifier(Modifier::ITALIC)
                 .remove_modifier(Modifier::DIM)
         );
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serialize_then_deserialize() {
+        let style = Style {
+            fg: Some(Color::Rgb(255, 0, 255)),
+            bg: Some(Color::White),
+            #[cfg(feature = "underline-color")]
+            underline_color: Some(Color::Indexed(3)),
+            add_modifier: Modifier::UNDERLINED,
+            sub_modifier: Modifier::CROSSED_OUT,
+        };
+
+        let json_str = serde_json::to_string(&style).unwrap();
+        let json_value: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+
+        let mut expected_json = serde_json::json!({
+            "fg": "#FF00FF",
+            "bg": "White",
+            "add_modifier": "UNDERLINED",
+            "sub_modifier": "CROSSED_OUT"
+        });
+
+        #[cfg(feature = "underline-color")]
+        {
+            expected_json
+                .as_object_mut()
+                .unwrap()
+                .insert("underline_color".into(), "3".into());
+        }
+
+        assert_eq!(json_value, expected_json);
+
+        let deserialized: Style = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(deserialized, style);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialize_defaults() {
+        let style = Style {
+            fg: None,
+            bg: None,
+            #[cfg(feature = "underline-color")]
+            underline_color: None,
+            add_modifier: Modifier::empty(),
+            sub_modifier: Modifier::empty(),
+        };
+
+        let json_str = serde_json::to_string(&style).unwrap();
+        assert_eq!(json_str, "{}");
+
+        let deserialized: Style = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(deserialized, style);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialize_null_modifiers() {
+        let json_value = serde_json::json!({
+            "add_modifier": serde_json::Value::Null,
+            "sub_modifier": serde_json::Value::Null
+        });
+        let json_str = serde_json::to_string(&json_value).unwrap();
+
+        let style: Style = serde_json::from_str(&json_str).unwrap();
+
+        assert!(style.add_modifier.is_empty());
+        assert!(style.sub_modifier.is_empty());
     }
 }

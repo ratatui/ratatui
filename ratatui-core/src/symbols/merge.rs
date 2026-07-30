@@ -99,7 +99,7 @@ pub enum MergeStrategy {
     ///
     /// The following diagram illustrates how this would apply to several overlapping blocks where
     /// the thick bordered blocks are rendered last, merging the previous symbols into a single
-    /// composite character. All combindations of the plain and thick segments exist, so these
+    /// composite character. All combinations of the plain and thick segments exist, so these
     /// symbols can be merged into a single character:
     ///
     /// ```text
@@ -264,7 +264,7 @@ pub enum MergeStrategy {
     /// assert_eq!(strategy.merge("┃", "═"), "╬");
     /// assert_eq!(strategy.merge("═", "┃"), "╋");
     ///
-    /// // combindations of double with plain that don't exist are merged based on the second symbol
+    /// // combinations of double with plain that don't exist are merged based on the second symbol
     /// assert_eq!(strategy.merge("┐", "╔"), "╦");
     /// assert_eq!(strategy.merge("╔", "┐"), "┬");
     /// ```

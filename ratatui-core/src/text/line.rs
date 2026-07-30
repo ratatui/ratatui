@@ -7,6 +7,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use unicode_truncate::UnicodeTruncateStr;
+use unicode_width::UnicodeWidthStr;
 
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
@@ -34,6 +35,7 @@ use crate::widgets::Widget;
 /// - [`Line::from`] creates a `Line` from a [`String`].
 /// - [`Line::from`] creates a `Line` from a [`&str`].
 /// - [`Line::from`] creates a `Line` from a [`Vec`] of [`Span`]s.
+/// - [`Line::from`] creates a `Line` from a `&[Into<Span>]`.
 /// - [`Line::from`] creates a `Line` from single [`Span`].
 /// - [`String::from`] converts a line into a [`String`].
 /// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
@@ -435,8 +437,9 @@ impl<'a> Line<'a> {
     /// let line = Line::from(vec!["Hello".blue(), " world!".green()]);
     /// assert_eq!(12, line.width());
     /// ```
+    #[must_use]
     pub fn width(&self) -> usize {
-        self.spans.iter().map(Span::width).sum()
+        UnicodeWidthStr::width(self)
     }
 
     /// Returns an iterator over the graphemes held by this line.
@@ -562,6 +565,16 @@ impl<'a> Line<'a> {
     }
 }
 
+impl UnicodeWidthStr for Line<'_> {
+    fn width(&self) -> usize {
+        self.spans.iter().map(UnicodeWidthStr::width).sum()
+    }
+
+    fn width_cjk(&self) -> usize {
+        self.spans.iter().map(UnicodeWidthStr::width_cjk).sum()
+    }
+}
+
 impl<'a> IntoIterator for Line<'a> {
     type Item = Span<'a>;
     type IntoIter = alloc::vec::IntoIter<Span<'a>>;
@@ -611,6 +624,18 @@ impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     fn from(spans: Vec<Span<'a>>) -> Self {
         Self {
             spans,
+            ..Default::default()
+        }
+    }
+}
+
+impl<'a, 'b, T> From<&'b [T]> for Line<'a>
+where
+    T: Into<Span<'a>> + Clone,
+{
+    fn from(value: &'b [T]) -> Self {
+        Self {
+            spans: value.iter().cloned().map(Into::into).collect(),
             ..Default::default()
         }
     }
@@ -791,7 +816,7 @@ fn spans_after_width<'a>(
 /// A trait for converting a value to a [`Line`].
 ///
 /// This trait is automatically implemented for any type that implements the [`Display`] trait. As
-/// such, `ToLine` shouln't be implemented directly: [`Display`] should be implemented instead, and
+/// such, `ToLine` shouldn't be implemented directly: [`Display`] should be implemented instead, and
 /// you get the `ToLine` implementation for free.
 ///
 /// [`Display`]: std::fmt::Display
@@ -834,6 +859,9 @@ impl Styled for Line<'_> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "std"))]
+    extern crate std;
+
     use alloc::format;
     use core::iter;
     use std::dbg;
@@ -1003,6 +1031,41 @@ mod tests {
         ];
         let line = Line::from(spans.clone());
         assert_eq!(line.spans, spans);
+    }
+
+    #[test]
+    fn from_slice_of_spans() {
+        let slice = [
+            Span::from("Hello"),
+            Span::from("world!"),
+            Span::from("Extra"),
+        ];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strs() {
+        let slice = ["Hello", "world!", "Extra"];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strings() {
+        let slice = [
+            "Hello".to_string(),
+            "world!".to_string(),
+            "Extra".to_string(),
+        ];
+        let line = Line::from(&slice[0..2]);
+        let line2 = Line::from(&slice[1..]);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
     }
 
     #[test]

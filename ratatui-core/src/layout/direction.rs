@@ -12,9 +12,25 @@ use strum::{Display, EnumString};
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Direction {
+    /// Layout segments are arranged side by side (left to right).
     Horizontal,
+    /// Layout segments are arranged top to bottom (default).
     #[default]
     Vertical,
+}
+
+impl Direction {
+    /// The perpendicular direction to this direction.
+    ///
+    /// `Horizontal` returns `Vertical`, and `Vertical` returns `Horizontal`.
+    #[inline]
+    #[must_use = "returns the perpendicular direction"]
+    pub const fn perpendicular(self) -> Self {
+        match self {
+            Self::Horizontal => Self::Vertical,
+            Self::Vertical => Self::Horizontal,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -36,5 +52,12 @@ mod tests {
         assert_eq!("Horizontal".parse::<Direction>(), Ok(Direction::Horizontal));
         assert_eq!("Vertical".parse::<Direction>(), Ok(Direction::Vertical));
         assert_eq!("".parse::<Direction>(), Err(ParseError::VariantNotFound));
+    }
+
+    #[test]
+    fn other() {
+        use Direction::*;
+        assert_eq!(Horizontal.perpendicular(), Vertical);
+        assert_eq!(Vertical.perpendicular(), Horizontal);
     }
 }

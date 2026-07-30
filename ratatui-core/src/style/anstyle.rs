@@ -109,8 +109,15 @@ impl From<anstyle::Color> for Color {
 }
 
 impl From<Color> for anstyle::Color {
+    /// Converts a Ratatui `Color` into an `anstyle::Color`.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the input is [`Color::Reset`], as there is no
+    /// equivalent representation for a reset color in `anstyle`.
     fn from(color: Color) -> Self {
         match color {
+            Color::Reset => panic!("Color::Reset has no equivalent in anstyle"),
             Color::Rgb(_, _, _) => Self::Rgb(RgbColor::try_from(color).unwrap()),
             Color::Indexed(_) => Self::Ansi256(Ansi256Color::try_from(color).unwrap()),
             _ => Self::Ansi(AnsiColor::try_from(color).unwrap()),
@@ -344,5 +351,11 @@ mod tests {
         );
         assert!(anstyle_style.get_effects().contains(Effects::BOLD));
         assert!(anstyle_style.get_effects().contains(Effects::ITALIC));
+    }
+
+    #[test]
+    #[should_panic(expected = "Color::Reset has no equivalent in anstyle")]
+    fn converting_reset_panics_explicitly() {
+        let _ = anstyle::Color::from(Color::Reset);
     }
 }

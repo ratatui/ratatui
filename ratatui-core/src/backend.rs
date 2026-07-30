@@ -7,6 +7,7 @@
 //! Supported terminal backends:
 //! - [Crossterm]: enable the `crossterm` feature (enabled by default) and use [`CrosstermBackend`]
 //! - [Termion]: enable the `termion` feature and use [`TermionBackend`]
+//! - [Termina]: enable the `termina` feature and use [`TerminaBackend`]
 //! - [Termwiz]: enable the `termwiz` feature and use [`TermwizBackend`]
 //!
 //! Additionally, a [`TestBackend`] is provided for testing purposes.
@@ -38,7 +39,7 @@
 //! # std::io::Result::Ok(())
 //! ```
 //!
-//! See the the [Examples] directory for more examples.
+//! See the [Examples] directory for more examples.
 //!
 //! # Raw Mode
 //!
@@ -92,10 +93,12 @@
 //!
 //! [`CrosstermBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.CrosstermBackend.html
 //! [`TermionBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermionBackend.html
+//! [`TerminaBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TerminaBackend.html
 //! [`TermwizBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermwizBackend.html
 //! [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
+//! [Termina]: https://crates.io/crates/termina
 //! [Termwiz]: https://crates.io/crates/termwiz
 //! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
@@ -109,19 +112,28 @@ use crate::layout::{Position, Size};
 mod test;
 pub use self::test::TestBackend;
 
-/// Enum representing the different types of clearing operations that can be performed
-/// on the terminal screen.
+/// Defines which region of the terminal's visible display area is cleared.
+///
+/// Clearing operates on character cells in the active display surface. It does not move, hide, or
+/// reset the cursor position. If the cursor lies inside the cleared region, the character cell at
+/// the cursor position is cleared as well.
+///
+/// Clearing applies to the terminal's visible display area, not just content previously drawn by
+/// Ratatui. No guarantees are made about scrollback, history, or off-screen buffers.
 #[derive(Debug, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum ClearType {
-    /// Clear the entire screen.
+    /// Clears all character cells in the visible display area.
     All,
-    /// Clear everything after the cursor.
+    /// Clears all character cells from the cursor position (inclusive) through the end of the
+    /// display area.
     AfterCursor,
-    /// Clear everything before the cursor.
+    /// Clears all character cells from the start of the display area through the cursor position
+    /// (inclusive).
     BeforeCursor,
-    /// Clear the current line.
+    /// Clears all character cells in the cursor's current line.
     CurrentLine,
-    /// Clear everything from the cursor until the next newline.
+    /// Clears all character cells from the cursor position (inclusive) to the end of the current
+    /// line.
     UntilNewLine,
 }
 
@@ -237,7 +249,14 @@ pub trait Backend {
         self.set_cursor_position(Position { x, y })
     }
 
-    /// Clears the whole terminal screen
+    /// Clears all character cells in the terminal's visible display area.
+    ///
+    /// This operation preserves the cursor position. If the cursor lies within the cleared
+    /// region, the character cell at the cursor position is cleared. No guarantees are made about
+    /// scrollback, history, or off-screen buffers.
+    ///
+    /// This is equivalent to calling [`clear_region`](Self::clear_region) with
+    /// [`ClearType::All`].
     ///
     /// # Example
     ///
@@ -251,7 +270,13 @@ pub trait Backend {
     /// ```
     fn clear(&mut self) -> Result<(), Self::Error>;
 
-    /// Clears a specific region of the terminal specified by the [`ClearType`] parameter
+    /// Clears a specific region of the terminal's visible display area, as defined by
+    /// [`ClearType`].
+    ///
+    /// This operation preserves the cursor position. If the cursor lies within the cleared
+    /// region, the character cell at the cursor position is cleared. Clearing applies to the
+    /// active display surface only and does not make guarantees about scrollback, history, or
+    /// off-screen buffers.
     ///
     /// This method is optional and may not be implemented by all backends. The default
     /// implementation calls [`clear`] if the `clear_type` is [`ClearType::All`] and returns an
@@ -299,7 +324,10 @@ pub trait Backend {
     /// syscall, and the user is also most likely to need columns and rows along with pixel size.
     fn window_size(&mut self) -> Result<WindowSize, Self::Error>;
 
-    /// Flush any buffered content to the terminal screen.
+    /// Flush any backend-buffered output to the terminal screen.
+    ///
+    /// This is distinct from [`Terminal::flush`](crate::terminal::Terminal::flush), which computes
+    /// a diff between Ratatui's screen buffers and sends draw commands to the backend.
     fn flush(&mut self) -> Result<(), Self::Error>;
 
     /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range

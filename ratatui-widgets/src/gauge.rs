@@ -431,7 +431,7 @@ impl Widget for &LineGauge<'_> {
         }
 
         let ratio = self.ratio;
-        let default_label = Line::from(format!("{:.0}%", ratio * 100.0));
+        let default_label = Line::from(format!("{:3.0}%", ratio * 100.0));
         let label = self.label.as_ref().unwrap_or(&default_label);
         let (col, row) = buf.set_line(gauge_area.left(), gauge_area.top(), label, gauge_area.width);
         let start = col + 1;
@@ -602,7 +602,7 @@ mod tests {
         let line_gauge = LineGauge::default().ratio(0.5);
         // This should not panic, even if the buffer is too small to render the line gauge.
         line_gauge.render(buffer.area, &mut buffer);
-        assert_eq!(buffer, Buffer::with_lines(["5"]));
+        assert_eq!(buffer, Buffer::with_lines([" "]));
     }
 
     #[test]

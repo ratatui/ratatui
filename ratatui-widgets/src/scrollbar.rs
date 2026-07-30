@@ -9,16 +9,12 @@
 
 use core::iter;
 
-use ratatui_core::buffer::Buffer;
+use ratatui_core::buffer::{Buffer, CellWidth};
 use ratatui_core::layout::Rect;
 use ratatui_core::style::Style;
 use ratatui_core::symbols::scrollbar::{DOUBLE_HORIZONTAL, DOUBLE_VERTICAL, Set};
 use ratatui_core::widgets::StatefulWidget;
 use strum::{Display, EnumString};
-use unicode_width::UnicodeWidthStr;
-
-#[cfg(not(feature = "std"))]
-use crate::polyfills::F64Polyfills;
 
 /// A widget to display a scrollbar
 ///
@@ -559,32 +555,47 @@ impl Scrollbar<'_> {
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &ScrollbarState) -> (usize, usize, usize) {
-        let track_length = f64::from(self.track_length_excluding_arrow_heads(area));
-        let viewport_length = self.viewport_length(state, area) as f64;
+        // This integer division rounds to the nearest integer, but rounding up instead of
+        // rounding down (as is the case for plain integer division).
+        #[inline]
+        const fn rounding_divide(numerator: usize, denominator: usize) -> usize {
+            (numerator + denominator / 2) / denominator
+        }
 
-        // Ensure that the position of the thumb is within the bounds of the content taking into
-        // account the content and viewport length. When the last line of the content is at the top
-        // of the viewport, the thumb should be at the bottom of the track.
-        let max_position = state.content_length.saturating_sub(1) as f64;
-        let start_position = (state.position as f64).clamp(0.0, max_position);
-        let max_viewport_position = max_position + viewport_length;
-        let end_position = start_position + viewport_length;
+        let track_length = self.track_length_excluding_arrow_heads(area) as usize;
 
-        // Calculate the start and end positions of the thumb. The size will be proportional to the
-        // viewport length compared to the total amount of possible visible rows.
-        let thumb_start = start_position * track_length / max_viewport_position;
-        let thumb_end = end_position * track_length / max_viewport_position;
+        if track_length == 0 {
+            return (0, 0, 0);
+        }
 
-        // Make sure that the thumb is at least 1 cell long by ensuring that the start of the thumb
-        // is less than the track_len. We use the positions instead of the sizes and use nearest
-        // integer instead of floor / ceil to avoid problems caused by rounding errors.
-        let thumb_start = thumb_start.round().clamp(0.0, track_length - 1.0) as usize;
-        let thumb_end = thumb_end.round().clamp(0.0, track_length) as usize;
+        let viewport_length = self.viewport_length(state, area);
 
-        let thumb_length = thumb_end.saturating_sub(thumb_start).max(1);
-        let track_end_length = (track_length as usize).saturating_sub(thumb_start + thumb_length);
+        let max_position = state.content_length.saturating_sub(1);
+        let start_position = state.position.clamp(0, max_position);
+        let max_viewport_position = max_position.saturating_add(viewport_length);
 
-        (thumb_start, thumb_length, track_end_length)
+        if max_viewport_position == 0 {
+            // just in case to prevent division by zero
+            return (0, track_length, 0);
+        }
+
+        let thumb_length = rounding_divide(
+            viewport_length.saturating_mul(track_length),
+            max_viewport_position,
+        )
+        .clamp(1, track_length);
+
+        // Clamp so the thumb always fits within the track (`thumb_start + thumb_length <=
+        // track_length`). Clamping to `track_length - 1` instead let a large thumb overrun the
+        // track at the end, pushing the end symbol out of the rendered area. See issue #2582.
+        let thumb_start = rounding_divide(
+            start_position.saturating_mul(track_length),
+            max_viewport_position,
+        )
+        .clamp(0, track_length.saturating_sub(thumb_length));
+
+        let track_end = track_length.saturating_sub(thumb_start + thumb_length);
+        (thumb_start, thumb_length, track_end)
     }
 
     fn scrollbar_area(&self, area: Rect) -> Option<Rect> {
@@ -604,8 +615,8 @@ impl Scrollbar<'_> {
     /// <═══█████═══════>
     /// ```
     fn track_length_excluding_arrow_heads(&self, area: Rect) -> u16 {
-        let start_len = self.begin_symbol.map_or(0, |s| s.width() as u16);
-        let end_len = self.end_symbol.map_or(0, |s| s.width() as u16);
+        let start_len = self.begin_symbol.map_or(0, CellWidth::cell_width);
+        let end_len = self.end_symbol.map_or(0, CellWidth::cell_width);
         let arrows_len = start_len.saturating_add(end_len);
         if self.orientation.is_vertical() {
             area.height.saturating_sub(arrows_len)
@@ -649,6 +660,7 @@ mod tests {
     use ratatui_core::widgets::Widget;
     use rstest::{fixture, rstest};
     use strum::ParseError;
+    use unicode_width::UnicodeWidthStr;
 
     use super::*;
 
@@ -873,14 +885,14 @@ mod tests {
 
     #[rstest]
     #[case::position_0("<####---->", 0, 10)]
-    #[case::position_1("<#####--->", 1, 10)]
+    #[case::position_1("<####---->", 1, 10)]
     #[case::position_2("<-####--->", 2, 10)]
     #[case::position_3("<-####--->", 3, 10)]
     #[case::position_4("<--####-->", 4, 10)]
     #[case::position_5("<--####-->", 5, 10)]
     #[case::position_6("<---####->", 6, 10)]
     #[case::position_7("<---####->", 7, 10)]
-    #[case::position_8("<---#####>", 8, 10)]
+    #[case::position_8("<---####->", 8, 10)]
     #[case::position_9("<----####>", 9, 10)]
     #[case::position_one_out_of_bounds("<----####>", 10, 10)]
     #[case::position_few_out_of_bounds("<----####>", 15, 10)]
@@ -960,14 +972,14 @@ mod tests {
 
     #[rstest]
     #[case::position_0("<####---->", 0, 10)]
-    #[case::position_1("<#####--->", 1, 10)]
+    #[case::position_1("<####---->", 1, 10)]
     #[case::position_2("<-####--->", 2, 10)]
     #[case::position_3("<-####--->", 3, 10)]
     #[case::position_4("<--####-->", 4, 10)]
     #[case::position_5("<--####-->", 5, 10)]
     #[case::position_6("<---####->", 6, 10)]
     #[case::position_7("<---####->", 7, 10)]
-    #[case::position_8("<---#####>", 8, 10)]
+    #[case::position_8("<---####->", 8, 10)]
     #[case::position_9("<----####>", 9, 10)]
     #[case::position_one_out_of_bounds("<----####>", 10, 10)]
     #[case::position_few_out_of_bounds("<----####>", 15, 10)]
@@ -992,14 +1004,14 @@ mod tests {
 
     #[rstest]
     #[case::position_0("<####---->", 0, 10)]
-    #[case::position_1("<#####--->", 1, 10)]
+    #[case::position_1("<####---->", 1, 10)]
     #[case::position_2("<-####--->", 2, 10)]
     #[case::position_3("<-####--->", 3, 10)]
     #[case::position_4("<--####-->", 4, 10)]
     #[case::position_5("<--####-->", 5, 10)]
     #[case::position_6("<---####->", 6, 10)]
     #[case::position_7("<---####->", 7, 10)]
-    #[case::position_8("<---#####>", 8, 10)]
+    #[case::position_8("<---####->", 8, 10)]
     #[case::position_9("<----####>", 9, 10)]
     #[case::position_one_out_of_bounds("<----####>", 10, 10)]
     #[case::position_few_out_of_bounds("<----####>", 15, 10)]
@@ -1027,8 +1039,8 @@ mod tests {
     #[case::position_1("-##-------", 1, 10)]
     #[case::position_2("--##------", 2, 10)]
     #[case::position_3("---##-----", 3, 10)]
-    #[case::position_4("----#-----", 4, 10)]
-    #[case::position_5("-----#----", 5, 10)]
+    #[case::position_4("----##----", 4, 10)]
+    #[case::position_5("-----##---", 5, 10)]
     #[case::position_6("-----##---", 6, 10)]
     #[case::position_7("------##--", 7, 10)]
     #[case::position_8("-------##-", 8, 10)]
@@ -1119,5 +1131,89 @@ mod tests {
         let mut state = ScrollbarState::new(10).position(5);
         // This should not panic, even if the buffer has zero size.
         scrollbar.render(buffer.area, &mut buffer, &mut state);
+    }
+
+    #[rstest]
+    #[case::horizontal_width_eq_arrows(ScrollbarOrientation::HorizontalTop, Rect::new(0, 0, 2, 1))]
+    #[case::horizontal_width_lt_arrows(ScrollbarOrientation::HorizontalTop, Rect::new(0, 0, 1, 1))]
+    #[case::vertical_height_eq_arrows(ScrollbarOrientation::VerticalLeft, Rect::new(0, 0, 1, 2))]
+    #[case::vertical_height_lt_arrows(ScrollbarOrientation::VerticalLeft, Rect::new(0, 0, 1, 1))]
+    fn part_lengths_returns_zeros_when_track_len_is_zero(
+        #[case] orientation: ScrollbarOrientation,
+        #[case] area: Rect,
+    ) {
+        let scrollbar = Scrollbar::new(orientation)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("-"))
+            .thumb_symbol("#");
+
+        let state = ScrollbarState::new(10)
+            .position(5)
+            .viewport_content_length(2);
+
+        let (start, thumb_len, end) = scrollbar.part_lengths(area, &state);
+        assert_eq!((start, thumb_len, end), (0, 0, 0));
+    }
+
+    #[test]
+    fn part_lengths_returns_zeros_when_area_dimension_is_zero_even_without_arrows() {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::HorizontalTop)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .track_symbol(Some("-"))
+            .thumb_symbol("#");
+
+        let state = ScrollbarState::new(10)
+            .position(3)
+            .viewport_content_length(2);
+
+        let (start, thumb_len, end) = scrollbar.part_lengths(Rect::new(0, 0, 0, 1), &state);
+        assert_eq!((start, thumb_len, end), (0, 0, 0));
+    }
+
+    /// Regression test for <https://github.com/ratatui/ratatui/issues/2582>.
+    ///
+    /// A thumb that is large relative to the track (content shorter than the viewport) must not
+    /// overrun the track when the position is at the end. Otherwise the rendered thumb pushes the
+    /// end symbol out of the area, leaving a thumb cell where the end arrow should be.
+    #[test]
+    fn thumb_stays_within_track_for_large_thumb_at_end() {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+        // height 24 minus the two arrow heads leaves a track of 22.
+        let area = Rect::new(0, 0, 1, 24);
+        let state = ScrollbarState::new(9).position(8);
+
+        let (start, thumb_len, end) = scrollbar.part_lengths(area, &state);
+
+        assert!(
+            start + thumb_len <= 22,
+            "thumb overruns the track: start={start} + thumb_len={thumb_len} > 22"
+        );
+        assert_eq!(
+            start + thumb_len + end,
+            22,
+            "parts must sum to the track length"
+        );
+    }
+
+    /// Visual regression for <https://github.com/ratatui/ratatui/issues/2582>: with an end symbol
+    /// set, a large thumb at the end must render the end symbol rather than overwriting it.
+    #[rstest]
+    #[case::large_thumb_at_end("<-----#################>", 8, 9)]
+    fn render_scrollbar_keeps_end_symbol_for_large_thumb(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+    ) {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::HorizontalTop)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("-"))
+            .thumb_symbol("#");
+        let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
+        let mut state = ScrollbarState::new(content_length).position(position);
+        scrollbar.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 }

@@ -12,7 +12,7 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 use crate::block::{Block, BlockExt};
-use crate::canvas::{Canvas, Line as CanvasLine, Points};
+use crate::canvas::{Canvas, FilledLine, Line as CanvasLine, Points};
 
 /// An X or Y axis for the [`Chart`] widget
 ///
@@ -82,9 +82,9 @@ impl<'a> Axis<'a> {
     /// - For the X axis, the labels are displayed left to right.
     /// - For the Y axis, the labels are displayed bottom to top.
     ///
-    /// Currently, you need to give at least two labels or the render will panic. Also, giving
-    /// more than 3 labels is currently broken and the middle labels won't be in the correct
-    /// position, see [issue 334].
+    /// Currently, you need to give at least two labels for them to be rendered. Also, giving more
+    /// than 3 labels is currently broken and the middle labels won't be in the correct position,
+    /// see [issue 334].
     ///
     /// [issue 334]: https://github.com/ratatui/ratatui/issues/334
     ///
@@ -168,6 +168,11 @@ pub enum GraphType {
 
     /// Draw a bar chart. This will draw a bar for each point in the dataset.
     Bar,
+
+    /// Draw a line chart with the area filled. Like [`Line`](GraphType::Line), this draws a line
+    /// between each following point, but also fills the area between the line and the y-coordinate
+    /// specified by [`Dataset::fill_to_y`].
+    Area,
 }
 
 /// Allow users to specify the position of a legend in a [`Chart`]
@@ -328,6 +333,8 @@ pub struct Dataset<'a> {
     graph_type: GraphType,
     /// Style used to plot this dataset
     style: Style,
+    /// The y-coordinate to fill area to when using [`GraphType::Area`]
+    fill_to_y: f64,
 }
 
 impl<'a> Dataset<'a> {
@@ -368,8 +375,9 @@ impl<'a> Dataset<'a> {
 
     /// Sets the kind of character to use to display this dataset
     ///
-    /// You can use dots (`•`), blocks (`█`), bars (`▄`), braille (`⠓`, `⣇`, `⣿`) or half-blocks
-    /// (`█`, `▄`, and `▀`). See [`symbols::Marker`] for more details.
+    /// You can use dots (`•`), blocks (`█`), bars (`▄`), braille (`⠓`, `⣇`, `⣿`), half-blocks
+    /// (`█`, `▄`, and `▀`) or if you need custom chars use
+    /// [`Marker::Custom`](symbols::Marker::Custom). See [`symbols::Marker`] for more details.
     ///
     /// Note [`Marker::Braille`](symbols::Marker::Braille) requires a font that supports Unicode
     /// Braille Patterns.
@@ -419,6 +427,18 @@ impl<'a> Dataset<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
+        self
+    }
+
+    /// Sets the y-coordinate to fill the area to when using [`GraphType::Area`]
+    ///
+    /// When the graph type is set to [`GraphType::Area`], the area between the data points and the
+    /// specified y-coordinate will be filled with the dataset's style. The default is `0.0`.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn fill_to_y(mut self, fill_to_y: f64) -> Self {
+        self.fill_to_y = fill_to_y;
         self
     }
 }
@@ -952,6 +972,10 @@ impl<'a> Chart<'a> {
         let Some(x) = layout.label_y else { return };
         let labels = &self.y_axis.labels;
         let labels_len = labels.len() as u16;
+        if labels_len < 2 {
+            return;
+        }
+
         for (i, label) in labels.iter().enumerate() {
             let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
             if dy < graph_area.bottom() {
@@ -1009,24 +1033,26 @@ impl Widget for &Chart<'_> {
             }
         }
 
-        if let Some(y) = layout.axis_x {
-            if let Some(x) = layout.axis_y {
-                buf[(x, y)]
-                    .set_symbol(symbols::line::BOTTOM_LEFT)
-                    .set_style(self.x_axis.style);
-            }
+        if let Some(y) = layout.axis_x
+            && let Some(x) = layout.axis_y
+        {
+            buf[(x, y)]
+                .set_symbol(symbols::line::BOTTOM_LEFT)
+                .set_style(self.x_axis.style);
         }
 
-        for dataset in &self.datasets {
-            Canvas::default()
-                .background_color(self.style.bg.unwrap_or(Color::Reset))
-                .x_bounds(self.x_axis.bounds)
-                .y_bounds(self.y_axis.bounds)
-                .marker(dataset.marker)
-                .paint(|ctx| {
+        Canvas::default()
+            .background_color(self.style.bg.unwrap_or(Color::Reset))
+            .x_bounds(self.x_axis.bounds)
+            .y_bounds(self.y_axis.bounds)
+            .paint(|ctx| {
+                for dataset in &self.datasets {
+                    ctx.marker(dataset.marker);
+
+                    let color = dataset.style.fg.unwrap_or(Color::Reset);
                     ctx.draw(&Points {
                         coords: dataset.data,
-                        color: dataset.style.fg.unwrap_or(Color::Reset),
+                        color,
                     });
                     match dataset.graph_type {
                         GraphType::Line => {
@@ -1036,7 +1062,7 @@ impl Widget for &Chart<'_> {
                                     y1: data[0].1,
                                     x2: data[1].0,
                                     y2: data[1].1,
-                                    color: dataset.style.fg.unwrap_or(Color::Reset),
+                                    color,
                                 });
                             }
                         }
@@ -1047,15 +1073,28 @@ impl Widget for &Chart<'_> {
                                     y1: 0.0,
                                     x2: *x,
                                     y2: *y,
-                                    color: dataset.style.fg.unwrap_or(Color::Reset),
+                                    color,
                                 });
                             }
                         }
+                        GraphType::Area => {
+                            for data in dataset.data.windows(2) {
+                                ctx.draw(&FilledLine {
+                                    x1: data[0].0,
+                                    y1: data[0].1,
+                                    x2: data[1].0,
+                                    y2: data[1].1,
+                                    fill_to_y: dataset.fill_to_y,
+                                    color,
+                                });
+                            }
+                        }
+
                         GraphType::Scatter => {}
                     }
-                })
-                .render(graph_area, buf);
-        }
+                }
+            })
+            .render(graph_area, buf);
 
         if let Some(Position { x, y }) = layout.title_x {
             let title = self.x_axis.title.as_ref().unwrap();
@@ -1261,6 +1300,14 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 4));
         widget.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]));
+    }
+
+    #[test]
+    fn it_does_not_panic_if_y_axis_has_one_label() {
+        let widget = Chart::new(vec![]).y_axis(Axis::default().bounds([0.0, 1.0]).labels(["only"]));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 5));
+
+        widget.render(buffer.area, &mut buffer);
     }
 
     #[test]
@@ -1544,6 +1591,93 @@ mod tests {
             "    • • • •",
             "  • • • • •",
             "• • • • • •",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::dot(symbols::Marker::Dot, '•')]
+    #[case::dot(symbols::Marker::Braille, '⢣')]
+    fn overlapping_lines(#[case] marker: symbols::Marker, #[case] symbol: char) {
+        let data_diagonal_up = [(0.0, 0.0), (5.0, 5.0)];
+        let data_diagonal_down = [(0.0, 5.0), (5.0, 0.0)];
+        let lines = vec![
+            Dataset::default()
+                .data(&data_diagonal_up)
+                .marker(symbols::Marker::Block)
+                .graph_type(GraphType::Line)
+                .blue(),
+            Dataset::default()
+                .data(&data_diagonal_down)
+                .marker(marker)
+                .graph_type(GraphType::Line)
+                .red(),
+        ];
+        let chart = Chart::new(lines)
+            .x_axis(Axis::default().bounds([0.0, 5.0]))
+            .y_axis(Axis::default().bounds([0.0, 5.0]));
+        let area = Rect::new(0, 0, 5, 5);
+        let mut buffer = Buffer::empty(area);
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            format!("{symbol}   █"),
+            format!(" {symbol} █ "),
+            format!("  {symbol}  "),
+            format!(" █ {symbol} "),
+            format!("█   {symbol}"),
+        ]);
+        for i in 0..5 {
+            // The Marker::Dot and Marker::Braille tiles have the
+            // foreground set to Red.
+            expected.set_style(Rect::new(i, i, 1, 1), Style::new().fg(Color::Red));
+            // The Marker::Block tiles have both the foreground and
+            // background set to Blue.
+            expected.set_style(
+                Rect::new(i, 4 - i, 1, 1),
+                Style::new().fg(Color::Blue).bg(Color::Blue),
+            );
+        }
+        // Where the Marker::Dot/Braille overlaps with Marker::Block,
+        // the background is set to blue from the Block, but the
+        // foreground is set to red from the Dot/Braille.  This allows
+        // two line plots to overlap, so long as one of them is a
+        // Block.
+        expected.set_style(
+            Rect::new(2, 2, 1, 1),
+            Style::new().fg(Color::Red).bg(Color::Blue),
+        );
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn filled_line() {
+        let data = [(0.0, 0.0), (5.0, 5.0), (10.0, 5.0)];
+        let chart = Chart::new(vec![
+            Dataset::default()
+                .data(&data)
+                .marker(symbols::Marker::Dot)
+                .fill_to_y(0.0)
+                .graph_type(GraphType::Area),
+        ])
+        .x_axis(Axis::default().bounds([0.0, 10.0]))
+        .y_axis(Axis::default().bounds([0.0, 10.0]));
+        let area = Rect::new(0, 0, 11, 11);
+        let mut buffer = Buffer::empty(area);
+        chart.render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines([
+            "           ",
+            "           ",
+            "           ",
+            "           ",
+            "           ",
+            "     ••••••",
+            "    •••••••",
+            "   ••••••••",
+            "  •••••••••",
+            " ••••••••••",
+            "•••••••••••",
         ]);
         assert_eq!(buffer, expected);
     }

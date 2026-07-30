@@ -70,8 +70,8 @@ See our [deprecation notice policy](#deprecation-notice) for more details.
 
 Run `cargo xtask format` before committing to ensure that code is consistently formatted with
 rustfmt. Configuration is in [`rustfmt.toml`](./rustfmt.toml). We use some unstable formatting
-options as they lead to subjectively better formatting. These require a nightly version of Rust
-to be installed when running rustfmt. You can install the nightly version of Rust using
+options there because they lead to subjectively better formatting. These require a nightly version
+of Rust to be installed when running rustfmt. You can install the nightly version of Rust using
 [`rustup`](https://rustup.rs/):
 
 ```shell
@@ -135,6 +135,14 @@ Changes to project configuration files require special consideration:
 
 Please discuss these changes in an issue before implementing them.
 
+### Collaborative development
+
+We may occasionally make changes directly to your branch—such as force-pushes—to help move a PR
+forward, speed up review, or ensure it meets our quality standards. If you would prefer we do not do
+this, or if your workflow depends on us avoiding force-pushes (for example, if your app points to
+your branch in `Cargo.toml`), please mention this in your PR description and we will respect your
+preference.
+
 ## Implementation Guidelines
 
 ### Setup
@@ -151,6 +159,17 @@ git clone https://github.com/ratatui/ratatui.git
 cd ratatui
 cargo xtask build
 ```
+
+You would need the following packages installed if you want to run the other `cargo xtask` commands:
+
+- [cargo-hack](https://github.com/taiki-e/cargo-hack)
+- [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)
+- [cargo-rdme](https://github.com/orium/cargo-rdme)
+- [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
+- [cargo-docs-rs](https://github.com/dtolnay/cargo-docs-rs)
+- [tombi-cli](https://github.com/tombi-toml/tombi) ([docs](https://tombi-toml.github.io/tombi/),
+  [installation](https://tombi-toml.github.io/tombi/docs/installation/))
+- [typos-cli](https://github.com/crate-ci/typos)
 
 ### Architecture
 
@@ -173,7 +192,8 @@ good, but this can always be improved. Focus on keeping the tests simple and obv
 tests for all new or modified code. Beside the usual doc and unit tests, one of the most valuable
 test you can write for Ratatui is a test against the `TestBackend`. It allows you to assert the
 content of the output buffer that would have been flushed to the terminal after a given draw call.
-See `widgets_block_renders` in [tests/widgets_block.rs](./tests/widget_block.rs) for an example.
+See `widgets_block_renders` in [ratatui/tests/widgets_block.rs](./ratatui/tests/widgets_block.rs)
+for an example.
 
 When writing tests, generally prefer to write unit tests and doc tests directly in the code file
 being tested rather than integration tests in the `tests/` folder.
@@ -193,6 +213,49 @@ exist to show coverage directly in your editor. E.g.:
 
 - <https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters>
 - <https://github.com/alepez/vim-llvmcov>
+
+### TOML formatting and editor setup
+
+We previously used and recommended Taplo for TOML formatting. We switched to Tombi after Taplo's
+maintainer stepped down and its future became uncertain; see
+[tamasfe/taplo#715](https://github.com/tamasfe/taplo/issues/715) for the upstream discussion.
+
+Ratatui now uses [tombi-cli](https://github.com/tombi-toml/tombi) for TOML formatting. Tombi ships
+prebuilt binaries; follow its
+[installation guide](https://tombi-toml.github.io/tombi/docs/installation/) for the current
+recommended install method on your platform.
+
+If you use VS Code, we recommend the
+[`rust-lang.rust-analyzer`](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+and [`tombi-toml.tombi`](https://marketplace.visualstudio.com/items?itemName=tombi-toml.tombi)
+extensions. The tracked workspace settings set formatting defaults so editor behavior matches CI,
+including using nightly rustfmt to pick up the unstable options in [`rustfmt.toml`](./rustfmt.toml).
+
+If you cannot install nightly locally, use a personal `*.code-workspace` file to override those
+editor settings instead of changing `.vscode/settings.json`. A minimal example looks like this:
+
+```json
+{
+  "folders": [{ "path": "." }],
+  "settings": {
+    "editor.formatOnSave": true,
+    "rust-analyzer.rustfmt.extraArgs": []
+  }
+}
+```
+
+### Formatting code
+
+Run `cargo xtask format` before sending a PR. This formats both Rust and TOML files using the same
+tools and settings that CI expects.
+
+- Rust formatting uses [`rustfmt.toml`](./rustfmt.toml).
+- TOML formatting uses [`tombi.toml`](./tombi.toml).
+- `cargo xtask format --check` verifies formatting without rewriting files.
+
+Rust formatting works best with nightly because [`rustfmt.toml`](./rustfmt.toml) uses unstable
+options. If you cannot install nightly locally, use a personal `*.code-workspace` file to override
+the tracked VS Code settings for Rust formatting while keeping the repo defaults intact.
 
 ### Documentation
 

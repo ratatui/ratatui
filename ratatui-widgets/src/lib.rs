@@ -1,7 +1,6 @@
 #![no_std]
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
     html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
@@ -40,6 +39,7 @@
 //! - [`Canvas`]: draws arbitrary shapes using drawing characters.
 //! - [`Chart`]: displays multiple datasets as lines or scatter graphs.
 //! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
+//! - [`Fill`]: paints every cell in its area with a single repeated symbol and style.
 //! - [`Gauge`]: displays progress percentage using block characters.
 //! - [`LineGauge`]: displays progress as a line.
 //! - [`List`]: displays a list of items and allows selection.
@@ -57,6 +57,7 @@
 //! [`Canvas`]: crate::canvas::Canvas
 //! [`Chart`]: crate::chart::Chart
 //! [`Clear`]: crate::clear::Clear
+//! [`Fill`]: crate::fill::Fill
 //! [`Gauge`]: crate::gauge::Gauge
 //! [`LineGauge`]: crate::gauge::LineGauge
 //! [`List`]: crate::list::List
@@ -97,7 +98,7 @@
 //! # Contributing
 //!
 //! Contributions are welcome! Please open an issue or submit a pull request on GitHub. For more
-//! details on contributing, please see the [CONTRIBUTING](CONTRIBUTING.md) document.
+//! details on contributing, please see the [CONTRIBUTING](../CONTRIBUTING.md) document.
 //!
 //! # License
 //!
@@ -117,6 +118,7 @@ pub mod borders;
 pub mod canvas;
 pub mod chart;
 pub mod clear;
+pub mod fill;
 pub mod gauge;
 pub mod list;
 pub mod logo;
@@ -131,5 +133,6 @@ pub mod tabs;
 mod polyfills;
 mod reflow;
 
+mod as_ref;
 #[cfg(feature = "calendar")]
 pub mod calendar;

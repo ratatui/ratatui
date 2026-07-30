@@ -1,7 +1,6 @@
 [package]
 name = "async-github"
 publish = false
-authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
 homepage.workspace = true
@@ -14,9 +13,9 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-color-eyre = "0.6.5"
+color-eyre.workspace = true
 crossterm = { workspace = true, features = ["event-stream"] }
-octocrab = "0.44.0"
+octocrab.workspace = true
 ratatui.workspace = true
-tokio = { version = "1.47.0", features = ["rt-multi-thread", "macros"] }
-tokio-stream = "0.1.17"
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tokio-stream.workspace = true

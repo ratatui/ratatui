@@ -6,6 +6,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-color-eyre = "0.6"
-crossterm = "0.29"
+color-eyre.workspace = true
+crossterm.workspace = true
 ratatui = { workspace = true, features = ["unstable-widget-ref"] }

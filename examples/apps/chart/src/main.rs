@@ -247,13 +247,13 @@ fn render_scatter(frame: &mut Frame, area: Rect) {
             .data(&HEAVY_PAYLOAD_DATA),
         Dataset::default()
             .name("Medium".underlined())
-            .marker(Marker::Braille)
+            .marker(Marker::Custom('×'))
             .graph_type(GraphType::Scatter)
             .style(Style::new().magenta())
             .data(&MEDIUM_PAYLOAD_DATA),
         Dataset::default()
             .name("Small")
-            .marker(Marker::Dot)
+            .marker(Marker::Custom('+'))
             .graph_type(GraphType::Scatter)
             .style(Style::new().cyan())
             .data(&SMALL_PAYLOAD_DATA),

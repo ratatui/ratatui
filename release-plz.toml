@@ -3,3 +3,7 @@ changelog_path = "./CHANGELOG.md"
 changelog_config = "cliff.toml"
 release_always = false
 semver_check = false
+
+git_release_body = """
+{{ changelog | replace(from=" by @", to=" by ") }}
+"""

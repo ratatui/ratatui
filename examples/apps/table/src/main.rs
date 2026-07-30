@@ -112,7 +112,7 @@ impl App {
         }
     }
 
-    pub fn next_row(&mut self) {
+    pub const fn next_row(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
@@ -127,7 +127,7 @@ impl App {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
-    pub fn previous_row(&mut self) {
+    pub const fn previous_row(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -222,6 +222,19 @@ impl App {
             let item = data.ref_array();
             item.into_iter()
                 .map(|content| Cell::from(Text::from(format!("\n{content}\n"))))
+                .enumerate()
+                .map(|(idx, cell)| {
+                    if i == 3 && idx == 1 {
+                        Cell::from(Text::from(
+                            // Gratuitously long error message to demonstrate column_span(2)
+                            "\n[no address or email address is available for this person]\n"
+                                .to_string(),
+                        ))
+                        .column_span(2)
+                    } else {
+                        cell
+                    }
+                })
                 .collect::<Row>()
                 .style(Style::new().fg(self.colors.row_fg).bg(color))
                 .height(4)
