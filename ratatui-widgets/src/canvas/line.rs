@@ -63,7 +63,7 @@ impl Shape for Line {
     }
 }
 
-fn clip_line(
+pub(super) fn clip_line(
     &[xmin, xmax]: &[f64; 2],
     &[ymin, ymax]: &[f64; 2],
     x1: f64,
