@@ -158,7 +158,7 @@ impl PullRequestListWidget {
         }
     }
     fn on_load(&self, page: &Page<OctoPullRequest>) {
-        let prs = page.items.iter().map(Into::into);
+        let prs = page.items.iter().filter_map(PullRequest::from_octo);
         let mut state = self.state.write().unwrap();
         state.loading_state = LoadingState::Loaded;
         state.pull_requests.extend(prs);
@@ -186,17 +186,13 @@ impl PullRequestListWidget {
 
 type OctoPullRequest = octocrab::models::pulls::PullRequest;
 
-impl From<&OctoPullRequest> for PullRequest {
-    fn from(pr: &OctoPullRequest) -> Self {
-        Self {
+impl PullRequest {
+    fn from_octo(pr: &OctoPullRequest) -> Option<Self> {
+        Some(Self {
             id: pr.number.to_string(),
-            title: pr.title.as_ref().unwrap().to_string(),
-            url: pr
-                .html_url
-                .as_ref()
-                .map(ToString::to_string)
-                .unwrap_or_default(),
-        }
+            title: pr.title.clone()?,
+            url: pr.html_url.as_ref()?.to_string(),
+        })
     }
 }
 

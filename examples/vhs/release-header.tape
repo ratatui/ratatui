@@ -7,7 +7,7 @@
 Set Theme {"background": "#141432"}
 Set FontSize 25
 Set Width 1120
-Set Height 480
+Set Height 520
 Set Padding 0
 Hide
 Type "cargo run -p release-header"

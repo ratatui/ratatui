@@ -2,10 +2,15 @@
 
 <!-- cargo-rdme start -->
 
-This crate provides [`CrosstermBackend`], an implementation of the [`Backend`] trait for the
+This crate provides [`CrosstermBackend`](https://docs.rs/ratatui-crossterm/latest/ratatui_crossterm/struct.CrosstermBackend.html), an implementation of the [`Backend`] trait for the
 [Ratatui] library. It uses the [Crossterm] library for all terminal manipulation.
-<!-- markdownlint-disable-next-line heading-increment -->
-### Crossterm Version and Re-export
+
+Most application authors should start with the main [`ratatui`] crate, which re-exports this
+backend and provides higher-level setup helpers. Reach for `ratatui-crossterm` directly when
+you need to depend on the backend crate itself, choose the Crossterm version explicitly, or
+integrate with Crossterm APIs beyond Ratatui's higher-level surface.
+
+## Crossterm Version and Re-export
 
 `ratatui-crossterm` requires you to specify a version of the [Crossterm] library to be used.
 This is managed via feature flags. The highest enabled feature flag of the available
@@ -32,11 +37,11 @@ For example, if your application's `Cargo.toml` enables the `crossterm_0_29` fea
 version of Crossterm.
 
 For more information on how to use the backend, see the documentation for the
-[`CrosstermBackend`] struct.
+[`CrosstermBackend`](https://docs.rs/ratatui-crossterm/latest/ratatui_crossterm/struct.CrosstermBackend.html) struct.
 
 [Ratatui]: https://ratatui.rs
 [Crossterm]: https://crates.io/crates/crossterm
-[`Backend`]: ratatui_core::backend::Backend
+[`Backend`]: https://docs.rs/ratatui_core/latest/ratatui_core/backend/trait.Backend.html
 
 ## Crate Organization
 
@@ -45,14 +50,16 @@ This crate provides the [Crossterm] backend implementation for Ratatui.
 
 **When to use `ratatui-crossterm`:**
 
-- You need fine-grained control over dependencies
-- Building a widget library that needs backend functionality
-- You want to use only the Crossterm backend without other backends
+- You want to depend on the Crossterm backend crate directly
+- You need fine-grained control over the selected Crossterm version
+- You integrate with Crossterm APIs alongside Ratatui and want the re-exported
+  `ratatui_crossterm::crossterm` path
 
 **When to use the main [`ratatui`] crate:**
 
-- Building applications (recommended - includes crossterm backend by default)
-- You want the convenience of having everything available
+- Building applications
+- You want the common Ratatui path that already includes the Crossterm backend by default
+- You want the backend and higher-level terminal setup in one crate
 
 For detailed information about the workspace organization, see [ARCHITECTURE.md].
 

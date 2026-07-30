@@ -21,6 +21,7 @@ pub struct TestBackend {
 pub enum Backend {
     Crossterm,
     Termion,
+    Termina,
     Termwiz,
 }
 
@@ -32,6 +33,7 @@ impl Run for CheckBackend {
         let backend = match self.backend {
             Backend::Crossterm => "crossterm",
             Backend::Termion => "termion",
+            Backend::Termina => "termina",
             Backend::Termwiz => "termwiz",
         };
         run_cargo(vec![
@@ -52,6 +54,7 @@ impl Run for TestBackend {
         let backend = match self.backend {
             Backend::Crossterm => "crossterm",
             Backend::Termion => "termion",
+            Backend::Termina => "termina",
             Backend::Termwiz => "termwiz",
         };
         // This is a temporary hack to run tests both with and without layout cache.

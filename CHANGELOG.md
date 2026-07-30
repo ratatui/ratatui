@@ -4,6 +4,1514 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+## [0.30.2](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.2) - 2026-06-19
+
+![a gift](https://github.com/ratatui/ratatui-website/raw/refs/heads/main/src/assets/a-gift.png)
+
+We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 👨‍🍳🐀
+
+✨ **Release highlights**: <https://ratatui.rs/highlights/v0302/>
+
+⚠️ List of breaking changes can be found [here](https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md).
+
+### Features
+
+- [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a) *(uncategorized)* Add Termina backend by `@joshka` in [#2561](https://github.com/ratatui/ratatui/pull/2561)
+
+  > ## Summary
+  >
+  > - add the `ratatui-termina` backend crate using the published `termina`
+  > crate
+  > - expose the backend through the `termina` feature and Ratatui
+  > prelude/backend re-exports
+  > - add a small Termina event-loop example and wire the backend into CI,
+  > xtask, README generation, and docs
+  >
+  > Refs #1784
+  >
+  > ## Validation
+  >
+  > - `cargo +nightly fmt`
+  > - `cargo check -p ratatui-termina --all-features --all-targets`
+  > - `cargo check -p ratatui --no-default-features --features termina`
+  > - `cargo check -p xtask`
+  > - `cargo check -p release-header`
+  > - `cargo xtask check-backend termina`
+  > - `cargo xtask test-backend termina`
+  > - `cargo xtask rdme --check`
+  > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  > .github/ISSUE_TEMPLATE/bug_report.md`
+  >
+  > ---------
+
+### Bug Fixes
+
+- [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c) *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](https://github.com/ratatui/ratatui/pull/2584)
+
+  > ## Summary
+  >
+  > - require custom shadow effects to preserve the auto traits expected by
+  > Block-backed widgets
+  > - document the CellEffect auto-trait contract
+  > - add a public widget regression test for the affected ratatui::widgets
+  > re-exports
+  >
+  > Fixes #2583
+  >
+  > ---------
+
+- [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79) *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in [#2587](https://github.com/ratatui/ratatui/pull/2587)
+
+  > When a wide cell from the previous buffer is replaced by a short/normal
+  > cell, the trailing cell does not get an update if its content does not
+  > change. But if the wide cell has a background (or other) style, the
+  > terminal *did* render the trailing cell with that style.
+  >
+  > Force trailing cells to update if background, underline, or modifiers
+  > are different than the wide cell. We can ignore foreground.
+  >
+  > Fixes #2585 (see that for the detailed visual reports)
+
+- [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409) *(scrollbar)* Keep a large thumb within the track at the end by `@satyakwok` in [#2594](https://github.com/ratatui/ratatui/pull/2594)
+  >
+  > Closes #2582.
+  >
+  > ## Problem
+  >
+  > When the content is shorter than the viewport, the thumb is large
+  > relative to the track. With the position at the end, `part_lengths`
+  > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  > clamped independently to `[1, track_length]`, so `thumb_start +
+  > thumb_length` could exceed `track_length`.
+  >
+  > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > and zips it against the cells of the area. When the thumb overruns the
+  > track, `track_end` saturates to `0` but the thumb still emits more cells
+  > than the track can hold, so the trailing `end` symbol is pushed past the
+  > end of the area. The last visible cell ends up being a thumb (`█`) where
+  > the end arrow (`▼`) should be.
+  >
+  > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >
+  > This is a regression from v0.30.0, where `thumb_length` was derived as
+  > `thumb_end - thumb_start` and therefore always fit within the track.
+  >
+  > ## Fix
+  >
+  > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > `track_length - 1`) so the thumb always fits within the track and the
+  > end symbol is preserved.
+  >
+  > ## Test
+  >
+  > Two regression tests, both fail on `main` and pass with the fix:
+  >
+  > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  > `part_lengths` directly with the issue's parameters — asserts
+  > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  > the track length.
+  > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the #2582
+  > case (both arrows, large thumb at the end) and asserts the end symbol is
+  > drawn rather than overwritten by a thumb cell.
+  >
+  > All existing scrollbar tests still pass.
+
+
+### Miscellaneous Tasks
+
+- [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0) *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](https://github.com/ratatui/ratatui/pull/2599)
+
+  > Adds cargo xtask udeps and runs it from CI as a required job.
+  >
+  > This complements cargo-machete rather than replacing it. cargo-machete
+  > is a fast static source scan, which is why it missed the package-level
+  > unused deps fixed in #2598 when the same dependency names were still
+  > referenced by example crates. cargo-udeps compiles the workspace and
+  > checks rustc dep-info, so it can catch unused dependency declarations
+  > for the package being checked.
+  >
+  > To make the new job pass, this also removes the remaining true-positive
+  > unused dev-deps and records explicit cargo-udeps ignores for current
+  > false positives / intentional cases: ratatui-core critical-section,
+  > ratatui-crossterm's duplicate crossterm version feature shape, and
+  > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >
+  > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  > udeps". I did not find prior ratatui discussion about adopting
+  > cargo-udeps; the only hits were Dependabot PR bodies for
+  > taiki-e/install-action release notes mentioning cargo-udeps version
+  > updates, for example #1971, #2095, #2194, and #2522.
+  >
+  > Validation:- cargo xtask udeps
+  > - cargo xtask format --check
+  >
+  > ---------
+
+- [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4) *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](https://github.com/ratatui/ratatui/pull/2598)
+
+  > Audit removes these dependencies that are not used:
+  >
+  >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   - futures
+  >   - rand_chacha
+  >   - tokio
+  >   - tracing
+  >   - tracing-appender
+  >   - tracing-subscriber
+  >
+  > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  > [dev-dependencies]:
+  >   - indoc
+  >
+  > ---------
+
+### Continuous Integration
+
+- [36854ef](https://github.com/ratatui/ratatui/commit/36854ef4f1af3dd551988e0af000e4eec43ebc74) *(uncategorized)* Add auto-merge required gate by `@joshka` in [#2596](https://github.com/ratatui/ratatui/pull/2596)
+
+  > ## Summary
+  >
+  > This makes GitHub auto-merge usable for Ratatui PRs once maintainers are
+  > happy with the change but CI is still running.
+  >
+  > The workflow change adds a single aggregate `required` job to the main
+  > CI workflow. The repository now has [auto-merge
+  > enabled](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository)
+  > and an `ensure checks pass`
+  > [ruleset](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)
+  > that requires that `required` status context on `main`.
+  >
+  > ## Why
+  >
+  > Without a required status context, GitHub's auto-merge button is not
+  > useful for the maintainer flow we want. The goal is to let a maintainer
+  > review a PR, decide it is ready, click auto-merge, and move on without
+  > coming back later just to check whether the remaining jobs finished.
+  >
+  > This does not relax the merge policy. GitHub's own auto-merge behavior
+  > is to merge only after all required reviews and required status checks
+  > are satisfied. This change gives GitHub a stable required status to wait
+  > on automatically.
+  >
+  > ## Precedent
+  >
+  > I have been using this same auto-merge pattern in
+  > [`ratatui/tui-widgets`](https://github.com/ratatui/tui-widgets), where
+  > it has worked well for the intended maintainer flow: once a PR looks
+  > ready, I can enable auto-merge and let GitHub merge it after the
+  > remaining checks and review requirements are satisfied.
+  >
+  > ## How it works
+  >
+  > The new `required` job depends on the main CI jobs in
+  > `.github/workflows/ci.yml` and always runs after them. It fails if any
+  > required dependency fails, is cancelled, or is skipped.
+  >
+  > The repository ruleset requires only this aggregate `required` context
+  > instead of requiring every individual matrix job separately. That gives
+  > GitHub one stable status to wait on while preserving the existing CI
+  > coverage.
+  >
+  > ## Things to know
+  >
+  > - Auto-merge is opt-in per PR. Maintainers still choose when to click
+  > it.
+  > - It does not skip review requirements, status checks, labels, or any
+  > other protection rule.
+  > - A PR with auto-merge enabled can still show as blocked while checks or
+  > required reviews are pending. That is expected.
+  > - If something needs to merge normally, maintainers can still use the
+  > regular merge path or an allowed ruleset bypass. This is a convenience
+  > path, not a hard blocker.
+  > - Existing open PRs may need a rebase or synchronize event after this
+  > lands so they pick up the new `required` workflow job.
+  > - If a new required CI job is added later, it should be added to the
+  > `required.needs` list or it will not be represented by the aggregate
+  > gate.
+  > - Jobs that are intentionally allowed to fail should be handled
+  > carefully before adding them to `required.needs`, because skipped,
+  > cancelled, and failed dependencies make the aggregate fail.
+  >
+  > ## Current PR state
+  >
+  > Auto-merge is already enabled on this PR. If you approve it and the
+  > required checks pass, GitHub will squash-merge it automatically;
+  > approving it is enough to let the PR merge once the remaining
+  > requirements are satisfied.
+  >
+  > ## GitHub docs
+  >
+  > - [Automatically merging a pull
+  > request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request)
+  > - [Managing auto-merge for pull requests in your
+  > repository](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository)
+  > - [About
+  > rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)
+  > - [Require status checks to pass before
+  > merging](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#require-status-checks-to-pass-before-merging)
+  > - [About status
+  > checks](https://docs.github.com/articles/about-status-checks)
+  > - [Troubleshooting required status
+  > checks](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
+  >
+  > ## Validation
+  >
+  > - `ruby -e 'require "yaml"; YAML.load_file(".github/workflows/ci.yml");
+  > puts "ok"'`
+  > - `actionlint .github/workflows/ci.yml`
+  > - Verified `ratatui/ratatui` has `allow_auto_merge: true`
+  > - Verified the active `ensure checks pass` ruleset requires status
+  > context `required`
+  > - Verified this PR has squash auto-merge enabled and is blocked pending
+  > checks/review
+
+### New Contributors
+
+* `@satyakwok` made their first contribution in [#2594](https://github.com/ratatui/ratatui/pull/2594)
+* `@KikiKian` made their first contribution in [#2598](https://github.com/ratatui/ratatui/pull/2598)
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+
+## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1) - 2026-06-05
+
+> _"Rats, we're rats; we're the rats." – [Rat Movie](https://www.youtube.com/watch?v=OXQwx1EolD8)_
+
+We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 👨‍🍳🐀
+
+✨ **Release highlights**: <https://ratatui.rs/highlights/v0301/>
+
+⚠️ List of breaking changes can be found [here](https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md).
+
+### Features
+
+- [74d6a84](https://github.com/ratatui/ratatui/commit/74d6a846e1fab811fcdbcc09b09648cdca05c174) *(block)* Support shadows by @orhun in [#2481](https://github.com/ratatui/ratatui/pull/2481)
+
+  > Introduce `Block::shadow(...)` with a new `Shadow` type that supports:
+  >
+  > - presets: `overlay`,` block`, `light_shade`, `medium_shade`,
+  > `dark_shade`
+  > - custom symbols via `Shadow::symbol(...)`
+  > - custom effects via `Shadow::custom(...)`
+  >
+  > ```rust
+  > use ratatui::layout::Offset;
+  > use ratatui::style::Stylize;
+  > use ratatui::widgets::{Block, Shadow};
+  >
+  > let popup = Block::bordered().title("Popup").shadow(
+  >     Shadow::dark_shade()
+  >         .black()
+  >         .on_white()
+  >         .offset(Offset::new(2, 1)),
+  > );
+  > ```
+  >
+  > Results in:
+  >
+  > ```
+  > ┌Popup─────┐
+  > │content   │▒
+  > └──────────┘▒
+  >   ▒▒▒▒▒▒▒▒▒▒▒
+  > ```
+  >
+  > ![shadow](https://github.com/user-attachments/assets/103ddc17-6536-424c-a7a8-8895540dd145)
+  >
+  > fixes #1892
+  >
+  > ---------
+
+- [4d30420](https://github.com/ratatui/ratatui/commit/4d304206f45c96813dd9773a268b61d7d33d1f44) *(buffer)* Add `CellDiffOption::AlwaysUpdate` to force cell updates by @sxyazi in [#2480](https://github.com/ratatui/ratatui/pull/2480)
+
+  > When this option is used, the cells are updated even when content is identical.
+  >
+  > Follow-up for https://github.com/ratatui/ratatui/pull/1605
+  >
+  > Trying to resolve https://github.com/ratatui/ratatui/issues/1116
+
+- [39c32c6](https://github.com/ratatui/ratatui/commit/39c32c6fa981c4b326bf2533100ac86b7be05eba) *(buffer)* Add cell diff options by @benjajaja in [#1605](https://github.com/ratatui/ratatui/pull/1605)
+  >
+  > Problem:Escape sequences always cause a cell to count as "multiwidth",
+  > even when it doesn't render wider than one cell, or not as wide as the
+  > escape sequence would be computed as.
+  >
+  > Solution:Convert `skip:bool` to enum. Add enum option `ForceWidth` to
+  > force a cell width for diffing.
+  >
+  > When using the option, this also fixes some bug where diffing is not
+  > idempotent and causes a diff operation for `(symbol.len() - 1)` times.
+  >
+  > There are three new specific test cases:
+  >
+  > 1. Rendering hyperlinks by squeezing the escape sequence into the first
+  >    cell and forcing the width to the unicode width of the text part.
+  >    This is much easier to implement for a Link widget, as it would only
+  >    need to get the unicode-width once and not iterate over graphemes
+  >    like Spans must do.
+  > 2. Rendering hyperlinks by squeezing the opening sequence into the first
+  >    cell with the first grapheme and forcing the width to that of the
+  >    first grapheme. Then rendering each grapheme as usual. Then squeezing
+  >    the closing sequence into the last cell with the last grapheme and
+  >    forcing the width to that of the last grapheme.
+  >    This is harder to implement for a Link widget, as it would have to
+  >    iterate over graphemes with their width like Spans do.
+  > 3. Kitty image sequence with utf-8 placeholders, similar to 2 but with
+  >    known constant grapheme widths.
+  >
+  > ### Link widget that leverages this
+  >
+  > https://github.com/benjajaja/tui-link
+  >
+  > ![](https://github.com/user-attachments/assets/40ac5f9e-9025-4bd9-8e88-b5c5a235b8ec)
+  >
+  > It would be cooler if we could just add something like `.link(url)` to
+  > `Span`s, because it would much simpler to insert some link and leverage
+  > all the Line/Text/Paragraph wrapping and whatnot. With a custom widget
+  > you need to take care of the `Area` where you'd want to render it, so
+  > it's not that clean. But we could iterate on this later, if even
+  > possible.
+
+- [6faaddb](https://github.com/ratatui/ratatui/commit/6faaddb47e9707647b97c1cdb8275f14b58397d2) *(core)* Implement from slice for line and text by @NoOPeEKS in [#2371](https://github.com/ratatui/ratatui/pull/2371)
+
+  > This PR adds the following implementations of the From trait for Line
+  > and Text structs:
+  >
+  > - Implements From<&[T]> where T is Into\<Span> for Line, allowing using
+  > of slices to construct Lines.
+  > - Implements From<&[T]> where T is Into\<Line> for Text, allowing using
+  > of slices of various types to construct Texts.
+  >
+  > closes #2279
+
+- [5fc6ab8](https://github.com/ratatui/ratatui/commit/5fc6ab881aba8f0bad30f05730673a15ed64858f) *(core)* Support layout-cache in no_std environments by @junkdog in [#2399](https://github.com/ratatui/ratatui/pull/2399)
+
+  > this enables "layout-cache" for no_std builds; it's meant for embedded
+  > environments, where the layout engine otherwise consumes all CPU,
+  > capping the framerate at around ~10fps. the same app can refresh 300-500
+  > times per second with layout cache enabled.
+  >
+  > i had to add `layout-cache = ["dep:critical-section"]` to all builds -
+  > it's pretty tiny and shouldn't leave a trace in std-builds. the
+  > alternative is to add an extra layer of features for layout-cache with
+  > std and no_std, but it pollutes the feature space.
+  >
+  > ---------
+
+- [ee4b7a9](https://github.com/ratatui/ratatui/commit/ee4b7a900cf293fc1ed3b406a4edeaa220d0b93f) *(crossterm)* Add the missing hidden modifier by @sxyazi in [#2413](https://github.com/ratatui/ratatui/pull/2413)
+
+  > Fixes https://github.com/sxyazi/yazi/issues/3724, see
+  > https://github.com/sxyazi/yazi/issues/3724#issuecomment-3970129744 for a
+  > reproducer.
+  >
+  > This PR adds the missing `Modifier::HIDDEN` style and introduces a
+  > `queue_modifier_diff` to test `ModifierDiff::queue()`.
+  >
+  > It also fixes a bug where `CrosstermAttribute::Bold` and
+  > `CrosstermAttribute::Dim` would be emitted twice when resetting
+  > intensity. For example:
+  >
+  > ```rust
+  > #[case(Modifier::DIM, Modifier::BOLD, &[CrosstermAttribute::NormalIntensity, CrosstermAttribute::Bold])]
+  > ```
+  >
+  > would become:
+  >
+  > ```rust
+  > #[case(Modifier::DIM, Modifier::BOLD, &[CrosstermAttribute::NormalIntensity, CrosstermAttribute::Bold, CrosstermAttribute::Bold])]
+  > ```
+  >
+  > ---------
+
+- [9d9239a](https://github.com/ratatui/ratatui/commit/9d9239a702d8cd29ca321745901ddb56bff20f70) *(examples)* Add volatility-surface 3D visualization by @floor-licker in [#2322](https://github.com/ratatui/ratatui/pull/2322)
+
+  > A design demonstration of a 3D volatility surface rendering using
+  > Braille canvas with interactive rotation and zoom controls. I built this
+  > for myself for an app I'm currently building but just wanted to share it
+  > with the community as well to inspire more 3D perspective terminal
+  > widgets in the future.
+  >
+  > ## Final Demo
+  >
+  > ![volatility-surface](https://github.com/user-attachments/assets/9613ef26-c766-4f6b-80eb-5bfaa2a7963d)
+  >
+  > ## Description
+  >
+  > Adds a new example demonstrating 3D visualization techniques in the
+  > terminal. There aren't many examples showing how to represent 3D objects
+  > in 2D terminal space so my goal is just to demonstrate more advanced
+  > Canvas and Braille rendering techniques for 3D graphics. The example
+  > visualizes an implied volatility surface which is a common financial
+  > visualization using interactive rotation and zoom controls. You can run
+  > the interactive demo for yourself with `cargo run -p volatility-surface`
+  >
+  > https://github.com/user-attachments/assets/aa32a864-54a8-4c67-a3c9-432dd29373fd
+  >
+  > <img width="659" height="432" alt="image"
+  >
+  > src="https://github.com/user-attachments/assets/68698cb0-c5d5-4b41-a3c3-65ec8fff12f5"
+  > />
+  >
+  > ## Technical Highlights
+  >
+  > - Demonstrates how to implement perspective projection in a terminal
+  > - Shows advanced use of `Canvas` widget with `Marker::Braille`
+  > - Example of smooth animation patterns and state management
+  > - Self-contained with synthetic data generation (no external APIs)
+  >
+  > ---------
+
+- [ae975c7](https://github.com/ratatui/ratatui/commit/ae975c720006114c64e42656c111c5a9966e2af1) *(examples)* Allow overlap spacing in explorer by @joshka in [#2316](https://github.com/ratatui/ratatui/pull/2316)
+
+  > Store spacing as i16 so negative values map to Spacing::Overlap, and
+  > show overlap in the axis label.
+
+- [1e0ab0c](https://github.com/ratatui/ratatui/commit/1e0ab0c54935c27a9729e7a1c4a918d3e5a10c21) *(ratatui-crossterm)* Add IntoCrossterm<ContentStyle> for Style by @0xferrous in [#2323](https://github.com/ratatui/ratatui/pull/2323)
+
+- [101a63e](https://github.com/ratatui/ratatui/commit/101a63e112188cbccef968053dee8bbd332cb8c3) *(render)* Add function for applying buffer by @musjj in [#2566](https://github.com/ratatui/ratatui/pull/2566)
+
+  > Add a public API for applying and flushing the terminal buffer.
+  >
+  > A minimal usage will look something like this:
+  >
+  > ```rust
+  > use ratatui::Terminal;
+  > use ratatui::backend::CrosstermBackend;
+  > use ratatui::buffer::Buffer;
+  > use ratatui::widgets::Widget;
+  >
+  > let backend = CrosstermBackend::new(io::stdout());
+  > let mut terminal = Terminal::new(backend)?;
+  >
+  > terminal.autoresize()?;
+  >
+  > let mut custom_buffer = Buffer::default();
+  > custom_buffer.resize(terminal.get_frame().area());
+  > custom_buffer.reset();
+  >
+  > "Hello World!".render(custom_buffer.area, &mut custom_buffer);
+  >
+  > terminal.current_buffer_mut().merge(&custom_buffer);
+  > terminal.apply_buffer()?;
+  > ```
+  >
+  > My primary motivation for this PR is to improve the ECS ergonomics in
+  > [`bevy_ratatui`](https://github.com/ratatui/bevy_ratatui). But this
+  > should be useful for anyone who wants to commit incremental writes to
+  > the buffer without having to do everything in one monolithic
+  > [`Terminal::draw`](https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html#method.draw)
+  > closure.
+  >
+  > ---------
+
+- [09a3027](https://github.com/ratatui/ratatui/commit/09a3027bfce906b86bf20bdcf36fc5e365892b7c) *(symbol)* Add custom marker by @BenFradet in [#2356](https://github.com/ratatui/ratatui/pull/2356)
+
+- [f9d066f](https://github.com/ratatui/ratatui/commit/f9d066f4d74684bb13fbbac6c02fb1178d9c0b15) *(table)* Let Cells span multiple columns by @karkhaz in [#2150](https://github.com/ratatui/ratatui/pull/2150)
+
+  > Add a 'column_span' field to table cells. The default value
+  > is 1; larger values will cause cells to span over multiple columns,
+  > being rendered over all columns plus the spaces between them.
+  >
+  > Fixes #1568.
+
+- [a5b08d6](https://github.com/ratatui/ratatui/commit/a5b08d622a1411b9224c7ebbf59d57c6aeed24a9) *(widgets)* Add Fill widget by @Metbcy in [#2520](https://github.com/ratatui/ratatui/pull/2520)
+
+  > Adds a new `Fill` widget that paints every cell within its area with a
+  > single repeated symbol and style. Integrates with `Stylize` so the whole
+  > chain works as expected:
+  >
+  > ```rust
+  > use ratatui::widgets::{Fill, Widget};
+  > use ratatui::style::Stylize;
+  >
+  > Fill::new("X").blue().bold().render(area, buf);
+  > ```
+  >
+  > Implements `Widget` (for both `Fill` and `&Fill`) and `Styled`, accepts
+  > anything that converts into a `Cow<'a, str>`, and degrades gracefully on
+  > empty / multi-grapheme symbols.
+  >
+  >
+  > ---------
+
+- [9094fd2](https://github.com/ratatui/ratatui/commit/9094fd2fa2cd22d4916a73398b391e6ebf8a5ecc) *(widgets)* Add line shape with filled area for Canvas and Chart by @bananaofhappiness in [#2426](https://github.com/ratatui/ratatui/pull/2426)
+
+  > This commit adds filled area-chart rendering for both `Canvas` and `Chart`.
+  >
+  > You can now render a line and fill the area between that line and a baseline Y value, which helps highlight magnitude/volume trends.
+  >
+  > - In `Canvas`, use `FilledLine`.
+  > - In `Chart`, use `GraphType::Area` and set the baseline via `Dataset::fill_to_y(f64)`.
+  >
+  > The `f64` baseline is now configured on `Dataset` (not in `GraphType`), so `GraphType` stays a simple enum variant.
+  >
+  > Under the hood, line rasterization in canvas was refactored to share a reusable Bresenham point iterator, and `FilledLine` builds on that to paint vertical spans from each line point to `fill_to_y`.
+  >
+  > Some screenshots with and without this new type:
+  > <img width="1460" height="879" alt="изображение"
+  > src="https://github.com/user-attachments/assets/c7b534b1-2afb-49c7-9c56-178e6ba9e844"
+  > />
+  > <img width="1460" height="881" alt="изображение"
+  > src="https://github.com/user-attachments/assets/53592e2c-ee89-4481-9099-be06480d305a"
+  > />
+  >
+  > ```rust
+  > // In Canvas
+  > use ratatui::widgets::canvas::FilledLine;
+  >
+  > Canvas::default()
+  >     .paint(|ctx| {
+  >         ctx.draw(&FilledLine::new(0.0, 0.0, 10.0, 5.0, 0.0, Color::Red));
+  >     });
+  >
+  > // In Chart
+  > let dataset = Dataset::default()
+  >     .data(&data)
+  >     .graph_type(GraphType::Area)
+  >     .fill_to_y(0.0); // fill to y = 0
+  >
+  > Chart::new(vec![dataset]);
+  > ```
+  >
+  > ---
+
+- [0a87882](https://github.com/ratatui/ratatui/commit/0a87882e95b493ede74ca72df9164eaa87a0b1f0) *(uncategorized)* Add `impl From<u16>` for `Padding` and `Margin` by @JayanAXHF in [#2438](https://github.com/ratatui/ratatui/pull/2438)
+
+- [556cc7b](https://github.com/ratatui/ratatui/commit/556cc7b543e102d7a0c1e7dc86a00777d790bb89) *(uncategorized)* Add comment for inner area to popup example by @Its-Just-Nans in [#2309](https://github.com/ratatui/ratatui/pull/2309)
+
+- [01a15f9](https://github.com/ratatui/ratatui/commit/01a15f980940e465c0455229c6910e16d69f6745) *(uncategorized)* Add AsRef impls for widget types by @joshka in [#2297](https://github.com/ratatui/ratatui/pull/2297)
+
+### Bug Fixes
+
+- [d12bb83](https://github.com/ratatui/ratatui/commit/d12bb83840056392ad93d5d3b2d4220f1d5fb12e) *(barchart)* Handle empty horizontal charts by @fallintoplace in [#2553](https://github.com/ratatui/ratatui/pull/2553)
+  >
+  > Fixes #2552
+  >
+  > This makes the `BarChart` constructors ignore empty groups, matching the
+  > existing `.data(...)` builder behavior. Without this,
+  >
+  > `BarChart::horizontal(Vec::<Bar>::new())` stores one empty group,
+  > proceeds into horizontal rendering, skips the bar loop, and then
+  > underflows when computing the group label row from `bar_y -
+  > self.bar_gap`.
+  >
+  > The fix normalizes constructor input through a shared `non_empty_groups`
+  > helper for `new`, `horizontal`, and `grouped`. Empty horizontal charts
+  > now render nothing instead of panicking, and constructor behavior is
+  > consistent with `.data(...)`.
+  >
+  > ---------
+
+- [6396b1c](https://github.com/ratatui/ratatui/commit/6396b1ce66721bda028ab3a54a6361cb98db7e6d) *(block)* Saturate block edge arithmetic by @joshka in [#2488](https://github.com/ratatui/ratatui/pull/2488)
+
+  > ### Motivation
+  >
+  > - Block border and title layout used unchecked `u16` arithmetic in
+  > several places.
+  > - In debug builds that can panic on tiny or edge-case geometry; in
+  > release builds the same arithmetic wraps.
+  > - The original report came from merge-border rendering on tiny areas,
+  > but the same pattern appeared in title layout and spacing helpers as
+  > well.
+  >
+  > ### Description
+  >
+  > - Use saturating arithmetic in `Block::inner`, `render_sides`,
+  > `render_corners`, `titles_area`, and `vertical_space`.
+  > - Clamp rendered title widths to `u16` for layout arithmetic.
+  > - Replace unchecked title-width accumulation and cursor-advance math
+  > with bounded arithmetic.
+  > - Add debug-only regression tests covering empty areas, maximal padding,
+  > title-area edge cases, and very large title widths.
+  >
+  > ### Testing
+  >
+  > - Ran `cargo test -p ratatui-widgets block::tests`.
+  >
+  > ------
+  > [Codex
+  > Task](https://chatgpt.com/codex/cloud/tasks/task_e_69dbd35ed38c833094a9fa56b239f0d0)
+
+- [9143b83](https://github.com/ratatui/ratatui/commit/9143b8360f0d0be268578c9f8a10f36e1e55d8a2) *(buffer)* Diff for trailing cells when only style changes by @gcavelier in [#2308](https://github.com/ratatui/ratatui/pull/2308)
+
+  > this PR closes #2307 by preventing unnecessary diff updates for trailing
+  > cells when only style changes.
+  >
+  > This PR was generated by Claude, and validated by me.
+  >
+  > ## Summary
+  >
+  > This PR fixes a visual artifact bug where block borders would appear
+  > offset when rendered over a widget that had a foreground color style
+  > applied to the entire area.
+  >
+  > ## The Fix
+  >
+  > ```diff
+  > - if !next_trailing.skip && prev_trailing != next_trailing {
+  > + // Only emit update if the SYMBOL changed, not just the style.
+  > + // The style of hidden trailing cells is not visible, so style
+  > + // differences alone should not trigger updates that can cause
+  > + // cursor positioning issues on some terminals.
+  > + if !next_trailing.skip && prev_trailing.symbol() != next_trailing.symbol() {
+  > ```
+  >
+  > This aligns the code with the documented intent: only emit updates when
+  > the **symbol** (visible content) changes, not when only the style
+  > changes.
+  >
+  > ## Changes
+  >
+  > | File | Change |
+  > |------|--------|
+  > | `ratatui-core/src/buffer/buffer.rs:526-530` | Compare only symbol, not
+  > full cell |
+  > | `ratatui-core/src/buffer/buffer.rs:1376-1425` | Add regression test |
+  >
+  > ## Test Added
+  >
+  > ```rust
+  > #[test]
+  > fn diff_ignores_style_only_changes_in_trailing_cells() {
+  >     // Verifies that trailing cells with same symbol but different style
+  >     // do NOT generate diff updates
+  > }
+  > ```
+  >
+  > ## Why This Is Safe
+  >
+  > 1. **Trailing cells are hidden** - they are visually covered by the wide
+  > character
+  > 2. **Style is invisible** - the fg/bg color of a hidden cell has no
+  > visual effect
+  > 3. **Symbol changes still trigger updates** - if the symbol changes
+  > (e.g., from `" "` to `"x"`), the update is still emitted
+  > 4. **Aligns with documented intent** - the original comment says
+  > "non-blank content", not "different style"
+  >
+  > ## Related
+  >
+  > - The existing test `diff_clears_trailing_cell_for_wide_grapheme`
+  > verifies that symbol changes DO trigger updates
+  > - This fix complements that behavior by ensuring style-only changes do
+  > NOT trigger updates
+
+- [e6b71f2](https://github.com/ratatui/ratatui/commit/e6b71f2ce7d829c3bf55a0b4fa8085e8ef3d0a88) *(build)* Correct rust-toolchain->rust-version on cargo-deny-action by @sermuns in [#2471](https://github.com/ratatui/ratatui/pull/2471)
+  >
+  > closes #2470
+
+- [65c5202](https://github.com/ratatui/ratatui/commit/65c520245aa20e99e64d9ffcb2062a4502a699ea) *(changelog)* Fix typo by @joshka in [#2300](https://github.com/ratatui/ratatui/pull/2300)
+
+- [43bbaae](https://github.com/ratatui/ratatui/commit/43bbaae9e9210e547867a129d862e416ddf746ea) *(clippy)* Fix beta clippy errors by @Logan-Ruf in [#2433](https://github.com/ratatui/ratatui/pull/2433)
+
+  > Noticed these errors on my other PR and figured I could just fix them
+  > real quick.
+  >
+  > closes #2432
+
+- [957fbb0](https://github.com/ratatui/ratatui/commit/957fbb02934955889b4b059666447a090d662297) *(core)* Use correct width for halfwidth dakuten/handakuten by @orhun in [#2499](https://github.com/ratatui/ratatui/pull/2499)
+
+  > unicode-width reports U+FF9E/U+FF9F as zero-width, but terminals render
+  > them as 1 cell.
+  > Adjusts `CellWidth` trait accordingly for fixing this behavior.
+  >
+  > fixes #2188
+
+- [d7646c7](https://github.com/ratatui/ratatui/commit/d7646c7156fedfdf970149cd25101caaf19724b9) *(core)* Avoid overflow in BufferDiff forced-width advance by @joshka in [#2487](https://github.com/ratatui/ratatui/pull/2487)
+
+  > ### Motivation
+  > - Prevent arithmetic overflow when advancing `self.pos` for
+  > `CellDiffOption::ForcedWidth(NonZeroU16)` in
+  > `ratatui-core/src/buffer/diff.rs`, which could panic in debug or wrap in
+  > release and cause an iterator hang/DoS.
+  >
+  > ### Description
+  > - Replace the unchecked `self.pos += width.get().saturating_sub(1)` with
+  > a saturating addition via `self.pos =
+  > self.pos.saturating_add(width.get().saturating_sub(1) as usize)` to
+  > avoid overflow while preserving existing iterator semantics.
+  >
+  > ### Testing
+  > - Ran `cargo test -p ratatui-core buffer::diff --lib` and the buffer
+  > diff tests completed successfully (`10 passed, 0 failed`).
+  >
+  > ------
+  > [Codex
+  > Task](https://chatgpt.com/codex/cloud/tasks/task_e_69dbd3420b74833089a87f6021475610)
+
+- [77f8006](https://github.com/ratatui/ratatui/commit/77f80064060cdc1e870b20005fd2be4c17f6edd5) *(core)* Avoid cursor position queries during resize by @orhun in [#2485](https://github.com/ratatui/ratatui/pull/2485)
+  >
+  > `Terminal::resize()` now clears without calling `get_cursor_position()`,
+  > so that CPR (Cursor position report) calls does not interfere with
+  > stdin.
+  >
+  > Fixes #2483
+  >
+  > ---------
+
+- [18aa467](https://github.com/ratatui/ratatui/commit/18aa467ef2e11583215d35b31df9832edec6964d) *(examples)* Make line-gauge example compatible with macos sequoia's terminal.app by @lazo4 in [#2474](https://github.com/ratatui/ratatui/pull/2474)
+
+  >
+  >
+  > Part of the fix for #1972
+  >
+  > ### Summary
+  > This fix makes the `line-gauge` example compatible with the macos
+  > sequoia Terminal.app which doesn't support truecolor. It reuses the
+  > `is_true_color_supported` introduced in #2211 by @ffex and uses a color
+  > theme instead of hardcoding the colors.
+  >
+  > ### Result on macos sequoia
+  > Before:
+  > <img width="566" height="138" alt="Capture d’écran 2026-04-06 à 11 47
+  > 07"
+  > src="https://github.com/user-attachments/assets/1ea37832-8a07-40b0-b0ab-aa77476ef9eb"
+  > />
+  > After:
+  > <img width="561" height="120" alt="Capture d’écran 2026-04-06 à 11 46
+  > 45"
+  > src="https://github.com/user-attachments/assets/4bd50bc1-68f9-4601-b361-f610abf8629d"
+  > />
+  >
+  > ### Notes
+  > This is my first open source contribution, thanks to @ffex for letting
+  > me help on this issue
+
+- [ce2c228](https://github.com/ratatui/ratatui/commit/ce2c22827a1fa9df9b97e22983cee3379327a832) *(examples)* Change flex example colors for MacOS default terminal by @ffex in [#2211](https://github.com/ratatui/ratatui/pull/2211)
+
+  > Part of the fix for #1972
+  >
+  > ### Summary
+  >
+  > This fix introduces a function to check if we are in a terminal without
+  > truecolor(24-bit) and changes the default colors to appear fine of the
+  > flex example.
+  >
+  > ### Notes
+  >
+  > The function "is_true_color_supported” is an old problem and there is no
+  > common way to determine if a terminal supports or not the truecolor.
+  >
+  > This is the main reason why the function detects specifically the
+  > Terminal.app version before the Tahoe. If there are other known
+  > terminals with this problem, we can add it to this function.
+  >
+  > ---------
+
+- [ef72dba](https://github.com/ratatui/ratatui/commit/ef72dbae54100b2c1084735cb5d7db474f2d81f2) *(examples)* Fix import for widget examples by @orhun in [#2422](https://github.com/ratatui/ratatui/pull/2422)
+  >
+  > closes #2299
+
+- [88441cf](https://github.com/ratatui/ratatui/commit/88441cff52cc40e380be964429956bb0b1c471da) *(terminal)* Fix inline viewport resizing issues by clearing the screen by @wyvernbw in [#2355](https://github.com/ratatui/ratatui/pull/2355)
+
+  > adds a check to the autoresize function to clear the entire screen and
+  > move the inline viewport to the top when the window shrinks horizontally
+  > in order to avoid line wrapping issues.
+  >
+  > Other libraries like ink purge the history as well, but the
+  > `backend::ClearType` type does not support that. Without this if the
+  > user scrolls up they will see previous broken renders. This should work
+  > well with all terminal emulators and multiplexers.
+  >
+  > fixes #2086
+
+- [91b6fb7](https://github.com/ratatui/ratatui/commit/91b6fb72d35404dd6db932ce70db4a50e70eab31) *(tests)* Use the correct type for the cell diff test by @orhun in [#2472](https://github.com/ratatui/ratatui/pull/2472)
+
+  > fixes the CI!
+
+- [4493742](https://github.com/ratatui/ratatui/commit/449374226bc736d169ca8923012796d48f012b66) *(widgets)* Handle single y-axis label by @fallintoplace in [#2550](https://github.com/ratatui/ratatui/pull/2550)
+  >
+  > Fixes #2549.
+  >
+  > This prevents `Chart` from panicking when the Y axis is configured with
+  > exactly one label. The X-axis rendering path already skips label
+  > placement when fewer than two labels are provided; this applies the same
+  > guard to Y-axis labels before the spacing calculation divides by
+  > `labels_len - 1`.
+  >
+  > This also updates the `Axis::labels` docs so they describe the new
+  >
+  > behavior:fewer than two labels are not rendered instead of causing a
+  > panic.
+
+- [0bdebd6](https://github.com/ratatui/ratatui/commit/0bdebd679f36d787c103ea0372b72b3318b73947) *(widgets)* Prevent chart scaling overflow by @fallintoplace in [#2546](https://github.com/ratatui/ratatui/pull/2546)
+
+  > ## Summary
+  >
+  > Fixes #2545.
+  >
+  > This changes BarChart and Sparkline scaling to use a `u128` intermediate
+  > before division, then caps the scaled ticks at the drawable area. That
+  > prevents debug-build panics and release-build wrapping when public `u64`
+  > chart values are large.
+  >
+  > ## Validation
+  >
+  > - `cargo test -p ratatui-widgets barchart::tests`
+  > - `cargo test -p ratatui-widgets sparkline::tests`
+  > - `cargo check -p ratatui-widgets --all-features`
+  > - `cargo clippy -p ratatui-widgets --all-targets --all-features -- -D
+  > warnings`
+  > - `cargo test -p ratatui-widgets`
+
+- [e27a22a](https://github.com/ratatui/ratatui/commit/e27a22a99a91fc991c8beabe25dde6c49c70d867) *(widgets)* Inherit the text alignment for Paragraph by @7Bpencil in [#2369](https://github.com/ratatui/ratatui/pull/2369)
+
+  > Paragraph didn't take into account alignment of the text it was created
+  > from:
+  >
+  > ```rs
+  > let lines = vec![
+  >     Line::from("one"),
+  >     Line::from("double"),
+  >     Line::from("quadruple"),
+  > ];
+  > let text = Text::from(lines).centered();
+  >
+  > // used to be rendered left-aligned, now centered
+  > let paragraph = Paragraph::new(text).block(block);
+  > ```
+  >
+  > Now the Paragraph inherits the text alignment.
+
+- [b5c0831](https://github.com/ratatui/ratatui/commit/b5c083151818e2c46aac837004c476dd978df55b) *(widgets)* Avoid panic if Clear area is outside of buffer by @7Bpencil in [#2368](https://github.com/ratatui/ratatui/pull/2368)
+
+  > If Clear area is at least partially outside of buffer, panic "index
+  > outside of buffer" happens on Widget::render
+  >
+  > <details>
+  >
+  > <summary>Demo source code</summary>
+  >
+  > ```rs
+  > use crossterm::event::{self, Event, KeyModifiers};
+  > use ratatui::{
+  >     layout::Rect,
+  >     text::Line,
+  >     widgets::{Block, Borders, Clear, Paragraph},
+  >     DefaultTerminal, Frame,
+  > };
+  > use std::iter;
+  >
+  > fn main() {
+  >     ratatui::run(app);
+  > }
+  >
+  > fn app(terminal: &mut DefaultTerminal) {
+  >     loop {
+  >         if let Event::Key(key_event) = event::read().expect("failed to read event") {
+  >             if key_event.kind.is_press()
+  >                 && key_event.modifiers.contains(KeyModifiers::CONTROL)
+  >                 && key_event.code.is_char('c')
+  >             {
+  >                 break;
+  >             }
+  >         }
+  >         terminal.draw(render).expect("failed to draw frame");
+  >     }
+  > }
+  >
+  > fn render(frame: &mut Frame) {
+  >     {
+  >         let width = frame.area().width;
+  >         let area = Rect::new(0, 0, width, 10);
+  >         let line = Line::from("W".repeat(area.width as usize));
+  >         let lines: Vec<Line> = iter::repeat_n(line, area.height as usize).collect();
+  >         frame.render_widget(Paragraph::new(lines), area);
+  >     }
+  >     {
+  >         let area = Rect::new(50, 2, 20, 5);
+  >         let block = Block::default()
+  >             .title_top(Line::from("Popup-with-Clear").centered())
+  >             .borders(Borders::ALL);
+  >         let lines = vec![
+  >             Line::from("one"),
+  >             Line::from("double"),
+  >             Line::from("quadruple"),
+  >         ];
+  >         frame.render_widget(Clear, area);
+  >         frame.render_widget(Paragraph::new(lines).block(block).centered(), area);
+  >     }
+  >     {
+  >         let area = Rect::new(80, 2, 20, 5);
+  >         let block = Block::default()
+  >             .title_top(Line::from("Popup").centered())
+  >             .borders(Borders::ALL);
+  >         let lines = vec![
+  >             Line::from("one"),
+  >             Line::from("double"),
+  >             Line::from("quadruple"),
+  >         ];
+  >         frame.render_widget(Paragraph::new(lines).block(block).centered(), area);
+  >     }
+  > }
+  > ```
+  >
+  > </details>
+  >
+  > Before the fix:
+  >
+  > https://github.com/user-attachments/assets/cebae1df-87b2-48ae-9456-7ad8cb72035c
+  >
+  > After the fix:
+  >
+  > https://github.com/user-attachments/assets/9e0170f3-9c71-4a28-96b3-3f4b7db8ed37
+
+- [1ce29d6](https://github.com/ratatui/ratatui/commit/1ce29d66f1fda58b76d711903c89654191bb4937) *(uncategorized)* Decouple std from serde and palette features by @december1981 in [#2460](https://github.com/ratatui/ratatui/pull/2460)
+
+  > The std feature now passes through to the deps rather than
+  > requiring std to use serde / palette.
+
+- [2a0b4b2](https://github.com/ratatui/ratatui/commit/2a0b4b28de8174eb2e0ca2687fea2af693ef43ef) *(uncategorized)* Ensure consistent thumb size when scrolling by @kdheepak in [#2352](https://github.com/ratatui/ratatui/pull/2352)
+
+  > This PR removes the use of `f64` for calculating scrollbar thumb size
+  > and uses integer rounding (rounding up instead of the default rounding
+  > down) instead. Using integer rounding seems to fix the problem of thumb
+  > size not being consistent.
+  >
+  > Fixes #2351
+
+- [4986b28](https://github.com/ratatui/ratatui/commit/4986b28a39bd62d0b2e98624799d402e0191cfeb) *(uncategorized)* Allow ratatui-widgets to be used without default features by @jakobhellermann in [#2350](https://github.com/ratatui/ratatui/pull/2350)
+
+  > Previously, ratatui-widgets was always included with default features.
+  >
+  > Additionally, the `std` feature would always enable the `time` crate.
+  >
+  > Fixing this gets rid of a few crates: `deranged`, `num-conv`,
+  > `time-core`, `time`.
+
+- [720303e](https://github.com/ratatui/ratatui/commit/720303e806b884f37f986913c111e79a4e243ae9) *(uncategorized)* Align clear() semantics with contract by @joshka in [#2320](https://github.com/ratatui/ratatui/pull/2320)
+
+- [d2b0ce1](https://github.com/ratatui/ratatui/commit/d2b0ce17a4764e1af5ebed515d85b5a84f5cff18) *(uncategorized)* Fix the dependency on time by @asomers in [#2306](https://github.com/ratatui/ratatui/pull/2306)
+
+  > ratatui-widgets uses time's Month::length(), which requires time-0.3.37
+  > or later.
+
+### Refactor
+
+- [d754c5e](https://github.com/ratatui/ratatui/commit/d754c5e58b0ff98d07338cd1e200b2c7e5991b7f) *(app)* Simplify render function in the scrollbar example by @marianomarciello in [#2388](https://github.com/ratatui/ratatui/pull/2388)
+
+  > Divide the render function into two functions for vertical and
+  > horizontal scroll.
+
+- [629e4b2](https://github.com/ratatui/ratatui/commit/629e4b2af2f35e89a1eec30a30983b4fa8ec74c1) *(core)* Reintroduce `Cell::skip` as a deprecated field by @junkdog in [#2437](https://github.com/ratatui/ratatui/pull/2437)
+
+  > as discussed in
+  > https://github.com/ratatui/ratatui/pull/1605#discussion_r2933338973 -
+  > this brings back `Cell::skip` as a deprecated field in order to avoid
+  > breaking the API in a patch release. in terms of noise; the diff() is
+  > left pretty intact, but had to `#[allow(deprecated)]` in a couple of
+  > places.
+  >
+  > ## `Cell::skip` vs `CellDiffOption`
+  >
+  > `CellDiffOption::ForcedWidth` takes precedence over `Cell::skip`, and
+  >
+  > `CellDiffOption::skip` is already skip - so `Cell::skip` can only
+  > override when `CellDiffOption::None` is set. i believe this is the
+  > correct behavior, but probably good to have another pair of eyes on it.
+  > @benjajaja maybe has some input too.
+  >
+  > ## PartialEq and Hash for `Cell::skip`
+  >
+  > `Cell::skip` is part of `PartialEq` and `Hash` as normal fields. another
+  > option would be to treat `CellDiffOption::None` as
+  >
+  > `CellDiffOption::Skip` when `Cell::skip` is set, and only consider the
+  > effective `CellDiffOption` for the trait impls.
+  >
+  > ---------
+
+- [ca5c109](https://github.com/ratatui/ratatui/commit/ca5c10923c57f5e3cc78a36d39f9a254c1ab09ee) *(core)* Introduce `CellWidth` trait for cell width computation by @junkdog in [#2400](https://github.com/ratatui/ratatui/pull/2400)
+
+  > this PR introduces a `CellWidth` trait for calculating the cell
+  > width/span, implemented for `&str` and `Cell`.
+  >
+  > The impl for `Cell` respects the new `CellDiffOption::ForcedWidth`. All
+  > width calculations are prefixed with a check if the symbol is ascii
+  > before calling `symbol.width()`; this micro-optimization probably won't
+  > do much on computers, but it helps on embedded.
+  >
+  > As discussed recently in #1605, this also changes the
+  > `CellDiffOption::ForcedWidth(type) from NonZeroUsize to NonZeroU16.
+  >
+  > ---------
+
+- [9ac167d](https://github.com/ratatui/ratatui/commit/9ac167d5ec6d6ce04fef8e824966847657ff8976) *(style)* Add descriptive panic for Color::Reset anstyle conversion by @singhh-piyush in [#2423](https://github.com/ratatui/ratatui/pull/2423)
+  >
+  > `Color::Reset` has no equivalent in `anstyle::Color`. Previously,
+  > converting `Color::Reset.into()` fell through to the catch-all arm in
+  > `From<Color> for anstyle::Color`, which called
+  >
+  > `AnsiColor::try_from(color).unwrap()` and panicked with the message:
+  > `called Result::unwrap() on an Err value: Ansi`.
+  >
+  > This replaces the opaque `unwrap()` with an explicit, immediately
+  > understandable panic: `"Color::Reset has no equivalent in anstyle"`.
+  >
+  > Fixes #2341
+
+- [f093b02](https://github.com/ratatui/ratatui/commit/f093b0292db270be3eccc50470f596f0124aeaa2) *(uncategorized)* Satisfy beta Clippy buffer debug lint by @joshka in [#2562](https://github.com/ratatui/ratatui/pull/2562)
+
+  > Remove a redundant borrow in `Buffer`'s `Debug` implementation
+
+### Documentation
+
+- [f8b42ad](https://github.com/ratatui/ratatui/commit/f8b42adb5f12075cfb8c1b7028ec71ac12e7f97a) *(breaking-changes)* Update header for 0.30.0 by @orhun in [#2295](https://github.com/ratatui/ratatui/pull/2295)
+
+- [e82b3b7](https://github.com/ratatui/ratatui/commit/e82b3b77fefca6b72876db2dcac11d2cec13efc3) *(buffer)* Run the doctests for Buffer by @orhun in [#2319](https://github.com/ratatui/ratatui/pull/2319)
+
+  > addresses
+  > https://github.com/ratatui/ratatui/pull/2314#pullrequestreview-3621576941
+  >
+  > the doctest was not running at all... (due to `fn foo`)
+
+- [d8c86c3](https://github.com/ratatui/ratatui/commit/d8c86c3d7c2af49b6121d24cd39d09b63af469dc) *(canvas)* Add usage example for Line widget by @ramadhan-dev-bright in [#2473](https://github.com/ratatui/ratatui/pull/2473)
+
+  > Added a doc-tested example for the Line struct in canvas to improve
+  > documentation and help new users understand how to render lines with
+  > color.
+
+- [83c1579](https://github.com/ratatui/ratatui/commit/83c157965759bf660eb81f47bdedf96b886b9fd3) *(changelog)* Fix doubled words in two entries by @adv0r in [#2578](https://github.com/ratatui/ratatui/pull/2578)
+  >
+  > Typo:`in in` → `in` and `and and` → `and` in `CHANGELOG.md`
+
+- [fff27e8](https://github.com/ratatui/ratatui/commit/fff27e8d50e72558a791e9ce146bcfff117ac424) *(contributing)* Add packages needed to run xtasks by @alabhyajindal in [#2409](https://github.com/ratatui/ratatui/pull/2409)
+  >
+  > Fixes #2408
+  >
+  > ---------
+
+- [be718d0](https://github.com/ratatui/ratatui/commit/be718d049a668602443e7f7dfb31ec366f40624a) *(ratatui-core)* Fix terminal rendering grammar by @Zacxxx in [#2555](https://github.com/ratatui/ratatui/pull/2555)
+
+- [095b47d](https://github.com/ratatui/ratatui/commit/095b47ddc7ce107674c5beae77841cebae7c0571) *(ratatui-crossterm)* Fix doubled article in module docs by @adv0r in [#2564](https://github.com/ratatui/ratatui/pull/2564)
+
+  > > **Dear maintainer** — AI-authored PR by **Composer** under
+  > [@adv0r](https://github.com/adv0r). Methodology +
+  > [opt-out](https://github.com/adv0r/tokens-for-good/blob/main/MAINTAINER_REMOVAL.md)
+  > at [tokens-for-good](https://github.com/adv0r/tokens-for-good).
+  > > A one-line "no thanks" → auto-apology + auto-close + permanent
+  > blacklist. Silent close treated the same. Your time matters more than
+  > this contribution.
+  >
+  > Typo:`See the the [Examples]` → `See the [Examples]` in
+  > `ratatui-crossterm/src/lib.rs`.
+
+- [160b177](https://github.com/ratatui/ratatui/commit/160b17790c3740ce2a06910e648c3eb4d7359fac) *(ratatui-termwiz)* Fix doubled article in module docs by @adv0r in [#2565](https://github.com/ratatui/ratatui/pull/2565)
+
+  > > **Dear maintainer** — AI-authored PR by **Composer** under
+  > [@adv0r](https://github.com/adv0r). Methodology +
+  > [opt-out](https://github.com/adv0r/tokens-for-good/blob/main/MAINTAINER_REMOVAL.md)
+  > at [tokens-for-good](https://github.com/adv0r/tokens-for-good).
+  > > A one-line "no thanks" → auto-apology + auto-close + permanent
+  > blacklist. Silent close treated the same. Your time matters more than
+  > this contribution.
+  >
+  > Typo:`See the the [Examples]` → `See the [Examples]` in
+  > `ratatui-termwiz/src/lib.rs`.
+
+- [8ce5513](https://github.com/ratatui/ratatui/commit/8ce5513902cc5ba23adadca2bf97c08874585ca5) *(sparkline)* Fix typo in doc comment by @adv0r in [#2554](https://github.com/ratatui/ratatui/pull/2554)
+
+- [e6529fd](https://github.com/ratatui/ratatui/commit/e6529fd6f5825752c5f8b2b6ef889b1367537e55) *(terminal)* Improve terminal and setup docs for app authors by @joshka in [#2461](https://github.com/ratatui/ratatui/pull/2461)
+
+  > ## Summary
+  >
+  > This updates the terminal and setup docs to better match the rendering
+  > behavior Ratatui actually implements, while also making the docs.rs path
+  > clearer for application authors.
+  >
+  > The main docs changes are split into two commits:
+  >
+  > 1. `docs: align terminal docs with behavior`
+  > - align `Terminal`, viewport, frame, and flush docs with the real render
+  > pipeline
+  >    - clarify the boundary between `Terminal::flush` and `Backend::flush`
+  >    - improve examples for fullscreen, inline, and fixed viewport usage
+  > 2. `docs: improve terminal docs for app authors`
+  > - improve setup-path guidance across `ratatui`, `ratatui-core`, and
+  > backend crates
+  >    - clarify viewport choice, escape hatches, and common edge cases
+  > - reduce duplication so crate-level docs explain choices while method
+  > docs hold detailed contracts
+  >
+  > A small follow-up also fixes the crate-doc heading hierarchy in
+  > `ratatui-core` and
+  > `ratatui-crossterm` so the generated READMEs no longer need
+  > `markdownlint-disable-next-line heading-increment` suppressions.
+  >
+  > ## Verification
+  >
+  > - `cargo test -p ratatui --doc`
+  > - `cargo test -p ratatui-core --doc`
+  > - `cargo test -p ratatui-crossterm --doc`
+  > - `cargo test -p ratatui-termion --doc`
+  > - `cargo test -p ratatui-termwiz --doc`
+  > - `cargo test --workspace --all-targets --no-run`
+  > - `cargo doc -p ratatui --no-deps`
+  > - `cargo doc -p ratatui-core --no-deps`
+  > - `cargo xtask format --check`
+  > - `cargo xtask readme --check`
+  >
+  > Note:`cargo doc -p ratatui-core --no-deps` still reports pre-existing
+  > warnings outside this pass in `layout` and `text` docs. The terminal-doc
+  > warnings introduced during this work were fixed.
+  >
+  > ---------
+
+- [744dc36](https://github.com/ratatui/ratatui/commit/744dc360813024bcaf8e768712f4b3821ac5dde8) *(uncategorized)* Remove duplicate word in color and backend module by @lphuc2250gma in [#2535](https://github.com/ratatui/ratatui/pull/2535)
+
+  > Two one-line typo fixes for duplicated "the" in doc-comments:
+  > - `ratatui-core/src/style/color.rs` — "/// the the older serialization
+  > implementation of Color are also able to be deserialized." → "...the
+  > older serialization..."
+  > - `ratatui-core/src/backend.rs` — "//! See the the [Examples] directory
+  > for more examples." → "//! See the [Examples] directory for more
+  > examples."
+  >
+  > No code/behavior change.
+
+- [3df8c20](https://github.com/ratatui/ratatui/commit/3df8c20dfb30e7afb8fd84614f44c62e5f6abb66) *(uncategorized)* Ask issue authors about PR willingness by @joshka in [#2317](https://github.com/ratatui/ratatui/pull/2317)
+
+  > Add a contribution question to the bug report and feature request
+  > templates so maintainers know whether the reporter wants to work on a
+  > fix/PR or needs guidance.
+
+- [53d925a](https://github.com/ratatui/ratatui/commit/53d925a8abac3690680633c4ad3eefe3c1b3258c) *(uncategorized)* Add Documentation on the Map Projection / CRS by @C-Loftus in [#2324](https://github.com/ratatui/ratatui/pull/2324)
+
+- [64d964b](https://github.com/ratatui/ratatui/commit/64d964b259616f6dcd7f83147946eeddcc19b64b) *(uncategorized)* Update Terminal docs by @joshka in [#2312](https://github.com/ratatui/ratatui/pull/2312)
+
+  > ## Summary
+  >
+  > - Improve `Terminal` Rustdocs to better explain typical app setup, the
+  > rendering pipeline, and how
+  > diff-based rendering works (including full redraw behavior on viewport
+  > size changes).
+  > - Clarify viewport concepts and behavior in `Viewport`/`Terminal` docs,
+  > with a more complete inline
+  >   section (anchoring, scrolling, resize behavior).
+  > - Reorder `Terminal::draw` / `Terminal::try_draw` closer to constructors
+  > so the primary rendering
+  >   entry points are easier to find.
+  >
+  > ## Notes
+  >
+  > - Docs-only change; no public API or runtime behavior changes.
+  > - No new tests in this PR.
+  >
+  > ## Test Plan
+  >
+  > - `cargo +nightly fmt`
+  > - `cargo +nightly docs-rs -p ratatui-core`
+  > - `cargo test -p ratatui-core --doc --features std`
+
+- [8d73d47](https://github.com/ratatui/ratatui/commit/8d73d4738eaa3fcb85910e189ca2d9a728485750) *(uncategorized)* Fix comment to reflect correct symbol in assertion by @homebrewmellow in [#2314](https://github.com/ratatui/ratatui/pull/2314)
+
+- [fbd5621](https://github.com/ratatui/ratatui/commit/fbd562117bd331c2094575c2f657f0f435e58711) *(uncategorized)* Fix misspellings by @cgzones in [#2310](https://github.com/ratatui/ratatui/pull/2310)
+
+### Performance
+
+- [dcea52b](https://github.com/ratatui/ratatui/commit/dcea52bdf933dd562e165d73566f87fab30a97db) *(core)* Eliminate per-frame Vec allocation in Terminal::flush by @junkdog in [#2416](https://github.com/ratatui/ratatui/pull/2416)
+
+  > ## what and how
+  >
+  > this PR removes the `Vec<(u16, u16, &Cell)>` allocation in
+  > `Terminal::flush` when calling `Buffer::diff`. a new method,
+  > `Buffer::diff_iter` is instead used by `Terminal::flush`.
+  >
+  > the existing diff implementation has moved to the `BufferDiff` iterator.
+  >
+  > ## why (who cares?)
+  >
+  > it's the mice. on embedded devices, allocating a short-lived, contiguous
+  > block of up to 40-50kb is problematic due to heap fragmentation in
+  > combination with tiny heaps. the requirements for a full refresh over
+  > 1200 terminal cells is 37.5kb+vec growth padding, but since we're
+  > dealing with a contiguous block of memory, the actual memory
+  > requirements are considerably higher, depending on user-land allocation
+  > patterns.
+  >
+  > ---------
+
+### Testing
+
+- [b696ea3](https://github.com/ratatui/ratatui/commit/b696ea37b239689acef890c7755ca8c297655f4b) *(core)* Split `Terminal` into submodules and expand test coverage by @joshka in [#2315](https://github.com/ratatui/ratatui/pull/2315)
+
+  > - Split the `Terminal` implementation into focused submodules to improve
+  > readability and maintainability.
+  > - Add characterization tests covering `Terminal` initialization, buffer
+  > lifecycle, resizing and autoresize behavior, and rendering paths.
+  > - Add inline viewport tests for `compute_inline_size` and
+  > `insert_before` in both fallback and scrolling-regions modes, including
+  > an end-to-end `draw -> insert_before -> draw scenario` scenario.
+  > - Extend `TestBackend` cursor plumbing to support the new terminal tests
+  > and assert cursor/ behavior.
+
+### Miscellaneous Tasks
+
+- [746e9c9](https://github.com/ratatui/ratatui/commit/746e9c9ca2370a2ff033fb082f765f4c32a629b4) *(build)* Add symlinks from each crate dir to root LICENSE by @martinvonz in [#2370](https://github.com/ratatui/ratatui/pull/2370)
+
+  > AFAICT, each crate directory must have its own LICENSE file for it to
+  > become part of the published crate. This patch therefore adds LICENSE
+  > symlinks from each crate directory to the root LICENSE file. This
+  > matches what e.g. clap does (https://github.com/clap-rs/clap).
+  >
+  > Since ratatui-macros/LICENSE already exists and with different copyright
+  > holders than in the root LICENSE file, I left it unchanged.
+
+- [7b66bd4](https://github.com/ratatui/ratatui/commit/7b66bd4a94c3d9f9015f62b4a8ec5c95a2c25f0b) *(ci)* Use latest released cargo-machete action by @sermuns in [#2469](https://github.com/ratatui/ratatui/pull/2469)
+
+- [b6dfafd](https://github.com/ratatui/ratatui/commit/b6dfafd062893963d352c5a3e623475f3bc778e4) *(markdown)* Fix linting issues reported by xtask lint by @Logan-Ruf in [#2435](https://github.com/ratatui/ratatui/pull/2435)
+
+- [fba4448](https://github.com/ratatui/ratatui/commit/fba44486e04b3abf2c3899955ea8cf5daedee7bd) *(ratatui)* Unleash the rats v0.30.1
+
+- [0b03fe4](https://github.com/ratatui/ratatui/commit/0b03fe47f1a941fccf9dd694f2531157e312f330) *(toml)* Migrate from taplo to tombi by @joshka in [#2501](https://github.com/ratatui/ratatui/pull/2501)
+
+  > ## Summary
+  >
+  > This migrates the repo's TOML tooling from
+  > [Taplo](https://github.com/tamasfe/taplo) to
+  > [Tombi](https://github.com/tombi-toml/tombi).
+  >
+  > The main motivation is maintenance and installability:
+  >
+  > - Ratatui previously used [Taplo](https://github.com/tamasfe/taplo) for
+  > TOML formatting.
+  > - Taplo's maintenance future has been uncertain; see
+  > <https://github.com/tamasfe/taplo/issues/715>.
+  > - Taplo's current release artifacts are not friendly to
+  > `cargo-binstall`, which means some setups fall back to building from
+  > source.
+  > - That source-build path is awkward for CI and was also a blocker while
+  > exploring a future Docker/devcontainer setup because of image size and
+  > install cost.
+  >
+  > [Tombi](https://github.com/tombi-toml/tombi) is actively maintained,
+  > publishes prebuilt binaries, and has a VS Code extension that lets us
+  > keep editor behavior aligned with CI.
+  >
+  > ## What Changed
+  >
+  > ### Tooling and CI
+  >
+  > - Replace `taplo` with `tombi` in `cargo xtask format`.
+  > - Use
+  > [`tombi-toml/setup-tombi`](https://github.com/tombi-toml/setup-tombi) in
+  > the formatting CI job.
+  > - Replace `.taplo.toml` with `tombi.toml`.
+  >
+  > ### Formatting policy
+  >
+  > - Keep the existing 100-column TOML line width.
+  > - Disable schema-driven top-level table ordering for `Cargo.toml`.
+  > - Disable the corresponding `tables-out-of-order` lint for `Cargo.toml`.
+  >
+  > Why disable Cargo schema ordering:
+  >
+  > - Tombi can order keys and tables according to schema metadata; see
+  > <https://tombi-toml.github.io/tombi/docs/comment-directive/tombi-value-directive/#format-rules-table-keys-order>.
+  > - The schema order moved sections like `[features]` below dependency
+  > sections.
+  > - That made feature-gated behavior harder to scan.
+  > - It also created noisy migration churn that was not central to the tool
+  > switch itself.
+  >
+  > Why disable the Cargo lint warning:
+  >
+  > - The VS Code warning came from Tombi's `tables-out-of-order` lint
+  > rather than from formatting.
+  > - Since we are intentionally preserving the existing Cargo manifest
+  > section order, we also disable that lint for `Cargo.toml` to keep
+  > diagnostics aligned with the formatter configuration.
+  > - Related docs:
+  > <https://tombi-toml.github.io/tombi/docs/configuration/>.
+  >
+  > ### Installation note
+  >
+  > - Tombi is better positioned for binary installs than Taplo today, but
+  > it is still not fully in the generic `cargo-binstall` /
+  > `taiki-e/install-action` path.
+  > - Relevant upstream context:
+  > - binary naming / generic installer compatibility:
+  > <https://github.com/tombi-toml/tombi/issues/1164>
+  > - crates.io publishing for `cargo-binstall` fallback:
+  > <https://github.com/tombi-toml/tombi/issues/1686>
+  > - earlier crates.io publishing discussion:
+  > <https://github.com/tombi-toml/tombi/issues/632>
+  > - In practice, this still leaves some rough edges around the generic
+  > Rust installer path, but Tombi already has usable prebuilt binaries and
+  > an official installer action, which is a better place for Ratatui than
+  > Taplo's current install story.
+  > - CI now uses
+  > [`tombi-toml/setup-tombi`](https://github.com/tombi-toml/setup-tombi)
+  > with a pinned version, which avoids the GitHub token path by not asking
+  > the action to resolve `latest` at runtime.
+  >
+  > ### Docs and editor setup
+  >
+  > - Update contributor docs to point to Tombi's repo, docs, and
+  > installation guide.
+  > - Note that the repo previously used Taplo and link the upstream
+  > maintenance discussion at <https://github.com/tamasfe/taplo/issues/715>.
+  > - Add VS Code extension recommendations for
+  > [`rust-lang.rust-analyzer`](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+  > and
+  > [`tombi-toml.tombi`](https://marketplace.visualstudio.com/items?itemName=tombi-toml.tombi).
+  > - Add committed VS Code workspace settings for shared repo defaults,
+  > mainly so the workspace can define formatter behavior that matches CI,
+  > including TOML formatter selection and nightly rustfmt args.
+  > - Add a dedicated formatting section to `CONTRIBUTING.md` covering Rust
+  > formatting, TOML formatting, nightly `rustfmt`, and the VS Code
+  > workspace override workaround.
+  >
+  > ## Why Commit VS Code Settings
+  >
+  > This PR adds committed VS Code workspace settings for shared repo
+  > defaults only.
+  >
+  > The goal is to:
+  >
+  > - recommend the expected extensions
+  > - make local editor formatting behave more like CI
+  > - avoid formatter drift between editor usage and the repo's checked-in
+  > tooling
+  >
+  > This is not intended to standardize everyone's full editor setup.
+  >
+  > ## Nightly rustfmt
+  >
+  > The repo already uses unstable rustfmt options in
+  > [`rustfmt.toml`](./rustfmt.toml), so formatting Rust code with `cargo
+  > xtask format` works best with nightly Rust. This is already how CI
+  > behaves.
+  >
+  > The docs now call this out more clearly:
+  >
+  > - install nightly if you want local formatting to match CI
+  > - the reason is to pick up the unstable formatting options configured in
+  > `rustfmt.toml`
+  >
+  > For contributors who cannot or do not want to install nightly, the docs
+  > also point to a workaround: use a personal VS Code workspace file with
+  > override settings instead of changing the tracked workspace config.
+  >
+  > ## Notes From Implementation
+  >
+  > - Tombi `v0.9.19` added config support to disable schema-defined
+  > ordering per schema, which let us preserve existing `Cargo.toml` section
+  > order cleanly.
+  > - The `tables-out-of-order` warning seen in VS Code came from Tombi
+  > lint, not formatting, so that needed a separate config change.
+  > - After disabling Cargo section ordering, the remaining TOML churn was
+  > much smaller and mostly mechanical.
+  >
+  > ## Files of Interest
+  >
+  > - `.github/workflows/ci.yml`
+  > - `xtask/src/commands/format.rs`
+  > - `tombi.toml`
+  > - `.vscode/settings.json`
+  > - `.vscode/extensions.json`
+  > - `CONTRIBUTING.md`
+  >
+  > ## Verification
+  >
+  > - `cargo xtask format --check`
+  > - `cargo metadata --format-version 1`
+  > - `markdownlint-cli2 CONTRIBUTING.md`
+
+- [ed46fef](https://github.com/ratatui/ratatui/commit/ed46fefb3f26f3786381843fe7f7cce47254781d) *(uncategorized)* Update versions
+
+- [f30bab9](https://github.com/ratatui/ratatui/commit/f30bab9ef0c089e3200237029cdf750cb09e5fcf) *(uncategorized)* Ignore licker as typo
+
+- [c7746e9](https://github.com/ratatui/ratatui/commit/c7746e90d0c10ea450356edac9715dd3f1b02a4a) *(uncategorized)* Bump MSRV to 1.88.0 by @orhun in [#2396](https://github.com/ratatui/ratatui/pull/2396)
+
+- [b0a7703](https://github.com/ratatui/ratatui/commit/b0a7703c0002c53bbaa432f04a342f63f75e2219) *(uncategorized)* Escape usernames in changelog with backticks by @kdheepak in [#2377](https://github.com/ratatui/ratatui/pull/2377)
+
+  > This PR escapes all github usernames in the CHANGELOG.md file by adding
+  > a backtick before and after the username.
+  >
+  > e.g.:**Before**
+  >
+  > ```
+  > 1dc18bf (calendar) Add width and height functions by @joshka in #2198
+  > ```
+  >
+  > **After**
+  >
+  > ```
+  > 1dc18bf (calendar) Add width and height functions by `@joshka` in #2198
+  > ```
+  >
+  > This change should prevent unnecessary tags in PRs and forks, at least
+  > until the next release is made with git cliff changes from release-plz
+
+- [0031fc6](https://github.com/ratatui/ratatui/commit/0031fc6b1ac93045aef041d26cf6dea1978d80fe) *(uncategorized)* Remove `@` sign from github release and PR by @kdheepak in [#2353](https://github.com/ratatui/ratatui/pull/2353)
+
+  > Previous PR (https://github.com/ratatui/ratatui/pull/2336) didn't solve
+  > the problem, and everyone still seems to be getting notifications (e.g.
+  > https://github.com/ratatui/ratatui/pull/2348).
+  >
+  > This PR removes the `@` for GitHub usernames in the autogenerated PR
+  > body by `release-plz`.
+  >
+  > ```tera
+  > {{ changelog | replace(from=" by @", to=" by ") }}
+  > ```
+  >
+  > The motivation behind this is that GitHub mentions in PR descriptions
+  > trigger notifications for every contributor for every release because
+  > their username is part of the changelog.
+  >
+  > With this change, in GitHub PR descriptions the changelog will change
+  > like so:
+  >
+  > **Before**
+  >
+  > ```
+  > 1dc18bf (calendar) Add width and height functions by @joshka in #2198
+  > ```
+  >
+  > **After**
+  >
+  > ```
+  > 1dc18bf (calendar) Add width and height functions by joshka in #2198
+  > ```
+
+- [ab5ad3f](https://github.com/ratatui/ratatui/commit/ab5ad3fc7ceb31b11ca9100a8d52dcb181e46b00) *(uncategorized)* Escape username using backticks in changelog by @kdheepak in [#2336](https://github.com/ratatui/ratatui/pull/2336)
+
+  > The motivation behind this is that GitHub mentions in PR descriptions trigger notifications for every contributor for every release because their username is part of the changelog.
+
+### New Contributors
+
+* @musjj made their first contribution in [#2566](https://github.com/ratatui/ratatui/pull/2566)
+* @adv0r made their first contribution in [#2578](https://github.com/ratatui/ratatui/pull/2578)
+* @fallintoplace made their first contribution in [#2550](https://github.com/ratatui/ratatui/pull/2550)
+* @Zacxxx made their first contribution in [#2555](https://github.com/ratatui/ratatui/pull/2555)
+* @lphuc2250gma made their first contribution in [#2535](https://github.com/ratatui/ratatui/pull/2535)
+* @lazo4 made their first contribution in [#2474](https://github.com/ratatui/ratatui/pull/2474)
+* @Metbcy made their first contribution in [#2520](https://github.com/ratatui/ratatui/pull/2520)
+* @bananaofhappiness made their first contribution in [#2426](https://github.com/ratatui/ratatui/pull/2426)
+* @sermuns made their first contribution in [#2469](https://github.com/ratatui/ratatui/pull/2469)
+* @ramadhan-dev-bright made their first contribution in [#2473](https://github.com/ratatui/ratatui/pull/2473)
+* @junkdog made their first contribution in [#2437](https://github.com/ratatui/ratatui/pull/2437)
+* @december1981 made their first contribution in [#2460](https://github.com/ratatui/ratatui/pull/2460)
+* @7Bpencil made their first contribution in [#2369](https://github.com/ratatui/ratatui/pull/2369)
+* @JayanAXHF made their first contribution in [#2438](https://github.com/ratatui/ratatui/pull/2438)
+* @Logan-Ruf made their first contribution in [#2435](https://github.com/ratatui/ratatui/pull/2435)
+* @singhh-piyush made their first contribution in [#2423](https://github.com/ratatui/ratatui/pull/2423)
+* @gcavelier made their first contribution in [#2308](https://github.com/ratatui/ratatui/pull/2308)
+* @ffex made their first contribution in [#2211](https://github.com/ratatui/ratatui/pull/2211)
+* @BenFradet made their first contribution in [#2356](https://github.com/ratatui/ratatui/pull/2356)
+* @wyvernbw made their first contribution in [#2355](https://github.com/ratatui/ratatui/pull/2355)
+* @NoOPeEKS made their first contribution in [#2371](https://github.com/ratatui/ratatui/pull/2371)
+* @alabhyajindal made their first contribution in [#2409](https://github.com/ratatui/ratatui/pull/2409)
+* @martinvonz made their first contribution in [#2370](https://github.com/ratatui/ratatui/pull/2370)
+* @jakobhellermann made their first contribution in [#2350](https://github.com/ratatui/ratatui/pull/2350)
+* @floor-licker made their first contribution in [#2322](https://github.com/ratatui/ratatui/pull/2322)
+* @C-Loftus made their first contribution in [#2324](https://github.com/ratatui/ratatui/pull/2324)
+* @0xferrous made their first contribution in [#2323](https://github.com/ratatui/ratatui/pull/2323)
+* @homebrewmellow made their first contribution in [#2314](https://github.com/ratatui/ratatui/pull/2314)
+* @karkhaz made their first contribution in [#2150](https://github.com/ratatui/ratatui/pull/2150)
 
 ## [v0.30.0](https://github.com/ratatui/ratatui/releases/tag/v0.30.0) - 2025-12-26
 
@@ -5996,7 +7504,7 @@ Adds conversions for various Color and Modifier combinations
 
   ```text
   Link to the contributing, changelog, and breaking changes docs at the
-  top of the page instead of just in in the main part of the doc. This
+  top of the page instead of just in the main part of the doc. This
   makes it easier to find them.
 
   Rearrange the links to be in a more logical order.
@@ -6370,7 +7878,7 @@ Also, we renewed our website and updated our documentation/tutorials to get star
   _(tabs)_ Tab widget now supports custom padding ([#629](https://github.com/ratatui/ratatui/issues/629))
 
   ````text
-  The Tab widget now contains padding_left and and padding_right
+  The Tab widget now contains padding_left and padding_right
   properties. Those values can be set with functions `padding_left()`,
   `padding_right()`, and `padding()` which all accept `Into<Line>`.
 

@@ -142,7 +142,7 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn new<T: Into<Vec<Bar<'a>>>>(bars: T) -> Self {
         Self {
-            data: vec![BarGroup::new(bars.into())],
+            data: Self::non_empty_groups(vec![BarGroup::new(bars.into())]),
             direction: Direction::Vertical,
             ..Default::default()
         }
@@ -166,7 +166,7 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn horizontal(bars: impl Into<Vec<Bar<'a>>>) -> Self {
         Self {
-            data: vec![BarGroup::new(bars.into())],
+            data: Self::non_empty_groups(vec![BarGroup::new(bars.into())]),
             direction: Direction::Horizontal,
             ..Default::default()
         }
@@ -192,9 +192,17 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn grouped<T: Into<Vec<BarGroup<'a>>>>(groups: T) -> Self {
         Self {
-            data: groups.into(),
+            data: Self::non_empty_groups(groups.into()),
             ..Default::default()
         }
+    }
+
+    /// Returns a new vector of groups without the empty ones.
+    fn non_empty_groups(groups: Vec<BarGroup<'a>>) -> Vec<BarGroup<'a>> {
+        groups
+            .into_iter()
+            .filter(|group| !group.bars.is_empty())
+            .collect()
     }
 
     /// Add group of bars to the `BarChart`
@@ -453,11 +461,17 @@ impl BarChart<'_> {
                         .bars
                         .iter()
                         .take(n as usize)
-                        .map(|bar| bar.value * u64::from(bar_max_length) * 8 / max)
+                        .map(|bar| Self::scale_ticks(bar.value, max, bar_max_length))
                         .collect()
                 })
             })
             .collect()
+    }
+
+    fn scale_ticks(value: u64, max: u64, max_length: u16) -> u64 {
+        let max_ticks = u128::from(max_length) * 8;
+        let ticks = u128::from(value) * max_ticks / u128::from(max);
+        ticks.min(max_ticks) as u64
     }
 
     /// Get label information.
@@ -733,6 +747,26 @@ mod tests {
         let widget = BarChart::default();
         widget.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["          "; 3]));
+    }
+
+    #[test]
+    fn horizontal_empty_barchart_does_not_panic() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        let widget = BarChart::horizontal(Vec::<Bar>::new());
+
+        widget.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn constructors_ignore_empty_groups() {
+        assert!(BarChart::new(Vec::<Bar>::new()).data.is_empty());
+        assert!(BarChart::horizontal(Vec::<Bar>::new()).data.is_empty());
+
+        let chart = BarChart::grouped([
+            BarGroup::new(Vec::<Bar>::new()),
+            BarGroup::new([Bar::new(1)]),
+        ]);
+        assert_eq!(chart.data, vec![BarGroup::new([Bar::new(1)])]);
     }
 
     #[test]
@@ -1429,6 +1463,27 @@ mod tests {
     }
 
     #[test]
+    fn render_handles_u64_max_value() {
+        let chart = BarChart::new([Bar::new(u64::MAX)]).max(u64::MAX);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 5));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(["█    "; 5]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_keeps_integer_precision_for_large_values() {
+        let chart = BarChart::new([Bar::new(u64::MAX - 1)]).max(u64::MAX);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(["▇"]));
+    }
+
+    #[test]
     fn test_barchart_new() {
         let bars = [Bar::with_label("Red", 1), Bar::with_label("Green", 2)];
 
@@ -1503,5 +1558,19 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::ZERO);
         // This should not panic, even if the buffer has zero size.
         chart.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn wide_value_label_centered_by_display_width() {
+        // A double-width (CJK) value label must be centered by its display width,
+        // not its byte length. "中文" is 4 columns wide, so in an 8-wide bar it
+        // gets 2 columns of padding on each side. Centering by byte length (6)
+        // would instead give only 1 column on the left.
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 2));
+        let widget = BarChart::default()
+            .bar_width(8)
+            .data(BarGroup::new([Bar::new(1).text_value("中文")]));
+        widget.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["████████", "██中文██"]));
     }
 }

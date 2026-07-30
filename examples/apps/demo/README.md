@@ -18,6 +18,12 @@ cargo run -p demo
 cargo run -p demo --no-default-features --features termion
 ```
 
+## termina
+
+```shell
+cargo run -p demo --no-default-features --features termina
+```
+
 ## termwiz
 
 ```shell

@@ -4,6 +4,18 @@ use ratatui_core::style::Color;
 use crate::canvas::{Painter, Shape};
 
 /// A line from `(x1, y1)` to `(x2, y2)` with the given color
+///
+/// # Examples
+///
+/// ```rust
+/// # use ratatui_core::style::Color;
+/// # use ratatui_widgets::canvas::{Canvas, Line};
+/// Canvas::default().paint(|ctx| {
+///     ctx.draw(&Line::new(0.0, 0.0, 1.0, 0.0, Color::Red));
+///     ctx.draw(&Line::new(1.0, 0.0, 0.5, 1.0, Color::Red));
+///     ctx.draw(&Line::new(0.5, 1.0, 0.0, 0.0, Color::Red));
+/// });
+/// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Line {
     /// `x` of the starting point

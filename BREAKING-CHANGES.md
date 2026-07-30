@@ -10,10 +10,9 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.31.0](#v0310)
-  - MSRV is now 1.88.0
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
+  - MSRV is now 1.88.0
 - [v0.30.0](#v0300)
   - `Flex::SpaceAround` now mirrors flexbox: space between items is twice the size of the outer gaps
     are twice the size of first and last elements
@@ -26,7 +25,7 @@ This is a quick summary of the sections below:
   - `Backend` now requires an associated `Error` type and `clear_region` method
   - `TestBackend` now uses `core::convert::Infallible` for error handling instead of `std::io::Error`
   - Disabling `default-features` will now disable layout cache,
-  which can have a negative impact on performance
+    which can have a negative impact on performance
   - `Layout::init_cache` and `Layout::DEFAULT_CACHE_SIZE` are now only available if `layout-cache`
     feature is enabled
   - Disabling `default-features` suppresses the error message if `show_cursor()` fails when dropping
@@ -98,13 +97,11 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## [v0.31.0](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.31.0)
+## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 
 ### MSRV is now 1.88.0
 
 The minimum supported Rust version (MSRV) is now 1.88.0.
-
-## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 
 ### Adding `AsRef` impls for widgets may affect type inference ([#2297])
 
@@ -488,7 +485,7 @@ These fields were not intended to be public and should not have been accessed di
 [#1378]: https://github.com/ratatui/ratatui/pull/1378
 
 This is likely to impact anything which relies on `Rect::area` maxing out at u16::MAX. It can now
-return up to u16::MAX * u16::MAX (2^32 - 2^17 + 1).
+return up to u16::MAX \* u16::MAX (2^32 - 2^17 + 1).
 
 ### `Line` now implements `From<Cow<str>` ([#1373])
 
