@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use polygon_clipping::{Point, Polygon, Window, sutherland_hodgman};
+use line_clipping::{Point, Polygon, Window, sutherland_hodgman};
 use ratatui_core::style::Color;
 
 use crate::canvas::{Painter, Shape, line};

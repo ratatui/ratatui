@@ -61,7 +61,6 @@ strum.workspace = true
 time = { workspace = true, optional = true }
 unicode-segmentation.workspace = true
 unicode-width.workspace = true
-polygon-clipping = { path = "../../polygon-clipping" }
 
 [dev-dependencies]
 color-eyre.workspace = true

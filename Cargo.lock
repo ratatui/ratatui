@@ -2639,10 +2639,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "polygon-clipping"
-version = "0.1.0"
-
-[[package]]
 name = "popup"
 version = "0.0.0"
 dependencies = [
@@ -2966,7 +2962,6 @@ dependencies = [
  "instability",
  "itertools 0.15.0",
  "line-clipping",
- "polygon-clipping",
  "pretty_assertions",
  "ratatui",
  "ratatui-core",
