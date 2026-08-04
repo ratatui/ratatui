@@ -47,7 +47,7 @@ kasuari = { version = "0.4.9", default-features = false }
 line-clipping = "0.3"
 lru = "0.18"
 octocrab = "0.54"
-palette = { version = "0.7.6", default-features = false, features = ["libm"] }
+palette = { version = "0.7.7", default-features = false, features = ["libm"] }
 pretty_assertions = "1"
 rand = "0.10"
 rand_chacha = "0.10"
