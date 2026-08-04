@@ -30,7 +30,9 @@ impl PluginWidget {
         let mut linker = Linker::new(&engine);
         wasmtime_wasi::add_to_linker_sync(&mut linker)?;
 
-        let wasi = WasiCtxBuilder::new().inherit_stdout().build();
+        let mut builder = WasiCtxBuilder::new();
+        apply_capabilities(&mut builder, capabilities);
+        let wasi = builder.build();
         let mut store = Store::new(&engine, WasiState::new(wasi));
 
         let binding = Box::new(
@@ -132,6 +134,22 @@ impl ratatui_core::widgets::Widget for WasmWidget {
                 tracing::debug!("failed to load WASM widget: {err:#}");
             }
         }
+    }
+}
+
+/// Configure a WASI context builder according to the granted capabilities.
+fn apply_capabilities(builder: &mut WasiCtxBuilder, capabilities: &[String]) {
+    if capabilities.iter().any(|c| c == "stdio:stdout") {
+        builder.inherit_stdout();
+    }
+    if capabilities.iter().any(|c| c == "stdio:stderr") {
+        builder.inherit_stderr();
+    }
+    if capabilities.iter().any(|c| c == "stdio:stdin") {
+        builder.inherit_stdin();
+    }
+    if capabilities.iter().any(|c| c == "env:read") {
+        builder.inherit_env();
     }
 }
 
