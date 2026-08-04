@@ -1,0 +1,46 @@
+// ratatui: wasm-capable widget interface
+package ratatui:widget@0.1.0;
+
+/// A single cell to draw on the terminal buffer.
+record cell {
+    /// Column offset relative to the widget area.
+    x: u16,
+    /// Row offset relative to the widget area.
+    y: u16,
+    /// Single grapheme to display.
+    symbol: string,
+    /// Foreground color as hex string, e.g. "#ffffff".
+    fg: option<string>,
+    /// Background color as hex string, e.g. "#000000".
+    bg: option<string>,
+}
+
+/// A rectangular area.
+record rect {
+    x: u16,
+    y: u16,
+    width: u16,
+    height: u16,
+}
+
+/// Returned by a widget when it asks for a capability it was not granted.
+variant widget-error {
+    /// Capability not granted.
+    capability-denied(string),
+    /// Generic rendering error.
+    internal(string),
+}
+
+/// Core widget capability. Each WASM module exports exactly one widget.
+interface widget {
+    /// Render the widget for the given area and return draw commands.
+    /// The host is responsible for blitting cells into the terminal buffer.
+    render: func(area: rect, state: option<list<u8>>) -> result<list<cell>, widget-error>;
+
+    /// List capabilities required by this widget (e.g. "clock:read").
+    capabilities: func() -> list<string>;
+}
+
+world wasm-widget {
+    export widget;
+}

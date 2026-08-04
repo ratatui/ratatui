@@ -1,0 +1,27 @@
+[package]
+name = "ratatui-wasm"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+readme = "README.md"
+description = "Capability-based WebAssembly plugin host for Ratatui widgets"
+keywords = ["ratatui", "tui", "wasm", "plugin", "terminal"]
+categories = ["command-line-interface"]
+
+[dependencies]
+ratatui-core = { workspace = true }
+anyhow = "1"
+wasmtime = { version = "29", features = ["component-model"] }
+wasmtime-wasi = { version = "29" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+ratatui-crossterm = { workspace = true }
+
+[lints]
+workspace = true
