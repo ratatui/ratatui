@@ -4,7 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-wit-bindgen = "0.39"
+wit-bindgen = "0.60"
+
 
 [lib]
 crate-type = ["cdylib"]
+
+[workspace]
+

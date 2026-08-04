@@ -5,20 +5,30 @@
 
 #![warn(missing_docs)]
 
-use std::path::Path;
-
 use ratatui_core::buffer::{Buffer, Cell as RatatuiCell};
 use ratatui_core::layout::Rect;
-use ratatui_core::style::{Color, Modifier, Style};
+use ratatui_core::style::{Color, Style};
 
 pub mod commands;
 pub mod host;
 
-pub use host::{WasmWidget, WasmWidgetHost};
+pub use host::{PluginWidget, WasmWidgetHost};
+
+#[allow(missing_docs)]
+mod generated {
+    wasmtime::component::bindgen!({
+        path: "wit/widget.wit",
+        world: "wasm-widget",
+    });
+}
+
+pub use generated::*;
+
+use self::exports::ratatui::widget::widget::{Cell, Rect as WitRect};
 
 /// Convert a host-side `Rect` into the WIT `rect` representation.
-pub fn rect_to_wit(area: Rect) -> widget::Rect {
-    widget::Rect {
+pub fn rect_to_wit(area: Rect) -> WitRect {
+    WitRect {
         x: area.x,
         y: area.y,
         width: area.width,
@@ -27,7 +37,7 @@ pub fn rect_to_wit(area: Rect) -> widget::Rect {
 }
 
 /// Blit a list of WIT cells returned by a guest into a Ratatui [`Buffer`].
-pub fn blit_cells(area: Rect, commands: &[widget::Cell], buf: &mut Buffer) {
+pub fn blit_cells(area: Rect, commands: &[Cell], buf: &mut Buffer) {
     for cmd in commands {
         let abs_x = area.x.saturating_add(cmd.x);
         let abs_y = area.y.saturating_add(cmd.y);
@@ -41,7 +51,9 @@ pub fn blit_cells(area: Rect, commands: &[widget::Cell], buf: &mut Buffer) {
         if let Some(bg) = parse_color(cmd.bg.as_deref()) {
             style = style.bg(bg);
         }
-        let cell = RatatuiCell::new(cmd.symbol.clone(), style);
+        let mut cell = RatatuiCell::default();
+        cell.set_symbol(&cmd.symbol);
+        cell.set_style(style);
         buf[(abs_x, abs_y)] = cell;
     }
 }
@@ -57,8 +69,3 @@ fn parse_color(s: Option<&str>) -> Option<Color> {
         None
     }
 }
-
-wasmtime::component::bindgen!({
-    path: "wit/widget.wit",
-    world: "wasm-widget",
-});

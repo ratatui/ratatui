@@ -7,6 +7,7 @@ use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::Style;
 use ratatui_core::text::Line;
+use ratatui_core::widgets::Widget;
 
 /// A high-level draw command.
 #[derive(Debug, Clone, PartialEq, Eq)]

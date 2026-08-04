@@ -5,20 +5,20 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
-use wasmtime::component::{Component, Linker, ResourceTable};
+use wasmtime::component::{Component, Linker};
 use wasmtime::{Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
-use crate::{blit_cells, rect_to_wit, WasmWidget as Binding};
+use crate::{blit_cells, rect_to_wit, WasmWidget as WasmWidgetBinding};
 
 /// A loaded WASM widget with its granted capabilities.
-pub struct WasmWidget {
+pub struct PluginWidget {
     store: Store<WasiState>,
-    binding: Binding,
+    binding: Box<WasmWidgetBinding>,
     capabilities: Vec<String>,
 }
 
-impl WasmWidget {
+impl PluginWidget {
     /// Load a `.wasm` component from the given path.
     pub fn from_file(path: impl AsRef<Path>, capabilities: &[String]) -> Result<Self> {
         let engine = Engine::default();
@@ -31,8 +31,10 @@ impl WasmWidget {
         let wasi = WasiCtxBuilder::new().inherit_stdout().build();
         let mut store = Store::new(&engine, WasiState::new(wasi));
 
-        let binding = Binding::instantiate(&mut store, &component, &linker)
-            .context("instantiating wasm widget component")?;
+        let binding = Box::new(
+            WasmWidgetBinding::instantiate(&mut store, &component, &linker)
+                .context("instantiating wasm widget component")?,
+        );
 
         let caps = binding
             .ratatui_widget_widget()
@@ -85,20 +87,20 @@ impl WasmWidgetHost {
 
 struct WasiState {
     ctx: WasiCtx,
-    table: ResourceTable,
+    table: wasmtime::component::ResourceTable,
 }
 
 impl WasiState {
     fn new(ctx: WasiCtx) -> Self {
         Self {
             ctx,
-            table: ResourceTable::new(),
+            table: wasmtime::component::ResourceTable::new(),
         }
     }
 }
 
 impl WasiView for WasiState {
-    fn table(&mut self) -> &mut ResourceTable {
+    fn table(&mut self) -> &mut wasmtime::component::ResourceTable {
         &mut self.table
     }
 
