@@ -13,6 +13,8 @@ pub mod commands;
 pub mod event;
 pub mod host;
 
+mod cache;
+
 pub use event::{Event, KeyCode, KeyEvent};
 pub use host::{PluginWidget, StatefulWasmWidget, WasmWidget, WasmWidgetHost};
 

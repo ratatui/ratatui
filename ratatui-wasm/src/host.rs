@@ -6,10 +6,11 @@ use anyhow::{Context, Result};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::widgets::StatefulWidget;
-use wasmtime::component::{Component, Linker};
-use wasmtime::{Engine, Store};
+use wasmtime::component::Linker;
+use wasmtime::Store;
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
+use crate::cache;
 use crate::exports::ratatui::widget::widget::{Event, RenderResult};
 use crate::generated::WasmWidget as WasmWidgetBinding;
 use crate::{blit_cells, rect_to_wit};
@@ -24,9 +25,7 @@ pub struct PluginWidget {
 impl PluginWidget {
     /// Load a `.wasm` component from the given path.
     pub fn from_file(path: impl AsRef<Path>, capabilities: &[String]) -> Result<Self> {
-        let engine = Engine::default();
-        let component = Component::from_file(&engine, path.as_ref())
-            .with_context(|| format!("loading wasm component from {}", path.as_ref().display()))?;
+        let (engine, component) = cache::get_component(path.as_ref())?;
 
         let mut linker = Linker::new(&engine);
         wasmtime_wasi::add_to_linker_sync(&mut linker)?;
