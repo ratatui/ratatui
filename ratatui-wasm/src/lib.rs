@@ -14,7 +14,7 @@ pub mod event;
 pub mod host;
 
 pub use event::{Event, KeyCode, KeyEvent};
-pub use host::{PluginWidget, WasmWidget, WasmWidgetHost};
+pub use host::{PluginWidget, StatefulWasmWidget, WasmWidget, WasmWidgetHost};
 
 #[allow(missing_docs)]
 mod generated {

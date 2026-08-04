@@ -25,6 +25,15 @@ interface widget {
         height: u16,
     }
 
+    /// Result returned by `render`, carrying both draw commands and optional
+    /// updated state.
+    record render-result {
+        /// Cells to blit onto the host buffer.
+        cells: list<cell>,
+        /// Updated opaque state to persist until the next frame.
+        state: option<list<u8>>,
+    }
+
     /// Returned by a widget when it asks for a capability it was not granted.
     variant widget-error {
         /// Capability not granted.
@@ -81,9 +90,9 @@ interface widget {
         null,
     }
 
-    /// Render the widget for the given area and return draw commands.
-    /// The host is responsible for blitting cells into the terminal buffer.
-    render: func(area: rect, state: option<list<u8>>) -> result<list<cell>, widget-error>;
+    /// Render the widget for the given area and return draw commands plus
+    /// optional updated state.
+    render: func(area: rect, state: option<list<u8>>) -> result<render-result, widget-error>;
 
     /// Deliver an input event to the widget. The returned boolean indicates
     /// whether the widget consumed the event.

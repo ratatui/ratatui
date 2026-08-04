@@ -5,11 +5,12 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
+use ratatui_core::widgets::StatefulWidget;
 use wasmtime::component::{Component, Linker};
 use wasmtime::{Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
-use crate::exports::ratatui::widget::widget::Event;
+use crate::exports::ratatui::widget::widget::{Event, RenderResult};
 use crate::generated::WasmWidget as WasmWidgetBinding;
 use crate::{blit_cells, rect_to_wit};
 
@@ -59,15 +60,30 @@ impl PluginWidget {
         })
     }
 
-    /// Render the widget into the given buffer area.
+    /// Render the widget into the given buffer area without state persistence.
     pub fn render(&mut self, area: Rect, buf: &mut Buffer) -> Result<()> {
+        let mut state = Vec::new();
+        self.render_stateful(area, buf, &mut state)
+    }
+
+    /// Render the widget while persisting opaque state across frames.
+    pub fn render_stateful(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        state: &mut Vec<u8>,
+    ) -> Result<()> {
         let wit_area = rect_to_wit(area);
-        let cells = self
+        let input_state = if state.is_empty() { None } else { Some(state.clone()) };
+        let RenderResult { cells, state: new_state } = self
             .binding
             .ratatui_widget_widget()
-            .call_render(&mut self.store, wit_area, None)
+            .call_render(&mut self.store, wit_area, input_state.as_deref())
             .context("calling widget render")?
             .map_err(|e| anyhow::anyhow!("widget render failed: {e:?}"))?;
+        if let Some(new_state) = new_state {
+            *state = new_state;
+        }
         blit_cells(area, &cells, buf);
         Ok(())
     }
@@ -132,6 +148,44 @@ impl ratatui_core::widgets::Widget for WasmWidget {
             }
             Err(err) => {
                 tracing::debug!("failed to load WASM widget: {err:#}");
+            }
+        }
+    }
+}
+
+/// A stateful Ratatui widget backed by a WASM plugin.
+///
+/// Use this with `Frame::render_stateful_widget` to let the guest persist opaque
+/// state across frames.
+#[derive(Clone, Debug)]
+pub struct StatefulWasmWidget {
+    path: PathBuf,
+    capabilities: Vec<String>,
+}
+
+impl StatefulWasmWidget {
+    /// Create a stateful WASM-backed widget from the given component path and
+    /// granted capabilities.
+    pub fn from_file(path: impl AsRef<Path>, capabilities: &[String]) -> Self {
+        Self {
+            path: path.as_ref().to_path_buf(),
+            capabilities: capabilities.to_vec(),
+        }
+    }
+}
+
+impl StatefulWidget for StatefulWasmWidget {
+    type State = Vec<u8>;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Vec<u8>) {
+        match PluginWidget::from_file(&self.path, &self.capabilities) {
+            Ok(mut plugin) => {
+                if let Err(err) = plugin.render_stateful(area, buf, state) {
+                    tracing::debug!("failed to render stateful WASM widget: {err:#}");
+                }
+            }
+            Err(err) => {
+                tracing::debug!("failed to load stateful WASM widget: {err:#}");
             }
         }
     }

@@ -1,4 +1,4 @@
-use crate::exports::ratatui::widget::widget::{Cell, Event, Guest, Rect, WidgetError};
+use crate::exports::ratatui::widget::widget::{Cell, Event, Guest, Rect, RenderResult, WidgetError};
 
 wit_bindgen::generate!({
     path: "../../../ratatui-wasm/wit/widget.wit",
@@ -8,7 +8,7 @@ wit_bindgen::generate!({
 struct HelloWidget;
 
 impl Guest for HelloWidget {
-    fn render(area: Rect, _state: Option<Vec<u8>>) -> Result<Vec<Cell>, WidgetError> {
+    fn render(area: Rect, _state: Option<Vec<u8>>) -> Result<RenderResult, WidgetError> {
         let mut cells = Vec::new();
         let text = "Hello from WASM";
         for (i, ch) in text.chars().enumerate() {
@@ -24,7 +24,7 @@ impl Guest for HelloWidget {
                 bg: Some("#000000".to_string()),
             });
         }
-        Ok(cells)
+        Ok(RenderResult { cells, state: None })
     }
 
     fn handle_event(_event: Event) -> Result<bool, WidgetError> {

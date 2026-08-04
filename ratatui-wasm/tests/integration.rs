@@ -1,7 +1,7 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::widgets::Widget;
-use ratatui_wasm::{event, PluginWidget, WasmWidget};
+use ratatui_wasm::{event, PluginWidget, StatefulWasmWidget, WasmWidget};
 
 fn wasm_path() -> &'static str {
     concat!(
@@ -60,4 +60,25 @@ fn widget_handles_key_events() {
         .handle_event(&event)
         .expect("widget can handle events");
     assert!(!handled, "hello-widget does not claim key events");
+}
+
+#[test]
+fn stateful_widget_persists_state() {
+    let path = wasm_path();
+    let widget = StatefulWasmWidget::from_file(&path, &[]);
+    let mut state: Vec<u8> = Vec::new();
+    let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
+    ratatui_core::widgets::StatefulWidget::render(widget, Rect::new(0, 0, 40, 3), &mut buf, &mut state);
+
+    let line: String = buf
+        .content()
+        .iter()
+        .take(40)
+        .map(ratatui_core::buffer::Cell::symbol)
+        .collect();
+    assert!(
+        line.contains("Hello from WASM"),
+        "expected rendered text via StatefulWasmWidget, got: {line:?}"
+    );
+    assert!(state.is_empty(), "hello-widget does not emit state");
 }
