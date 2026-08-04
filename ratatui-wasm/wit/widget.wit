@@ -33,9 +33,61 @@ interface widget {
         internal(string),
     }
 
+    /// A host-side input event delivered to the widget.
+    variant event {
+        /// Keyboard event.
+        key(key-event),
+        /// Terminal was resized to a new size.
+        resize(resize-event),
+    }
+
+    /// Resize event details.
+    record resize-event {
+        /// New number of columns.
+        cols: u16,
+        /// New number of rows.
+        rows: u16,
+    }
+
+    /// Keyboard event details.
+    record key-event {
+        /// The pressed key.
+        code: key-code,
+        /// Bitmask of modifiers (shift=1, ctrl=2, alt=4, super=8).
+        modifiers: u8,
+    }
+
+    /// Key code enumeration.
+    variant key-code {
+        backspace,
+        enter,
+        left,
+        right,
+        up,
+        down,
+        home,
+        end,
+        page-up,
+        page-down,
+        tab,
+        back-tab,
+        delete,
+        insert,
+        esc,
+        /// A single Unicode character.
+        codepoint(string),
+        /// Function key F1..F24.
+        function(u8),
+        null,
+    }
+
     /// Render the widget for the given area and return draw commands.
     /// The host is responsible for blitting cells into the terminal buffer.
     render: func(area: rect, state: option<list<u8>>) -> result<list<cell>, widget-error>;
+
+    /// Deliver an input event to the widget. The returned boolean indicates
+    /// whether the widget consumed the event.
+    handle-event: func(event: event) -> result<bool, widget-error>;
 
     /// List capabilities required by this widget (e.g. "clock:read").
     capabilities: func() -> list<string>;

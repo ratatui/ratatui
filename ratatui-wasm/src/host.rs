@@ -9,6 +9,7 @@ use wasmtime::component::{Component, Linker};
 use wasmtime::{Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
+use crate::exports::ratatui::widget::widget::Event;
 use crate::generated::WasmWidget as WasmWidgetBinding;
 use crate::{blit_cells, rect_to_wit};
 
@@ -67,6 +68,17 @@ impl PluginWidget {
             .map_err(|e| anyhow::anyhow!("widget render failed: {e:?}"))?;
         blit_cells(area, &cells, buf);
         Ok(())
+    }
+
+    /// Deliver an input event to the widget.
+    ///
+    /// Returns `true` if the widget consumed the event.
+    pub fn handle_event(&mut self, event: &Event) -> Result<bool> {
+        self.binding
+            .ratatui_widget_widget()
+            .call_handle_event(&mut self.store, event)
+            .context("calling widget handle_event")?
+            .map_err(|e| anyhow::anyhow!("widget handle_event failed: {e:?}"))
     }
 
     /// Capabilities granted to this widget instance.

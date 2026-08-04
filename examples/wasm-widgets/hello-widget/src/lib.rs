@@ -1,4 +1,4 @@
-use crate::exports::ratatui::widget::widget::{Cell, Guest, Rect, WidgetError};
+use crate::exports::ratatui::widget::widget::{Cell, Event, Guest, Rect, WidgetError};
 
 wit_bindgen::generate!({
     path: "../../../ratatui-wasm/wit/widget.wit",
@@ -25,6 +25,10 @@ impl Guest for HelloWidget {
             });
         }
         Ok(cells)
+    }
+
+    fn handle_event(_event: Event) -> Result<bool, WidgetError> {
+        Ok(false)
     }
 
     fn capabilities() -> Vec<String> {

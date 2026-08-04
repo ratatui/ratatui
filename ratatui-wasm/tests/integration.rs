@@ -1,7 +1,7 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::widgets::Widget;
-use ratatui_wasm::{PluginWidget, WasmWidget};
+use ratatui_wasm::{event, PluginWidget, WasmWidget};
 
 fn wasm_path() -> &'static str {
     concat!(
@@ -48,4 +48,16 @@ fn wasm_widget_wrapper_renders_via_widget_trait() {
         line.contains("Hello from WASM"),
         "expected rendered text via WasmWidget wrapper, got: {line:?}"
     );
+}
+
+#[test]
+fn widget_handles_key_events() {
+    let path = wasm_path();
+    let mut widget = PluginWidget::from_file(&path, &[]).expect("widget loads");
+
+    let event = event::key(event::char_key('q'), 0);
+    let handled = widget
+        .handle_event(&event)
+        .expect("widget can handle events");
+    assert!(!handled, "hello-widget does not claim key events");
 }

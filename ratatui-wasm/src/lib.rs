@@ -10,8 +10,10 @@ use ratatui_core::layout::Rect;
 use ratatui_core::style::{Color, Style};
 
 pub mod commands;
+pub mod event;
 pub mod host;
 
+pub use event::{Event, KeyCode, KeyEvent};
 pub use host::{PluginWidget, WasmWidget, WasmWidgetHost};
 
 #[allow(missing_docs)]
