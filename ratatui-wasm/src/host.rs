@@ -1,6 +1,6 @@
 //! WebAssembly host for loading and rendering `ratatui:widget/widget` components.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use ratatui_core::buffer::Buffer;
@@ -9,7 +9,8 @@ use wasmtime::component::{Component, Linker};
 use wasmtime::{Engine, Store};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
-use crate::{blit_cells, rect_to_wit, WasmWidget as WasmWidgetBinding};
+use crate::generated::WasmWidget as WasmWidgetBinding;
+use crate::{blit_cells, rect_to_wit};
 
 /// A loaded WASM widget with its granted capabilities.
 pub struct PluginWidget {
@@ -82,6 +83,43 @@ impl WasmWidgetHost {
     /// Create a new empty host.
     pub fn new() -> Self {
         Self
+    }
+}
+
+/// A native Ratatui [`ratatui_core::widgets::Widget`] wrapper around a WASM plugin.
+///
+/// `WasmWidget` can be passed directly to `Frame::render_widget`. The guest WASM
+/// module is instantiated on every render, which keeps the wrapper cheaply
+/// cloneable and trivially hot-reloadable.
+#[derive(Clone, Debug)]
+pub struct WasmWidget {
+    path: PathBuf,
+    capabilities: Vec<String>,
+}
+
+impl WasmWidget {
+    /// Create a WASM-backed widget from the given component path and granted
+    /// capabilities.
+    pub fn from_file(path: impl AsRef<Path>, capabilities: &[String]) -> Self {
+        Self {
+            path: path.as_ref().to_path_buf(),
+            capabilities: capabilities.to_vec(),
+        }
+    }
+}
+
+impl ratatui_core::widgets::Widget for WasmWidget {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        match PluginWidget::from_file(&self.path, &self.capabilities) {
+            Ok(mut plugin) => {
+                if let Err(err) = plugin.render(area, buf) {
+                    tracing::debug!("failed to render WASM widget: {err:#}");
+                }
+            }
+            Err(err) => {
+                tracing::debug!("failed to load WASM widget: {err:#}");
+            }
+        }
     }
 }
 

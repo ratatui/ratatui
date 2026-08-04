@@ -19,6 +19,7 @@ wasmtime = { version = "29", features = ["component-model"] }
 wasmtime-wasi = { version = "29" }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 ratatui-crossterm = { workspace = true }

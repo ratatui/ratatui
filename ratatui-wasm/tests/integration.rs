@@ -1,6 +1,7 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
-use ratatui_wasm::PluginWidget;
+use ratatui_core::widgets::Widget;
+use ratatui_wasm::{PluginWidget, WasmWidget};
 
 fn wasm_path() -> &'static str {
     concat!(
@@ -27,5 +28,24 @@ fn loads_and_renders_hello_widget() {
     assert!(
         line.contains("Hello from WASM"),
         "expected rendered text, got: {line:?}"
+    );
+}
+
+#[test]
+fn wasm_widget_wrapper_renders_via_widget_trait() {
+    let path = wasm_path();
+    let widget = WasmWidget::from_file(&path, &[]);
+    let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
+    widget.render(Rect::new(0, 0, 40, 3), &mut buf);
+
+    let line: String = buf
+        .content()
+        .iter()
+        .take(40)
+        .map(ratatui_core::buffer::Cell::symbol)
+        .collect();
+    assert!(
+        line.contains("Hello from WASM"),
+        "expected rendered text via WasmWidget wrapper, got: {line:?}"
     );
 }

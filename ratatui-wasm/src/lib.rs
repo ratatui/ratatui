@@ -12,7 +12,7 @@ use ratatui_core::style::{Color, Style};
 pub mod commands;
 pub mod host;
 
-pub use host::{PluginWidget, WasmWidgetHost};
+pub use host::{PluginWidget, WasmWidget, WasmWidgetHost};
 
 #[allow(missing_docs)]
 mod generated {

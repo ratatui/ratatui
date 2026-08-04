@@ -3518,6 +3518,7 @@ dependencies = [
  "ratatui-crossterm",
  "serde",
  "serde_json",
+ "tracing 0.1.44",
  "wasmtime",
  "wasmtime-wasi",
 ]
