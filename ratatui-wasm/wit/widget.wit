@@ -11,10 +11,86 @@ interface widget {
         y: u16,
         /// Single grapheme to display.
         symbol: string,
-        /// Foreground color as hex string, e.g. "#ffffff".
-        fg: option<string>,
-        /// Background color as hex string, e.g. "#000000".
-        bg: option<string>,
+        /// Foreground color.
+        fg: option<color>,
+        /// Background color.
+        bg: option<color>,
+    }
+
+    /// RGB color components.
+    record rgb-color {
+        r: u8,
+        g: u8,
+        b: u8,
+    }
+
+    /// Terminal color.
+    variant color {
+        reset,
+        black,
+        red,
+        green,
+        yellow,
+        blue,
+        magenta,
+        cyan,
+        gray,
+        dark-gray,
+        light-red,
+        light-green,
+        light-yellow,
+        light-blue,
+        light-magenta,
+        light-cyan,
+        white,
+        rgb(rgb-color),
+    }
+
+    /// Text style.
+    record style {
+        /// Foreground color.
+        fg: option<color>,
+        /// Background color.
+        bg: option<color>,
+        /// Render in bold.
+        bold: bool,
+        /// Render in italic.
+        italic: bool,
+        /// Underline.
+        underline: bool,
+    }
+
+    /// A styled text span.
+    record span {
+        /// The text content.
+        content: string,
+        /// Optional style. If omitted, the terminal default is used.
+        style: option<style>,
+    }
+
+    /// Horizontal alignment.
+    enum alignment {
+        left,
+        center,
+        right,
+    }
+
+    /// A line of spans positioned at a row offset.
+    record line {
+        /// Row offset relative to the widget area.
+        y: u16,
+        /// Spans making up the line.
+        spans: list<span>,
+        /// Horizontal alignment within the widget area.
+        alignment: option<alignment>,
+    }
+
+    /// A single draw command.
+    variant render-command {
+        /// Low-level cell.
+        cell(cell),
+        /// Higher-level line composed of spans.
+        line(line),
     }
 
     /// A rectangular area.
@@ -28,8 +104,8 @@ interface widget {
     /// Result returned by `render`, carrying both draw commands and optional
     /// updated state.
     record render-result {
-        /// Cells to blit onto the host buffer.
-        cells: list<cell>,
+        /// Draw commands to blit onto the host buffer.
+        commands: list<render-command>,
         /// Updated opaque state to persist until the next frame.
         state: option<list<u8>>,
     }

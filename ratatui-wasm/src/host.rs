@@ -11,9 +11,9 @@ use wasmtime::Store;
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
 use crate::cache;
-use crate::exports::ratatui::widget::widget::{Event, RenderResult};
 use crate::generated::WasmWidget as WasmWidgetBinding;
-use crate::{blit_cells, rect_to_wit};
+use crate::rect_to_wit;
+use crate::wit::{Event, RenderResult};
 
 /// A loaded WASM widget with its granted capabilities.
 pub struct PluginWidget {
@@ -74,7 +74,7 @@ impl PluginWidget {
     ) -> Result<()> {
         let wit_area = rect_to_wit(area);
         let input_state = if state.is_empty() { None } else { Some(state.clone()) };
-        let RenderResult { cells, state: new_state } = self
+        let RenderResult { commands, state: new_state } = self
             .binding
             .ratatui_widget_widget()
             .call_render(&mut self.store, wit_area, input_state.as_deref())
@@ -83,7 +83,7 @@ impl PluginWidget {
         if let Some(new_state) = new_state {
             *state = new_state;
         }
-        blit_cells(area, &cells, buf);
+        crate::blit_commands(area, &commands, buf);
         Ok(())
     }
 

@@ -1,6 +1,6 @@
 //! Convenience builders for host-side input events delivered to WASM widgets.
 
-pub use crate::exports::ratatui::widget::widget::{Event, KeyCode, KeyEvent, ResizeEvent};
+use crate::wit::{Event, KeyCode, KeyEvent, ResizeEvent};
 
 /// Build a keyboard event.
 pub fn key(code: KeyCode, modifiers: u8) -> Event {

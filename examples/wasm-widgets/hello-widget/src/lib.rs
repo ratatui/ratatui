@@ -1,4 +1,6 @@
-use crate::exports::ratatui::widget::widget::{Cell, Event, Guest, Rect, RenderResult, WidgetError};
+use crate::exports::ratatui::widget::widget::{
+    Cell, Color, Event, Guest, Rect, RenderCommand, RenderResult, WidgetError,
+};
 
 wit_bindgen::generate!({
     path: "../../../ratatui-wasm/wit/widget.wit",
@@ -16,15 +18,26 @@ impl Guest for HelloWidget {
             if x >= area.width {
                 break;
             }
-            cells.push(Cell {
+            cells.push(RenderCommand::Cell(Cell {
                 x,
                 y: 0,
                 symbol: ch.to_string(),
-                fg: Some("#00ff00".to_string()),
-                bg: Some("#000000".to_string()),
-            });
+                fg: Some(Color::Rgb(crate::exports::ratatui::widget::widget::RgbColor {
+                    r: 0,
+                    g: 255,
+                    b: 0,
+                })),
+                bg: Some(Color::Rgb(crate::exports::ratatui::widget::widget::RgbColor {
+                    r: 0,
+                    g: 0,
+                    b: 0,
+                })),
+            }));
         }
-        Ok(RenderResult { cells, state: None })
+        Ok(RenderResult {
+            commands: cells,
+            state: None,
+        })
     }
 
     fn handle_event(_event: Event) -> Result<bool, WidgetError> {
