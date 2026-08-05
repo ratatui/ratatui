@@ -45,8 +45,7 @@ impl<'a> Area<'a> {
 
 impl Shape for Area<'_> {
     fn draw(&self, painter: &mut Painter) {
-        let len = self.vertices.len();
-        if len == 0 {
+        if self.vertices.is_empty() {
             return;
         }
 
@@ -90,27 +89,32 @@ impl Shape for Area<'_> {
             return;
         };
 
-        let len = clipped.vertices.len();
+        let Some(&last) = clipped.vertices.last() else {
+            return;
+        };
+        let mut previous = last;
 
         // Scanline algorithm
         for y in y_min_bound..=y_max_bound {
             let mut intersections = Vec::new();
 
-            for i in 0..len {
-                let p1 = clipped.vertices[i];
-                // % len to connect last and first vertices
-                let p2 = clipped.vertices[(i + 1) % len];
+            for current in &clipped.vertices {
+                // in order to avoid [mixed_read_write_in_expression](https://rust-lang.github.io/rust-clippy/master/index.html#mixed_read_write_in_expression)
+                // calculate prev_x and prev_y outside of let Some block.
+                let (prev_x, prev_y) = (previous.x, previous.y);
+                let Some((x1, y1)) = painter.get_point(prev_x, prev_y) else {
+                    previous = *current;
+                    continue;
+                };
+                let Some((x2, y2)) = painter.get_point(current.x, current.y) else {
+                    continue;
+                };
+                previous = *current;
 
-                let Some((x1, y1)) = painter.get_point(p1.x, p1.y) else {
-                    continue;
-                };
-                let Some((x2, y2)) = painter.get_point(p2.x, p2.y) else {
-                    continue;
-                };
+                line::draw_line(painter, x1, y1, x2, y2, self.color);
 
                 // skip horizontal lines (don't contribute to intersections)
                 if y1 == y2 {
-                    line::draw_line(painter, x1, y1, x2, y2, self.color);
                     continue;
                 }
 
@@ -118,13 +122,13 @@ impl Shape for Area<'_> {
                 // Only used when fill because otherwise we don't need to know an intersection
                 // point, just draw_line
                 if self.fill && ((y1 <= y && y < y2) || (y2 <= y && y < y1)) {
+                    // Linearly interpolate along the edge to find its intersection with the
+                    // scanline.
                     let cross = (x1 as isize
                         + (y as isize - y1 as isize) * (x2 as isize - x1 as isize)
                             / (y2 as isize - y1 as isize)) as usize;
                     intersections.push(cross);
                 }
-
-                line::draw_line(painter, x1, y1, x2, y2, self.color);
             }
 
             if !self.fill {
