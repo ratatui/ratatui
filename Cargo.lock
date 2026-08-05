@@ -3514,6 +3514,7 @@ name = "ratatui-wasm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clap",
  "ratatui-core",
  "ratatui-crossterm",
  "serde",

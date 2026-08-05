@@ -21,6 +21,16 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
 toml = "0.8"
+clap = { workspace = true, optional = true }
+
+[features]
+default = []
+cli = ["dep:clap"]
+
+[[bin]]
+name = "ratatui-wasm"
+path = "src/main.rs"
+required-features = ["cli"]
 
 [dev-dependencies]
 ratatui-crossterm = { workspace = true }
