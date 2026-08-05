@@ -1,0 +1,9 @@
+[plugin]
+name = "hello-c"
+version = "0.1.0"
+author = "yunuservices"
+entry = "hello_c.wasm"
+
+[capabilities]
+required = []
+optional = []

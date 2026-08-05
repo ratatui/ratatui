@@ -10,6 +10,13 @@ fn manifest_path() -> &'static str {
     )
 }
 
+fn c_wasm_path() -> &'static str {
+    concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../examples/wasm-widgets/hello-c/hello_c.wasm"
+    )
+}
+
 fn wasm_path() -> &'static str {
     concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -123,5 +130,26 @@ fn wasm_widget_from_manifest_renders() {
     assert!(
         line.contains("Hello from WASM"),
         "expected rendered text from WasmWidget manifest, got: {line:?}"
+    );
+}
+
+#[test]
+fn c_guest_renders() {
+    let path = c_wasm_path();
+    let mut widget = PluginWidget::from_file(&path, &[]).expect("C widget loads");
+    let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
+    widget
+        .render(Rect::new(0, 0, 40, 3), &mut buf)
+        .expect("C widget renders");
+
+    let line: String = buf
+        .content()
+        .iter()
+        .take(40)
+        .map(ratatui_core::buffer::Cell::symbol)
+        .collect();
+    assert!(
+        line.contains("Hello from C"),
+        "expected rendered text from C guest, got: {line:?}"
     );
 }
