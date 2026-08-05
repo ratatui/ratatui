@@ -164,6 +164,7 @@ mod tests {
     use crate::canvas::Canvas;
 
     #[rstest]
+    #[case::empty_area(&Area::new(&[], Color::Red, true), ["          "; 10])]
     #[case::off_grid1(&Area::new(&[(-1.0, 0.0), (-1.0, 10.0), (-1.0,-1.0)], Color::Red, true), ["          "; 10])]
     #[case::off_grid2(&Area::new(&[(0.0, -1.0), (10.0, -1.0), (0.0,-10.0)], Color::Red, true), ["          "; 10])]
     #[case::off_grid3(&Area::new(&[(-10.0, 5.0), (-1.0, 5.0), (-1.0,0.0)], Color::Red, true), ["          "; 10])]
