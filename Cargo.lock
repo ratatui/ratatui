@@ -5128,6 +5128,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-demo"
+version = "0.0.0"
+dependencies = [
+ "crossterm 0.29.0",
+ "ratatui",
+ "ratatui-wasm",
+]
+
+[[package]]
 name = "wasm-encoder"
 version = "0.221.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
