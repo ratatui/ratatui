@@ -20,6 +20,7 @@ wasmtime-wasi = { version = "29" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
+toml = "0.8"
 
 [dev-dependencies]
 ratatui-crossterm = { workspace = true }

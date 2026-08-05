@@ -18,6 +18,7 @@ use crate::generated::exports::ratatui::widget::widget::{
 pub mod commands;
 pub mod event;
 pub mod host;
+pub mod manifest;
 
 mod cache;
 

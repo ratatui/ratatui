@@ -3,6 +3,13 @@ use ratatui_core::layout::Rect;
 use ratatui_core::widgets::Widget;
 use ratatui_wasm::{event, PluginWidget, StatefulWasmWidget, WasmWidget};
 
+fn manifest_path() -> &'static str {
+    concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../examples/wasm-widgets/hello-widget/ratatui.plugin.toml"
+    )
+}
+
 fn wasm_path() -> &'static str {
     concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -81,4 +88,40 @@ fn stateful_widget_persists_state() {
         "expected rendered text via StatefulWasmWidget, got: {line:?}"
     );
     assert!(state.is_empty(), "hello-widget does not emit state");
+}
+
+#[test]
+fn loads_widget_from_manifest() {
+    let mut widget = PluginWidget::from_manifest(manifest_path()).expect("manifest loads widget");
+    let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
+    widget.render(Rect::new(0, 0, 40, 3), &mut buf).expect("render");
+
+    let line: String = buf
+        .content()
+        .iter()
+        .take(40)
+        .map(ratatui_core::buffer::Cell::symbol)
+        .collect();
+    assert!(
+        line.contains("Hello from WASM"),
+        "expected rendered text from manifest, got: {line:?}"
+    );
+}
+
+#[test]
+fn wasm_widget_from_manifest_renders() {
+    let widget = WasmWidget::from_manifest(manifest_path()).expect("manifest creates widget");
+    let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
+    ratatui_core::widgets::Widget::render(widget, Rect::new(0, 0, 40, 3), &mut buf);
+
+    let line: String = buf
+        .content()
+        .iter()
+        .take(40)
+        .map(ratatui_core::buffer::Cell::symbol)
+        .collect();
+    assert!(
+        line.contains("Hello from WASM"),
+        "expected rendered text from WasmWidget manifest, got: {line:?}"
+    );
 }

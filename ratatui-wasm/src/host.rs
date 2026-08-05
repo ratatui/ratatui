@@ -12,6 +12,7 @@ use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
 use crate::cache;
 use crate::generated::WasmWidget as WasmWidgetBinding;
+use crate::manifest::PluginManifest;
 use crate::rect_to_wit;
 use crate::wit::{Event, RenderResult};
 
@@ -57,6 +58,14 @@ impl PluginWidget {
             binding,
             capabilities: granted,
         })
+    }
+
+    /// Load a widget from a `ratatui.plugin.toml` manifest.
+    pub fn from_manifest(path: impl AsRef<Path>) -> Result<Self> {
+        let manifest = PluginManifest::from_file(&path)?;
+        let base = path.as_ref().parent().unwrap_or_else(|| Path::new("."));
+        let entry = manifest.resolve_entry(base);
+        Self::from_file(entry, &manifest.granted_capabilities())
     }
 
     /// Render the widget into the given buffer area without state persistence.
@@ -135,6 +144,16 @@ impl WasmWidget {
             capabilities: capabilities.to_vec(),
         }
     }
+
+    /// Load a WASM-backed widget from a `ratatui.plugin.toml` manifest.
+    pub fn from_manifest(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        let manifest = PluginManifest::from_file(&path)?;
+        let base = path.as_ref().parent().unwrap_or_else(|| Path::new("."));
+        Ok(Self::from_file(
+            manifest.resolve_entry(base),
+            &manifest.granted_capabilities(),
+        ))
+    }
 }
 
 impl ratatui_core::widgets::Widget for WasmWidget {
@@ -170,6 +189,16 @@ impl StatefulWasmWidget {
             path: path.as_ref().to_path_buf(),
             capabilities: capabilities.to_vec(),
         }
+    }
+
+    /// Load a stateful WASM-backed widget from a `ratatui.plugin.toml` manifest.
+    pub fn from_manifest(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        let manifest = PluginManifest::from_file(&path)?;
+        let base = path.as_ref().parent().unwrap_or_else(|| Path::new("."));
+        Ok(Self::from_file(
+            manifest.resolve_entry(base),
+            &manifest.granted_capabilities(),
+        ))
     }
 }
 
