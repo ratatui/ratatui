@@ -208,6 +208,17 @@ where
         self.writer.flush()
     }
 
+    fn save_cursor_position(&mut self) -> io::Result<bool> {
+        write!(self.writer, "{}", termion::cursor::Save)?;
+        self.writer.flush()?;
+        Ok(true)
+    }
+
+    fn restore_cursor_position(&mut self) -> io::Result<()> {
+        write!(self.writer, "{}", termion::cursor::Restore)?;
+        self.writer.flush()
+    }
+
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -565,6 +576,16 @@ impl fmt::Display for ResetRegion {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn save_and_restore_cursor_position_write_escape_sequences() {
+        let mut backend = TermionBackend::new(Vec::new());
+
+        assert!(backend.save_cursor_position().unwrap());
+        backend.restore_cursor_position().unwrap();
+
+        assert_eq!(backend.writer(), b"\x1b[s\x1b[u");
+    }
 
     #[test]
     fn from_termion_color() {

@@ -225,6 +225,19 @@ where
         self.terminal.flush()
     }
 
+    fn save_cursor_position(&mut self) -> io::Result<bool> {
+        let command = Csi::Cursor(Cursor::SaveCursor);
+        write!(self.terminal, "{command}")?;
+        self.terminal.flush()?;
+        Ok(true)
+    }
+
+    fn restore_cursor_position(&mut self) -> io::Result<()> {
+        let command = Csi::Cursor(Cursor::RestoreCursor);
+        write!(self.terminal, "{command}")?;
+        self.terminal.flush()
+    }
+
     fn clear(&mut self) -> io::Result<()> {
         self.clear_region(ClearType::All)
     }
@@ -615,6 +628,17 @@ mod tests {
             backend.terminal.output(),
             format!("{hide_cursor}{show_cursor}")
         );
+    }
+
+    #[test]
+    fn saves_and_restores_cursor_position() {
+        let mut backend = backend();
+        assert!(backend.save_cursor_position().unwrap());
+        backend.restore_cursor_position().unwrap();
+
+        let save = Csi::Cursor(Cursor::SaveCursor);
+        let restore = Csi::Cursor(Cursor::RestoreCursor);
+        assert_eq!(backend.terminal.output(), format!("{save}{restore}"));
     }
 
     #[test]
