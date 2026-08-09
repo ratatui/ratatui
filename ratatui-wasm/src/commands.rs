@@ -29,11 +29,11 @@ impl DrawCommand {
     /// Apply this command to a buffer region.
     pub fn render(&self, area: Rect, buf: &mut Buffer) {
         match self {
-            DrawCommand::Line { x, y, line } => {
+            Self::Line { x, y, line } => {
                 let rect = Rect::new(area.x + x, area.y + y, area.width - x, 1);
                 line.render(rect, buf);
             }
-            DrawCommand::Clear(style) => {
+            Self::Clear(style) => {
                 for y in area.y..area.bottom() {
                     for x in area.x..area.right() {
                         buf[(x, y)].set_symbol(" ");

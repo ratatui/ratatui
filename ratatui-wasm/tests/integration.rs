@@ -3,21 +3,21 @@ use ratatui_core::layout::Rect;
 use ratatui_core::widgets::Widget;
 use ratatui_wasm::{event, PluginWidget, StatefulWasmWidget, WasmWidget};
 
-fn manifest_path() -> &'static str {
+const fn manifest_path() -> &'static str {
     concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../examples/wasm-widgets/hello-rust/ratatui.plugin.toml"
     )
 }
 
-fn c_wasm_path() -> &'static str {
+const fn c_wasm_path() -> &'static str {
     concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../examples/wasm-widgets/hello-c/hello_c.wasm"
     )
 }
 
-fn wasm_path() -> &'static str {
+const fn wasm_path() -> &'static str {
     concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../examples/wasm-widgets/hello-rust/target/wasm32-wasip2/release/hello_rust.wasm"
@@ -27,7 +27,7 @@ fn wasm_path() -> &'static str {
 #[test]
 fn loads_and_renders_hello_rust() {
     let path = wasm_path();
-    let mut widget = PluginWidget::from_file(&path, &[]).expect("widget loads");
+    let mut widget = PluginWidget::from_file(path, &[]).expect("widget loads");
     let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
     widget
         .render(Rect::new(0, 0, 40, 3), &mut buf)
@@ -48,7 +48,7 @@ fn loads_and_renders_hello_rust() {
 #[test]
 fn wasm_widget_wrapper_renders_via_widget_trait() {
     let path = wasm_path();
-    let widget = WasmWidget::from_file(&path, &[]);
+    let widget = WasmWidget::from_file(path, &[]);
     let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
     widget.render(Rect::new(0, 0, 40, 3), &mut buf);
 
@@ -67,7 +67,7 @@ fn wasm_widget_wrapper_renders_via_widget_trait() {
 #[test]
 fn widget_handles_key_events() {
     let path = wasm_path();
-    let mut widget = PluginWidget::from_file(&path, &[]).expect("widget loads");
+    let mut widget = PluginWidget::from_file(path, &[]).expect("widget loads");
 
     let event = event::key(event::char_key('q'), 0);
     let handled = widget
@@ -79,7 +79,7 @@ fn widget_handles_key_events() {
 #[test]
 fn stateful_widget_persists_state() {
     let path = wasm_path();
-    let widget = StatefulWasmWidget::from_file(&path, &[]);
+    let widget = StatefulWasmWidget::from_file(path, &[]);
     let mut state: Vec<u8> = Vec::new();
     let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
     ratatui_core::widgets::StatefulWidget::render(widget, Rect::new(0, 0, 40, 3), &mut buf, &mut state);
@@ -139,7 +139,7 @@ fn c_guest_renders() {
     if !std::path::Path::new(path).exists() {
         return;
     }
-    let mut widget = PluginWidget::from_file(&path, &[]).expect("C widget loads");
+    let mut widget = PluginWidget::from_file(path, &[]).expect("C widget loads");
     let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
     widget
         .render(Rect::new(0, 0, 40, 3), &mut buf)

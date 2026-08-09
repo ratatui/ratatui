@@ -46,7 +46,7 @@ impl PluginWidget {
             .call_capabilities(&mut store)
             .context("calling widget capabilities")?;
 
-        let granted: Vec<String> = capabilities.iter().cloned().collect();
+        let granted: Vec<String> = capabilities.to_vec();
         for required in &caps {
             if !granted.contains(required) {
                 anyhow::bail!("widget requires capability `{required}` which was not granted");
@@ -119,7 +119,7 @@ pub struct WasmWidgetHost;
 
 impl WasmWidgetHost {
     /// Create a new empty host.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self
     }
 }

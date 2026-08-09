@@ -42,7 +42,7 @@ pub struct Capabilities {
 
 impl PluginManifest {
     /// Parse a manifest from a TOML string.
-    pub fn from_str(content: &str) -> Result<Self> {
+    pub fn parse(content: &str) -> Result<Self> {
         toml::from_str(content).context("parsing plugin manifest")
     }
 
@@ -50,7 +50,7 @@ impl PluginManifest {
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let content = fs::read_to_string(path.as_ref())
             .with_context(|| format!("reading {}", path.as_ref().display()))?;
-        Self::from_str(&content)
+        Self::parse(&content)
     }
 
     /// Return the absolute path to the plugin entry wasm file.
@@ -92,7 +92,7 @@ entry = "target/wasm32-wasip2/release/hello_rust.wasm"
 required = ["stdio:stdout"]
 optional = ["clock:read"]
 "#;
-        let manifest = PluginManifest::from_str(content).unwrap();
+        let manifest = PluginManifest::parse(content).unwrap();
         assert_eq!(manifest.plugin.name, "hello-rust");
         assert_eq!(manifest.plugin.version, "0.1.0");
         assert_eq!(manifest.plugin.author.as_deref(), Some("yunuservices"));
@@ -116,7 +116,7 @@ name = "minimal"
 version = "1.0.0"
 entry = "plugin.wasm"
 "#;
-        let manifest = PluginManifest::from_str(content).unwrap();
+        let manifest = PluginManifest::parse(content).unwrap();
         assert!(manifest.capabilities.required.is_empty());
         assert!(manifest.capabilities.optional.is_empty());
         assert_eq!(manifest.granted_capabilities().len(), 0);

@@ -3,12 +3,12 @@
 use crate::wit::{Event, KeyCode, KeyEvent, ResizeEvent};
 
 /// Build a keyboard event.
-pub fn key(code: KeyCode, modifiers: u8) -> Event {
+pub const fn key(code: KeyCode, modifiers: u8) -> Event {
     Event::Key(KeyEvent { code, modifiers })
 }
 
 /// Build a terminal resize event.
-pub fn resize(cols: u16, rows: u16) -> Event {
+pub const fn resize(cols: u16, rows: u16) -> Event {
     Event::Resize(ResizeEvent { cols, rows })
 }
 
@@ -18,6 +18,6 @@ pub fn char_key(c: char) -> KeyCode {
 }
 
 /// Build a function key code (`F1`..`F24`).
-pub fn f_key(n: u8) -> KeyCode {
+pub const fn f_key(n: u8) -> KeyCode {
     KeyCode::Function(n)
 }

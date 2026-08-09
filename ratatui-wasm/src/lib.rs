@@ -43,7 +43,7 @@ mod generated {
 use self::generated::exports::ratatui::widget::widget::Rect as WitRect;
 
 /// Convert a host-side `Rect` into the WIT `rect` representation.
-pub fn rect_to_wit(area: Rect) -> WitRect {
+pub const fn rect_to_wit(area: Rect) -> WitRect {
     WitRect {
         x: area.x,
         y: area.y,
@@ -53,7 +53,7 @@ pub fn rect_to_wit(area: Rect) -> WitRect {
 }
 
 /// Convert a WIT color into a Ratatui [`Color`].
-pub fn convert_color(color: &WitColor) -> Color {
+pub const fn convert_color(color: WitColor) -> Color {
     match color {
         WitColor::Reset => Color::Reset,
         WitColor::Black => Color::Black,
@@ -77,13 +77,13 @@ pub fn convert_color(color: &WitColor) -> Color {
 }
 
 /// Convert a WIT style into a Ratatui [`Style`].
-pub fn convert_style(style: &WitStyle) -> Style {
+pub const fn convert_style(style: &WitStyle) -> Style {
     let mut host = Style::new();
     if let Some(fg) = &style.fg {
-        host = host.fg(convert_color(fg));
+        host = host.fg(convert_color(*fg));
     }
     if let Some(bg) = &style.bg {
-        host = host.bg(convert_color(bg));
+        host = host.bg(convert_color(*bg));
     }
     if style.bold {
         host = host.add_modifier(Modifier::BOLD);
@@ -104,7 +104,7 @@ fn convert_span(span: &WitSpan) -> Span<'static> {
     }
 }
 
-fn convert_alignment(alignment: WitAlignment) -> Alignment {
+const fn convert_alignment(alignment: WitAlignment) -> Alignment {
     match alignment {
         WitAlignment::Left => Alignment::Left,
         WitAlignment::Center => Alignment::Center,
@@ -130,10 +130,10 @@ fn blit_cell(area: Rect, cell: &crate::generated::exports::ratatui::widget::widg
     }
     let mut style = Style::new();
     if let Some(fg) = &cell.fg {
-        style = style.fg(convert_color(fg));
+        style = style.fg(convert_color(*fg));
     }
     if let Some(bg) = &cell.bg {
-        style = style.bg(convert_color(bg));
+        style = style.bg(convert_color(*bg));
     }
     let mut host_cell = RatatuiCell::default();
     host_cell.set_symbol(&cell.symbol);

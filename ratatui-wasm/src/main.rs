@@ -7,7 +7,7 @@
 //! ```
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -43,14 +43,14 @@ enum Command {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::List { dir } => list_plugins(dir),
-        Command::Check { manifest } => check_manifest(manifest),
-        Command::Build { guest_dir } => build_guest(guest_dir),
+        Command::List { dir } => list_plugins(&dir),
+        Command::Check { manifest } => check_manifest(&manifest),
+        Command::Build { guest_dir } => build_guest(&guest_dir),
     }
 }
 
-fn list_plugins(dir: PathBuf) -> Result<()> {
-    let found = discover_manifests(&dir)?;
+fn list_plugins(dir: &Path) -> Result<()> {
+    let found = discover_manifests(dir)?;
     if found.is_empty() {
         println!("no ratatui.plugin.toml files found in {}", dir.display());
         return Ok(());
@@ -62,14 +62,14 @@ fn list_plugins(dir: PathBuf) -> Result<()> {
             name = manifest.plugin.name,
             version = manifest.plugin.version,
             author = manifest.plugin.author.as_deref().unwrap_or("unknown"),
-            entry = manifest.resolve_entry(path.parent().unwrap_or(&dir)).display(),
+            entry = manifest.resolve_entry(path.parent().unwrap_or(dir)).display(),
         );
     }
     Ok(())
 }
 
-fn check_manifest(manifest: PathBuf) -> Result<()> {
-    let widget = PluginWidget::from_manifest(&manifest)?;
+fn check_manifest(manifest: &Path) -> Result<()> {
+    let widget = PluginWidget::from_manifest(manifest)?;
     let capabilities = widget
         .capabilities()
         .iter()
@@ -80,29 +80,29 @@ fn check_manifest(manifest: PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn build_guest(guest_dir: PathBuf) -> Result<()> {
+fn build_guest(guest_dir: &Path) -> Result<()> {
     let status = std::process::Command::new("cargo")
         .args(["build", "--target", "wasm32-wasip2", "--release"])
-        .current_dir(&guest_dir)
+        .current_dir(guest_dir)
         .status()
         .with_context(|| format!("spawning cargo in {}", guest_dir.display()))?;
     anyhow::ensure!(status.success(), "cargo build failed for {}", guest_dir.display());
     Ok(())
 }
 
-fn discover_manifests(dir: &PathBuf) -> Result<Vec<PathBuf>> {
+fn discover_manifests(dir: &Path) -> Result<Vec<PathBuf>> {
     let mut manifests = Vec::new();
-    let mut stack = vec![dir.clone()];
+    let mut stack = vec![dir.to_path_buf()];
     while let Some(current) = stack.pop() {
         let entries = fs::read_dir(&current)
             .with_context(|| format!("reading directory {}", current.display()))?;
         for entry in entries {
             let entry = entry?;
             let path = entry.path();
-            if path.is_dir() {
-                stack.push(path);
-            } else if path.file_name().and_then(|n| n.to_str()) == Some("ratatui.plugin.toml") {
-                manifests.push(path);
+            match path.file_name().and_then(|n| n.to_str()) {
+                Some("ratatui.plugin.toml") => manifests.push(path),
+                _ if path.is_dir() => stack.push(path),
+                _ => {}
             }
         }
     }

@@ -31,10 +31,10 @@ pub fn get_component(path: &Path) -> Result<(Engine, Component)> {
         .and_then(|m| m.modified())
         .with_context(|| format!("reading metadata for {}", path.display()))?;
 
-    if let Some(cached) = cache.get(path) {
-        if cached.mtime == mtime {
-            return Ok((cached.engine.clone(), cached.component.clone()));
-        }
+    if let Some(cached) = cache.get(path)
+        && cached.mtime == mtime
+    {
+        return Ok((cached.engine.clone(), cached.component.clone()));
     }
 
     let engine = Engine::default();
