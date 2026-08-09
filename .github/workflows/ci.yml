@@ -306,10 +306,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master
         with:
           toolchain: stable
+          targets: wasm32-wasip2
       - uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2
         with:
           tool: cargo-hack
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - run: cargo build --target wasm32-wasip2 --release --manifest-path examples/wasm-widgets/hello-rust/Cargo.toml
       - run: cargo xtask test-libs
 
   # Build WASM guest examples used by ratatui-wasm integration tests.
