@@ -24,20 +24,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .constraints([Constraint::Min(3), Constraint::Length(1)])
                     .split(area);
 
-                let widget_block = Block::default()
-                    .title("WASM Widget")
-                    .borders(Borders::ALL);
+                let widget_block = Block::default().title("WASM Widget").borders(Borders::ALL);
                 let inner = widget_block.inner(chunks[0]);
                 frame.render_widget(widget_block, chunks[0]);
-                frame.render_widget(
-                    WasmWidget::from_file(&widget_path, &[]),
-                    inner,
-                );
+                frame.render_widget(WasmWidget::from_file(&widget_path, &[]), inner);
 
                 frame.render_widget(
-                    Paragraph::new(format!(
-                        "Counter: {counter}  |  +/- adjust  |  q quit"
-                    )),
+                    Paragraph::new(format!("Counter: {counter}  |  +/- adjust  |  q quit")),
                     chunks[1],
                 );
             })?;
@@ -66,7 +59,6 @@ fn find_widget() -> Result<PathBuf, Box<dyn std::error::Error>> {
     }
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    Ok(manifest_dir.join(
-        "../../wasm-widgets/hello-rust/target/wasm32-wasip2/release/hello_rust.wasm",
-    ))
+    Ok(manifest_dir
+        .join("../../wasm-widgets/hello-rust/target/wasm32-wasip2/release/hello_rust.wasm"))
 }

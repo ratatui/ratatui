@@ -11,8 +11,8 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use ratatui_wasm::manifest::PluginManifest;
 use ratatui_wasm::PluginWidget;
+use ratatui_wasm::manifest::PluginManifest;
 
 #[derive(Parser)]
 #[command(name = "ratatui-wasm", about = "Manage Ratatui WASM plugins")]
@@ -62,7 +62,9 @@ fn list_plugins(dir: &Path) -> Result<()> {
             name = manifest.plugin.name,
             version = manifest.plugin.version,
             author = manifest.plugin.author.as_deref().unwrap_or("unknown"),
-            entry = manifest.resolve_entry(path.parent().unwrap_or(dir)).display(),
+            entry = manifest
+                .resolve_entry(path.parent().unwrap_or(dir))
+                .display(),
         );
     }
     Ok(())
@@ -76,7 +78,11 @@ fn check_manifest(manifest: &Path) -> Result<()> {
         .map(String::as_str)
         .collect::<Vec<_>>()
         .join(", ");
-    println!("{}: OK (capabilities: [{}])", manifest.display(), capabilities);
+    println!(
+        "{}: OK (capabilities: [{}])",
+        manifest.display(),
+        capabilities
+    );
     Ok(())
 }
 
@@ -86,7 +92,11 @@ fn build_guest(guest_dir: &Path) -> Result<()> {
         .current_dir(guest_dir)
         .status()
         .with_context(|| format!("spawning cargo in {}", guest_dir.display()))?;
-    anyhow::ensure!(status.success(), "cargo build failed for {}", guest_dir.display());
+    anyhow::ensure!(
+        status.success(),
+        "cargo build failed for {}",
+        guest_dir.display()
+    );
     Ok(())
 }
 

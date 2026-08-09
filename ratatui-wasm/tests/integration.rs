@@ -1,7 +1,7 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::widgets::Widget;
-use ratatui_wasm::{event, PluginWidget, StatefulWasmWidget, WasmWidget};
+use ratatui_wasm::{PluginWidget, StatefulWasmWidget, WasmWidget, event};
 
 const fn manifest_path() -> &'static str {
     concat!(
@@ -82,7 +82,12 @@ fn stateful_widget_persists_state() {
     let widget = StatefulWasmWidget::from_file(path, &[]);
     let mut state: Vec<u8> = Vec::new();
     let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
-    ratatui_core::widgets::StatefulWidget::render(widget, Rect::new(0, 0, 40, 3), &mut buf, &mut state);
+    ratatui_core::widgets::StatefulWidget::render(
+        widget,
+        Rect::new(0, 0, 40, 3),
+        &mut buf,
+        &mut state,
+    );
 
     let line: String = buf
         .content()
@@ -101,7 +106,9 @@ fn stateful_widget_persists_state() {
 fn loads_widget_from_manifest() {
     let mut widget = PluginWidget::from_manifest(manifest_path()).expect("manifest loads widget");
     let mut buf = Buffer::empty(Rect::new(0, 0, 40, 3));
-    widget.render(Rect::new(0, 0, 40, 3), &mut buf).expect("render");
+    widget
+        .render(Rect::new(0, 0, 40, 3), &mut buf)
+        .expect("render");
 
     let line: String = buf
         .content()

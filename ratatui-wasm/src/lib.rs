@@ -28,7 +28,7 @@ pub use host::{PluginWidget, StatefulWasmWidget, WasmWidget, WasmWidgetHost};
 pub mod wit {
     pub use super::generated::exports::ratatui::widget::widget::{
         Alignment, Cell, Color, Event, KeyCode, KeyEvent, Line, Rect, RenderCommand, RenderResult,
-        RgbColor, ResizeEvent, Span, Style, WidgetError,
+        ResizeEvent, RgbColor, Span, Style, WidgetError,
     };
 }
 
@@ -122,7 +122,11 @@ pub fn blit_commands(area: Rect, commands: &[RenderCommand], buf: &mut Buffer) {
     }
 }
 
-fn blit_cell(area: Rect, cell: &crate::generated::exports::ratatui::widget::widget::Cell, buf: &mut Buffer) {
+fn blit_cell(
+    area: Rect,
+    cell: &crate::generated::exports::ratatui::widget::widget::Cell,
+    buf: &mut Buffer,
+) {
     let abs_x = area.x.saturating_add(cell.x);
     let abs_y = area.y.saturating_add(cell.y);
     if abs_x >= area.right() || abs_y >= area.bottom() {

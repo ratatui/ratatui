@@ -6,8 +6,8 @@ use anyhow::{Context, Result};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::widgets::StatefulWidget;
-use wasmtime::component::Linker;
 use wasmtime::Store;
+use wasmtime::component::Linker;
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
 
 use crate::cache;
@@ -82,8 +82,15 @@ impl PluginWidget {
         state: &mut Vec<u8>,
     ) -> Result<()> {
         let wit_area = rect_to_wit(area);
-        let input_state = if state.is_empty() { None } else { Some(state.clone()) };
-        let RenderResult { commands, state: new_state } = self
+        let input_state = if state.is_empty() {
+            None
+        } else {
+            Some(state.clone())
+        };
+        let RenderResult {
+            commands,
+            state: new_state,
+        } = self
             .binding
             .ratatui_widget_widget()
             .call_render(&mut self.store, wit_area, input_state.as_deref())

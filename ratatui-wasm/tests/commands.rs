@@ -1,7 +1,7 @@
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
-use ratatui_wasm::wit::{Alignment, Color, Line, RenderCommand, Span, Style};
 use ratatui_wasm::blit_commands;
+use ratatui_wasm::wit::{Alignment, Color, Line, RenderCommand, Span, Style};
 
 #[test]
 fn blit_left_aligned_line() {
@@ -27,7 +27,11 @@ fn blit_left_aligned_line() {
         alignment: Some(Alignment::Left),
     };
 
-    blit_commands(Rect::new(0, 0, 20, 3), &[RenderCommand::Line(line)], &mut buf);
+    blit_commands(
+        Rect::new(0, 0, 20, 3),
+        &[RenderCommand::Line(line)],
+        &mut buf,
+    );
 
     let text: String = buf.content()[20..40]
         .iter()
@@ -48,7 +52,11 @@ fn blit_centered_line() {
         alignment: Some(Alignment::Center),
     };
 
-    blit_commands(Rect::new(0, 0, 20, 3), &[RenderCommand::Line(line)], &mut buf);
+    blit_commands(
+        Rect::new(0, 0, 20, 3),
+        &[RenderCommand::Line(line)],
+        &mut buf,
+    );
 
     let text: String = buf.content()[0..20]
         .iter()

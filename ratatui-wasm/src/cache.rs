@@ -11,8 +11,8 @@ use std::sync::{LazyLock, Mutex};
 use std::time::SystemTime;
 
 use anyhow::{Context, Result};
-use wasmtime::component::Component;
 use wasmtime::Engine;
+use wasmtime::component::Component;
 
 struct CachedComponent {
     engine: Engine,
