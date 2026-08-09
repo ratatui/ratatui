@@ -12,7 +12,7 @@ use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui_wasm::WasmWidget;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let widget_path = find_widget()?;
+    let widget_path = find_widget();
     let mut counter: i64 = 0;
 
     ratatui::run(|terminal| {
@@ -53,12 +53,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Locate the `hello-rust` `.wasm` artifact.
 ///
 /// The path can be overridden with the `WASM_WIDGET` environment variable.
-fn find_widget() -> Result<PathBuf, Box<dyn std::error::Error>> {
+fn find_widget() -> PathBuf {
     if let Ok(path) = std::env::var("WASM_WIDGET") {
-        return Ok(path.into());
+        return path.into();
     }
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    Ok(manifest_dir
-        .join("../../wasm-widgets/hello-rust/target/wasm32-wasip2/release/hello_rust.wasm"))
+    manifest_dir.join("../../wasm-widgets/hello-rust/target/wasm32-wasip2/release/hello_rust.wasm")
 }
