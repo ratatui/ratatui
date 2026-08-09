@@ -160,10 +160,12 @@ jobs:
         with:
           toolchain: stable
           components: llvm-tools
+          targets: wasm32-wasip2
       - uses: taiki-e/install-action@a6b2e2dcd845ddd7f509ce4f3ed3d922b80cc5d9 # v2
         with:
           tool: cargo-llvm-cov
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2
+      - run: cargo build --target wasm32-wasip2 --release --manifest-path examples/wasm-widgets/hello-rust/Cargo.toml
       - run: cargo xtask coverage
       - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v5
         with:
@@ -310,6 +312,21 @@ jobs:
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2
       - run: cargo xtask test-libs
 
+  # Build WASM guest examples used by ratatui-wasm integration tests.
+  build-wasm-examples:
+    name: Build WASM Examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c # master
+        with:
+          toolchain: stable
+          targets: wasm32-wasip2
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2
+      - run: cargo build --target wasm32-wasip2 --release --manifest-path examples/wasm-widgets/hello-rust/Cargo.toml
+
   # Run cargo test on all the backends.
   test-backends:
     name: Test ${{matrix.backend}} on ${{ matrix.os }}
@@ -351,6 +368,7 @@ jobs:
       - lint-docs
       - test-docs
       - test-libs
+      - build-wasm-examples
       - test-backends
     if: ${{ always() }}
     steps:
