@@ -1,0 +1,9 @@
+[plugin]
+name = "hello-rust"
+version = "0.1.0"
+author = "yunuservices"
+entry = "target/wasm32-wasip2/release/hello_rust.wasm"
+
+[capabilities]
+required = []
+optional = ["stdio:stdout"]

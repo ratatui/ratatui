@@ -1,0 +1,183 @@
+// ratatui: wasm-capable widget interface
+package ratatui:widget@0.1.0;
+
+/// Core widget capability. Each WASM module exports exactly one widget.
+interface widget {
+    /// A single cell to draw on the terminal buffer.
+    record cell {
+        /// Column offset relative to the widget area.
+        x: u16,
+        /// Row offset relative to the widget area.
+        y: u16,
+        /// Single grapheme to display.
+        symbol: string,
+        /// Foreground color.
+        fg: option<color>,
+        /// Background color.
+        bg: option<color>,
+    }
+
+    /// RGB color components.
+    record rgb-color {
+        r: u8,
+        g: u8,
+        b: u8,
+    }
+
+    /// Terminal color.
+    variant color {
+        reset,
+        black,
+        red,
+        green,
+        yellow,
+        blue,
+        magenta,
+        cyan,
+        gray,
+        dark-gray,
+        light-red,
+        light-green,
+        light-yellow,
+        light-blue,
+        light-magenta,
+        light-cyan,
+        white,
+        rgb(rgb-color),
+    }
+
+    /// Text style.
+    record style {
+        /// Foreground color.
+        fg: option<color>,
+        /// Background color.
+        bg: option<color>,
+        /// Render in bold.
+        bold: bool,
+        /// Render in italic.
+        italic: bool,
+        /// Underline.
+        underline: bool,
+    }
+
+    /// A styled text span.
+    record span {
+        /// The text content.
+        content: string,
+        /// Optional style. If omitted, the terminal default is used.
+        style: option<style>,
+    }
+
+    /// Horizontal alignment.
+    enum alignment {
+        left,
+        center,
+        right,
+    }
+
+    /// A line of spans positioned at a row offset.
+    record line {
+        /// Row offset relative to the widget area.
+        y: u16,
+        /// Spans making up the line.
+        spans: list<span>,
+        /// Horizontal alignment within the widget area.
+        alignment: option<alignment>,
+    }
+
+    /// A single draw command.
+    variant render-command {
+        /// Low-level cell.
+        cell(cell),
+        /// Higher-level line composed of spans.
+        line(line),
+    }
+
+    /// A rectangular area.
+    record rect {
+        x: u16,
+        y: u16,
+        width: u16,
+        height: u16,
+    }
+
+    /// Result returned by `render`, carrying both draw commands and optional
+    /// updated state.
+    record render-result {
+        /// Draw commands to blit onto the host buffer.
+        commands: list<render-command>,
+        /// Updated opaque state to persist until the next frame.
+        state: option<list<u8>>,
+    }
+
+    /// Returned by a widget when it asks for a capability it was not granted.
+    variant widget-error {
+        /// Capability not granted.
+        capability-denied(string),
+        /// Generic rendering error.
+        internal(string),
+    }
+
+    /// A host-side input event delivered to the widget.
+    variant event {
+        /// Keyboard event.
+        key(key-event),
+        /// Terminal was resized to a new size.
+        resize(resize-event),
+    }
+
+    /// Resize event details.
+    record resize-event {
+        /// New number of columns.
+        cols: u16,
+        /// New number of rows.
+        rows: u16,
+    }
+
+    /// Keyboard event details.
+    record key-event {
+        /// The pressed key.
+        code: key-code,
+        /// Bitmask of modifiers (shift=1, ctrl=2, alt=4, super=8).
+        modifiers: u8,
+    }
+
+    /// Key code enumeration.
+    variant key-code {
+        backspace,
+        enter,
+        left,
+        right,
+        up,
+        down,
+        home,
+        end,
+        page-up,
+        page-down,
+        tab,
+        back-tab,
+        delete,
+        insert,
+        esc,
+        /// A single Unicode character.
+        codepoint(string),
+        /// Function key F1..F24.
+        function(u8),
+        null,
+    }
+
+    /// Render the widget for the given area and return draw commands plus
+    /// optional updated state.
+    render: func(area: rect, state: option<list<u8>>) -> result<render-result, widget-error>;
+
+    /// Deliver an input event to the widget. The returned boolean indicates
+    /// whether the widget consumed the event.
+    handle-event: func(event: event) -> result<bool, widget-error>;
+
+    /// List capabilities required by this widget (e.g. "clock:read").
+    capabilities: func() -> list<string>;
+}
+
+world wasm-widget {
+    export widget;
+}
