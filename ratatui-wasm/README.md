@@ -31,14 +31,14 @@ Build the example Rust guest:
 
 ```sh
 cargo build --target wasm32-wasip2 --release \
-  -p hello-widget --manifest-path examples/wasm-widgets/hello-widget/Cargo.toml
+  -p hello-rust --manifest-path examples/wasm-widgets/hello-rust/Cargo.toml
 ```
 
 Validate the plugin:
 
 ```sh
 cargo run -p ratatui-wasm --features cli -- check \
-  examples/wasm-widgets/hello-widget/ratatui.plugin.toml
+  examples/wasm-widgets/hello-rust/ratatui.plugin.toml
 ```
 
 Run the demo app:
@@ -64,7 +64,7 @@ cargo run -p ratatui-wasm --features cli -- check ratatui.plugin.toml
 ```rust
 use ratatui_wasm::WasmWidget;
 
-let widget = WasmWidget::from_file("hello_widget.wasm", &[]);
+let widget = WasmWidget::from_file("hello_rust.wasm", &[]);
 frame.render_widget(widget, area);
 ```
 
@@ -133,7 +133,7 @@ The interface is language-agnostic. Any toolchain that implements the `ratatui:w
 - `src/lib.rs`: draw command blitting and WIT type re-exports.
 - `src/main.rs`: Optional CLI under the `cli` feature.
 - `tests/`: Integration and command tests.
-- `examples/wasm-widgets/hello-widget`: Rust guest example.
+- `examples/wasm-widgets/hello-rust`: Rust guest example.
 - `examples/apps/wasm-demo`: Minimal Ratatui app using a plugin.
 
 ## License

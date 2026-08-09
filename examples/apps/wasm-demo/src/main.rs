@@ -2,7 +2,7 @@
 //!
 //! Press `+`/`-` (or `Up`/`Down`) to adjust the host-side counter, `q`/`Esc`
 //! to quit. The guest widget is reloaded on every frame, so editing and
-//! recompiling `hello-widget` is visible immediately.
+//! recompiling `hello-rust` is visible immediately.
 
 use std::path::PathBuf;
 
@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-/// Locate the `hello-widget` `.wasm` artifact.
+/// Locate the `hello-rust` `.wasm` artifact.
 ///
 /// The path can be overridden with the `WASM_WIDGET` environment variable.
 fn find_widget() -> Result<PathBuf, Box<dyn std::error::Error>> {
@@ -67,6 +67,6 @@ fn find_widget() -> Result<PathBuf, Box<dyn std::error::Error>> {
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     Ok(manifest_dir.join(
-        "../../wasm-widgets/hello-widget/target/wasm32-wasip2/release/hello_widget.wasm",
+        "../../wasm-widgets/hello-rust/target/wasm32-wasip2/release/hello_rust.wasm",
     ))
 }

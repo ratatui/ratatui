@@ -83,28 +83,28 @@ mod tests {
     fn parse_manifest() {
         let content = r#"
 [plugin]
-name = "hello-widget"
+name = "hello-rust"
 version = "0.1.0"
 author = "yunuservices"
-entry = "target/wasm32-wasip2/release/hello_widget.wasm"
+entry = "target/wasm32-wasip2/release/hello_rust.wasm"
 
 [capabilities]
 required = ["stdio:stdout"]
 optional = ["clock:read"]
 "#;
         let manifest = PluginManifest::from_str(content).unwrap();
-        assert_eq!(manifest.plugin.name, "hello-widget");
+        assert_eq!(manifest.plugin.name, "hello-rust");
         assert_eq!(manifest.plugin.version, "0.1.0");
         assert_eq!(manifest.plugin.author.as_deref(), Some("yunuservices"));
         assert_eq!(
             manifest.plugin.entry,
-            PathBuf::from("target/wasm32-wasip2/release/hello_widget.wasm")
+            PathBuf::from("target/wasm32-wasip2/release/hello_rust.wasm")
         );
         assert_eq!(manifest.capabilities.required, vec!["stdio:stdout"]);
         assert_eq!(manifest.capabilities.optional, vec!["clock:read"]);
         assert_eq!(
             manifest.resolve_entry("/tmp"),
-            PathBuf::from("/tmp/target/wasm32-wasip2/release/hello_widget.wasm")
+            PathBuf::from("/tmp/target/wasm32-wasip2/release/hello_rust.wasm")
         );
     }
 
