@@ -6,7 +6,7 @@ This example shows that the widget interface is not tied to Rust. Any language t
 
 ## What it does
 
-Renders the text `Hello from C` with a green foreground and black background, using the same low-level cell commands as the Rust `hello-widget`.
+Renders the text `Hello from C` with a green foreground and black background, using the same low-level cell commands as the Rust `hello-rust`.
 
 ## Prerequisites
 
