@@ -15,8 +15,10 @@ categories = ["command-line-interface"]
 [dependencies]
 ratatui-core = { workspace = true }
 anyhow = "1"
-wasmtime = { version = "29", features = ["component-model"] }
-wasmtime-wasi = { version = "29" }
+pkg-config = "0.3.27"
+thiserror = "1.0.50"
+wasmtime = { version = "47.0.3", features = ["component-model"] }
+wasmtime-wasi = "47.0.3"
 serde = { workspace = true }
 tracing = { workspace = true }
 toml = "0.8"
@@ -30,6 +32,9 @@ cli = ["dep:clap"]
 name = "ratatui-wasm"
 path = "src/main.rs"
 required-features = ["cli"]
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["pkg-config", "thiserror"]
 
 [lints]
 workspace = true

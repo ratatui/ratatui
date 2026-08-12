@@ -119,3 +119,140 @@ fn discover_manifests(dir: &Path) -> Result<Vec<PathBuf>> {
     manifests.sort();
     Ok(manifests)
 }
+
+#[cfg(test)]
+mod tests {
+    use clap::Parser;
+
+    use super::*;
+
+    #[test]
+    fn clap_command_parses_list() {
+        let cli = Cli::parse_from(["ratatui-wasm", "list", "/tmp"]);
+        match cli.command {
+            Command::List { dir } => assert_eq!(dir, PathBuf::from("/tmp")),
+            _ => panic!("expected List command"),
+        }
+    }
+
+    #[test]
+    fn clap_command_parses_check() {
+        let cli = Cli::parse_from(["ratatui-wasm", "check", "/tmp/test.plugin.toml"]);
+        match cli.command {
+            Command::Check { manifest } => {
+                assert_eq!(manifest, PathBuf::from("/tmp/test.plugin.toml"));
+            }
+            _ => panic!("expected Check command"),
+        }
+    }
+
+    #[test]
+    fn clap_command_parses_build() {
+        let cli = Cli::parse_from(["ratatui-wasm", "build", "/tmp/guest"]);
+        match cli.command {
+            Command::Build { guest_dir } => {
+                assert_eq!(guest_dir, PathBuf::from("/tmp/guest"));
+            }
+            _ => panic!("expected Build command"),
+        }
+    }
+
+    #[test]
+    fn clap_command_debug_assert() {
+        <Cli as clap::CommandFactory>::command().debug_assert();
+    }
+
+    #[test]
+    fn discover_manifests_finds_nested_manifests() {
+        let temp_dir =
+            std::env::temp_dir().join(format!("ratatui-wasm-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+        fs::create_dir_all(temp_dir.join("nested")).unwrap();
+        fs::write(
+            temp_dir.join("ratatui.plugin.toml"),
+            "[plugin]\nname = \"root\"\nversion = \"1.0\"\nentry = \"root.wasm\"\n",
+        )
+        .unwrap();
+        fs::write(
+            temp_dir.join("nested").join("ratatui.plugin.toml"),
+            "[plugin]\nname = \"nested\"\nversion = \"1.0\"\nentry = \"nested.wasm\"\n",
+        )
+        .unwrap();
+        fs::write(temp_dir.join("other.txt"), "ignored").unwrap();
+
+        let found = discover_manifests(&temp_dir).unwrap();
+        assert_eq!(found.len(), 2);
+        assert!(
+            found
+                .iter()
+                .any(|p| p.ends_with("nested/ratatui.plugin.toml"))
+        );
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn discover_manifests_returns_empty_when_none() {
+        let temp_dir =
+            std::env::temp_dir().join(format!("ratatui-wasm-empty-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+        fs::write(temp_dir.join("other.txt"), "ignored").unwrap();
+
+        let found = discover_manifests(&temp_dir).unwrap();
+        assert!(found.is_empty());
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn list_plugins_with_valid_manifest() {
+        let manifest = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../examples/wasm-widgets/hello-rust/ratatui.plugin.toml"
+        );
+        let dir = Path::new(manifest).parent().unwrap();
+        list_plugins(dir).expect("list_plugins should succeed");
+    }
+
+    #[test]
+    fn check_manifest_with_valid_widget() {
+        let manifest = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../examples/wasm-widgets/hello-rust/ratatui.plugin.toml"
+        );
+        check_manifest(Path::new(manifest)).expect("check_manifest should succeed");
+    }
+
+    #[test]
+    fn list_plugins_empty_directory() {
+        let temp_dir =
+            std::env::temp_dir().join(format!("ratatui-wasm-empty-list-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+        list_plugins(&temp_dir).expect("list_plugins should succeed on empty dir");
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn discover_manifests_fails_when_dir_missing() {
+        let result = discover_manifests(Path::new("/nonexistent-ratatui-wasm-dir"));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn check_manifest_fails_when_widget_missing() {
+        let temp_dir =
+            std::env::temp_dir().join(format!("ratatui-wasm-check-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+        let manifest = temp_dir.join("ratatui.plugin.toml");
+        fs::write(
+            &manifest,
+            "[plugin]\nname = \"missing\"\nversion = \"1.0\"\nentry = \"missing.wasm\"\n",
+        )
+        .unwrap();
+        let result = check_manifest(&manifest);
+        assert!(result.is_err());
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+}

@@ -2,13 +2,13 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::widgets::StatefulWidget;
 use wasmtime::Store;
 use wasmtime::component::Linker;
-use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
+use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 
 use crate::cache;
 use crate::generated::WasmWidget as WasmWidgetBinding;
@@ -29,7 +29,8 @@ impl PluginWidget {
         let (engine, component) = cache::get_component(path.as_ref())?;
 
         let mut linker = Linker::new(&engine);
-        wasmtime_wasi::add_to_linker_sync(&mut linker)?;
+        wasmtime_wasi::p2::add_to_linker_sync(&mut linker)
+            .map_err(|e| anyhow::anyhow!("adding WASI to linker: {e}"))?;
 
         let mut builder = WasiCtxBuilder::new();
         apply_capabilities(&mut builder, capabilities);
@@ -38,13 +39,13 @@ impl PluginWidget {
 
         let binding = Box::new(
             WasmWidgetBinding::instantiate(&mut store, &component, &linker)
-                .context("instantiating wasm widget component")?,
+                .map_err(|e| anyhow::anyhow!("instantiating wasm widget component: {e}"))?,
         );
 
         let caps = binding
             .ratatui_widget_widget()
             .call_capabilities(&mut store)
-            .context("calling widget capabilities")?;
+            .map_err(|e| anyhow::anyhow!("calling widget capabilities: {e}"))?;
 
         let granted: Vec<String> = capabilities.to_vec();
         for required in &caps {
@@ -94,7 +95,7 @@ impl PluginWidget {
             .binding
             .ratatui_widget_widget()
             .call_render(&mut self.store, wit_area, input_state.as_deref())
-            .context("calling widget render")?
+            .map_err(|e| anyhow::anyhow!("calling widget render: {e}"))?
             .map_err(|e| anyhow::anyhow!("widget render failed: {e:?}"))?;
         if let Some(new_state) = new_state {
             *state = new_state;
@@ -110,7 +111,7 @@ impl PluginWidget {
         self.binding
             .ratatui_widget_widget()
             .call_handle_event(&mut self.store, event)
-            .context("calling widget handle_event")?
+            .map_err(|e| anyhow::anyhow!("calling widget handle_event: {e}"))?
             .map_err(|e| anyhow::anyhow!("widget handle_event failed: {e:?}"))
     }
 
@@ -257,11 +258,10 @@ impl WasiState {
 }
 
 impl WasiView for WasiState {
-    fn table(&mut self) -> &mut wasmtime::component::ResourceTable {
-        &mut self.table
-    }
-
-    fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.ctx
+    fn ctx(&mut self) -> WasiCtxView<'_> {
+        WasiCtxView {
+            ctx: &mut self.ctx,
+            table: &mut self.table,
+        }
     }
 }

@@ -39,7 +39,7 @@ pub fn get_component(path: &Path) -> Result<(Engine, Component)> {
 
     let engine = Engine::default();
     let component = Component::from_file(&engine, path)
-        .with_context(|| format!("loading wasm component from {}", path.display()))?;
+        .map_err(|e| anyhow::anyhow!("loading wasm component from {}: {e}", path.display()))?;
 
     cache.insert(
         path.to_path_buf(),

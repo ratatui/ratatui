@@ -163,3 +163,36 @@ fn c_guest_renders() {
         "expected rendered text from C guest, got: {line:?}"
     );
 }
+
+#[test]
+fn from_file_fails_when_wasm_missing() {
+    let result = PluginWidget::from_file("/tmp/ratatui-wasm-missing.wasm", &[]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn from_manifest_fails_when_manifest_missing() {
+    let result = PluginWidget::from_manifest("/tmp/ratatui-wasm-missing.toml");
+    assert!(result.is_err());
+}
+
+#[test]
+fn wasm_widget_from_manifest_fails_when_missing() {
+    let result = WasmWidget::from_manifest("/tmp/ratatui-wasm-missing.toml");
+    assert!(result.is_err());
+}
+
+#[test]
+fn widget_host_can_be_constructed() {
+    let _host = ratatui_wasm::WasmWidgetHost::new();
+}
+
+#[test]
+fn widget_fails_with_invalid_wasm_file() {
+    let temp_dir = std::env::temp_dir().join(format!("ratatui-wasm-bad-{}", std::process::id()));
+    let _ = std::fs::remove_file(&temp_dir);
+    std::fs::write(&temp_dir, b"not a wasm component").unwrap();
+    let result = PluginWidget::from_file(&temp_dir, &[]);
+    assert!(result.is_err());
+    let _ = std::fs::remove_file(&temp_dir);
+}
