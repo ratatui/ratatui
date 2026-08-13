@@ -1592,7 +1592,7 @@ mod tests {
     /// `"α"` is two bytes and one cell. With `bar_length == 3` the value
     /// `"ααααα"` must paint all five cells; the first three use `value_style`
     /// and the rest use the bar style. Splitting on byte indices leaves a
-    /// filled-block cell in the middle and mis-styles the overflow.
+    /// filled-block cell in the middle and styles the overflow incorrectly.
     #[test]
     fn horizontal_multibyte_text_value_split_by_display_width() {
         let bar = Bar::default()
