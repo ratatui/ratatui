@@ -103,7 +103,8 @@ Shows the full range of RGB colors in an animation. [Source](./apps/colors-rgb/)
 
 ## Constraint Explorer
 
-Shows how different constraints can be used to layout widgets. [Source](./apps/constraint-explorer/).
+An interactive layout playground for experimenting with constraint types and values, spacing, and
+`Flex` modes. [Source](./apps/constraint-explorer/).
 
 ![Constraint Explorer demo][constraint-explorer.gif]
 
