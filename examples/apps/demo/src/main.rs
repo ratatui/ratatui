@@ -38,7 +38,7 @@ struct Cli {
     tick_rate: u64,
 
     /// whether unicode symbols are used to improve the overall look of the app
-    #[arg(short, long, default_value_t = true)]
+    #[arg(short, long, default_value_t = true, action = clap::ArgAction::Set)]
     unicode: bool,
 }
 
