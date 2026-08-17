@@ -725,6 +725,39 @@ mod tests {
     }
 
     #[test]
+    fn draws_cursor_move_after_wide_symbol() {
+        // A double-width glyph advances the terminal cursor by two columns, so writing the
+        // very next cell requires an explicit cursor move. See issue #2651.
+        let mut backend = backend();
+        let wide = Cell::new("\u{2764}\u{FE0F}"); // ❤️ (VS16 emoji presentation)
+        let next = Cell::new("a");
+        let content = [(0, 0, &wide), (1, 0, &next)];
+
+        backend.draw(content.into_iter()).unwrap();
+
+        let output = backend.terminal.output();
+        let cursor = Csi::Cursor(cursor_position(Position::new(1, 0)).unwrap());
+        assert!(
+            output.contains(&cursor.to_string()),
+            "expected a cursor move to (1, 0) after a wide glyph, got: {output:?}"
+        );
+    }
+
+    #[test]
+    fn skips_cursor_move_for_contiguous_cells() {
+        let mut backend = backend();
+        let a = Cell::new("a");
+        let b = Cell::new("b");
+        let content = [(0, 0, &a), (1, 0, &b)];
+
+        backend.draw(content.into_iter()).unwrap();
+
+        let output = backend.terminal.output();
+        let cursor = Csi::Cursor(cursor_position(Position::new(1, 0)).unwrap());
+        assert!(!output.contains(&cursor.to_string()));
+    }
+
+    #[test]
     fn converts_ratatui_colors_to_termina_colors() {
         assert_eq!(Color::Reset.into_termina(), ColorSpec::Reset);
         assert_eq!(Color::Red.into_termina(), ColorSpec::RED);

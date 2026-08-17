@@ -566,6 +566,37 @@ impl fmt::Display for ResetRegion {
 mod tests {
     use super::*;
 
+    /// Renders `content` and returns the emitted bytes as a lossy string.
+    fn draw_to_string(content: &[(u16, u16, &Cell)]) -> String {
+        let mut out = Vec::new();
+        TermionBackend::new(&mut out)
+            .draw(content.iter().copied())
+            .unwrap();
+        String::from_utf8_lossy(&out).into_owned()
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_wide_symbol() {
+        // A double-width glyph advances the terminal cursor by two columns, so writing the
+        // very next cell requires an explicit cursor move. See issue #2651.
+        let wide = Cell::new("\u{2764}\u{FE0F}"); // ❤️ (VS16 emoji presentation)
+        let next = Cell::new("a");
+        let output = draw_to_string(&[(0, 0, &wide), (1, 0, &next)]);
+        let goto = termion::cursor::Goto(2, 1).to_string();
+        assert!(
+            output.contains(&goto),
+            "expected `Goto(2, 1)` after a wide glyph, got: {output:?}"
+        );
+    }
+
+    #[test]
+    fn draw_skips_cursor_move_for_contiguous_cells() {
+        let a = Cell::new("a");
+        let b = Cell::new("b");
+        let output = draw_to_string(&[(0, 0, &a), (1, 0, &b)]);
+        assert!(!output.contains(&termion::cursor::Goto(2, 1).to_string()));
+    }
+
     #[test]
     fn from_termion_color() {
         assert_eq!(Color::from_termion(tcolor::Reset), Color::Reset);
