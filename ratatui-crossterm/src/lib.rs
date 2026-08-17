@@ -795,6 +795,10 @@ impl crate::crossterm::Command for ScrollDownInRegion {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU16;
+
+    use ratatui_core::buffer::{Buffer, CellDiffOption};
+    use ratatui_core::layout::Rect;
     use rstest::rstest;
 
     use super::*;
@@ -829,6 +833,40 @@ mod tests {
         let output = draw_to_string(&[(0, 0, &a), (1, 0, &b)]);
         assert_eq!(output.matches(&MoveTo(0, 0).to_string()).count(), 1);
         assert!(!output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_uses_forced_width_for_cursor_tracking() {
+        // A cell with an escape sequence has an arbitrary text width; the forced width tells
+        // us how far the terminal cursor actually advances.
+        let mut forced = Cell::new("\u{1b}[?25hab");
+        forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
+        let next = Cell::new("c");
+        let output = draw_to_string(&[(0, 0, &forced), (2, 0, &next)]);
+        assert!(!output.contains(&MoveTo(2, 0).to_string()));
+        let output = draw_to_string(&[(0, 0, &forced), (1, 0, &next)]);
+        assert!(output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_wide_symbol_from_buffer_diff() {
+        // End-to-end version of the report in #2651: the diff emits the trailing cell of a
+        // VS16 emoji sequence on purpose, and the backend must reposition before writing it.
+        let area = Rect::new(0, 0, 4, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "aaaa", Style::default());
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "\u{2764}\u{FE0F}bc", Style::default());
+
+        let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        assert_eq!(
+            updates.iter().map(|(x, _, _)| *x).collect::<Vec<_>>(),
+            [0, 1, 2, 3]
+        );
+        let output = draw_to_string(&updates);
+        assert!(output.contains(&MoveTo(1, 0).to_string()));
+        assert!(!output.contains(&MoveTo(2, 0).to_string()));
+        assert!(!output.contains(&MoveTo(3, 0).to_string()));
     }
 
     #[test]
