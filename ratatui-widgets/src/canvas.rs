@@ -420,7 +420,7 @@ impl Painter<'_, '_> {
     /// `(x, y)` coordinates to the location of a point on the grid.
     ///
     /// Points are rounded to the nearest grid cell (with points exactly in the center of a cell
-    /// rounding up).
+    /// rounding up). Points outside the bounds or with non-finite coordinates return `None`.
     ///
     /// # Examples
     ///
@@ -449,7 +449,7 @@ impl Painter<'_, '_> {
     pub fn get_point(&self, x: f64, y: f64) -> Option<(usize, usize)> {
         let [left, right] = self.context.x_bounds;
         let [bottom, top] = self.context.y_bounds;
-        if x < left || x > right || y < bottom || y > top {
+        if !x.is_finite() || !y.is_finite() || x < left || x > right || y < bottom || y > top {
             return None;
         }
         let width = right - left;
