@@ -46,6 +46,12 @@ impl Line {
 impl Shape for Line {
     #[expect(clippy::similar_names)]
     fn draw(&self, painter: &mut Painter) {
+        if [self.x1, self.y1, self.x2, self.y2]
+            .iter()
+            .any(|coordinate| !coordinate.is_finite())
+        {
+            return;
+        }
         let (x_bounds, y_bounds) = painter.bounds();
         let Some((world_x1, world_y1, world_x2, world_y2)) =
             clip_line(x_bounds, y_bounds, self.x1, self.y1, self.x2, self.y2)
