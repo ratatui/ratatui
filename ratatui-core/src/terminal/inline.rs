@@ -484,6 +484,22 @@ mod tests {
         assert_eq!(area, Rect::new(0, 0, 10, 4));
     }
 
+    #[test]
+    fn insert_before_is_noop_when_terminal_has_no_rows() {
+        let backend = TestBackend::new(5, 0);
+        let options = TerminalOptions {
+            viewport: Viewport::Inline(3),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+        let scrollback = terminal.backend().scrollback().clone();
+
+        terminal
+            .insert_before(2, |buf| buf.set_string(0, 0, "aaaaa", Style::default()))
+            .unwrap();
+
+        assert_eq!(terminal.backend().scrollback(), &scrollback);
+    }
+
     #[cfg(not(feature = "scrolling-regions"))]
     mod no_scrolling_regions {
         use super::*;
