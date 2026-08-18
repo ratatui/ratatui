@@ -66,6 +66,8 @@ impl<B: Backend> Terminal<B> {
     /// directly into the terminal's scrollback buffer. At the limit, if the viewport takes up the
     /// whole screen, all lines will be inserted directly into the scrollback buffer.
     ///
+    /// This is a no-op for non-inline viewports and when the terminal has no rows.
+    ///
     /// # Examples
     ///
     /// ## Insert a single line before the current viewport
@@ -111,6 +113,7 @@ impl<B: Backend> Terminal<B> {
         F: FnOnce(&mut Buffer),
     {
         match self.viewport {
+            Viewport::Inline(_) if self.last_known_area.height == 0 => Ok(()),
             #[cfg(feature = "scrolling-regions")]
             Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),
             #[cfg(not(feature = "scrolling-regions"))]
