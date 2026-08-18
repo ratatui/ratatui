@@ -1218,4 +1218,15 @@ mod tests {
         // This should not panic, even if the buffer has zero size.
         canvas.render(buffer.area, &mut buffer);
     }
+
+    #[rstest]
+    #[case::nan_x(f64::NAN, 5.0)]
+    #[case::nan_y(5.0, f64::NAN)]
+    #[case::inf_x(f64::INFINITY, 5.0)]
+    #[case::neg_inf_y(5.0, f64::NEG_INFINITY)]
+    fn get_point_rejects_non_finite_coordinates(#[case] x: f64, #[case] y: f64) {
+        let mut ctx = Context::new(2, 2, [0.0, 10.0], [0.0, 10.0], Marker::Dot);
+        let painter = Painter::from(&mut ctx);
+        assert_eq!(painter.get_point(x, y), None);
+    }
 }
