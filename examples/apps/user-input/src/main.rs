@@ -220,7 +220,7 @@ impl App {
                 ListItem::new(content)
             })
             .collect();
-        let messages = List::new(messages).block(Block::bordered().title("Messages"));
+        let messages = List::from(&messages).block(Block::bordered().title("Messages"));
         frame.render_widget(messages, messages_area);
     }
 }

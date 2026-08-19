@@ -1,3 +1,5 @@
+use std::cell::OnceCell;
+
 use itertools::Itertools;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Constraint, Layout, Margin, Rect};
@@ -49,14 +51,21 @@ impl Widget for TracerouteTab {
 }
 
 fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
+    let hop_rows: OnceCell<Vec<Row<'_>>> = OnceCell::new();
+    let rows = hop_rows.get_or_init(|| {
+        HOPS.iter()
+            .map(|hop| Row::new(vec![hop.host, hop.address]))
+            .collect()
+    });
+
     let mut state = TableState::default().with_selected(Some(selected_row));
-    let rows = HOPS.iter().map(|hop| Row::new(vec![hop.host, hop.address]));
     let block = Block::new()
         .padding(Padding::new(1, 1, 1, 1))
         .title_alignment(Alignment::Center)
         .title("Traceroute bad.horse".bold().white());
     StatefulWidget::render(
-        Table::new(rows, [Constraint::Max(100), Constraint::Length(15)])
+        Table::from(rows)
+            .widths([Constraint::Max(100), Constraint::Length(15)])
             .header(Row::new(vec!["Host", "Address"]).set_style(THEME.traceroute.header))
             .row_highlight_style(THEME.traceroute.selected)
             .block(block),

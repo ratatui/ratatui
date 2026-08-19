@@ -1,3 +1,5 @@
+use std::cell::OnceCell;
+
 use itertools::Itertools;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Constraint, Layout, Margin, Rect};
@@ -155,11 +157,14 @@ fn render_recipe(area: Rect, buf: &mut Buffer) {
 }
 
 fn render_ingredients(selected_row: usize, area: Rect, buf: &mut Buffer) {
+    let ingredient_rows: OnceCell<Vec<Row<'_>>> = OnceCell::new();
+    let rows = ingredient_rows.get_or_init(|| INGREDIENTS.iter().map(|i| (*i).into()).collect());
+
     let mut state = TableState::default().with_selected(Some(selected_row));
-    let rows = INGREDIENTS.iter().copied();
     let theme = THEME.recipe;
     StatefulWidget::render(
-        Table::new(rows, [Constraint::Length(7), Constraint::Length(30)])
+        Table::from(rows)
+            .widths([Constraint::Length(7), Constraint::Length(30)])
             .block(Block::new().style(theme.ingredients))
             .header(Row::new(vec!["Qty", "Ingredient"]).style(theme.ingredients_header))
             .row_highlight_style(Style::new().light_yellow()),
