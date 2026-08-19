@@ -2,6 +2,7 @@ use criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
 use rand::RngExt;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
+use ratatui::symbols::Marker;
 use ratatui::widgets::{Sparkline, Widget};
 
 /// Benchmark for rendering a sparkline.
@@ -16,8 +17,15 @@ fn sparkline(c: &mut Criterion) {
 
         // Render a basic sparkline
         group.bench_with_input(
-            BenchmarkId::new("render", data_count),
+            BenchmarkId::new("render_bar", data_count),
             &Sparkline::default().data(&data),
+            render,
+        );
+
+        // Render a braille sparkline
+        group.bench_with_input(
+            BenchmarkId::new("render_braille", data_count),
+            &Sparkline::default().data(&data).marker(Marker::Braille),
             render,
         );
     }
