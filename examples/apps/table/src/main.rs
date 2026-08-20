@@ -25,12 +25,17 @@ const PALETTES: [tailwind::Palette; 4] = [
     tailwind::INDIGO,
     tailwind::RED,
 ];
-const INFO_TEXT: [&str; 2] = [
+const INFO_TEXT_SIZE: usize = 2;
+const INFO_TEXT: [&str; INFO_TEXT_SIZE] = [
     "(Esc) quit | (↑) move up | (↓) move down | (←) move left | (→) move right",
     "(Shift + →) next color | (Shift + ←) previous color",
 ];
 
-const ITEM_HEIGHT: usize = 4;
+const LIST_SIZE: usize = 20;
+const ITEM_HEIGHT: u16 = 4; // 2 lines of text + top/bottom spacing.
+const HEADER_HEIGHT: u16 = 1;
+const FOOTER_HEIGHT: u16 = INFO_TEXT_SIZE as u16 + 2; // 2 is for the borders.
+const MIN_TABLE_HEIGHT: u16 = ITEM_HEIGHT + HEADER_HEIGHT;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -105,7 +110,7 @@ impl App {
         Self {
             state: TableState::default().with_selected(0),
             longest_item_lens: constraint_len_calculator(&data_vec),
-            scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
+            scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT as usize),
             colors: TableColors::new(&PALETTES[0]),
             color_index: 0,
             items: data_vec,
@@ -124,7 +129,7 @@ impl App {
             None => 0,
         };
         self.state.select(Some(i));
-        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
+        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT as usize);
     }
 
     pub const fn previous_row(&mut self) {
@@ -139,7 +144,7 @@ impl App {
             None => 0,
         };
         self.state.select(Some(i));
-        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
+        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT as usize);
     }
 
     pub fn next_column(&mut self) {
@@ -186,7 +191,10 @@ impl App {
     }
 
     fn render(&mut self, frame: &mut Frame) {
-        let layout = Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
+        let layout = Layout::vertical([
+            Constraint::Min(MIN_TABLE_HEIGHT),
+            Constraint::Length(FOOTER_HEIGHT),
+        ]);
         let rects = frame.area().layout_vec(&layout);
 
         self.set_colors();
@@ -213,7 +221,7 @@ impl App {
             .map(Cell::from)
             .collect::<Row>()
             .style(header_style)
-            .height(1);
+            .height(HEADER_HEIGHT);
         let rows = self.items.iter().enumerate().map(|(i, data)| {
             let color = match i % 2 {
                 0 => self.colors.normal_row_color,
@@ -237,7 +245,7 @@ impl App {
                 })
                 .collect::<Row>()
                 .style(Style::new().fg(self.colors.row_fg).bg(color))
-                .height(4)
+                .height(ITEM_HEIGHT)
         });
         let bar = " █ ";
         let t = Table::new(
@@ -298,7 +306,7 @@ impl App {
 fn generate_fake_names() -> Vec<Data> {
     use fakeit::{address, contact, name};
 
-    (0..20)
+    (0..LIST_SIZE)
         .map(|_| {
             let name = name::full();
             let address = format!(
