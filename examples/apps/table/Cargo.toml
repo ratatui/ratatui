@@ -6,6 +6,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+clap.workspace = true
 color-eyre.workspace = true
 crossterm.workspace = true
 fakeit.workspace = true

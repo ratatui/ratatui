@@ -5,6 +5,7 @@
 /// release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+use clap::Parser;
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyModifiers};
 use itertools::Itertools;
@@ -31,15 +32,23 @@ const INFO_TEXT: [&str; INFO_TEXT_SIZE] = [
     "(Shift + →) next color | (Shift + ←) previous color",
 ];
 
-const LIST_SIZE: usize = 20;
 const ITEM_HEIGHT: u16 = 4; // 2 lines of text + top/bottom spacing.
 const HEADER_HEIGHT: u16 = 1;
 const FOOTER_HEIGHT: u16 = INFO_TEXT_SIZE as u16 + 2; // 2 is for the borders.
 const MIN_TABLE_HEIGHT: u16 = ITEM_HEIGHT + HEADER_HEIGHT;
 
+/// Table example with pagination support.
+#[derive(Parser)]
+struct Args {
+    /// Number of rows to generate. Use 0 for an empty table.
+    #[arg(short = 'n', default_value_t = 20)]
+    list_size: usize,
+}
+
 fn main() -> Result<()> {
+    let args = Args::parse();
     color_eyre::install()?;
-    ratatui::run(|terminal| App::new().run(terminal))
+    ratatui::run(|terminal| App::new(args.list_size).run(terminal))
 }
 struct TableColors {
     buffer_bg: Color,
@@ -105,12 +114,14 @@ struct App {
 }
 
 impl App {
-    fn new() -> Self {
-        let data_vec = generate_fake_names();
+    fn new(list_size: usize) -> Self {
+        let data_vec = generate_fake_names(list_size);
         Self {
             state: TableState::default().with_selected(0),
             longest_item_lens: constraint_len_calculator(&data_vec),
-            scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT as usize),
+            scroll_state: ScrollbarState::new(
+                (data_vec.len().saturating_sub(1)) * ITEM_HEIGHT as usize,
+            ),
             colors: TableColors::new(&PALETTES[0]),
             color_index: 0,
             items: data_vec,
@@ -303,10 +314,10 @@ impl App {
     }
 }
 
-fn generate_fake_names() -> Vec<Data> {
+fn generate_fake_names(list_size: usize) -> Vec<Data> {
     use fakeit::{address, contact, name};
 
-    (0..LIST_SIZE)
+    (0..list_size)
         .map(|_| {
             let name = name::full();
             let address = format!(

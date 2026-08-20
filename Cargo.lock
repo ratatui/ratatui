@@ -3669,6 +3669,7 @@ dependencies = [
 name = "table"
 version = "0.0.0"
 dependencies = [
+ "clap",
  "color-eyre",
  "crossterm 0.29.0",
  "fakeit",
