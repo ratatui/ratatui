@@ -15,7 +15,7 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use crossterm::event;
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
@@ -29,8 +29,10 @@ fn main() -> Result<()> {
     ratatui::run(|terminal| {
         loop {
             terminal.draw(render)?;
-            if event::read()?.is_key_press() {
-                break Ok(());
+            if let Event::Key(key_event) = event::read()? {
+                if key_event.code == KeyCode::Char('q') {
+                    break Ok(());
+                }
             }
         }
     })
