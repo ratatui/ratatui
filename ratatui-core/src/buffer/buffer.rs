@@ -412,15 +412,28 @@ impl Buffer {
         }
     }
 
-    /// Resize the buffer so that the mapped area matches the given area and that the buffer
-    /// length is equal to area.width * area.height
+    /// Resize the buffer so that the mapped area matches the given area and the buffer
+    /// length is equal to area.width * area.height.
+    ///
+    /// Cells that overlap between the old and new areas are preserved at the same global
+    /// coordinates. New cells are initialized as empty.
     pub fn resize(&mut self, area: Rect) {
-        let length = area.area() as usize;
-        if self.content.len() > length {
-            self.content.truncate(length);
-        } else {
-            self.content.resize(length, Cell::EMPTY);
+        if self.area == area {
+            return;
         }
+
+        let old_area = self.area;
+        let old_content =
+            core::mem::replace(&mut self.content, vec![Cell::EMPTY; area.area() as usize]);
+        let preserved_area = old_area.intersection(area);
+
+        for position in preserved_area.positions() {
+            let old_index =
+                ((position.y - old_area.y) * old_area.width + position.x - old_area.x) as usize;
+            let new_index = ((position.y - area.y) * area.width + position.x - area.x) as usize;
+            self.content[new_index] = old_content[old_index].clone();
+        }
+
         self.area = area;
     }
 
@@ -841,6 +854,25 @@ mod tests {
     fn index_mut_out_of_bounds_panics(#[case] x: u16, #[case] y: u16) {
         let mut buf = Buffer::empty(Rect::new(10, 10, 10, 10));
         buf[(x, y)].set_symbol("A");
+    }
+
+    #[test]
+    fn resize_preserves_cells_by_global_position() {
+        let mut buffer = Buffer::with_lines(["abcd", "efgh", "ijkl"]);
+        let area = Rect::new(1, 1, 2, 1);
+        buffer.resize(area);
+
+        let mut expected = Buffer::with_lines(["fg"]);
+        expected.area = area;
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn resize_does_not_wrap_cells_when_width_changes() {
+        let mut buffer = Buffer::with_lines(["abc", "def"]);
+        buffer.resize(Rect::new(0, 0, 2, 3));
+
+        assert_eq!(buffer, Buffer::with_lines(["ab", "de", "  "]));
     }
 
     #[test]
