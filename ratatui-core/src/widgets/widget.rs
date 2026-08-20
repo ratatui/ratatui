@@ -1,7 +1,7 @@
 use alloc::string::String;
 
-use crate::buffer::Buffer;
-use crate::layout::Rect;
+use crate::buffer::{Buffer, Cell};
+use crate::layout::{Position, Rect};
 use crate::style::Style;
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
@@ -102,6 +102,41 @@ impl<W: Widget> Widget for Option<W> {
         if let Some(widget) = self {
             widget.render(area, buf);
         }
+    }
+}
+
+/// Renders a `Cell` as a widget.
+///
+/// This implementation enables an owned `Cell` to be treated as a widget, which can be printed
+/// directly into the [`Buffer`], at the position given by the [`Rect`].
+impl Widget for Cell {
+    fn render(self, area: Rect, buf: &mut Buffer)
+    where
+        Self: Sized,
+    {
+        let Some(cell) = buf.cell_mut(Position {
+            x: area.x,
+            y: area.y,
+        }) else {
+            return;
+        };
+
+        *cell = self;
+    }
+}
+
+/// Renders a `char` as a widget.
+///
+/// This implementation enables a `char` to be treated as a widget, which can be printed
+/// directly into the [`Buffer`], at the position given by the [`Rect`] with the default [`Style`].
+impl Widget for char {
+    fn render(self, area: Rect, buf: &mut Buffer)
+    where
+        Self: Sized,
+    {
+        let mut cell = Cell::default();
+        cell.set_char(self);
+        cell.render(area, buf);
     }
 }
 
