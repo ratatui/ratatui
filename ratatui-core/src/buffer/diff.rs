@@ -146,13 +146,16 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     // a wide grapheme, which can result in visual artifacts (e.g., leftover
                     // characters). Emitting an explicit update for the trailing cells avoids
                     // this.
-                    let cell_width = current.cell_width() as usize;
+                    // Equal cells must not advance by unicode width. Long symbols (e.g. image
+                    // protocol escapes stored in one cell) report a large width but occupy a
+                    // single logical cell; skipping by that width drops real subsequent cells.
+                    // Trailing blanks of true wide glyphs are blank==blank and fall through
+                    // naturally, matching pre-BufferDiff behavior.
                     if matches!(current.diff_option, CellDiffOption::None) && current == previous {
-                        // Equal cells still need to account for multi-width skip.
-                        self.pos += cell_width.saturating_sub(1);
                         continue;
                     }
 
+                    let cell_width = current.cell_width() as usize;
                     let previous_width = previous.cell_width() as usize;
 
                     // Work around terminals that fail to clear the trailing cell of certain
@@ -230,6 +233,27 @@ mod tests {
         let buf = Buffer::with_lines(["hello"]);
         let diff: Vec<_> = BufferDiff::new(&buf, &buf).collect();
         assert!(diff.is_empty());
+    }
+
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2685>:
+    /// a long symbol identical in prev and next must not advance the iterator by its
+    /// unicode width. Image escape protocols store ~200 ASCII chars in one cell; skipping
+    /// by that width drops every later cell that actually changed.
+    #[test]
+    fn long_identical_symbol_does_not_skip_later_changes() {
+        let area = Rect::new(0, 0, 20, 5);
+        let mut prev = Buffer::filled(area, Cell::new("X"));
+        let mut next = Buffer::filled(area, Cell::new("Y"));
+        let long = "a".repeat(200);
+        prev[(0, 0)].set_symbol(&long);
+        next[(0, 0)].set_symbol(&long);
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+        assert_eq!(
+            diff.len(),
+            area.area() as usize - 1,
+            "expected all cells except the identical long-symbol cell; got {diff:?}"
+        );
     }
 
     #[test]
