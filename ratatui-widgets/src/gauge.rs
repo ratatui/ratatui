@@ -180,6 +180,7 @@ impl Gauge<'_> {
         let label = self.label.as_ref().unwrap_or(&default_label);
         let clamped_label_width = gauge_area.width.min(label.width() as u16);
         let label_col = gauge_area.left() + (gauge_area.width - clamped_label_width) / 2;
+        let label_end = label_col.saturating_add(clamped_label_width);
         let label_row = gauge_area.top() + gauge_area.height / 2;
 
         // the gauge will be filled proportionally to the ratio
@@ -195,7 +196,7 @@ impl Gauge<'_> {
                 // Use full block for the filled part of the gauge and spaces for the part that is
                 // covered by the label. Note that the background and foreground colors are swapped
                 // for the label part, otherwise the gauge will be inverted
-                if x < label_col || x > label_col + clamped_label_width || y != label_row {
+                if x < label_col || x >= label_end || y != label_row {
                     buf[(x, y)]
                         .set_symbol(symbols::block::FULL)
                         .set_fg(self.gauge_style.fg.unwrap_or(Color::Reset))
@@ -594,6 +595,16 @@ mod tests {
         // This should not panic, even if the buffer is too small to render the gauge.
         gauge.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["5"]));
+    }
+
+    #[test]
+    fn render_fills_cell_after_label_end() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let gauge = Gauge::default().percent(100);
+
+        gauge.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(["███100%███"]));
     }
 
     #[test]
