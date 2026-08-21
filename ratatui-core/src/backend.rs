@@ -231,6 +231,37 @@ pub trait Backend {
     /// ```
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error>;
 
+    /// Try to save the current cursor position so it can be restored with
+    /// [`restore_cursor_position`](Self::restore_cursor_position).
+    ///
+    /// Returns `true` when the position was saved. When this returns `false`, callers should use
+    /// [`get_cursor_position`](Self::get_cursor_position) and
+    /// [`set_cursor_position`](Self::set_cursor_position) to preserve the cursor instead.
+    ///
+    /// Saving and restoring the cursor position is not nestable. Backends are only required to
+    /// retain one saved position, so a later successful save may replace the position from an
+    /// earlier save.
+    ///
+    /// This must not query the terminal for the cursor position or read from its input stream.
+    /// Backends that support a terminal cursor-save command should override this method and return
+    /// `true` after writing it. The default implementation returns `false`.
+    fn save_cursor_position(&mut self) -> Result<bool, Self::Error> {
+        Ok(false)
+    }
+
+    /// Restore the cursor position previously saved by
+    /// [`save_cursor_position`](Self::save_cursor_position).
+    ///
+    /// This restores the most recently saved position. Saving and restoring the cursor position
+    /// is not nestable.
+    ///
+    /// This must not query the terminal for the cursor position or read from its input stream.
+    /// Backends whose [`save_cursor_position`](Self::save_cursor_position) implementation can
+    /// return `true` must override this method. The default implementation does nothing.
+    fn restore_cursor_position(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
     /// Get the current cursor position on the terminal screen.
     ///
     /// The returned tuple contains the x and y coordinates of the cursor. The origin
