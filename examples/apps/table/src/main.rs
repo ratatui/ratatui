@@ -577,4 +577,75 @@ mod tests {
         assert_eq!(app.selected, Some(expected));
         assert_eq!(app.offset, expected);
     }
+
+    #[test]
+    fn empty_list_navigation_is_safe() {
+        let mut app = crate::App::new(0);
+        assert_eq!(app.selected, None);
+
+        // all navigation must be no-ops on an empty list
+        app.first_row();
+        app.last_row();
+        app.next_row();
+        app.previous_row();
+        app.page_down_row();
+        app.page_up_row();
+        assert_eq!(app.selected, None);
+
+        // rendering an empty list must not panic or clobber state
+        let mut terminal = Terminal::new(TestBackend::new(WIDTH, 100)).unwrap();
+        terminal.draw(|f| app.render(f)).unwrap();
+        assert_eq!(app.selected, None);
+        assert_eq!(app.offset, 0);
+    }
+
+    #[test]
+    fn arrow_navigation_wraps_around() {
+        let mut app = crate::App::new(5);
+
+        // next_row advances and wraps from the last row back to the first
+        for expected in [1, 2, 3, 4, 0] {
+            app.next_row();
+            assert_eq!(app.selected, Some(expected));
+        }
+
+        // previous_row moves back and wraps from the first row to the last
+        for expected in [4, 3, 2, 1, 0] {
+            app.previous_row();
+            assert_eq!(app.selected, Some(expected));
+        }
+
+        // Home/End jump straight to the bounds
+        app.last_row();
+        assert_eq!(app.selected, Some(4));
+        app.first_row();
+        assert_eq!(app.selected, Some(0));
+    }
+
+    #[test]
+    fn resize_pulls_offset_back_when_selection_is_above_viewport() {
+        let list_size = 20;
+        let mut app = crate::App::new(list_size);
+        let item_height = ITEM_HEIGHT;
+        let visible_rows = 9;
+        let height = visible_rows * item_height + HEADER_HEIGHT + FOOTER_HEIGHT;
+        let rows_per_page = visible_rows as usize;
+
+        let mut terminal = Terminal::new(TestBackend::new(WIDTH, height)).unwrap();
+        terminal.draw(|f| app.render(f)).unwrap();
+
+        // page to the end, then jump to the first row without scrolling:
+        // the selection now sits above the viewport start
+        for _ in 0..(list_size - 1).div_ceil(rows_per_page) {
+            app.page_down_row();
+        }
+        app.first_row();
+        assert_eq!(app.selected, Some(0));
+        assert!(app.offset > 0);
+
+        // the next render must pull the offset back to reveal the selection
+        terminal.draw(|f| app.render(f)).unwrap();
+        assert_eq!(app.offset, 0);
+        assert_eq!(app.selected, Some(0));
+    }
 }
