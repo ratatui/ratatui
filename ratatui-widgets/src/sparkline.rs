@@ -4,10 +4,12 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::cmp::min;
 
-use ratatui_core::buffer::Buffer;
+use ratatui_core::buffer::{Buffer, Cell};
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Style, Styled};
-use ratatui_core::symbols;
+use ratatui_core::symbols::braille::BRAILLE;
+use ratatui_core::symbols::pixel::{OCTANTS, QUADRANTS, SEXTANTS};
+use ratatui_core::symbols::{self, Marker};
 use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
@@ -29,7 +31,8 @@ use crate::block::{Block, BlockExt};
 /// entire widget or for individual bars by setting individual [`SparklineBar::style`].
 ///
 /// The bars are rendered using a set of symbols. The default set is [`symbols::bar::NINE_LEVELS`].
-/// You can change the set using [`Sparkline::bar_set`].
+/// You can change the set using [`Sparkline::bar_set`], or configure a custom [`Marker`] (such as
+/// [`Marker::Braille`]) using [`Sparkline::marker`].
 ///
 /// If the data provided is a slice of `u64` or `Option<u64>`, the bars will be styled with the
 /// style of the sparkline. If the data is a slice of [`SparklineBar`], the bars will be
@@ -45,6 +48,8 @@ use crate::block::{Block, BlockExt};
 /// - [`Sparkline::data`] defines the dataset, you'll almost always want to use it
 /// - [`Sparkline::max`] sets the maximum value of bars
 /// - [`Sparkline::direction`] sets the render direction
+/// - [`Sparkline::marker`] sets the marker type (e.g. [`Marker::Braille`])
+/// - [`Sparkline::bar_set`] sets the bar symbols when using [`Marker::Bar`]
 ///
 /// # Examples
 ///
@@ -62,7 +67,7 @@ use crate::block::{Block, BlockExt};
 ///     .absent_value_style(Style::default().fg(Color::Red))
 ///     .absent_value_symbol(symbols::shade::FULL);
 /// ```
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Sparkline<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
@@ -81,6 +86,24 @@ pub struct Sparkline<'a> {
     bar_set: symbols::bar::Set<'a>,
     /// The direction to render the sparkline, either from left to right, or from right to left
     direction: RenderDirection,
+    /// The marker to use when rendering the sparkline
+    marker: Marker,
+}
+
+impl Default for Sparkline<'_> {
+    fn default() -> Self {
+        Self {
+            block: None,
+            style: Style::default(),
+            absent_value_style: Style::default(),
+            absent_value_symbol: AbsentValueSymbol::default(),
+            data: Vec::new(),
+            max: None,
+            bar_set: symbols::bar::Set::default(),
+            direction: RenderDirection::default(),
+            marker: Marker::Bar,
+        }
+    }
 }
 
 /// Defines the direction in which sparkline will be rendered.
@@ -243,6 +266,31 @@ impl<'a> Sparkline<'a> {
         self.direction = direction;
         self
     }
+
+    /// Sets the marker type used to render the sparkline.
+    ///
+    /// Defaults to [`Marker::Bar`]. When [`Marker::Bar`] is used, the characters from
+    /// [`Sparkline::bar_set`] are used.
+    ///
+    /// For 2-column markers like [`Marker::Braille`], [`Marker::Quadrant`], [`Marker::Sextant`],
+    /// and [`Marker::Octant`], each terminal column displays 2 data points, doubling the
+    /// horizontal resolution.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::symbols::Marker;
+    /// use ratatui::widgets::Sparkline;
+    ///
+    /// let sparkline = Sparkline::default()
+    ///     .data([1, 2, 3, 4])
+    ///     .marker(Marker::Braille);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn marker(mut self, marker: Marker) -> Self {
+        self.marker = marker;
+        self
+    }
 }
 
 /// An bar in a `Sparkline`.
@@ -355,69 +403,178 @@ impl Sparkline<'_> {
         if spark_area.is_empty() {
             return;
         }
-        // determine the maximum height across all bars
         let max_height = self
             .max
             .unwrap_or_else(|| self.data.iter().filter_map(|s| s.value).max().unwrap_or(1));
 
-        // determine the maximum index to render
-        let max_index = min(spark_area.width as usize, self.data.len());
+        match self.marker {
+            Marker::Braille | Marker::Octant => {
+                self.render_2_column(spark_area, buf, 4, max_height);
+            }
+            Marker::Sextant => self.render_2_column(spark_area, buf, 3, max_height),
+            Marker::Quadrant => self.render_2_column(spark_area, buf, 2, max_height),
+            Marker::HalfBlock => self.render_1_column(spark_area, buf, 2, max_height),
+            Marker::Block | Marker::Dot | Marker::Custom(_) => {
+                self.render_1_column(spark_area, buf, 1, max_height);
+            }
+            Marker::Bar | _ => self.render_1_column(spark_area, buf, 8, max_height),
+        }
+    }
 
-        // render each item in the data
+    fn render_1_column(&self, spark_area: Rect, buf: &mut Buffer, sub_rows: u16, max_height: u64) {
+        let max_index = min(spark_area.width as usize, self.data.len());
         for (i, item) in self.data.iter().take(max_index).enumerate() {
             let x = match self.direction {
                 RenderDirection::LeftToRight => spark_area.left() + i as u16,
                 RenderDirection::RightToLeft => spark_area.right() - i as u16 - 1,
             };
 
-            // determine the height, symbol and style to use for the item
-            //
-            // if the item is not absent:
-            // - the height is the value of the item scaled to the height of the spark area
-            // - the symbol is determined by the scaled height
-            // - the style is the style of the item, if one is set
-            //
-            // otherwise:
-            // - the height is the total height of the spark area
-            // - the symbol is the absent value symbol
-            // - the style is the absent value style
-            let (mut height, symbol, style) = match item {
-                SparklineBar {
-                    value: Some(value),
-                    style,
-                } => {
-                    let height = Self::scale_height(*value, max_height, spark_area.height);
-                    (height, None, *style)
-                }
-                _ => (
-                    u64::from(spark_area.height) * 8,
-                    Some(self.absent_value_symbol.0.as_str()),
-                    Some(self.absent_value_style),
-                ),
-            };
+            if let Some(value) = item.value {
+                let total_ticks =
+                    Self::scale_height(value, max_height, spark_area.height, sub_rows);
+                let style = self.style.patch(item.style.unwrap_or_default());
 
-            // render the item from top to bottom
-            //
-            // if the symbol is set it will be used for the entire height of the bar, otherwise the
-            // symbol will be determined by the _remaining_ height.
-            //
-            // if the style is set it will be used for the entire height of the bar, otherwise the
-            // sparkline style will be used.
-            for j in (0..spark_area.height).rev() {
-                let symbol = symbol.unwrap_or_else(|| self.symbol_for_height(height));
-                if height > 8 {
-                    height -= 8;
-                } else {
-                    height = 0;
+                for j in 0..spark_area.height {
+                    let y = spark_area.top() + spark_area.height - 1 - j;
+                    let ticks = Self::cell_ticks(total_ticks, j, sub_rows);
+                    let cell = &mut buf[(x, y)];
+                    self.set_1_column_cell(cell, ticks, style);
                 }
-                buf[(x, spark_area.top() + j)]
-                    .set_symbol(symbol)
-                    .set_style(self.style.patch(style.unwrap_or_default()));
+            } else {
+                let style = self.style.patch(self.absent_value_style);
+                for j in 0..spark_area.height {
+                    let y = spark_area.top() + j;
+                    buf[(x, y)]
+                        .set_symbol(&self.absent_value_symbol.0)
+                        .set_style(style);
+                }
             }
         }
     }
 
-    const fn symbol_for_height(&self, height: u64) -> &str {
+    fn set_1_column_cell(&self, cell: &mut Cell, ticks: u16, style: Style) {
+        match self.marker {
+            Marker::HalfBlock => {
+                let ch = match ticks {
+                    0 => ' ',
+                    1 => symbols::half_block::LOWER,
+                    _ => symbols::half_block::FULL,
+                };
+                cell.set_char(ch).set_style(style);
+            }
+            Marker::Block => {
+                let symbol = if ticks > 0 { symbols::block::FULL } else { " " };
+                cell.set_symbol(symbol).set_style(style);
+            }
+            Marker::Dot => {
+                let symbol = if ticks > 0 { symbols::DOT } else { " " };
+                cell.set_symbol(symbol).set_style(style);
+            }
+            Marker::Custom(c) => {
+                let ch = if ticks > 0 { c } else { ' ' };
+                cell.set_char(ch).set_style(style);
+            }
+            Marker::Bar | _ => {
+                let symbol = self.symbol_for_height(ticks);
+                cell.set_symbol(symbol).set_style(style);
+            }
+        }
+    }
+
+    fn render_2_column(&self, spark_area: Rect, buf: &mut Buffer, sub_rows: u16, max_height: u64) {
+        for col in 0..spark_area.width {
+            let x = spark_area.left() + col;
+            // 2-column markers place 2 data points per terminal column.
+            // For RightToLeft, the right sub-column gets the earlier data index to maintain
+            // consistent right-to-left data progression within the cell.
+            let (idx_left, idx_right) = match self.direction {
+                RenderDirection::LeftToRight => {
+                    let base = 2 * (col as usize);
+                    (base, base + 1)
+                }
+                RenderDirection::RightToLeft => {
+                    let dist = (spark_area.width - 1 - col) as usize;
+                    (2 * dist + 1, 2 * dist)
+                }
+            };
+
+            let left_item = self.data.get(idx_left);
+            let right_item = self.data.get(idx_right);
+
+            if left_item.is_none() && right_item.is_none() {
+                continue;
+            }
+
+            let left_is_absent = left_item.is_some_and(|item| item.value.is_none());
+            let right_is_absent = right_item.is_some_and(|item| item.value.is_none());
+
+            if left_is_absent
+                && (right_item.is_none() || right_is_absent)
+                && self.absent_value_symbol.0 != symbols::shade::EMPTY
+            {
+                let style = self.style.patch(self.absent_value_style);
+                for j in 0..spark_area.height {
+                    let y = spark_area.top() + j;
+                    buf[(x, y)]
+                        .set_symbol(&self.absent_value_symbol.0)
+                        .set_style(style);
+                }
+                continue;
+            }
+
+            let item_data = |item: Option<&SparklineBar>| match item {
+                Some(SparklineBar {
+                    value: Some(v),
+                    style,
+                }) => (
+                    Self::scale_height(*v, max_height, spark_area.height, sub_rows),
+                    *style,
+                ),
+                Some(SparklineBar { value: None, .. }) => (0, Some(self.absent_value_style)),
+                None => (0, None),
+            };
+
+            let (t_left, style_left) = item_data(left_item);
+            let (t_right, style_right) = item_data(right_item);
+
+            let mut cell_style = self.style;
+            if let Some(s) = style_left {
+                cell_style = cell_style.patch(s);
+            }
+            if let Some(s) = style_right {
+                cell_style = cell_style.patch(s);
+            }
+
+            for j in 0..spark_area.height {
+                let y = spark_area.top() + spark_area.height - 1 - j;
+                let ticks_left = Self::cell_ticks(t_left, j, sub_rows);
+                let ticks_right = Self::cell_ticks(t_right, j, sub_rows);
+
+                // Construct row-major bit patterns matching Unicode Braille/pixel tables
+                // (bit = x + 2 * y, where y=0 is top row). Bars fill from bottom up.
+                let mut pattern = 0u8;
+                for r in 0..ticks_left {
+                    let dy = (sub_rows - 1) - r;
+                    pattern |= 1u8 << (2 * dy);
+                }
+                for r in 0..ticks_right {
+                    let dy = (sub_rows - 1) - r;
+                    pattern |= 1u8 << (1 + 2 * dy);
+                }
+
+                let ch = match self.marker {
+                    Marker::Octant => OCTANTS[pattern as usize],
+                    Marker::Sextant => SEXTANTS[pattern as usize],
+                    Marker::Quadrant => QUADRANTS[pattern as usize],
+                    Marker::Braille | _ => BRAILLE[pattern as usize],
+                };
+
+                buf[(x, y)].set_char(ch).set_style(cell_style);
+            }
+        }
+    }
+
+    const fn symbol_for_height(&self, height: u16) -> &str {
         match height {
             0 => self.bar_set.empty,
             1 => self.bar_set.one_eighth,
@@ -431,12 +588,27 @@ impl Sparkline<'_> {
         }
     }
 
-    fn scale_height(value: u64, max: u64, max_height: u16) -> u64 {
+    /// Calculates the number of sub-row ticks that fall into a specific vertical cell row
+    /// (indexed 0 from the bottom of the spark area).
+    #[allow(clippy::cast_lossless)]
+    const fn cell_ticks(total_ticks: u64, row_from_bottom: u16, sub_rows: u16) -> u16 {
+        let row_base = (row_from_bottom as u64) * (sub_rows as u64);
+        let row_ceiling = row_base + (sub_rows as u64);
+        if total_ticks >= row_ceiling {
+            sub_rows
+        } else if total_ticks <= row_base {
+            0
+        } else {
+            (total_ticks - row_base) as u16
+        }
+    }
+
+    fn scale_height(value: u64, max: u64, max_height: u16, sub_rows: u16) -> u64 {
         if max == 0 {
             return 0;
         }
 
-        let max_ticks = u128::from(max_height) * 8;
+        let max_ticks = u128::from(max_height) * u128::from(sub_rows);
         let ticks = u128::from(value) * max_ticks / u128::from(max);
         ticks.min(max_ticks) as u64
     }
@@ -747,5 +919,143 @@ mod tests {
             .max(10);
         // This should not panic, even if the buffer has zero size.
         sparkline.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn marker_setter() {
+        let sparkline = Sparkline::default().marker(Marker::Braille);
+        assert_eq!(sparkline.marker, Marker::Braille);
+    }
+
+    #[test]
+    fn it_renders_braille() {
+        let widget = Sparkline::default()
+            .marker(Marker::Braille)
+            .data([0, 1, 2, 3, 4, 3, 2, 1, 0])
+            .max(4);
+        let buffer = render(widget, 6);
+        assert_eq!(buffer, Buffer::with_lines(["⢀⣴⣷⣄⠀x"]));
+    }
+
+    #[test]
+    fn it_renders_braille_double_height() {
+        let widget = Sparkline::default()
+            .marker(Marker::Braille)
+            .data([0, 1, 2, 3, 4, 5, 6, 7, 8])
+            .max(8);
+        let area = Rect::new(0, 0, 6, 2);
+        let mut buffer = Buffer::filled(area, Cell::new("x"));
+        widget.render(area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["⠀⠀⢀⣴⡇x", "⢀⣴⣿⣿⡇x"]));
+    }
+
+    #[test]
+    fn it_renders_braille_right_to_left() {
+        let widget = Sparkline::default()
+            .marker(Marker::Braille)
+            .direction(RenderDirection::RightToLeft)
+            .data([0, 1, 2, 3, 4])
+            .max(4);
+        let buffer = render(widget, 4);
+        assert_eq!(buffer, Buffer::with_lines(["x⢸⣦⡀"]));
+    }
+
+    #[test]
+    fn it_renders_braille_with_absent_values() {
+        let widget = Sparkline::default()
+            .marker(Marker::Braille)
+            .absent_value_style(Style::default().fg(Color::Red))
+            .absent_value_symbol(symbols::shade::FULL)
+            .data([None, None, Some(1), Some(4)])
+            .max(4);
+        let buffer = render(widget, 3);
+        let mut expected = Buffer::with_lines(["█⣸x"]);
+        expected.set_style(Rect::new(0, 0, 1, 1), Style::default().fg(Color::Red));
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn it_renders_braille_with_custom_bar_styles() {
+        let widget = Sparkline::default()
+            .marker(Marker::Braille)
+            .data([
+                SparklineBar::from(1).style(Some(Style::default().fg(Color::Red))),
+                SparklineBar::from(4).style(Some(Style::default().fg(Color::Blue))),
+            ])
+            .max(4);
+        let buffer = render(widget, 2);
+        let mut expected = Buffer::with_lines(["⣸x"]);
+        expected.set_style(Rect::new(0, 0, 1, 1), Style::default().fg(Color::Blue));
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn it_renders_quadrant() {
+        let widget = Sparkline::default()
+            .marker(Marker::Quadrant)
+            .data([0, 1, 2, 2, 1, 0])
+            .max(2);
+        let buffer = render(widget, 4);
+        assert_eq!(buffer, Buffer::with_lines(["▗█▖x"]));
+    }
+
+    #[test]
+    fn it_renders_sextant() {
+        let widget = Sparkline::default()
+            .marker(Marker::Sextant)
+            .data([0, 1, 2, 3, 3, 2, 1, 0])
+            .max(3);
+        let buffer = render(widget, 5);
+        assert_eq!(buffer, Buffer::with_lines(["🬞🬻🬺🬏x"]));
+    }
+
+    #[test]
+    fn it_renders_octant() {
+        let widget = Sparkline::default()
+            .marker(Marker::Octant)
+            .data([0, 1, 2, 3, 4, 3, 2, 1, 0])
+            .max(4);
+        let buffer = render(widget, 6);
+        assert_eq!(buffer, Buffer::with_lines(["𜺠𜷡𜷤𜶻 x"]));
+    }
+
+    #[test]
+    fn it_renders_half_block() {
+        let widget = Sparkline::default()
+            .marker(Marker::HalfBlock)
+            .data([0, 1, 2])
+            .max(2);
+        let buffer = render(widget, 4);
+        assert_eq!(buffer, Buffer::with_lines([" ▄█x"]));
+    }
+
+    #[test]
+    fn it_renders_block() {
+        let widget = Sparkline::default()
+            .marker(Marker::Block)
+            .data([0, 1, 0, 1])
+            .max(1);
+        let buffer = render(widget, 5);
+        assert_eq!(buffer, Buffer::with_lines([" █ █x"]));
+    }
+
+    #[test]
+    fn it_renders_dot() {
+        let widget = Sparkline::default()
+            .marker(Marker::Dot)
+            .data([0, 1, 0, 1])
+            .max(1);
+        let buffer = render(widget, 5);
+        assert_eq!(buffer, Buffer::with_lines([" • •x"]));
+    }
+
+    #[test]
+    fn it_renders_custom_marker() {
+        let widget = Sparkline::default()
+            .marker(Marker::Custom('*'))
+            .data([0, 1, 0, 1])
+            .max(1);
+        let buffer = render(widget, 5);
+        assert_eq!(buffer, Buffer::with_lines([" * *x"]));
     }
 }
