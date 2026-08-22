@@ -193,6 +193,11 @@ Shows how to create an interactive table. [Source](./apps/table/).
 
 ![Table demo][table.gif]
 
+## Large Table
+
+Shows how to create a table that handles large datasets with pagination and virtual scrolling.
+[Source](./apps/large-table/).
+
 ## Todo List
 
 Shows how to create a simple todo list application. [Source](./apps/todo-list/).
