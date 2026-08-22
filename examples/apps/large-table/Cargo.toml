@@ -1,0 +1,18 @@
+[package]
+name = "large-table"
+publish = false
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+clap.workspace = true
+color-eyre.workspace = true
+crossterm.workspace = true
+fakeit.workspace = true
+itertools.workspace = true
+ratatui.workspace = true
+unicode-width.workspace = true
+
+[lints]
+workspace = true
