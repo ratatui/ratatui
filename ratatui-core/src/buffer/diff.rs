@@ -181,7 +181,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         // refresh the terminal regardless of whether the buffer content changed.
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
-                            end: i + previous_width,
+                            end: (i + previous_width).min(len),
                             force: true,
                         });
                     } else {
@@ -573,6 +573,33 @@ mod tests {
                 .any(|(x, y, cell)| *x == 1 && *y == 0 && cell.symbol() == "好"),
             "'好' at col 1 must be emitted; got {diff:?}"
         );
+    }
+
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2695> (introduced by #2587):
+    /// the forced trailing range was not clamped to the buffer length, unlike the VS16 range
+    /// above it. With a wide glyph carrying a visible-on-blank style in the *last* cell of the
+    /// buffer, replaced by narrower content, the range extended one past the end and the
+    /// iterator panicked with an index out of bounds while being consumed (i.e. inside
+    /// `Terminal::flush`).
+    #[test]
+    fn wide_glyph_in_last_cell_does_not_overrun_buffer() {
+        let rect = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(rect);
+        // set_string refuses to place a wide glyph in the last column, so write the cell
+        // directly — the path third-party widgets and direct cell access take.
+        prev.content[2].set_symbol("你").set_bg(Color::Red);
+        let mut next = Buffer::empty(rect);
+        next.content[2].set_symbol("a");
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(
+            diff.len(),
+            1,
+            "only the replaced cell must be emitted, got {diff:?}"
+        );
+        assert_eq!((diff[0].0, diff[0].1), (2, 0));
+        assert_eq!(diff[0].2.symbol(), "a");
     }
 
     #[test]
