@@ -45,6 +45,7 @@ use crate::block::{Block, BlockExt};
 /// - [`Sparkline::data`] defines the dataset, you'll almost always want to use it
 /// - [`Sparkline::max`] sets the maximum value of bars
 /// - [`Sparkline::direction`] sets the render direction
+/// - [`Sparkline::marker`] sets the characters used to display the bars based on the given marker
 ///
 /// # Examples
 ///
@@ -241,6 +242,53 @@ impl<'a> Sparkline<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn direction(mut self, direction: RenderDirection) -> Self {
         self.direction = direction;
+        self
+    }
+
+    /// Sets the characters used to display the bars based on the given marker.
+    ///
+    /// This is a convenience method that sets the `bar_set` based on the given `marker`.
+    /// `Marker::Custom` is not supported and will not change the `bar_set`.
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn marker(mut self, marker: symbols::Marker) -> Self {
+        self.bar_set = match marker {
+            symbols::Marker::Block => symbols::bar::Set {
+                full: symbols::bar::FULL,
+                seven_eighths: symbols::bar::FULL,
+                three_quarters: symbols::bar::FULL,
+                five_eighths: symbols::bar::FULL,
+                half: symbols::bar::FULL,
+                three_eighths: symbols::bar::FULL,
+                one_quarter: symbols::bar::FULL,
+                one_eighth: symbols::bar::FULL,
+                empty: " ",
+            },
+            symbols::Marker::HalfBlock | symbols::Marker::Quadrant => symbols::bar::THREE_LEVELS,
+            symbols::Marker::Bar | symbols::Marker::Sextant | symbols::Marker::Octant => symbols::bar::NINE_LEVELS,
+            symbols::Marker::Braille => symbols::bar::Set {
+                full: "⣿",
+                seven_eighths: "⣿",
+                three_quarters: "⣶",
+                five_eighths: "⣶",
+                half: "⣤",
+                three_eighths: "⣤",
+                one_quarter: "⣀",
+                one_eighth: "⣀",
+                empty: " ",
+            },
+            symbols::Marker::Dot => symbols::bar::Set {
+                full: symbols::marker::DOT,
+                seven_eighths: symbols::marker::DOT,
+                three_quarters: symbols::marker::DOT,
+                five_eighths: symbols::marker::DOT,
+                half: symbols::marker::DOT,
+                three_eighths: symbols::marker::DOT,
+                one_quarter: symbols::marker::DOT,
+                one_eighth: symbols::marker::DOT,
+                empty: " ",
+            },
+            symbols::Marker::Custom(_) => self.bar_set,
+        };
         self
     }
 }
@@ -747,5 +795,20 @@ mod tests {
             .max(10);
         // This should not panic, even if the buffer has zero size.
         sparkline.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn it_renders_with_markers() {
+        let widget = Sparkline::default()
+            .data([0, 1, 2, 3, 4, 5, 6, 7, 8])
+            .marker(symbols::Marker::Braille);
+        let buffer = render(widget, 12);
+        assert_eq!(buffer, Buffer::with_lines([" ⣀⣀⣤⣤⣶⣶⣿⣿xxx"]));
+
+        let widget = Sparkline::default()
+            .data([0, 1, 2, 3, 4, 5, 6, 7, 8])
+            .marker(symbols::Marker::Dot);
+        let buffer = render(widget, 12);
+        assert_eq!(buffer, Buffer::with_lines([" ••••••••xxx"]));
     }
 }
