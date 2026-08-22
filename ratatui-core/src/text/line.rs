@@ -940,12 +940,6 @@ mod tests {
     }
 
     #[test]
-    fn style() {
-        let line = Line::default().style(Style::new().red());
-        assert_eq!(line.style, Style::new().red());
-    }
-
-    #[test]
     fn alignment() {
         let line = Line::from("This is left").alignment(Alignment::Left);
         assert_eq!(Some(Alignment::Left), line.alignment);
@@ -964,35 +958,6 @@ mod tests {
 
         let empty_line = Line::default();
         assert_eq!(0, empty_line.width());
-    }
-
-    #[test]
-    fn patch_style() {
-        let raw_line = Line::styled("foobar", Color::Yellow);
-        let styled_line = Line::styled("foobar", (Color::Yellow, Modifier::ITALIC));
-
-        assert_ne!(raw_line, styled_line);
-
-        let raw_line = raw_line.patch_style(Modifier::ITALIC);
-        assert_eq!(raw_line, styled_line);
-    }
-
-    #[test]
-    fn reset_style() {
-        let line =
-            Line::styled("foobar", Style::default().yellow().on_red().italic()).reset_style();
-
-        assert_eq!(Style::reset(), line.style);
-    }
-
-    #[test]
-    fn stylize() {
-        assert_eq!(Line::default().green().style, Color::Green.into());
-        assert_eq!(
-            Line::default().on_green().style,
-            Style::new().bg(Color::Green)
-        );
-        assert_eq!(Line::default().italic().style, Modifier::ITALIC.into());
     }
 
     #[test]
@@ -1246,6 +1211,69 @@ mod tests {
             line.spans,
             vec![Span::raw("A"), Span::raw("B"), Span::raw("C")]
         );
+    }
+
+    mod style {
+        use super::*;
+
+        #[test]
+        fn style() {
+            let line = Line::default().style(Style::new().red());
+            assert_eq!(line.style, Style::new().red());
+        }
+
+        #[test]
+        fn patch_style() {
+            let raw_line = Line::styled("foobar", Color::Yellow);
+            let styled_line = Line::styled("foobar", (Color::Yellow, Modifier::ITALIC));
+
+            assert_ne!(raw_line, styled_line);
+
+            let raw_line = raw_line.patch_style(Modifier::ITALIC);
+            assert_eq!(raw_line, styled_line);
+        }
+
+        #[test]
+        fn reset_style() {
+            let line =
+                Line::styled("foobar", Style::default().yellow().on_red().italic()).reset_style();
+
+            assert_eq!(Style::reset(), line.style);
+        }
+
+        #[test]
+        fn stylize() {
+            assert_eq!(Line::default().green().style, Color::Green.into());
+            assert_eq!(
+                Line::default().on_green().style,
+                Style::new().bg(Color::Green)
+            );
+            assert_eq!(Line::default().italic().style, Modifier::ITALIC.into());
+        }
+
+        #[test]
+        fn render_span_style_overrides_line_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            Line::from(Span::from("hi").blue())
+                .red()
+                .on_green()
+                .render(buf.area, &mut buf);
+            let expected = Buffer::with_lines([Line::from(vec![
+                "hi".blue().on_green(),
+                "  ".red().on_green(),
+            ])]);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_overrides_prerendered_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            buf.set_style(buf.area, Style::new().red().on_green().italic());
+            Line::from("hi").blue().render(buf.area, &mut buf);
+            let mut expected = Buffer::with_lines(["hi  "]);
+            expected.set_style(expected.area, Style::new().blue().on_green().italic());
+            assert_eq!(buf, expected);
+        }
     }
 
     mod widget {
