@@ -17,10 +17,10 @@ pub struct BufferDiff<'prev, 'next> {
     area: Rect,
     /// Current position in the flat cell array.
     pos: usize,
-    /// Tracks trailing cells that must be yielded after a wide character is processed.
+    /// Cells to yield before the main loop moves past a wide character.
     ///
-    /// Set when a wide char was replaced by narrower content (force=true) or when a VS16 emoji
-    /// needs its trailing column checked (force=false).
+    /// Set when a wide char was replaced by narrower content (see `force`), or when an
+    /// uncertain-width cluster's reserved columns must be cleared first (see `deferred`).
     trailing: Option<TrailingState>,
 }
 
@@ -33,9 +33,11 @@ struct TrailingState {
     /// wide character's style was visible on blank cells, so the terminal may show stale style
     /// there and every trailing cell must be refreshed.
     ///
-    /// When `false` (VS16 path), only cells whose symbol changed are emitted, because the emoji
-    /// visually covers its trailing column and style differences there are invisible.
+    /// When `false`, only cells whose symbol changed are emitted.
     force: bool,
+    /// A cell to yield once the range is exhausted, so it is drawn after the columns it
+    /// reserves. See [`has_uncertain_width`].
+    deferred: Option<usize>,
 }
 
 /// Modifiers that are visually apparent on a blank (space) cell.
@@ -97,6 +99,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
             next_index,
             end,
             force,
+            deferred,
         }) = &mut self.trailing
         {
             while *next_index < *end {
@@ -116,8 +119,14 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
             }
 
             // Done with trailing cells; resume main loop past the wide character.
+            let deferred = deferred.take();
             self.pos = *end;
             self.trailing = None;
+
+            if let Some(origin) = deferred {
+                let (x, y) = self.pos_of(origin);
+                return Some((x, y, &self.next[origin]));
+            }
         }
         while self.pos < len {
             let i = self.pos;
@@ -140,12 +149,6 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     }
                 }
                 CellDiffOption::None | CellDiffOption::AlwaysUpdate => {
-                    // If the current cell is multi-width, ensure the trailing cells are
-                    // explicitly cleared when they previously contained non-blank content.
-                    // Some terminals do not reliably clear the trailing cell(s) when printing
-                    // a wide grapheme, which can result in visual artifacts (e.g., leftover
-                    // characters). Emitting an explicit update for the trailing cells avoids
-                    // this.
                     let cell_width = current.cell_width() as usize;
                     if matches!(current.diff_option, CellDiffOption::None) && current == previous {
                         // Equal cells still need to account for multi-width skip.
@@ -155,20 +158,23 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
                     let previous_width = previous.cell_width() as usize;
 
-                    // Work around terminals that fail to clear the trailing cell of certain
-                    // emoji presentation sequences (those containing VS16 / U+FE0F).
-                    // Only emit explicit clears for such sequences to avoid bloating diffs
-                    // for standard wide characters (e.g., CJK), which terminals handle well.
-                    let contains_vs16 =
-                        cell_width > 1 && current.symbol().chars().any(|c| c == '\u{FE0F}');
+                    // Terminals disagree on this cluster's width, so clear its reserved columns
+                    // before drawing it: a two-column draw repaints over them, a one-column draw
+                    // leaves them cleared. Drawing it last also keeps it non-adjacent to the
+                    // preceding write, forcing a cursor move, so a width disagreement cannot
+                    // shift the rest of the row (#2357).
+                    let uncertain_width = cell_width > 1 && has_uncertain_width(current.symbol());
 
-                    if contains_vs16 {
+                    if uncertain_width {
                         let trailing_end = (i + cell_width).min(len);
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
                             end: trailing_end,
                             force: false,
+                            deferred: Some(i),
                         });
+                        // Recurses once: the block above always returns when `deferred` is set.
+                        return self.next();
                     } else if cell_width > 1 {
                         self.pos += cell_width.saturating_sub(1);
                     } else if previous_width > cell_width
@@ -179,10 +185,12 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         // terminal may still show it on the trailing columns even after the
                         // character is replaced. Force-emit every cell in the trailing range to
                         // refresh the terminal regardless of whether the buffer content changed.
+                        // This cell is narrow, so those columns stay adjacent and need no move.
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
                             end: i + previous_width,
                             force: true,
+                            deferred: None,
                         });
                     } else {
                         // single-width character, no position adjustment needed
@@ -196,6 +204,16 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
         None
     }
+}
+
+/// Returns `true` if terminals disagree on how many columns `symbol` occupies.
+///
+/// Emoji presentation sequences (those containing VS16, `U+FE0F`) are the known case:
+/// `unicode-width` and most modern terminals treat them as two columns, but some terminals draw
+/// them in one. The diff cannot assume either, so it must emit updates that are correct under
+/// both.
+fn has_uncertain_width(symbol: &str) -> bool {
+    symbol.chars().any(|c| c == '\u{FE0F}')
 }
 
 /// Returns `true` if this cell should be skipped during diffing.
@@ -581,5 +599,210 @@ mod tests {
         let prev = Buffer::empty(Rect::new(0, 0, 5, 1));
         let next = Buffer::empty(Rect::new(0, 0, 10, 1));
         BufferDiff::new(&prev, &next);
+    }
+}
+
+/// Replays diffs through a model backend with real cursor semantics, and checks the resulting
+/// screen against what the buffer says the row should look like.
+///
+/// Backends emit a cursor move only when the next cell is not adjacent to the last one written
+/// (see `CrosstermBackend::draw`), so an update lands on its assigned column only if the previous
+/// update advanced the real cursor by exactly the width the buffer reserved.
+///
+/// Terminals disagree on the width of a cluster carrying VS16 (`U+FE0F`), so the model is
+/// parameterised over both observed behaviours; every scenario must pass under both.
+#[cfg(test)]
+mod terminal_replay {
+    use alloc::string::{String, ToString};
+    use alloc::vec;
+    use alloc::vec::Vec;
+
+    use super::*;
+    use crate::buffer::Buffer;
+    use crate::style::Style;
+
+    /// Marks a column painted over by the glyph starting to its left.
+    const COVERED: &str = "";
+
+    /// How a terminal renders a grapheme cluster carrying VS16 (`U+FE0F`).
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    enum TerminalModel {
+        /// VS16 clusters advance two columns (tmux, most modern terminals).
+        Wide,
+        /// VS16 clusters advance one column (the terminals
+        /// <https://github.com/ratatui/ratatui/pull/2063> was filed against).
+        Narrow,
+    }
+
+    const MODELS: [TerminalModel; 2] = [TerminalModel::Wide, TerminalModel::Narrow];
+
+    impl TerminalModel {
+        /// Columns the cursor advances when `symbol` is printed, given the width the buffer
+        /// reserved for it.
+        fn advance(self, symbol: &str, reserved: usize) -> usize {
+            if self == Self::Narrow && reserved > 1 && has_uncertain_width(symbol) {
+                1
+            } else {
+                reserved
+            }
+        }
+    }
+
+    /// A single row of terminal columns.
+    #[derive(Debug)]
+    struct Screen {
+        cols: Vec<String>,
+    }
+
+    impl Screen {
+        /// Prints `symbol` at `col`, advancing the cursor by `advance` columns.
+        ///
+        /// Overwriting either half of a multi-column glyph destroys the whole glyph, so its full
+        /// footprint is blanked before the new symbol is written.
+        fn print(&mut self, col: usize, symbol: &str, advance: usize) {
+            let len = self.cols.len();
+            if col >= len {
+                return;
+            }
+            let end = (col + advance).min(len);
+
+            let mut lo = col;
+            while lo > 0 && self.cols[lo] == COVERED {
+                lo -= 1;
+            }
+            let mut hi = end;
+            while hi < len && self.cols[hi] == COVERED {
+                hi += 1;
+            }
+            for c in lo..hi {
+                self.cols[c] = " ".to_string();
+            }
+
+            self.cols[col] = symbol.to_string();
+            for c in col + 1..end {
+                self.cols[c] = COVERED.to_string();
+            }
+        }
+    }
+
+    /// The columns a buffer row occupies on screen under `model`.
+    ///
+    /// A glyph paints its own column plus every column it advances over; columns the buffer
+    /// reserved but the terminal did not cover show the buffer cell's own content.
+    fn expected_columns(model: TerminalModel, buf: &Buffer) -> Vec<String> {
+        let width = buf.area.width as usize;
+        let mut cols = vec![" ".to_string(); width];
+        let mut i = 0;
+        while i < width {
+            let cell = &buf.content[i];
+            let reserved = (cell.cell_width() as usize).max(1);
+            let advance = model.advance(cell.symbol(), reserved);
+            cols[i] = cell.symbol().to_string();
+            for (c, col) in cols
+                .iter_mut()
+                .enumerate()
+                .take((i + reserved).min(width))
+                .skip(i + 1)
+            {
+                *col = if c < i + advance {
+                    COVERED.to_string()
+                } else {
+                    buf.content[c].symbol().to_string()
+                };
+            }
+            i += reserved;
+        }
+        cols
+    }
+
+    /// Replays `BufferDiff` the way a backend does and returns the resulting screen.
+    ///
+    /// The screen starts as `prev` rendered under `model`, so any column the diff never rewrites
+    /// keeps the previous frame's content — a stale column surviving into the comparison *is* the
+    /// artifact.
+    fn replay(model: TerminalModel, prev: &Buffer, next: &Buffer) -> Vec<String> {
+        assert_eq!(prev.area.height, 1, "harness models a single row");
+        let mut screen = Screen {
+            cols: expected_columns(model, prev),
+        };
+        let mut cursor = 0usize;
+        let mut last_x: Option<u16> = None;
+
+        for (x, _y, cell) in BufferDiff::new(prev, next) {
+            // Reposition only when this cell is not adjacent to the last one written.
+            let col = if matches!(last_x, Some(p) if x == p + 1) {
+                cursor
+            } else {
+                x as usize
+            };
+            let reserved = (cell.cell_width() as usize).max(1);
+            let advance = model.advance(cell.symbol(), reserved);
+            screen.print(col, cell.symbol(), advance);
+            cursor = col + advance;
+            last_x = Some(x);
+        }
+        screen.cols
+    }
+
+    #[track_caller]
+    fn assert_no_artifacts(model: TerminalModel, prev: &Buffer, next: &Buffer) {
+        let expected = expected_columns(model, next);
+        let actual = replay(model, prev, next);
+        assert_eq!(
+            actual, expected,
+            "{model:?} model: screen differs from buffer"
+        );
+    }
+
+    #[track_caller]
+    fn assert_no_artifacts_in_both_models(prev: &str, next: &str, width: u16) {
+        for model in MODELS {
+            assert_no_artifacts(model, &row(width, prev), &row(width, next));
+        }
+    }
+
+    fn row(width: u16, content: &str) -> Buffer {
+        let mut buf = Buffer::empty(Rect::new(0, 0, width, 1));
+        buf.set_string(0, 0, content, Style::default());
+        buf
+    }
+
+    /// <https://github.com/ratatui/ratatui/issues/2357>: updating an ASCII row to VS16 emoji.
+    #[test]
+    fn vs16_emoji_replacing_ascii_does_not_drift() {
+        assert_no_artifacts_in_both_models("int value8;;", "❤️❤️❤️❤️❤️❤️", 12);
+    }
+
+    /// Same as above with keycap sequences, which carry VS16 plus a combining enclosing keycap.
+    #[test]
+    fn vs16_keycaps_replacing_ascii_do_not_drift() {
+        assert_no_artifacts_in_both_models("int value8;;", "1️⃣1️⃣1️⃣1️⃣1️⃣1️⃣", 12);
+    }
+
+    /// A VS16 row redrawn one column over: every glyph moves, so no update may inherit an offset.
+    #[test]
+    fn shifted_vs16_row_does_not_drift() {
+        assert_no_artifacts_in_both_models("❤️❤️❤️❤️❤️", " ❤️❤️❤️❤️❤️", 12);
+    }
+
+    /// <https://github.com/ratatui/ratatui/pull/2063>: a terminal that draws a VS16 cluster in a
+    /// single column leaves the buffer's reserved column showing the old content unless the diff
+    /// writes it. Regression guard: deleting the VS16 special case to fix #2357 breaks this.
+    #[test]
+    fn vs16_emoji_replacing_narrower_content_leaves_no_stale_column() {
+        assert_no_artifacts_in_both_models("ab", "❤️", 2);
+        assert_no_artifacts_in_both_models("abcd", "❤️cd", 4);
+        assert_no_artifacts_in_both_models("abcd", "ab❤️", 4);
+    }
+
+    /// Mixed rows: narrow, certain-width (`漢`, `😀`) and uncertain-width clusters interleaved.
+    ///
+    /// Also pins that certain-width clusters keep skipping their own reserved column: they are
+    /// not routed through the clear-first path, and must not drift either.
+    #[test]
+    fn mixed_width_rows_do_not_drift() {
+        assert_no_artifacts_in_both_models("int value8;;", "a❤️b漢c😀d", 12);
+        assert_no_artifacts_in_both_models("a❤️b漢c😀d", "int value8;;", 12);
+        assert_no_artifacts_in_both_models("a❤️b漢c😀d", "漢a❤️b😀c", 12);
     }
 }
