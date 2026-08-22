@@ -66,6 +66,8 @@ impl<B: Backend> Terminal<B> {
     /// directly into the terminal's scrollback buffer. At the limit, if the viewport takes up the
     /// whole screen, all lines will be inserted directly into the scrollback buffer.
     ///
+    /// This is a no-op for non-inline viewports and when the terminal has no rows.
+    ///
     /// # Examples
     ///
     /// ## Insert a single line before the current viewport
@@ -111,6 +113,7 @@ impl<B: Backend> Terminal<B> {
         F: FnOnce(&mut Buffer),
     {
         match self.viewport {
+            Viewport::Inline(_) if self.last_known_area.height == 0 => Ok(()),
             #[cfg(feature = "scrolling-regions")]
             Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),
             #[cfg(not(feature = "scrolling-regions"))]
@@ -482,6 +485,22 @@ mod tests {
             compute_inline_size(&mut backend, 4, Size::new(10, 10), 5).unwrap();
 
         assert_eq!(area, Rect::new(0, 0, 10, 4));
+    }
+
+    #[test]
+    fn insert_before_is_noop_when_terminal_has_no_rows() {
+        let backend = TestBackend::new(5, 0);
+        let options = TerminalOptions {
+            viewport: Viewport::Inline(3),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+        let scrollback = terminal.backend().scrollback().clone();
+
+        terminal
+            .insert_before(2, |buf| buf.set_string(0, 0, "aaaaa", Style::default()))
+            .unwrap();
+
+        assert_eq!(terminal.backend().scrollback(), &scrollback);
     }
 
     #[cfg(not(feature = "scrolling-regions"))]
