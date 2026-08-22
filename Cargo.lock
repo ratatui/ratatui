@@ -1763,6 +1763,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "inline-resizable"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm 0.29.0",
+ "ratatui",
+]
+
+[[package]]
 name = "input-form"
 version = "0.0.0"
 dependencies = [
