@@ -222,14 +222,14 @@ mod tests {
         let rect = Rect::new(0, 0, 5, 1);
         let buf = Buffer::empty(rect);
         let diff: Vec<_> = BufferDiff::new(&buf, &buf).collect();
-        assert!(diff.is_empty());
+        assert_eq!(diff, Vec::new());
     }
 
     #[test]
     fn identical_buffers_yield_no_diffs() {
         let buf = Buffer::with_lines(["hello"]);
         let diff: Vec<_> = BufferDiff::new(&buf, &buf).collect();
-        assert!(diff.is_empty());
+        assert_eq!(diff, Vec::new());
     }
 
     #[test]
