@@ -99,6 +99,7 @@ mod tests {
     use crate::backend::{Backend, TestBackend};
     use crate::buffer::Buffer;
     use crate::layout::{Position, Rect};
+    use crate::style::Style;
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
 
     #[test]
@@ -337,19 +338,16 @@ mod tests {
         for text in ["one", "two"] {
             terminal
                 .insert_before(1, |buf| {
-                    buf.set_string(0, 0, text, crate::style::Style::default());
+                    buf.set_string(0, 0, text, Style::default());
                 })
                 .unwrap();
         }
         terminal
             .draw(|frame| {
                 let area = frame.area();
-                frame.buffer_mut().set_string(
-                    area.x,
-                    area.y,
-                    "live",
-                    crate::style::Style::default(),
-                );
+                frame
+                    .buffer_mut()
+                    .set_string(area.x, area.y, "live", Style::default());
             })
             .unwrap();
         terminal
