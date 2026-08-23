@@ -232,6 +232,58 @@ mod tests {
         assert_eq!(diff, Vec::new());
     }
 
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2685>: an image protocol cell
+    /// keeps its whole escape sequence in one symbol, which measures hundreds of columns wide
+    /// while covering a single column. Advancing the cursor by that width dropped every later
+    /// cell in the buffer, so the frame kept whatever was on screen before.
+    #[test]
+    fn long_symbol_does_not_hide_later_cells() {
+        let area = Rect::new(0, 0, 20, 5);
+        let prev = Buffer::filled(area, Cell::new("S"));
+        let mut next = Buffer::filled(area, Cell::new("L"));
+        next[(10, 0)].set_symbol(&"\u{1b}[s".repeat(400));
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+        assert_eq!(diff.len(), area.area() as usize);
+    }
+
+    /// The same cell, unchanged between the two frames. It still must not hide the cells after
+    /// it, which is how the regression showed up once the image had been drawn once.
+    #[test]
+    fn unchanged_long_symbol_does_not_hide_later_cells() {
+        let area = Rect::new(0, 0, 20, 5);
+        let mut prev = Buffer::filled(area, Cell::new("S"));
+        let mut next = Buffer::filled(area, Cell::new("L"));
+        let payload = "\u{1b}[s".repeat(400);
+        prev[(10, 0)].set_symbol(&payload);
+        next[(10, 0)].set_symbol(&payload);
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+        assert_eq!(diff.len(), area.area() as usize - 1);
+    }
+
+    /// A real wide glyph still hides its trailing cell: writing to the column covered by the
+    /// right half of the glyph would overwrite the glyph itself.
+    #[test]
+    fn identical_wide_glyph_hides_trailing_cell_changes() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "＋", Style::default());
+
+        let mut next = prev.clone();
+        // Column 1 is occupied by the right half of `＋`.
+        next[(1, 0)].set_bg(Color::Red);
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert!(
+            diff.is_empty(),
+            "the hidden trailing cell of an unchanged wide glyph must not be emitted; got {diff:?}"
+        );
+    }
+
     #[test]
     fn single_cell_change() {
         let prev = Buffer::with_lines(["hello"]);
