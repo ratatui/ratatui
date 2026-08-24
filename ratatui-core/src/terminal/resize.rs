@@ -91,8 +91,8 @@ mod tests {
     use alloc::vec::Vec;
 
     use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
-    use crate::buffer::Buffer;
-    use crate::layout::{Position, Rect};
+    use crate::buffer::{Buffer, Cell};
+    use crate::layout::{Position, Rect, Size};
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
 
     /// A [`TestBackend`] that records clear commands.
@@ -194,6 +194,32 @@ mod tests {
         terminal.backend_mut().clears.clear();
         terminal.resize(Rect::new(0, 0, 40, 24)).unwrap();
         terminal.backend().clears.clone()
+    }
+
+    /// The resize assertions above only mean anything if the wrapper is a faithful pass-through,
+    /// so exercise the methods those tests do not reach.
+    #[test]
+    fn counting_backend_delegates_everything_to_the_inner_backend() {
+        let mut backend = CountingTestBackend::new(4, 2);
+
+        backend.draw([(0, 0, &Cell::new("x"))].into_iter()).unwrap();
+        backend.set_cursor_position(Position::new(1, 1)).unwrap();
+        assert_eq!(backend.get_cursor_position().unwrap(), Position::new(1, 1));
+        assert_eq!(backend.size().unwrap(), Size::new(4, 2));
+        assert_eq!(backend.window_size().unwrap().columns_rows, Size::new(4, 2));
+        backend.hide_cursor().unwrap();
+        backend.show_cursor().unwrap();
+        backend.append_lines(1).unwrap();
+        backend.flush().unwrap();
+        #[cfg(feature = "scrolling-regions")]
+        {
+            backend.scroll_region_up(0..2, 1).unwrap();
+            backend.scroll_region_down(0..2, 1).unwrap();
+        }
+
+        backend.clear().unwrap();
+        backend.clear_region(ClearType::CurrentLine).unwrap();
+        assert_eq!(backend.clears, [ClearType::All, ClearType::CurrentLine]);
     }
 
     #[test]
