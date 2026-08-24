@@ -112,7 +112,7 @@ struct App {
     scroll_state: ScrollbarState,
     colors: TableColors,
     color_index: usize,
-    rows_per_page: Option<usize>,
+    complete_rows: Option<usize>,
     offset: usize,
     selected: Option<usize>,
 }
@@ -130,7 +130,7 @@ impl App {
             colors: TableColors::new(&PALETTES[0]),
             color_index: 0,
             items: data_vec,
-            rows_per_page: None,
+            complete_rows: None,
             offset: 0,
             selected: (!is_empty).then_some(0),
         }
@@ -193,20 +193,20 @@ impl App {
         if self.items.is_empty() {
             return;
         }
-        let Some(rows_per_page) = self.rows_per_page else {
+        let Some(complete_rows) = self.complete_rows else {
             return;
         };
         // page the viewport from the current offset, not the selected row: the
         // selection can sit mid-viewport after arrow-key navigation, and paging
         // from it would scroll by more than one page
-        let i = self.offset + rows_per_page;
+        let i = self.offset + complete_rows;
         let max = self.items.len() - 1;
         let i = if i > max { max } else { i };
         self.update_row_state(i);
         // scroll the viewport by a full page, but keep it filled at the end of the
         // list: setting the offset to the selection would leave blank rows below the
         // last item when paging to the end
-        let max_offset = self.items.len().saturating_sub(rows_per_page);
+        let max_offset = self.items.len().saturating_sub(complete_rows);
         self.offset = if i > max_offset { max_offset } else { i };
     }
 
@@ -214,11 +214,11 @@ impl App {
         if self.items.is_empty() {
             return;
         }
-        let Some(rows_per_page) = self.rows_per_page else {
+        let Some(complete_rows) = self.complete_rows else {
             return;
         };
         // page the viewport from the current offset, not the selected row
-        let i = self.offset.saturating_sub(rows_per_page);
+        let i = self.offset.saturating_sub(complete_rows);
         self.update_row_state(i);
         self.offset = i;
     }
@@ -277,26 +277,26 @@ impl App {
         ]);
         let rects = frame.area().layout_vec(&layout);
 
-        let rows_per_page =
+        let complete_rows =
             ((rects[0].height.saturating_sub(HEADER_HEIGHT)) / ITEM_HEIGHT) as usize;
         // after shrinking the window, the offset may have been pushed to the end of the
         // list to keep the selection visible; regrowing would then leave blank rows below
         // the last item, so clamp the offset back to the start of the last page
         self.offset = self
             .offset
-            .min(self.items.len().saturating_sub(rows_per_page));
+            .min(self.items.len().saturating_sub(complete_rows));
         // keep the selected row inside the viewport (previously done by Table's
         // visible_rows on the full row set; now the table only sees a window)
         if let Some(selected) = self.selected {
-            if selected >= self.offset + rows_per_page {
-                self.offset = selected.saturating_sub(rows_per_page.saturating_sub(1));
+            if selected >= self.offset + complete_rows {
+                self.offset = selected.saturating_sub(complete_rows.saturating_sub(1));
             } else if selected < self.offset {
                 self.offset = selected;
             } else {
                 // selection already visible
             }
         }
-        self.rows_per_page = Some(rows_per_page);
+        self.complete_rows = Some(complete_rows);
 
         self.set_colors();
 
@@ -323,9 +323,9 @@ impl App {
             .collect::<Row>()
             .style(header_style)
             .height(HEADER_HEIGHT);
-        let rows_per_page = self.rows_per_page.unwrap_or(0);
+        let complete_rows = self.complete_rows.unwrap_or(0);
         let window_start = self.offset;
-        let window_end = (window_start + rows_per_page).min(self.items.len());
+        let window_end = (window_start + complete_rows).min(self.items.len());
         let rows = self.items[window_start..window_end]
             .iter()
             .enumerate()
@@ -514,38 +514,38 @@ mod tests {
         let big_visible_rows = 9;
         let small_visible_rows = 5;
         // terminal heights derived from the same formula as render():
-        //   rows_per_page = (height - FOOTER_HEIGHT - HEADER_HEIGHT) / item_height
-        //   →  height = rows_per_page * item_height + HEADER_HEIGHT + FOOTER_HEIGHT
+        //   complete_rows = (height - FOOTER_HEIGHT - HEADER_HEIGHT) / item_height
+        //   →  height = complete_rows * item_height + HEADER_HEIGHT + FOOTER_HEIGHT
         let big_height = big_visible_rows * item_height + HEADER_HEIGHT + FOOTER_HEIGHT;
         let small_height = small_visible_rows * item_height + HEADER_HEIGHT + FOOTER_HEIGHT;
-        let big_rows_per_page = big_visible_rows as usize;
-        let small_rows_per_page = small_visible_rows as usize;
+        let big_complete_rows = big_visible_rows as usize;
+        let small_complete_rows = small_visible_rows as usize;
 
         let mut terminal = Terminal::new(TestBackend::new(WIDTH, big_height)).unwrap();
 
-        // first render to set rows_per_page
+        // first render to set complete_rows
         terminal.draw(|f| app.render(f)).unwrap();
 
         // page down to the end
-        let page_down_count = (list_size - 1).div_ceil(big_rows_per_page);
+        let page_down_count = (list_size - 1).div_ceil(big_complete_rows);
         for _ in 0..page_down_count {
             app.page_down_row();
         }
 
         assert_eq!(app.selected, Some(list_size - 1));
-        assert_eq!(app.offset, list_size - big_rows_per_page);
+        assert_eq!(app.offset, list_size - big_complete_rows);
 
         // shrink: render scrolls the offset to keep selected in view
         terminal = Terminal::new(TestBackend::new(WIDTH, small_height)).unwrap();
         terminal.draw(|f| app.render(f)).unwrap();
-        // offset moves to list_size - small_rows_per_page so that
+        // offset moves to list_size - small_complete_rows so that
         // the last row sits at the bottom of the viewport
-        assert_eq!(app.offset, list_size - small_rows_per_page);
+        assert_eq!(app.offset, list_size - small_complete_rows);
 
-        // regrow: clamp pulls offset back to list_size - big_rows_per_page
+        // regrow: clamp pulls offset back to list_size - big_complete_rows
         terminal = Terminal::new(TestBackend::new(WIDTH, big_height)).unwrap();
         terminal.draw(|f| app.render(f)).unwrap();
-        assert_eq!(app.offset, list_size - big_rows_per_page);
+        assert_eq!(app.offset, list_size - big_complete_rows);
         assert_eq!(app.selected, Some(list_size - 1));
     }
 
@@ -555,25 +555,25 @@ mod tests {
         let item_height = ITEM_HEIGHT;
         let visible_rows = 9;
         let height = visible_rows * item_height + HEADER_HEIGHT + FOOTER_HEIGHT;
-        let rows_per_page = visible_rows as usize;
+        let complete_rows = visible_rows as usize;
 
         let mut app = crate::App::new(list_size);
         let mut terminal = Terminal::new(TestBackend::new(WIDTH, height)).unwrap();
-        // first render sets rows_per_page
+        // first render sets complete_rows
         terminal.draw(|f| app.render(f)).unwrap();
 
         // page down to the end, matching existing test setup
-        for _ in 0..(list_size - 1).div_ceil(rows_per_page) {
+        for _ in 0..(list_size - 1).div_ceil(complete_rows) {
             app.page_down_row();
         }
         assert_eq!(app.selected, Some(list_size - 1));
-        assert_eq!(app.offset, list_size - rows_per_page);
+        assert_eq!(app.offset, list_size - complete_rows);
 
         // no draw in between: offset must move with the selection.
         // page_up by a page from the offset reached at the end of the list
         let offset_before = app.offset;
         app.page_up_row();
-        let expected = offset_before.saturating_sub(rows_per_page);
+        let expected = offset_before.saturating_sub(complete_rows);
         assert_eq!(app.selected, Some(expected));
         assert_eq!(app.offset, expected);
     }
@@ -629,14 +629,14 @@ mod tests {
         let item_height = ITEM_HEIGHT;
         let visible_rows = 9;
         let height = visible_rows * item_height + HEADER_HEIGHT + FOOTER_HEIGHT;
-        let rows_per_page = visible_rows as usize;
+        let complete_rows = visible_rows as usize;
 
         let mut terminal = Terminal::new(TestBackend::new(WIDTH, height)).unwrap();
         terminal.draw(|f| app.render(f)).unwrap();
 
         // page to the end, then jump to the first row without scrolling:
         // the selection now sits above the viewport start
-        for _ in 0..(list_size - 1).div_ceil(rows_per_page) {
+        for _ in 0..(list_size - 1).div_ceil(complete_rows) {
             app.page_down_row();
         }
         app.first_row();
