@@ -785,6 +785,20 @@ mod tests {
     }
 
     #[test]
+    fn skips_cursor_move_after_wide_symbol_when_contiguous() {
+        let mut backend = backend();
+        let wide = Cell::new("\u{1F600}"); // 😀
+        let next = Cell::new("a");
+        let content = [(0, 0, &wide), (2, 0, &next)];
+
+        backend.draw(content.into_iter()).unwrap();
+
+        let output = backend.terminal.output();
+        let cursor = Csi::Cursor(cursor_position(Position::new(2, 0)).unwrap());
+        assert!(!output.contains(&cursor.to_string()));
+    }
+
+    #[test]
     fn converts_ratatui_colors_to_termina_colors() {
         assert_eq!(Color::Reset.into_termina(), ColorSpec::Reset);
         assert_eq!(Color::Red.into_termina(), ColorSpec::RED);

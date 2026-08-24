@@ -611,6 +611,14 @@ mod tests {
     }
 
     #[test]
+    fn draw_skips_cursor_move_after_wide_symbol_when_contiguous() {
+        let wide = Cell::new("\u{1F600}"); // 😀
+        let next = Cell::new("a");
+        let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
+        assert!(!output.contains(&termion::cursor::Goto(3, 1).to_string()));
+    }
+
+    #[test]
     fn save_and_restore_cursor_position_write_escape_sequences() {
         let mut backend = TermionBackend::new(Vec::new());
 
