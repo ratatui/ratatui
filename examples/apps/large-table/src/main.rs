@@ -654,4 +654,85 @@ mod tests {
         assert_eq!(app.offset, 0);
         assert_eq!(app.selected, Some(0));
     }
+
+    #[test]
+    fn partially_visible_row_is_rendered() {
+        // deterministic data: avoid fakeit flakiness
+        let items = (0..10)
+            .map(|i| Data {
+                name: format!("Name{i:02}"),
+                address: format!("Main Street\nCity, State {i:05}"),
+                email: format!("name{i:02}@example.com"),
+            })
+            .collect::<Vec<_>>();
+        let mut app = crate::App::new(0);
+        let len = items.len();
+        app.items = items;
+        app.longest_item_lens = crate::constraint_len_calculator(&app.items);
+        app.selected = Some(0);
+        let table_height = HEADER_HEIGHT + 2 * ITEM_HEIGHT + 2; // +2 partial lines for row 2
+        let height = table_height + FOOTER_HEIGHT;
+        let mut terminal = Terminal::new(TestBackend::new(WIDTH, height)).unwrap();
+        let buffer_text = |terminal: &Terminal<TestBackend>| -> String {
+            terminal
+                .backend()
+                .buffer()
+                .content()
+                .iter()
+                .map(ratatui::buffer::Cell::symbol)
+                .collect()
+        };
+
+        // walk from the first to the last row, rendering after each step so
+        // the window scrolls; assert the visible window contains exactly the
+        // rows in [offset, offset+3) and that a partially visible last row
+        // hides its second address line
+        for selected in 0..len {
+            if selected > 0 {
+                app.next_row();
+            }
+            terminal.draw(|f| app.render(f)).unwrap();
+            let text = buffer_text(&terminal);
+
+            // window covers rows [offset, offset+3), clamped to the list end
+            let window_end = (app.offset + 3).min(len);
+            for (i, item) in app.items.iter().enumerate() {
+                assert_eq!(
+                    text.contains(item.name.as_str()),
+                    (app.offset..window_end).contains(&i),
+                    "row {i} presence mismatch"
+                );
+            }
+
+            // a window of 3 rows ends in a partially visible row: its second
+            // address line must stay hidden
+            if window_end - app.offset == 3 {
+                let last = window_end - 1;
+                assert!(
+                    !text.contains(&format!("City, State {last:05}")),
+                    "row {last} second address line leaked"
+                );
+            }
+        }
+
+        // the last window (2 rows) is fully visible, so the final row's
+        // second address line renders
+        let text = buffer_text(&terminal);
+        assert!(text.contains("City, State 00009"));
+    }
+
+    #[test]
+    fn paging_moves_by_full_rows_only() {
+        let list_size = 10;
+        let mut app = crate::App::new(list_size);
+        let table_height = HEADER_HEIGHT + 2 * ITEM_HEIGHT + 2; // +2 partial lines for row 2
+        let height = table_height + FOOTER_HEIGHT;
+        let mut terminal = Terminal::new(TestBackend::new(WIDTH, height)).unwrap();
+        terminal.draw(|f| app.render(f)).unwrap();
+
+        app.page_down_row();
+        // page step is the floor count (2 complete rows), not the ceil count (3)
+        assert_eq!(app.selected, Some(2));
+        assert_eq!(app.offset, 2);
+    }
 }
