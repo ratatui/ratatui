@@ -234,7 +234,7 @@ where
         for (x, y, cell) in content {
             // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
             // the previous one on the same row, accounting for the width of what was printed.
-            if !matches!(last, Some((p, w)) if x == p.x + w && y == p.y) {
+            if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
                 write!(string, "{}", termion::cursor::Goto(x + 1, y + 1)).unwrap();
             }
             last = Some((Position { x, y }, cell.cell_width()));
@@ -577,6 +577,10 @@ impl fmt::Display for ResetRegion {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU16;
+
+    use ratatui_core::buffer::CellDiffOption;
+
     use super::*;
 
     /// Renders `content` and returns the emitted bytes as a lossy string.
@@ -616,6 +620,15 @@ mod tests {
         let next = Cell::new("a");
         let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
         assert!(!output.contains(&termion::cursor::Goto(3, 1).to_string()));
+    }
+
+    #[test]
+    fn draw_moves_cursor_when_previous_width_overflows() {
+        let mut forced = Cell::new("a");
+        forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::MAX));
+        let next = Cell::new("b");
+        let output = draw_to_string(&[(1, 0, &forced), (0, 0, &next)]);
+        assert!(output.contains(&termion::cursor::Goto(1, 1).to_string()));
     }
 
     #[test]
