@@ -323,9 +323,15 @@ impl App {
             .collect::<Row>()
             .style(header_style)
             .height(HEADER_HEIGHT);
-        let complete_rows = self.complete_rows.unwrap_or(0);
+        // Use ceil so a partially visible row at the bottom of the area still
+        // renders; paging and offset clamping instead use the floor count
+        // complete_rows so that a page step moves by whole rows only
+        let visible_rows = area
+            .height
+            .saturating_sub(HEADER_HEIGHT)
+            .div_ceil(ITEM_HEIGHT) as usize;
         let window_start = self.offset;
-        let window_end = (window_start + complete_rows).min(self.items.len());
+        let window_end = (window_start + visible_rows).min(self.items.len());
         let rows = self.items[window_start..window_end]
             .iter()
             .enumerate()
