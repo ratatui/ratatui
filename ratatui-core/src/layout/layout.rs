@@ -1072,6 +1072,8 @@ fn configure_flex_constraints(
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
                 if spacers.len() == 2 {
+                    // Special case for one element: there are only the outer spacers.
+                    // Let the last spacer grow so the element is pulled to the start.
                     solver.add_constraint(last.has_size(area, GROW))?;
                 } else {
                     solver.add_constraint(last.is_empty())?;
