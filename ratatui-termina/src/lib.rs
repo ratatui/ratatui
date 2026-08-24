@@ -151,7 +151,7 @@ where
         for (x, y, cell) in content {
             // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
             // the previous one on the same row, accounting for the width of what was printed.
-            if !matches!(last, Some((p, w)) if x == p.x + w && y == p.y) {
+            if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
                 let command = Csi::Cursor(cursor_position(Position { x, y })?);
                 write!(string, "{command}").unwrap();
             }
@@ -525,9 +525,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU16;
     use std::time::Duration;
 
-    use ratatui_core::buffer::Cell;
+    use ratatui_core::buffer::{Cell, CellDiffOption};
     use termina::EventReader;
     use termina::escape::csi::Csi;
 
@@ -796,6 +797,21 @@ mod tests {
         let output = backend.terminal.output();
         let cursor = Csi::Cursor(cursor_position(Position::new(2, 0)).unwrap());
         assert!(!output.contains(&cursor.to_string()));
+    }
+
+    #[test]
+    fn moves_cursor_when_previous_width_overflows() {
+        let mut backend = backend();
+        let mut forced = Cell::new("a");
+        forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::MAX));
+        let next = Cell::new("b");
+        let content = [(1, 0, &forced), (0, 0, &next)];
+
+        backend.draw(content.into_iter()).unwrap();
+
+        let output = backend.terminal.output();
+        let cursor = Csi::Cursor(cursor_position(Position::new(0, 0)).unwrap());
+        assert!(output.contains(&cursor.to_string()));
     }
 
     #[test]

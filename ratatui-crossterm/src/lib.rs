@@ -243,7 +243,7 @@ where
         for (x, y, cell) in content {
             // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
             // the previous one on the same row, accounting for the width of what was printed.
-            if !matches!(last, Some((p, w)) if x == p.x + w && y == p.y) {
+            if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
             last = Some((Position { x, y }, cell.cell_width()));
@@ -855,6 +855,15 @@ mod tests {
         assert!(!output.contains(&MoveTo(2, 0).to_string()));
         let output = draw_to_string(&[(0, 0, &forced), (1, 0, &next)]);
         assert!(output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_moves_cursor_when_previous_width_overflows() {
+        let mut forced = Cell::new("a");
+        forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::MAX));
+        let next = Cell::new("b");
+        let output = draw_to_string(&[(1, 0, &forced), (0, 0, &next)]);
+        assert!(output.contains(&MoveTo(0, 0).to_string()));
     }
 
     #[test]
