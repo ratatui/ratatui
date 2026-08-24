@@ -45,6 +45,7 @@ use ratatui_core::widgets::Widget;
 ///
 /// Cells outside the buffer are silently clipped, mirroring the behavior of other widgets
 /// such as [`Clear`](crate::clear::Clear).
+/// An empty symbol leaves the buffer unchanged.
 ///
 /// [`Stylize`]: ratatui_core::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -58,6 +59,7 @@ impl<'a> Fill<'a> {
     ///
     /// The style defaults to [`Style::default`]; use the [`Stylize`] shorthands or
     /// [`Fill::style`] to customize it.
+    /// An empty symbol leaves the buffer unchanged when rendered.
     ///
     /// [`Stylize`]: ratatui_core::style::Stylize
     pub fn new<S: Into<Cow<'a, str>>>(symbol: S) -> Self {
@@ -81,6 +83,7 @@ impl<'a> Fill<'a> {
     }
 
     /// Set the symbol painted into each cell.
+    /// An empty symbol leaves the buffer unchanged when rendered.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -99,7 +102,7 @@ impl Widget for Fill<'_> {
 impl Widget for &Fill<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(*buf.area());
-        if area.is_empty() {
+        if area.is_empty() || self.symbol.is_empty() {
             return;
         }
         for position in area.positions() {
@@ -208,5 +211,14 @@ mod tests {
             .symbol("b")
             .render(Rect::new(0, 0, 2, 1), &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["bb"]));
+    }
+
+    #[test]
+    fn empty_symbol_is_noop() {
+        for fill in [Fill::new(""), Fill::new("x").symbol(""), Fill::default()] {
+            let mut buffer = Buffer::with_lines(["xxxxx"]);
+            fill.red().render(Rect::new(1, 0, 3, 1), &mut buffer);
+            assert_eq!(buffer, Buffer::with_lines(["xxxxx"]));
+        }
     }
 }
