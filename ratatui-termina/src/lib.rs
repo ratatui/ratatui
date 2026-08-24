@@ -27,7 +27,7 @@ use std::fmt::{self, Write as FmtWrite};
 use std::io::{self, Write};
 
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 pub use termina;
@@ -146,13 +146,16 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<Position> = None;
+        // Position and width of the last cell written, used to skip redundant cursor moves.
+        let mut last: Option<(Position, u16)> = None;
         for (x, y, cell) in content {
-            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
+            // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
+            // the previous one on the same row, accounting for the width of what was printed.
+            if !matches!(last, Some((p, w)) if x == p.x + w && y == p.y) {
                 let command = Csi::Cursor(cursor_position(Position { x, y })?);
                 write!(string, "{command}").unwrap();
             }
-            last_pos = Some(Position { x, y });
+            last = Some((Position { x, y }, cell.cell_width()));
 
             let mut attributes = SgrAttributes::default();
             if cell.fg != fg {
@@ -746,6 +749,53 @@ mod tests {
         assert!(output.starts_with(&cursor.to_string()));
         assert!(output.contains('x'));
         assert!(output.ends_with(&Csi::Sgr(Sgr::Reset).to_string()));
+    }
+
+    #[test]
+    fn draws_cursor_move_after_wide_symbol() {
+        // A double-width glyph advances the terminal cursor by two columns, so writing the
+        // very next cell requires an explicit cursor move. See issue #2651.
+        let mut backend = backend();
+        let wide = Cell::new("\u{2764}\u{FE0F}"); // ❤️ (VS16 emoji presentation)
+        let next = Cell::new("a");
+        let content = [(0, 0, &wide), (1, 0, &next)];
+
+        backend.draw(content.into_iter()).unwrap();
+
+        let output = backend.terminal.output();
+        let cursor = Csi::Cursor(cursor_position(Position::new(1, 0)).unwrap());
+        assert!(
+            output.contains(&cursor.to_string()),
+            "expected a cursor move to (1, 0) after a wide glyph, got: {output:?}"
+        );
+    }
+
+    #[test]
+    fn skips_cursor_move_for_contiguous_cells() {
+        let mut backend = backend();
+        let a = Cell::new("a");
+        let b = Cell::new("b");
+        let content = [(0, 0, &a), (1, 0, &b)];
+
+        backend.draw(content.into_iter()).unwrap();
+
+        let output = backend.terminal.output();
+        let cursor = Csi::Cursor(cursor_position(Position::new(1, 0)).unwrap());
+        assert!(!output.contains(&cursor.to_string()));
+    }
+
+    #[test]
+    fn skips_cursor_move_after_wide_symbol_when_contiguous() {
+        let mut backend = backend();
+        let wide = Cell::new("\u{1F600}"); // 😀
+        let next = Cell::new("a");
+        let content = [(0, 0, &wide), (2, 0, &next)];
+
+        backend.draw(content.into_iter()).unwrap();
+
+        let output = backend.terminal.output();
+        let cursor = Csi::Cursor(cursor_position(Position::new(2, 0)).unwrap());
+        assert!(!output.contains(&cursor.to_string()));
     }
 
     #[test]
