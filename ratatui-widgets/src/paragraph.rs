@@ -182,8 +182,9 @@ impl<'a> Paragraph<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// This applies to the entire widget, including the block if one is present. Any style set on
-    /// the block or text will be added to this style.
+    /// This applies to the entire widget, including the block if one is present. On the rendered
+    /// text, the [`Text`], [`Line`], and [`Span`] styles are patched on top of this style in that
+    /// order, so fields they set take precedence.
     ///
     /// # Example
     ///
@@ -195,6 +196,7 @@ impl<'a> Paragraph<'a> {
     /// ```
     ///
     /// [`Color`]: ratatui_core::style::Color
+    /// [`Span`]: ratatui_core::text::Span
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();

@@ -73,7 +73,7 @@
 
 use std::io::{self, Write};
 
-use crossterm::cursor::{Hide, MoveTo, Show};
+use crossterm::cursor::{Hide, MoveTo, RestorePosition, SavePosition, Show};
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
 use crossterm::style::{
@@ -310,6 +310,15 @@ where
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
         let Position { x, y } = position.into();
         execute!(self.writer, MoveTo(x, y))
+    }
+
+    fn save_cursor_position(&mut self) -> io::Result<bool> {
+        execute!(self.writer, SavePosition)?;
+        Ok(true)
+    }
+
+    fn restore_cursor_position(&mut self) -> io::Result<()> {
+        execute!(self.writer, RestorePosition)
     }
 
     fn clear(&mut self) -> io::Result<()> {
@@ -876,6 +885,16 @@ mod tests {
         let next = Cell::new("a");
         let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
         assert!(!output.contains(&MoveTo(2, 0).to_string()));
+    }
+
+    #[test]
+    fn save_and_restore_cursor_position_write_escape_sequences() {
+        let mut backend = CrosstermBackend::new(Vec::new());
+
+        assert!(backend.save_cursor_position().unwrap());
+        backend.restore_cursor_position().unwrap();
+
+        assert_eq!(backend.writer(), b"\x1b7\x1b8");
     }
 
     #[rstest]
