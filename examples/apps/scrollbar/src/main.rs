@@ -9,7 +9,6 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use std::rc::Rc;
-use std::time::{Duration, Instant};
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
@@ -35,21 +34,8 @@ fn main() -> Result<()> {
 
 impl App {
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
-        // Note: This tick loop is unnecessary for this example — there is no
-        // tick-driven animation or periodic state update. The tick_rate only
-        // controls the poll timeout, causing unnecessary redraws every 250ms
-        // when idle. A blocking event::read() would be functionally equivalent.
-        // The tick pattern is retained only for consistency with other examples.
-        let tick_rate = Duration::from_millis(250);
-        let mut last_tick = Instant::now();
         loop {
             terminal.draw(|frame| self.render(frame))?;
-
-            let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-            if !event::poll(timeout)? {
-                last_tick = Instant::now();
-                continue;
-            }
             if let Some(key) = event::read()?.as_key_press_event() {
                 match key.code {
                     KeyCode::Char('q') => return Ok(()),
