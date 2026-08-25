@@ -11,6 +11,7 @@ color-eyre.workspace = true
 crossterm.workspace = true
 fakeit.workspace = true
 itertools.workspace = true
+ratatui-table = "0.1.0"
 ratatui.workspace = true
 unicode-width.workspace = true
 

@@ -1896,6 +1896,7 @@ dependencies = [
  "fakeit",
  "itertools 0.15.0",
  "ratatui",
+ "ratatui-table",
  "unicode-width",
 ]
 
@@ -2932,6 +2933,18 @@ dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
  "ratatui",
+]
+
+[[package]]
+name = "ratatui-table"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb57f2b96b8c32229b842343071707e4b80783cc3ce5bcbc333e7c8d9cf9a225"
+dependencies = [
+ "itertools 0.15.0",
+ "ratatui-core",
+ "ratatui-widgets",
+ "strum",
 ]
 
 [[package]]

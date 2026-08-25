@@ -79,6 +79,10 @@ unicode-truncate = { version = "2", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width = ">=0.2.0"
 
+[patch.crates-io]
+ratatui-core = { path = "ratatui-core" }
+ratatui-widgets = { path = "ratatui-widgets" }
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
