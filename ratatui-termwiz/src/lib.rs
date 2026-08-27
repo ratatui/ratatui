@@ -96,7 +96,7 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 /// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
 /// [Termwiz]: https://crates.io/crates/termwiz
-/// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }

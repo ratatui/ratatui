@@ -100,7 +100,7 @@
 //! [Termion]: https://crates.io/crates/termion
 //! [Termina]: https://crates.io/crates/termina
 //! [Termwiz]: https://crates.io/crates/termwiz
-//! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
+//! [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
 
