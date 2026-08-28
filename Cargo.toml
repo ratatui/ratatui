@@ -73,7 +73,7 @@ thiserror = { version = "2.0.12", default-features = false }
 time = { version = "0.3.37", default-features = false }
 tokio = "1.35"
 tokio-stream = "0.1"
-tracing = "0.1.37"
+tracing = "0.1.40"
 tracing-appender = "0.2"
 tracing-subscriber = "0.3.10"
 trybuild = "1.0.19"

@@ -15,7 +15,7 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
-accesskit = "0.24"
+accesskit = "0.24.1"
 accesskit_unix = "0.22"
 
 [dev-dependencies]

@@ -96,3 +96,46 @@ struct Deactivation;
 impl DeactivationHandler for Deactivation {
     fn deactivate_accessibility(&mut self) {}
 }
+
+#[cfg(test)]
+mod tests {
+    use accesskit::{Node, NodeId, Role, Tree, TreeId};
+
+    use super::*;
+
+    fn dummy_tree() -> TreeUpdate {
+        let id = NodeId(1);
+        TreeUpdate {
+            nodes: vec![(id, Node::new(Role::Window))],
+            tree: Some(Tree::new(id)),
+            tree_id: TreeId::ROOT,
+            focus: id,
+        }
+    }
+
+    // No AT client is the common case `Adapter::new` is documented to degrade silently
+    // rather than error or block, so none of this should panic or hang.
+    #[test]
+    fn new_update_focus_actions_never_panic() {
+        let mut a11y = A11y::new(dummy_tree());
+        a11y.update(dummy_tree());
+        a11y.set_focused(true);
+        a11y.set_focused(false);
+        assert_eq!(a11y.actions().count(), 0);
+    }
+
+    #[test]
+    fn lock_recovers_from_a_poisoned_mutex() {
+        let mutex = Arc::new(Mutex::new(dummy_tree()));
+        let poison_it = Arc::clone(&mutex);
+        let _ = std::thread::spawn(move || {
+            let _guard = poison_it.lock().unwrap();
+            panic!("poisoning the lock on purpose");
+        })
+        .join();
+
+        assert!(mutex.is_poisoned());
+        let guard = lock(&mutex); // must recover, not panic
+        drop(guard);
+    }
+}

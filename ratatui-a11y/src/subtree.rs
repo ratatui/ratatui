@@ -54,3 +54,56 @@ impl SubTree {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use accesskit::Role;
+
+    use super::*;
+    use crate::id::node_id;
+
+    fn two_node_subtree() -> SubTree {
+        let root = node_id("root");
+        let child = node_id("child");
+        SubTree::new(
+            root,
+            vec![
+                (root, Node::new(Role::List)),
+                (child, Node::new(Role::ListItem)),
+            ],
+        )
+    }
+
+    #[test]
+    fn nodes_mut_exposes_every_node_including_root() {
+        let mut sub = two_node_subtree();
+        assert_eq!(sub.nodes_mut().len(), 2);
+        for (_, node) in sub.nodes_mut() {
+            node.set_label("tweaked");
+        }
+        assert!(
+            sub.into_nodes()
+                .iter()
+                .all(|(_, n)| n.label() == Some("tweaked"))
+        );
+    }
+
+    #[test]
+    fn add_action_to_children_skips_root() {
+        let mut sub = two_node_subtree();
+        let root = sub.root;
+        sub.add_action_to_children(Action::Click);
+
+        let nodes = sub.into_nodes();
+        let root_node = &nodes.iter().find(|(id, _)| *id == root).unwrap().1;
+        let child_node = &nodes.iter().find(|(id, _)| *id != root).unwrap().1;
+        assert!(!root_node.supports_action(Action::Click));
+        assert!(child_node.supports_action(Action::Click));
+    }
+
+    #[test]
+    fn new_starts_with_no_selection() {
+        let sub = two_node_subtree();
+        assert_eq!(sub.selected, None);
+    }
+}
