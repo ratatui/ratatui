@@ -423,8 +423,27 @@ impl Style {
     /// ```
     #[must_use = "`add_modifier` returns the modified style without modifying the original"]
     pub const fn add_modifier(mut self, modifier: Modifier) -> Self {
+        let underline_type = if modifier.contains(Modifier::UNDERLINED) {
+            Modifier::UNDERLINED
+        } else if modifier.contains(Modifier::UNDER_CURLED) {
+            Modifier::UNDER_CURLED
+        } else if modifier.contains(Modifier::DOUBLE_UNDERLINED) {
+            Modifier::DOUBLE_UNDERLINED
+        } else if modifier.contains(Modifier::UNDER_DOTTED) {
+            Modifier::UNDER_DOTTED
+        } else if modifier.contains(Modifier::UNDER_DASHED) {
+            Modifier::UNDER_DASHED
+        } else {
+            Modifier::empty()
+        };
+
+        if !underline_type.is_empty() {
+            self.sub_modifier = self.sub_modifier.union(Modifier::ALL_UNDERLINES);
+        }
+
         self.sub_modifier = self.sub_modifier.difference(modifier);
-        self.add_modifier = self.add_modifier.union(modifier);
+        self.add_modifier = self.add_modifier.union(modifier.difference(Modifier::ALL_UNDERLINES));
+        self.add_modifier = self.add_modifier.union(underline_type);
         self
     }
 
@@ -495,6 +514,8 @@ impl Style {
             self.underline_color = other.underline_color.or(self.underline_color);
         }
 
+        // Assuming the Style have `sub_modifier` for all underlines except for the one in the
+        // `add_modifier`, If an underline exists.
         self.add_modifier.remove(other.sub_modifier);
         self.add_modifier.insert(other.add_modifier);
         self.sub_modifier.remove(other.add_modifier);
@@ -719,7 +740,7 @@ mod tests {
     use alloc::format;
 
     use rstest::rstest;
-
+    use crate::buffer::Cell;
     use super::*;
 
     #[rstest]
@@ -1016,6 +1037,44 @@ mod tests {
                 .add_modifier(Modifier::ITALIC)
                 .remove_modifier(Modifier::DIM)
         );
+    }
+
+    #[test]
+    fn set_few_underline_types() {
+        let mut cell = Cell::new("a");
+
+        cell.set_style(Style::new()
+            .add_modifier(Modifier::UNDERLINED)
+            .add_modifier(Modifier::DOUBLE_UNDERLINED)
+            .add_modifier(Modifier::BOLD)
+        );
+        assert_eq!(cell.modifier, Modifier::DOUBLE_UNDERLINED | Modifier::BOLD);
+
+        cell.set_style(Style::new()
+            .add_modifier(Modifier::UNDERLINED)
+        );
+        assert_eq!(cell.modifier, Modifier::UNDERLINED | Modifier::BOLD);
+
+        cell.set_style(Style::new()
+            .add_modifier(Modifier::ITALIC)
+        );
+        assert_eq!(cell.modifier, Modifier::UNDERLINED | Modifier::BOLD | Modifier::ITALIC);
+
+        cell.set_style(Style::new()
+            .remove_modifier(Modifier::DOUBLE_UNDERLINED)
+        );
+        assert_eq!(cell.modifier, Modifier::UNDERLINED | Modifier::BOLD | Modifier::ITALIC);
+
+        cell.set_style(Style::new()
+            .remove_modifier(Modifier::UNDERLINED)
+        );
+        assert_eq!(cell.modifier, Modifier::BOLD | Modifier::ITALIC);
+
+        cell.set_style(Style::new()
+            .remove_modifier(Modifier::BOLD)
+            .add_modifier(Modifier::DIM | Modifier::DOUBLE_UNDERLINED | Modifier::UNDER_DOTTED | Modifier::UNDER_DASHED)
+        );
+        assert_eq!(cell.modifier, Modifier::ITALIC | Modifier::DOUBLE_UNDERLINED | Modifier::DIM);
     }
 
     #[cfg(feature = "serde")]
