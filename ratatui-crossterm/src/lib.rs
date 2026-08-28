@@ -577,7 +577,7 @@ impl ModifierDiff {
         if removed.contains(Modifier::ITALIC) {
             queue!(w, SetAttribute(CrosstermAttribute::NoItalic))?;
         }
-        if removed.contains(Modifier::UNDERLINED) {
+        if (removed & Modifier::ALL_UNDERLINES) != Modifier::empty() {
             queue!(w, SetAttribute(CrosstermAttribute::NoUnderline))?;
         }
         if removed.contains(Modifier::CROSSED_OUT) {
@@ -602,6 +602,18 @@ impl ModifierDiff {
         }
         if added.contains(Modifier::UNDERLINED) {
             queue!(w, SetAttribute(CrosstermAttribute::Underlined))?;
+        }
+        if added.contains(Modifier::UNDER_CURLED) {
+            queue!(w, SetAttribute(CrosstermAttribute::Undercurled))?;
+        }
+        if added.contains(Modifier::DOUBLE_UNDERLINED) {
+            queue!(w, SetAttribute(CrosstermAttribute::DoubleUnderlined))?;
+        }
+        if added.contains(Modifier::UNDER_DOTTED) {
+            queue!(w, SetAttribute(CrosstermAttribute::Underdotted))?;
+        }
+        if added.contains(Modifier::UNDER_DASHED) {
+            queue!(w, SetAttribute(CrosstermAttribute::Underdashed))?;
         }
         if added.contains(Modifier::DIM) && !reset_intensity {
             queue!(w, SetAttribute(CrosstermAttribute::Dim))?;

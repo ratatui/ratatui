@@ -102,16 +102,33 @@ bitflags! {
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
     #[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct Modifier: u16 {
-        const BOLD              = 0b0000_0000_0001;
-        const DIM               = 0b0000_0000_0010;
-        const ITALIC            = 0b0000_0000_0100;
-        const UNDERLINED        = 0b0000_0000_1000;
-        const SLOW_BLINK        = 0b0000_0001_0000;
-        const RAPID_BLINK       = 0b0000_0010_0000;
-        const REVERSED          = 0b0000_0100_0000;
-        const HIDDEN            = 0b0000_1000_0000;
-        const CROSSED_OUT       = 0b0001_0000_0000;
+        const BOLD              = 0b0000_0000_0000_0001;
+        const DIM               = 0b0000_0000_0000_0010;
+        const ITALIC            = 0b0000_0000_0000_0100;
+        const UNDERLINED        = 0b0000_0000_0000_1000;
+        const SLOW_BLINK        = 0b0000_0000_0001_0000;
+        const RAPID_BLINK       = 0b0000_0000_0010_0000;
+        const REVERSED          = 0b0000_0000_0100_0000;
+        const HIDDEN            = 0b0000_0000_1000_0000;
+        const CROSSED_OUT       = 0b0000_0001_0000_0000;
+        /// Not supported in termion
+        const UNDER_CURLED      = 0b0000_0010_0000_0000;
+        /// Not supported in termion
+        const DOUBLE_UNDERLINED = 0b0000_0100_0000_0000;
+        /// Not supported in termion
+        const UNDER_DOTTED      = 0b0000_1000_0000_0000;
+        /// Not supported in termion
+        const UNDER_DASHED      = 0b0001_0000_0000_0000;
     }
+}
+
+/// Implement some constant values for `Modifier` for easier usage.
+impl Modifier {
+    pub const ALL_UNDERLINES: Self = Modifier::UNDERLINED
+        .union(Modifier::UNDER_CURLED)
+        .union(Modifier::DOUBLE_UNDERLINED)
+        .union(Modifier::UNDER_DOTTED)
+        .union(Modifier::UNDER_DASHED);
 }
 
 /// Implement the `Debug` trait for `Modifier` manually.
@@ -786,10 +803,14 @@ mod tests {
     #[case(Modifier::REVERSED, "REVERSED")]
     #[case(Modifier::HIDDEN, "HIDDEN")]
     #[case(Modifier::CROSSED_OUT, "CROSSED_OUT")]
+    #[case(Modifier::UNDER_CURLED, "UNDER_CURLED")]
+    #[case(Modifier::DOUBLE_UNDERLINED, "DOUBLE_UNDERLINED")]
+    #[case(Modifier::UNDER_DOTTED, "UNDER_DOTTED")]
+    #[case(Modifier::UNDER_DASHED, "UNDER_DASHED")]
     #[case(Modifier::BOLD | Modifier::DIM, "BOLD | DIM")]
     #[case(
         Modifier::all(),
-        "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT"
+        "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT | UNDER_CURLED | DOUBLE_UNDERLINED | UNDER_DOTTED | UNDER_DASHED"
     )]
     fn modifier_debug(#[case] modifier: Modifier, #[case] expected: &str) {
         assert_eq!(format!("{modifier:?}"), expected);

@@ -435,7 +435,9 @@ impl IntoTermina<SgrModifiers> for ModifierDiff {
         if removed.contains(Modifier::ITALIC) {
             modifiers |= SgrModifiers::NO_ITALIC;
         }
-        if removed.contains(Modifier::UNDERLINED) {
+        if (removed & Modifier::ALL_UNDERLINES) != Modifier::empty()
+            && (added & Modifier::ALL_UNDERLINES) == Modifier::empty()
+        {
             modifiers |= SgrModifiers::UNDERLINE_NONE;
         }
         if removed.contains(Modifier::SLOW_BLINK) || removed.contains(Modifier::RAPID_BLINK) {
@@ -462,6 +464,18 @@ impl IntoTermina<SgrModifiers> for ModifierDiff {
         }
         if added.contains(Modifier::UNDERLINED) {
             modifiers |= SgrModifiers::UNDERLINE_SINGLE;
+        }
+        if added.contains(Modifier::UNDER_CURLED) {
+            modifiers |= SgrModifiers::UNDERLINE_CURLY;
+        }
+        if added.contains(Modifier::DOUBLE_UNDERLINED) {
+            modifiers |= SgrModifiers::UNDERLINE_DOUBLE;
+        }
+        if added.contains(Modifier::UNDER_DOTTED) {
+            modifiers |= SgrModifiers::UNDERLINE_DOTTED;
+        }
+        if added.contains(Modifier::UNDER_DASHED) {
+            modifiers |= SgrModifiers::UNDERLINE_DASHED;
         }
         if added.contains(Modifier::SLOW_BLINK) {
             modifiers |= SgrModifiers::BLINK_SLOW;

@@ -185,6 +185,14 @@ impl Backend for TermwizBackend {
                 .add_change(Change::Attribute(AttributeChange::Underline(
                     if cell.modifier.contains(Modifier::UNDERLINED) {
                         Underline::Single
+                    } else if cell.modifier.contains(Modifier::UNDER_CURLED) {
+                        Underline::Curly
+                    } else if cell.modifier.contains(Modifier::DOUBLE_UNDERLINED) {
+                        Underline::Double
+                    } else if cell.modifier.contains(Modifier::UNDER_DOTTED) {
+                        Underline::Dotted
+                    } else if cell.modifier.contains(Modifier::UNDER_DASHED) {
+                        Underline::Dashed
                     } else {
                         Underline::None
                     },
