@@ -10,6 +10,8 @@ default-members = [
   "ratatui-macros",
   # this is not included as it doesn't compile on windows
   # "ratatui-termion",
+  # this is experimental and Linux-only (AT-SPI)
+  # "ratatui-a11y",
   "ratatui-termina",
   "ratatui-termwiz",
   "ratatui-widgets",
@@ -52,6 +54,7 @@ pretty_assertions = "1"
 rand = "0.10"
 rand_chacha = "0.10"
 ratatui = { path = "ratatui", version = "0.30.2" }
+ratatui-a11y = { path = "ratatui-a11y", version = "0.1.0" }
 ratatui-core = { path = "ratatui-core", version = "0.1.2" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.2" }
 ratatui-macros = { path = "ratatui-macros", version = "0.7.2" }

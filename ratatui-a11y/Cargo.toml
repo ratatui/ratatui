@@ -1,0 +1,27 @@
+[package]
+name = "ratatui-a11y"
+version = "0.1.0"
+description = "Experimental Linux (AT-SPI) accessibility tree support for Ratatui."
+documentation = "https://docs.rs/ratatui-a11y"
+readme = "README.md"
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+exclude.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+accesskit = "0.24"
+accesskit_unix = "0.22"
+
+[dev-dependencies]
+color-eyre.workspace = true
+crossterm.workspace = true
+ratatui.workspace = true
+
+[lints]
+workspace = true
