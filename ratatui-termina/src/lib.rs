@@ -871,6 +871,59 @@ mod tests {
     }
 
     #[test]
+    fn converts_underline_modifier_diffs_to_sgr_modifiers() {
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::UNDERLINED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_SINGLE
+        );
+
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::UNDER_CURLED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_CURLY
+        );
+
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::DOUBLE_UNDERLINED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_DOUBLE
+        );
+
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::UNDER_DOTTED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_DOTTED
+        );
+
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::UNDER_DASHED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_DASHED
+        );
+    }
+
+    #[test]
     fn converts_termina_modifiers_to_ratatui_modifiers() {
         assert_eq!(Modifier::from_termina(Intensity::Normal), Modifier::empty());
         assert_eq!(Modifier::from_termina(Intensity::Bold), Modifier::BOLD);

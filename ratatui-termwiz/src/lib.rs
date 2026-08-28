@@ -824,6 +824,34 @@ mod tests {
     }
 
     #[test]
+    fn draw() {
+        let mut backend = TermwizBackend::new().unwrap();
+
+        let mut b = Cell::new("b");
+        let mut c = Cell::new("c");
+        let mut d = Cell::new("d");
+        let content = [
+            (2, 10, &Cell::new("a")),
+            (
+                2,
+                11,
+                b.set_style(Style::new().add_modifier(Modifier::UNDERLINED)),
+            ),
+            (
+                3,
+                1,
+                c.set_style(Style::new().add_modifier(Modifier::DOUBLE_UNDERLINED)),
+            ),
+            (
+                3,
+                3,
+                d.set_style(Style::new().add_modifier(Modifier::UNDER_CURLED)),
+            ),
+        ];
+        backend.draw(content.into_iter()).unwrap();
+    }
+
+    #[test]
     fn from_cell_attribute_for_style() {
         #[cfg(feature = "underline-color")]
         const STYLE: Style = Style::new()
