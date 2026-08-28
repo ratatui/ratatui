@@ -511,7 +511,11 @@ impl FromTermina<Underline> for Modifier {
     fn from_termina(value: Underline) -> Self {
         match value {
             Underline::None => Self::empty(),
-            _ => Self::UNDERLINED,
+            Underline::Single => Self::UNDERLINED,
+            Underline::Double => Self::DOUBLE_UNDERLINED,
+            Underline::Curly => Self::UNDER_CURLED,
+            Underline::Dotted => Self::UNDER_DOTTED,
+            Underline::Dashed => Self::UNDER_DASHED,
         }
     }
 }
@@ -874,6 +878,22 @@ mod tests {
         assert_eq!(
             Modifier::from_termina(Underline::Single),
             Modifier::UNDERLINED
+        );
+        assert_eq!(
+            Modifier::from_termina(Underline::Curly),
+            Modifier::UNDER_CURLED
+        );
+        assert_eq!(
+            Modifier::from_termina(Underline::Double),
+            Modifier::DOUBLE_UNDERLINED
+        );
+        assert_eq!(
+            Modifier::from_termina(Underline::Dotted),
+            Modifier::UNDER_DOTTED
+        );
+        assert_eq!(
+            Modifier::from_termina(Underline::Dashed),
+            Modifier::UNDER_DASHED
         );
         assert_eq!(Modifier::from_termina(Blink::None), Modifier::empty());
         assert_eq!(Modifier::from_termina(Blink::Rapid), Modifier::RAPID_BLINK);

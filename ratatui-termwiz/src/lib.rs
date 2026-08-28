@@ -439,7 +439,11 @@ impl FromTermwiz<Underline> for Modifier {
     fn from_termwiz(value: Underline) -> Self {
         match value {
             Underline::None => Self::empty(),
-            _ => Self::UNDERLINED,
+            Underline::Single => Self::UNDERLINED,
+            Underline::Double => Self::DOUBLE_UNDERLINED,
+            Underline::Curly => Self::UNDER_CURLED,
+            Underline::Dotted => Self::UNDER_DOTTED,
+            Underline::Dashed => Self::UNDER_DASHED,
         }
     }
 }
@@ -795,19 +799,19 @@ mod tests {
             );
             assert_eq!(
                 Modifier::from_termwiz(Underline::Double),
-                Modifier::UNDERLINED
+                Modifier::DOUBLE_UNDERLINED
             );
             assert_eq!(
                 Modifier::from_termwiz(Underline::Curly),
-                Modifier::UNDERLINED
+                Modifier::UNDER_CURLED
             );
             assert_eq!(
                 Modifier::from_termwiz(Underline::Dashed),
-                Modifier::UNDERLINED
+                Modifier::UNDER_DASHED
             );
             assert_eq!(
                 Modifier::from_termwiz(Underline::Dotted),
-                Modifier::UNDERLINED
+                Modifier::UNDER_DOTTED
             );
         }
 

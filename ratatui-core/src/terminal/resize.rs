@@ -328,7 +328,7 @@ mod tests {
             ..old_area
         };
 
-        terminal.resize(new_area);
+        let _ = terminal.resize(new_area);
         assert_eq!(terminal.viewport_area, new_area);
         let all_clear = terminal
             .current_buffer_mut()

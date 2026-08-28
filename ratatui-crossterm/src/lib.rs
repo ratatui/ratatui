@@ -83,6 +83,7 @@ use crossterm::style::{
 };
 use crossterm::terminal::{self, Clear};
 use crossterm::{execute, queue};
+
 cfg_if::cfg_if! {
     // Re-export the selected Crossterm crate making sure to choose the latest version. We do this
     // to make it possible to easily enable all features when compiling `ratatui-crossterm`.
@@ -655,13 +656,20 @@ impl FromCrossterm<CrosstermAttributes> for Modifier {
         if value.has(CrosstermAttribute::Italic) {
             res |= Self::ITALIC;
         }
-        if value.has(CrosstermAttribute::Underlined)
-            || value.has(CrosstermAttribute::DoubleUnderlined)
-            || value.has(CrosstermAttribute::Undercurled)
-            || value.has(CrosstermAttribute::Underdotted)
-            || value.has(CrosstermAttribute::Underdashed)
-        {
+        if value.has(CrosstermAttribute::Underlined) {
             res |= Self::UNDERLINED;
+        }
+        if value.has(CrosstermAttribute::Undercurled) {
+            res |= Self::UNDER_CURLED;
+        }
+        if value.has(CrosstermAttribute::DoubleUnderlined) {
+            res |= Self::DOUBLE_UNDERLINED;
+        }
+        if value.has(CrosstermAttribute::Underdotted) {
+            res |= Self::UNDER_DOTTED;
+        }
+        if value.has(CrosstermAttribute::Underdashed) {
+            res |= Self::UNDER_DASHED;
         }
         if value.has(CrosstermAttribute::SlowBlink) {
             res |= Self::SLOW_BLINK;
@@ -958,6 +966,13 @@ mod tests {
     #[case(Modifier::empty(), Modifier::CROSSED_OUT, &[CrosstermAttribute::CrossedOut])]
     #[case(Modifier::empty(), Modifier::HIDDEN, &[CrosstermAttribute::Hidden])]
     #[case(Modifier::empty(), Modifier::REVERSED, &[CrosstermAttribute::Reverse])]
+    #[case(Modifier::empty(), Modifier::UNDERLINED, &[CrosstermAttribute::Underlined])]
+    #[case(Modifier::empty(), Modifier::UNDER_CURLED, &[CrosstermAttribute::Undercurled])]
+    #[case(Modifier::empty(), Modifier::DOUBLE_UNDERLINED, &[CrosstermAttribute::DoubleUnderlined])]
+    #[case(Modifier::empty(), Modifier::UNDER_DOTTED, &[CrosstermAttribute::Underdotted])]
+    #[case(Modifier::empty(), Modifier::UNDER_DASHED, &[CrosstermAttribute::Underdashed])]
+    #[case(Modifier::UNDERLINED, Modifier::UNDER_DASHED, &[CrosstermAttribute::NoUnderline, CrosstermAttribute::Underdashed])]
+    #[case(Modifier::UNDER_DOTTED, Modifier::UNDER_DASHED, &[CrosstermAttribute::NoUnderline, CrosstermAttribute::Underdashed])]
     fn queue_modifier_diff(
         #[case] from: Modifier,
         #[case] to: Modifier,
@@ -989,10 +1004,10 @@ mod tests {
         #[case(CrosstermAttribute::NoUnderline, Modifier::empty())]
         #[case(CrosstermAttribute::OverLined, Modifier::empty())]
         #[case(CrosstermAttribute::NotOverLined, Modifier::empty())]
-        #[case(CrosstermAttribute::DoubleUnderlined, Modifier::UNDERLINED)]
-        #[case(CrosstermAttribute::Undercurled, Modifier::UNDERLINED)]
-        #[case(CrosstermAttribute::Underdotted, Modifier::UNDERLINED)]
-        #[case(CrosstermAttribute::Underdashed, Modifier::UNDERLINED)]
+        #[case(CrosstermAttribute::DoubleUnderlined, Modifier::DOUBLE_UNDERLINED)]
+        #[case(CrosstermAttribute::Undercurled, Modifier::UNDER_CURLED)]
+        #[case(CrosstermAttribute::Underdotted, Modifier::UNDER_DOTTED)]
+        #[case(CrosstermAttribute::Underdashed, Modifier::UNDER_DASHED)]
         #[case(CrosstermAttribute::Dim, Modifier::DIM)]
         #[case(CrosstermAttribute::NormalIntensity, Modifier::empty())]
         #[case(CrosstermAttribute::CrossedOut, Modifier::CROSSED_OUT)]
@@ -1018,7 +1033,7 @@ mod tests {
         #[case(&[CrosstermAttribute::Bold], Modifier::BOLD)]
         #[case(&[CrosstermAttribute::Bold, CrosstermAttribute::Italic], Modifier::BOLD | Modifier::ITALIC)]
         #[case(&[CrosstermAttribute::Bold, CrosstermAttribute::NotCrossedOut], Modifier::BOLD)]
-        #[case(&[CrosstermAttribute::Dim, CrosstermAttribute::Underdotted], Modifier::DIM | Modifier::UNDERLINED)]
+        #[case(&[CrosstermAttribute::Dim, CrosstermAttribute::Underdotted], Modifier::DIM | Modifier::UNDER_DOTTED)]
         #[case(&[CrosstermAttribute::Dim, CrosstermAttribute::SlowBlink, CrosstermAttribute::Italic], Modifier::DIM | Modifier::SLOW_BLINK | Modifier::ITALIC)]
         #[case(&[CrosstermAttribute::Hidden, CrosstermAttribute::NoUnderline, CrosstermAttribute::NotCrossedOut], Modifier::HIDDEN)]
         #[case(&[CrosstermAttribute::Reverse], Modifier::REVERSED)]
