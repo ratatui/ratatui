@@ -312,6 +312,9 @@ impl<'a> Text<'a> {
     /// only by the style of each [`Line`] contained in the line. For this reason, this field may
     /// not be supported by all widgets (outside of the `ratatui` crate itself).
     ///
+    /// When rendered, this style is the base for the text. Each [`Line`] style, and then each
+    /// [`Span`] style, is patched on top, so fields set by the more specific style take precedence.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
