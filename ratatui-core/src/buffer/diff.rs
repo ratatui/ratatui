@@ -17,14 +17,14 @@ pub struct BufferDiff<'prev, 'next> {
     area: Rect,
     /// Current position in the flat cell array.
     pos: usize,
-    /// Tracks trailing cells that must be yielded after a wide character is processed.
+    /// Tracks trailing cells that must be yielded around a wide character update.
     ///
-    /// Set when a wide char was replaced by narrower content (force=true) or when a VS16 emoji
-    /// needs its trailing column checked (force=false).
+    /// Set before repainting a wide glyph after a visible style change, after replacing a wide
+    /// glyph with narrower content, or when a VS16 emoji needs its trailing column checked.
     trailing: Option<TrailingState>,
 }
 
-/// Tracks pending trailing-cell yields when a wide character is followed by narrower content.
+/// Tracks pending trailing-cell yields for a wide character update.
 #[derive(Debug)]
 struct TrailingState {
     next_index: usize,
@@ -36,6 +36,8 @@ struct TrailingState {
     /// When `false` (VS16 path), only cells whose symbol changed are emitted, because the emoji
     /// visually covers its trailing column and style differences there are invisible.
     force: bool,
+    /// A cell to yield once the trailing range is exhausted.
+    deferred: Option<usize>,
 }
 
 /// Modifiers that are visually apparent on a blank (space) cell.
@@ -97,6 +99,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
             next_index,
             end,
             force,
+            deferred,
         }) = &mut self.trailing
         {
             while *next_index < *end {
@@ -115,9 +118,15 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                 }
             }
 
-            // Done with trailing cells; resume main loop past the wide character.
+            // Done with trailing cells; resume past the wide character, repainting its leading
+            // cell first when the trailing cells were a pre-clear.
             self.pos = *end;
+            let deferred = deferred.take();
             self.trailing = None;
+            if let Some(i) = deferred {
+                let (x, y) = self.pos_of(i);
+                return Some((x, y, &self.next[i]));
+            }
         }
         while self.pos < len {
             let i = self.pos;
@@ -154,6 +163,22 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     }
 
                     let previous_width = previous.cell_width() as usize;
+                    let previous_style_is_visible_on_blank = previous.bg != Color::Reset
+                        || previous.modifier.intersects(VISIBLE_ON_BLANK);
+
+                    if cell_width > 1
+                        && current.symbol() == previous.symbol()
+                        && current.style() != previous.style()
+                        && previous_style_is_visible_on_blank
+                    {
+                        self.trailing = Some(TrailingState {
+                            next_index: i + 1,
+                            end: (i + cell_width).min(len),
+                            force: true,
+                            deferred: Some(i),
+                        });
+                        return self.next();
+                    }
 
                     // Work around terminals that fail to clear the trailing cell of certain
                     // emoji presentation sequences (those containing VS16 / U+FE0F).
@@ -168,13 +193,11 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                             next_index: i + 1,
                             end: trailing_end,
                             force: false,
+                            deferred: None,
                         });
                     } else if cell_width > 1 {
                         self.pos += cell_width.saturating_sub(1);
-                    } else if previous_width > cell_width
-                        && (previous.bg != Color::Reset
-                            || previous.modifier.intersects(VISIBLE_ON_BLANK))
-                    {
+                    } else if previous_width > cell_width && previous_style_is_visible_on_blank {
                         // The previous wide character's style is visible on blank cells, so the
                         // terminal may still show it on the trailing columns even after the
                         // character is replaced. Force-emit every cell in the trailing range to
@@ -183,6 +206,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                             next_index: i + 1,
                             end: (i + previous_width).min(len),
                             force: true,
+                            deferred: None,
                         });
                     } else {
                         // single-width character, no position adjustment needed
@@ -282,6 +306,46 @@ mod tests {
             diff.is_empty(),
             "the hidden trailing cell of an unchanged wide glyph must not be emitted; got {diff:?}"
         );
+    }
+
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2652>: removing a style that is
+    /// visible on blank cells from an unchanged wide glyph must clear its trailing column before
+    /// repainting the glyph. Clearing it afterwards can erase the glyph on some terminals.
+    #[test]
+    fn wide_glyph_style_change_clears_trailing_cell_before_repaint() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        for glyph in ["❤️", "😀"] {
+            let mut prev = Buffer::empty(area);
+            prev.set_string(0, 0, glyph, Style::new().bg(Color::Blue));
+
+            let mut next = Buffer::empty(area);
+            next.set_string(0, 0, glyph, Style::default());
+
+            let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+            assert_eq!(diff.len(), 2, "trailing cell and glyph must be redrawn");
+            assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
+            assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, glyph));
+        }
+    }
+
+    #[test]
+    fn wide_glyph_foreground_change_does_not_clear_trailing_cell() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "한", Style::new().fg(Color::Blue));
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한", Style::new().fg(Color::Red));
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(diff.len(), 1);
+        assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (0, 0, "한"));
     }
 
     #[test]

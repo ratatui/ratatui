@@ -888,6 +888,33 @@ mod tests {
     }
 
     #[test]
+    fn draw_clears_trailing_cell_before_repainting_styled_wide_glyph() {
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(
+            0,
+            0,
+            "한",
+            Style::new()
+                .fg(Color::Red)
+                .add_modifier(Modifier::UNDERLINED),
+        );
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한", Style::default());
+
+        let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        let output = draw_to_string(&updates);
+        let clear = output.find(&MoveTo(1, 0).to_string()).unwrap();
+        let repaint = output.find(&MoveTo(0, 0).to_string()).unwrap();
+
+        assert!(
+            clear < repaint,
+            "trailing cell must be cleared first: {output:?}"
+        );
+    }
+
+    #[test]
     fn draw_skips_cursor_move_after_wide_symbol_when_contiguous() {
         // The cell right after a wide glyph's trailing column is where the cursor already is.
         let wide = Cell::new("\u{1F600}"); // 😀
