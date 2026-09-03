@@ -19,5 +19,5 @@ rand.workspace = true
 ratatui.workspace = true
 termwiz = { workspace = true, optional = true }
 
-[target."cfg(not(windows))".dependencies]
+[target.'cfg(not(windows))'.dependencies]
 termion = { workspace = true, optional = true }

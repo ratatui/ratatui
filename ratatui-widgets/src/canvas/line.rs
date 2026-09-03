@@ -46,6 +46,12 @@ impl Line {
 impl Shape for Line {
     #[expect(clippy::similar_names)]
     fn draw(&self, painter: &mut Painter) {
+        if [self.x1, self.y1, self.x2, self.y2]
+            .iter()
+            .any(|coordinate| !coordinate.is_finite())
+        {
+            return;
+        }
         let (x_bounds, y_bounds) = painter.bounds();
         let Some((world_x1, world_y1, world_x2, world_y2)) =
             clip_line(x_bounds, y_bounds, self.x1, self.y1, self.x2, self.y2)
@@ -599,5 +605,22 @@ mod tests {
             }
         }
         assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::nan_x(f64::NAN, 5.0)]
+    #[case::nan_y(5.0, f64::NAN)]
+    #[case::inf_x(f64::INFINITY, 5.0)]
+    #[case::neg_inf_y(5.0, f64::NEG_INFINITY)]
+    fn non_finite_endpoint_draws_nothing(#[case] x2: f64, #[case] y2: f64) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
+        let canvas = Canvas::default()
+            .marker(Marker::Dot)
+            .x_bounds([0.0, 10.0])
+            .y_bounds([10.0, 0.0])
+            .paint(|context| context.draw(&Line::new(0.0, 0.0, x2, y2, Color::Red)));
+        canvas.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(["          "; 10]));
     }
 }
