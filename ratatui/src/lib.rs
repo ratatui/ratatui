@@ -297,6 +297,9 @@
 //! section of the [Ratatui Website] for more info, and check out the [Layout Recipes] for
 //! practical examples.
 //!
+//! For an interactive exploration of constraint types, flex modes, and spacing, see the
+//! [Constraint Explorer example].
+//!
 //! ```rust,no_run
 //! use ratatui::Frame;
 //! use ratatui::layout::{Constraint, Layout};
@@ -398,10 +401,11 @@
 //! [Handling Events]: https://ratatui.rs/concepts/event-handling/
 //! [Layout]: https://ratatui.rs/recipes/layout/
 //! [Layout Recipes]: https://ratatui.rs/recipes/layout/
+//! [Constraint Explorer example]: https://github.com/ratatui/ratatui/tree/main/examples/apps/constraint-explorer/
 //! [Styling Text]: https://ratatui.rs/recipes/render/style-text/
 //! [Styling Recipes]: https://ratatui.rs/recipes/render/
 //! [templates]: https://github.com/ratatui/templates/
-//! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
+//! [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 //! [Report a bug]: https://github.com/ratatui/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
 //! [Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
 //! [Create a Pull Request]: https://github.com/ratatui/ratatui/compare

@@ -422,7 +422,7 @@ impl Painter<'_, '_> {
     /// `(x, y)` coordinates to the location of a point on the grid.
     ///
     /// Points are rounded to the nearest grid cell (with points exactly in the center of a cell
-    /// rounding up).
+    /// rounding up). Points outside the bounds or with non-finite coordinates return `None`.
     ///
     /// # Examples
     ///
@@ -451,7 +451,7 @@ impl Painter<'_, '_> {
     pub fn get_point(&self, x: f64, y: f64) -> Option<(usize, usize)> {
         let [left, right] = self.context.x_bounds;
         let [bottom, top] = self.context.y_bounds;
-        if x < left || x > right || y < bottom || y > top {
+        if !x.is_finite() || !y.is_finite() || x < left || x > right || y < bottom || y > top {
             return None;
         }
         let width = right - left;
@@ -1219,5 +1219,16 @@ mod tests {
             .paint(|_ctx| {});
         // This should not panic, even if the buffer has zero size.
         canvas.render(buffer.area, &mut buffer);
+    }
+
+    #[rstest]
+    #[case::nan_x(f64::NAN, 5.0)]
+    #[case::nan_y(5.0, f64::NAN)]
+    #[case::inf_x(f64::INFINITY, 5.0)]
+    #[case::neg_inf_y(5.0, f64::NEG_INFINITY)]
+    fn get_point_rejects_non_finite_coordinates(#[case] x: f64, #[case] y: f64) {
+        let mut ctx = Context::new(2, 2, [0.0, 10.0], [0.0, 10.0], Marker::Dot);
+        let painter = Painter::from(&mut ctx);
+        assert_eq!(painter.get_point(x, y), None);
     }
 }
