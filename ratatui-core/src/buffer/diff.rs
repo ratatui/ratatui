@@ -171,7 +171,8 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         return self.next();
                     }
 
-                    // Clear reserved columns first so they cannot overwrite the uncertain-width glyph.
+                    // Clear reserved columns first so they cannot overwrite the uncertain-width
+                    // glyph.
                     let uncertain_width = cell_width > 1 && has_uncertain_width(current.symbol());
 
                     if uncertain_width {
