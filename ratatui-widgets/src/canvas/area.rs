@@ -1,0 +1,376 @@
+use alloc::vec::Vec;
+
+use line_clipping::{Point, Polygon, Window, sutherland_hodgman};
+use ratatui_core::style::Color;
+
+use crate::canvas::{Painter, Shape, line};
+
+/// A shape that draws a polygon defined by a list of vertices.
+///
+/// The polygon can be convex or non-convex, and may self-intersect. When `fill` is `true`, the
+/// interior of the polygon is filled using the specified color; otherwise only the outline is
+/// drawn.
+///
+/// # Bridge artifacts
+///
+/// This algorithm produces a "bridge" artifact when clipping non-convex polygons that split into
+/// multiple pieces. It connects the disjoint visible regions with a straight line along the clip
+/// window border, creating a single polygon where multiple separate polygons would be correct.
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct Area<'a> {
+    /// List of vertices defining the polygon
+    pub vertices: &'a [(f64, f64)],
+    /// Color used to draw the polygon
+    pub color: Color,
+    /// Whether to fill the interior of the polygon or draw only the outline
+    pub fill: bool,
+}
+
+impl<'a> Area<'a> {
+    /// Creates a new polygon shape.
+    ///
+    /// # Arguments
+    ///
+    /// * `vertices` - A slice of `(x, y)` coordinate pairs defining the polygon's vertices
+    /// * `color` - The color to use for drawing
+    /// * `fill` - If `true`, fills the interior of the polygon; if `false`, draws only the outline
+    pub const fn new(vertices: &'a [(f64, f64)], color: Color, fill: bool) -> Self {
+        Self {
+            vertices,
+            color,
+            fill,
+        }
+    }
+}
+
+impl Shape for Area<'_> {
+    fn draw(&self, painter: &mut Painter) {
+        if self.vertices.is_empty() {
+            return;
+        }
+
+        let x_min_bound = painter.bounds().0[0];
+        let x_max_bound = painter.bounds().0[1];
+        let y_min_bound = painter.bounds().1[0];
+        let y_max_bound = painter.bounds().1[1];
+
+        let vertices: Vec<Point> = self
+            .vertices
+            .iter()
+            .map(|&(x, y)| Point::new(x, y))
+            .collect();
+
+        let clipped = sutherland_hodgman::clip_polygon(
+            &Polygon::new(&vertices),
+            Window::new(x_min_bound, x_max_bound, y_min_bound, y_max_bound),
+        );
+
+        if clipped.vertices.is_empty() {
+            return;
+        }
+
+        let Some(vertices) = clipped
+            .vertices
+            .iter()
+            .map(|point| painter.get_point(point.x, point.y))
+            .collect::<Option<Vec<_>>>()
+        else {
+            return;
+        };
+
+        let Some(&last) = vertices.last() else {
+            return;
+        };
+        let mut previous = last;
+
+        for &current in &vertices {
+            line::draw_line(
+                painter, previous.0, previous.1, current.0, current.1, self.color,
+            );
+            previous = current;
+        }
+
+        if !self.fill {
+            return;
+        }
+
+        let (y_min, y_max) = vertices
+            .iter()
+            .fold((usize::MAX, usize::MIN), |(y_min, y_max), &(_, y)| {
+                (y_min.min(y), y_max.max(y))
+            });
+        let mut intersections = Vec::with_capacity(vertices.len());
+
+        // Scanline algorithm
+        for y in y_min..=y_max {
+            intersections.clear();
+            previous = last;
+
+            for &(x2, y2) in &vertices {
+                let (x1, y1) = previous;
+                previous = (x2, y2);
+
+                // skip horizontal lines (don't contribute to intersections)
+                if y1 == y2 {
+                    continue;
+                }
+
+                // Get an intersection of a scanline with a polygon edge
+                if (y1 <= y && y < y2) || (y2 <= y && y < y1) {
+                    // Linearly interpolate along the edge to find its intersection with the
+                    // scanline.
+                    let cross = (x1 as isize
+                        + (y as isize - y1 as isize) * (x2 as isize - x1 as isize)
+                            / (y2 as isize - y1 as isize)) as usize;
+                    intersections.push(cross);
+                }
+            }
+
+            // Fill polygon. Even-odd rule. E.g. if we have intersections like this
+            // ----|---|------|----|
+            //     5   8      14   18
+            // We should only paint intervals 5-8 and 14-18, not 8-14.
+            // This is useful when a polygon is concave.
+            intersections.sort_unstable();
+
+            for chunk in intersections.as_chunks::<2>().0 {
+                for x in chunk[0]..=chunk[1] {
+                    painter.paint(x, y, self.color);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ratatui_core::buffer::Buffer;
+    use ratatui_core::layout::Rect;
+    use ratatui_core::style::Style;
+    use ratatui_core::symbols::Marker;
+    use ratatui_core::widgets::Widget;
+    use rstest::rstest;
+
+    use super::*;
+    use crate::canvas::Canvas;
+
+    #[rstest]
+    #[case::empty_area(&Area::new(&[], Color::Red, true), ["          "; 10])]
+    #[case::off_grid1(&Area::new(&[(-1.0, 0.0), (-1.0, 10.0), (-1.0,-1.0)], Color::Red, true), ["          "; 10])]
+    #[case::off_grid2(&Area::new(&[(0.0, -1.0), (10.0, -1.0), (0.0,-10.0)], Color::Red, true), ["          "; 10])]
+    #[case::off_grid3(&Area::new(&[(-10.0, 5.0), (-1.0, 5.0), (-1.0,0.0)], Color::Red, true), ["          "; 10])]
+    #[case::off_grid4(&Area::new(&[(5.0, 11.0), (5.0, 20.0), (11.0,11.0)], Color::Red, true), ["          "; 10])]
+    #[case::off_grid5(&Area::new(&[(-10.0, 0.0), (5.0, 0.0), (-10.0,0.0)], Color::Red, true), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "••••••    ",
+    ])]
+    #[case::off_grid6(&Area::new(&[(0.0, 0.0), (10.0, 10.0), (10.0, 0.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "     •••••",
+        "    ••••••",
+        "   •••••••",
+        "  ••••••••",
+        " •••••••••",
+        "••••••••••",
+    ])]
+    #[case::off_grid7(&Area::new(&[(0.0, 0.0), (11.0, 11.0), (10.0, 0.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "     •••••",
+        "    ••••••",
+        "   •••••••",
+        "  ••••••••",
+        " •••••••••",
+        "••••••••••",
+    ])]
+    #[case::off_grid8(&Area::new(&[(-1.0, -1.0), (11.0, 11.0), (10.0,-1.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "     •••••",
+        "    ••••••",
+        "   •••••••",
+        "  ••••••••",
+        " •••••••••",
+        "••••••••••",
+    ])]
+    #[case::off_grid9(&Area::new(&[(5.0, 0.0), (5.0, 5.0), (15.0, 0.0)], Color::Red, true), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "     ••   ",
+        "     •••• ",
+        "     •••••",
+        "     •••••",
+        "     •••••",
+    ])]
+    #[case::off_grid10(&Area::new(&[(-5.0, 0.0), (-5.0, 5.0), (5.0, 0.0)], Color::Red, true), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "••        ",
+        "••••      ",
+        "••••••    ",
+    ])]
+    #[case::off_grid11(&Area::new(&[(5.0, 0.0), (5.0, 5.0), (10.0, 5.0), (10.0, 0.0)], Color::Red, true), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "     •••••",
+        "     •••••",
+        "     •••••",
+        "     •••••",
+        "     •••••",
+    ])]
+    #[case::off_grid12(&Area::new(&[(7.0, 5.0), (11.0, 10.0), (11.0, 0.0)], Color::Red, true), [
+        "          ",
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "      ••••",
+        "       •••",
+        "        ••",
+        "         •",
+        "          ",
+    ])]
+    #[case::rhombus_1(&Area::new(&[(0.0, 0.0), (0.0, 7.0), (10.0, 10.0), (10.0, 3.0)], Color::Red, true), [
+        "        ••",
+        "     •••••",
+        "  ••••••••",
+        "••••••••••",
+        "••••••••••",
+        "••••••••••",
+        "••••••••••",
+        "••••••••  ",
+        "•••••     ",
+        "••        ",
+    ])]
+    #[case::rhombus_2(&Area::new(&[(5.0, 0.0), (4.0, 0.0), (0.0, 4.0), (0.0, 5.0), (4.0, 10.0), (5.0, 10.0), (10.0, 6.0), (10.0, 5.0)], Color::Red, true), [
+        "    ••    ",
+        "   ••••   ",
+        "  ••••••  ",
+        " •••••••• ",
+        "••••••••••",
+        "••••••••••",
+        " •••••••• ",
+        "  ••••••  ",
+        "   ••••   ",
+        "    ••    ",
+    ])]
+    #[case::rhombus_1_not_filled(&Area::new(&[(0.0, 0.0), (0.0, 7.0), (10.0, 10.0), (10.0, 3.0)], Color::Red, false), [
+        "        ••",
+        "     ••• •",
+        "  •••    •",
+        "••       •",
+        "•        •",
+        "•        •",
+        "•       ••",
+        "•    •••  ",
+        "• •••     ",
+        "••        ",
+    ])]
+    #[case::rhombus_2_not_filled(&Area::new(&[(5.0, 0.0), (4.0, 0.0), (0.0, 5.0), (0.0, 6.0), (4.0, 10.0), (5.0, 10.0), (10.0, 6.0), (10.0, 5.0)], Color::Red, false), [
+        "    ••    ",
+        "   •  •   ",
+        "  •    •  ",
+        " •      • ",
+        "•        •",
+        "•        •",
+        " •      • ",
+        "  •    •  ",
+        "   •  •   ",
+        "    ••    ",
+    ])]
+    #[case::cross1(&Area::new(&[(0.0, 0.0), (0.0, 5.0), (10.0, 5.0), (10.0, 10.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "      ••••",
+        "     •••••",
+        "••••••••••",
+        "••••      ",
+        "•••       ",
+        "••        ",
+        "•         ",
+    ])]
+    #[case::cross2(&Area::new(&[(0.0, 0.0), (0.0, 7.0), (10.0, 3.0), (10.0, 10.0)], Color::Red, true), [
+        "         •",
+        "        ••",
+        "       •••",
+        "••    ••••",
+        "••••••••••",
+        "••••••••••",
+        "••••    ••",
+        "•••       ",
+        "••        ",
+        "•         ",
+    ])]
+    #[case::cross1_not_filled(&Area::new(&[(0.0, 0.0), (0.0, 5.0), (10.0, 5.0), (10.0, 10.0)], Color::Red, false), [
+        "         •",
+        "        ••",
+        "       • •",
+        "      •  •",
+        "     •   •",
+        "••••••••••",
+        "•  •      ",
+        "• •       ",
+        "••        ",
+        "•         ",
+    ])]
+    #[case::cross_not_filled2(&Area::new(&[(0.0, 0.0), (0.0, 7.0), (10.0, 3.0), (10.0, 10.0)], Color::Red, false), [
+        "         •",
+        "        ••",
+        "       • •",
+        "••    •  •",
+        "• ••••   •",
+        "•   •••• •",
+        "•  •    ••",
+        "• •       ",
+        "••        ",
+        "•         ",
+    ])]
+    fn tests<'expected_line, ExpectedLines>(#[case] area: &Area, #[case] expected: ExpectedLines)
+    where
+        ExpectedLines: IntoIterator,
+        ExpectedLines::Item: Into<ratatui_core::text::Line<'expected_line>>,
+    {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
+        let canvas = Canvas::default()
+            .marker(Marker::Dot)
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .paint(|context| context.draw(area));
+        canvas.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(expected);
+        for cell in &mut expected.content {
+            if cell.symbol() == "•" {
+                cell.set_style(Style::new().red());
+            }
+        }
+        assert_eq!(buffer, expected);
+    }
+}
