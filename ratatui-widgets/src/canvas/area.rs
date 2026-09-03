@@ -69,49 +69,46 @@ impl Shape for Area<'_> {
             return;
         }
 
-        // Get the polygon bounds
-        let (x_min, x_max, y_min, y_max) = clipped.vertices.iter().fold(
-            (
-                f64::INFINITY,
-                f64::NEG_INFINITY,
-                f64::INFINITY,
-                f64::NEG_INFINITY,
-            ),
-            |(x_min, x_max, y_min, y_max), &Point { x, y }| {
-                (x_min.min(x), x_max.max(x), y_min.min(y), y_max.max(y))
-            },
-        );
-
-        let Some((_, y_max_bound)) = painter.get_point(x_min, y_min) else {
-            return;
-        };
-        let Some((_, y_min_bound)) = painter.get_point(x_max, y_max) else {
+        let Some(vertices) = clipped
+            .vertices
+            .iter()
+            .map(|point| painter.get_point(point.x, point.y))
+            .collect::<Option<Vec<_>>>()
+        else {
             return;
         };
 
-        let Some(&last) = clipped.vertices.last() else {
+        let Some(&last) = vertices.last() else {
             return;
         };
         let mut previous = last;
 
+        for &current in &vertices {
+            line::draw_line(
+                painter, previous.0, previous.1, current.0, current.1, self.color,
+            );
+            previous = current;
+        }
+
+        if !self.fill {
+            return;
+        }
+
+        let (y_min, y_max) = vertices
+            .iter()
+            .fold((usize::MAX, usize::MIN), |(y_min, y_max), &(_, y)| {
+                (y_min.min(y), y_max.max(y))
+            });
+        let mut intersections = Vec::with_capacity(vertices.len());
+
         // Scanline algorithm
-        for y in y_min_bound..=y_max_bound {
-            let mut intersections = Vec::new();
+        for y in y_min..=y_max {
+            intersections.clear();
+            previous = last;
 
-            for current in &clipped.vertices {
-                // in order to avoid [mixed_read_write_in_expression](https://rust-lang.github.io/rust-clippy/master/index.html#mixed_read_write_in_expression)
-                // calculate prev_x and prev_y outside of let Some block.
-                let (prev_x, prev_y) = (previous.x, previous.y);
-                let Some((x1, y1)) = painter.get_point(prev_x, prev_y) else {
-                    previous = *current;
-                    continue;
-                };
-                let Some((x2, y2)) = painter.get_point(current.x, current.y) else {
-                    continue;
-                };
-                previous = *current;
-
-                line::draw_line(painter, x1, y1, x2, y2, self.color);
+            for &(x2, y2) in &vertices {
+                let (x1, y1) = previous;
+                previous = (x2, y2);
 
                 // skip horizontal lines (don't contribute to intersections)
                 if y1 == y2 {
@@ -119,9 +116,7 @@ impl Shape for Area<'_> {
                 }
 
                 // Get an intersection of a scanline with a polygon edge
-                // Only used when fill because otherwise we don't need to know an intersection
-                // point, just draw_line
-                if self.fill && ((y1 <= y && y < y2) || (y2 <= y && y < y1)) {
+                if (y1 <= y && y < y2) || (y2 <= y && y < y1) {
                     // Linearly interpolate along the edge to find its intersection with the
                     // scanline.
                     let cross = (x1 as isize
@@ -129,10 +124,6 @@ impl Shape for Area<'_> {
                             / (y2 as isize - y1 as isize)) as usize;
                     intersections.push(cross);
                 }
-            }
-
-            if !self.fill {
-                continue;
             }
 
             // Fill polygon. Even-odd rule. E.g. if we have intersections like this
