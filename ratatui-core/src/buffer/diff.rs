@@ -757,7 +757,7 @@ mod tests {
 /// Terminals disagree on the width of a cluster carrying VS16 (`U+FE0F`), so the model is
 /// parameterised over both observed behaviours; every scenario must pass under both.
 #[cfg(test)]
-mod terminal_replay {
+mod terminal_model {
     use alloc::string::{String, ToString};
     use alloc::vec;
     use alloc::vec::Vec;
@@ -768,26 +768,48 @@ mod terminal_replay {
     use crate::buffer::Buffer;
     use crate::style::Style;
 
-    /// Marks a column painted over by the glyph starting to its left.
-    const COVERED: &str = "";
-
-    /// How a terminal renders a grapheme cluster carrying VS16 (`U+FE0F`).
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    enum TerminalModel {
-        /// VS16 clusters advance two columns (tmux, most modern terminals).
-        Wide,
-        /// VS16 clusters advance one column (the terminals
-        /// <https://github.com/ratatui/ratatui/pull/2063> was filed against).
-        Narrow,
+    /// What is visibly occupying one terminal column.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    enum Column {
+        Blank,
+        Glyph(String),
+        /// This column is painted by the multi-column glyph to its left.
+        Continuation,
     }
 
-    const MODELS: [TerminalModel; 2] = [TerminalModel::Wide, TerminalModel::Narrow];
+    impl Column {
+        fn from_symbol(symbol: &str) -> Self {
+            if symbol == " " {
+                Self::Blank
+            } else {
+                Self::Glyph(symbol.to_string())
+            }
+        }
+    }
 
-    impl TerminalModel {
+    /// How many columns a terminal advances after printing a VS16 grapheme cluster.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    enum Vs16Width {
+        /// VS16 clusters advance two columns (tmux, most modern terminals).
+        TwoColumns,
+        /// VS16 clusters advance one column (the terminals
+        /// <https://github.com/ratatui/ratatui/pull/2063> was filed against).
+        OneColumn,
+    }
+
+    const VS16_WIDTHS: [Vs16Width; 2] = [Vs16Width::TwoColumns, Vs16Width::OneColumn];
+
+    fn contains_vs16(symbol: &str) -> bool {
+        symbol.chars().any(|c| c == '\u{FE0F}')
+    }
+
+    impl Vs16Width {
         /// Columns the cursor advances when `symbol` is printed, given the width the buffer
         /// reserved for it.
         fn advance(self, symbol: &str, reserved: usize) -> usize {
-            if self == Self::Narrow && reserved > 1 && has_uncertain_width(symbol) {
+            // Keep this model independent from the production width detection so it remains a
+            // useful oracle if that detection regresses.
+            if self == Self::OneColumn && reserved > 1 && contains_vs16(symbol) {
                 1
             } else {
                 reserved
@@ -797,80 +819,76 @@ mod terminal_replay {
 
     /// A single row of terminal columns.
     #[derive(Debug)]
-    struct Screen {
-        cols: Vec<String>,
+    struct TerminalRow {
+        columns: Vec<Column>,
     }
 
-    impl Screen {
+    impl TerminalRow {
         /// Prints `symbol` at `col`, advancing the cursor by `advance` columns.
         ///
         /// Overwriting either half of a multi-column glyph destroys the whole glyph, so its full
         /// footprint is blanked before the new symbol is written.
         fn print(&mut self, col: usize, symbol: &str, advance: usize) {
-            let len = self.cols.len();
+            let len = self.columns.len();
             if col >= len {
                 return;
             }
             let end = (col + advance).min(len);
 
             let mut lo = col;
-            while lo > 0 && self.cols[lo] == COVERED {
+            while lo > 0 && self.columns[lo] == Column::Continuation {
                 lo -= 1;
             }
             let mut hi = end;
-            while hi < len && self.cols[hi] == COVERED {
+            while hi < len && self.columns[hi] == Column::Continuation {
                 hi += 1;
             }
-            for c in lo..hi {
-                self.cols[c] = " ".to_string();
-            }
+            self.columns[lo..hi].fill(Column::Blank);
 
-            self.cols[col] = symbol.to_string();
-            for c in col + 1..end {
-                self.cols[c] = COVERED.to_string();
-            }
+            self.columns[col] = Column::from_symbol(symbol);
+            self.columns[col + 1..end].fill(Column::Continuation);
         }
     }
 
-    /// The columns a buffer row occupies on screen under `model`.
+    /// The columns a buffer row occupies on screen for the given VS16 width.
     ///
     /// A glyph paints its own column plus every column it advances over; columns the buffer
     /// reserved but the terminal did not cover show the buffer cell's own content.
-    fn expected_columns(model: TerminalModel, buf: &Buffer) -> Vec<String> {
+    fn expected_columns(vs16_width: Vs16Width, buf: &Buffer) -> Vec<Column> {
         let width = buf.area.width as usize;
-        let mut cols = vec![" ".to_string(); width];
+        let mut columns = vec![Column::Blank; width];
         let mut i = 0;
         while i < width {
             let cell = &buf.content[i];
             let reserved = (cell.cell_width() as usize).max(1);
-            let advance = model.advance(cell.symbol(), reserved);
-            cols[i] = cell.symbol().to_string();
-            for (c, col) in cols
+            let advance = vs16_width.advance(cell.symbol(), reserved);
+            columns[i] = Column::from_symbol(cell.symbol());
+            for (c, column) in columns
                 .iter_mut()
                 .enumerate()
                 .take((i + reserved).min(width))
                 .skip(i + 1)
             {
-                *col = if c < i + advance {
-                    COVERED.to_string()
+                *column = if c < i + advance {
+                    Column::Continuation
                 } else {
-                    buf.content[c].symbol().to_string()
+                    Column::from_symbol(buf.content[c].symbol())
                 };
             }
             i += reserved;
         }
-        cols
+        columns
     }
 
     /// Replays `BufferDiff` the way a backend does and returns the resulting screen.
     ///
-    /// The screen starts as `prev` rendered under `model`, so any column the diff never rewrites
-    /// keeps the previous frame's content — a stale column surviving into the comparison *is* the
-    /// artifact.
-    fn replay(model: TerminalModel, prev: &Buffer, next: &Buffer) -> Vec<String> {
+    /// The screen starts as `prev` rendered with `vs16_width`, so any column the diff never
+    /// rewrites keeps the previous frame's content — a stale column surviving into the comparison
+    /// *is* the artifact.
+    fn replay(vs16_width: Vs16Width, prev: &Buffer, next: &Buffer) -> Vec<Column> {
         assert_eq!(prev.area.height, 1, "harness models a single row");
-        let mut screen = Screen {
-            cols: expected_columns(model, prev),
+        let mut terminal = TerminalRow {
+            columns: expected_columns(vs16_width, prev),
         };
         let mut cursor = 0usize;
         let mut last: Option<(u16, usize)> = None;
@@ -884,29 +902,30 @@ mod terminal_replay {
                 x as usize
             };
             let reserved = (cell.cell_width() as usize).max(1);
-            let advance = model.advance(cell.symbol(), reserved);
-            screen.print(col, cell.symbol(), advance);
+            let advance = vs16_width.advance(cell.symbol(), reserved);
+            terminal.print(col, cell.symbol(), advance);
             cursor = col + advance;
-            let uncertain_width = reserved > 1 && has_uncertain_width(cell.symbol());
+            // Model the backend rule independently from BufferDiff's production helper.
+            let uncertain_width = reserved > 1 && contains_vs16(cell.symbol());
             last = (!uncertain_width).then_some((x, reserved));
         }
-        screen.cols
+        terminal.columns
     }
 
     #[track_caller]
-    fn assert_no_artifacts(model: TerminalModel, prev: &Buffer, next: &Buffer) {
-        let expected = expected_columns(model, next);
-        let actual = replay(model, prev, next);
+    fn assert_no_artifacts(vs16_width: Vs16Width, prev: &Buffer, next: &Buffer) {
+        let expected = expected_columns(vs16_width, next);
+        let actual = replay(vs16_width, prev, next);
         assert_eq!(
             actual, expected,
-            "{model:?} model: screen differs from buffer"
+            "{vs16_width:?}: terminal differs from buffer"
         );
     }
 
     #[track_caller]
-    fn assert_no_artifacts_in_both_models(prev: &str, next: &str, width: u16) {
-        for model in MODELS {
-            assert_no_artifacts(model, &row(width, prev), &row(width, next));
+    fn assert_no_artifacts_for_both_widths(prev: &str, next: &str, width: u16) {
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &row(width, prev), &row(width, next));
         }
     }
 
@@ -921,19 +940,19 @@ mod terminal_replay {
     #[case::heart("❤️❤️❤️❤️❤️❤️")]
     #[case::rocket("🚀️🚀️🚀️🚀️🚀️🚀️")]
     fn vs16_emoji_replacing_ascii_does_not_drift(#[case] next: &str) {
-        assert_no_artifacts_in_both_models("int value8;;", next, 12);
+        assert_no_artifacts_for_both_widths("int value8;;", next, 12);
     }
 
     /// Same as above with keycap sequences, which carry VS16 plus a combining enclosing keycap.
     #[test]
     fn vs16_keycaps_replacing_ascii_do_not_drift() {
-        assert_no_artifacts_in_both_models("int value8;;", "1️⃣1️⃣1️⃣1️⃣1️⃣1️⃣", 12);
+        assert_no_artifacts_for_both_widths("int value8;;", "1️⃣1️⃣1️⃣1️⃣1️⃣1️⃣", 12);
     }
 
     /// A VS16 row redrawn one column over: every glyph moves, so no update may inherit an offset.
     #[test]
     fn shifted_vs16_row_does_not_drift() {
-        assert_no_artifacts_in_both_models("❤️❤️❤️❤️❤️", " ❤️❤️❤️❤️❤️", 12);
+        assert_no_artifacts_for_both_widths("❤️❤️❤️❤️❤️", " ❤️❤️❤️❤️❤️", 12);
     }
 
     /// <https://github.com/ratatui/ratatui/pull/2063>: a terminal that draws a VS16 cluster in a
@@ -941,9 +960,9 @@ mod terminal_replay {
     /// writes it. Regression guard: deleting the VS16 special case to fix #2357 breaks this.
     #[test]
     fn vs16_emoji_replacing_narrower_content_leaves_no_stale_column() {
-        assert_no_artifacts_in_both_models("ab", "❤️", 2);
-        assert_no_artifacts_in_both_models("abcd", "❤️cd", 4);
-        assert_no_artifacts_in_both_models("abcd", "ab❤️", 4);
+        assert_no_artifacts_for_both_widths("ab", "❤️", 2);
+        assert_no_artifacts_for_both_widths("abcd", "❤️cd", 4);
+        assert_no_artifacts_for_both_widths("abcd", "ab❤️", 4);
     }
 
     /// Mixed rows: narrow, certain-width (`漢`, `😀`) and uncertain-width clusters interleaved.
@@ -952,8 +971,8 @@ mod terminal_replay {
     /// not routed through the clear-first path, and must not drift either.
     #[test]
     fn mixed_width_rows_do_not_drift() {
-        assert_no_artifacts_in_both_models("int value8;;", "a❤️b漢c😀d", 12);
-        assert_no_artifacts_in_both_models("a❤️b漢c😀d", "int value8;;", 12);
-        assert_no_artifacts_in_both_models("a❤️b漢c😀d", "漢a❤️b😀c", 12);
+        assert_no_artifacts_for_both_widths("int value8;;", "a❤️b漢c😀d", 12);
+        assert_no_artifacts_for_both_widths("a❤️b漢c😀d", "int value8;;", 12);
+        assert_no_artifacts_for_both_widths("a❤️b漢c😀d", "漢a❤️b😀c", 12);
     }
 }
