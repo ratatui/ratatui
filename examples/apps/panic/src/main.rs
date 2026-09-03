@@ -51,7 +51,9 @@ fn main() -> Result<()> {
             if let Some(key) = event::read()?.as_key_press_event() {
                 match key.code {
                     KeyCode::Char('p') => panic!("intentional demo panic"),
-                    KeyCode::Char('e') => bail!("intentional demo error"),
+                    KeyCode::Char('e') => {
+                        bail!("intentional demo error");
+                    }
                     KeyCode::Char('h') => {
                         let _ = std::panic::take_hook();
                         panic_hook_state = PanicHandlerState::Disabled;

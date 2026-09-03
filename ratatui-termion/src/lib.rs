@@ -41,7 +41,7 @@ use std::fmt;
 use std::io::{self, Write};
 
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 pub use termion;
@@ -208,6 +208,17 @@ where
         self.writer.flush()
     }
 
+    fn save_cursor_position(&mut self) -> io::Result<bool> {
+        write!(self.writer, "{}", termion::cursor::Save)?;
+        self.writer.flush()?;
+        Ok(true)
+    }
+
+    fn restore_cursor_position(&mut self) -> io::Result<()> {
+        write!(self.writer, "{}", termion::cursor::Restore)?;
+        self.writer.flush()
+    }
+
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -218,13 +229,15 @@ where
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<Position> = None;
+        // Position and width of the last cell written, used to skip redundant cursor moves.
+        let mut last: Option<(Position, u16)> = None;
         for (x, y, cell) in content {
-            // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
+            // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
+            // the previous one on the same row, accounting for the width of what was printed.
+            if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
                 write!(string, "{}", termion::cursor::Goto(x + 1, y + 1)).unwrap();
             }
-            last_pos = Some(Position { x, y });
+            last = Some((Position { x, y }, cell.cell_width()));
             if cell.modifier != modifier {
                 write!(
                     string,
@@ -564,7 +577,69 @@ impl fmt::Display for ResetRegion {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU16;
+
+    use ratatui_core::buffer::CellDiffOption;
+
     use super::*;
+
+    /// Renders `content` and returns the emitted bytes as a lossy string.
+    fn draw_to_string(content: &[(u16, u16, &Cell)]) -> String {
+        let mut out = Vec::new();
+        TermionBackend::new(&mut out)
+            .draw(content.iter().copied())
+            .unwrap();
+        String::from_utf8_lossy(&out).into_owned()
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_wide_symbol() {
+        // A double-width glyph advances the terminal cursor by two columns, so writing the
+        // very next cell requires an explicit cursor move. See issue #2651.
+        let wide = Cell::new("\u{2764}\u{FE0F}"); // ❤️ (VS16 emoji presentation)
+        let next = Cell::new("a");
+        let output = draw_to_string(&[(0, 0, &wide), (1, 0, &next)]);
+        let goto = termion::cursor::Goto(2, 1).to_string();
+        assert!(
+            output.contains(&goto),
+            "expected `Goto(2, 1)` after a wide glyph, got: {output:?}"
+        );
+    }
+
+    #[test]
+    fn draw_skips_cursor_move_for_contiguous_cells() {
+        let a = Cell::new("a");
+        let b = Cell::new("b");
+        let output = draw_to_string(&[(0, 0, &a), (1, 0, &b)]);
+        assert!(!output.contains(&termion::cursor::Goto(2, 1).to_string()));
+    }
+
+    #[test]
+    fn draw_skips_cursor_move_after_wide_symbol_when_contiguous() {
+        let wide = Cell::new("\u{1F600}"); // 😀
+        let next = Cell::new("a");
+        let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
+        assert!(!output.contains(&termion::cursor::Goto(3, 1).to_string()));
+    }
+
+    #[test]
+    fn draw_moves_cursor_when_previous_width_overflows() {
+        let mut forced = Cell::new("a");
+        forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::MAX));
+        let next = Cell::new("b");
+        let output = draw_to_string(&[(1, 0, &forced), (0, 0, &next)]);
+        assert!(output.contains(&termion::cursor::Goto(1, 1).to_string()));
+    }
+
+    #[test]
+    fn save_and_restore_cursor_position_write_escape_sequences() {
+        let mut backend = TermionBackend::new(Vec::new());
+
+        assert!(backend.save_cursor_position().unwrap());
+        backend.restore_cursor_position().unwrap();
+
+        assert_eq!(backend.writer(), b"\x1b[s\x1b[u");
+    }
 
     #[test]
     fn from_termion_color() {

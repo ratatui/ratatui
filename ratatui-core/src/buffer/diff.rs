@@ -17,14 +17,11 @@ pub struct BufferDiff<'prev, 'next> {
     area: Rect,
     /// Current position in the flat cell array.
     pos: usize,
-    /// Cells to yield before the main loop moves past a wide character.
-    ///
-    /// Set when a wide char was replaced by narrower content (see `force`), or when an
-    /// uncertain-width cluster's reserved columns must be cleared first (see `deferred`).
+    /// Tracks trailing cells and a leading cell that may be deferred until after they are cleared.
     trailing: Option<TrailingState>,
 }
 
-/// Tracks pending trailing-cell yields when a wide character is followed by narrower content.
+/// Tracks pending trailing-cell yields for a wide character update.
 #[derive(Debug)]
 struct TrailingState {
     next_index: usize,
@@ -35,8 +32,7 @@ struct TrailingState {
     ///
     /// When `false`, only cells whose symbol changed are emitted.
     force: bool,
-    /// A cell to yield once the range is exhausted, so it is drawn after the columns it
-    /// reserves. See [`has_uncertain_width`].
+    /// Leading cell to repaint after its trailing cells have been processed.
     deferred: Option<usize>,
 }
 
@@ -118,14 +114,13 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                 }
             }
 
-            // Done with trailing cells; resume main loop past the wide character.
-            let deferred = deferred.take();
+            // Resume after the wide glyph, repainting its deferred leading cell first.
             self.pos = *end;
+            let deferred = deferred.take();
             self.trailing = None;
-
-            if let Some(origin) = deferred {
-                let (x, y) = self.pos_of(origin);
-                return Some((x, y, &self.next[origin]));
+            if let Some(i) = deferred {
+                let (x, y) = self.pos_of(i);
+                return Some((x, y, &self.next[i]));
             }
         }
         while self.pos < len {
@@ -157,6 +152,24 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     }
 
                     let previous_width = previous.cell_width() as usize;
+                    let previous_style_is_visible_on_blank = previous.bg != Color::Reset
+                        || previous.modifier.intersects(VISIBLE_ON_BLANK);
+
+                    // Clear stale styles from an unchanged wide glyph's trailing cells before
+                    // repainting it.
+                    if cell_width > 1
+                        && current.symbol() == previous.symbol()
+                        && current.style() != previous.style()
+                        && previous_style_is_visible_on_blank
+                    {
+                        self.trailing = Some(TrailingState {
+                            next_index: i + 1,
+                            end: (i + cell_width).min(len),
+                            force: true,
+                            deferred: Some(i),
+                        });
+                        return self.next();
+                    }
 
                     // Terminals disagree on this cluster's width, so clear its reserved columns
                     // before drawing it: a two-column draw repaints over them, a one-column draw
@@ -177,10 +190,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         return self.next();
                     } else if cell_width > 1 {
                         self.pos += cell_width.saturating_sub(1);
-                    } else if previous_width > cell_width
-                        && (previous.bg != Color::Reset
-                            || previous.modifier.intersects(VISIBLE_ON_BLANK))
-                    {
+                    } else if previous_width > cell_width && previous_style_is_visible_on_blank {
                         // The previous wide character's style is visible on blank cells, so the
                         // terminal may still show it on the trailing columns even after the
                         // character is replaced. Force-emit every cell in the trailing range to
@@ -188,7 +198,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         // This cell is narrow, so those columns stay adjacent and need no move.
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
-                            end: i + previous_width,
+                            end: (i + previous_width).min(len),
                             force: true,
                             deferred: None,
                         });
@@ -240,14 +250,126 @@ mod tests {
         let rect = Rect::new(0, 0, 5, 1);
         let buf = Buffer::empty(rect);
         let diff: Vec<_> = BufferDiff::new(&buf, &buf).collect();
-        assert!(diff.is_empty());
+        assert_eq!(diff, Vec::new());
     }
 
     #[test]
     fn identical_buffers_yield_no_diffs() {
         let buf = Buffer::with_lines(["hello"]);
         let diff: Vec<_> = BufferDiff::new(&buf, &buf).collect();
-        assert!(diff.is_empty());
+        assert_eq!(diff, Vec::new());
+    }
+
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2685>: an image protocol cell
+    /// keeps its whole escape sequence in one symbol, which measures hundreds of columns wide
+    /// while covering a single column. Advancing the cursor by that width dropped every later
+    /// cell in the buffer, so the frame kept whatever was on screen before.
+    #[test]
+    fn long_symbol_does_not_hide_later_cells() {
+        let area = Rect::new(0, 0, 20, 5);
+        let prev = Buffer::filled(area, Cell::new("S"));
+        let mut next = Buffer::filled(area, Cell::new("L"));
+        next[(10, 0)].set_symbol(&"\u{1b}[s".repeat(400));
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+        assert_eq!(diff.len(), area.area() as usize);
+    }
+
+    /// The same cell, unchanged between the two frames. It still must not hide the cells after
+    /// it, which is how the regression showed up once the image had been drawn once.
+    #[test]
+    fn unchanged_long_symbol_does_not_hide_later_cells() {
+        let area = Rect::new(0, 0, 20, 5);
+        let mut prev = Buffer::filled(area, Cell::new("S"));
+        let mut next = Buffer::filled(area, Cell::new("L"));
+        let payload = "\u{1b}[s".repeat(400);
+        prev[(10, 0)].set_symbol(&payload);
+        next[(10, 0)].set_symbol(&payload);
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+        assert_eq!(diff.len(), area.area() as usize - 1);
+    }
+
+    /// A real wide glyph still hides its trailing cell: writing to the column covered by the
+    /// right half of the glyph would overwrite the glyph itself.
+    #[test]
+    fn identical_wide_glyph_hides_trailing_cell_changes() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "＋", Style::default());
+
+        let mut next = prev.clone();
+        // Column 1 is occupied by the right half of `＋`.
+        next[(1, 0)].set_bg(Color::Red);
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert!(
+            diff.is_empty(),
+            "the hidden trailing cell of an unchanged wide glyph must not be emitted; got {diff:?}"
+        );
+    }
+
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2652>: removing a style that is
+    /// visible on blank cells from an unchanged wide glyph must clear its trailing column before
+    /// repainting the glyph. Clearing it afterwards can erase the glyph on some terminals.
+    #[test]
+    fn wide_glyph_style_change_clears_trailing_cell_before_repaint() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        for glyph in ["❤️", "😀"] {
+            let mut prev = Buffer::empty(area);
+            prev.set_string(0, 0, glyph, Style::new().bg(Color::Blue));
+
+            let mut next = Buffer::empty(area);
+            next.set_string(0, 0, glyph, Style::default());
+
+            let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+            assert_eq!(diff.len(), 2, "trailing cell and glyph must be redrawn");
+            assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
+            assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, glyph));
+        }
+    }
+
+    #[test]
+    fn wide_glyph_style_change_resumes_after_repaint() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "한a", Style::new().bg(Color::Blue));
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한b", Style::new().bg(Color::Red));
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(diff.len(), 3);
+        assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
+        assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, "한"));
+        assert_eq!((diff[2].0, diff[2].1, diff[2].2.symbol()), (2, 0, "b"));
+        assert_eq!(diff[1].2.bg, Color::Red);
+    }
+
+    #[test]
+    fn wide_glyph_foreground_change_does_not_clear_trailing_cell() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "한", Style::new().fg(Color::Blue));
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한", Style::new().fg(Color::Red));
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(diff.len(), 1);
+        assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (0, 0, "한"));
     }
 
     #[test]
@@ -591,6 +713,33 @@ mod tests {
                 .any(|(x, y, cell)| *x == 1 && *y == 0 && cell.symbol() == "好"),
             "'好' at col 1 must be emitted; got {diff:?}"
         );
+    }
+
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2695> (introduced by #2587):
+    /// the forced trailing range was not clamped to the buffer length, unlike the VS16 range
+    /// above it. With a wide glyph carrying a visible-on-blank style in the *last* cell of the
+    /// buffer, replaced by narrower content, the range extended one past the end and the
+    /// iterator panicked with an index out of bounds while being consumed (i.e. inside
+    /// `Terminal::flush`).
+    #[test]
+    fn wide_glyph_in_last_cell_does_not_overrun_buffer() {
+        let rect = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(rect);
+        // set_string refuses to place a wide glyph in the last column, so write the cell
+        // directly — the path third-party widgets and direct cell access take.
+        prev.content[2].set_symbol("你").set_bg(Color::Red);
+        let mut next = Buffer::empty(rect);
+        next.content[2].set_symbol("a");
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(
+            diff.len(),
+            1,
+            "only the replaced cell must be emitted, got {diff:?}"
+        );
+        assert_eq!((diff[0].0, diff[0].1), (2, 0));
+        assert_eq!(diff[0].2.symbol(), "a");
     }
 
     #[test]
