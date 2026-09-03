@@ -44,7 +44,7 @@ indoc = "2.0.5"
 instability = "0.3.7"
 itertools = { version = "0.15", default-features = false, features = ["use_alloc"] }
 kasuari = { version = "0.4.9", default-features = false }
-line-clipping = "0.3"
+line-clipping = "0.3.8"
 lru = "0.18"
 octocrab = "0.54"
 palette = { version = "0.7.7", default-features = false, features = ["libm"] }
