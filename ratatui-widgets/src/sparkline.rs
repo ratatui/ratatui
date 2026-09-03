@@ -448,6 +448,17 @@ impl Sparkline<'_> {
                 RenderDirection::RightToLeft => spark_area.right() - i as u16 - 1,
             };
 
+            // Determine the height, symbol, and style to use for the item.
+            //
+            // If the item is not absent:
+            // - the height is the value of the item scaled to the height of the spark area
+            // - the symbol is determined by the scaled height
+            // - the style is the style of the item, if one is set
+            //
+            // Otherwise:
+            // - the item fills the height of the spark area
+            // - the symbol is the absent value symbol
+            // - the style is the absent value style
             if let Some(value) = item.value {
                 let total_ticks =
                     Self::scale_height(value, max_height, spark_area.height, sub_rows);
