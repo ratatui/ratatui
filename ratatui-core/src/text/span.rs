@@ -199,6 +199,9 @@ impl<'a> Span<'a> {
     /// In contrast to [`Span::patch_style`], this method replaces the style of the span instead of
     /// patching it.
     ///
+    /// When rendered inside a [`Line`] or [`Text`], this style is patched on top of those styles,
+    /// so any field it sets takes precedence over them.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
@@ -212,6 +215,7 @@ impl<'a> Span<'a> {
     /// ```
     ///
     /// [`Color`]: crate::style::Color
+    /// [`Text`]: crate::text::Text
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
