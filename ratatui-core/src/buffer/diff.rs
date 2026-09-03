@@ -762,6 +762,8 @@ mod terminal_replay {
     use alloc::vec;
     use alloc::vec::Vec;
 
+    use rstest::rstest;
+
     use super::*;
     use crate::buffer::Buffer;
     use crate::style::Style;
@@ -915,9 +917,11 @@ mod terminal_replay {
     }
 
     /// <https://github.com/ratatui/ratatui/issues/2357>: updating an ASCII row to VS16 emoji.
-    #[test]
-    fn vs16_emoji_replacing_ascii_does_not_drift() {
-        assert_no_artifacts_in_both_models("int value8;;", "❤️❤️❤️❤️❤️❤️", 12);
+    #[rstest]
+    #[case::heart("❤️❤️❤️❤️❤️❤️")]
+    #[case::rocket("🚀️🚀️🚀️🚀️🚀️🚀️")]
+    fn vs16_emoji_replacing_ascii_does_not_drift(#[case] next: &str) {
+        assert_no_artifacts_in_both_models("int value8;;", next, 12);
     }
 
     /// Same as above with keycap sequences, which carry VS16 plus a combining enclosing keycap.
