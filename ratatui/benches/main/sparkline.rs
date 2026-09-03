@@ -17,7 +17,7 @@ fn sparkline(c: &mut Criterion) {
 
         // Render a basic sparkline
         group.bench_with_input(
-            BenchmarkId::new("render_bar", data_count),
+            BenchmarkId::new("render", data_count),
             &Sparkline::default().data(&data),
             render,
         );

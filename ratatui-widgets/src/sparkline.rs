@@ -276,6 +276,11 @@ impl<'a> Sparkline<'a> {
     /// and [`Marker::Octant`], each terminal column displays 2 data points, doubling the
     /// horizontal resolution.
     ///
+    /// When two data points with different styles share a terminal cell, the style of the
+    /// right-hand data point is used. If only one data point has a value, its style is used and
+    /// the absent data point is rendered as an empty sub-column. If both data points are absent,
+    /// [`Sparkline::absent_value_symbol`] and [`Sparkline::absent_value_style`] are used.
+    ///
     /// # Examples
     ///
     /// ```
@@ -508,8 +513,12 @@ impl Sparkline<'_> {
             let left_is_absent = left_item.is_some_and(|item| item.value.is_none());
             let right_is_absent = right_item.is_some_and(|item| item.value.is_none());
 
-            if left_is_absent
-                && (right_item.is_none() || right_is_absent)
+            let has_absent_item = left_is_absent || right_is_absent;
+            let has_present_item = left_item.is_some_and(|item| item.value.is_some())
+                || right_item.is_some_and(|item| item.value.is_some());
+
+            if has_absent_item
+                && !has_present_item
                 && self.absent_value_symbol.0 != symbols::shade::EMPTY
             {
                 let style = self.style.patch(self.absent_value_style);
@@ -530,20 +539,17 @@ impl Sparkline<'_> {
                     Self::scale_height(*v, max_height, spark_area.height, sub_rows),
                     *style,
                 ),
-                Some(SparklineBar { value: None, .. }) => (0, Some(self.absent_value_style)),
-                None => (0, None),
+                Some(SparklineBar { value: None, .. }) | None => (0, None),
             };
 
             let (t_left, style_left) = item_data(left_item);
             let (t_right, style_right) = item_data(right_item);
 
-            let mut cell_style = self.style;
-            if let Some(s) = style_left {
-                cell_style = cell_style.patch(s);
-            }
-            if let Some(s) = style_right {
-                cell_style = cell_style.patch(s);
-            }
+            // A terminal cell has only one style. Prefer the physical right-hand sample when both
+            // samples have styles, and never let an absent sample override a visible one.
+            let cell_style = self
+                .style
+                .patch(style_right.or(style_left).unwrap_or_default());
 
             for j in 0..spark_area.height {
                 let y = spark_area.top() + spark_area.height - 1 - j;
@@ -975,7 +981,7 @@ mod tests {
     }
 
     #[test]
-    fn it_renders_braille_with_custom_bar_styles() {
+    fn braille_uses_right_sample_style_when_styles_differ() {
         let widget = Sparkline::default()
             .marker(Marker::Braille)
             .data([
@@ -986,6 +992,43 @@ mod tests {
         let buffer = render(widget, 2);
         let mut expected = Buffer::with_lines(["⣸x"]);
         expected.set_style(Rect::new(0, 0, 1, 1), Style::default().fg(Color::Blue));
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn braille_renders_lone_absent_value_in_both_directions() {
+        for (direction, expected) in [
+            (RenderDirection::LeftToRight, "*x"),
+            (RenderDirection::RightToLeft, "x*"),
+        ] {
+            let widget = Sparkline::default()
+                .marker(Marker::Braille)
+                .direction(direction)
+                .absent_value_symbol('*')
+                .data([None]);
+
+            assert_eq!(render(widget, 2), Buffer::with_lines([expected]));
+        }
+    }
+
+    #[test]
+    fn braille_absent_sample_does_not_override_visible_sample() {
+        let widget = Sparkline::default()
+            .marker(Marker::Braille)
+            .absent_value_style(Color::Yellow)
+            .absent_value_symbol('*')
+            .data([
+                SparklineBar::from(4).style(Style::new().fg(Color::Red)),
+                SparklineBar::from(None),
+                SparklineBar::from(None),
+                SparklineBar::from(4).style(Style::new().fg(Color::Blue)),
+            ])
+            .max(4);
+        let buffer = render(widget, 3);
+        let mut expected = Buffer::with_lines(["⡇⢸x"]);
+        expected[(0, 0)].set_fg(Color::Red);
+        expected[(1, 0)].set_fg(Color::Blue);
+
         assert_eq!(buffer, expected);
     }
 
