@@ -904,13 +904,23 @@ mod tests {
         next.set_string(0, 0, "한", Style::default());
 
         let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        assert_eq!(
+            updates
+                .iter()
+                .map(|(x, y, cell)| (*x, *y, cell.symbol()))
+                .collect::<Vec<_>>(),
+            [(1, 0, " "), (0, 0, "한")]
+        );
+
         let output = draw_to_string(&updates);
         let clear = output.find(&MoveTo(1, 0).to_string()).unwrap();
         let repaint = output.find(&MoveTo(0, 0).to_string()).unwrap();
+        let cleared_cell = output.find(' ').unwrap();
+        let repainted_glyph = output.find('한').unwrap();
 
         assert!(
-            clear < repaint,
-            "trailing cell must be cleared first: {output:?}"
+            clear < cleared_cell && cleared_cell < repaint && repaint < repainted_glyph,
+            "trailing cell must be cleared before repainting the glyph: {output:?}"
         );
     }
 

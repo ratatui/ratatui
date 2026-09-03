@@ -333,6 +333,26 @@ mod tests {
     }
 
     #[test]
+    fn wide_glyph_style_change_resumes_after_repaint() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "한a", Style::new().bg(Color::Blue));
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한b", Style::new().bg(Color::Red));
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(diff.len(), 3);
+        assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
+        assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, "한"));
+        assert_eq!((diff[2].0, diff[2].1, diff[2].2.symbol()), (2, 0, "b"));
+        assert_eq!(diff[1].2.bg, Color::Red);
+    }
+
+    #[test]
     fn wide_glyph_foreground_change_does_not_clear_trailing_cell() {
         use crate::style::Style;
 
