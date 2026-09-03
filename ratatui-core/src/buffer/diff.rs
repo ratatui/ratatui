@@ -166,7 +166,8 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     let previous_style_is_visible_on_blank = previous.bg != Color::Reset
                         || previous.modifier.intersects(VISIBLE_ON_BLANK);
 
-                    // Clear stale styles from an unchanged wide glyph's trailing cells before repainting it.
+                    // Clear stale styles from an unchanged wide glyph's trailing cells before
+                    // repainting it.
                     if cell_width > 1
                         && current.symbol() == previous.symbol()
                         && current.style() != previous.style()
