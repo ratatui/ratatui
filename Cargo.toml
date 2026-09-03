@@ -60,7 +60,7 @@ ratatui-termion = { path = "ratatui-termion", version = "0.1.2" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.2" }
 ratatui-widgets = { path = "ratatui-widgets", version = "0.3.2", default-features = false }
 rstest = "0.26"
-serde = { version = "1.0.219", default-features = false, features = ["derive"] }
+serde = { version = "1.0.228", default-features = false, features = ["derive"] }
 serde_json = "1.0.142"
 strum = { version = "0.28", default-features = false, features = ["derive"] }
 termina = "0.3"
