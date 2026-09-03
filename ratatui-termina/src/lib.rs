@@ -155,7 +155,10 @@ where
                 let command = Csi::Cursor(cursor_position(Position { x, y })?);
                 write!(string, "{command}").unwrap();
             }
-            last = Some((Position { x, y }, cell.cell_width()));
+            let width = cell.cell_width();
+            // A VS16 cluster's terminal cursor advance is not reliably predictable.
+            let uncertain_width = width > 1 && cell.symbol().chars().any(|c| c == '\u{FE0F}');
+            last = (!uncertain_width).then_some((Position { x, y }, width));
 
             let mut attributes = SgrAttributes::default();
             if cell.fg != fg {
@@ -797,6 +800,20 @@ mod tests {
         let output = backend.terminal.output();
         let cursor = Csi::Cursor(cursor_position(Position::new(2, 0)).unwrap());
         assert!(!output.contains(&cursor.to_string()));
+    }
+
+    #[test]
+    fn moves_cursor_after_uncertain_width_symbol() {
+        let mut backend = backend();
+        let wide = Cell::new("\u{2764}\u{FE0F}"); // ❤️
+        let next = Cell::new("a");
+        let content = [(0, 0, &wide), (2, 0, &next)];
+
+        backend.draw(content.into_iter()).unwrap();
+
+        let output = backend.terminal.output();
+        let cursor = Csi::Cursor(cursor_position(Position::new(2, 0)).unwrap());
+        assert!(output.contains(&cursor.to_string()));
     }
 
     #[test]

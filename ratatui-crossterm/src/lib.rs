@@ -246,7 +246,10 @@ where
             if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
-            last = Some((Position { x, y }, cell.cell_width()));
+            let width = cell.cell_width();
+            // A VS16 cluster's terminal cursor advance is not reliably predictable.
+            let uncertain_width = width > 1 && cell.symbol().chars().any(|c| c == '\u{FE0F}');
+            last = (!uncertain_width).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -879,11 +882,12 @@ mod tests {
         let updates: Vec<_> = prev.diff(&next).into_iter().collect();
         assert_eq!(
             updates.iter().map(|(x, _, _)| *x).collect::<Vec<_>>(),
-            [0, 1, 2, 3]
+            [1, 0, 2, 3]
         );
         let output = draw_to_string(&updates);
         assert!(output.contains(&MoveTo(1, 0).to_string()));
-        assert!(!output.contains(&MoveTo(2, 0).to_string()));
+        assert!(output.contains(&MoveTo(0, 0).to_string()));
+        assert!(output.contains(&MoveTo(2, 0).to_string()));
         assert!(!output.contains(&MoveTo(3, 0).to_string()));
     }
 
