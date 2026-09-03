@@ -37,7 +37,7 @@ jobs:
           toolchain: nightly
           components: rustfmt
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
-      - uses: tombi-toml/setup-tombi@23af0f0e4fcad609f048a37fb312714cd6b07741 # v1.4.0
+      - uses: tombi-toml/setup-tombi@603c3e90bc4382f3dd5c44573484db1c664102dd # v1.4.1
         with:
           version: "0.9.19"
       - run: cargo xtask format --check
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: crate-ci/typos@8a48f81b6c64dcfea44b3633223084c4be58ac5f # master
+      - uses: crate-ci/typos@4d9c206a77c041268485162b8e2579ad7a5cb9a3 # master
 
   # Check for any disallowed dependencies in the codebase due to license / security issues.
   # See <https://github.com/EmbarkStudios/cargo-deny>
