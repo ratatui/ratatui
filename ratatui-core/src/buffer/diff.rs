@@ -33,7 +33,7 @@ struct TrailingState {
     /// When `false`, only cells whose symbol changed are emitted.
     force: bool,
     /// Leading cell to repaint after its trailing cells have been processed.
-    deferred: Option<usize>,
+    deferred_leading_cell: Option<usize>,
 }
 
 /// Modifiers that are visually apparent on a blank (space) cell.
@@ -95,7 +95,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
             next_index,
             end,
             force,
-            deferred,
+            deferred_leading_cell,
         }) = &mut self.trailing
         {
             while *next_index < *end {
@@ -116,9 +116,9 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
             // Resume after the wide glyph, repainting its deferred leading cell first.
             self.pos = *end;
-            let deferred = deferred.take();
+            let deferred_leading_cell = deferred_leading_cell.take();
             self.trailing = None;
-            if let Some(i) = deferred {
+            if let Some(i) = deferred_leading_cell {
                 let (x, y) = self.pos_of(i);
                 return Some((x, y, &self.next[i]));
             }
@@ -166,16 +166,12 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                             next_index: i + 1,
                             end: (i + cell_width).min(len),
                             force: true,
-                            deferred: Some(i),
+                            deferred_leading_cell: Some(i),
                         });
                         return self.next();
                     }
 
-                    // Terminals disagree on this cluster's width, so clear its reserved columns
-                    // before drawing it: a two-column draw repaints over them, a one-column draw
-                    // leaves them cleared. Drawing it last also keeps it non-adjacent to the
-                    // preceding write, forcing a cursor move, so a width disagreement cannot
-                    // shift the rest of the row (#2357).
+                    // Clear reserved columns first so they cannot overwrite the uncertain-width glyph.
                     let uncertain_width = cell_width > 1 && has_uncertain_width(current.symbol());
 
                     if uncertain_width {
@@ -184,9 +180,9 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                             next_index: i + 1,
                             end: trailing_end,
                             force: false,
-                            deferred: Some(i),
+                            deferred_leading_cell: Some(i),
                         });
-                        // Recurses once: the block above always returns when `deferred` is set.
+                        // Recurses once and returns the deferred leading cell.
                         return self.next();
                     } else if cell_width > 1 {
                         self.pos += cell_width.saturating_sub(1);
@@ -200,7 +196,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                             next_index: i + 1,
                             end: (i + previous_width).min(len),
                             force: true,
-                            deferred: None,
+                            deferred_leading_cell: None,
                         });
                     } else {
                         // single-width character, no position adjustment needed
@@ -754,9 +750,8 @@ mod tests {
 /// Replays diffs through a model backend with real cursor semantics, and checks the resulting
 /// screen against what the buffer says the row should look like.
 ///
-/// Backends emit a cursor move only when the next cell is not adjacent to the last one written
-/// (see `CrosstermBackend::draw`), so an update lands on its assigned column only if the previous
-/// update advanced the real cursor by exactly the width the buffer reserved.
+/// Backends skip a cursor move only when the previous symbol has a predictable terminal width.
+/// VS16 clusters force a move because their actual cursor advance may differ from the buffer.
 ///
 /// Terminals disagree on the width of a cluster carrying VS16 (`U+FE0F`), so the model is
 /// parameterised over both observed behaviours; every scenario must pass under both.
@@ -875,11 +870,12 @@ mod terminal_replay {
             cols: expected_columns(model, prev),
         };
         let mut cursor = 0usize;
-        let mut last_x: Option<u16> = None;
+        let mut last: Option<(u16, usize)> = None;
 
         for (x, _y, cell) in BufferDiff::new(prev, next) {
-            // Reposition only when this cell is not adjacent to the last one written.
-            let col = if matches!(last_x, Some(p) if x == p + 1) {
+            // Reposition unless the backend can predict the terminal's cursor position.
+            let col = if matches!(last, Some((p, width)) if usize::from(p) + width == usize::from(x))
+            {
                 cursor
             } else {
                 x as usize
@@ -888,7 +884,8 @@ mod terminal_replay {
             let advance = model.advance(cell.symbol(), reserved);
             screen.print(col, cell.symbol(), advance);
             cursor = col + advance;
-            last_x = Some(x);
+            let uncertain_width = reserved > 1 && has_uncertain_width(cell.symbol());
+            last = (!uncertain_width).then_some((x, reserved));
         }
         screen.cols
     }

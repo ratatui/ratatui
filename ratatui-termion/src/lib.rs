@@ -237,7 +237,10 @@ where
             if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
                 write!(string, "{}", termion::cursor::Goto(x + 1, y + 1)).unwrap();
             }
-            last = Some((Position { x, y }, cell.cell_width()));
+            let width = cell.cell_width();
+            // A VS16 cluster's terminal cursor advance is not reliably predictable.
+            let uncertain_width = width > 1 && cell.symbol().chars().any(|c| c == '\u{FE0F}');
+            last = (!uncertain_width).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 write!(
                     string,
@@ -620,6 +623,14 @@ mod tests {
         let next = Cell::new("a");
         let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
         assert!(!output.contains(&termion::cursor::Goto(3, 1).to_string()));
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_uncertain_width_symbol() {
+        let wide = Cell::new("\u{2764}\u{FE0F}"); // ❤️
+        let next = Cell::new("a");
+        let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
+        assert!(output.contains(&termion::cursor::Goto(3, 1).to_string()));
     }
 
     #[test]
