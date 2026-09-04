@@ -6,8 +6,8 @@ use crate::terminal::{Terminal, Viewport};
 impl<B: Backend> Terminal<B> {
     /// Updates the Terminal so that internal buffers match the requested area.
     ///
-    /// This updates the buffer size used for rendering and triggers a full clear so the next
-    /// [`Terminal::draw`] / [`Terminal::try_draw`] paints into a consistent area.
+    /// This updates the buffer size used for rendering and clears the affected viewport so the
+    /// next [`Terminal::draw`] / [`Terminal::try_draw`] paints into a consistent area.
     ///
     /// When the viewport is [`Viewport::Inline`], the `area` argument is treated as the new
     /// terminal size and the viewport origin is recomputed relative to the current cursor position.
@@ -49,11 +49,15 @@ impl<B: Backend> Terminal<B> {
         // every resize event. The `clear_viewport` call below already erases
         // from the recomputed origin to the bottom of the screen, which covers
         // every row the inline viewport can legitimately own.
-        if next_area.width < self.viewport_area.width
-            && !matches!(self.viewport, Viewport::Inline(_))
-        {
-            next_area.y = 0;
-            self.backend.clear_region(ClearType::All)?;
+        if next_area.width < self.viewport_area.width {
+            match self.viewport {
+                Viewport::Inline(_) => {}
+                Viewport::Fullscreen => next_area.y = 0,
+                Viewport::Fixed(_) => {
+                    next_area.y = 0;
+                    self.backend.clear_region(ClearType::All)?;
+                }
+            }
         }
 
         self.set_viewport_area(next_area);
@@ -96,11 +100,115 @@ impl<B: Backend> Terminal<B> {
 
 #[cfg(test)]
 mod tests {
-    use crate::backend::{Backend, TestBackend};
+    use alloc::vec::Vec;
+
+    use rstest::rstest;
+
+    use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
     use crate::buffer::Buffer;
-    use crate::layout::{Position, Rect};
+    use crate::layout::{Position, Rect, Size};
     use crate::style::Style;
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
+
+    #[derive(Debug, Default)]
+    struct ClearBackend(Vec<ClearType>);
+
+    impl Backend for ClearBackend {
+        type Error = core::convert::Infallible;
+
+        fn draw<'a, I>(&mut self, _content: I) -> Result<(), Self::Error>
+        where
+            I: Iterator<Item = (u16, u16, &'a crate::buffer::Cell)>,
+        {
+            Ok(())
+        }
+
+        fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn show_cursor(&mut self) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+            Ok(Position::ORIGIN)
+        }
+
+        fn set_cursor_position<P: Into<Position>>(
+            &mut self,
+            _position: P,
+        ) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn clear(&mut self) -> Result<(), Self::Error> {
+            self.clear_region(ClearType::All)
+        }
+
+        fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+            self.0.push(clear_type);
+            Ok(())
+        }
+
+        fn size(&self) -> Result<Size, Self::Error> {
+            Ok(Size::new(80, 24))
+        }
+
+        fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+            Ok(WindowSize {
+                columns_rows: self.size()?,
+                pixels: Size::default(),
+            })
+        }
+
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_up(
+            &mut self,
+            _region: core::ops::Range<u16>,
+            _line_count: u16,
+        ) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_down(
+            &mut self,
+            _region: core::ops::Range<u16>,
+            _line_count: u16,
+        ) -> Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
+    fn clears_on_horizontal_shrink(viewport: Viewport) -> Vec<ClearType> {
+        let backend = ClearBackend::default();
+        let mut terminal = Terminal::with_options(backend, TerminalOptions { viewport }).unwrap();
+        terminal.backend_mut().0.clear();
+        terminal.resize(Rect::new(0, 0, 40, 24)).unwrap();
+        terminal.backend().0.clone()
+    }
+
+    #[rstest]
+    #[case::fullscreen(Viewport::Fullscreen, &[ClearType::All])]
+    #[case::inline(
+        Viewport::Inline(5),
+        &[ClearType::AfterCursor]
+    )]
+    #[case::fixed(
+        Viewport::Fixed(Rect::new(0, 0, 80, 24)),
+        &[ClearType::All]
+    )]
+    fn resize_horizontal_shrink_clears_expected_regions(
+        #[case] viewport: Viewport,
+        #[case] expected: &[ClearType],
+    ) {
+        assert_eq!(clears_on_horizontal_shrink(viewport), expected);
+    }
 
     #[test]
     fn resize_fullscreen_updates_viewport_and_buffer_areas() {

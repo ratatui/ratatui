@@ -199,6 +199,9 @@ impl<'a> Span<'a> {
     /// In contrast to [`Span::patch_style`], this method replaces the style of the span instead of
     /// patching it.
     ///
+    /// When rendered inside a [`Line`] or [`Text`], this style is patched on top of those styles,
+    /// so any field it sets takes precedence over them.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
@@ -212,6 +215,7 @@ impl<'a> Span<'a> {
     /// ```
     ///
     /// [`Color`]: crate::style::Color
+    /// [`Text`]: crate::text::Text
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -566,12 +570,6 @@ mod tests {
     }
 
     #[test]
-    fn set_style() {
-        let span = Span::default().style(Style::new().green());
-        assert_eq!(span.style, Style::new().green());
-    }
-
-    #[test]
     fn from_ref_str_borrowed_cow() {
         let content = "test content";
         let span = Span::from(content);
@@ -610,37 +608,12 @@ mod tests {
     }
 
     #[test]
-    fn reset_style() {
-        let span = Span::styled("test content", Style::new().green()).reset_style();
-        assert_eq!(span.style, Style::reset());
-    }
-
-    #[test]
-    fn patch_style() {
-        let span = Span::styled("test content", Style::new().green().on_yellow())
-            .patch_style(Style::new().red().bold());
-        assert_eq!(span.style, Style::new().red().on_yellow().bold());
-    }
-
-    #[test]
     fn width() {
         assert_eq!(Span::raw("").width(), 0);
         assert_eq!(Span::raw("test").width(), 4);
         assert_eq!(Span::raw("test content").width(), 12);
         // Needs reconsideration: https://github.com/ratatui/ratatui/issues/1271
         assert_eq!(Span::raw("test\ncontent").width(), 12);
-    }
-
-    #[test]
-    fn stylize() {
-        let span = Span::raw("test content").green();
-        assert_eq!(span.content, Cow::Borrowed("test content"));
-        assert_eq!(span.style, Style::new().green());
-
-        let span = Span::styled("test content", Style::new().green());
-        let stylized = span.on_yellow().bold();
-        assert_eq!(stylized.content, Cow::Borrowed("test content"));
-        assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
     }
 
     #[test]
@@ -682,6 +655,53 @@ mod tests {
         let span = Span::styled("Test Content", Style::new().green().italic());
         let line = span.into_right_aligned_line();
         assert_eq!(line.alignment, Some(Alignment::Right));
+    }
+
+    mod style {
+        use super::*;
+
+        #[test]
+        fn style() {
+            let span = Span::default().style(Style::new().green());
+            assert_eq!(span.style, Style::new().green());
+        }
+
+        #[test]
+        fn reset_style() {
+            let span = Span::styled("test content", Style::new().green()).reset_style();
+            assert_eq!(span.style, Style::reset());
+        }
+
+        #[test]
+        fn patch_style() {
+            let span = Span::styled("test content", Style::new().green().on_yellow())
+                .patch_style(Style::new().red().bold());
+            assert_eq!(span.style, Style::new().red().on_yellow().bold());
+        }
+
+        #[test]
+        fn stylize() {
+            let span = Span::raw("test content").green();
+            assert_eq!(span.content, Cow::Borrowed("test content"));
+            assert_eq!(span.style, Style::new().green());
+
+            let span = Span::styled("test content", Style::new().green());
+            let stylized = span.on_yellow().bold();
+            assert_eq!(stylized.content, Cow::Borrowed("test content"));
+            assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
+        }
+
+        #[test]
+        fn render_overrides_prerendered_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            buf.set_style(buf.area, Style::new().red().on_green().italic());
+            Span::from("hi").blue().render(buf.area, &mut buf);
+            let expected = Buffer::with_lines([Line::from(vec![
+                "hi".blue().on_green().italic(),
+                "  ".red().on_green().italic(),
+            ])]);
+            assert_eq!(buf, expected);
+        }
     }
 
     mod widget {

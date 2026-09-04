@@ -305,10 +305,10 @@
 //!
 //! - [`constraints`](https://github.com/ratatui/ratatui/blob/main/examples/apps/constraints/) -
 //!   Demonstrates different constraint types
+//! - [`constraint-explorer`](https://github.com/ratatui/ratatui/tree/main/examples/apps/constraint-explorer/)
+//!   - Interactively compares constraint types, flex modes, spacing, and overlap
 //! - [`flex`](https://github.com/ratatui/ratatui/blob/main/examples/apps/flex/) - Shows flex space
 //!   distribution
-//! - [`layout`](https://github.com/ratatui/ratatui/blob/main/examples/apps/layout/) - Basic layout
-//!   examples
 
 mod alignment;
 mod constraint;

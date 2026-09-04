@@ -312,6 +312,9 @@ impl<'a> Text<'a> {
     /// only by the style of each [`Line`] contained in the line. For this reason, this field may
     /// not be supported by all widgets (outside of the `ratatui` crate itself).
     ///
+    /// When rendered, this style is the base for the text. Each [`Line`] style, and then each
+    /// [`Span`] style, is patched on top, so fields set by the more specific style take precedence.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
@@ -835,26 +838,6 @@ mod tests {
     }
 
     #[test]
-    fn patch_style() {
-        let style = Style::new().yellow().italic();
-        let style2 = Style::new().red().underlined();
-        let text = Text::styled("The first line\nThe second line", style).patch_style(style2);
-
-        let expected_style = Style::new().red().italic().underlined();
-        let expected_text = Text::styled("The first line\nThe second line", expected_style);
-
-        assert_eq!(text, expected_text);
-    }
-
-    #[test]
-    fn reset_style() {
-        let style = Style::new().yellow().italic();
-        let text = Text::styled("The first line\nThe second line", style).reset_style();
-
-        assert_eq!(text.style, Style::reset());
-    }
-
-    #[test]
     fn from_string() {
         let text = Text::from(String::from("The first line\nThe second line"));
         assert_eq!(
@@ -1159,16 +1142,6 @@ mod tests {
     }
 
     #[test]
-    fn stylize() {
-        assert_eq!(Text::default().green().style, Color::Green.into());
-        assert_eq!(
-            Text::default().on_green().style,
-            Style::new().bg(Color::Green)
-        );
-        assert_eq!(Text::default().italic().style, Modifier::ITALIC.into());
-    }
-
-    #[test]
     fn left_aligned() {
         let text = Text::from("Hello, world!").left_aligned();
         assert_eq!(text.alignment, Some(Alignment::Left));
@@ -1230,6 +1203,69 @@ mod tests {
         let mut text = Text::default();
         text.push_span(Span::raw("Hello, world!"));
         assert_eq!(text.lines, [Line::from(Span::raw("Hello, world!"))]);
+    }
+
+    mod style {
+        use super::*;
+
+        #[test]
+        fn style() {
+            let text = Text::default().style(Style::new().red());
+            assert_eq!(text.style, Style::new().red());
+        }
+
+        #[test]
+        fn patch_style() {
+            let style = Style::new().yellow().italic();
+            let style2 = Style::new().red().underlined();
+            let text = Text::styled("The first line\nThe second line", style).patch_style(style2);
+
+            let expected_style = Style::new().red().italic().underlined();
+            let expected_text = Text::styled("The first line\nThe second line", expected_style);
+
+            assert_eq!(text, expected_text);
+        }
+
+        #[test]
+        fn reset_style() {
+            let style = Style::new().yellow().italic();
+            let text = Text::styled("The first line\nThe second line", style).reset_style();
+
+            assert_eq!(text.style, Style::reset());
+        }
+
+        #[test]
+        fn stylize() {
+            assert_eq!(Text::default().green().style, Color::Green.into());
+            assert_eq!(
+                Text::default().on_green().style,
+                Style::new().bg(Color::Green)
+            );
+            assert_eq!(Text::default().italic().style, Modifier::ITALIC.into());
+        }
+
+        #[test]
+        fn render_line_style_overrides_text_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 2));
+            Text::from(Line::from("hi").blue())
+                .red()
+                .on_green()
+                .render(buf.area, &mut buf);
+            let mut expected = Buffer::with_lines(["hi  ", "    "]);
+            expected.set_style(Rect::new(0, 0, 4, 1), Style::new().blue().on_green());
+            expected.set_style(Rect::new(0, 1, 4, 1), Style::new().red().on_green());
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_overrides_prerendered_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            buf.set_style(buf.area, Style::new().red().on_green().italic());
+            Text::from("hi").blue().render(buf.area, &mut buf);
+            let mut expected = Buffer::with_lines(["hi  "]);
+            expected.set_style(expected.area, Style::new().blue().on_green().italic());
+            assert_eq!(buf, expected);
+        }
     }
 
     mod widget {
