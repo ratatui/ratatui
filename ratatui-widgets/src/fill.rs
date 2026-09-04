@@ -45,7 +45,6 @@ use ratatui_core::widgets::Widget;
 ///
 /// Cells outside the buffer are silently clipped, mirroring the behavior of other widgets
 /// such as [`Clear`](crate::clear::Clear).
-/// An empty symbol leaves the buffer unchanged.
 ///
 /// [`Stylize`]: ratatui_core::style::Stylize
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -59,12 +58,17 @@ impl<'a> Fill<'a> {
     ///
     /// The style defaults to [`Style::default`]; use the [`Stylize`] shorthands or
     /// [`Fill::style`] to customize it.
-    /// An empty symbol leaves the buffer unchanged when rendered.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `symbol` is empty.
     ///
     /// [`Stylize`]: ratatui_core::style::Stylize
     pub fn new<S: Into<Cow<'a, str>>>(symbol: S) -> Self {
+        let symbol = symbol.into();
+        assert!(!symbol.is_empty(), "Fill symbol must not be empty");
         Self {
-            symbol: symbol.into(),
+            symbol,
             style: Style::default(),
         }
     }
@@ -83,12 +87,17 @@ impl<'a> Fill<'a> {
     }
 
     /// Set the symbol painted into each cell.
-    /// An empty symbol leaves the buffer unchanged when rendered.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `symbol` is empty.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn symbol<S: Into<Cow<'a, str>>>(mut self, symbol: S) -> Self {
-        self.symbol = symbol.into();
+        let symbol = symbol.into();
+        assert!(!symbol.is_empty(), "Fill symbol must not be empty");
+        self.symbol = symbol;
         self
     }
 }
@@ -214,11 +223,23 @@ mod tests {
     }
 
     #[test]
-    fn empty_symbol_is_noop() {
-        for fill in [Fill::new(""), Fill::new("x").symbol(""), Fill::default()] {
-            let mut buffer = Buffer::with_lines(["xxxxx"]);
-            fill.red().render(Rect::new(1, 0, 3, 1), &mut buffer);
-            assert_eq!(buffer, Buffer::with_lines(["xxxxx"]));
-        }
+    #[should_panic(expected = "Fill symbol must not be empty")]
+    fn new_panics_on_empty_symbol() {
+        Fill::new("");
+    }
+
+    #[test]
+    #[should_panic(expected = "Fill symbol must not be empty")]
+    fn symbol_panics_on_empty_symbol() {
+        let _ = Fill::new("x").symbol("");
+    }
+
+    #[test]
+    fn default_is_noop() {
+        let mut buffer = Buffer::with_lines(["xxxxx"]);
+        Fill::default()
+            .red()
+            .render(Rect::new(1, 0, 3, 1), &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["xxxxx"]));
     }
 }
