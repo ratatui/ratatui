@@ -6,8 +6,8 @@ use crate::terminal::{Terminal, Viewport};
 impl<B: Backend> Terminal<B> {
     /// Updates the Terminal so that internal buffers match the requested area.
     ///
-    /// This updates the buffer size used for rendering and triggers a full clear so the next
-    /// [`Terminal::draw`] / [`Terminal::try_draw`] paints into a consistent area.
+    /// This updates the buffer size used for rendering and clears the affected viewport so the
+    /// next [`Terminal::draw`] / [`Terminal::try_draw`] paints into a consistent area.
     ///
     /// When the viewport is [`Viewport::Inline`], the `area` argument is treated as the new
     /// terminal size and the viewport origin is recomputed relative to the current cursor position.
@@ -38,12 +38,25 @@ impl<B: Backend> Terminal<B> {
             Viewport::Fixed(_) | Viewport::Fullscreen => (area, None),
         };
 
-        // clear screen on horizontal shrink to avoid line wrapping issues
+        // Clear the screen on horizontal shrink to avoid line wrapping issues.
+        //
+        // Inline viewports are excluded: an inline viewport only owns the rows
+        // from its origin down. The rows above it were written by
+        // `insert_before`, which keeps no copy of them, so the application can
+        // never repaint them. A full-screen erase either destroys that output
+        // or, on terminals that move erased content into scrollback (Windows
+        // Terminal, conhost), pushes a copy of the viewport into scrollback on
+        // every resize event. The `clear_viewport` call below already erases
+        // from the recomputed origin to the bottom of the screen, which covers
+        // every row the inline viewport can legitimately own.
         if next_area.width < self.viewport_area.width {
-            next_area.y = 0;
-            // `clear_viewport` below already clears everything for `Fullscreen`.
-            if !matches!(self.viewport, Viewport::Fullscreen) {
-                self.backend.clear_region(ClearType::All)?;
+            match self.viewport {
+                Viewport::Inline(_) => {}
+                Viewport::Fullscreen => next_area.y = 0,
+                Viewport::Fixed(_) => {
+                    next_area.y = 0;
+                    self.backend.clear_region(ClearType::All)?;
+                }
             }
         }
 
@@ -94,6 +107,7 @@ mod tests {
     use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
     use crate::buffer::Buffer;
     use crate::layout::{Position, Rect, Size};
+    use crate::style::Style;
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
 
     #[derive(Debug, Default)]
@@ -183,7 +197,7 @@ mod tests {
     #[case::fullscreen(Viewport::Fullscreen, &[ClearType::All])]
     #[case::inline(
         Viewport::Inline(5),
-        &[ClearType::All, ClearType::AfterCursor]
+        &[ClearType::AfterCursor]
     )]
     #[case::fixed(
         Viewport::Fixed(Rect::new(0, 0, 80, 24)),
@@ -412,11 +426,66 @@ mod tests {
         );
     }
 
-    // This tests for the case where the new width is smaller than the old
-    // width. The screen should be cleared completely to avoid rendering
-    // glitches caused by line wrap.
+    // An inline viewport does not own the rows above its origin: they were
+    // written by `insert_before`, which keeps no copy of them, so the
+    // application cannot repaint them. A horizontal shrink must not erase them.
     #[test]
-    fn resize_inline_clears_screen_on_horizontal_shrink() {
+    fn resize_inline_horizontal_shrink_keeps_rows_above_the_viewport() {
+        let mut backend = TestBackend::new(6, 4);
+        backend
+            .set_cursor_position(Position { x: 0, y: 0 })
+            .unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(1),
+            },
+        )
+        .unwrap();
+
+        for text in ["one", "two"] {
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, text, Style::default());
+                })
+                .unwrap();
+        }
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                frame
+                    .buffer_mut()
+                    .set_string(area.x, area.y, "live", Style::default());
+            })
+            .unwrap();
+        terminal
+            .backend()
+            .assert_buffer_lines(["one   ", "two   ", "live  ", "      "]);
+
+        // A real backend leaves the cursor just past the last painted cell;
+        // `TestBackend` only moves it on an explicit cursor command, so place it
+        // where the viewport was drawn. `resize` anchors the new origin to it.
+        terminal
+            .backend_mut()
+            .set_cursor_position(Position { x: 4, y: 2 })
+            .unwrap();
+
+        // Narrow the terminal. The backend buffer is left at its original width
+        // so the assertions below read the same columns as the ones above;
+        // `resize_inline_resets_the_buffers_on_horizontal_shrink` does the same.
+        terminal.resize(Rect::new(0, 0, 5, 4)).unwrap();
+
+        assert_eq!(terminal.viewport_area, Rect::new(0, 2, 5, 1));
+        terminal
+            .backend()
+            .assert_buffer_lines(["one   ", "two   ", "      ", "      "]);
+    }
+
+    // This tests for the case where the new width is smaller than the old
+    // width. The internal buffers are reset so the next draw repaints the
+    // viewport into a consistent area.
+    #[test]
+    fn resize_inline_resets_the_buffers_on_horizontal_shrink() {
         let mut backend = TestBackend::with_lines(["0000", "1111"]);
         backend
             .set_cursor_position(Position { x: 0, y: 0 })
