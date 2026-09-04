@@ -62,10 +62,12 @@
 //!
 //! - Use [`run()`] for normal applications. It initializes the terminal, runs your app, and
 //!   restores the terminal on exit.
+//! - Use [`run_with_options()`] for applications with a custom [`Viewport`] (such as inline
+//!   rendering) and automatic terminal restoration.
 //! - Use [`init()`] / [`restore()`] (or [`try_init()`] / [`try_restore()`]) when you want manual
 //!   control over terminal lifetime and the event loop structure.
-//! - Use [`init_with_options()`] / [`try_init_with_options()`] when you need a custom [`Viewport`],
-//!   such as inline rendering or a fixed drawing region.
+//! - Use [`init_with_options()`] / [`try_init_with_options()`] when you need a custom [`Viewport`]
+//!   and manual control over setup and teardown.
 //!
 //! Reach for [`Terminal::new`] or [`Terminal::with_options`] directly only when you need custom
 //! backend construction or terminal setup that Ratatui's convenience functions do not manage.
@@ -500,8 +502,8 @@ pub use ratatui_termwiz::termwiz;
 #[cfg(feature = "crossterm")]
 #[doc(inline)]
 pub use crate::init::{
-    DefaultTerminal, init, init_with_options, restore, run, try_init, try_init_with_options,
-    try_restore,
+    DefaultTerminal, init, init_with_options, restore, run, run_with_options, try_init,
+    try_init_with_options, try_restore,
 };
 
 /// Re-exports for the backend implementations.
