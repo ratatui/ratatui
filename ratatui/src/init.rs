@@ -324,10 +324,7 @@ pub fn run<F, R>(f: F) -> R
 where
     F: FnOnce(&mut DefaultTerminal) -> R,
 {
-    let mut terminal = init();
-    let result = f(&mut terminal);
-    restore();
-    result
+    run_terminal(init(), f, restore)
 }
 
 /// Run a closure with a terminal initialized with the given options.
@@ -339,6 +336,10 @@ where
 /// Unlike [`run`], this function does not enter the alternate screen buffer as this may not be
 /// desired in all cases (such as inline or fixed viewports). If you need the alternate screen
 /// buffer, you should enable it manually after the closure starts or use [`run`].
+///
+/// In particular, `run_with_options(TerminalOptions::default(), f)` is **not** equivalent to
+/// `run(f)`: despite using the default fullscreen viewport, it does not enter the alternate screen
+/// buffer. Use [`run`] for the normal fullscreen setup.
 ///
 /// See the [module-level documentation](mod@crate::init) for a comparison of all initialization
 /// functions and guidance on when to use each one.
@@ -379,9 +380,16 @@ pub fn run_with_options<F, R>(options: TerminalOptions, f: F) -> R
 where
     F: FnOnce(&mut DefaultTerminal) -> R,
 {
-    let mut terminal = init_with_options(options);
+    run_terminal(init_with_options(options), f, restore)
+}
+
+fn run_terminal<T, F, R, C>(mut terminal: T, f: F, cleanup: C) -> R
+where
+    F: FnOnce(&mut T) -> R,
+    C: FnOnce(),
+{
     let result = f(&mut terminal);
-    restore();
+    cleanup();
     result
 }
 
@@ -629,4 +637,43 @@ fn set_panic_hook() {
         restore();
         hook(info);
     }));
+}
+
+#[cfg(test)]
+mod tests {
+    use core::cell::Cell;
+
+    use super::run_terminal;
+
+    #[test]
+    fn run_terminal_runs_closure_then_cleanup_and_returns_result() {
+        let closure_ran = Cell::new(false);
+        let cleanup_ran = Cell::new(false);
+
+        let result = run_terminal(
+            (),
+            |()| {
+                assert!(!cleanup_ran.get());
+                closure_ran.set(true);
+                42
+            },
+            || {
+                assert!(closure_ran.get());
+                cleanup_ran.set(true);
+            },
+        );
+
+        assert_eq!(result, 42);
+        assert!(cleanup_ran.get());
+    }
+
+    #[test]
+    fn run_terminal_cleans_up_after_error_result() {
+        let cleanup_ran = Cell::new(false);
+
+        let result = run_terminal((), |()| Err::<(), _>("error"), || cleanup_ran.set(true));
+
+        assert_eq!(result, Err("error"));
+        assert!(cleanup_ran.get());
+    }
 }
