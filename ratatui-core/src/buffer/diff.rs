@@ -17,14 +17,11 @@ pub struct BufferDiff<'prev, 'next> {
     area: Rect,
     /// Current position in the flat cell array.
     pos: usize,
-    /// Tracks trailing cells that must be yielded after a wide character is processed.
-    ///
-    /// Set when a wide char was replaced by narrower content (force=true) or when a VS16 emoji
-    /// needs its trailing column checked (force=false).
+    /// Tracks trailing cells and a leading cell that may be deferred until after they are cleared.
     trailing: Option<TrailingState>,
 }
 
-/// Tracks pending trailing-cell yields when a wide character is followed by narrower content.
+/// Tracks pending trailing-cell yields for a wide character update.
 #[derive(Debug)]
 struct TrailingState {
     next_index: usize,
@@ -33,9 +30,10 @@ struct TrailingState {
     /// wide character's style was visible on blank cells, so the terminal may show stale style
     /// there and every trailing cell must be refreshed.
     ///
-    /// When `false` (VS16 path), only cells whose symbol changed are emitted, because the emoji
-    /// visually covers its trailing column and style differences there are invisible.
+    /// When `false`, only cells whose symbol changed are emitted.
     force: bool,
+    /// Leading cell to repaint after its trailing cells have been processed.
+    deferred_leading_cell: Option<usize>,
 }
 
 /// Modifiers that are visually apparent on a blank (space) cell.
@@ -97,6 +95,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
             next_index,
             end,
             force,
+            deferred_leading_cell,
         }) = &mut self.trailing
         {
             while *next_index < *end {
@@ -115,9 +114,14 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                 }
             }
 
-            // Done with trailing cells; resume main loop past the wide character.
+            // Resume after the wide glyph, repainting its deferred leading cell first.
             self.pos = *end;
+            let deferred_leading_cell = deferred_leading_cell.take();
             self.trailing = None;
+            if let Some(i) = deferred_leading_cell {
+                let (x, y) = self.pos_of(i);
+                return Some((x, y, &self.next[i]));
+            }
         }
         while self.pos < len {
             let i = self.pos;
@@ -140,12 +144,6 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     }
                 }
                 CellDiffOption::None | CellDiffOption::AlwaysUpdate => {
-                    // If the current cell is multi-width, ensure the trailing cells are
-                    // explicitly cleared when they previously contained non-blank content.
-                    // Some terminals do not reliably clear the trailing cell(s) when printing
-                    // a wide grapheme, which can result in visual artifacts (e.g., leftover
-                    // characters). Emitting an explicit update for the trailing cells avoids
-                    // this.
                     let cell_width = current.cell_width() as usize;
                     if matches!(current.diff_option, CellDiffOption::None) && current == previous {
                         // Equal cells still need to account for multi-width skip.
@@ -154,35 +152,52 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     }
 
                     let previous_width = previous.cell_width() as usize;
+                    let previous_style_is_visible_on_blank = previous.bg != Color::Reset
+                        || previous.modifier.intersects(VISIBLE_ON_BLANK);
 
-                    // Work around terminals that fail to clear the trailing cell of certain
-                    // emoji presentation sequences (those containing VS16 / U+FE0F).
-                    // Only emit explicit clears for such sequences to avoid bloating diffs
-                    // for standard wide characters (e.g., CJK), which terminals handle well.
-                    let contains_vs16 =
-                        cell_width > 1 && current.symbol().chars().any(|c| c == '\u{FE0F}');
+                    // Clear stale styles from an unchanged wide glyph's trailing cells before
+                    // repainting it.
+                    if cell_width > 1
+                        && current.symbol() == previous.symbol()
+                        && current.style() != previous.style()
+                        && previous_style_is_visible_on_blank
+                    {
+                        self.trailing = Some(TrailingState {
+                            next_index: i + 1,
+                            end: (i + cell_width).min(len),
+                            force: true,
+                            deferred_leading_cell: Some(i),
+                        });
+                        return self.next();
+                    }
 
-                    if contains_vs16 {
+                    // Clear reserved columns first so they cannot overwrite the uncertain-width
+                    // glyph.
+                    let uncertain_width = cell_width > 1 && has_uncertain_width(current.symbol());
+
+                    if uncertain_width {
                         let trailing_end = (i + cell_width).min(len);
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
                             end: trailing_end,
                             force: false,
+                            deferred_leading_cell: Some(i),
                         });
+                        // Recurses once and returns the deferred leading cell.
+                        return self.next();
                     } else if cell_width > 1 {
                         self.pos += cell_width.saturating_sub(1);
-                    } else if previous_width > cell_width
-                        && (previous.bg != Color::Reset
-                            || previous.modifier.intersects(VISIBLE_ON_BLANK))
-                    {
+                    } else if previous_width > cell_width && previous_style_is_visible_on_blank {
                         // The previous wide character's style is visible on blank cells, so the
                         // terminal may still show it on the trailing columns even after the
                         // character is replaced. Force-emit every cell in the trailing range to
                         // refresh the terminal regardless of whether the buffer content changed.
+                        // This cell is narrow, so those columns stay adjacent and need no move.
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
                             end: (i + previous_width).min(len),
                             force: true,
+                            deferred_leading_cell: None,
                         });
                     } else {
                         // single-width character, no position adjustment needed
@@ -196,6 +211,16 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
         None
     }
+}
+
+/// Returns `true` if terminals disagree on how many columns `symbol` occupies.
+///
+/// Emoji presentation sequences (those containing VS16, `U+FE0F`) are the known case:
+/// `unicode-width` and most modern terminals treat them as two columns, but some terminals draw
+/// them in one. The diff cannot assume either, so it must emit updates that are correct under
+/// both.
+fn has_uncertain_width(symbol: &str) -> bool {
+    symbol.chars().any(|c| c == '\u{FE0F}')
 }
 
 /// Returns `true` if this cell should be skipped during diffing.
@@ -282,6 +307,66 @@ mod tests {
             diff.is_empty(),
             "the hidden trailing cell of an unchanged wide glyph must not be emitted; got {diff:?}"
         );
+    }
+
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2652>: removing a style that is
+    /// visible on blank cells from an unchanged wide glyph must clear its trailing column before
+    /// repainting the glyph. Clearing it afterwards can erase the glyph on some terminals.
+    #[test]
+    fn wide_glyph_style_change_clears_trailing_cell_before_repaint() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        for glyph in ["❤️", "😀"] {
+            let mut prev = Buffer::empty(area);
+            prev.set_string(0, 0, glyph, Style::new().bg(Color::Blue));
+
+            let mut next = Buffer::empty(area);
+            next.set_string(0, 0, glyph, Style::default());
+
+            let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+            assert_eq!(diff.len(), 2, "trailing cell and glyph must be redrawn");
+            assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
+            assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, glyph));
+        }
+    }
+
+    #[test]
+    fn wide_glyph_style_change_resumes_after_repaint() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "한a", Style::new().bg(Color::Blue));
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한b", Style::new().bg(Color::Red));
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(diff.len(), 3);
+        assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
+        assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, "한"));
+        assert_eq!((diff[2].0, diff[2].1, diff[2].2.symbol()), (2, 0, "b"));
+        assert_eq!(diff[1].2.bg, Color::Red);
+    }
+
+    #[test]
+    fn wide_glyph_foreground_change_does_not_clear_trailing_cell() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "한", Style::new().fg(Color::Blue));
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한", Style::new().fg(Color::Red));
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(diff.len(), 1);
+        assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (0, 0, "한"));
     }
 
     #[test]
@@ -660,5 +745,234 @@ mod tests {
         let prev = Buffer::empty(Rect::new(0, 0, 5, 1));
         let next = Buffer::empty(Rect::new(0, 0, 10, 1));
         BufferDiff::new(&prev, &next);
+    }
+}
+
+/// Replays diffs through a model backend with real cursor semantics, and checks the resulting
+/// screen against what the buffer says the row should look like.
+///
+/// Backends skip a cursor move only when the previous symbol has a predictable terminal width.
+/// VS16 clusters force a move because their actual cursor advance may differ from the buffer.
+///
+/// Terminals disagree on the width of a cluster carrying VS16 (`U+FE0F`), so the model is
+/// parameterised over both observed behaviours; every scenario must pass under both.
+#[cfg(test)]
+mod terminal_model {
+    use alloc::string::{String, ToString};
+    use alloc::vec;
+    use alloc::vec::Vec;
+
+    use rstest::rstest;
+
+    use super::*;
+    use crate::buffer::Buffer;
+    use crate::style::Style;
+
+    /// What is visibly occupying one terminal column.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    enum Column {
+        Blank,
+        Glyph(String),
+        /// This column is painted by the multi-column glyph to its left.
+        Continuation,
+    }
+
+    impl Column {
+        fn from_symbol(symbol: &str) -> Self {
+            if symbol == " " {
+                Self::Blank
+            } else {
+                Self::Glyph(symbol.to_string())
+            }
+        }
+    }
+
+    /// How many columns a terminal advances after printing a VS16 grapheme cluster.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    enum Vs16Width {
+        /// VS16 clusters advance two columns (tmux, most modern terminals).
+        TwoColumns,
+        /// VS16 clusters advance one column (the terminals
+        /// <https://github.com/ratatui/ratatui/pull/2063> was filed against).
+        OneColumn,
+    }
+
+    const VS16_WIDTHS: [Vs16Width; 2] = [Vs16Width::TwoColumns, Vs16Width::OneColumn];
+
+    fn contains_vs16(symbol: &str) -> bool {
+        symbol.chars().any(|c| c == '\u{FE0F}')
+    }
+
+    impl Vs16Width {
+        /// Columns the cursor advances when `symbol` is printed, given the width the buffer
+        /// reserved for it.
+        fn advance(self, symbol: &str, reserved: usize) -> usize {
+            // Keep this model independent from the production width detection so it remains a
+            // useful oracle if that detection regresses.
+            if self == Self::OneColumn && reserved > 1 && contains_vs16(symbol) {
+                1
+            } else {
+                reserved
+            }
+        }
+    }
+
+    /// A single row of terminal columns.
+    #[derive(Debug)]
+    struct TerminalRow {
+        columns: Vec<Column>,
+    }
+
+    impl TerminalRow {
+        /// Prints `symbol` at `col`, advancing the cursor by `advance` columns.
+        ///
+        /// Overwriting either half of a multi-column glyph destroys the whole glyph, so its full
+        /// footprint is blanked before the new symbol is written.
+        fn print(&mut self, col: usize, symbol: &str, advance: usize) {
+            let len = self.columns.len();
+            if col >= len {
+                return;
+            }
+            let end = (col + advance).min(len);
+
+            let mut lo = col;
+            while lo > 0 && self.columns[lo] == Column::Continuation {
+                lo -= 1;
+            }
+            let mut hi = end;
+            while hi < len && self.columns[hi] == Column::Continuation {
+                hi += 1;
+            }
+            self.columns[lo..hi].fill(Column::Blank);
+
+            self.columns[col] = Column::from_symbol(symbol);
+            self.columns[col + 1..end].fill(Column::Continuation);
+        }
+    }
+
+    /// The columns a buffer row occupies on screen for the given VS16 width.
+    ///
+    /// A glyph paints its own column plus every column it advances over; columns the buffer
+    /// reserved but the terminal did not cover show the buffer cell's own content.
+    fn expected_columns(vs16_width: Vs16Width, buf: &Buffer) -> Vec<Column> {
+        let width = buf.area.width as usize;
+        let mut columns = vec![Column::Blank; width];
+        let mut i = 0;
+        while i < width {
+            let cell = &buf.content[i];
+            let reserved = (cell.cell_width() as usize).max(1);
+            let advance = vs16_width.advance(cell.symbol(), reserved);
+            columns[i] = Column::from_symbol(cell.symbol());
+            for (c, column) in columns
+                .iter_mut()
+                .enumerate()
+                .take((i + reserved).min(width))
+                .skip(i + 1)
+            {
+                *column = if c < i + advance {
+                    Column::Continuation
+                } else {
+                    Column::from_symbol(buf.content[c].symbol())
+                };
+            }
+            i += reserved;
+        }
+        columns
+    }
+
+    /// Replays `BufferDiff` the way a backend does and returns the resulting screen.
+    ///
+    /// The screen starts as `prev` rendered with `vs16_width`, so any column the diff never
+    /// rewrites keeps the previous frame's content — a stale column surviving into the comparison
+    /// *is* the artifact.
+    fn replay(vs16_width: Vs16Width, prev: &Buffer, next: &Buffer) -> Vec<Column> {
+        assert_eq!(prev.area.height, 1, "harness models a single row");
+        let mut terminal = TerminalRow {
+            columns: expected_columns(vs16_width, prev),
+        };
+        let mut cursor = 0usize;
+        let mut last: Option<(u16, usize)> = None;
+
+        for (x, _y, cell) in BufferDiff::new(prev, next) {
+            // Reposition unless the backend can predict the terminal's cursor position.
+            let col = if matches!(last, Some((p, width)) if usize::from(p) + width == usize::from(x))
+            {
+                cursor
+            } else {
+                x as usize
+            };
+            let reserved = (cell.cell_width() as usize).max(1);
+            let advance = vs16_width.advance(cell.symbol(), reserved);
+            terminal.print(col, cell.symbol(), advance);
+            cursor = col + advance;
+            // Model the backend rule independently from BufferDiff's production helper.
+            let uncertain_width = reserved > 1 && contains_vs16(cell.symbol());
+            last = (!uncertain_width).then_some((x, reserved));
+        }
+        terminal.columns
+    }
+
+    #[track_caller]
+    fn assert_no_artifacts(vs16_width: Vs16Width, prev: &Buffer, next: &Buffer) {
+        let expected = expected_columns(vs16_width, next);
+        let actual = replay(vs16_width, prev, next);
+        assert_eq!(
+            actual, expected,
+            "{vs16_width:?}: terminal differs from buffer"
+        );
+    }
+
+    #[track_caller]
+    fn assert_no_artifacts_for_both_widths(prev: &str, next: &str, width: u16) {
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &row(width, prev), &row(width, next));
+        }
+    }
+
+    fn row(width: u16, content: &str) -> Buffer {
+        let mut buf = Buffer::empty(Rect::new(0, 0, width, 1));
+        buf.set_string(0, 0, content, Style::default());
+        buf
+    }
+
+    /// <https://github.com/ratatui/ratatui/issues/2357>: updating an ASCII row to VS16 emoji.
+    #[rstest]
+    #[case::heart("❤️❤️❤️❤️❤️❤️")]
+    #[case::rocket("🚀️🚀️🚀️🚀️🚀️🚀️")]
+    fn vs16_emoji_replacing_ascii_does_not_drift(#[case] next: &str) {
+        assert_no_artifacts_for_both_widths("int value8;;", next, 12);
+    }
+
+    /// Same as above with keycap sequences, which carry VS16 plus a combining enclosing keycap.
+    #[test]
+    fn vs16_keycaps_replacing_ascii_do_not_drift() {
+        assert_no_artifacts_for_both_widths("int value8;;", "1️⃣1️⃣1️⃣1️⃣1️⃣1️⃣", 12);
+    }
+
+    /// A VS16 row redrawn one column over: every glyph moves, so no update may inherit an offset.
+    #[test]
+    fn shifted_vs16_row_does_not_drift() {
+        assert_no_artifacts_for_both_widths("❤️❤️❤️❤️❤️", " ❤️❤️❤️❤️❤️", 12);
+    }
+
+    /// <https://github.com/ratatui/ratatui/pull/2063>: a terminal that draws a VS16 cluster in a
+    /// single column leaves the buffer's reserved column showing the old content unless the diff
+    /// writes it. Regression guard: deleting the VS16 special case to fix #2357 breaks this.
+    #[test]
+    fn vs16_emoji_replacing_narrower_content_leaves_no_stale_column() {
+        assert_no_artifacts_for_both_widths("ab", "❤️", 2);
+        assert_no_artifacts_for_both_widths("abcd", "❤️cd", 4);
+        assert_no_artifacts_for_both_widths("abcd", "ab❤️", 4);
+    }
+
+    /// Mixed rows: narrow, certain-width (`漢`, `😀`) and uncertain-width clusters interleaved.
+    ///
+    /// Also pins that certain-width clusters keep skipping their own reserved column: they are
+    /// not routed through the clear-first path, and must not drift either.
+    #[test]
+    fn mixed_width_rows_do_not_drift() {
+        assert_no_artifacts_for_both_widths("int value8;;", "a❤️b漢c😀d", 12);
+        assert_no_artifacts_for_both_widths("a❤️b漢c😀d", "int value8;;", 12);
+        assert_no_artifacts_for_both_widths("a❤️b漢c😀d", "漢a❤️b😀c", 12);
     }
 }

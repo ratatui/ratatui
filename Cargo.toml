@@ -31,7 +31,7 @@ rust-version = "1.88.0"
 
 [workspace.dependencies]
 anstyle = "1.0.3"
-bitflags = "2.9"
+bitflags = "2.11"
 clap = { version = "4.5", features = ["derive"] }
 color-eyre = "0.6"
 compact_str = { version = "0.10", default-features = false }
@@ -46,7 +46,7 @@ indoc = "2.0.5"
 instability = "0.3.7"
 itertools = { version = "0.15", default-features = false, features = ["use_alloc"] }
 kasuari = { version = "0.4.9", default-features = false }
-line-clipping = "0.3"
+line-clipping = "0.3.8"
 lru = "0.18"
 octocrab = "0.54"
 palette = { version = "0.7.7", default-features = false, features = ["libm"] }
@@ -63,7 +63,7 @@ ratatui-termion = { path = "ratatui-termion", version = "0.1.2" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.2" }
 ratatui-widgets = { path = "ratatui-widgets", version = "0.3.2", default-features = false }
 rstest = "0.26"
-serde = { version = "1.0.219", default-features = false, features = ["derive"] }
+serde = { version = "1.0.228", default-features = false, features = ["derive"] }
 serde_json = "1.0.142"
 strum = { version = "0.28", default-features = false, features = ["derive"] }
 termina = "0.3"
