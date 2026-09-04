@@ -9,8 +9,9 @@ GitHub with a [breaking change] label.
 ## Summary
 
 This is a quick summary of the sections below:
-
+/re
 - [v0.31.0](#v0310)
+  - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
   - `Backend` adds cursor save and restore methods
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
@@ -99,6 +100,17 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
+## v0.31.0 (unreleased)
+
+### `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
+
+Previously, `Flex::SpaceBetween` stretched a single layout item to fill the full area, even when the
+item used a fixed-size constraint such as `Length`, `Max`, `Percentage`, or `Ratio`. A single item
+now falls back to start alignment because there is no space to distribute between items.
+
+`Min` and `Fill` constraints still grow to fill the available area. If you relied on the previous
+single-item stretching behavior with a fixed-size constraint, use `Flex::Legacy` or switch the item
+to a growing constraint such as `Fill` or `Min`.
 ## v0.31.0
 
 ### `Backend` adds cursor save and restore methods
