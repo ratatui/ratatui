@@ -101,7 +101,7 @@ pub(super) fn draw_line(
     for_each_line_point(x1, y1, x2, y2, |x, y| painter.paint(x, y, color));
 }
 
-/// Calls `f(x, y)` for each pixel on the Bresenham line from `(x1, y1)` to `(x2, y2)`.  
+/// Calls `f(x, y)` for each pixel on the Bresenham line from `(x1, y1)` to `(x2, y2)`.
 pub(super) fn for_each_line_point<F>(x1: usize, y1: usize, x2: usize, y2: usize, mut f: F)
 where
     F: FnMut(usize, usize),
