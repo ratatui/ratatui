@@ -97,7 +97,7 @@ cfg_if::cfg_if! {
     }
 }
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::Cell;
+use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 
@@ -155,7 +155,7 @@ use ratatui_core::style::{Color, Modifier, Style};
 /// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 /// [`backend`]: ratatui_core::backend
 /// [Crossterm]: https://crates.io/crates/crossterm
-/// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct CrosstermBackend<W: Write> {
     /// The writer used to send commands to the terminal.
@@ -238,13 +238,18 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<Position> = None;
+        // Position and width of the last cell written, used to skip redundant cursor moves.
+        let mut last: Option<(Position, u16)> = None;
         for (x, y, cell) in content {
-            // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
+            // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
+            // the previous one on the same row, accounting for the width of what was printed.
+            if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
-            last_pos = Some(Position { x, y });
+            let width = cell.cell_width();
+            // A VS16 cluster's terminal cursor advance is not reliably predictable.
+            let uncertain_width = width > 1 && cell.symbol().chars().any(|c| c == '\u{FE0F}');
+            last = (!uncertain_width).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -802,9 +807,135 @@ impl crate::crossterm::Command for ScrollDownInRegion {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU16;
+
+    use ratatui_core::buffer::{Buffer, CellDiffOption};
+    use ratatui_core::layout::Rect;
     use rstest::rstest;
 
     use super::*;
+
+    /// Renders `content` and returns the emitted bytes as a lossy string.
+    fn draw_to_string(content: &[(u16, u16, &Cell)]) -> String {
+        let mut out = Vec::new();
+        CrosstermBackend::new(&mut out)
+            .draw(content.iter().copied())
+            .unwrap();
+        String::from_utf8_lossy(&out).into_owned()
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_wide_symbol() {
+        // A double-width glyph advances the terminal cursor by two columns, so writing the
+        // very next cell requires an explicit cursor move. See issue #2651.
+        let wide = Cell::new("\u{2764}\u{FE0F}"); // ❤️ (VS16 emoji presentation)
+        let next = Cell::new("a");
+        let output = draw_to_string(&[(0, 0, &wide), (1, 0, &next)]);
+        let move_to = MoveTo(1, 0).to_string();
+        assert!(
+            output.contains(&move_to),
+            "expected `MoveTo(1, 0)` after a wide glyph, got: {output:?}"
+        );
+    }
+
+    #[test]
+    fn draw_skips_cursor_move_for_contiguous_cells() {
+        let a = Cell::new("a");
+        let b = Cell::new("b");
+        let output = draw_to_string(&[(0, 0, &a), (1, 0, &b)]);
+        assert_eq!(output.matches(&MoveTo(0, 0).to_string()).count(), 1);
+        assert!(!output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_uses_forced_width_for_cursor_tracking() {
+        // A cell with an escape sequence has an arbitrary text width; the forced width tells
+        // us how far the terminal cursor actually advances.
+        let mut forced = Cell::new("\u{1b}[?25hab");
+        forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
+        let next = Cell::new("c");
+        let output = draw_to_string(&[(0, 0, &forced), (2, 0, &next)]);
+        assert!(!output.contains(&MoveTo(2, 0).to_string()));
+        let output = draw_to_string(&[(0, 0, &forced), (1, 0, &next)]);
+        assert!(output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_moves_cursor_when_previous_width_overflows() {
+        let mut forced = Cell::new("a");
+        forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::MAX));
+        let next = Cell::new("b");
+        let output = draw_to_string(&[(1, 0, &forced), (0, 0, &next)]);
+        assert!(output.contains(&MoveTo(0, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_moves_cursor_after_wide_symbol_from_buffer_diff() {
+        // End-to-end version of the report in #2651: the diff emits the trailing cell of a
+        // VS16 emoji sequence on purpose, and the backend must reposition before writing it.
+        let area = Rect::new(0, 0, 4, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "aaaa", Style::default());
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "\u{2764}\u{FE0F}bc", Style::default());
+
+        let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        assert_eq!(
+            updates.iter().map(|(x, _, _)| *x).collect::<Vec<_>>(),
+            [1, 0, 2, 3]
+        );
+        let output = draw_to_string(&updates);
+        assert!(output.contains(&MoveTo(1, 0).to_string()));
+        assert!(output.contains(&MoveTo(0, 0).to_string()));
+        assert!(output.contains(&MoveTo(2, 0).to_string()));
+        assert!(!output.contains(&MoveTo(3, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_clears_trailing_cell_before_repainting_styled_wide_glyph() {
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(
+            0,
+            0,
+            "한",
+            Style::new()
+                .fg(Color::Red)
+                .add_modifier(Modifier::UNDERLINED),
+        );
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한", Style::default());
+
+        let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        assert_eq!(
+            updates
+                .iter()
+                .map(|(x, y, cell)| (*x, *y, cell.symbol()))
+                .collect::<Vec<_>>(),
+            [(1, 0, " "), (0, 0, "한")]
+        );
+
+        let output = draw_to_string(&updates);
+        let clear = output.find(&MoveTo(1, 0).to_string()).unwrap();
+        let repaint = output.find(&MoveTo(0, 0).to_string()).unwrap();
+        let cleared_cell = output.find(' ').unwrap();
+        let repainted_glyph = output.find('한').unwrap();
+
+        assert!(
+            clear < cleared_cell && cleared_cell < repaint && repaint < repainted_glyph,
+            "trailing cell must be cleared before repainting the glyph: {output:?}"
+        );
+    }
+
+    #[test]
+    fn draw_skips_cursor_move_after_wide_symbol_when_contiguous() {
+        // The cell right after a wide glyph's trailing column is where the cursor already is.
+        let wide = Cell::new("\u{1F600}"); // 😀
+        let next = Cell::new("a");
+        let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
+        assert!(!output.contains(&MoveTo(2, 0).to_string()));
+    }
 
     #[test]
     fn save_and_restore_cursor_position_write_escape_sequences() {
