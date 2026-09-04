@@ -87,165 +87,113 @@ impl<B: Backend> Terminal<B> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
     use alloc::vec::Vec;
 
+    use rstest::rstest;
+
     use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
-    use crate::buffer::{Buffer, Cell};
+    use crate::buffer::Buffer;
     use crate::layout::{Position, Rect, Size};
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
 
-    /// A [`TestBackend`] that records clear commands.
-    ///
-    /// [`TestBackend`] implements `clear_region(ClearType::All)` as a buffer reset, so one clear
-    /// and two are indistinguishable in its buffer.
-    #[derive(Debug)]
-    struct CountingTestBackend {
-        inner: TestBackend,
-        clears: Vec<ClearType>,
-    }
+    #[derive(Debug, Default)]
+    struct ClearBackend(Vec<ClearType>);
 
-    impl CountingTestBackend {
-        fn new(width: u16, height: u16) -> Self {
-            Self {
-                inner: TestBackend::new(width, height),
-                clears: Vec::new(),
-            }
-        }
-    }
-
-    impl Backend for CountingTestBackend {
+    impl Backend for ClearBackend {
         type Error = core::convert::Infallible;
 
-        fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+        fn draw<'a, I>(&mut self, _content: I) -> Result<(), Self::Error>
         where
             I: Iterator<Item = (u16, u16, &'a crate::buffer::Cell)>,
         {
-            self.inner.draw(content)
-        }
-
-        fn append_lines(&mut self, n: u16) -> Result<(), Self::Error> {
-            self.inner.append_lines(n)
+            Ok(())
         }
 
         fn hide_cursor(&mut self) -> Result<(), Self::Error> {
-            self.inner.hide_cursor()
+            Ok(())
         }
 
         fn show_cursor(&mut self) -> Result<(), Self::Error> {
-            self.inner.show_cursor()
+            Ok(())
         }
 
         fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
-            self.inner.get_cursor_position()
+            Ok(Position::ORIGIN)
         }
 
         fn set_cursor_position<P: Into<Position>>(
             &mut self,
-            position: P,
+            _position: P,
         ) -> Result<(), Self::Error> {
-            self.inner.set_cursor_position(position)
+            Ok(())
         }
 
         fn clear(&mut self) -> Result<(), Self::Error> {
-            self.clears.push(ClearType::All);
-            self.inner.clear()
+            self.clear_region(ClearType::All)
         }
 
         fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
-            self.clears.push(clear_type);
-            self.inner.clear_region(clear_type)
+            self.0.push(clear_type);
+            Ok(())
         }
 
-        fn size(&self) -> Result<crate::layout::Size, Self::Error> {
-            self.inner.size()
+        fn size(&self) -> Result<Size, Self::Error> {
+            Ok(Size::new(80, 24))
         }
 
         fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
-            self.inner.window_size()
+            Ok(WindowSize {
+                columns_rows: self.size()?,
+                pixels: Size::default(),
+            })
         }
 
         fn flush(&mut self) -> Result<(), Self::Error> {
-            self.inner.flush()
+            Ok(())
         }
 
         #[cfg(feature = "scrolling-regions")]
         fn scroll_region_up(
             &mut self,
-            region: core::ops::Range<u16>,
-            line_count: u16,
+            _region: core::ops::Range<u16>,
+            _line_count: u16,
         ) -> Result<(), Self::Error> {
-            self.inner.scroll_region_up(region, line_count)
+            Ok(())
         }
 
         #[cfg(feature = "scrolling-regions")]
         fn scroll_region_down(
             &mut self,
-            region: core::ops::Range<u16>,
-            line_count: u16,
+            _region: core::ops::Range<u16>,
+            _line_count: u16,
         ) -> Result<(), Self::Error> {
-            self.inner.scroll_region_down(region, line_count)
+            Ok(())
         }
     }
 
     fn clears_on_horizontal_shrink(viewport: Viewport) -> Vec<ClearType> {
-        let backend = CountingTestBackend::new(80, 24);
+        let backend = ClearBackend::default();
         let mut terminal = Terminal::with_options(backend, TerminalOptions { viewport }).unwrap();
-        terminal.backend_mut().clears.clear();
+        terminal.backend_mut().0.clear();
         terminal.resize(Rect::new(0, 0, 40, 24)).unwrap();
-        terminal.backend().clears.clone()
+        terminal.backend().0.clone()
     }
 
-    /// The resize assertions above only mean anything if the wrapper is a faithful pass-through,
-    /// so exercise the methods those tests do not reach.
-    #[test]
-    fn counting_backend_delegates_everything_to_the_inner_backend() {
-        let mut backend = CountingTestBackend::new(4, 2);
-
-        backend.draw([(0, 0, &Cell::new("x"))].into_iter()).unwrap();
-        backend.set_cursor_position(Position::new(1, 1)).unwrap();
-        assert_eq!(backend.get_cursor_position().unwrap(), Position::new(1, 1));
-        assert_eq!(backend.size().unwrap(), Size::new(4, 2));
-        assert_eq!(backend.window_size().unwrap().columns_rows, Size::new(4, 2));
-        backend.hide_cursor().unwrap();
-        backend.show_cursor().unwrap();
-        backend.append_lines(1).unwrap();
-        backend.flush().unwrap();
-        #[cfg(feature = "scrolling-regions")]
-        {
-            backend.scroll_region_up(0..2, 1).unwrap();
-            backend.scroll_region_down(0..2, 1).unwrap();
-        }
-
-        backend.clear().unwrap();
-        backend.clear_region(ClearType::CurrentLine).unwrap();
-        assert_eq!(backend.clears, [ClearType::All, ClearType::CurrentLine]);
-    }
-
-    #[test]
-    fn resize_fullscreen_clears_the_screen_once_on_horizontal_shrink() {
-        assert_eq!(
-            clears_on_horizontal_shrink(Viewport::Fullscreen),
-            vec![ClearType::All]
-        );
-    }
-
-    #[test]
-    fn resize_inline_still_clears_above_the_viewport_on_horizontal_shrink() {
-        // Both are needed: `clear_viewport` only reaches from the viewport origin down.
-        assert_eq!(
-            clears_on_horizontal_shrink(Viewport::Inline(5)),
-            vec![ClearType::All, ClearType::AfterCursor]
-        );
-    }
-
-    #[test]
-    fn resize_fixed_still_clears_outside_the_viewport_on_horizontal_shrink() {
-        // The one clear here is the explicit one: `clear_fixed_viewport` redraws cells instead.
-        assert_eq!(
-            clears_on_horizontal_shrink(Viewport::Fixed(Rect::new(0, 0, 80, 24))),
-            vec![ClearType::All]
-        );
+    #[rstest]
+    #[case::fullscreen(Viewport::Fullscreen, &[ClearType::All])]
+    #[case::inline(
+        Viewport::Inline(5),
+        &[ClearType::All, ClearType::AfterCursor]
+    )]
+    #[case::fixed(
+        Viewport::Fixed(Rect::new(0, 0, 80, 24)),
+        &[ClearType::All]
+    )]
+    fn resize_horizontal_shrink_clears_expected_regions(
+        #[case] viewport: Viewport,
+        #[case] expected: &[ClearType],
+    ) {
+        assert_eq!(clears_on_horizontal_shrink(viewport), expected);
     }
 
     #[test]
