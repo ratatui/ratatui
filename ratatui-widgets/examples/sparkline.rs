@@ -46,7 +46,7 @@ fn render(frame: &mut Frame) {
         Constraint::Fill(1),
     ];
     let layout = Layout::vertical(constraints).spacing(1);
-    let [top, first, second, _] = frame.area().layout(&layout);
+    let [top, first, second, third] = frame.area().layout(&layout);
 
     let title = Line::from_iter([
         Span::from("Sparkline Widget").bold(),
@@ -56,6 +56,7 @@ fn render(frame: &mut Frame) {
 
     render_sparkline(frame, first);
     render_sin_wave(frame, second);
+    render_braille_sin_wave(frame, third);
 }
 
 /// Render a sparkline with some sample data.
@@ -87,6 +88,27 @@ pub fn render_sin_wave(frame: &mut Frame, area: Rect) {
         .style(Style::default().magenta().on_black())
         .absent_value_style(Color::Red)
         .absent_value_symbol(symbols::shade::FULL);
+
+    frame.render_widget(sparkline, area);
+}
+
+/// Render a high-resolution Braille sparkline based on the current frame count.
+pub fn render_braille_sin_wave(frame: &mut Frame, area: Rect) {
+    let phase_shift = frame.count() as f64 * 0.15;
+    // Braille has 2 data points per terminal column
+    let data: Vec<u64> = (0..(area.width * 2))
+        .map(|v| {
+            let angle = f64::from(v) * 0.25 + phase_shift;
+            ((angle.sin() * 3.0 + 3.0) * 10.0).round() as u64
+        })
+        .collect();
+
+    let sparkline = Sparkline::default()
+        .data(&data)
+        .max(100)
+        .marker(symbols::Marker::Braille)
+        .direction(RenderDirection::LeftToRight)
+        .style(Color::Green);
 
     frame.render_widget(sparkline, area);
 }

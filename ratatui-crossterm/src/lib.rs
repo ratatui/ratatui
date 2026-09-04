@@ -246,7 +246,10 @@ where
             if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
-            last = Some((Position { x, y }, cell.cell_width()));
+            let width = cell.cell_width();
+            // A VS16 cluster's terminal cursor advance is not reliably predictable.
+            let uncertain_width = width > 1 && cell.symbol().chars().any(|c| c == '\u{FE0F}');
+            last = (!uncertain_width).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -879,12 +882,50 @@ mod tests {
         let updates: Vec<_> = prev.diff(&next).into_iter().collect();
         assert_eq!(
             updates.iter().map(|(x, _, _)| *x).collect::<Vec<_>>(),
-            [0, 1, 2, 3]
+            [1, 0, 2, 3]
         );
         let output = draw_to_string(&updates);
         assert!(output.contains(&MoveTo(1, 0).to_string()));
-        assert!(!output.contains(&MoveTo(2, 0).to_string()));
+        assert!(output.contains(&MoveTo(0, 0).to_string()));
+        assert!(output.contains(&MoveTo(2, 0).to_string()));
         assert!(!output.contains(&MoveTo(3, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_clears_trailing_cell_before_repainting_styled_wide_glyph() {
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(
+            0,
+            0,
+            "한",
+            Style::new()
+                .fg(Color::Red)
+                .add_modifier(Modifier::UNDERLINED),
+        );
+
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "한", Style::default());
+
+        let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        assert_eq!(
+            updates
+                .iter()
+                .map(|(x, y, cell)| (*x, *y, cell.symbol()))
+                .collect::<Vec<_>>(),
+            [(1, 0, " "), (0, 0, "한")]
+        );
+
+        let output = draw_to_string(&updates);
+        let clear = output.find(&MoveTo(1, 0).to_string()).unwrap();
+        let repaint = output.find(&MoveTo(0, 0).to_string()).unwrap();
+        let cleared_cell = output.find(' ').unwrap();
+        let repainted_glyph = output.find('한').unwrap();
+
+        assert!(
+            clear < cleared_cell && cleared_cell < repaint && repaint < repainted_glyph,
+            "trailing cell must be cleared before repainting the glyph: {output:?}"
+        );
     }
 
     #[test]
