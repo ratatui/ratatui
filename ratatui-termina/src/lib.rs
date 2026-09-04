@@ -438,7 +438,9 @@ impl IntoTermina<SgrModifiers> for ModifierDiff {
         if removed.contains(Modifier::ITALIC) {
             modifiers |= SgrModifiers::NO_ITALIC;
         }
-        if removed.contains(Modifier::UNDERLINED) {
+        if (removed & Modifier::ALL_UNDERLINES) != Modifier::empty()
+            && (added & Modifier::ALL_UNDERLINES) == Modifier::empty()
+        {
             modifiers |= SgrModifiers::UNDERLINE_NONE;
         }
         if removed.contains(Modifier::SLOW_BLINK) || removed.contains(Modifier::RAPID_BLINK) {
@@ -465,6 +467,18 @@ impl IntoTermina<SgrModifiers> for ModifierDiff {
         }
         if added.contains(Modifier::UNDERLINED) {
             modifiers |= SgrModifiers::UNDERLINE_SINGLE;
+        }
+        if added.contains(Modifier::UNDER_CURLED) {
+            modifiers |= SgrModifiers::UNDERLINE_CURLY;
+        }
+        if added.contains(Modifier::DOUBLE_UNDERLINED) {
+            modifiers |= SgrModifiers::UNDERLINE_DOUBLE;
+        }
+        if added.contains(Modifier::UNDER_DOTTED) {
+            modifiers |= SgrModifiers::UNDERLINE_DOTTED;
+        }
+        if added.contains(Modifier::UNDER_DASHED) {
+            modifiers |= SgrModifiers::UNDERLINE_DASHED;
         }
         if added.contains(Modifier::SLOW_BLINK) {
             modifiers |= SgrModifiers::BLINK_SLOW;
@@ -500,7 +514,11 @@ impl FromTermina<Underline> for Modifier {
     fn from_termina(value: Underline) -> Self {
         match value {
             Underline::None => Self::empty(),
-            _ => Self::UNDERLINED,
+            Underline::Single => Self::UNDERLINED,
+            Underline::Double => Self::DOUBLE_UNDERLINED,
+            Underline::Curly => Self::UNDER_CURLED,
+            Underline::Dotted => Self::UNDER_DOTTED,
+            Underline::Dashed => Self::UNDER_DASHED,
         }
     }
 }
@@ -870,6 +888,59 @@ mod tests {
     }
 
     #[test]
+    fn converts_underline_modifier_diffs_to_sgr_modifiers() {
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::UNDERLINED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_SINGLE
+        );
+
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::UNDER_CURLED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_CURLY
+        );
+
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::DOUBLE_UNDERLINED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_DOUBLE
+        );
+
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::UNDER_DOTTED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_DOTTED
+        );
+
+        let modifiers = ModifierDiff {
+            from: Modifier::BOLD,
+            to: Modifier::UNDER_DASHED | Modifier::ITALIC,
+        }
+        .into_termina();
+        assert_eq!(
+            modifiers,
+            SgrModifiers::INTENSITY_NORMAL | SgrModifiers::ITALIC | SgrModifiers::UNDERLINE_DASHED
+        );
+    }
+
+    #[test]
     fn converts_termina_modifiers_to_ratatui_modifiers() {
         assert_eq!(Modifier::from_termina(Intensity::Normal), Modifier::empty());
         assert_eq!(Modifier::from_termina(Intensity::Bold), Modifier::BOLD);
@@ -877,6 +948,22 @@ mod tests {
         assert_eq!(
             Modifier::from_termina(Underline::Single),
             Modifier::UNDERLINED
+        );
+        assert_eq!(
+            Modifier::from_termina(Underline::Curly),
+            Modifier::UNDER_CURLED
+        );
+        assert_eq!(
+            Modifier::from_termina(Underline::Double),
+            Modifier::DOUBLE_UNDERLINED
+        );
+        assert_eq!(
+            Modifier::from_termina(Underline::Dotted),
+            Modifier::UNDER_DOTTED
+        );
+        assert_eq!(
+            Modifier::from_termina(Underline::Dashed),
+            Modifier::UNDER_DASHED
         );
         assert_eq!(Modifier::from_termina(Blink::None), Modifier::empty());
         assert_eq!(Modifier::from_termina(Blink::Rapid), Modifier::RAPID_BLINK);

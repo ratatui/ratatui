@@ -102,16 +102,33 @@ bitflags! {
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
     #[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct Modifier: u16 {
-        const BOLD              = 0b0000_0000_0001;
-        const DIM               = 0b0000_0000_0010;
-        const ITALIC            = 0b0000_0000_0100;
-        const UNDERLINED        = 0b0000_0000_1000;
-        const SLOW_BLINK        = 0b0000_0001_0000;
-        const RAPID_BLINK       = 0b0000_0010_0000;
-        const REVERSED          = 0b0000_0100_0000;
-        const HIDDEN            = 0b0000_1000_0000;
-        const CROSSED_OUT       = 0b0001_0000_0000;
+        const BOLD              = 0b0000_0000_0000_0001;
+        const DIM               = 0b0000_0000_0000_0010;
+        const ITALIC            = 0b0000_0000_0000_0100;
+        const UNDERLINED        = 0b0000_0000_0000_1000;
+        const SLOW_BLINK        = 0b0000_0000_0001_0000;
+        const RAPID_BLINK       = 0b0000_0000_0010_0000;
+        const REVERSED          = 0b0000_0000_0100_0000;
+        const HIDDEN            = 0b0000_0000_1000_0000;
+        const CROSSED_OUT       = 0b0000_0001_0000_0000;
+        /// Not supported in termion
+        const UNDER_CURLED      = 0b0000_0010_0000_0000;
+        /// Not supported in termion
+        const DOUBLE_UNDERLINED = 0b0000_0100_0000_0000;
+        /// Not supported in termion
+        const UNDER_DOTTED      = 0b0000_1000_0000_0000;
+        /// Not supported in termion
+        const UNDER_DASHED      = 0b0001_0000_0000_0000;
     }
+}
+
+/// Implement some constant values for `Modifier` for easier usage.
+impl Modifier {
+    pub const ALL_UNDERLINES: Self = Self::UNDERLINED
+        .union(Self::UNDER_CURLED)
+        .union(Self::DOUBLE_UNDERLINED)
+        .union(Self::UNDER_DOTTED)
+        .union(Self::UNDER_DASHED);
 }
 
 /// Implement the `Debug` trait for `Modifier` manually.
@@ -406,8 +423,29 @@ impl Style {
     /// ```
     #[must_use = "`add_modifier` returns the modified style without modifying the original"]
     pub const fn add_modifier(mut self, modifier: Modifier) -> Self {
+        let underline_type = if modifier.contains(Modifier::UNDERLINED) {
+            Modifier::UNDERLINED
+        } else if modifier.contains(Modifier::UNDER_CURLED) {
+            Modifier::UNDER_CURLED
+        } else if modifier.contains(Modifier::DOUBLE_UNDERLINED) {
+            Modifier::DOUBLE_UNDERLINED
+        } else if modifier.contains(Modifier::UNDER_DOTTED) {
+            Modifier::UNDER_DOTTED
+        } else if modifier.contains(Modifier::UNDER_DASHED) {
+            Modifier::UNDER_DASHED
+        } else {
+            Modifier::empty()
+        };
+
+        if !underline_type.is_empty() {
+            self.sub_modifier = self.sub_modifier.union(Modifier::ALL_UNDERLINES);
+        }
+
         self.sub_modifier = self.sub_modifier.difference(modifier);
-        self.add_modifier = self.add_modifier.union(modifier);
+        self.add_modifier = self
+            .add_modifier
+            .union(modifier.difference(Modifier::ALL_UNDERLINES));
+        self.add_modifier = self.add_modifier.union(underline_type);
         self
     }
 
@@ -478,6 +516,8 @@ impl Style {
             self.underline_color = other.underline_color.or(self.underline_color);
         }
 
+        // Assuming the Style have `sub_modifier` for all underlines except for the one in the
+        // `add_modifier`, If an underline exists.
         self.add_modifier.remove(other.sub_modifier);
         self.add_modifier.insert(other.add_modifier);
         self.sub_modifier.remove(other.add_modifier);
@@ -704,6 +744,7 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+    use crate::buffer::Cell;
 
     #[rstest]
     #[case(Style::new(), "Style::new()")]
@@ -757,6 +798,10 @@ mod tests {
             Modifier::DIM,
             Modifier::ITALIC,
             Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED,
             Modifier::SLOW_BLINK,
             Modifier::RAPID_BLINK,
             Modifier::REVERSED,
@@ -786,10 +831,18 @@ mod tests {
     #[case(Modifier::REVERSED, "REVERSED")]
     #[case(Modifier::HIDDEN, "HIDDEN")]
     #[case(Modifier::CROSSED_OUT, "CROSSED_OUT")]
+    #[case(Modifier::UNDER_CURLED, "UNDER_CURLED")]
+    #[case(Modifier::DOUBLE_UNDERLINED, "DOUBLE_UNDERLINED")]
+    #[case(Modifier::UNDER_DOTTED, "UNDER_DOTTED")]
+    #[case(Modifier::UNDER_DASHED, "UNDER_DASHED")]
     #[case(Modifier::BOLD | Modifier::DIM, "BOLD | DIM")]
     #[case(
+        Modifier::ALL_UNDERLINES,
+        "UNDERLINED | UNDER_CURLED | DOUBLE_UNDERLINED | UNDER_DOTTED | UNDER_DASHED"
+    )]
+    #[case(
         Modifier::all(),
-        "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT"
+        "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT | UNDER_CURLED | DOUBLE_UNDERLINED | UNDER_DOTTED | UNDER_DASHED"
     )]
     fn modifier_debug(#[case] modifier: Modifier, #[case] expected: &str) {
         assert_eq!(format!("{modifier:?}"), expected);
@@ -994,6 +1047,48 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .add_modifier(Modifier::ITALIC)
                 .remove_modifier(Modifier::DIM)
+        );
+    }
+
+    #[test]
+    fn set_few_underline_types() {
+        let mut cell = Cell::new("a");
+
+        cell.set_style(
+            Style::new()
+                .add_modifier(Modifier::UNDERLINED)
+                .add_modifier(Modifier::DOUBLE_UNDERLINED)
+                .add_modifier(Modifier::BOLD),
+        );
+        assert_eq!(cell.modifier, Modifier::DOUBLE_UNDERLINED | Modifier::BOLD);
+
+        cell.set_style(Style::new().add_modifier(Modifier::UNDERLINED));
+        assert_eq!(cell.modifier, Modifier::UNDERLINED | Modifier::BOLD);
+
+        cell.set_style(Style::new().add_modifier(Modifier::ITALIC));
+        assert_eq!(
+            cell.modifier,
+            Modifier::UNDERLINED | Modifier::BOLD | Modifier::ITALIC
+        );
+
+        cell.set_style(Style::new().remove_modifier(Modifier::DOUBLE_UNDERLINED));
+        assert_eq!(
+            cell.modifier,
+            Modifier::UNDERLINED | Modifier::BOLD | Modifier::ITALIC
+        );
+
+        cell.set_style(Style::new().remove_modifier(Modifier::UNDERLINED));
+        assert_eq!(cell.modifier, Modifier::BOLD | Modifier::ITALIC);
+
+        cell.set_style(Style::new().remove_modifier(Modifier::BOLD).add_modifier(
+            Modifier::DIM
+                | Modifier::DOUBLE_UNDERLINED
+                | Modifier::UNDER_DOTTED
+                | Modifier::UNDER_DASHED,
+        ));
+        assert_eq!(
+            cell.modifier,
+            Modifier::ITALIC | Modifier::DOUBLE_UNDERLINED | Modifier::DIM
         );
     }
 
