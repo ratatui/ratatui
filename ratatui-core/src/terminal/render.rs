@@ -1037,6 +1037,42 @@ mod tests {
         }
     }
 
+    /// The `RecordingCursorBackend` delegates the `Backend` methods it does not intercept to the
+    /// inner `TestBackend`. Exercise each method so the delegation is verified and covered.
+    #[test]
+    fn recording_backend_delegates_all_backend_methods() {
+        let mut backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+
+        backend
+            .draw([(0, 0, &Cell::new("x")), (1, 1, &Cell::new("y"))].into_iter())
+            .unwrap();
+        backend.append_lines(1).unwrap();
+        backend.hide_cursor().unwrap();
+        backend.show_cursor().unwrap();
+        assert_eq!(
+            backend.get_cursor_position().unwrap(),
+            Position { x: 2, y: 1 },
+            "the simulated cursor sits just past the last drawn cell"
+        );
+        backend
+            .set_cursor_position(Position { x: 2, y: 1 })
+            .unwrap();
+        backend.clear().unwrap();
+        backend.clear_region(ClearType::All).unwrap();
+        assert_eq!(
+            backend.size().unwrap(),
+            crate::layout::Size::new(3, 2),
+            "size is delegated to the inner TestBackend"
+        );
+        backend.window_size().unwrap();
+        backend.flush().unwrap();
+
+        #[cfg(feature = "scrolling-regions")]
+        {
+            backend.scroll_region_up(0..1, 1).unwrap();
+            backend.scroll_region_down(0..1, 1).unwrap();
+        }
+    }
 
     /// Consecutive frames that request an unchanged cursor position must not re-emit `Show` +
     /// `MoveTo` when nothing changed on screen, while a changed position, changed content, or a
