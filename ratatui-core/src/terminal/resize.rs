@@ -64,6 +64,18 @@ impl<B: Backend> Terminal<B> {
         self.clear_viewport()?;
         if let Some(cursor_position) = cursor_to_restore {
             self.backend.set_cursor_position(cursor_position)?;
+            // `resize` moves the physical cursor directly on the backend. Keep the next-frame
+            // `MoveTo` dedup tracking (`last_frame_cursor_position`) accurate so a subsequent
+            // draw at this same position correctly skips a redundant move, while a draw at a
+            // different position still emits one. (`last_known_cursor_pos` is left untouched:
+            // inline viewports use it to anchor the cursor offset within the previous viewport
+            // during resize, which is independent of the physical cursor's absolute position.)
+            self.last_frame_cursor_position = Some(cursor_position);
+        } else {
+            // For fullscreen and fixed viewports there is no restored cursor: the physical cursor
+            // ends wherever the clear left it, which is not tracked. Invalidate the dedup so a
+            // following draw always re-emits `Show` + `MoveTo`.
+            self.last_frame_cursor_position = None;
         }
 
         self.last_known_area = area;
@@ -223,6 +235,25 @@ mod tests {
         assert_eq!(terminal.last_known_area, new_area);
         assert_eq!(terminal.buffers[terminal.current].area, new_area);
         assert_eq!(terminal.buffers[1 - terminal.current].area, new_area);
+    }
+
+    // A fullscreen/fixed resize moves the cursor during the clear without a defined end position,
+    // so the `MoveTo` dedup tracking must be invalidated to force a re-emit on the next draw.
+    #[test]
+    fn resize_fullscreen_invalidates_move_dedup_tracking() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // Simulate a prior draw that left a caret tracked at (1, 1).
+        terminal.last_frame_cursor_position = Some(Position { x: 1, y: 1 });
+
+        terminal.backend_mut().resize(4, 3);
+        terminal.resize(Rect::new(0, 0, 4, 3)).unwrap();
+
+        assert_eq!(
+            terminal.last_frame_cursor_position, None,
+            "a fullscreen resize must invalidate the MoveTo dedup tracking"
+        );
     }
 
     #[test]
@@ -423,6 +454,45 @@ mod tests {
         assert_eq!(
             terminal.backend().cursor_position(),
             Position { x: 0, y: 6 }
+        );
+    }
+
+    // `resize` restores the physical cursor directly on the backend, so the next-frame `MoveTo`
+    // dedup tracking must be synced to that restored position. Otherwise a subsequent draw that
+    // requests the same position would skip the needed `MoveTo`, leaving the caret at the wrong
+    // physical row after the viewport moved.
+    #[test]
+    fn resize_inline_tracks_restored_cursor_for_move_dedup() {
+        let mut backend = TestBackend::new(10, 10);
+        backend
+            .set_cursor_position(Position { x: 0, y: 4 })
+            .unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(4),
+            },
+        )
+        .unwrap();
+
+        terminal.last_known_cursor_pos = Position { x: 0, y: 5 };
+        terminal
+            .backend_mut()
+            .set_cursor_position(Position { x: 0, y: 6 })
+            .unwrap();
+
+        // The inline resize restores the physical cursor to (0, 6); the dedup tracking must
+        // reflect that position so a following draw at (0, 6) can skip a redundant `MoveTo`.
+        terminal.resize(Rect::new(0, 0, 10, 12)).unwrap();
+        assert_eq!(
+            terminal.backend().cursor_position(),
+            Position { x: 0, y: 6 },
+            "resize restores the physical cursor"
+        );
+        assert_eq!(
+            terminal.last_frame_cursor_position,
+            Some(Position { x: 0, y: 6 }),
+            "resize must sync the MoveTo dedup tracking to the restored cursor"
         );
     }
 

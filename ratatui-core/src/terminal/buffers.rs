@@ -91,7 +91,9 @@ impl<B: Backend> Terminal<B> {
     ///
     /// Implementation note: when there are updates, Ratatui records the position of the last
     /// updated cell as the "last known cursor position". Inline viewports use this to preserve the
-    /// cursor's relative position within the viewport across resizes.
+    /// cursor's relative position within the viewport across resizes. It also records whether any
+    /// cells were written (`last_flush_had_updates`), which `apply_buffer_with_cursor` uses to
+    /// decide whether it can safely skip a redundant `MoveTo` on an unchanged caret.
     ///
     /// [`Backend::flush`]: crate::backend::Backend::flush
     pub fn flush(&mut self) -> Result<(), B::Error> {
@@ -105,6 +107,11 @@ impl<B: Backend> Terminal<B> {
                 last_pos = Some(Position { x: *col, y: *row });
             });
         self.backend.draw(updates)?;
+
+        // Track whether any cells were actually written, so the cursor dedup logic can skip a
+        // redundant `MoveTo` only when the diff was empty (and thus the physical cursor did not
+        // move). See `Terminal::last_flush_had_updates`.
+        self.last_flush_had_updates = last_pos.is_some();
 
         if let Some(pos) = last_pos {
             self.last_known_cursor_pos = pos;
@@ -279,6 +286,24 @@ mod tests {
         terminal.flush().unwrap();
 
         assert_eq!(terminal.last_known_cursor_pos, Position { x: 2, y: 1 });
+    }
+
+    #[test]
+    fn flush_tracks_whether_it_wrote_cells() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // A flush with nothing to draw (empty buffers) reports no update.
+        terminal.flush().unwrap();
+        assert!(!terminal.last_flush_had_updates);
+
+        // A flush that draws a changed cell reports an update.
+        {
+            let frame = terminal.get_frame();
+            frame.buffer[(1, 0)].set_symbol("x");
+        }
+        terminal.flush().unwrap();
+        assert!(terminal.last_flush_had_updates);
     }
 
     #[test]
