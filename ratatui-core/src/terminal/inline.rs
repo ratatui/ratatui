@@ -522,6 +522,38 @@ mod tests {
         assert_eq!(terminal.backend().scrollback(), &scrollback);
     }
 
+    // `insert_before` is a no-op for a non-inline viewport, so it must neither move the cursor
+    // nor invalidate the dedup tracking. This test lives in the feature-independent `tests`
+    // module so it runs under both the scrolling-regions and the fallback build, covering the
+    // non-inline dispatch arm (`_ => Ok(())`) in every configuration.
+    #[test]
+    fn insert_before_is_noop_for_non_inline_and_preserves_dedup() {
+        let mut terminal = Terminal::new(TestBackend::new(3, 2)).unwrap();
+
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.last_frame_cursor_position,
+            Some(Position { x: 2, y: 1 }),
+            "a draw with a caret records the dedup position"
+        );
+
+        terminal
+            .insert_before(1, |buf| {
+                buf.set_string(0, 0, "aaa", Style::default());
+            })
+            .unwrap();
+
+        assert_eq!(
+            terminal.last_frame_cursor_position,
+            Some(Position { x: 2, y: 1 }),
+            "a no-op insert_before on a non-inline viewport must not invalidate the tracking"
+        );
+    }
+
     #[cfg(not(feature = "scrolling-regions"))]
     mod no_scrolling_regions {
         use super::*;
