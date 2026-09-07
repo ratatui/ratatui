@@ -101,7 +101,8 @@ const DEFAULT_STATE_BUFFER: [&str; 5] = [
 const DEFAULT_STATE_REPR: &str = r#"{
   "list": {
     "offset": 0,
-    "selected": null
+    "selected": null,
+    "item_count": 10
   },
   "table": {
     "offset": 0,
@@ -139,7 +140,8 @@ const SELECTED_STATE_BUFFER: [&str; 5] = [
 const SELECTED_STATE_REPR: &str = r#"{
   "list": {
     "offset": 0,
-    "selected": 1
+    "selected": 1,
+    "item_count": 10
   },
   "table": {
     "offset": 0,
@@ -179,7 +181,8 @@ const SCROLLED_STATE_BUFFER: [&str; 5] = [
 const SCROLLED_STATE_REPR: &str = r#"{
   "list": {
     "offset": 4,
-    "selected": 8
+    "selected": 8,
+    "item_count": 10
   },
   "table": {
     "offset": 4,
