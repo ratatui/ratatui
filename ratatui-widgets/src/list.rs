@@ -7,11 +7,12 @@ use ratatui_core::style::{Style, Styled};
 use ratatui_core::text::Line;
 use strum::{Display, EnumString};
 
+pub use self::highlight_spacing::ListHighlightSpacing;
 pub use self::item::ListItem;
 pub use self::state::ListState;
 use crate::block::Block;
-use crate::table::HighlightSpacing;
 
+mod highlight_spacing;
 mod item;
 mod rendering;
 mod state;
@@ -122,7 +123,7 @@ pub struct List<'a> {
     /// Whether to repeat the highlight symbol for each line of the selected item
     pub(crate) repeat_highlight_symbol: bool,
     /// Decides when to allocate spacing for the selection symbol
-    pub(crate) highlight_spacing: HighlightSpacing,
+    pub(crate) highlight_spacing: ListHighlightSpacing,
     /// How many items to try to keep visible before and after the selected item
     pub(crate) scroll_padding: usize,
 }
@@ -348,28 +349,28 @@ impl<'a> List<'a> {
     /// and is used to shift the list when an item is selected. This method allows you to configure
     /// when this spacing is allocated.
     ///
-    /// - [`HighlightSpacing::Always`] will always allocate the spacing, regardless of whether an
-    ///   item is selected or not. This means that the table will never change size, regardless of
-    ///   if an item is selected or not.
-    /// - [`HighlightSpacing::WhenSelected`] will only allocate the spacing if an item is selected.
-    ///   This means that the table will shift when an item is selected. This is the default setting
-    ///   for backwards compatibility, but it is recommended to use `HighlightSpacing::Always` for a
-    ///   better user experience.
-    /// - [`HighlightSpacing::Never`] will never allocate the spacing, regardless of whether an item
-    ///   is selected or not. This means that the highlight symbol will never be drawn.
+    /// - [`ListHighlightSpacing::Always`] will always allocate the spacing, regardless of whether
+    ///   an item is selected or not. This means that the table will never change size, regardless
+    ///   of if an item is selected or not.
+    /// - [`ListHighlightSpacing::WhenSelected`] will only allocate the spacing if an item is
+    ///   selected. This means that the table will shift when an item is selected. This is the
+    ///   default setting for backwards compatibility, but it is recommended to use
+    ///   `ListHighlightSpacing::Always` for a better user experience.
+    /// - [`ListHighlightSpacing::Never`] will never allocate the spacing, regardless of whether an
+    ///   item is selected or not. This means that the highlight symbol will never be drawn.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// # Examples
     ///
     /// ```rust
-    /// use ratatui::widgets::{HighlightSpacing, List};
+    /// use ratatui::widgets::{List, ListHighlightSpacing};
     ///
     /// let items = ["Item 1"];
-    /// let list = List::new(items).highlight_spacing(HighlightSpacing::Always);
+    /// let list = List::new(items).highlight_spacing(ListHighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
+    pub const fn highlight_spacing(mut self, value: ListHighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }
@@ -503,7 +504,7 @@ mod tests {
         let text = Text::from("Item 1");
         let list = List::new([ListItem::new(text)])
             .highlight_symbol(">>")
-            .highlight_spacing(HighlightSpacing::Always);
+            .highlight_spacing(ListHighlightSpacing::Always);
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
 
         list.render(buffer.area, &mut buffer, &mut ListState::default());
@@ -516,7 +517,7 @@ mod tests {
         let text = Text::from("Item 1").bold();
         let list = List::new([ListItem::new(text)])
             .highlight_symbol(">>")
-            .highlight_spacing(HighlightSpacing::Always);
+            .highlight_spacing(ListHighlightSpacing::Always);
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
 
         list.render(buffer.area, &mut buffer, &mut ListState::default());
@@ -535,7 +536,7 @@ mod tests {
         let item = ListItem::new(text).style(Modifier::ITALIC);
         let list = List::new([item])
             .highlight_symbol(">>")
-            .highlight_spacing(HighlightSpacing::Always);
+            .highlight_spacing(ListHighlightSpacing::Always);
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
 
         list.render(buffer.area, &mut buffer, &mut ListState::default());
@@ -554,7 +555,7 @@ mod tests {
         let item = ListItem::new(text).style(Modifier::ITALIC);
         let list = List::new([item])
             .highlight_symbol(">>")
-            .highlight_spacing(HighlightSpacing::Always);
+            .highlight_spacing(ListHighlightSpacing::Always);
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
 
         list.render(buffer.area, &mut buffer, &mut ListState::default());
