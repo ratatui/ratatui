@@ -119,6 +119,7 @@ impl App {
                 KeyCode::Char('-') => self.decrement_spacing(),
                 KeyCode::Char('x') => self.delete_block(),
                 KeyCode::Char('a') => self.insert_block(),
+                KeyCode::Char('s') => self.load_single_length_example(),
                 KeyCode::Char('k') | KeyCode::Up => self.increment_value(),
                 KeyCode::Char('j') | KeyCode::Down => self.decrement_value(),
                 KeyCode::Char('h') | KeyCode::Left => self.prev_block(),
@@ -193,6 +194,11 @@ impl App {
         let constraint = Constraint::Length(self.value);
         self.constraints.insert(index, constraint);
         self.selected_index = index;
+    }
+
+    fn load_single_length_example(&mut self) {
+        self.constraints = vec![Constraint::Length(self.value)];
+        self.selected_index = 0;
     }
 
     const fn increment_spacing(&mut self) {
@@ -271,8 +277,7 @@ impl App {
     }
 
     fn instructions() -> impl Widget {
-        let text =
-            "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q/Esc: quit, +/-: spacing";
+        let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, s: single, x: delete, q/Esc: quit, +/-: spacing";
         Paragraph::new(text)
             .fg(Self::TEXT_COLOR)
             .centered()
