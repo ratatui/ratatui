@@ -82,11 +82,9 @@ impl<'a> Axis<'a> {
     /// - For the X axis, the labels are displayed left to right.
     /// - For the Y axis, the labels are displayed bottom to top.
     ///
-    /// Currently, you need to give at least two labels for them to be rendered. Also, giving more
-    /// than 3 labels is currently broken and the middle labels won't be in the correct position,
-    /// see [issue 334].
-    ///
-    /// [issue 334]: https://github.com/ratatui/ratatui/issues/334
+    /// Currently, you need to give at least two labels for them to be rendered. The first and last
+    /// labels are drawn at the two ends of the axis, and any labels in between are spaced evenly
+    /// along it.
     ///
     /// `labels` is a vector of any type that can be converted into a [`Line`] (e.g. `&str`,
     /// `String`, `&Line`, `Span`, ...). This allows you to style the labels using the methods
@@ -899,7 +897,7 @@ impl<'a> Chart<'a> {
 
         let width_between_ticks = graph_area.width / labels_len;
 
-        let label_area = self.first_x_label_area(
+        let first_label_area = self.first_x_label_area(
             y,
             labels.first().unwrap().width() as u16,
             width_between_ticks,
@@ -913,21 +911,66 @@ impl<'a> Chart<'a> {
             Alignment::Right => Alignment::Left,
         };
 
-        Self::render_label(buf, labels.first().unwrap(), label_area, label_alignment);
+        Self::render_label(
+            buf,
+            labels.first().unwrap(),
+            first_label_area,
+            label_alignment,
+        );
+
+        // The last label is aligned Right to sit at the edge of the graph area.
+        let last_label_area = Rect::new(
+            graph_area.right() - width_between_ticks,
+            y,
+            width_between_ticks,
+            1,
+        );
+
+        // Leave a blank column against each endpoint label.
+        let min_x = first_label_area.right().saturating_add(1);
+        let max_x = last_label_area.x.saturating_sub(2);
 
         for (i, label) in labels[1..labels.len() - 1].iter().enumerate() {
-            // We add 1 to x (and width-1 below) to leave at least one space before each
-            // intermediate labels
-            let x = graph_area.left() + (i + 1) as u16 * width_between_ticks + 1;
-            let label_area = Rect::new(x, y, width_between_ticks.saturating_sub(1), 1);
+            let index = i as u16 + 1;
+            let tick = Self::x_label_tick(graph_area, index, labels_len);
+            if tick < min_x || tick > max_x {
+                continue;
+            }
+            // Two labels that each stay `(distance - 2) / 2` short of a shared tick distance
+            // cannot meet, which keeps a blank column between neighbours too when space permits.
+            // Growing symmetrically keeps the label centered on its tick, and one wider than the
+            // room available is truncated rather than drawn over a neighbour.
+            let previous = Self::x_label_tick(graph_area, index - 1, labels_len);
+            let next = Self::x_label_tick(graph_area, index + 1, labels_len);
+            let half_width = (tick - min_x)
+                .min(max_x - tick)
+                .min(tick.saturating_sub(previous).saturating_sub(2) / 2)
+                .min(next.saturating_sub(tick).saturating_sub(2) / 2);
+            let label_area = Rect::new(tick - half_width, y, half_width * 2 + 1, 1);
 
             Self::render_label(buf, label, label_area, Alignment::Center);
         }
 
-        let x = graph_area.right() - width_between_ticks;
-        let label_area = Rect::new(x, y, width_between_ticks, 1);
-        // The last label should be aligned Right to be at the edge of the graph area
-        Self::render_label(buf, labels.last().unwrap(), label_area, Alignment::Right);
+        Self::render_label(
+            buf,
+            labels.last().unwrap(),
+            last_label_area,
+            Alignment::Right,
+        );
+    }
+
+    /// The column of the tick marked by the x axis label at `index`.
+    ///
+    /// The axis is endpoint-inclusive, so `label_count` labels divide it into `label_count - 1`
+    /// intervals, as [`Chart::render_y_labels`] divides the y axis. Ticks then fall on the same
+    /// columns as the plotted data. Each is derived from `index` rather than accumulated so the
+    /// rounding error does not compound along the axis.
+    fn x_label_tick(graph_area: Rect, index: u16, label_count: u16) -> u16 {
+        let interval_count = u32::from(label_count.saturating_sub(1)).max(1);
+        let axis_width = u32::from(graph_area.width.saturating_sub(1));
+        // `axis_width * index` cannot overflow: both are at most `u16::MAX`.
+        let offset = (axis_width * u32::from(index) / interval_count) as u16;
+        graph_area.left().saturating_add(offset)
     }
 
     fn first_x_label_area(
@@ -1195,7 +1238,7 @@ impl Styled for Chart<'_> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::ToString;
+    use alloc::string::{String, ToString};
     use alloc::{format, vec};
 
     use ratatui_core::style::{Modifier, Stylize};
@@ -1714,5 +1757,211 @@ mod tests {
             .y_axis(Axis::default().bounds([0.0, 1.0]));
         // This should not panic, even if the buffer has zero size.
         chart.render(buffer.area, &mut buffer);
+    }
+
+    /// Builds a chart whose only visible content is the row of x axis labels.
+    fn x_label_chart(labels: &[&str]) -> Chart<'static> {
+        let labels: Vec<Line<'static>> = labels
+            .iter()
+            .map(|label| Line::from(label.to_string()))
+            .collect();
+        Chart::new(vec![])
+            .x_axis(Axis::default().bounds([0.0, 1.0]).labels(labels))
+            .y_axis(Axis::default().bounds([0.0, 1.0]))
+    }
+
+    /// The x label row, rendered 30 columns wide to match the expectations below.
+    fn x_label_row(labels: &[&str]) -> String {
+        let area = Rect::new(0, 0, 30, 2);
+        let mut buffer = Buffer::empty(area);
+        x_label_chart(labels).render(area, &mut buffer);
+        (0..area.width).map(|x| buffer[(x, 1)].symbol()).collect()
+    }
+
+    /// The columns spanned by the label whose characters all start with `symbol`.
+    fn rendered_span(buffer: &Buffer, row: u16, symbol: char) -> Option<(u16, u16)> {
+        let columns: Vec<u16> = (0..buffer.area.width)
+            .filter(|&x| buffer[(x, row)].symbol().starts_with(symbol))
+            .collect();
+        Some((*columns.first()?, *columns.last()?))
+    }
+
+    /// Expected columns are worked out by hand from the documented formula rather than taken from
+    /// the implementation: for a graph area at column 1, 29 wide, that is `1 + 28 * index / gaps`.
+    #[rstest]
+    #[case::two(2, &[1, 29])]
+    #[case::four(4, &[1, 10, 19, 29])]
+    #[case::six(6, &[1, 6, 12, 17, 23, 29])]
+    fn x_label_ticks_divide_the_axis_evenly(#[case] label_count: u16, #[case] expected: &[u16]) {
+        let graph_area = Rect::new(1, 0, 29, 1);
+        let ticks: Vec<u16> = (0..label_count)
+            .map(|index| Chart::x_label_tick(graph_area, index, label_count))
+            .collect();
+        assert_eq!(ticks, expected);
+    }
+
+    /// Expected rows are written out by hand rather than derived from [`Chart::x_label_tick`], so
+    /// a matching pair of mistakes in the helper and the renderer still fails here.
+    ///
+    /// Labels used to bunch towards the left, leaving a wide gap before the last one. See
+    /// <https://github.com/ratatui/ratatui/issues/334>.
+    #[rstest]
+    #[case::two_unchanged(&["0", "1"], "0                            1")]
+    #[case::three(&["0", "1", "2"], "0              1             2")]
+    #[case::six(&["0", "1", "2", "3", "4", "5"], "0     1     2    3     4     5")]
+    fn x_labels_are_evenly_spaced(#[case] labels: &[&str], #[case] expected: &str) {
+        assert_eq!(x_label_row(labels), expected);
+    }
+
+    /// Multi-character labels are centered on their tick, not aligned to one side of it.
+    #[test]
+    fn x_labels_are_centered_on_their_ticks() {
+        let labels = ["000", "111", "222", "333"];
+        let area = Rect::new(0, 0, 30, 2);
+        let chart = x_label_chart(&labels);
+        let graph_area = chart.layout(area).unwrap().graph_area;
+        let mut buffer = Buffer::empty(area);
+        chart.render(area, &mut buffer);
+
+        for index in 1..labels.len() as u16 - 1 {
+            let symbol = labels[index as usize].chars().next().expect("empty label");
+            let (first, last) = rendered_span(&buffer, 1, symbol)
+                .unwrap_or_else(|| panic!("label {index} was not rendered"));
+            let tick = Chart::x_label_tick(graph_area, index, labels.len() as u16);
+            assert_eq!(
+                first.midpoint(last),
+                tick,
+                "label {index} spans {first}..={last}, which is not centered on tick {tick}"
+            );
+        }
+    }
+
+    /// Points at the start, middle and end of the bounds are drawn under the labels that name
+    /// them, which is what makes these the right columns.
+    #[test]
+    fn x_labels_align_with_plotted_data() {
+        let data = [(0.0, 0.0), (0.5, 0.0), (1.0, 0.0)];
+        let chart = Chart::new(vec![
+            Dataset::default()
+                .data(&data)
+                .marker(symbols::Marker::Block),
+        ])
+        .x_axis(
+            Axis::default()
+                .bounds([0.0, 1.0])
+                .labels(vec!["0", "1", "2"]),
+        )
+        .y_axis(Axis::default().bounds([0.0, 1.0]));
+        let area = Rect::new(0, 0, 30, 3);
+        let mut buffer = Buffer::empty(area);
+        chart.render(area, &mut buffer);
+
+        let data_columns: Vec<u16> = (0..area.width)
+            .filter(|&x| buffer[(x, 0)].symbol() == symbols::block::FULL)
+            .collect();
+        let middle_label = rendered_span(&buffer, 2, '1').expect("middle label was not rendered");
+        assert_eq!(data_columns.len(), 3, "expected three plotted points");
+        assert_eq!(
+            middle_label.0, data_columns[1],
+            "the middle label should sit on the same column as the middle data point"
+        );
+    }
+
+    #[rstest]
+    #[case::four(4)]
+    fn x_labels_in_narrow_areas(#[case] width: u16) {
+        let area = Rect::new(0, 0, width, 2);
+        let mut buffer = Buffer::empty(area);
+        // This should not panic, however little room there is for the labels.
+        x_label_chart(&["0", "1", "2", "3", "4", "5"]).render(area, &mut buffer);
+    }
+
+    /// A label wider than the room between its neighbours is truncated, not drawn over them.
+    ///
+    /// The middle label is centered on column 15 and truncated to the nine columns that fit
+    /// between the endpoint labels, leaving a blank column against each.
+    #[rstest]
+    #[case::wide_middle(
+        &["0", "BBBBBBBBBBBBB", "CCCCCCCCC"],
+        "0          BBBBBBBBB CCCCCCCCC"
+    )]
+    #[case::wide_first(
+        &["AAAAAAAAA", "BBBBBBBBBBBBB", "2"],
+        "AAAAAAAAA        BBBBB       2"
+    )]
+    fn wide_x_labels_do_not_overwrite_their_neighbours(
+        #[case] labels: &[&str],
+        #[case] expected: &str,
+    ) {
+        assert_eq!(x_label_row(labels), expected);
+    }
+
+    /// Neighbouring labels keep a blank column between them, and neither text nor style bleeds
+    /// across.
+    ///
+    /// The intermediate labels are longer than the room available, so each fills its area exactly.
+    /// The rendered spans are therefore the areas themselves, and a gap between spans is the
+    /// `left_area.right() < right_area.x` the endpoint bounds alone do not guarantee.
+    #[test]
+    fn adjacent_x_labels_do_not_touch() {
+        let labels = vec![
+            Line::from("0"),
+            Line::from("AAAAAAAAAAAA").red(),
+            Line::from("BBBBBBBBBBBB").green(),
+            Line::from("CCCCCCCCCCCC").blue(),
+            Line::from("DDDDDDDDDDDD").magenta(),
+            Line::from("5"),
+        ];
+        let label_count = labels.len() as u16;
+        let area = Rect::new(0, 0, 40, 2);
+        let chart = Chart::new(vec![])
+            .x_axis(Axis::default().bounds([0.0, 1.0]).labels(labels))
+            .y_axis(Axis::default().bounds([0.0, 1.0]));
+        let graph_area = chart.layout(area).unwrap().graph_area;
+        let mut buffer = Buffer::empty(area);
+        chart.render(area, &mut buffer);
+
+        let expected = [
+            ('A', Color::Red),
+            ('B', Color::Green),
+            ('C', Color::Blue),
+            ('D', Color::Magenta),
+        ];
+        let mut spans = Vec::new();
+        for (i, (symbol, color)) in expected.iter().enumerate() {
+            let index = i as u16 + 1;
+            let (first, last) = rendered_span(&buffer, 1, *symbol)
+                .unwrap_or_else(|| panic!("label {index} was not rendered"));
+            let tick = Chart::x_label_tick(graph_area, index, label_count);
+            assert_eq!(
+                first.midpoint(last),
+                tick,
+                "label {index} spans {first}..={last}, which is not centered on tick {tick}"
+            );
+            for x in first..=last {
+                assert_eq!(
+                    buffer[(x, 1)].fg,
+                    *color,
+                    "column {x} of label {index} carries a neighbour's style"
+                );
+            }
+            spans.push((first, last));
+        }
+
+        for pair in spans.windows(2) {
+            let left_end = pair[0].1;
+            let right_start = pair[1].0;
+            assert!(
+                left_end + 1 < right_start,
+                "labels touch: one ends at {left_end}, the next starts at {right_start}"
+            );
+            assert_eq!(buffer[(left_end + 1, 1)].symbol(), " ");
+        }
+
+        // The endpoint labels are untouched, and are separated from the intermediates too.
+        assert_eq!(buffer[(0, 1)].symbol(), "0");
+        assert_eq!(buffer[(area.width - 1, 1)].symbol(), "5");
+        assert_eq!(buffer[(spans[0].0 - 1, 1)].symbol(), " ");
+        assert_eq!(buffer[(spans[3].1 + 1, 1)].symbol(), " ");
     }
 }
