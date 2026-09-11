@@ -4,9 +4,11 @@
 /// addition, it also accepts an expression for the first argument, which will be converted to a
 /// string using the [`format!`] macro.
 ///
-/// If semicolon follows the first argument, then the first argument is a [`Style`] and a styled
-/// [`Span`] will be created. Otherwise, the [`Span`] will be created as a raw span (i.e. with style
-/// set to `Style::default()`).
+/// An optional `style =>` prefix sets the style of the span. The style can be anything convertible
+/// to [`Style`]. Without the prefix, the span has `Style::default()`. The content after `=>` uses
+/// the same formatting or expression syntax as an unstyled invocation.
+///
+/// The semicolon form `span!(style; content)` is deprecated. Use `span!(style => content)` instead.
 ///
 /// # Examples
 ///
@@ -33,34 +35,34 @@
 /// let style = Style::new().green();
 ///
 /// // styled expression
-/// let span = span!(style; content);
+/// let span = span!(style => content);
 ///
 /// // styled format string
-/// let span = span!(style; "test content");
-/// let span = span!(style; "test {}", "content");
-/// let span = span!(style; "{} {}", "test", "content");
-/// let span = span!(style; "test {content}");
-/// let span = span!(style; "test {content}", content = "content");
+/// let span = span!(style => "test content");
+/// let span = span!(style => "test {}", "content");
+/// let span = span!(style => "{} {}", "test", "content");
+/// let span = span!(style => "test {content}");
+/// let span = span!(style => "test {content}", content = "content");
 ///
 /// // accepts any type that is convertible to Style
-/// let span = span!(Style::new().green(); "test {content}");
-/// let span = span!(Color::Green; "test {content}");
-/// let span = span!(Modifier::BOLD; "test {content}");
+/// let span = span!(Style::new().green() => "test {content}");
+/// let span = span!(Color::Green => "test {content}");
+/// let span = span!(Modifier::BOLD => "test {content}");
 ///
 /// // with format specifiers
-/// let span = span!(style; "test {:4}", 123);
-/// let span = span!(style; "test {:04}", 123);
+/// let span = span!(style => "test {:4}", 123);
+/// let span = span!(style => "test {:04}", 123);
 /// ```
 ///
 /// # Note
 ///
 /// The first parameter must be a formatting specifier followed by a comma OR anything that can be
-/// converted into a [`Style`] followed by a semicolon.
+/// converted into a [`Style`] followed by `=>`.
 ///
 /// For example, the following will fail to compile:
 ///
 /// ```compile_fail
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::style::Modifier;
 /// # use ratatui_macros::span;
 /// let span = span!(Modifier::BOLD, "hello world");
 /// ```
@@ -70,13 +72,13 @@
 /// ```rust
 /// # use ratatui_core::style::{Modifier};
 /// # use ratatui_macros::span;
-/// let span = span!(Modifier::BOLD; "hello world");
+/// let span = span!(Modifier::BOLD => "hello world");
 /// ```
 ///
 /// The following will fail to compile:
 ///
 /// ```compile_fail
-/// # use ratatui::prelude::*;
+/// # use ratatui_core::style::Modifier;
 /// # use ratatui_macros::span;
 /// let span = span!("hello", "world");
 /// ```
@@ -94,6 +96,10 @@
 /// [`format!`]: alloc::format!
 #[macro_export]
 macro_rules! span {
+    ($style:expr => $($content:tt)*) => {{
+        let style = $style;
+        $crate::span![$($content)*].style(style)
+    }};
     ($string:literal) => {
         $crate::ratatui_core::text::Span::raw($crate::format!($string))
     };
@@ -104,17 +110,35 @@ macro_rules! span {
         $crate::ratatui_core::text::Span::raw($crate::format!("{}", $expr))
     };
     ($style:expr, $($arg:tt)*) => {
-        compile_error!("first parameter must be a formatting specifier followed by a comma OR a `Style` followed by a semicolon")
+        compile_error!("first parameter must be a formatting specifier followed by a comma OR a `Style` followed by `=>`")
     };
-    ($style:expr; $string:literal) => {
+    ($style:expr; $string:literal) => {{
+        #[deprecated(
+            note = "`span!(style; content)` is deprecated; replace the semicolon \
+                    after the style with `=>`: `span!(style => content)`"
+        )]
+        const SEMICOLON_STYLE: () = ();
+        let _ = SEMICOLON_STYLE;
         $crate::ratatui_core::text::Span::styled($crate::format!($string), $style)
-    };
-    ($style:expr; $string:literal, $($arg:tt)*) => {
+    }};
+    ($style:expr; $string:literal, $($arg:tt)*) => {{
+        #[deprecated(
+            note = "`span!(style; content)` is deprecated; replace the semicolon \
+                    after the style with `=>`: `span!(style => content)`"
+        )]
+        const SEMICOLON_STYLE: () = ();
+        let _ = SEMICOLON_STYLE;
         $crate::ratatui_core::text::Span::styled($crate::format!($string, $($arg)*), $style)
-    };
-    ($style:expr; $expr:expr) => {
+    }};
+    ($style:expr; $expr:expr) => {{
+        #[deprecated(
+            note = "`span!(style; content)` is deprecated; replace the semicolon \
+                    after the style with `=>`: `span!(style => content)`"
+        )]
+        const SEMICOLON_STYLE: () = ();
+        let _ = SEMICOLON_STYLE;
         $crate::ratatui_core::text::Span::styled($crate::format!("{}", $expr), $style)
-    };
+    }};
 }
 
 #[cfg(test)]
@@ -180,6 +204,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn styled() {
         const STYLE: Style = Style::new().fg(Color::Green);
 
