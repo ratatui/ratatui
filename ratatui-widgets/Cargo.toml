@@ -38,6 +38,9 @@ all-widgets = ["calendar"]
 ## enables the [`calendar`] widget module and adds a dependency on [`time`].
 calendar = ["dep:time"]
 
+## enables portable-atomic integration for targets that don't support atomic types.
+portable-atomic = ["dep:portable-atomic-util", "portable-atomic-util/alloc"]
+
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info"]
 
@@ -55,6 +58,7 @@ indoc.workspace = true
 instability.workspace = true
 itertools.workspace = true
 line-clipping.workspace = true
+portable-atomic-util = { workspace = true, optional = true }
 ratatui-core = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
