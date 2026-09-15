@@ -15,6 +15,8 @@ impl<B: Backend> Terminal<B> {
     pub fn hide_cursor(&mut self) -> Result<(), B::Error> {
         self.backend.hide_cursor()?;
         self.hidden_cursor = true;
+        // The cursor is no longer visible, so the last-frame dedup position is stale.
+        self.last_frame_cursor_position = None;
         Ok(())
     }
 
@@ -81,6 +83,9 @@ impl<B: Backend> Terminal<B> {
         let position = position.into();
         self.backend.set_cursor_position(position)?;
         self.last_known_cursor_pos = position;
+        // Keep the last-frame dedup tracking accurate so the next draw doesn't re-emit a `MoveTo`
+        // for an unchanged position.
+        self.last_frame_cursor_position = Some(position);
         Ok(())
     }
 }
@@ -156,5 +161,22 @@ mod tests {
         terminal
             .backend_mut()
             .assert_cursor_position(Position { x: 4, y: 1 });
+    }
+
+    #[test]
+    fn cursor_position_changes_keep_last_frame_tracking_accurate() {
+        let backend = TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // set_cursor_position records the new position in the last-frame dedup tracking.
+        terminal.set_cursor_position((3, 4)).unwrap();
+        assert_eq!(
+            terminal.last_frame_cursor_position,
+            Some(Position { x: 3, y: 4 })
+        );
+
+        // hide_cursor invalidates it so a later draw cannot assume a stale position.
+        terminal.hide_cursor().unwrap();
+        assert_eq!(terminal.last_frame_cursor_position, None);
     }
 }

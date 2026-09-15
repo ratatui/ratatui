@@ -112,6 +112,14 @@ impl<B: Backend> Terminal<B> {
     where
         F: FnOnce(&mut Buffer),
     {
+        // Insertions only run for inline viewports with a non-empty display. For every other
+        // case `insert_before` is a no-op, so the physical cursor does not move and the
+        // next-frame `MoveTo` dedup tracking must not be invalidated.
+        let did_insert = matches!(
+            self.viewport,
+            Viewport::Inline(_) if self.last_known_area.height > 0
+        );
+
         match self.viewport {
             Viewport::Inline(_) if self.last_known_area.height == 0 => Ok(()),
             #[cfg(feature = "scrolling-regions")]
@@ -119,7 +127,18 @@ impl<B: Backend> Terminal<B> {
             #[cfg(not(feature = "scrolling-regions"))]
             Viewport::Inline(_) => self.insert_before_no_scrolling_regions(height, draw_fn),
             _ => Ok(()),
+        }?;
+
+        if did_insert {
+            // `insert_before` draws lines and scrolls the terminal directly on the backend, which
+            // moves the physical cursor outside the `apply_buffer_with_cursor` flow. Invalidate
+            // the next-frame `MoveTo` dedup tracking so a following `draw` always re-emits `Show`
+            // + `MoveTo` to reposition the caret, even if it requests an otherwise unchanged
+            // position.
+            self.last_frame_cursor_position = None;
         }
+
+        Ok(())
     }
 
     /// Implement `Self::insert_before` using standard backend capabilities.
@@ -427,11 +446,174 @@ pub(crate) fn compute_inline_size<B: Backend>(
 
 #[cfg(test)]
 mod tests {
-    use crate::backend::{Backend, TestBackend};
+    use alloc::format;
+    use core::fmt;
+
+    use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
+    use crate::buffer::Cell;
     use crate::layout::{Position, Rect, Size};
     use crate::style::Style;
     use crate::terminal::inline::compute_inline_size;
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
+
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    struct TestError(&'static str);
+
+    impl fmt::Display for TestError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    impl core::error::Error for TestError {}
+
+    /// A [`TestBackend`] wrapper with a fallible error type that fails `draw` when
+    /// [`Self::fail_draw`] is set. Used to exercise `insert_before`'s error path (the `?` on
+    /// the dispatch).
+    struct FailingBackend {
+        inner: TestBackend,
+        fail_draw: bool,
+    }
+
+    impl FailingBackend {
+        fn new(inner: TestBackend) -> Self {
+            Self {
+                inner,
+                fail_draw: false,
+            }
+        }
+    }
+
+    impl Backend for FailingBackend {
+        type Error = TestError;
+
+        fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+        where
+            I: Iterator<Item = (u16, u16, &'a Cell)>,
+        {
+            if self.fail_draw {
+                return Err(TestError("draw failed"));
+            }
+            self.inner.draw(content).map_err(|err| match err {})
+        }
+
+        fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+            self.inner.hide_cursor().map_err(|err| match err {})
+        }
+
+        fn show_cursor(&mut self) -> Result<(), Self::Error> {
+            self.inner.show_cursor().map_err(|err| match err {})
+        }
+
+        fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+            self.inner.get_cursor_position().map_err(|err| match err {})
+        }
+
+        fn set_cursor_position<P: Into<Position>>(
+            &mut self,
+            position: P,
+        ) -> Result<(), Self::Error> {
+            self.inner
+                .set_cursor_position(position)
+                .map_err(|err| match err {})
+        }
+
+        fn clear(&mut self) -> Result<(), Self::Error> {
+            self.inner.clear().map_err(|err| match err {})
+        }
+
+        fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+            self.inner
+                .clear_region(clear_type)
+                .map_err(|err| match err {})
+        }
+
+        fn size(&self) -> Result<crate::layout::Size, Self::Error> {
+            self.inner.size().map_err(|err| match err {})
+        }
+
+        fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+            self.inner.window_size().map_err(|err| match err {})
+        }
+
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.inner.flush().map_err(|err| match err {})
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_up(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.inner
+                .scroll_region_up(region, line_count)
+                .map_err(|err| match err {})
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_down(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.inner
+                .scroll_region_down(region, line_count)
+                .map_err(|err| match err {})
+        }
+    }
+
+    #[test]
+    fn insert_before_propagates_backend_error() {
+        let mut terminal = Terminal::with_options(
+            FailingBackend::new(TestBackend::new(10, 10)),
+            TerminalOptions {
+                viewport: Viewport::Inline(4),
+            },
+        )
+        .unwrap();
+
+        // Exercise the delegating methods so they stay covered: a full draw touches size,
+        // set_cursor_position, show_cursor, flush, and get_cursor_position on setup.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 3, y: 7 });
+            })
+            .unwrap();
+        terminal.hide_cursor().unwrap();
+
+        // Fail `draw` so `insert_before`'s internal draw propagates through the `?`.
+        terminal.backend_mut().fail_draw = true;
+        let result = terminal.insert_before(1, |_buf| ());
+        assert_eq!(result, Err(TestError("draw failed")));
+    }
+
+    // `FailingBackend` delegates every `Backend` method to its inner `TestBackend`. Exercise each
+    // delegation directly so the wrapper stays covered even though the error-path test above only
+    // reaches the subset of methods that `insert_before` happens to call.
+    #[test]
+    fn failing_backend_delegates_all_backend_methods() {
+        let mut backend = FailingBackend::new(TestBackend::new(10, 10));
+
+        // `clear_region`, `window_size` and the scroll-region methods are not touched by the
+        // `insert_before` error path, so cover them explicitly here.
+        backend.clear().unwrap();
+        backend.clear_region(ClearType::All).unwrap();
+        assert_eq!(
+            backend.window_size().unwrap().columns_rows,
+            TestBackend::new(10, 10).size().unwrap()
+        );
+        assert_eq!(backend.window_size().unwrap().pixels, Size::new(640, 480));
+
+        #[cfg(feature = "scrolling-regions")]
+        {
+            backend.scroll_region_up(0..4, 1).unwrap();
+            backend.scroll_region_down(0..4, 1).unwrap();
+        }
+
+        // The `Display` impl is only exercised when a `TestError` is formatted.
+        assert_eq!(format!("{}", TestError("boom")), "boom");
+    }
 
     #[test]
     fn compute_inline_size_uses_cursor_offset_when_space_available() {
@@ -503,6 +685,34 @@ mod tests {
         assert_eq!(terminal.backend().scrollback(), &scrollback);
     }
 
+    // `insert_before` is a no-op for a non-inline viewport, so it must neither move the cursor
+    // nor invalidate the dedup tracking. This test lives in the feature-independent `tests`
+    // module so it runs under both the scrolling-regions and the fallback build, covering the
+    // non-inline dispatch arm (`_ => Ok(())`) in every configuration.
+    #[test]
+    fn insert_before_is_noop_for_non_inline_and_preserves_dedup() {
+        let mut terminal = Terminal::new(TestBackend::new(3, 2)).unwrap();
+
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.last_frame_cursor_position,
+            Some(Position { x: 2, y: 1 }),
+            "a draw with a caret records the dedup position"
+        );
+
+        terminal.insert_before(1, |_buf| ()).unwrap();
+
+        assert_eq!(
+            terminal.last_frame_cursor_position,
+            Some(Position { x: 2, y: 1 }),
+            "a no-op insert_before on a non-inline viewport must not invalidate the tracking"
+        );
+    }
+
     #[cfg(not(feature = "scrolling-regions"))]
     mod no_scrolling_regions {
         use super::*;
@@ -536,6 +746,36 @@ mod tests {
 
             assert_eq!(terminal.viewport_area, viewport_area);
             terminal.backend().assert_buffer_lines(["x  ", "   "]);
+        }
+
+        // A no-op `insert_before` (non-inline viewport) does not move the physical cursor, so it
+        // must not invalidate the next-frame `MoveTo` dedup tracking.
+        #[test]
+        fn noop_insert_before_preserves_move_dedup_tracking() {
+            let mut terminal = Terminal::new(TestBackend::new(3, 2)).unwrap();
+
+            terminal
+                .draw(|frame| {
+                    frame.set_cursor_position(Position { x: 2, y: 1 });
+                })
+                .unwrap();
+            assert_eq!(
+                terminal.last_frame_cursor_position,
+                Some(Position { x: 2, y: 1 }),
+                "a draw with a caret records the dedup position"
+            );
+
+            terminal
+                .insert_before(1, |buf| {
+                    buf.set_string(0, 0, "zzz", Style::default());
+                })
+                .unwrap();
+
+            assert_eq!(
+                terminal.last_frame_cursor_position,
+                Some(Position { x: 2, y: 1 }),
+                "a no-op insert_before on a fullscreen viewport must not invalidate dedup tracking"
+            );
         }
 
         #[test]
@@ -738,6 +978,47 @@ mod tests {
                 "BBBBBBBBBB",
                 "BBBBBBBBBB",
             ]);
+        }
+
+        // `insert_before` moves the physical cursor directly on the backend, so it must
+        // invalidate the next-frame `MoveTo` dedup tracking. Otherwise a following `draw` that
+        // requests an otherwise unchanged caret could skip the needed `MoveTo` and leave the
+        // caret stranded at the scrolling/insert position.
+        #[test]
+        fn insert_before_invalidates_move_dedup_tracking() {
+            let mut backend = TestBackend::new(10, 10);
+            backend
+                .set_cursor_position(Position { x: 0, y: 6 })
+                .unwrap();
+            let mut terminal = Terminal::with_options(
+                backend,
+                TerminalOptions {
+                    viewport: Viewport::Inline(4),
+                },
+            )
+            .unwrap();
+
+            terminal
+                .draw(|frame| {
+                    frame.set_cursor_position(Position { x: 3, y: 7 });
+                })
+                .unwrap();
+            assert_eq!(
+                terminal.last_frame_cursor_position,
+                Some(Position { x: 3, y: 7 }),
+                "a draw with a caret records the dedup position"
+            );
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf.set_string(0, 0, "INSERTED00", Style::default());
+                })
+                .unwrap();
+
+            assert_eq!(
+                terminal.last_frame_cursor_position, None,
+                "insert_before must invalidate the MoveTo dedup tracking"
+            );
         }
     }
 

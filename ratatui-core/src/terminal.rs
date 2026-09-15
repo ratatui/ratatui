@@ -450,6 +450,37 @@ where
     /// Inline viewports use this during [`Terminal::resize`] to preserve the cursor's relative
     /// position within the viewport.
     last_known_cursor_pos: Position,
+    /// Cursor position applied at the end of the last successful draw.
+    ///
+    /// This is the position the caret was placed at by [`Terminal::apply_buffer_with_cursor`]
+    /// during the previous frame (`Some`) or `None` if the cursor was hidden. It is separate from
+    /// [`Terminal::last_known_cursor_pos`] (which [`Terminal::flush`] also overwrites with the
+    /// last cell it wrote), so that consecutive frames requesting an unchanged caret can skip the
+    /// redundant `Show` + `MoveTo` escape sequences.
+    ///
+    /// A `MoveTo` is only skipped when the physical cursor is provably still at the requested
+    /// position, which additionally requires that the current frame's [`Terminal::flush`] wrote
+    /// nothing (see [`Terminal::last_flush_had_updates`]). On a real terminal, drawing any cell
+    /// advances the physical cursor past it, so a non-empty diff always invalidates the skip.
+    ///
+    /// Direct calls to [`Terminal::set_cursor_position`] (which records the new position) and
+    /// [`Terminal::hide_cursor`] (which invalidates it to a `None` so a later draw cannot assume
+    /// a stale position) also keep this tracking accurate. [`Terminal::show_cursor`] does not
+    /// change the position, so it leaves the tracking untouched. [`Terminal::resize`] and
+    /// [`Terminal::insert_before`] move the physical cursor directly on the backend, so they
+    /// resync or invalidate this tracking as appropriate.
+    ///
+    /// [`Terminal::apply_buffer_with_cursor`]: crate::terminal::Terminal::apply_buffer_with_cursor
+    last_frame_cursor_position: Option<Position>,
+    /// Whether the most recent [`Terminal::flush`] wrote any cells to the backend.
+    ///
+    /// When a frame's diff is empty, `flush` writes nothing and the physical cursor is guaranteed
+    /// to still sit where the previous `set_cursor_position` placed it. Any non-empty diff
+    /// advances the terminal cursor to (just past) the last cell written, regardless of
+    /// `flush`'s recorded position, so a `MoveTo` must be re-emitted.
+    /// `apply_buffer_with_cursor` uses this to decide whether it can safely skip the redundant
+    /// `MoveTo`.
+    last_flush_had_updates: bool,
     /// Number of frames rendered so far.
     ///
     /// This increments after each successful [`Terminal::draw`] / [`Terminal::try_draw`] and wraps

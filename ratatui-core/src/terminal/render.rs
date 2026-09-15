@@ -249,7 +249,11 @@ impl<B: Backend> Terminal<B> {
     ///
     /// This method will:
     ///
-    /// - show/hide the cursor based on `cursor_position` ([`None`] will hide the cursor)
+    /// - show/hide the cursor based on `cursor_position` ([`None`] will hide the cursor). When a
+    ///   position is given, the redundant `Show` + `MoveTo` are skipped only when the cursor is
+    ///   provably already at that position and the frame's diff was empty (so the cursor did not
+    ///   move). When it does reposition the caret, it emits `MoveTo` and, only if the cursor is
+    ///   currently hidden, `Show`
     /// - call [`Terminal::swap_buffers`] to prepare for the next render pass
     /// - call [`Backend::flush`] to flush any buffered backend output
     /// - return a [`CompletedFrame`] with the current buffer and the area used for rendering
@@ -297,8 +301,37 @@ impl<B: Backend> Terminal<B> {
         match cursor_position {
             None => self.hide_cursor()?,
             Some(position) => {
-                self.show_cursor()?;
-                self.set_cursor_position(position)?;
+                // Only emit `Show` + `MoveTo` when the cursor is not already visible at this
+                // exact position. Consecutive frames that request an unchanged caret then emit no
+                // redundant escape sequences. This avoids repeatedly re-showing the cursor,
+                // which some terminals use to re-arm the cursor blink, and trims per-frame
+                // output.
+                //
+                // The cursor can only be skipped when it is provably still at `position`:
+                // - the cursor is not hidden (`hidden_cursor`), and
+                // - no external operation (`insert_before`, `resize`, direct cursor calls)
+                //   invalidated `last_frame_cursor_position` since the last draw, and
+                // - this frame's `flush` wrote nothing (`last_flush_had_updates` is `false`).
+                //
+                // The `flush` condition is essential: on a real terminal, writing any cell
+                // advances the physical cursor to just past the cell drawn. So any non-empty diff
+                // moves the cursor away from `position`, and the `MoveTo` must be re-emitted to
+                // bring the caret back. This is why `last_known_cursor_pos` alone cannot be used:
+                // it records the cell coordinate, not the cursor position after drawing it.
+                if self.hidden_cursor
+                    || self.last_frame_cursor_position != Some(position)
+                    || self.last_flush_had_updates
+                {
+                    // Only emit `Show` when the cursor is actually hidden; when it is already
+                    // visible we only need to reposition it with `MoveTo`. Re-showing an already
+                    // visible cursor is a redundant escape that some terminals treat as a hint to
+                    // re-arm the blink phase.
+                    if self.hidden_cursor {
+                        self.show_cursor()?;
+                    }
+                    self.set_cursor_position(position)?;
+                }
+                self.last_frame_cursor_position = Some(position);
             }
         }
 
@@ -860,6 +893,466 @@ mod tests {
         assert_eq!(
             terminal.frame_count, 1,
             "successful draw increments frame_count"
+        );
+    }
+
+    /// A [`TestBackend`] wrapper that records cursor operations and simulates real-terminal cursor
+    /// behavior so tests can assert both that redundant `Show`/`MoveTo` sequences are skipped and
+    /// that the caret ends at the requested position.
+    ///
+    /// Like a real terminal, writing cells with [`Backend::draw`] advances the logical cursor to
+    /// just past the last cell written, and [`Backend::set_cursor_position`] moves it to the
+    /// requested position.
+    #[derive(Debug)]
+    struct RecordingCursorBackend {
+        inner: TestBackend,
+        hide_cursor_calls: usize,
+        show_cursor_calls: usize,
+        set_cursor_position_calls: usize,
+        /// Simulated physical cursor position, advanced by `draw` like a real terminal.
+        simulated_cursor: Position,
+        /// Simulated cursor visibility, toggled by `show_cursor`/`hide_cursor`.
+        simulated_visible: bool,
+    }
+
+    impl RecordingCursorBackend {
+        fn new(inner: TestBackend) -> Self {
+            Self {
+                inner,
+                hide_cursor_calls: 0,
+                show_cursor_calls: 0,
+                set_cursor_position_calls: 0,
+                simulated_cursor: Position::ORIGIN,
+                simulated_visible: true,
+            }
+        }
+    }
+
+    impl Backend for RecordingCursorBackend {
+        type Error = TestError;
+
+        fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+        where
+            I: Iterator<Item = (u16, u16, &'a crate::buffer::Cell)>,
+        {
+            // Consume the iterator, tracking the last cell written so we can simulate the
+            // terminal cursor advancing just past it (like a real terminal after printing a
+            // cell), then forward the collected cells to TestBackend.
+            let mut last = None;
+            let mut cells = alloc::vec::Vec::new();
+            for (x, y, cell) in content {
+                // The test cells are single-width ASCII, so a `Print` advances the terminal
+                // cursor by one column. Real multi-width glyphs advance by more.
+                last = Some(Position {
+                    x: x.saturating_add(1),
+                    y,
+                });
+                cells.push((x, y, cell));
+            }
+            if let Some(pos) = last {
+                self.simulated_cursor = pos;
+            }
+            self.inner
+                .draw(cells.into_iter())
+                .map_err(|err| match err {})
+        }
+
+        fn append_lines(&mut self, n: u16) -> Result<(), Self::Error> {
+            self.inner.append_lines(n).map_err(|err| match err {})
+        }
+
+        fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+            self.hide_cursor_calls += 1;
+            self.simulated_visible = false;
+            self.inner.hide_cursor().map_err(|err| match err {})
+        }
+
+        fn show_cursor(&mut self) -> Result<(), Self::Error> {
+            self.show_cursor_calls += 1;
+            self.simulated_visible = true;
+            self.inner.show_cursor().map_err(|err| match err {})
+        }
+
+        fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+            // Return the simulated cursor so the wrapper is internally consistent: a real
+            // terminal query reflects the same cursor state that `set_cursor_position`/`draw`
+            // maintain.
+            Ok(self.simulated_cursor)
+        }
+
+        fn set_cursor_position<P: Into<Position>>(
+            &mut self,
+            position: P,
+        ) -> Result<(), Self::Error> {
+            let position = position.into();
+            self.set_cursor_position_calls += 1;
+            self.simulated_cursor = position;
+            self.inner
+                .set_cursor_position(position)
+                .map_err(|err| match err {})
+        }
+
+        fn clear(&mut self) -> Result<(), Self::Error> {
+            self.inner.clear().map_err(|err| match err {})
+        }
+
+        fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+            self.inner
+                .clear_region(clear_type)
+                .map_err(|err| match err {})
+        }
+
+        fn size(&self) -> Result<crate::layout::Size, Self::Error> {
+            self.inner.size().map_err(|err| match err {})
+        }
+
+        fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+            self.inner.window_size().map_err(|err| match err {})
+        }
+
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.inner.flush().map_err(|err| match err {})
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_up(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.inner
+                .scroll_region_up(region, line_count)
+                .map_err(|err| match err {})
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_down(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.inner
+                .scroll_region_down(region, line_count)
+                .map_err(|err| match err {})
+        }
+    }
+
+    /// The `RecordingCursorBackend` delegates the `Backend` methods it does not intercept to the
+    /// inner `TestBackend`. Exercise each method so the delegation is verified and covered.
+    #[test]
+    fn recording_backend_delegates_all_backend_methods() {
+        let mut backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+
+        backend
+            .draw([(0, 0, &Cell::new("x")), (1, 1, &Cell::new("y"))].into_iter())
+            .unwrap();
+        backend.append_lines(1).unwrap();
+        backend.hide_cursor().unwrap();
+        backend.show_cursor().unwrap();
+        assert_eq!(
+            backend.get_cursor_position().unwrap(),
+            Position { x: 2, y: 1 },
+            "the simulated cursor sits just past the last drawn cell"
+        );
+        backend
+            .set_cursor_position(Position { x: 2, y: 1 })
+            .unwrap();
+        backend.clear().unwrap();
+        backend.clear_region(ClearType::All).unwrap();
+        assert_eq!(
+            backend.size().unwrap(),
+            crate::layout::Size::new(3, 2),
+            "size is delegated to the inner TestBackend"
+        );
+        backend.window_size().unwrap();
+        backend.flush().unwrap();
+
+        #[cfg(feature = "scrolling-regions")]
+        {
+            backend.scroll_region_up(0..1, 1).unwrap();
+            backend.scroll_region_down(0..1, 1).unwrap();
+        }
+    }
+
+    /// Consecutive frames that request an unchanged cursor position must not re-emit `Show` +
+    /// `MoveTo` when nothing changed on screen, while a changed position, changed content, or a
+    /// hidden cursor must.
+    ///
+    /// On a real terminal, drawing a diff advances the cursor just past the last cell written, so
+    /// the `MoveTo` may only be skipped when the physical cursor provably remains at the requested
+    /// position, which requires the frame's diff to be empty.
+    #[test]
+    fn draw_skips_redundant_cursor_emission_when_position_unchanged() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // First frame places the caret at (2, 1); the cursor is already visible, so only a
+        // `MoveTo` is emitted, not a redundant `Show`.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+                frame.buffer_mut()[(0, 0)] = Cell::new("x");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_cursor_calls,
+            0,
+            "first frame with a visible cursor must not emit a redundant Show"
+        );
+        assert_eq!(
+            terminal.backend().set_cursor_position_calls,
+            1,
+            "first frame moves the cursor"
+        );
+
+        // A second frame at the same caret with no cell changes (redrawing the same "x" content)
+        // must not re-emit `Show`/`MoveTo`: the diff is empty so the physical cursor stays
+        // at (2, 1).
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+                frame.buffer_mut()[(0, 0)] = Cell::new("x");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_cursor_calls,
+            0,
+            "unchanged caret with empty diff must not re-show the cursor"
+        );
+        assert_eq!(
+            terminal.backend().set_cursor_position_calls,
+            1,
+            "unchanged caret with empty diff must not re-MoveTo the cursor"
+        );
+
+        // A third frame at the same caret but with changed content must re-emit `MoveTo`: drawing
+        // the diff leaves the terminal cursor on the changed cell, not at the caret.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+                frame.buffer_mut()[(0, 0)] = Cell::new("y");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().set_cursor_position_calls,
+            2,
+            "an unchanged caret with a changed cell must re-MoveTo the cursor"
+        );
+
+        // A moved caret must emit.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 1, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().set_cursor_position_calls,
+            3,
+            "a moved caret must re-emit MoveTo"
+        );
+    }
+
+    /// On a real terminal the cursor follows the last cell drawn by the frame's flush. When a
+    /// frame changes content but keeps the caret unchanged, the `MoveTo` must still be emitted so
+    /// the physical cursor ends at the caret rather than stranded on a changed cell.
+    #[test]
+    fn content_change_keeps_caret_positioned_at_requested_spot() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // First frame places the caret at (2, 1).
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+                frame.buffer_mut()[(0, 0)] = Cell::new("x");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().simulated_cursor,
+            Position { x: 2, y: 1 },
+            "after the first frame the cursor must be at the caret"
+        );
+
+        // Second frame changes a cell but keeps the caret unchanged. The flush draws the changed
+        // cell, which advances the terminal cursor just past it (to (1, 0) in the simulated real
+        // terminal); the guard must re-emit the `MoveTo` so the caret ends back at (2, 1).
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+                frame.buffer_mut()[(0, 0)] = Cell::new("y");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().simulated_cursor,
+            Position { x: 2, y: 1 },
+            "after a content change the cursor must still be at the caret"
+        );
+        assert_eq!(
+            terminal.get_cursor_position().unwrap(),
+            Position { x: 2, y: 1 },
+            "querying the cursor via the public API reflects the caret after a content change"
+        );
+    }
+
+    /// Any non-empty frame diff (even one whose last written cell is at the caret) must re-emit
+    /// `MoveTo`. On a real terminal, writing a cell advances the physical cursor to just past that
+    /// cell, so it is never exactly at the caret position after a non-empty `flush`.
+    #[test]
+    fn draw_reemits_when_diff_is_nonempty_even_if_it_ends_at_caret() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // First frame places the caret at (1, 0) and writes a cell there too.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 1, y: 0 });
+                frame.buffer_mut()[(1, 0)] = Cell::new("x");
+            })
+            .unwrap();
+        assert_eq!(terminal.backend().set_cursor_position_calls, 1);
+
+        // Second frame keeps the caret at (1, 0) and changes two cells, the last of which is the
+        // caret cell. Because the diff is non-empty, the `MoveTo` must be re-emitted to bring the
+        // caret back to (1, 0).
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 1, y: 0 });
+                frame.buffer_mut()[(0, 0)] = Cell::new("y");
+                frame.buffer_mut()[(1, 0)] = Cell::new("z");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().set_cursor_position_calls,
+            2,
+            "a non-empty diff must re-MoveTo even if it ends at the caret"
+        );
+        assert_eq!(
+            terminal.backend().simulated_cursor,
+            Position { x: 1, y: 0 },
+            "the simulated cursor is brought back to the caret after a non-empty diff"
+        );
+    }
+
+    /// A hidden cursor followed by a shown frame must still re-emit `Show` + `MoveTo`, even if the
+    /// requested position matches the stale hidden-frame tracking.
+    #[test]
+    fn draw_emits_cursor_when_transitioning_from_hidden_to_shown() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // First frame hides the cursor.
+        terminal
+            .draw(|frame| {
+                frame.buffer_mut()[(0, 0)] = Cell::new("x");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().hide_cursor_calls,
+            1,
+            "a frame without a cursor hides the cursor"
+        );
+        assert!(terminal.hidden_cursor);
+        assert!(
+            !terminal.backend().simulated_visible,
+            "the simulated cursor is hidden after the hide frame"
+        );
+
+        // A shown frame at a position must re-emit `Show` + `MoveTo` even though it is the first
+        // shown caret. The `Some` position differs from the stale `None` (and `hidden_cursor` is
+        // true), so both guards cooperate to force the emission.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_cursor_calls,
+            1,
+            "shown-after-hidden must re-show the cursor"
+        );
+        assert_eq!(
+            terminal.backend().set_cursor_position_calls,
+            1,
+            "shown-after-hidden must re-MoveTo the cursor"
+        );
+        assert!(
+            terminal.backend().simulated_visible,
+            "the simulated cursor is visible again after the shown frame"
+        );
+    }
+
+    /// A direct [`Terminal::show_cursor`] call only changes visibility, not position, so the
+    /// dedup tracking is unaffected and a following draw at the same position skips re-emitting
+    /// `Show` + `MoveTo`.
+    #[test]
+    fn draw_skips_cursor_after_direct_show_cursor() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // One draw places a visible caret at (2, 1); the cursor is already visible, so only a
+        // `MoveTo` is emitted, not a redundant `Show`.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(terminal.backend().show_cursor_calls, 0);
+        assert_eq!(terminal.backend().set_cursor_position_calls, 1);
+
+        // Re-showing directly touches the backend once (counter -> 1) but doesn't change the
+        // position, so the next draw at the same spot must not emit any further `Show` or
+        // `MoveTo`.
+        terminal.show_cursor().unwrap();
+        assert_eq!(terminal.backend().show_cursor_calls, 1);
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_cursor_calls,
+            1,
+            "a draw after a direct show_cursor at the same spot must not re-show the cursor"
+        );
+        assert_eq!(
+            terminal.backend().set_cursor_position_calls,
+            1,
+            "a draw after a direct show_cursor at the same spot must not re-MoveTo the cursor"
+        );
+        assert_eq!(
+            terminal.backend().simulated_cursor,
+            Position { x: 2, y: 1 },
+            "a direct show_cursor does not move the simulated cursor"
+        );
+    }
+
+    /// A direct [`Terminal::set_cursor_position`] call keeps the dedup tracking accurate, so a
+    /// following draw at the same position must not re-emit `MoveTo`.
+    #[test]
+    fn draw_skips_moveto_after_direct_set_cursor_position() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // Position the cursor directly at (2, 1).
+        terminal
+            .set_cursor_position(Position { x: 2, y: 1 })
+            .unwrap();
+
+        // A draw requesting the same position must not re-emit `MoveTo`.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().set_cursor_position_calls,
+            1,
+            "a draw after a direct set_cursor_position at the same spot must not re-MoveTo"
+        );
+        assert_eq!(
+            terminal.backend().simulated_cursor,
+            Position { x: 2, y: 1 },
+            "the simulated cursor stays where the direct set_cursor_position placed it"
         );
     }
 }
