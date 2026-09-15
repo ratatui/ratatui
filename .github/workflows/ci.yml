@@ -37,7 +37,7 @@ jobs:
           toolchain: nightly
           components: rustfmt
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
-      - uses: tombi-toml/setup-tombi@3312a580f45ec61ab93c4b84159c9376c1d5a035 # v1.5.1
+      - uses: tombi-toml/setup-tombi@0ca8607861bce3508ba79339c7c47acb40a334e1 # v1.5.4
         with:
           version: "0.9.19"
       - run: cargo xtask format --check
