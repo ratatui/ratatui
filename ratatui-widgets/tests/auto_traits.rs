@@ -12,8 +12,13 @@ use ratatui_widgets::sparkline::Sparkline;
 use ratatui_widgets::table::Table;
 use ratatui_widgets::tabs::Tabs;
 
+#[cfg(not(target_has_atomic = "ptr"))]
 /// A compile-time assertion for checking that the given type implements the auto traits.
 const fn assert_auto_traits<T: Send + Sync + UnwindSafe + RefUnwindSafe>() {}
+
+#[cfg(target_has_atomic = "ptr")]
+/// A compile-time assertion for checking that the given type implements the auto traits.
+const fn assert_auto_traits<T: UnwindSafe + RefUnwindSafe>() {}
 
 #[test]
 fn block_backed_widgets_keep_auto_traits() {
