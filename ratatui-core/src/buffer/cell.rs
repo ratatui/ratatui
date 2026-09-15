@@ -202,6 +202,8 @@ impl Cell {
         if let Some(c) = style.underline_color {
             self.underline_color = c;
         }
+        // Assuming the Style have `sub_modifier` for all underlines except for the one in the
+        // `add_modifier`, If an underline exists.
         self.modifier.insert(style.add_modifier);
         self.modifier.remove(style.sub_modifier);
         self
