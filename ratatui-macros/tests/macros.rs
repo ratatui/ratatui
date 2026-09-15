@@ -101,4 +101,5 @@ fn layout_constraints_macro() {
 fn fails() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/ui/fails.rs");
+    t.compile_fail("tests/ui/span_semicolon.rs");
 }
