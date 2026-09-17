@@ -320,6 +320,7 @@ mod tests {
     #[case(Modifier::DOUBLE_UNDERLINED, &[Effects::DOUBLE_UNDERLINE])]
     #[case(Modifier::UNDER_CURLED, &[Effects::CURLY_UNDERLINE])]
     #[case(Modifier::UNDER_DOTTED, &[Effects::DOTTED_UNDERLINE])]
+    #[case(Modifier::UNDER_DASHED, &[Effects::DASHED_UNDERLINE])]
     fn modifier_to_effects(#[case] modifier: Modifier, #[case] expected_effects: &[Effects]) {
         let effects = Effects::from(modifier);
         for &effect in expected_effects {

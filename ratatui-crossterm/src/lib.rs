@@ -1165,46 +1165,93 @@ mod tests {
             .remove_modifier(Modifier::ITALIC)
     )]
     #[case(
-    ContentStyle {
-    attributes: CrosstermAttributes::from(
-    [CrosstermAttribute::Bold, CrosstermAttribute::Underlined].as_ref()
-    ), ..Default::default()
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::Bold, CrosstermAttribute::Underlined].as_ref()
+            ),
+            ..Default::default()
         },
-    Style::default()
-    .add_modifier(Modifier::BOLD)
-    .add_modifier(Modifier::UNDERLINED)
-    .remove_modifier(Modifier::UNDER_CURLED)
-    .remove_modifier(Modifier::DOUBLE_UNDERLINED)
-    .remove_modifier(Modifier::UNDER_DOTTED)
-    .remove_modifier(Modifier::UNDER_DASHED)
+        Style::default()
+            .add_modifier(Modifier::BOLD)
+            .add_modifier(Modifier::UNDERLINED)
+            .remove_modifier(Modifier::UNDER_CURLED)
+            .remove_modifier(Modifier::DOUBLE_UNDERLINED)
+            .remove_modifier(Modifier::UNDER_DOTTED)
+            .remove_modifier(Modifier::UNDER_DASHED)
     )]
     #[case(
-    ContentStyle {
-    attributes: CrosstermAttributes::from(
-    [CrosstermAttribute::Italic, CrosstermAttribute::DoubleUnderlined].as_ref()
-    ), ..Default::default()
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::Undercurled].as_ref()
+            ),
+            ..Default::default()
         },
-    Style::default()
-    .add_modifier(Modifier::ITALIC)
-    .add_modifier(Modifier::DOUBLE_UNDERLINED)
-    .remove_modifier(Modifier::UNDERLINED)
-    .remove_modifier(Modifier::UNDER_CURLED)
-    .remove_modifier(Modifier::UNDER_DOTTED)
-    .remove_modifier(Modifier::UNDER_DASHED)
+        Style::default()
+            .add_modifier(Modifier::UNDER_CURLED)
+            .remove_modifier(Modifier::UNDERLINED)
+            .remove_modifier(Modifier::DOUBLE_UNDERLINED)
+            .remove_modifier(Modifier::UNDER_DOTTED)
+            .remove_modifier(Modifier::UNDER_DASHED)
     )]
     #[case(
-    ContentStyle {
-    attributes: CrosstermAttributes::from(
-    [CrosstermAttribute::Bold, CrosstermAttribute::NoUnderline].as_ref()
-    ), ..Default::default()
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::Italic, CrosstermAttribute::DoubleUnderlined].as_ref()
+            ),
+            ..Default::default()
         },
-    Style::default()
-    .add_modifier(Modifier::BOLD)
-    .remove_modifier(Modifier::UNDERLINED)
-    .remove_modifier(Modifier::UNDER_CURLED)
-    .remove_modifier(Modifier::DOUBLE_UNDERLINED)
-    .remove_modifier(Modifier::UNDER_DOTTED)
-    .remove_modifier(Modifier::UNDER_DASHED)
+        Style::default()
+            .add_modifier(Modifier::ITALIC)
+            .add_modifier(Modifier::DOUBLE_UNDERLINED)
+            .remove_modifier(Modifier::UNDERLINED)
+            .remove_modifier(Modifier::UNDER_CURLED)
+            .remove_modifier(Modifier::UNDER_DOTTED)
+            .remove_modifier(Modifier::UNDER_DASHED)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::Italic, CrosstermAttribute::Underdotted].as_ref()
+            ),
+            ..Default::default()
+        },
+        Style::default()
+            .add_modifier(Modifier::ITALIC)
+            .add_modifier(Modifier::UNDER_DOTTED)
+            .remove_modifier(Modifier::UNDERLINED)
+            .remove_modifier(Modifier::UNDER_CURLED)
+            .remove_modifier(Modifier::DOUBLE_UNDERLINED)
+            .remove_modifier(Modifier::UNDER_DASHED)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::Italic, CrosstermAttribute::Underdashed].as_ref()
+            ),
+            ..Default::default()
+        },
+        Style::default()
+            .add_modifier(Modifier::ITALIC)
+            .add_modifier(Modifier::UNDER_DASHED)
+            .remove_modifier(Modifier::UNDERLINED)
+            .remove_modifier(Modifier::UNDER_CURLED)
+            .remove_modifier(Modifier::UNDER_DOTTED)
+            .remove_modifier(Modifier::DOUBLE_UNDERLINED)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(
+                [CrosstermAttribute::Bold, CrosstermAttribute::NoUnderline].as_ref()
+            ),
+            ..Default::default()
+        },
+        Style::default()
+            .add_modifier(Modifier::BOLD)
+            .remove_modifier(Modifier::UNDERLINED)
+            .remove_modifier(Modifier::UNDER_CURLED)
+            .remove_modifier(Modifier::DOUBLE_UNDERLINED)
+            .remove_modifier(Modifier::UNDER_DOTTED)
+            .remove_modifier(Modifier::UNDER_DASHED)
     )]
     fn from_crossterm_content_style(#[case] content_style: ContentStyle, #[case] style: Style) {
         assert_eq!(Style::from_crossterm(content_style), style);
