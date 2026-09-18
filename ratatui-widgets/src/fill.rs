@@ -59,10 +59,16 @@ impl<'a> Fill<'a> {
     /// The style defaults to [`Style::default`]; use the [`Stylize`] shorthands or
     /// [`Fill::style`] to customize it.
     ///
+    /// # Panics
+    ///
+    /// Panics if `symbol` is empty.
+    ///
     /// [`Stylize`]: ratatui_core::style::Stylize
     pub fn new<S: Into<Cow<'a, str>>>(symbol: S) -> Self {
+        let symbol = symbol.into();
+        assert!(!symbol.is_empty(), "Fill symbol must not be empty");
         Self {
-            symbol: symbol.into(),
+            symbol,
             style: Style::default(),
         }
     }
@@ -82,10 +88,16 @@ impl<'a> Fill<'a> {
 
     /// Set the symbol painted into each cell.
     ///
+    /// # Panics
+    ///
+    /// Panics if `symbol` is empty.
+    ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn symbol<S: Into<Cow<'a, str>>>(mut self, symbol: S) -> Self {
-        self.symbol = symbol.into();
+        let symbol = symbol.into();
+        assert!(!symbol.is_empty(), "Fill symbol must not be empty");
+        self.symbol = symbol;
         self
     }
 }
@@ -99,7 +111,7 @@ impl Widget for Fill<'_> {
 impl Widget for &Fill<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(*buf.area());
-        if area.is_empty() {
+        if area.is_empty() || self.symbol.is_empty() {
             return;
         }
         for position in area.positions() {
@@ -208,5 +220,26 @@ mod tests {
             .symbol("b")
             .render(Rect::new(0, 0, 2, 1), &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["bb"]));
+    }
+
+    #[test]
+    #[should_panic(expected = "Fill symbol must not be empty")]
+    fn new_panics_on_empty_symbol() {
+        Fill::new("");
+    }
+
+    #[test]
+    #[should_panic(expected = "Fill symbol must not be empty")]
+    fn symbol_panics_on_empty_symbol() {
+        let _ = Fill::new("x").symbol("");
+    }
+
+    #[test]
+    fn default_is_noop() {
+        let mut buffer = Buffer::with_lines(["xxxxx"]);
+        Fill::default()
+            .red()
+            .render(Rect::new(1, 0, 3, 1), &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["xxxxx"]));
     }
 }
