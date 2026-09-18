@@ -496,6 +496,28 @@ impl ScrollbarState {
     pub const fn get_position(&self) -> usize {
         self.position
     }
+
+    /// Returns `true` if the scroll position is at the start of the scrollable content.
+    ///
+    /// # See also
+    ///
+    /// - [`ScrollbarState::is_at_end`] to check the opposite boundary.
+    /// - [`ScrollbarState::first`] to scroll to the start of the scrollable content.
+    #[must_use = "returns whether the scroll position is at the start of the scrollable content"]
+    pub const fn is_at_start(&self) -> bool {
+        self.position == 0
+    }
+
+    /// Returns `true` if the scroll position is at the end of the scrollable content.
+    ///
+    /// # See also
+    ///
+    /// - [`ScrollbarState::is_at_start`] to check the opposite boundary.
+    /// - [`ScrollbarState::last`] to scroll to the end of the scrollable content.
+    #[must_use = "returns whether the scroll position is at the end of the scrollable content"]
+    pub const fn is_at_end(&self) -> bool {
+        self.position >= self.content_length.saturating_sub(1)
+    }
 }
 
 impl StatefulWidget for Scrollbar<'_> {
@@ -700,6 +722,40 @@ mod tests {
             ScrollbarOrientation::from_str(""),
             Err(ParseError::VariantNotFound)
         );
+    }
+
+    #[rstest]
+    #[case::start(0, true, false)]
+    #[case::middle(1, false, false)]
+    #[case::end(2, false, true)]
+    fn scrollbar_state_is_at_start_and_end(
+        #[case] position: usize,
+        #[case] expected_at_start: bool,
+        #[case] expected_at_end: bool,
+    ) {
+        let state = ScrollbarState::new(3).position(position);
+        assert_eq!(state.is_at_start(), expected_at_start);
+        assert_eq!(state.is_at_end(), expected_at_end);
+    }
+
+    #[test]
+    fn scrollbar_state_is_at_start_and_end_with_empty_content() {
+        let state = ScrollbarState::new(0);
+        assert!(state.is_at_start());
+        assert!(state.is_at_end());
+    }
+
+    #[test]
+    fn scrollbar_state_is_at_end_after_first_and_last() {
+        let mut state = ScrollbarState::new(5).position(2);
+
+        state.last();
+        assert!(state.is_at_end());
+        assert!(!state.is_at_start());
+
+        state.first();
+        assert!(state.is_at_start());
+        assert!(!state.is_at_end());
     }
 
     #[fixture]
