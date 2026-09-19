@@ -175,6 +175,8 @@ impl<B: Backend> Terminal<B> {
             buffers: [Buffer::empty(viewport_area), Buffer::empty(viewport_area)],
             current: 0,
             cursor_visibility: CursorVisibility::Unknown,
+            last_frame_cursor_position: None,
+            last_flush_had_updates: false,
             viewport: options.viewport,
             viewport_area,
             last_known_area: area,

@@ -425,6 +425,24 @@ where
     /// the terminal's cursor visibility. It is invalidated back to `Unknown` when the backend is
     /// mutated directly via [`Terminal::backend_mut`].
     cursor_visibility: CursorVisibility,
+    /// Cursor position applied at the end of the last successful draw.
+    ///
+    /// This is the position the caret was placed at by [`Terminal::apply_buffer_with_cursor`]
+    /// during the previous frame (`Some`) or `None` if the cursor was hidden. It is separate from
+    /// [`Terminal::last_known_cursor_pos`] (which [`Terminal::flush`] also overwrites with the
+    /// last cell it wrote), so consecutive frames requesting an unchanged caret can skip the
+    /// redundant `MoveTo` escape sequence. It is invalidated whenever something moves the physical
+    /// cursor outside [`Terminal::apply_buffer_with_cursor`] (direct cursor calls,
+    /// [`Terminal::resize`], or [`Terminal::insert_before`]).
+    last_frame_cursor_position: Option<Position>,
+    /// Whether the most recent [`Terminal::flush`] wrote any cells to the backend.
+    ///
+    /// When a frame's diff is empty, `flush` writes nothing and the physical cursor is guaranteed
+    /// to still sit where the previous `set_cursor_position` placed it. Any non-empty diff
+    /// advances the terminal cursor to (just past) the last cell written, so a `MoveTo` must be
+    /// re-emitted. [`Terminal::apply_buffer_with_cursor`] uses this to decide whether it can
+    /// safely skip the redundant `MoveTo` on an unchanged caret.
+    last_flush_had_updates: bool,
     /// The configured [`Viewport`] mode.
     ///
     /// This determines how the initial viewport area is computed during construction, whether

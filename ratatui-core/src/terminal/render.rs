@@ -251,8 +251,10 @@ impl<B: Backend> Terminal<B> {
     ///
     /// - show/hide the cursor based on `cursor_position` ([`None`] will hide the cursor). When a
     ///   position is given, a `Show` is only emitted if the cursor is not already known to be
-    ///   visible; the `MoveTo` is always emitted. If something outside Ratatui hides the cursor,
-    ///   call [`Terminal::show_cursor`] to show it again.
+    ///   visible (see `CursorVisibility`). The `MoveTo` is emitted unless the cursor is provably
+    ///   already at that exact position with an unchanged on-screen diff (see
+    ///   `last_frame_cursor_position` and `last_flush_had_updates`). If something outside Ratatui
+    ///   hides the cursor, call [`Terminal::show_cursor`] to show it again.
     /// - call [`Terminal::swap_buffers`] to prepare for the next render pass
     /// - call [`Backend::flush`] to flush any buffered backend output
     /// - return a [`CompletedFrame`] with the current buffer and the area used for rendering
@@ -300,19 +302,32 @@ impl<B: Backend> Terminal<B> {
         match cursor_position {
             None => self.hide_cursor()?,
             Some(position) => {
-                // Only emit `Show` when the cursor is not known to be visible. Re-showing an
-                // already-visible cursor is a redundant escape sequence that some terminals treat
-                // as a hint to re-arm the cursor blink, so it is skipped when the cursor is
-                // already known to be visible. When the visibility is `Unknown` (initial state or
-                // after a direct backend mutation) or `Hidden`, a `Show` is emitted for safety.
+                // Skip the redundant `Show` + `MoveTo` when the cursor is provably already at
+                // `position`: it is visible, it was placed there by the previous draw's caret
+                // positioning (so no external cursor-moving operation invalidated the tracking),
+                // and this frame's `flush` wrote nothing (so the physical cursor did not move).
                 //
-                // The backend is called directly rather than via [`Terminal::show_cursor`] so the
-                // `Visible` state is only recorded after the flush below succeeds; a failure that
-                // leaves the cursor's visibility unknown must not be mistaken for `Visible`.
-                if self.cursor_visibility != CursorVisibility::Visible {
-                    self.backend.show_cursor()?;
+                // The `flush` condition is essential: on a real terminal, writing any cell
+                // advances the physical cursor to just past the cell drawn, so a non-empty diff
+                // moves the cursor away from `position` even when `last_known_cursor_pos` matches.
+                let skip_redundant = self.cursor_visibility == CursorVisibility::Visible
+                    && self.last_frame_cursor_position == Some(position)
+                    && !self.last_flush_had_updates;
+
+                if !skip_redundant {
+                    // Only emit `Show` when the cursor is not known to be visible. Re-showing an
+                    // already-visible cursor is a redundant escape sequence that some terminals
+                    // treat as a hint to re-arm the cursor blink. When the visibility is `Unknown`
+                    // (initial state or after a direct backend mutation) or `Hidden`, a `Show` is
+                    // emitted for safety. The backend is called directly rather than via
+                    // [`Terminal::show_cursor`] so the `Visible` state is only recorded after the
+                    // flush below succeeds.
+                    if self.cursor_visibility != CursorVisibility::Visible {
+                        self.backend.show_cursor()?;
+                    }
+                    self.set_cursor_position(position)?;
                 }
-                self.set_cursor_position(position)?;
+                self.last_frame_cursor_position = Some(position);
             }
         }
 
@@ -540,6 +555,88 @@ mod tests {
             .unwrap();
         assert_eq!(terminal.backend().show_cursor_count(), 1);
         assert_eq!(terminal.backend().hide_cursor_count(), 1);
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Visible);
+    }
+
+    /// Consecutive frames requesting an unchanged caret with an empty diff skip the redundant
+    /// `Show` + `MoveTo` entirely.
+    ///
+    /// When the buffer is unchanged between frames, `flush` writes nothing, so the physical cursor
+    /// provably stays where the previous draw placed it. A second identical draw must therefore
+    /// emit no additional cursor escape sequences.
+    #[test]
+    fn draw_skips_redundant_cursor_emission_when_position_unchanged() {
+        let mut terminal = Terminal::new(TestBackend::new(3, 2)).unwrap();
+
+        // First frame: the caret starts Unknown, so a `Show` and a `MoveTo` are both emitted.
+        terminal
+            .draw(|frame| frame.set_cursor_position((2, 1)))
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_cursor_count(),
+            1,
+            "first frame shows the cursor"
+        );
+        assert_eq!(
+            terminal.backend().move_cursor_count(),
+            1,
+            "first frame moves the cursor"
+        );
+
+        // Second identical frame: empty diff + unchanged caret, so no `Show` and no `MoveTo`.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_cursor_count(),
+            1,
+            "an unchanged caret with an empty diff must not re-show the cursor"
+        );
+        assert_eq!(
+            terminal.backend().move_cursor_count(),
+            1,
+            "an unchanged caret with an empty diff must not re-move the cursor"
+        );
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Visible);
+    }
+
+    /// A changed cell in the same frame as an unchanged caret must still re-emit the `MoveTo`.
+    ///
+    /// Drawing content advances the physical cursor to just past the last cell written, so even if
+    /// the requested caret position is unchanged from the previous draw, the `MoveTo` has to be
+    /// re-emitted to bring the caret back.
+    #[test]
+    fn content_change_keeps_caret_positioned_at_requested_spot() {
+        let mut terminal = Terminal::new(TestBackend::new(3, 2)).unwrap();
+
+        // First frame places the caret at (2, 1) with an empty screen.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(terminal.backend().move_cursor_count(), 1);
+
+        // Second frame changes a cell but keeps the caret unchanged: because `flush` wrote a cell,
+        // the `MoveTo` must be re-emitted (the physical cursor moved past the written cell).
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 2, y: 1 });
+                frame.buffer_mut()[(0, 0)] = Cell::new("y");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().move_cursor_count(),
+            2,
+            "a content change with an unchanged caret must re-emit the MoveTo"
+        );
+        assert_eq!(
+            terminal.backend().show_cursor_count(),
+            1,
+            "no redundant Show is emitted"
+        );
         assert_eq!(terminal.cursor_visibility, CursorVisibility::Visible);
     }
 

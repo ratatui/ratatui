@@ -38,6 +38,7 @@ pub struct TestBackend {
     cursor_position_queries: usize,
     show_cursor_calls: usize,
     hide_cursor_calls: usize,
+    move_cursor_calls: usize,
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
@@ -82,6 +83,7 @@ impl TestBackend {
             cursor_position_queries: 0,
             show_cursor_calls: 0,
             hide_cursor_calls: 0,
+            move_cursor_calls: 0,
         }
     }
 
@@ -108,6 +110,7 @@ impl TestBackend {
             cursor_position_queries: 0,
             show_cursor_calls: 0,
             hide_cursor_calls: 0,
+            move_cursor_calls: 0,
         }
     }
 
@@ -142,6 +145,11 @@ impl TestBackend {
     /// Returns the number of times the cursor has been hidden.
     pub const fn hide_cursor_count(&self) -> usize {
         self.hide_cursor_calls
+    }
+
+    /// Returns the number of times the cursor has been moved.
+    pub const fn move_cursor_count(&self) -> usize {
+        self.move_cursor_calls
     }
 
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
@@ -303,6 +311,7 @@ impl Backend for TestBackend {
 
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<()> {
         self.pos = position.into().into();
+        self.move_cursor_calls += 1;
         Ok(())
     }
 
@@ -525,6 +534,7 @@ mod tests {
                 cursor_position_queries: 0,
                 show_cursor_calls: 0,
                 hide_cursor_calls: 0,
+                move_cursor_calls: 0,
             }
         );
     }
