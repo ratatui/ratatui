@@ -962,14 +962,14 @@ impl<'a> Chart<'a> {
     /// The column of the tick marked by the x axis label at `index`.
     ///
     /// The axis is endpoint-inclusive, so `label_count` labels divide it into `label_count - 1`
-    /// intervals, as [`Chart::render_y_labels`] divides the y axis. Ticks then fall on the same
-    /// columns as the plotted data. Each is derived from `index` rather than accumulated so the
-    /// rounding error does not compound along the axis.
+    /// intervals. Tick positions round to the nearest column, with ties rounded up, to match the
+    /// plotted data. Each is derived from `index` rather than accumulated so the rounding error
+    /// does not compound along the axis.
     fn x_label_tick(graph_area: Rect, index: u16, label_count: u16) -> u16 {
         let interval_count = u32::from(label_count.saturating_sub(1)).max(1);
         let axis_width = u32::from(graph_area.width.saturating_sub(1));
-        // `axis_width * index` cannot overflow: both are at most `u16::MAX`.
-        let offset = (axis_width * u32::from(index) / interval_count) as u16;
+        // All operands originate from `u16` values, so the numerator fits in `u32`.
+        let offset = ((axis_width * u32::from(index) + interval_count / 2) / interval_count) as u16;
         graph_area.left().saturating_add(offset)
     }
 
@@ -1787,11 +1787,12 @@ mod tests {
     }
 
     /// Expected columns are worked out by hand from the documented formula rather than taken from
-    /// the implementation: for a graph area at column 1, 29 wide, that is `1 + 28 * index / gaps`.
+    /// the implementation: for a graph area at column 1, 29 wide, that is
+    /// `1 + round(28 * index / gaps)`.
     #[rstest]
     #[case::two(2, &[1, 29])]
-    #[case::four(4, &[1, 10, 19, 29])]
-    #[case::six(6, &[1, 6, 12, 17, 23, 29])]
+    #[case::four(4, &[1, 10, 20, 29])]
+    #[case::six(6, &[1, 7, 12, 18, 23, 29])]
     fn x_label_ticks_divide_the_axis_evenly(#[case] label_count: u16, #[case] expected: &[u16]) {
         let graph_area = Rect::new(1, 0, 29, 1);
         let ticks: Vec<u16> = (0..label_count)
@@ -1808,7 +1809,8 @@ mod tests {
     #[rstest]
     #[case::two_unchanged(&["0", "1"], "0                            1")]
     #[case::three(&["0", "1", "2"], "0              1             2")]
-    #[case::six(&["0", "1", "2", "3", "4", "5"], "0     1     2    3     4     5")]
+    #[case::four(&["0", "1", "2", "3"], "0         1         2        3")]
+    #[case::six(&["0", "1", "2", "3", "4", "5"], "0      1    2     3    4     5")]
     fn x_labels_are_evenly_spaced(#[case] labels: &[&str], #[case] expected: &str) {
         assert_eq!(x_label_row(labels), expected);
     }
@@ -1836,11 +1838,17 @@ mod tests {
         }
     }
 
-    /// Points at the start, middle and end of the bounds are drawn under the labels that name
-    /// them, which is what makes these the right columns.
-    #[test]
-    fn x_labels_align_with_plotted_data() {
-        let data = [(0.0, 0.0), (0.5, 0.0), (1.0, 0.0)];
+    /// Intermediate labels align with their plotted points, including when their positions round
+    /// up or fall exactly halfway between columns (three labels in a 31-column chart).
+    #[rstest]
+    fn x_labels_align_with_plotted_data(
+        #[values(3, 4, 6)] label_count: u16,
+        #[values(30, 31, 32)] width: u16,
+    ) {
+        let data: Vec<_> = (0..label_count)
+            .map(|index| (f64::from(index), 0.0))
+            .collect();
+        let labels: Vec<_> = (0..label_count).map(|index| index.to_string()).collect();
         let chart = Chart::new(vec![
             Dataset::default()
                 .data(&data)
@@ -1848,22 +1856,31 @@ mod tests {
         ])
         .x_axis(
             Axis::default()
-                .bounds([0.0, 1.0])
-                .labels(vec!["0", "1", "2"]),
+                .bounds([0.0, f64::from(label_count - 1)])
+                .labels(labels),
         )
         .y_axis(Axis::default().bounds([0.0, 1.0]));
-        let area = Rect::new(0, 0, 30, 3);
+        let area = Rect::new(0, 0, width, 3);
         let mut buffer = Buffer::empty(area);
         chart.render(area, &mut buffer);
 
         let data_columns: Vec<u16> = (0..area.width)
             .filter(|&x| buffer[(x, 0)].symbol() == symbols::block::FULL)
             .collect();
-        let middle_label = rendered_span(&buffer, 2, '1').expect("middle label was not rendered");
-        assert_eq!(data_columns.len(), 3, "expected three plotted points");
+        assert_eq!(data_columns.len(), usize::from(label_count));
+        for (index, &column) in data_columns.iter().enumerate().skip(1).take(data.len() - 2) {
+            assert_eq!(
+                buffer[(column, 2)].symbol(),
+                index.to_string(),
+                "label {index} should align with its data point in column {column}"
+            );
+        }
+
+        // Endpoint labels retain their existing alignment at the edges of the chart.
+        assert_eq!(buffer[(0, 2)].symbol(), "0");
         assert_eq!(
-            middle_label.0, data_columns[1],
-            "the middle label should sit on the same column as the middle data point"
+            buffer[(width - 1, 2)].symbol(),
+            (label_count - 1).to_string()
         );
     }
 
