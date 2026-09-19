@@ -36,6 +36,8 @@ pub struct TestBackend {
     pos: (u16, u16),
     saved_pos: Option<(u16, u16)>,
     cursor_position_queries: usize,
+    show_cursor_calls: usize,
+    hide_cursor_calls: usize,
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
@@ -78,6 +80,8 @@ impl TestBackend {
             pos: (0, 0),
             saved_pos: None,
             cursor_position_queries: 0,
+            show_cursor_calls: 0,
+            hide_cursor_calls: 0,
         }
     }
 
@@ -102,6 +106,8 @@ impl TestBackend {
             pos: (0, 0),
             saved_pos: None,
             cursor_position_queries: 0,
+            show_cursor_calls: 0,
+            hide_cursor_calls: 0,
         }
     }
 
@@ -126,6 +132,16 @@ impl TestBackend {
     /// Returns the number of times the cursor position has been queried.
     pub const fn cursor_position_query_count(&self) -> usize {
         self.cursor_position_queries
+    }
+
+    /// Returns the number of times the cursor has been shown.
+    pub const fn show_cursor_count(&self) -> usize {
+        self.show_cursor_calls
+    }
+
+    /// Returns the number of times the cursor has been hidden.
+    pub const fn hide_cursor_count(&self) -> usize {
+        self.hide_cursor_calls
     }
 
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
@@ -270,11 +286,13 @@ impl Backend for TestBackend {
 
     fn hide_cursor(&mut self) -> Result<()> {
         self.cursor = false;
+        self.hide_cursor_calls += 1;
         Ok(())
     }
 
     fn show_cursor(&mut self) -> Result<()> {
         self.cursor = true;
+        self.show_cursor_calls += 1;
         Ok(())
     }
 
@@ -505,6 +523,8 @@ mod tests {
                 pos: (0, 0),
                 saved_pos: None,
                 cursor_position_queries: 0,
+                show_cursor_calls: 0,
+                hide_cursor_calls: 0,
             }
         );
     }
@@ -580,6 +600,7 @@ mod tests {
         let mut backend = TestBackend::new(10, 2);
         backend.hide_cursor().unwrap();
         assert!(!backend.cursor);
+        assert_eq!(backend.hide_cursor_count(), 1);
     }
 
     #[test]
@@ -587,6 +608,7 @@ mod tests {
         let mut backend = TestBackend::new(10, 2);
         backend.show_cursor().unwrap();
         assert!(backend.cursor);
+        assert_eq!(backend.show_cursor_count(), 1);
     }
 
     #[test]

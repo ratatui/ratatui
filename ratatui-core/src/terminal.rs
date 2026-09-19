@@ -415,10 +415,16 @@ where
     ///
     /// This toggles between 0 and 1 and is updated by [`Terminal::swap_buffers`].
     current: usize,
-    /// Whether Ratatui believes it has hidden the cursor.
+    /// Whether Ratatui believes the cursor is visible.
     ///
-    /// This is tracked so [`Drop`] can attempt to restore cursor visibility.
-    hidden_cursor: bool,
+    /// This is tracked so [`Terminal::apply_buffer_with_cursor`] can avoid redundantly re-showing
+    /// an already-visible cursor (which some terminals treat as a hint to re-arm the cursor
+    /// blink), and so [`Drop`] can attempt to restore cursor visibility.
+    ///
+    /// Starts at [`CursorVisibility::Unknown`] because before the first draw Ratatui does not know
+    /// the terminal's cursor visibility. It is invalidated back to `Unknown` when the backend is
+    /// mutated directly via [`Terminal::backend_mut`].
+    cursor_visibility: CursorVisibility,
     /// The configured [`Viewport`] mode.
     ///
     /// This determines how the initial viewport area is computed during construction, whether
@@ -476,8 +482,9 @@ where
     B: Backend,
 {
     fn drop(&mut self) {
-        // Attempt to restore the cursor state
-        if self.hidden_cursor {
+        // Attempt to restore the cursor unless it's known to be visible. `Unknown` counts as
+        // possibly hidden, e.g. after a frame hid the cursor and `backend_mut()` was then called.
+        if self.cursor_visibility != CursorVisibility::Visible {
             #[allow(unused_variables)]
             if let Err(err) = self.show_cursor() {
                 #[cfg(feature = "std")]
@@ -485,4 +492,23 @@ where
             }
         }
     }
+}
+
+/// The visibility state Ratatui tracks for the terminal cursor.
+///
+/// This is an internal implementation detail used by [`Terminal`] to decide when it needs to
+/// re-emit a `Show` (cursor visible) escape sequence, rather than a user-facing configuration.
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+pub(crate) enum CursorVisibility {
+    /// Ratatui does not know the cursor's current visibility.
+    ///
+    /// This is the initial state before the first draw, and it is restored when the backend is
+    /// mutated directly via [`Terminal::backend_mut`]. When a cursor position is requested while
+    /// in this state, a `Show` is emitted to be safe.
+    #[default]
+    Unknown,
+    /// The cursor was last hidden by Ratatui.
+    Hidden,
+    /// The cursor is visible; a `Show` was emitted and the backend flush succeeded.
+    Visible,
 }
