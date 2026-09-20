@@ -70,7 +70,7 @@ jobs:
           fi
       - name: Add label
         if: steps.check_breaking_change.outputs.breaking_change == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

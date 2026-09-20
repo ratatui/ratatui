@@ -1596,6 +1596,19 @@ mod tests {
     }
 
     #[rstest]
+    #[case::line(GraphType::Line)]
+    #[case::bar(GraphType::Bar)]
+    fn nan_data_point_with_reversed_bounds(#[case] graph_type: GraphType) {
+        let data = [(0.0, 0.0), (1.0, f64::NAN)];
+        let chart = Chart::new(vec![Dataset::default().data(&data).graph_type(graph_type)])
+            .x_axis(Axis::default().bounds([0.0, 1.0]))
+            .y_axis(Axis::default().bounds([1.0, 0.0]));
+        let area = Rect::new(0, 0, 3, 3);
+        let mut buffer = Buffer::empty(area);
+        chart.render(area, &mut buffer);
+    }
+
+    #[rstest]
     #[case::dot(symbols::Marker::Dot, '•')]
     #[case::dot(symbols::Marker::Braille, '⢣')]
     fn overlapping_lines(#[case] marker: symbols::Marker, #[case] symbol: char) {

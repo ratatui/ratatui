@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 
-/// A Ratatui example that demonstrates how different layout constraints work.
+/// A Ratatui example that demonstrates how different layout constraints and flex modes work.
 ///
-/// It also supports swapping constraints, adding and removing blocks, and changing the spacing
-/// between blocks.
+/// It compares how each flex mode distributes space and supports swapping constraints, adding
+/// and removing blocks, and changing the spacing between blocks.
 ///
 /// This example runs with the Ratatui library code in the branch that you are currently
 /// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
@@ -271,7 +271,8 @@ impl App {
     }
 
     fn instructions() -> impl Widget {
-        let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, +/-: spacing";
+        let text =
+            "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q/Esc: quit, +/-: spacing";
         Paragraph::new(text)
             .fg(Self::TEXT_COLOR)
             .centered()
@@ -328,14 +329,16 @@ impl App {
         self.render_user_constraints_legend(user_constraints, buf);
 
         let [
+            legacy,
             start,
             center,
             end,
             space_between,
             space_around,
             space_evenly,
-        ] = area.layout(&Layout::vertical([Length(7); 6]));
+        ] = area.layout(&Layout::vertical([Length(7); 7]));
 
+        self.render_layout_block(Flex::Legacy, legacy, buf);
         self.render_layout_block(Flex::Start, start, buf);
         self.render_layout_block(Flex::Center, center, buf);
         self.render_layout_block(Flex::End, end, buf);

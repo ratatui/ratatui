@@ -57,13 +57,13 @@ easily be productive in creating applications:
 This is the original demo example from the main README. It is available for each of the backends.
 [Source](./apps/demo/).
 
-![Demo](demo.gif)
+![Demo][demo.gif]
 
 ## Demo2
 
 This is the demo example from the main README and crate page. [Source](./apps/demo2/).
 
-![Demo2](demo2.gif)
+![Demo2][demo2.gif]
 
 ## Async GitHub
 
@@ -103,7 +103,8 @@ Shows the full range of RGB colors in an animation. [Source](./apps/colors-rgb/)
 
 ## Constraint Explorer
 
-Shows how different constraints can be used to layout widgets. [Source](./apps/constraint-explorer/).
+An interactive layout playground for experimenting with constraint types and values, spacing, and
+`Flex` modes. [Source](./apps/constraint-explorer/).
 
 ![Constraint Explorer demo][constraint-explorer.gif]
 
@@ -257,6 +258,8 @@ vhs/generate.bash
 [constraint-explorer.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraint-explorer.gif?raw=true
 [constraints.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraints.gif?raw=true
 [custom-widget.gif]: https://github.com/ratatui/ratatui/blob/images/examples/custom-widget.gif?raw=true
+[demo.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true
+[demo2.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true
 [flex.gif]: https://github.com/ratatui/ratatui/blob/images/examples/flex.gif?raw=true
 [hello-world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello-world.gif?raw=true
 [hyperlink.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hyperlink.gif?raw=true

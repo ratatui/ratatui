@@ -59,6 +59,12 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// commands to the terminal. It provides methods for drawing content, manipulating the cursor, and
 /// clearing the terminal screen.
 ///
+/// Termwiz tracks the cursor position in the [`BufferedTerminal`] surface rather than emitting
+/// terminal save and restore commands. [`Backend::save_cursor_position`] therefore returns `false`,
+/// and operations such as [`Terminal::clear`](ratatui_core::terminal::Terminal::clear) use the
+/// cursor get-and-set fallback. That fallback reads and updates Termwiz's local surface state
+/// without querying terminal input.
+///
 /// Most applications should not call the methods on `TermwizBackend` directly, but will instead
 /// use the [`Terminal`] struct, which provides a more ergonomic interface.
 ///
@@ -90,7 +96,7 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 /// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
 /// [Termwiz]: https://crates.io/crates/termwiz
-/// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }
@@ -242,6 +248,9 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
+    // Termwiz intentionally uses the default cursor save and restore methods. Its buffered surface
+    // has no corresponding Change variants, and raw escape sequences could desynchronize the
+    // tracked state. The get-and-set fallback uses the local surface state without reading input.
     fn clear(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::ClearScreen(termwiz::color::ColorAttribute::Default));

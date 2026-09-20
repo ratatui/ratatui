@@ -182,8 +182,9 @@ impl<'a> Paragraph<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// This applies to the entire widget, including the block if one is present. Any style set on
-    /// the block or text will be added to this style.
+    /// This applies to the entire widget, including the block if one is present. On the rendered
+    /// text, the [`Text`], [`Line`], and [`Span`] styles are patched on top of this style in that
+    /// order, so fields they set take precedence.
     ///
     /// # Example
     ///
@@ -195,6 +196,7 @@ impl<'a> Paragraph<'a> {
     /// ```
     ///
     /// [`Color`]: ratatui_core::style::Color
+    /// [`Span`]: ratatui_core::text::Span
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -666,40 +668,6 @@ mod tests {
     }
 
     #[test]
-    fn test_render_line_styled() {
-        let l0 = Line::raw("unformatted");
-        let l1 = Line::styled("bold text", Style::new().bold());
-        let l2 = Line::styled("cyan text", Style::new().cyan());
-        let l3 = Line::styled("dim text", Style::new().dim());
-        let paragraph = Paragraph::new(vec![l0, l1, l2, l3]);
-
-        let mut expected =
-            Buffer::with_lines(["unformatted", "bold text", "cyan text", "dim text"]);
-        expected.set_style(Rect::new(0, 1, 9, 1), Style::new().bold());
-        expected.set_style(Rect::new(0, 2, 9, 1), Style::new().cyan());
-        expected.set_style(Rect::new(0, 3, 8, 1), Style::new().dim());
-
-        test_case(&paragraph, &expected);
-    }
-
-    #[test]
-    fn test_render_line_spans_styled() {
-        let l0 = Line::default().spans([
-            Span::styled("bold", Style::new().bold()),
-            Span::raw(" and "),
-            Span::styled("cyan", Style::new().cyan()),
-        ]);
-        let l1 = Line::default().spans([Span::raw("unformatted")]);
-        let paragraph = Paragraph::new(vec![l0, l1]);
-
-        let mut expected = Buffer::with_lines(["bold and cyan", "unformatted"]);
-        expected.set_style(Rect::new(0, 0, 4, 1), Style::new().bold());
-        expected.set_style(Rect::new(9, 0, 4, 1), Style::new().cyan());
-
-        test_case(&paragraph, &expected);
-    }
-
-    #[test]
     fn test_render_paragraph_with_block_with_bottom_title_and_border() {
         let block = Block::new()
             .borders(Borders::BOTTOM)
@@ -936,35 +904,6 @@ mod tests {
         ] {
             test_case(&paragraph, &Buffer::empty(area));
             test_case(&paragraph.clone().scroll((2, 4)), &Buffer::empty(area));
-        }
-    }
-
-    #[test]
-    fn test_render_paragraph_with_styled_text() {
-        let text = Line::from(vec![
-            Span::styled("Hello, ", Style::default().fg(Color::Red)),
-            Span::styled("world!", Style::default().fg(Color::Blue)),
-        ]);
-
-        let mut expected_buffer = Buffer::with_lines(["Hello, world!"]);
-        expected_buffer.set_style(
-            Rect::new(0, 0, 7, 1),
-            Style::default().fg(Color::Red).bg(Color::Green),
-        );
-        expected_buffer.set_style(
-            Rect::new(7, 0, 6, 1),
-            Style::default().fg(Color::Blue).bg(Color::Green),
-        );
-
-        for paragraph in [
-            Paragraph::new(text.clone()),
-            Paragraph::new(text.clone()).wrap(Wrap { trim: false }),
-            Paragraph::new(text.clone()).wrap(Wrap { trim: true }),
-        ] {
-            test_case(
-                &paragraph.style(Style::default().bg(Color::Green)),
-                &expected_buffer,
-            );
         }
     }
 
@@ -1274,27 +1213,6 @@ mod tests {
         assert_eq!(p.alignment, Alignment::Right);
     }
 
-    /// Regression test for <https://github.com/ratatui/ratatui/issues/990>
-    ///
-    /// This test ensures that paragraphs with a block and styled text are rendered correctly.
-    /// It has been simplified from the original issue but tests the same functionality.
-    #[test]
-    fn paragraph_block_text_style() {
-        let text = Text::styled("Styled text", Color::Green);
-        let paragraph = Paragraph::new(text).block(Block::bordered());
-
-        let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
-        paragraph.render(Rect::new(0, 0, 20, 3), &mut buf);
-
-        let mut expected = Buffer::with_lines([
-            "┌──────────────────┐",
-            "│Styled text       │",
-            "└──────────────────┘",
-        ]);
-        expected.set_style(Rect::new(1, 1, 11, 1), Style::default().fg(Color::Green));
-        assert_eq!(buf, expected);
-    }
-
     #[rstest]
     #[case::bottom(Rect::new(0, 5, 15, 1))]
     #[case::right(Rect::new(20, 0, 15, 1))]
@@ -1334,5 +1252,145 @@ mod tests {
         let paragraph = Paragraph::new("Lorem ipsum");
         // This should not panic, even if the buffer has zero size.
         paragraph.render(buffer.area, &mut buffer);
+    }
+
+    mod style {
+        use super::*;
+
+        #[test]
+        fn style() {
+            let paragraph = Paragraph::new("").style(Style::new().red());
+            assert_eq!(paragraph.style, Style::new().red());
+        }
+
+        #[test]
+        fn render_overrides_prerendered_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            buf.set_style(buf.area, Style::new().red().on_green().italic());
+            Paragraph::new("hi").blue().render(buf.area, &mut buf);
+            let mut expected = Buffer::with_lines(["hi  "]);
+            expected.set_style(expected.area, Style::new().blue().on_green().italic());
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_text_style_overrides_paragraph_style() {
+            let paragraph = Paragraph::new(Text::from("hi").blue()).red().on_green();
+            let mut expected = Buffer::with_lines(["hi  "]);
+            expected.set_style(expected.area, Style::new().red().on_green());
+            expected.set_style(Rect::new(0, 0, 2, 1), Style::new().blue());
+            test_case(&paragraph, &expected);
+        }
+
+        #[test]
+        fn render_line_style_overrides_text_style() {
+            let paragraph = Paragraph::new(Text::from(Line::from("hi").blue()).red().on_green());
+            let mut expected = Buffer::with_lines(["hi  "]);
+            expected.set_style(Rect::new(0, 0, 2, 1), Style::new().blue().on_green());
+            test_case(&paragraph, &expected);
+        }
+
+        #[test]
+        fn render_span_style_overrides_line_style() {
+            let paragraph = Paragraph::new(Line::from(Span::from("hi").blue()).red().on_green());
+            let mut expected = Buffer::with_lines(["hi  "]);
+            expected.set_style(Rect::new(0, 0, 2, 1), Style::new().blue().on_green());
+            test_case(&paragraph, &expected);
+        }
+
+        #[test]
+        fn render_paragraph_style_overrides_block_style_inside_the_block() {
+            let paragraph = Paragraph::new("hi")
+                .block(Block::bordered().on_green())
+                .on_blue();
+            let mut expected = Buffer::with_lines(["┌────┐", "│hi  │", "└────┘"]);
+            expected.set_style(expected.area, Style::new().on_green());
+            expected.set_style(Rect::new(1, 1, 4, 1), Style::new().on_blue());
+            test_case(&paragraph, &expected);
+        }
+
+        #[test]
+        fn render_line_styled() {
+            let l0 = Line::raw("unformatted");
+            let l1 = Line::styled("bold text", Style::new().bold());
+            let l2 = Line::styled("cyan text", Style::new().cyan());
+            let l3 = Line::styled("dim text", Style::new().dim());
+            let paragraph = Paragraph::new(vec![l0, l1, l2, l3]);
+
+            let mut expected =
+                Buffer::with_lines(["unformatted", "bold text", "cyan text", "dim text"]);
+            expected.set_style(Rect::new(0, 1, 9, 1), Style::new().bold());
+            expected.set_style(Rect::new(0, 2, 9, 1), Style::new().cyan());
+            expected.set_style(Rect::new(0, 3, 8, 1), Style::new().dim());
+
+            test_case(&paragraph, &expected);
+        }
+
+        #[test]
+        fn render_line_spans_styled() {
+            let l0 = Line::default().spans([
+                Span::styled("bold", Style::new().bold()),
+                Span::raw(" and "),
+                Span::styled("cyan", Style::new().cyan()),
+            ]);
+            let l1 = Line::default().spans([Span::raw("unformatted")]);
+            let paragraph = Paragraph::new(vec![l0, l1]);
+
+            let mut expected = Buffer::with_lines(["bold and cyan", "unformatted"]);
+            expected.set_style(Rect::new(0, 0, 4, 1), Style::new().bold());
+            expected.set_style(Rect::new(9, 0, 4, 1), Style::new().cyan());
+
+            test_case(&paragraph, &expected);
+        }
+
+        #[test]
+        fn render_with_styled_text() {
+            let text = Line::from(vec![
+                Span::styled("Hello, ", Style::default().fg(Color::Red)),
+                Span::styled("world!", Style::default().fg(Color::Blue)),
+            ]);
+
+            let mut expected_buffer = Buffer::with_lines(["Hello, world!"]);
+            expected_buffer.set_style(
+                Rect::new(0, 0, 7, 1),
+                Style::default().fg(Color::Red).bg(Color::Green),
+            );
+            expected_buffer.set_style(
+                Rect::new(7, 0, 6, 1),
+                Style::default().fg(Color::Blue).bg(Color::Green),
+            );
+
+            for paragraph in [
+                Paragraph::new(text.clone()),
+                Paragraph::new(text.clone()).wrap(Wrap { trim: false }),
+                Paragraph::new(text.clone()).wrap(Wrap { trim: true }),
+            ] {
+                test_case(
+                    &paragraph.style(Style::default().bg(Color::Green)),
+                    &expected_buffer,
+                );
+            }
+        }
+
+        /// Regression test for <https://github.com/ratatui/ratatui/issues/990>
+        ///
+        /// This test ensures that paragraphs with a block and styled text are rendered correctly.
+        /// It has been simplified from the original issue but tests the same functionality.
+        #[test]
+        fn block_text_style() {
+            let text = Text::styled("Styled text", Color::Green);
+            let paragraph = Paragraph::new(text).block(Block::bordered());
+
+            let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
+            paragraph.render(Rect::new(0, 0, 20, 3), &mut buf);
+
+            let mut expected = Buffer::with_lines([
+                "┌──────────────────┐",
+                "│Styled text       │",
+                "└──────────────────┘",
+            ]);
+            expected.set_style(Rect::new(1, 1, 11, 1), Style::default().fg(Color::Green));
+            assert_eq!(buf, expected);
+        }
     }
 }

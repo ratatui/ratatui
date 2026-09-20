@@ -10,6 +10,8 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.31.0](#v0310)
+  - `Backend` adds cursor save and restore methods
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -96,6 +98,20 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## v0.31.0
+
+### `Backend` adds cursor save and restore methods
+
+`Backend` now provides default `save_cursor_position` and `restore_cursor_position` methods.
+Existing backend implementations continue to compile because both methods have default
+implementations. However, this may cause method-call ambiguity in the unlikely case that another
+trait in scope defines a method with the same name for a backend type. Use fully qualified syntax to
+disambiguate such calls.
+
+Backends that can save the cursor without querying terminal input should override both methods and
+return `Ok(true)` from `save_cursor_position`. Other backends can use the default implementations,
+which select the cursor get-and-set fallback.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 

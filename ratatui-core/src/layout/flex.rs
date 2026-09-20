@@ -19,6 +19,12 @@ use crate::layout::Constraint;
 /// - `Center`: Centers items within the container.
 /// - `SpaceBetween`: Adds excess space between each element.
 /// - `SpaceAround`: Adds excess space around each element.
+/// - `SpaceEvenly`: Adds equal space between and around each element.
+///
+/// For an interactive comparison of these space distribution modes with different constraint
+/// types and spacing, see the [constraint-explorer example].
+///
+/// [constraint-explorer example]: https://github.com/ratatui/ratatui/tree/main/examples/apps/constraint-explorer/
 ///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash, EnumIs)]

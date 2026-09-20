@@ -759,8 +759,8 @@ mod tests {
 
     #[test]
     fn constructors_ignore_empty_groups() {
-        assert!(BarChart::new(Vec::<Bar>::new()).data.is_empty());
-        assert!(BarChart::horizontal(Vec::<Bar>::new()).data.is_empty());
+        assert_eq!(BarChart::new(Vec::<Bar>::new()).data, Vec::new());
+        assert_eq!(BarChart::horizontal(Vec::<Bar>::new()).data, Vec::new());
 
         let chart = BarChart::grouped([
             BarGroup::new(Vec::<Bar>::new()),

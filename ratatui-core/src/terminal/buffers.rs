@@ -138,6 +138,15 @@ impl<B: Backend> Terminal<B> {
     ///
     /// This preserves the backend's current cursor position.
     ///
+    /// For fixed and inline viewports, this uses [`Backend::save_cursor_position`] and
+    /// [`Backend::restore_cursor_position`], falling back to [`Backend::get_cursor_position`] and
+    /// [`Backend::set_cursor_position`] when saving is unsupported. Saving avoids a terminal cursor
+    /// position query that could compete with application input readers for the response; see
+    /// [issue #2691](https://github.com/ratatui/ratatui/issues/2691). Because terminals generally
+    /// have a single saved-cursor slot, this may overwrite the position stored by any other call to
+    /// [`Backend::save_cursor_position`]; save and restore operations that overlap this call are
+    /// not nestable.
+    ///
     /// This also resets the "previous" buffer so the next [`Terminal::flush`] redraws the full
     /// viewport.
     ///
@@ -145,10 +154,21 @@ impl<B: Backend> Terminal<B> {
     ///
     /// Implementation note: this uses [`ClearType::AfterCursor`] starting at the viewport origin.
     pub fn clear(&mut self) -> Result<(), B::Error> {
-        let original_cursor = self.backend.get_cursor_position()?;
-        self.clear_viewport()?;
-        self.backend.set_cursor_position(original_cursor)?;
-        Ok(())
+        match self.viewport {
+            // Clearing the full display preserves the cursor position by the Backend contract, so
+            // avoid saving it unnecessarily.
+            Viewport::Fullscreen => self.clear_viewport(),
+            Viewport::Inline(_) | Viewport::Fixed(_) => {
+                if self.backend.save_cursor_position()? {
+                    self.clear_viewport()?;
+                    self.backend.restore_cursor_position()
+                } else {
+                    let original_cursor = self.backend.get_cursor_position()?;
+                    self.clear_viewport()?;
+                    self.backend.set_cursor_position(original_cursor)
+                }
+            }
+        }
     }
 
     /// Clears according to the current viewport and resets the back buffer.
@@ -369,6 +389,23 @@ mod tests {
         assert_eq!(
             terminal.backend().cursor_position(),
             Position { x: 2, y: 0 }
+        );
+    }
+
+    #[test]
+    fn clear_fixed_uses_saved_cursor_without_querying() {
+        let backend = TestBackend::new(10, 3);
+        let options = TerminalOptions {
+            viewport: Viewport::Fixed(Rect::new(0, 1, 10, 2)),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+        let query_count = terminal.backend().cursor_position_query_count();
+
+        terminal.clear().unwrap();
+
+        assert_eq!(
+            terminal.backend().cursor_position_query_count(),
+            query_count
         );
     }
 

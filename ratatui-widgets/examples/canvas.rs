@@ -21,7 +21,7 @@ use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Stylize};
 use ratatui::symbols::Marker;
 use ratatui::text::{Line as TextLine, Span};
-use ratatui::widgets::canvas::{Canvas, Line, Map, MapResolution, Points, Rectangle};
+use ratatui::widgets::canvas::{Area, Canvas, Line, Map, MapResolution, Points, Rectangle};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -63,6 +63,12 @@ pub fn render_canvas(frame: &mut Frame, area: Rect) {
                 color: Color::White,
             });
             ctx.layer();
+            // Bermuda Triangle: Miami, Bermuda, and Puerto Rico.
+            ctx.draw(&Area::new(
+                &[(-80.2, 25.8), (-64.8, 32.3), (-66.5, 18.2)],
+                Color::Yellow,
+                true,
+            ));
             ctx.draw(&Line::new(0.0, 10.0, 10.0, 10.0, Color::Blue));
             ctx.draw(&Rectangle {
                 x: 10.0,

@@ -187,8 +187,9 @@ impl From<i16> for Spacing {
 /// }
 /// ```
 ///
-/// See the `layout`, `flex`, and `constraints` examples in the [Examples] folder for more details
-/// about how to use layouts.
+/// See the [constraint-explorer example] for an interactive exploration of how constraints, flex
+/// modes, and spacing affect the areas produced by a layout. The `flex` and `constraints` examples
+/// in the [Examples] folder show focused examples of each feature.
 ///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 ///
@@ -197,6 +198,7 @@ impl From<i16> for Spacing {
 ///
 /// [`kasuari`]: https://crates.io/crates/kasuari
 /// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
+/// [constraint-explorer example]: https://github.com/ratatui/ratatui/tree/main/examples/apps/constraint-explorer/
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Layout {
