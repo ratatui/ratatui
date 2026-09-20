@@ -15,7 +15,7 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use crossterm::event;
+use crossterm::event::{self, KeyCode};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
@@ -29,8 +29,11 @@ fn main() -> Result<()> {
     ratatui::run(|terminal| {
         loop {
             terminal.draw(render)?;
-            if event::read()?.is_key_press() {
-                break Ok(());
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => break Ok(()),
+                    _ => {}
+                }
             }
         }
     })
@@ -45,7 +48,7 @@ fn render(frame: &mut Frame) {
 
     let title = Line::from_iter([
         Span::from("Calendar Widget").bold(),
-        Span::from(" (Press 'q' to quit)"),
+        Span::from(" (Press 'q' or Esc to quit)"),
     ]);
     frame.render_widget(title.centered(), top);
 
