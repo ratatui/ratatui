@@ -335,7 +335,8 @@ discussion](https://github.com/ratatui/ratatui/discussions/66) for more about th
 We use GitHub Actions for the CI where we perform the following checks:
 
 - The code should compile on `stable` and the Minimum Supported Rust Version (MSRV).
-- The tests (docs, lib, tests and examples) should pass.
+- The tests (docs, lib, tests, and examples) should pass on `stable`. Compiler-diagnostic snapshots
+  are also tested on `stable`, because rustc's diagnostic text may differ across supported versions.
 - The code should conform to the default format enforced by `rustfmt`.
 - The code should not contain common style issues `clippy`.
 

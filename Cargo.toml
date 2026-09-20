@@ -59,11 +59,11 @@ ratatui-termina = { path = "ratatui-termina", version = "0.1.0" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.2" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.2" }
 ratatui-widgets = { path = "ratatui-widgets", version = "0.3.2", default-features = false }
-rstest = "0.26"
+rstest = "0.27"
 serde = { version = "1.0.228", default-features = false, features = ["derive"] }
 serde_json = "1.0.142"
 strum = { version = "0.28", default-features = false, features = ["derive"] }
-termina = "0.3"
+termina = "0.4"
 termion = "4"
 termwiz = "0.23"
 thiserror = { version = "2.0.12", default-features = false }
@@ -75,7 +75,7 @@ tracing-appender = "0.2"
 tracing-subscriber = "0.3.10"
 trybuild = "1.0.19"
 unicode-segmentation = "1.9"
-unicode-truncate = { version = "2", default-features = false }
+unicode-truncate = { version = "3", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width = ">=0.2.0"
 
