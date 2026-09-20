@@ -728,6 +728,7 @@ mod tests {
     #[case::start(0, true, false)]
     #[case::middle(1, false, false)]
     #[case::end(2, false, true)]
+    #[case::past_end(5, false, true)]
     fn scrollbar_state_is_at_start_and_end(
         #[case] position: usize,
         #[case] expected_at_start: bool,
@@ -742,6 +743,19 @@ mod tests {
     fn scrollbar_state_is_at_start_and_end_with_empty_content() {
         let state = ScrollbarState::new(0);
         assert!(state.is_at_start());
+        assert!(state.is_at_end());
+    }
+
+    #[rstest]
+    #[case::shorter_content(3)]
+    #[case::empty_content(0)]
+    fn scrollbar_state_remains_at_end_after_content_shrinks(#[case] content_length: usize) {
+        let state = ScrollbarState::new(6).position(5);
+        assert!(state.is_at_end());
+
+        let state = state.content_length(content_length);
+        assert_eq!(state.get_position(), 5);
+        assert!(!state.is_at_start());
         assert!(state.is_at_end());
     }
 
