@@ -290,13 +290,14 @@ jobs:
       - run: cargo xtask test-docs
 
   # Run cargo test on the libraries of the crate.
+  #
+  # Test the libraries on stable only. `ratatui-macros` uses trybuild snapshots that intentionally
+  # assert complete rustc diagnostics, including toolchain-specific details. The `check` matrix
+  # verifies MSRV compatibility; this job verifies the full test suite on the toolchain contributors
+  # use.
   test-libs:
-    name: Test Libs ${{ matrix.toolchain }}
+    name: Test Libs
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        toolchain: ["1.88.0", "stable"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
