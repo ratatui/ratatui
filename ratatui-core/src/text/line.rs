@@ -429,7 +429,10 @@ impl<'a> Line<'a> {
         self.alignment(Alignment::Right)
     }
 
-    /// Returns the width of the underlying string.
+    /// Returns the number of terminal cells this line occupies when rendered.
+    ///
+    /// This is the sum of the widths of its spans, so it counts what rendering
+    /// draws rather than the raw content; see [`Span::width`].
     ///
     /// # Examples
     ///

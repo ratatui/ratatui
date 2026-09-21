@@ -11,6 +11,7 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.31.0](#v0310)
+  - `Text`/`Line`/`Span::width` no longer count characters that are not drawn
   - `Backend` adds cursor save and restore methods
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
@@ -100,6 +101,18 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.31.0
+
+### `Text`/`Line`/`Span::width` no longer count characters that are not drawn
+
+`width` used to measure the raw content with `unicode-width`, which disagreed with what rendering
+put on screen in two ways: it counted control characters, which `Span::styled_graphemes` filters out
+before they reach the buffer, and it missed the cell that a halfwidth sound mark (`U+FF9E`,
+`U+FF9F`) takes up. A span therefore reported a width it did not draw, which put alignment and
+truncation one cell out.
+
+`width` now reports the cells that rendering draws. `Span::raw("a\tb").width()` is `2` rather than
+`3`, and `Span::raw("ｶﾞ").width()` is `2` rather than `1`. Code that relied on `width` to count raw
+content should measure the content directly with `unicode_width::UnicodeWidthStr::width` instead.
 
 ### `Backend` adds cursor save and restore methods
 

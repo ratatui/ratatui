@@ -271,7 +271,11 @@ impl<'a> Span<'a> {
         self.patch_style(Style::reset())
     }
 
-    /// Returns the unicode width of the content held by this span.
+    /// Returns the number of terminal cells this span occupies when rendered.
+    ///
+    /// This counts what rendering actually draws: control characters are left
+    /// out, since [`Span::styled_graphemes`] filters them, and every remaining
+    /// grapheme counts for the cells the buffer gives it.
     pub fn width(&self) -> usize {
         UnicodeWidthStr::width(self)
     }
@@ -381,10 +385,48 @@ impl<'a> Span<'a> {
 }
 
 impl UnicodeWidthStr for Span<'_> {
+    /// Returns the number of terminal cells this span occupies when rendered.
+    ///
+    /// Measuring the raw content with `unicode-width` alone disagrees with what
+    /// is drawn, in both directions: it counts control characters that
+    /// rendering drops, and it misses the cell that a halfwidth sound mark
+    /// takes (see [`CellWidth`]). Walking the same graphemes the renderer walks
+    /// keeps the declared width and the drawn width equal, which is what
+    /// alignment and truncation rely on.
     fn width(&self) -> usize {
-        self.content.width()
+        let content = self.content.as_ref();
+        // Rendering asks a line for its width on every frame, so stay off the
+        // grapheme segmenter unless the answer would actually differ.
+        //
+        // Printable ASCII is one grapheme and one cell per byte.
+        if content.is_ascii() {
+            return content
+                .bytes()
+                .filter(|byte| !byte.is_ascii_control())
+                .count();
+        }
+        // Past that, `unicode-width` only disagrees with the renderer over
+        // control characters, which it counts and the renderer drops, and over
+        // the halfwidth sound marks that [`CellWidth`] compensates for. One
+        // scan tells us whether either is present; text that holds neither is
+        // measured the cheap way.
+        let needs_exact_walk = content
+            .chars()
+            .any(|ch| ch.is_control() || matches!(ch, '\u{FF9E}' | '\u{FF9F}'));
+        if !needs_exact_walk {
+            return content.width();
+        }
+        content
+            .graphemes(true)
+            .filter(|symbol| !symbol.contains(char::is_control))
+            .map(|symbol| usize::from(symbol.cell_width()))
+            .sum()
     }
 
+    /// Returns the width of the raw content under the CJK width rules.
+    ///
+    /// Unlike [`width`](Self::width), this is not what rendering draws: the
+    /// buffer has no CJK mode to match it against.
     fn width_cjk(&self) -> usize {
         self.content.width_cjk()
     }
@@ -612,8 +654,42 @@ mod tests {
         assert_eq!(Span::raw("").width(), 0);
         assert_eq!(Span::raw("test").width(), 4);
         assert_eq!(Span::raw("test content").width(), 12);
-        // Needs reconsideration: https://github.com/ratatui/ratatui/issues/1271
-        assert_eq!(Span::raw("test\ncontent").width(), 12);
+        // A control character draws nothing, so it is worth no cells. This used
+        // to count as 12: https://github.com/ratatui/ratatui/issues/1271
+        assert_eq!(Span::raw("test\ncontent").width(), 11);
+    }
+
+    /// The width a span reports is the width it draws. Anything else puts
+    /// alignment, truncation and layout one cell out.
+    #[rstest]
+    #[case::empty("")]
+    #[case::ascii("test content")]
+    #[case::newline("test\ncontent")]
+    #[case::tab("a\tb")]
+    #[case::nul("a\0b")]
+    #[case::bell("a\u{7}b")]
+    #[case::only_a_control_char("\t")]
+    #[case::wide("が")]
+    #[case::emoji("👍")]
+    #[case::zero_width_joined_emoji("👩\u{200D}🔬")]
+    #[case::combining_accent("a\u{301}b")]
+    #[case::halfwidth_sound_mark("ｶ\u{FF9E}")]
+    #[case::sound_mark_between_letters("a\u{FF9E}b")]
+    fn width_matches_rendered_cells(#[case] content: &str) {
+        let span = Span::raw(content);
+
+        // Render onto a sentinel so the cells a wide grapheme hides, which are
+        // reset to a space, still count as drawn.
+        let sentinel = Cell::new("\u{2588}");
+        let mut buf = Buffer::filled(Rect::new(0, 0, 20, 1), sentinel.clone());
+        Widget::render(&span, buf.area, &mut buf);
+        let drawn = (0..20).take_while(|&x| buf[(x, 0)] != sentinel).count();
+
+        assert_eq!(
+            span.width(),
+            drawn,
+            "{content:?} reports a width it does not draw"
+        );
     }
 
     #[test]
