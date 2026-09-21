@@ -176,6 +176,18 @@ impl From<Modifier> for Effects {
         if modifier.contains(Modifier::UNDERLINED) {
             effects |= Self::UNDERLINE;
         }
+        if modifier.contains(Modifier::UNDER_CURLED) {
+            effects |= Self::CURLY_UNDERLINE;
+        }
+        if modifier.contains(Modifier::DOUBLE_UNDERLINED) {
+            effects |= Self::DOUBLE_UNDERLINE;
+        }
+        if modifier.contains(Modifier::UNDER_DOTTED) {
+            effects |= Self::DOTTED_UNDERLINE;
+        }
+        if modifier.contains(Modifier::UNDER_DASHED) {
+            effects |= Self::DASHED_UNDERLINE;
+        }
         if modifier.contains(Modifier::SLOW_BLINK) || modifier.contains(Modifier::RAPID_BLINK) {
             effects |= Self::BLINK;
         }
@@ -228,6 +240,8 @@ impl From<Style> for anstyle::Style {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     #[test]
@@ -301,12 +315,17 @@ mod tests {
         assert!(modifier.contains(Modifier::ITALIC));
     }
 
-    #[test]
-    fn modifier_to_effects() {
-        let modifier = Modifier::BOLD | Modifier::ITALIC;
+    #[rstest]
+    #[case(Modifier::BOLD | Modifier::ITALIC, &[Effects::BOLD, Effects::ITALIC])]
+    #[case(Modifier::DOUBLE_UNDERLINED, &[Effects::DOUBLE_UNDERLINE])]
+    #[case(Modifier::UNDER_CURLED, &[Effects::CURLY_UNDERLINE])]
+    #[case(Modifier::UNDER_DOTTED, &[Effects::DOTTED_UNDERLINE])]
+    #[case(Modifier::UNDER_DASHED, &[Effects::DASHED_UNDERLINE])]
+    fn modifier_to_effects(#[case] modifier: Modifier, #[case] expected_effects: &[Effects]) {
         let effects = Effects::from(modifier);
-        assert!(effects.contains(Effects::BOLD));
-        assert!(effects.contains(Effects::ITALIC));
+        for &effect in expected_effects {
+            assert!(effects.contains(effect));
+        }
     }
 
     #[test]
