@@ -61,7 +61,7 @@ use crate::widgets::Widget;
 ///
 /// - [`Line::patch_style`] patches the style of the line, adding modifiers from the given style.
 /// - [`Line::reset_style`] resets the style of the line.
-/// - [`Line::width`] returns the unicode width of the content held by this line.
+/// - [`Line::width`] returns the number of terminal cells this line occupies when rendered.
 /// - [`Line::styled_graphemes`] returns an iterator over the graphemes held by this line.
 /// - [`Line::push_span`] adds a span to the line.
 ///

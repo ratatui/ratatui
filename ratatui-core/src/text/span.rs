@@ -33,7 +33,7 @@ use crate::widgets::Widget;
 ///
 /// - [`Span::patch_style`] patches the style of the span, adding modifiers from the given style.
 /// - [`Span::reset_style`] resets the style of the span.
-/// - [`Span::width`] returns the unicode width of the content held by this span.
+/// - [`Span::width`] returns the number of terminal cells this span occupies when rendered.
 /// - [`Span::styled_graphemes`] returns an iterator over the graphemes held by this span.
 ///
 /// # Examples
