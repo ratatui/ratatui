@@ -39,7 +39,7 @@ all-widgets = ["calendar"]
 calendar = ["dep:time"]
 
 ## enables portable-atomic integration for targets that don't support atomic types.
-portable-atomic = ["dep:portable-atomic-util", "portable-atomic-util/alloc"]
+portable-atomic = ["dep:portable-atomic-util", "portable-atomic-util/alloc", "ratatui-core/portable-atomic"]
 
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info"]
