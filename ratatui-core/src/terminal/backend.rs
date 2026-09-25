@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::layout::Size;
-use crate::terminal::Terminal;
+use crate::terminal::{CursorVisibility, Terminal};
 
 impl<B: Backend> Terminal<B> {
     /// Returns a shared reference to the backend.
@@ -28,12 +28,14 @@ impl<B: Backend> Terminal<B> {
     /// Mutating the backend directly can desynchronize Ratatui's internal buffers, cursor
     /// tracking, or viewport assumptions from what's on-screen. If you do this, call
     /// [`Terminal::clear`] or perform a full draw pass before relying on Ratatui's view of the
-    /// terminal again.
+    /// terminal again. Because the cursor visibility is no longer guaranteed, it is reset to
+    /// `CursorVisibility::Unknown` so a later draw re-shows the cursor defensively.
     ///
     /// [`Terminal::clear`]: crate::terminal::Terminal::clear
     /// [`Terminal::draw`]: crate::terminal::Terminal::draw
     /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     pub const fn backend_mut(&mut self) -> &mut B {
+        self.cursor_visibility = CursorVisibility::Unknown;
         &mut self.backend
     }
 
@@ -59,9 +61,9 @@ impl<B: Backend> Terminal<B> {
 
 #[cfg(test)]
 mod tests {
-    use crate::backend::TestBackend;
+    use crate::backend::{Backend, TestBackend};
     use crate::layout::{Position, Size};
-    use crate::terminal::Terminal;
+    use crate::terminal::{CursorVisibility, Terminal};
 
     #[test]
     fn backend_returns_shared_reference() {
@@ -82,6 +84,22 @@ mod tests {
         terminal
             .backend()
             .assert_buffer_lines(["    ", "    ", "    "]);
+    }
+
+    #[test]
+    fn backend_mut_invalidates_cursor_visibility() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // Simulate a draw that leaves the cursor visible, then mutate the backend directly.
+        terminal.show_cursor().unwrap();
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Visible);
+
+        terminal.backend_mut().hide_cursor();
+
+        // Mutating the backend could desync the cursor, so visibility is reset to Unknown so a
+        // later draw defensively re-shows the cursor.
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Unknown);
     }
 
     #[test]
