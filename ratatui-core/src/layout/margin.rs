@@ -11,6 +11,9 @@ use core::fmt;
 /// margin, the space is applied to both the left and right sides. For vertical margin, the space
 /// is applied to both the top and bottom sides.
 ///
+/// Use [`Inset`](crate::layout::Inset) when you need different values for each side; `Margin`
+/// provides the symmetric case.
+///
 /// # Construction
 ///
 /// - [`new`](Self::new) - Create a new margin with horizontal and vertical spacing
