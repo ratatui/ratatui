@@ -1,4 +1,3 @@
-use alloc::sync::Arc;
 use core::hash::{Hash, Hasher};
 use core::panic::{RefUnwindSafe, UnwindSafe};
 use core::{fmt, ptr};
@@ -8,6 +7,12 @@ use ratatui_core::layout::{Offset, Position, Rect};
 use ratatui_core::style::{Color, Modifier, Style, Styled};
 use ratatui_core::symbols::shade;
 use ratatui_core::widgets::Widget;
+
+#[cfg(target_has_atomic = "ptr")]
+type CellRc<T> = alloc::sync::Arc<T>;
+
+#[cfg(not(target_has_atomic = "ptr"))]
+type CellRc<T> = alloc::rc::Rc<T>;
 
 /// A configurable shadow that can be rendered behind a [`Block`](crate::block::Block).
 ///
@@ -72,7 +77,7 @@ enum Effect {
     /// Fills the shadow area with a single symbol.
     Symbol(&'static str),
     /// Applies a user-defined shadow effect.
-    Custom(Arc<dyn CellEffect>),
+    Custom(CellRc<dyn CellEffect>),
 }
 
 /// A cell effect that modifies the cells covered by a [`Shadow`].
@@ -107,7 +112,7 @@ impl PartialEq for Effect {
         match (self, other) {
             (Self::Overlay, Self::Overlay) => true,
             (Self::Symbol(lhs), Self::Symbol(rhs)) => lhs == rhs,
-            (Self::Custom(lhs), Self::Custom(rhs)) => Arc::ptr_eq(lhs, rhs),
+            (Self::Custom(lhs), Self::Custom(rhs)) => CellRc::ptr_eq(lhs, rhs),
             _ => false,
         }
     }
@@ -125,7 +130,7 @@ impl Hash for Effect {
             }
             Self::Custom(filter) => {
                 "custom".hash(state);
-                ptr::hash(Arc::as_ptr(filter), state);
+                ptr::hash(CellRc::as_ptr(filter), state);
             }
         }
     }
@@ -250,7 +255,7 @@ impl Shadow {
     /// called after the shadow style has been applied.
     pub fn custom<F: CellEffect + 'static>(effect: F) -> Self {
         Self {
-            effect: Effect::Custom(Arc::new(effect)),
+            effect: Effect::Custom(CellRc::new(effect)),
             style: Style::default(),
             offset: Offset::new(1, 1),
         }
