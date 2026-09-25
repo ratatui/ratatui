@@ -21,7 +21,7 @@
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
 use color_eyre::Result;
-use crossterm::event::{self, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Constraint, Layout, Position};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span, Text};
@@ -139,7 +139,7 @@ impl App {
                         }
                         _ => {}
                     },
-                    InputMode::Editing if key.kind == KeyEventKind::Press => match key.code {
+                    InputMode::Editing => match key.code {
                         KeyCode::Enter => self.submit_message(),
                         KeyCode::Char(to_insert) => self.enter_char(to_insert),
                         KeyCode::Backspace => self.delete_char(),
@@ -148,7 +148,6 @@ impl App {
                         KeyCode::Esc => self.input_mode = InputMode::Normal,
                         _ => {}
                     },
-                    InputMode::Editing => {}
                 }
             }
         }

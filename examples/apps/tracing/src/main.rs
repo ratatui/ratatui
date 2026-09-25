@@ -52,7 +52,8 @@ fn main() -> Result<()> {
 fn should_exit(events: &[Event]) -> bool {
     events
         .iter()
-        .any(|event| matches!(event, Event::Key(key) if key.code == KeyCode::Char('q')))
+        .map(Event::as_key_press_event)
+        .any(|key| key.is_some_and(|key| key.code == KeyCode::Char('q')))
 }
 
 /// Handle events and insert them into the events vector keeping only the last 10 events
@@ -99,4 +100,26 @@ fn init_tracing() -> Result<WorkerGuard> {
         .with_env_filter(env_filter)
         .init();
     Ok(guard)
+}
+
+#[cfg(test)]
+mod tests {
+    use crossterm::event::{KeyEvent, KeyEventKind, KeyModifiers};
+
+    use super::*;
+
+    #[test]
+    fn should_exit_only_on_q_key_press() {
+        let q_event = |kind| {
+            Event::Key(KeyEvent::new_with_kind(
+                KeyCode::Char('q'),
+                KeyModifiers::NONE,
+                kind,
+            ))
+        };
+
+        assert!(should_exit(&[q_event(KeyEventKind::Press)]));
+        assert!(!should_exit(&[q_event(KeyEventKind::Repeat)]));
+        assert!(!should_exit(&[q_event(KeyEventKind::Release)]));
+    }
 }
