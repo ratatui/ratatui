@@ -274,6 +274,9 @@ pub struct Table<'a> {
 
     /// How many rows to try to keep visible before and after the selected row
     scroll_padding: usize,
+
+    /// Whether to move the selection into view on render
+    selection_must_be_visible: bool,
 }
 
 impl Default for Table<'_> {
@@ -293,6 +296,7 @@ impl Default for Table<'_> {
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
             scroll_padding: 0,
+            selection_must_be_visible: true,
         }
     }
 }
@@ -747,6 +751,30 @@ impl<'a> Table<'a> {
         self.scroll_padding = padding;
         self
     }
+
+    /// Set whether the table offset automatically adjusts to keep the selected row visible.
+    ///
+    /// By default this setting is enabled. When the selected row is above the visible area,
+    /// the table scrolls up until the selected row becomes visible. Likewise, if the selected row
+    /// is below the visible area, it scrolls down.
+    ///
+    /// In certain situations it can be desirable to disable it, for example when mapping mouse
+    /// scroll events to offset increments or decrements.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::Table;
+    ///
+    /// let table = Table::default().selection_must_be_visible(true);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn selection_must_be_visible(mut self, selection_must_be_visible: bool) -> Self {
+        self.selection_must_be_visible = selection_must_be_visible;
+        self
+    }
 }
 
 impl Widget for Table<'_> {
@@ -783,8 +811,10 @@ impl StatefulWidget for &Table<'_> {
         let (header_area, rows_area, footer_area) = self.layout(table_area);
 
         self.ensure_selection_is_in_bounds(state);
-        self.ensure_selection_is_visible(rows_area, state);
-        self.ensure_scroll_padding(rows_area, state);
+        if core::mem::take(&mut state.selected_changed) || self.selection_must_be_visible {
+            self.ensure_selection_is_visible(rows_area, state);
+            self.ensure_scroll_padding(rows_area, state);
+        }
 
         let column_count = self.column_count();
         let selection_width = self.selection_width(state);
