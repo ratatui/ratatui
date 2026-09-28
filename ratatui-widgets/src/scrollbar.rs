@@ -607,14 +607,34 @@ impl Scrollbar<'_> {
         )
         .clamp(1, track_length);
 
+        let thumb_travel = track_length.saturating_sub(thumb_length);
+
+        // The furthest an application can scroll to is `content_length - viewport_length`:
+        // scrolling any further would push content out of the viewport. The thumb therefore has
+        // to travel over that range, not over `content_length - 1 + viewport_length`, otherwise
+        // it stops short of the end of the track once the content is fully scrolled. See
+        // issue #1681.
+        let max_scroll_position = state.content_length.saturating_sub(viewport_length);
+        let thumb_start = if max_scroll_position == 0 {
+            // The content fits inside the viewport, so there is nothing to scroll and the
+            // position carries no information. Keep the historical rendering in that case so
+            // that non-scrollable content is unaffected.
+            rounding_divide(
+                start_position.saturating_mul(track_length),
+                max_viewport_position,
+            )
+        } else {
+            rounding_divide(
+                start_position
+                    .min(max_scroll_position)
+                    .saturating_mul(thumb_travel),
+                max_scroll_position,
+            )
+        }
         // Clamp so the thumb always fits within the track (`thumb_start + thumb_length <=
         // track_length`). Clamping to `track_length - 1` instead let a large thumb overrun the
         // track at the end, pushing the end symbol out of the rendered area. See issue #2582.
-        let thumb_start = rounding_divide(
-            start_position.saturating_mul(track_length),
-            max_viewport_position,
-        )
-        .clamp(0, track_length.saturating_sub(thumb_length));
+        .clamp(0, thumb_travel);
 
         let track_end = track_length.saturating_sub(thumb_start + thumb_length);
         (thumb_start, thumb_length, track_end)
@@ -1105,15 +1125,20 @@ mod tests {
     }
 
     #[rstest]
+    // The expectations below assume the historical normalization, which placed the thumb at
+    // `position * track_length / (content_length - 1 + viewport)`. As of the fix for #1681 the
+    // thumb travels over `content_length - viewport` instead, so it tracks the scroll position
+    // more accurately: 6/8, 7/8 and 8/8 of the way through the content now map to 6/8, 7/8 and
+    // 8/8 of the way along the track.
     #[case::position_0("##--------", 0, 10)]
     #[case::position_1("-##-------", 1, 10)]
     #[case::position_2("--##------", 2, 10)]
     #[case::position_3("---##-----", 3, 10)]
     #[case::position_4("----##----", 4, 10)]
     #[case::position_5("-----##---", 5, 10)]
-    #[case::position_6("-----##---", 6, 10)]
-    #[case::position_7("------##--", 7, 10)]
-    #[case::position_8("-------##-", 8, 10)]
+    #[case::position_6("------##--", 6, 10)]
+    #[case::position_7("-------##-", 7, 10)]
+    #[case::position_8("--------##", 8, 10)]
     #[case::position_9("--------##", 9, 10)]
     #[case::position_one_out_of_bounds("--------##", 10, 10)]
     fn custom_viewport_length(
@@ -1133,6 +1158,10 @@ mod tests {
 
     /// Fixes <https://github.com/ratatui/ratatui/pull/959> which was a bug that would not
     /// render a thumb when the viewport was very small in comparison to the content length.
+    ///
+    /// The expectations assume the fix for #1681: the thumb travels over
+    /// `content_length - viewport`, so 60/98 and 80/98 of the way through the content map to
+    /// 2/4 and 3/4 of the way along the track.
     #[rstest]
     #[case::position_0("#----", 0, 100)]
     #[case::position_10("#----", 10, 100)]
@@ -1140,9 +1169,9 @@ mod tests {
     #[case::position_30("-#---", 30, 100)]
     #[case::position_40("--#--", 40, 100)]
     #[case::position_50("--#--", 50, 100)]
-    #[case::position_60("---#-", 60, 100)]
+    #[case::position_60("--#--", 60, 100)]
     #[case::position_70("---#-", 70, 100)]
-    #[case::position_80("----#", 80, 100)]
+    #[case::position_80("---#-", 80, 100)]
     #[case::position_90("----#", 90, 100)]
     #[case::position_one_out_of_bounds("----#", 100, 100)]
     fn thumb_visible_on_very_small_track(
@@ -1285,5 +1314,51 @@ mod tests {
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar.render(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
+    }
+
+    /// Regression test for <https://github.com/ratatui/ratatui/issues/1681>.
+    ///
+    /// The maximum position an application can scroll to is `content_length -
+    /// viewport_content_length`: scrolling any further would push content out of view. Once the
+    /// content is scrolled that far the thumb has to sit flush against the end of the track,
+    /// otherwise the widget reports a scroll position that the content never reaches.
+    ///
+    /// The case where the content fits inside the viewport is deliberately not covered here:
+    /// there is nothing to scroll in that case, and `part_lengths` keeps its historical
+    /// rendering for it.
+    #[rstest]
+    #[case::content_twice_viewport(20, 10, 10)]
+    #[case::content_much_larger_than_viewport(100, 22, 78)]
+    #[case::content_ten_times_viewport(100, 10, 90)]
+    #[case::viewport_of_one(100, 1, 99)]
+    #[case::viewport_of_two(100, 2, 98)]
+    fn thumb_reaches_end_of_track_when_content_is_fully_scrolled(
+        #[case] content_length: usize,
+        #[case] viewport_content_length: usize,
+        #[case] max_position: usize,
+    ) {
+        // A track of 22 is what a 24 cell tall scrollbar with arrow heads leaves behind, which
+        // matches the layout used by the scrollbar example.
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+        let area = Rect::new(0, 0, 1, 24);
+        let track_length = 22;
+
+        let state = ScrollbarState::new(content_length)
+            .position(max_position)
+            .viewport_content_length(viewport_content_length);
+
+        let (start, thumb_len, end) = scrollbar.part_lengths(area, &state);
+
+        assert_eq!(
+            start + thumb_len + end,
+            track_length,
+            "parts must sum to the track length"
+        );
+        assert_eq!(
+            end, 0,
+            "thumb is not flush with the end of the track: \
+             content_length={content_length}, viewport={viewport_content_length}, \
+             position={max_position} leaves {end} track cell(s) after the thumb"
+        );
     }
 }
