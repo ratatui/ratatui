@@ -3210,5 +3210,43 @@ mod tests {
             StatefulWidget::render(&table, buf.area, &mut buf, &mut state);
             assert_eq!(buf, Buffer::with_lines(expected_after_select));
         }
+
+        #[rstest]
+        #[case::overscroll_exists(
+            4, // height
+            5, // offset
+            [
+                "Row 2     ",
+                "Row 3     ",
+                "Row 4     ",
+                "Row 5     ",
+            ]
+        )]
+        #[case::overscroll_doesnt_exist(
+            4, // height
+            0, // offset
+            [
+                "Row 0     ",
+                "Row 1     ",
+                "Row 2     ",
+                "Row 3     ",
+            ]
+        )]
+        fn no_overscroll<'line, Lines>(
+            #[case] render_height: u16,
+            #[case] offset: usize,
+            #[case] expected: Lines,
+        ) where
+            Lines: IntoIterator,
+            Lines::Item: Into<Line<'line>>,
+        {
+            let rows = (0..6).map(|i| Row::new(vec![format!("Row {i}")]));
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).allow_overscroll(false);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, render_height));
+            let mut state = TableState::new().with_offset(offset);
+            StatefulWidget::render(table, buf.area, &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(expected));
+        }
     }
 }
