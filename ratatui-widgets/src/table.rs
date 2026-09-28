@@ -780,26 +780,15 @@ impl StatefulWidget for &Table<'_> {
         if table_area.is_empty() {
             return;
         }
+        let (header_area, rows_area, footer_area) = self.layout(table_area);
 
-        if state.selected.is_some_and(|s| s >= self.rows.len()) {
-            state.select(Some(self.rows.len().saturating_sub(1)));
-        }
-
-        if self.rows.is_empty() {
-            state.select(None);
-        }
+        self.ensure_selection_is_in_bounds(state);
+        self.ensure_selection_is_visible(rows_area, state);
+        self.ensure_scroll_padding(rows_area, state);
 
         let column_count = self.column_count();
-        if state.selected_column.is_some_and(|s| s >= column_count) {
-            state.select_column(Some(column_count.saturating_sub(1)));
-        }
-        if column_count == 0 {
-            state.select_column(None);
-        }
-
         let selection_width = self.selection_width(state);
         let column_widths = self.get_column_widths(table_area.width, selection_width, column_count);
-        let (header_area, rows_area, footer_area) = self.layout(table_area);
 
         self.render_header(header_area, buf, &column_widths);
 
@@ -831,6 +820,83 @@ impl Table<'_> {
         .split(area);
         let (header_area, rows_area, footer_area) = (layout[1], layout[3], layout[5]);
         (header_area, rows_area, footer_area)
+    }
+
+    /// ensures that the selection points to a valid row
+    fn ensure_selection_is_in_bounds(&self, state: &mut TableState) {
+        if state.selected.is_some_and(|s| s >= self.rows.len()) {
+            state.select(Some(self.rows.len().saturating_sub(1)));
+        }
+
+        if self.rows.is_empty() {
+            state.select(None);
+        }
+
+        let column_count = self.column_count();
+
+        if state.selected_column.is_some_and(|s| s >= column_count) {
+            state.select_column(Some(column_count.saturating_sub(1)));
+        }
+        if column_count == 0 {
+            state.select_column(None);
+        }
+    }
+
+    /// Scroll the table if necessary to ensure the selected row it is visible.
+    fn ensure_selection_is_visible(&self, rows_area: Rect, state: &mut TableState) {
+        let last_row = self.rows.len().saturating_sub(1);
+        let visible_rows = usize::from(rows_area.height);
+        if let Some(selected) = state.selected {
+            assert!(selected <= last_row);
+            let min_offset = selected.saturating_sub(visible_rows.saturating_sub(1));
+            state.offset = state.offset.min(selected).max(min_offset);
+        }
+    }
+
+    /// Scroll the table if necessary to ensure there is enough space above and below the selected
+    /// item according to the configured padding.
+    fn ensure_scroll_padding(&self, rows_area: Rect, state: &mut TableState) {
+        if let Some(selected) = state.selected {
+            let max_height = usize::from(rows_area.height);
+            let mut height = 0;
+            let mut start = state.offset;
+            let mut end = start;
+            let row_height = |idx: usize| usize::from(self.rows[idx].height_with_margin());
+
+            while end < self.rows.len() && height + row_height(end) <= max_height {
+                height += row_height(end);
+                end += 1;
+            }
+
+            let index_to_display =
+                self.apply_scroll_padding_to_selected_index(selected, max_height, start, end);
+
+            // scroll down until the target index is visible
+            while end <= index_to_display {
+                if start < end {
+                    height -= row_height(start);
+                } else {
+                    end += 1;
+                }
+                start += 1;
+                while end < self.rows.len() && height + row_height(end) <= max_height {
+                    height += row_height(end);
+                    end += 1;
+                }
+            }
+
+            // scroll up until the target index is visible
+            while index_to_display < start {
+                start -= 1;
+                height += row_height(start);
+                while height > max_height {
+                    end -= 1;
+                    height -= row_height(end);
+                }
+            }
+
+            state.offset = start;
+        }
     }
 
     /// Render the header cells, if they are not `None`
@@ -872,7 +938,7 @@ impl Table<'_> {
         area: Rect,
         buf: &mut Buffer,
         selection_width: u16,
-        state: &mut TableState,
+        state: &TableState,
         columns_widths: &[Rect],
     ) {
         if self.rows.is_empty() {
@@ -880,7 +946,6 @@ impl Table<'_> {
         }
 
         let (start_index, end_index) = self.visible_rows(state, area);
-        state.offset = start_index;
 
         let mut y_offset = 0;
 
@@ -1017,64 +1082,22 @@ impl Table<'_> {
     /// The algorithm works as follows:
     /// - start at the offset and calculate the height of the rows that can be displayed within the
     ///   area.
-    /// - if the selected row is not visible, scroll the table to ensure it is visible.
-    /// - if scroll padding is set, ensure the padding number of rows are visible before and after
-    ///   the selected row, adjusting the padding down when items of inconsistent sizes make it
-    ///   impossible.
     /// - if there is still space to fill then there's a partial row at the end which should be
     ///   included in the view.
     fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
-        let last_row = self.rows.len().saturating_sub(1);
-        let mut start = state.offset.min(last_row);
-
-        if let Some(selected) = state.selected {
-            start = start.min(selected);
-        }
-
-        let mut end = start;
+        let max_height = usize::from(area.height);
         let mut height = 0;
+        let start = state.offset;
+        let mut end = start;
+        let row_height = move |idx: usize| usize::from(self.rows[idx].height_with_margin());
 
-        for item in self.rows.iter().skip(start) {
-            if height + item.height > area.height {
-                break;
-            }
-            height += item.height_with_margin();
+        while end < self.rows.len() && height + row_height(end) <= max_height {
+            height += row_height(end);
             end += 1;
         }
 
-        if let Some(selected) = state.selected {
-            let selected = selected.min(last_row);
-
-            let index_to_display = self.apply_scroll_padding_to_selected_index(
-                selected,
-                area.height as usize,
-                start,
-                end,
-            );
-
-            // scroll down until the target index is visible
-            while index_to_display >= end {
-                height = height.saturating_add(self.rows[end].height_with_margin());
-                end += 1;
-                while height > area.height {
-                    height = height.saturating_sub(self.rows[start].height_with_margin());
-                    start += 1;
-                }
-            }
-
-            // scroll up until the target index is visible
-            while index_to_display < start {
-                start -= 1;
-                height = height.saturating_add(self.rows[start].height_with_margin());
-                while height > area.height {
-                    end -= 1;
-                    height = height.saturating_sub(self.rows[end].height_with_margin());
-                }
-            }
-        }
-
         // Include a partial row if there is space
-        if height < area.height && end < self.rows.len() {
+        if height < max_height && end < self.rows.len() {
             end += 1;
         }
 
