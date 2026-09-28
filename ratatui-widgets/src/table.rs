@@ -277,6 +277,9 @@ pub struct Table<'a> {
 
     /// Whether to move the selection into view on render
     selection_must_be_visible: bool,
+
+    /// Whether to allow scrolling down further than is necessary to see the last row
+    allow_overscroll: bool,
 }
 
 impl Default for Table<'_> {
@@ -297,6 +300,7 @@ impl Default for Table<'_> {
             flex: Flex::Start,
             scroll_padding: 0,
             selection_must_be_visible: true,
+            allow_overscroll: true,
         }
     }
 }
@@ -775,6 +779,27 @@ impl<'a> Table<'a> {
         self.selection_must_be_visible = selection_must_be_visible;
         self
     }
+
+    /// Set whether to allow scrolling past the last row
+    ///
+    /// By default this setting is enabled, which allows the table to scroll down until only the
+    /// last row is visible. When disabled, the table does not scroll down further than is
+    /// necessary to see the last row.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::Table;
+    ///
+    /// let table = Table::default().allow_overscroll(true);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn allow_overscroll(mut self, allow_overscroll: bool) -> Self {
+        self.allow_overscroll = allow_overscroll;
+        self
+    }
 }
 
 impl Widget for Table<'_> {
@@ -815,6 +840,9 @@ impl StatefulWidget for &Table<'_> {
         if core::mem::take(&mut state.selected_changed) || self.selection_must_be_visible {
             self.ensure_selection_is_visible(rows_area, state);
             self.ensure_scroll_padding(rows_area, state);
+        }
+        if !self.allow_overscroll {
+            self.prevent_overscroll(rows_area, state);
         }
 
         let column_count = self.column_count();
@@ -933,6 +961,52 @@ impl Table<'_> {
 
             state.offset = start;
         }
+    }
+
+    /// prevents overscrolling i.e. the view doesn't scroll past the last item
+    fn prevent_overscroll(&self, rows_area: Rect, state: &mut TableState) {
+        let last_index = self.rows.len().saturating_sub(1);
+        let max_height = usize::from(rows_area.height);
+        let mut height = 0;
+        let mut start = state.offset;
+        let mut end = start;
+        let row_height = |idx: usize| usize::from(self.rows[idx].height_with_margin());
+
+        assert!(start <= last_index);
+
+        while end < self.rows.len() && height + row_height(end) <= max_height {
+            height += row_height(end);
+            end += 1;
+        }
+
+        if last_index >= end {
+            return;
+        }
+
+        // scroll up until last row is not visible anymore
+        while start > 0 && last_index < end {
+            start -= 1;
+            height += row_height(start);
+            while height > max_height {
+                end -= 1;
+                height -= row_height(end);
+            }
+        }
+        // scroll down one step, making the last row visible again
+        if last_index >= end {
+            if start < end {
+                height -= row_height(start);
+            } else {
+                end += 1;
+            }
+            start += 1;
+            while end < self.rows.len() && height + row_height(end) <= max_height {
+                height += row_height(end);
+                end += 1;
+            }
+        }
+
+        state.offset = start;
     }
 
     /// Render the header cells, if they are not `None`
