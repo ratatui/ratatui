@@ -3176,5 +3176,47 @@ mod tests {
             StatefulWidget::render(table, buf.area, &mut buf, &mut state);
             assert_eq!(buf, Buffer::with_lines(expected));
         }
+
+        #[rstest]
+        #[case::selection_not_visible_before(
+            4, // height
+            5, // offset
+            Some(0), // selected
+            [
+                "Row 5     ",
+                "          ",
+                "          ",
+                "          ",
+            ],
+            [
+                "Row 0     ",
+                "Row 1     ",
+                "Row 2     ",
+                "Row 3     ",
+            ]
+        )]
+        fn selection_visible_after_select<'line, Lines>(
+            #[case] render_height: u16,
+            #[case] offset: usize,
+            #[case] selected: Option<usize>,
+            #[case] expected_before_select: Lines,
+            #[case] expected_after_select: Lines,
+        ) where
+            Lines: IntoIterator,
+            Lines::Item: Into<Line<'line>>,
+        {
+            let rows = (0..6).map(|i| Row::new(vec![format!("Row {i}")]));
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).selection_must_be_visible(false);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, render_height));
+            let mut state = TableState::new()
+                .with_offset(offset)
+                .with_selected(selected);
+            StatefulWidget::render(&table, buf.area, &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(expected_before_select));
+            state.select(selected);
+            StatefulWidget::render(&table, buf.area, &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(expected_after_select));
+        }
     }
 }
