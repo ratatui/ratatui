@@ -193,7 +193,7 @@ fn widgets_chart_handles_long_labels<'line, Lines>(
         "          ",
         "          ",
         "  ────────",
-        "AAAA B   C",
+        "AAAA  B  C",
     ],
 )]
 #[case::right(
@@ -203,7 +203,7 @@ fn widgets_chart_handles_long_labels<'line, Lines>(
         "          ",
         "          ",
         "──────────",
-        "AAA B    C",
+        "AAA  B   C",
     ],
 )]
 fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
