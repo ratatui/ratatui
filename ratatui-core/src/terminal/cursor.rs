@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::layout::Position;
-use crate::terminal::Terminal;
+use crate::terminal::{CursorVisibility, Terminal};
 
 impl<B: Backend> Terminal<B> {
     /// Hides the cursor.
@@ -14,7 +14,7 @@ impl<B: Backend> Terminal<B> {
     /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     pub fn hide_cursor(&mut self) -> Result<(), B::Error> {
         self.backend.hide_cursor()?;
-        self.hidden_cursor = true;
+        self.cursor_visibility = CursorVisibility::Hidden;
         Ok(())
     }
 
@@ -29,7 +29,7 @@ impl<B: Backend> Terminal<B> {
     /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     pub fn show_cursor(&mut self) -> Result<(), B::Error> {
         self.backend.show_cursor()?;
-        self.hidden_cursor = false;
+        self.cursor_visibility = CursorVisibility::Visible;
         Ok(())
     }
 
@@ -89,7 +89,7 @@ impl<B: Backend> Terminal<B> {
 mod tests {
     use crate::backend::{Backend, TestBackend};
     use crate::layout::Position;
-    use crate::terminal::Terminal;
+    use crate::terminal::{CursorVisibility, Terminal};
 
     #[test]
     fn hide_cursor_updates_terminal_state() {
@@ -98,7 +98,7 @@ mod tests {
 
         terminal.hide_cursor().unwrap();
 
-        assert!(terminal.hidden_cursor);
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Hidden);
         assert!(!terminal.backend().cursor_visible());
     }
 
@@ -110,7 +110,7 @@ mod tests {
         terminal.hide_cursor().unwrap();
         terminal.show_cursor().unwrap();
 
-        assert!(!terminal.hidden_cursor);
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Visible);
         assert!(terminal.backend().cursor_visible());
     }
 
