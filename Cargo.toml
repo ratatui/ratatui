@@ -48,6 +48,7 @@ line-clipping = "0.3.8"
 lru = "0.18"
 octocrab = "0.54"
 palette = { version = "0.7.7", default-features = false, features = ["libm"] }
+portable-atomic-util = { version = "0.2.4", default-features = false }
 pretty_assertions = "1"
 rand = "0.10"
 rand_chacha = "0.10"

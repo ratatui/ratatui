@@ -221,7 +221,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master
         with:
           toolchain: stable
-          targets: x86_64-unknown-none
+          targets: x86_64-unknown-none, thumbv6m-none-eabi
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
       # This makes it easier to debug the exact versions of the dependencies
       - run: cargo tree --target x86_64-unknown-none -p ratatui-core
@@ -232,6 +232,15 @@ jobs:
       - run: cargo build --target x86_64-unknown-none -p ratatui-widgets
       - run: cargo build --target x86_64-unknown-none -p ratatui-macros
       - run: cargo build --target x86_64-unknown-none -p ratatui --no-default-features
+      # Regression check for targets without native atomic pointers (e.g. thumbv6m-none-eabi).
+      # x86_64-unknown-none still has atomics, so it does not exercise the portable-atomic path.
+      # The single-core cfg stands in for a critical-section implementation at check time.
+      - run: cargo check --target thumbv6m-none-eabi -p ratatui-widgets --features portable-atomic
+        env:
+          RUSTFLAGS: --cfg portable_atomic_unsafe_assume_single_core
+      - run: cargo check --target thumbv6m-none-eabi -p ratatui --no-default-features --features portable-atomic
+        env:
+          RUSTFLAGS: --cfg portable_atomic_unsafe_assume_single_core
 
   # Check if README.md is up-to-date with the crate's documentation.
   check-readme:
