@@ -12,6 +12,7 @@ This is a quick summary of the sections below:
 
 - [v0.31.0](#v0310)
   - `Backend` adds cursor save and restore methods
+  - `Paragraph::scroll` now takes `(usize, usize)`
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -100,6 +101,16 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.31.0
+
+### `Paragraph::scroll` now takes `(usize, usize)`
+
+Both scroll offsets now use `usize` to support content beyond 65,535 lines or columns. The tuple
+order remains `(y, x)`. Calls with unsuffixed integer literals continue to work. If your offsets
+are `u16` variables, convert them with `usize::from`:
+
+```rust
+paragraph.scroll((usize::from(y), usize::from(x)));
+```
 
 ### `Backend` adds cursor save and restore methods
 
