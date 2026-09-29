@@ -83,7 +83,7 @@ pub struct Paragraph<'a> {
     /// The text to display
     text: Text<'a>,
     /// Scroll
-    scroll: Position,
+    scroll: (Vertical, Horizontal),
     /// Alignment of the text
     alignment: Alignment,
 }
@@ -124,8 +124,8 @@ pub struct Wrap {
     pub trim: bool,
 }
 
-type Horizontal = u16;
-type Vertical = u16;
+type Horizontal = usize;
+type Vertical = usize;
 
 impl<'a> Paragraph<'a> {
     /// Creates a new [`Paragraph`] widget with the given text.
@@ -157,7 +157,7 @@ impl<'a> Paragraph<'a> {
             style: Style::default(),
             wrap: None,
             text,
-            scroll: Position::ORIGIN,
+            scroll: (0, 0),
             alignment,
         }
     }
@@ -223,7 +223,7 @@ impl<'a> Paragraph<'a> {
     /// Set the scroll offset for the given paragraph
     ///
     /// The scroll offset is a tuple of (y, x) offset. The y offset is the number of lines to
-    /// scroll, and the x offset is the number of characters to scroll. The scroll offset is applied
+    /// scroll, and the x offset is the number of columns to scroll. The scroll offset is applied
     /// after the text is wrapped and aligned.
     ///
     /// Note: the order of the tuple is (y, x) instead of (x, y), which is different from general
@@ -233,10 +233,7 @@ impl<'a> Paragraph<'a> {
     /// Scrollable Widgets](https://github.com/ratatui/ratatui/discussions/1924) on GitHub.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
-        self.scroll = Position {
-            x: offset.1,
-            y: offset.0,
-        };
+        self.scroll = offset;
         self
     }
 
@@ -433,7 +430,7 @@ impl Paragraph<'_> {
         if let Some(Wrap { trim }) = self.wrap {
             let mut line_composer = WordWrapper::new(styled, text_area.width, trim);
             // compute the lines iteratively until we reach the desired scroll offset.
-            for _ in 0..self.scroll.y {
+            for _ in 0..self.scroll.0 {
                 if line_composer.next_line().is_none() {
                     return;
                 }
@@ -441,9 +438,9 @@ impl Paragraph<'_> {
             render_lines(line_composer, text_area, buf);
         } else {
             // avoid unnecessary work by skipping directly to the relevant line before rendering
-            let lines = styled.skip(self.scroll.y as usize);
+            let lines = styled.skip(self.scroll.0);
             let mut line_composer = LineTruncator::new(lines, text_area.width);
-            line_composer.set_horizontal_offset(self.scroll.x);
+            line_composer.set_horizontal_offset(self.scroll.1);
             render_lines(line_composer, text_area, buf);
         }
     }
@@ -875,6 +872,68 @@ mod tests {
             &wrapped_paragraph,
             &Buffer::with_lines(["cool   ", "multili", "ne     "]),
         );
+    }
+
+    #[rstest]
+    fn test_render_paragraph_with_large_vertical_scroll_offset(
+        #[values(65_535, 65_536)] offset: usize,
+    ) {
+        let mut lines = vec![Line::raw("skip"); offset];
+        lines.extend([Line::raw("first"), Line::raw("second")]);
+        let paragraph = Paragraph::new(lines).scroll((offset, 0));
+
+        for paragraph in [
+            paragraph.clone(),
+            paragraph.clone().wrap(Wrap { trim: false }),
+            paragraph.wrap(Wrap { trim: true }),
+        ] {
+            test_case(&paragraph, &Buffer::with_lines(["first ", "second"]));
+        }
+    }
+
+    #[rstest]
+    fn test_render_paragraph_with_large_wrapped_scroll_offset(#[values(false, true)] trim: bool) {
+        let offset = usize::from(u16::MAX) + 1;
+        let text = "x".repeat(offset) + "ab";
+        let paragraph = Paragraph::new(text)
+            .wrap(Wrap { trim })
+            .scroll((offset, usize::MAX));
+
+        test_case(&paragraph, &Buffer::with_lines(["a", "b"]));
+    }
+
+    #[rstest]
+    #[case("x", 1)]
+    #[case("界", 2)]
+    #[case("e\u{301}", 1)]
+    fn test_render_paragraph_with_large_horizontal_scroll_offset(
+        #[case] symbol: &str,
+        #[case] width: usize,
+    ) {
+        let offset = usize::from(u16::MAX) + 1;
+        let prefix = symbol.repeat(offset / width);
+        let lines = vec![
+            Line::from(prefix.clone() + "end"),
+            Line::from(prefix + "fin"),
+        ];
+        let paragraph = Paragraph::new(lines).scroll((0, offset));
+
+        test_case(&paragraph, &Buffer::with_lines(["end", "fin"]));
+    }
+
+    #[test]
+    fn test_render_paragraph_with_max_scroll_offset() {
+        let paragraph = Paragraph::new("hello\nworld");
+        let expected = Buffer::with_lines(["     ", "     "]);
+
+        test_case(&paragraph.clone().scroll((0, usize::MAX)), &expected);
+        for paragraph in [
+            paragraph.clone(),
+            paragraph.clone().wrap(Wrap { trim: false }),
+            paragraph.wrap(Wrap { trim: true }),
+        ] {
+            test_case(&paragraph.scroll((usize::MAX, 0)), &expected);
+        }
     }
 
     #[test]

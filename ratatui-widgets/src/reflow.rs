@@ -248,7 +248,7 @@ where
     max_line_width: u16,
     current_line: Vec<StyledGrapheme<'a>>,
     /// Record the offset to skip render
-    horizontal_offset: u16,
+    horizontal_offset: usize,
 }
 
 impl<'a, O, I> LineTruncator<'a, O, I>
@@ -267,7 +267,7 @@ where
     }
 
     /// Set the horizontal offset to skip render.
-    pub const fn set_horizontal_offset(&mut self, horizontal_offset: u16) {
+    pub const fn set_horizontal_offset(&mut self, horizontal_offset: usize) {
         self.horizontal_offset = horizontal_offset;
     }
 }
@@ -306,7 +306,7 @@ where
                 let symbol = if horizontal_offset == 0 || Alignment::Left != *alignment {
                     symbol
                 } else {
-                    let w = symbol.cell_width();
+                    let w = usize::from(symbol.cell_width());
                     if w > horizontal_offset {
                         let t = trim_offset(symbol, horizontal_offset);
                         horizontal_offset = 0;
@@ -335,10 +335,10 @@ where
 
 /// This function will return a str slice which start at specified offset.
 /// As src is a unicode str, start offset has to be calculated with each character.
-fn trim_offset(src: &str, mut offset: u16) -> &str {
+fn trim_offset(src: &str, mut offset: usize) -> &str {
     let mut start = 0;
     for c in UnicodeSegmentation::graphemes(src, true) {
-        let w = c.cell_width();
+        let w = usize::from(c.cell_width());
         if w <= offset {
             offset -= w;
             start += c.len();
