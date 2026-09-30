@@ -102,16 +102,33 @@ bitflags! {
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
     #[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct Modifier: u16 {
-        const BOLD              = 0b0000_0000_0001;
-        const DIM               = 0b0000_0000_0010;
-        const ITALIC            = 0b0000_0000_0100;
-        const UNDERLINED        = 0b0000_0000_1000;
-        const SLOW_BLINK        = 0b0000_0001_0000;
-        const RAPID_BLINK       = 0b0000_0010_0000;
-        const REVERSED          = 0b0000_0100_0000;
-        const HIDDEN            = 0b0000_1000_0000;
-        const CROSSED_OUT       = 0b0001_0000_0000;
+        const BOLD              = 0b0000_0000_0000_0001;
+        const DIM               = 0b0000_0000_0000_0010;
+        const ITALIC            = 0b0000_0000_0000_0100;
+        const UNDERLINED        = 0b0000_0000_0000_1000;
+        const SLOW_BLINK        = 0b0000_0000_0001_0000;
+        const RAPID_BLINK       = 0b0000_0000_0010_0000;
+        const REVERSED          = 0b0000_0000_0100_0000;
+        const HIDDEN            = 0b0000_0000_1000_0000;
+        const CROSSED_OUT       = 0b0000_0001_0000_0000;
+        /// Not supported in termion
+        const UNDER_CURLED      = 0b0000_0010_0000_0000;
+        /// Not supported in termion
+        const DOUBLE_UNDERLINED = 0b0000_0100_0000_0000;
+        /// Not supported in termion
+        const UNDER_DOTTED      = 0b0000_1000_0000_0000;
+        /// Not supported in termion
+        const UNDER_DASHED      = 0b0001_0000_0000_0000;
     }
+}
+
+/// Implement some constant values for `Modifier` for easier usage.
+impl Modifier {
+    pub const ALL_UNDERLINES: Self = Self::UNDERLINED
+        .union(Self::UNDER_CURLED)
+        .union(Self::DOUBLE_UNDERLINED)
+        .union(Self::UNDER_DOTTED)
+        .union(Self::UNDER_DASHED);
 }
 
 /// Implement the `Debug` trait for `Modifier` manually.
@@ -406,8 +423,30 @@ impl Style {
     /// ```
     #[must_use = "`add_modifier` returns the modified style without modifying the original"]
     pub const fn add_modifier(mut self, modifier: Modifier) -> Self {
+        let underline_type = if modifier.contains(Modifier::UNDERLINED) {
+            Modifier::UNDERLINED
+        } else if modifier.contains(Modifier::UNDER_CURLED) {
+            Modifier::UNDER_CURLED
+        } else if modifier.contains(Modifier::DOUBLE_UNDERLINED) {
+            Modifier::DOUBLE_UNDERLINED
+        } else if modifier.contains(Modifier::UNDER_DOTTED) {
+            Modifier::UNDER_DOTTED
+        } else if modifier.contains(Modifier::UNDER_DASHED) {
+            Modifier::UNDER_DASHED
+        } else {
+            Modifier::empty()
+        };
+
+        if !underline_type.is_empty() {
+            self.sub_modifier = self.sub_modifier.union(Modifier::ALL_UNDERLINES);
+            self.add_modifier = self.add_modifier.difference(Modifier::ALL_UNDERLINES);
+        }
+
         self.sub_modifier = self.sub_modifier.difference(modifier);
-        self.add_modifier = self.add_modifier.union(modifier);
+        self.add_modifier = self.add_modifier.union(underline_type);
+        self.add_modifier = self
+            .add_modifier
+            .union(modifier.difference(Modifier::ALL_UNDERLINES));
         self
     }
 
@@ -478,6 +517,8 @@ impl Style {
             self.underline_color = other.underline_color.or(self.underline_color);
         }
 
+        // Assuming the Style have `sub_modifier` for all underlines except for the one in the
+        // `add_modifier`, If an underline exists.
         self.add_modifier.remove(other.sub_modifier);
         self.add_modifier.insert(other.add_modifier);
         self.sub_modifier.remove(other.add_modifier);
@@ -503,12 +544,33 @@ impl Style {
                 .stylize_debug(ColorDebugKind::Underline)
                 .fmt(f)?;
         }
+        // Tracks whether `.not_underlined()` has already been rendered or doesn't need rendering.
+        let mut set_not_underlined = false;
         for modifier in self.add_modifier.iter() {
             match modifier {
                 Modifier::BOLD => f.write_str(".bold()")?,
                 Modifier::DIM => f.write_str(".dim()")?,
                 Modifier::ITALIC => f.write_str(".italic()")?,
-                Modifier::UNDERLINED => f.write_str(".underlined()")?,
+                Modifier::UNDERLINED => {
+                    set_not_underlined = true;
+                    f.write_str(".underlined()")?;
+                }
+                Modifier::UNDER_CURLED => {
+                    set_not_underlined = true;
+                    f.write_str(".under_curled()")?;
+                }
+                Modifier::DOUBLE_UNDERLINED => {
+                    set_not_underlined = true;
+                    f.write_str(".double_underlined()")?;
+                }
+                Modifier::UNDER_DOTTED => {
+                    set_not_underlined = true;
+                    f.write_str(".under_dotted()")?;
+                }
+                Modifier::UNDER_DASHED => {
+                    set_not_underlined = true;
+                    f.write_str(".under_dashed()")?;
+                }
                 Modifier::SLOW_BLINK => f.write_str(".slow_blink()")?,
                 Modifier::RAPID_BLINK => f.write_str(".rapid_blink()")?,
                 Modifier::REVERSED => f.write_str(".reversed()")?,
@@ -522,7 +584,16 @@ impl Style {
                 Modifier::BOLD => f.write_str(".not_bold()")?,
                 Modifier::DIM => f.write_str(".not_dim()")?,
                 Modifier::ITALIC => f.write_str(".not_italic()")?,
-                Modifier::UNDERLINED => f.write_str(".not_underlined()")?,
+                Modifier::UNDERLINED
+                | Modifier::UNDER_CURLED
+                | Modifier::DOUBLE_UNDERLINED
+                | Modifier::UNDER_DOTTED
+                | Modifier::UNDER_DASHED => {
+                    if !set_not_underlined {
+                        set_not_underlined = true;
+                        f.write_str(".not_underlined()")?;
+                    }
+                }
                 Modifier::SLOW_BLINK => f.write_str(".not_slow_blink()")?,
                 Modifier::RAPID_BLINK => f.write_str(".not_rapid_blink()")?,
                 Modifier::REVERSED => f.write_str(".not_reversed()")?,
@@ -554,7 +625,12 @@ impl Style {
     modifier!(pub const Modifier::BOLD, bold(), not_bold() -> Self);
     modifier!(pub const Modifier::DIM, dim(), not_dim() -> Self);
     modifier!(pub const Modifier::ITALIC, italic(), not_italic() -> Self);
-    modifier!(pub const Modifier::UNDERLINED, underlined(), not_underlined() -> Self);
+    modifier!(pub const Modifier::ALL_UNDERLINES, _, not_underlined() -> Self);
+    modifier!(pub const Modifier::UNDERLINED, underlined(), _ -> Self);
+    modifier!(pub const Modifier::UNDER_CURLED, under_curled(), _ -> Self);
+    modifier!(pub const Modifier::DOUBLE_UNDERLINED, double_underlined(), _ -> Self);
+    modifier!(pub const Modifier::UNDER_DOTTED, under_dotted(), _ -> Self);
+    modifier!(pub const Modifier::UNDER_DASHED, under_dashed(), _ -> Self);
     modifier!(pub const Modifier::SLOW_BLINK, slow_blink(), not_slow_blink() -> Self);
     modifier!(pub const Modifier::RAPID_BLINK, rapid_blink(), not_rapid_blink() -> Self);
     modifier!(pub const Modifier::REVERSED, reversed(), not_reversed() -> Self);
@@ -704,6 +780,7 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+    use crate::buffer::Cell;
 
     #[rstest]
     #[case(Style::new(), "Style::new()")]
@@ -711,6 +788,14 @@ mod tests {
     #[case(Style::new().red(), "Style::new().red()")]
     #[case(Style::new().on_blue(), "Style::new().on_blue()")]
     #[case(Style::new().bold(), "Style::new().bold()")]
+    #[case(Style::new().not_italic(), "Style::new().not_italic()")]
+    #[case(Style::new().underlined(), "Style::new().underlined()")]
+    #[case(Style::new().under_curled(), "Style::new().under_curled()")]
+    #[case(Style::new().double_underlined(), "Style::new().double_underlined()")]
+    #[case(Style::new().under_dotted(), "Style::new().under_dotted()")]
+    #[case(Style::new().under_dashed(), "Style::new().under_dashed()")]
+    #[case(Style::new().not_underlined(), "Style::new().not_underlined()")]
+    #[case(Style::new().underlined().under_curled(), "Style::new().under_curled()")]
     #[case(Style::new().not_italic(), "Style::new().not_italic()")]
     #[case(
         Style::new().red().on_blue().bold().italic().not_dim().not_hidden(),
@@ -757,6 +842,10 @@ mod tests {
             Modifier::DIM,
             Modifier::ITALIC,
             Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED,
             Modifier::SLOW_BLINK,
             Modifier::RAPID_BLINK,
             Modifier::REVERSED,
@@ -786,10 +875,18 @@ mod tests {
     #[case(Modifier::REVERSED, "REVERSED")]
     #[case(Modifier::HIDDEN, "HIDDEN")]
     #[case(Modifier::CROSSED_OUT, "CROSSED_OUT")]
+    #[case(Modifier::UNDER_CURLED, "UNDER_CURLED")]
+    #[case(Modifier::DOUBLE_UNDERLINED, "DOUBLE_UNDERLINED")]
+    #[case(Modifier::UNDER_DOTTED, "UNDER_DOTTED")]
+    #[case(Modifier::UNDER_DASHED, "UNDER_DASHED")]
     #[case(Modifier::BOLD | Modifier::DIM, "BOLD | DIM")]
     #[case(
+        Modifier::ALL_UNDERLINES,
+        "UNDERLINED | UNDER_CURLED | DOUBLE_UNDERLINED | UNDER_DOTTED | UNDER_DASHED"
+    )]
+    #[case(
         Modifier::all(),
-        "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT"
+        "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT | UNDER_CURLED | DOUBLE_UNDERLINED | UNDER_DOTTED | UNDER_DASHED"
     )]
     fn modifier_debug(#[case] modifier: Modifier, #[case] expected: &str) {
         assert_eq!(format!("{modifier:?}"), expected);
@@ -912,7 +1009,7 @@ mod tests {
     #[case(Style::new().not_bold(), Modifier::BOLD)]
     #[case(Style::new().not_dim(), Modifier::DIM)]
     #[case(Style::new().not_italic(), Modifier::ITALIC)]
-    #[case(Style::new().not_underlined(), Modifier::UNDERLINED)]
+    #[case(Style::new().not_underlined(), Modifier::ALL_UNDERLINES)]
     #[case(Style::new().not_slow_blink(), Modifier::SLOW_BLINK)]
     #[case(Style::new().not_rapid_blink(), Modifier::RAPID_BLINK)]
     #[case(Style::new().not_reversed(), Modifier::REVERSED)]
@@ -994,6 +1091,48 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .add_modifier(Modifier::ITALIC)
                 .remove_modifier(Modifier::DIM)
+        );
+    }
+
+    #[test]
+    fn set_few_underline_types() {
+        let mut cell = Cell::new("a");
+
+        cell.set_style(
+            Style::new()
+                .add_modifier(Modifier::UNDERLINED)
+                .add_modifier(Modifier::DOUBLE_UNDERLINED)
+                .add_modifier(Modifier::BOLD),
+        );
+        assert_eq!(cell.modifier, Modifier::DOUBLE_UNDERLINED | Modifier::BOLD);
+
+        cell.set_style(Style::new().add_modifier(Modifier::UNDERLINED));
+        assert_eq!(cell.modifier, Modifier::UNDERLINED | Modifier::BOLD);
+
+        cell.set_style(Style::new().add_modifier(Modifier::ITALIC));
+        assert_eq!(
+            cell.modifier,
+            Modifier::UNDERLINED | Modifier::BOLD | Modifier::ITALIC
+        );
+
+        cell.set_style(Style::new().remove_modifier(Modifier::DOUBLE_UNDERLINED));
+        assert_eq!(
+            cell.modifier,
+            Modifier::UNDERLINED | Modifier::BOLD | Modifier::ITALIC
+        );
+
+        cell.set_style(Style::new().remove_modifier(Modifier::UNDERLINED));
+        assert_eq!(cell.modifier, Modifier::BOLD | Modifier::ITALIC);
+
+        cell.set_style(Style::new().remove_modifier(Modifier::BOLD).add_modifier(
+            Modifier::DIM
+                | Modifier::DOUBLE_UNDERLINED
+                | Modifier::UNDER_DOTTED
+                | Modifier::UNDER_DASHED,
+        ));
+        assert_eq!(
+            cell.modifier,
+            Modifier::ITALIC | Modifier::DOUBLE_UNDERLINED | Modifier::DIM
         );
     }
 
