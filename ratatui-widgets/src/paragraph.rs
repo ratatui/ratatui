@@ -498,6 +498,7 @@ impl Styled for Paragraph<'_> {
 #[cfg(test)]
 mod tests {
     use alloc::vec;
+    use alloc::vec::Vec;
 
     use ratatui_core::buffer::{Buffer, CellWidth};
     use ratatui_core::layout::{Alignment, Rect};
@@ -1032,6 +1033,19 @@ mod tests {
             &trimmed_paragraph,
             &Buffer::with_lines(["こんにちは,    ", "世界! 😃      "]),
         );
+    }
+
+    #[test]
+    fn repaints_cell_after_wide_grapheme() {
+        let next = Buffer::with_lines(["────"]);
+        let mut prev = next.clone();
+        Paragraph::new("1️⃣").render(Rect::new(1, 0, 2, 1), &mut prev);
+
+        assert_eq!(prev[(1, 0)].symbol(), "1️⃣");
+
+        let diff = prev.diff(&next);
+        let cols: Vec<_> = diff.iter().map(|(x, _, _)| *x).collect();
+        assert_eq!(cols, [1, 2]);
     }
 
     #[test]
