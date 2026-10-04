@@ -117,7 +117,7 @@ fn render_content(
         ]),
     ];
     frame.render_widget(
-        Paragraph::new(content).scroll((vertical.get_position(), horizontal.get_position())),
+        Paragraph::new(content).scroll_usize((vertical.get_position(), horizontal.get_position())),
         area,
     );
 }
