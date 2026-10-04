@@ -55,7 +55,7 @@ use strum::{Display, EnumString};
 ///     Line::from("Item 3"),
 /// ];
 /// let paragraph = Paragraph::new(items.clone())
-///     .scroll((vertical_scroll, 0))
+///     .scroll_usize((vertical_scroll, 0))
 ///     .block(Block::new().borders(Borders::RIGHT)); // to show a background for the scrollbar
 ///
 /// let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)

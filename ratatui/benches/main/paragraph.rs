@@ -17,7 +17,7 @@ fn paragraph(c: &mut Criterion) {
     for line_count in [64, 2048, u16::MAX] {
         let lines = random_lines(line_count);
         let lines = lines.as_str();
-        let y_scroll = usize::from(line_count - PARAGRAPH_DEFAULT_HEIGHT);
+        let y_scroll = line_count - PARAGRAPH_DEFAULT_HEIGHT;
 
         // benchmark that measures the overhead of creating a paragraph separately from rendering
         group.bench_with_input(BenchmarkId::new("new", line_count), lines, |b, lines| {

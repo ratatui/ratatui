@@ -229,10 +229,30 @@ impl<'a> Paragraph<'a> {
     /// Note: the order of the tuple is (y, x) instead of (x, y), which is different from general
     /// convention across the crate.
     ///
+    /// For offsets larger than [`u16::MAX`], use [`Self::scroll_usize`].
+    ///
     /// For more information about future scrolling design and concerns, see [RFC: Design of
     /// Scrollable Widgets](https://github.com/ratatui/ratatui/discussions/1924) on GitHub.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
+    pub const fn scroll(self, offset: (u16, u16)) -> Self {
+        self.scroll_usize((offset.0 as usize, offset.1 as usize))
+    }
+
+    /// Set the scroll offset using `usize` values.
+    ///
+    /// This supports offsets beyond 65,535 lines or columns. The tuple order is `(y, x)`, with
+    /// the same wrapping and alignment behavior as [`Self::scroll`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui::widgets::Paragraph;
+    ///
+    /// let text = "line\n".repeat(65_537);
+    /// let paragraph = Paragraph::new(text).scroll_usize((65_536, 0));
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn scroll_usize(mut self, offset: (Vertical, Horizontal)) -> Self {
         self.scroll = offset;
         self
     }
@@ -874,13 +894,26 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_render_paragraph_with_u16_scroll_offset() {
+        const fn scroll(paragraph: Paragraph<'_>, offset: (u16, u16)) -> Paragraph<'_> {
+            paragraph.scroll(offset)
+        }
+
+        let text = "This is a\ncool\nmultiline\nparagraph.";
+        let offset: (u16, u16) = (2, 4);
+        let paragraph = scroll(Paragraph::new(text), offset);
+
+        test_case(&paragraph, &Buffer::with_lines(["iline   ", "graph.  "]));
+    }
+
     #[rstest]
     fn test_render_paragraph_with_large_vertical_scroll_offset(
         #[values(65_535, 65_536)] offset: usize,
     ) {
         let mut lines = vec![Line::raw("skip"); offset];
         lines.extend([Line::raw("first"), Line::raw("second")]);
-        let paragraph = Paragraph::new(lines).scroll((offset, 0));
+        let paragraph = Paragraph::new(lines).scroll_usize((offset, 0));
 
         for paragraph in [
             paragraph.clone(),
@@ -897,7 +930,7 @@ mod tests {
         let text = "x".repeat(offset) + "ab";
         let paragraph = Paragraph::new(text)
             .wrap(Wrap { trim })
-            .scroll((offset, usize::MAX));
+            .scroll_usize((offset, usize::MAX));
 
         test_case(&paragraph, &Buffer::with_lines(["a", "b"]));
     }
@@ -916,7 +949,7 @@ mod tests {
             Line::from(prefix.clone() + "end"),
             Line::from(prefix + "fin"),
         ];
-        let paragraph = Paragraph::new(lines).scroll((0, offset));
+        let paragraph = Paragraph::new(lines).scroll_usize((0, offset));
 
         test_case(&paragraph, &Buffer::with_lines(["end", "fin"]));
     }
@@ -926,13 +959,13 @@ mod tests {
         let paragraph = Paragraph::new("hello\nworld");
         let expected = Buffer::with_lines(["     ", "     "]);
 
-        test_case(&paragraph.clone().scroll((0, usize::MAX)), &expected);
+        test_case(&paragraph.clone().scroll_usize((0, usize::MAX)), &expected);
         for paragraph in [
             paragraph.clone(),
             paragraph.clone().wrap(Wrap { trim: false }),
             paragraph.wrap(Wrap { trim: true }),
         ] {
-            test_case(&paragraph.scroll((usize::MAX, 0)), &expected);
+            test_case(&paragraph.scroll_usize((usize::MAX, 0)), &expected);
         }
     }
 
