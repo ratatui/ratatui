@@ -32,6 +32,7 @@ impl<B: Backend> Terminal<B> {
                     height,
                     area.as_size(),
                     offset_in_previous_viewport,
+                    None,
                 )?;
                 (next_area, Some(cursor_position))
             }

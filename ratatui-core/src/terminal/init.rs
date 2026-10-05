@@ -119,16 +119,58 @@ impl<B: Backend> Terminal<B> {
     /// cursor row at initialization time (always starting at column 0). Ratatui may append lines
     /// and thereby scroll the terminal to make enough room for the requested height so the
     /// viewport stays fully visible.
-    pub fn with_options(mut backend: B, options: TerminalOptions) -> Result<Self, B::Error> {
+    pub fn with_options(backend: B, options: TerminalOptions) -> Result<Self, B::Error> {
+        Self::with_options_inner(backend, options, None)
+    }
+
+    /// Creates a new [`Terminal`] with a known cursor position and the given options.
+    ///
+    /// This is useful with [`Viewport::Inline`] when querying the backend for the cursor position
+    /// would race with an input event stream that reads from the same terminal. The supplied
+    /// position must be the cursor's current position before the terminal is initialized. For
+    /// other viewport types, this behaves like [`Terminal::with_options`].
+    ///
+    /// ```rust
+    /// use ratatui_core::backend::TestBackend;
+    /// use ratatui_core::layout::Position;
+    /// use ratatui_core::terminal::{Terminal, TerminalOptions, Viewport};
+    ///
+    /// let options = TerminalOptions {
+    ///     viewport: Viewport::Inline(4),
+    /// };
+    /// let terminal = Terminal::with_options_and_cursor_position(
+    ///     TestBackend::new(80, 24),
+    ///     options,
+    ///     Position { x: 0, y: 3 },
+    /// )?;
+    /// # Ok::<(), core::convert::Infallible>(())
+    /// ```
+    pub fn with_options_and_cursor_position(
+        backend: B,
+        options: TerminalOptions,
+        cursor_position: Position,
+    ) -> Result<Self, B::Error> {
+        Self::with_options_inner(backend, options, Some(cursor_position))
+    }
+
+    fn with_options_inner(
+        mut backend: B,
+        options: TerminalOptions,
+        inline_cursor_position: Option<Position>,
+    ) -> Result<Self, B::Error> {
         let area = match options.viewport {
             Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?.into(),
             Viewport::Fixed(area) => area,
         };
         let (viewport_area, cursor_pos) = match options.viewport {
             Viewport::Fullscreen => (area, Position::ORIGIN),
-            Viewport::Inline(height) => {
-                compute_inline_size(&mut backend, height, area.as_size(), 0)?
-            }
+            Viewport::Inline(height) => compute_inline_size(
+                &mut backend,
+                height,
+                area.as_size(),
+                0,
+                inline_cursor_position,
+            )?,
             Viewport::Fixed(area) => (area, area.as_position()),
         };
         Ok(Self {
@@ -147,9 +189,86 @@ impl<B: Backend> Terminal<B> {
 
 #[cfg(test)]
 mod tests {
-    use crate::backend::{Backend, TestBackend};
-    use crate::layout::{Position, Rect};
+
+    use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
+    use crate::buffer::Cell;
+    use crate::layout::{Position, Rect, Size};
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
+
+    #[derive(Debug)]
+    struct NoCursorQueryBackend(TestBackend);
+
+    impl Backend for NoCursorQueryBackend {
+        type Error = core::convert::Infallible;
+
+        fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+        where
+            I: Iterator<Item = (u16, u16, &'a Cell)>,
+        {
+            self.0.draw(content)
+        }
+
+        fn append_lines(&mut self, lines: u16) -> Result<(), Self::Error> {
+            self.0.append_lines(lines)
+        }
+
+        fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+            self.0.hide_cursor()
+        }
+
+        fn show_cursor(&mut self) -> Result<(), Self::Error> {
+            self.0.show_cursor()
+        }
+
+        fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+            panic!("inline initialization should use the supplied cursor position")
+        }
+
+        fn set_cursor_position<P: Into<Position>>(
+            &mut self,
+            position: P,
+        ) -> Result<(), Self::Error> {
+            self.0.set_cursor_position(position)
+        }
+
+        fn clear(&mut self) -> Result<(), Self::Error> {
+            self.0.clear()
+        }
+
+        fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+            self.0.clear_region(clear_type)
+        }
+
+        fn size(&self) -> Result<Size, Self::Error> {
+            self.0.size()
+        }
+
+        fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+            self.0.window_size()
+        }
+
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.0.flush()
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_up(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.0.scroll_region_up(region, line_count)
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_down(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.0.scroll_region_down(region, line_count)
+        }
+    }
 
     #[test]
     fn new_fullscreen_initializes_state() {
@@ -199,6 +318,22 @@ mod tests {
             TerminalOptions {
                 viewport: Viewport::Inline(4),
             },
+        )
+        .unwrap();
+
+        assert_eq!(terminal.viewport_area, Rect::new(0, 3, 10, 4));
+        assert_eq!(terminal.last_known_cursor_pos, Position { x: 0, y: 3 });
+    }
+
+    #[test]
+    fn with_options_and_cursor_position_avoids_backend_cursor_query() {
+        let backend = NoCursorQueryBackend(TestBackend::new(10, 10));
+        let terminal = Terminal::with_options_and_cursor_position(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(4),
+            },
+            Position { x: 0, y: 3 },
         )
         .unwrap();
 
