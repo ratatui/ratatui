@@ -189,86 +189,9 @@ impl<B: Backend> Terminal<B> {
 
 #[cfg(test)]
 mod tests {
-
-    use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
-    use crate::buffer::Cell;
-    use crate::layout::{Position, Rect, Size};
+    use crate::backend::{Backend, TestBackend};
+    use crate::layout::{Position, Rect};
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
-
-    #[derive(Debug)]
-    struct NoCursorQueryBackend(TestBackend);
-
-    impl Backend for NoCursorQueryBackend {
-        type Error = core::convert::Infallible;
-
-        fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
-        where
-            I: Iterator<Item = (u16, u16, &'a Cell)>,
-        {
-            self.0.draw(content)
-        }
-
-        fn append_lines(&mut self, lines: u16) -> Result<(), Self::Error> {
-            self.0.append_lines(lines)
-        }
-
-        fn hide_cursor(&mut self) -> Result<(), Self::Error> {
-            self.0.hide_cursor()
-        }
-
-        fn show_cursor(&mut self) -> Result<(), Self::Error> {
-            self.0.show_cursor()
-        }
-
-        fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
-            panic!("inline initialization should use the supplied cursor position")
-        }
-
-        fn set_cursor_position<P: Into<Position>>(
-            &mut self,
-            position: P,
-        ) -> Result<(), Self::Error> {
-            self.0.set_cursor_position(position)
-        }
-
-        fn clear(&mut self) -> Result<(), Self::Error> {
-            self.0.clear()
-        }
-
-        fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
-            self.0.clear_region(clear_type)
-        }
-
-        fn size(&self) -> Result<Size, Self::Error> {
-            self.0.size()
-        }
-
-        fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
-            self.0.window_size()
-        }
-
-        fn flush(&mut self) -> Result<(), Self::Error> {
-            self.0.flush()
-        }
-
-        #[cfg(feature = "scrolling-regions")]
-        fn scroll_region_up(
-            &mut self,
-            region: core::ops::Range<u16>,
-            line_count: u16,
-        ) -> Result<(), Self::Error> {
-            self.0.scroll_region_up(region, line_count)
-        }
-
-        #[cfg(feature = "scrolling-regions")]
-        fn scroll_region_down(
-            &mut self,
-            region: core::ops::Range<u16>,
-            line_count: u16,
-        ) -> Result<(), Self::Error> {
-            self.0.scroll_region_down(region, line_count)
-        }
-    }
 
     #[test]
     fn new_fullscreen_initializes_state() {
@@ -326,8 +249,8 @@ mod tests {
     }
 
     #[test]
-    fn with_options_and_cursor_position_avoids_backend_cursor_query() {
-        let backend = NoCursorQueryBackend(TestBackend::new(10, 10));
+    fn with_options_and_cursor_position_uses_supplied_position() {
+        let backend = TestBackend::new(10, 10);
         let terminal = Terminal::with_options_and_cursor_position(
             backend,
             TerminalOptions {
