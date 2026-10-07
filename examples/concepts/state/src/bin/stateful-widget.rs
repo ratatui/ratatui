@@ -1,4 +1,4 @@
-//! # StatefulWidget Pattern (Recommended)
+//! # `StatefulWidget` Pattern (Recommended)
 //!
 //! This example demonstrates the `StatefulWidget` trait, which is the recommended approach for
 //! handling mutable state in Ratatui applications. This pattern separates the widget's rendering
@@ -43,7 +43,7 @@ use ratatui::layout::Rect;
 use ratatui::widgets::{StatefulWidget, Widget};
 use ratatui_state_examples::is_exit_key_pressed;
 
-/// Demonstrates the StatefulWidget pattern for mutable state management.
+/// Demonstrates the `StatefulWidget` pattern for mutable state management.
 ///
 /// Creates a counter widget using `StatefulWidget` and runs the application loop,
 /// updating the counter on each render cycle until the user exits.
@@ -53,7 +53,7 @@ fn main() -> color_eyre::Result<()> {
         let mut counter = 0;
         loop {
             terminal.draw(|frame| {
-                frame.render_stateful_widget(CounterWidget, frame.area(), &mut counter)
+                frame.render_stateful_widget(CounterWidget, frame.area(), &mut counter);
             })?;
             if is_exit_key_pressed()? {
                 break Ok(());
@@ -62,7 +62,7 @@ fn main() -> color_eyre::Result<()> {
     })
 }
 
-/// A counter widget that uses the StatefulWidget pattern for state management.
+/// A counter widget that uses the `StatefulWidget` pattern for state management.
 ///
 /// Demonstrates the separation of rendering logic from state, making the widget reusable
 /// with different state instances and easier to test.
