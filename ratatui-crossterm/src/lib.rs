@@ -96,6 +96,10 @@ cfg_if::cfg_if! {
         );
     }
 }
+// With both versions enabled, 0.29 is re-exported above and 0.28 would otherwise trip cargo's
+// unused_dependencies lint.
+#[cfg(all(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
+use crossterm_0_28 as _;
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
 use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};

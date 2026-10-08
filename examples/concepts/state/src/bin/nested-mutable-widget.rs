@@ -14,7 +14,7 @@
 //!
 //! - You have hierarchical widget relationships (parent-child)
 //! - Each widget needs to maintain its own distinct state
-//! - You prefer the mutable widget pattern over StatefulWidget
+//! - You prefer the mutable widget pattern over `StatefulWidget`
 //! - Widgets have clear ownership of their state
 //!
 //! ## Trade-offs
@@ -29,7 +29,7 @@
 //! - Complex borrowing scenarios can arise
 //! - Requires careful lifetime management
 //! - May lead to borrow checker issues in complex hierarchies
-//! - Less flexible than StatefulWidget for state sharing
+//! - Less flexible than `StatefulWidget` for state sharing
 //!
 //! ## Example Usage
 //!
