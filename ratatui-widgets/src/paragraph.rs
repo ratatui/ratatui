@@ -307,17 +307,21 @@ impl<'a> Paragraph<'a> {
         self.alignment(Alignment::Right)
     }
 
-    /// Calculates the number of lines needed to fully render.
+    /// Calculates the height needed to render this paragraph at the given width.
     ///
-    /// Given a max line width, this method calculates the number of lines that a paragraph will
-    /// need in order to be fully rendered. For paragraphs that do not use wrapping, this count is
-    /// simply the number of lines present in the paragraph.
+    /// The `width` includes the [`Block`]'s borders and padding, if set through [`Self::block`].
     ///
-    /// This method will also account for the [`Block`] if one is set through [`Self::block`].
+    /// Returns `0` if `width` is zero. If the block's borders and padding consume all available
+    /// width, no text rows are rendered, but the returned height still includes the block's
+    /// vertical borders and padding.
+    ///
+    /// Text is wrapped according to [`Wrap`] if set through [`Self::wrap`]. Without wrapping, text
+    /// exceeding the available width is horizontally clipped, and the returned height is the number
+    /// of text lines plus the block's vertical borders and padding.
     ///
     /// Note: The design for text wrapping is not stable and might affect this API.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```ignore
     /// use ratatui::{widgets::{Paragraph, Wrap}};
@@ -327,20 +331,56 @@ impl<'a> Paragraph<'a> {
     /// assert_eq!(paragraph.line_count(20), 1);
     /// assert_eq!(paragraph.line_count(10), 2);
     /// ```
+    ///
+    /// ## Determining Rendered Height
+    ///
+    /// The returned height can be used to size the render area for the given width.
+    ///
+    /// ```ignore
+    /// use ratatui::buffer::Buffer;
+    /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{Block, Paragraph, Widget, Wrap};
+    ///
+    /// let paragraph = Paragraph::new("Hello World")
+    ///     .block(Block::bordered())
+    ///     .wrap(Wrap { trim: false });
+    ///
+    /// let width = 10;
+    /// let height = paragraph.line_count(width) as u16;
+    /// assert_eq!(height, 4);
+    ///
+    /// let area = Rect::new(0, 0, width, height);
+    /// let mut buffer = Buffer::empty(area);
+    /// paragraph.render(area, &mut buffer);
+    /// assert_eq!(
+    ///     buffer,
+    ///     Buffer::with_lines([
+    ///         "┌────────┐",
+    ///         "│Hello   │",
+    ///         "│World   │",
+    ///         "└────────┘",
+    ///     ]),
+    /// );
+    /// ```
     #[instability::unstable(
         feature = "rendered-line-info",
         issue = "https://github.com/ratatui/ratatui/issues/293"
     )]
     pub fn line_count(&self, width: u16) -> usize {
-        if width < 1 {
+        if width == 0 {
             return 0;
         }
 
-        let (top, bottom) = self
+        let ((left, right), (top, bottom)) = self
             .block
             .as_ref()
-            .map(Block::vertical_space)
+            .map(|block| (block.horizontal_space(), block.vertical_space()))
             .unwrap_or_default();
+
+        let text_width = width.saturating_sub(left).saturating_sub(right);
+        if text_width == 0 {
+            return (top as usize).saturating_add(bottom as usize);
+        }
 
         let count = if let Some(Wrap { trim }) = self.wrap {
             let styled = self.text.iter().map(|line| {
@@ -351,7 +391,7 @@ impl<'a> Paragraph<'a> {
                 let alignment = line.alignment.unwrap_or(self.alignment);
                 (graphemes, alignment)
             });
-            let mut line_composer = WordWrapper::new(styled, width, trim);
+            let mut line_composer = WordWrapper::new(styled, text_width, trim);
             let mut count = 0;
             while line_composer.next_line().is_some() {
                 count += 1;
@@ -507,7 +547,7 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
-    use crate::block::TitlePosition;
+    use crate::block::{Padding, TitlePosition};
     use crate::borders::Borders;
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
@@ -1076,6 +1116,7 @@ mod tests {
         let paragraph = Paragraph::new("Hello World").block(block);
         assert_eq!(paragraph.line_count(20), 1);
         assert_eq!(paragraph.line_count(10), 1);
+        assert_eq!(paragraph.line_count(0), 0);
 
         let block = Block::new().borders(Borders::TOP);
         let paragraph = paragraph.block(block);
@@ -1096,16 +1137,55 @@ mod tests {
         let paragraph = paragraph.block(block);
         assert_eq!(paragraph.line_count(20), 3);
         assert_eq!(paragraph.line_count(10), 3);
+        assert_eq!(paragraph.line_count(2), 2);
+        assert_eq!(paragraph.line_count(1), 2);
+        assert_eq!(paragraph.line_count(0), 0);
 
         let block = Block::bordered();
         let paragraph = paragraph.block(block).wrap(Wrap { trim: true });
         assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(13), 3);
+        assert_eq!(paragraph.line_count(12), 4);
+        assert_eq!(paragraph.line_count(11), 4);
         assert_eq!(paragraph.line_count(10), 4);
+        assert_eq!(paragraph.line_count(2), 2);
+        assert_eq!(paragraph.line_count(1), 2);
+        assert_eq!(paragraph.line_count(0), 0);
 
         let block = Block::bordered();
         let paragraph = paragraph.block(block).wrap(Wrap { trim: false });
         assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(13), 3);
+        assert_eq!(paragraph.line_count(12), 4);
+        assert_eq!(paragraph.line_count(11), 4);
         assert_eq!(paragraph.line_count(10), 4);
+        assert_eq!(paragraph.line_count(2), 2);
+        assert_eq!(paragraph.line_count(1), 2);
+        assert_eq!(paragraph.line_count(0), 0);
+
+        let block = Block::new().borders(Borders::LEFT | Borders::RIGHT);
+        let paragraph = paragraph.block(block).wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_count(13), 1);
+        assert_eq!(paragraph.line_count(12), 2);
+        assert_eq!(paragraph.line_count(2), 0);
+        assert_eq!(paragraph.line_count(1), 0);
+        assert_eq!(paragraph.line_count(0), 0);
+
+        let block = Block::new().padding(Padding::uniform(1));
+        let paragraph = paragraph.block(block).wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_count(13), 3);
+        assert_eq!(paragraph.line_count(12), 4);
+        assert_eq!(paragraph.line_count(2), 2);
+        assert_eq!(paragraph.line_count(1), 2);
+        assert_eq!(paragraph.line_count(0), 0);
+
+        let block = Block::new().padding(Padding::new(1, 1, 1, 2));
+        let paragraph = paragraph.block(block).wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_count(13), 4);
+        assert_eq!(paragraph.line_count(12), 5);
+        assert_eq!(paragraph.line_count(2), 3);
+        assert_eq!(paragraph.line_count(1), 3);
+        assert_eq!(paragraph.line_count(0), 0);
 
         let text = "Hello World ".repeat(100);
         let block = Block::new();
@@ -1131,6 +1211,98 @@ mod tests {
         let paragraph = paragraph.block(block);
         assert_eq!(paragraph.line_count(11), 1);
         assert_eq!(paragraph.line_count(6), 1);
+    }
+
+    #[test]
+    fn widgets_paragraph_line_count_matches_rendered_height() {
+        let paddings = [0, 1];
+        let widths = [20, 13, 12, 11, 3, 2, 1, 0];
+        let expected = [
+            "┌──────────────────┐",
+            "│Hello world       │",
+            "└──────────────────┘",
+            "┌───────────┐",
+            "│Hello world│",
+            "└───────────┘",
+            "┌──────────┐",
+            "│Hello     │",
+            "│world     │",
+            "└──────────┘",
+            "┌─────────┐",
+            "│Hello    │",
+            "│world    │",
+            "└─────────┘",
+            "┌─┐",
+            "│H│",
+            "│e│",
+            "│l│",
+            "│l│",
+            "│o│",
+            "│w│",
+            "│o│",
+            "│r│",
+            "│l│",
+            "│d│",
+            "└─┘",
+            "┌┐",
+            "└┘",
+            "┌",
+            "└",
+            "┌──────────────────┐",
+            "│                  │",
+            "│ Hello world      │",
+            "│                  │",
+            "└──────────────────┘",
+            "┌───────────┐",
+            "│           │",
+            "│ Hello     │",
+            "│ world     │",
+            "│           │",
+            "└───────────┘",
+            "┌──────────┐",
+            "│          │",
+            "│ Hello    │",
+            "│ world    │",
+            "│          │",
+            "└──────────┘",
+            "┌─────────┐",
+            "│         │",
+            "│ Hello   │",
+            "│ world   │",
+            "│         │",
+            "└─────────┘",
+            "┌─┐",
+            "│ │",
+            "│ │",
+            "└─┘",
+            "┌┐",
+            "││",
+            "││",
+            "└┘",
+            "┌",
+            "│",
+            "│",
+            "└",
+        ];
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, expected.len() as u16));
+        let mut y = 0;
+        for padding in paddings {
+            for width in widths {
+                let paragraph = Paragraph::new("Hello world")
+                    .wrap(Wrap { trim: false })
+                    .block(Block::bordered().padding(Padding::uniform(padding)));
+
+                let height = paragraph.line_count(width) as u16;
+                let area = Rect::new(0, y, width, height);
+
+                paragraph.render(area, &mut buffer);
+                y += height;
+            }
+        }
+
+        assert_eq!(buffer, Buffer::with_lines(expected));
+        assert_eq!(y, expected.len() as u16);
     }
 
     #[test]
