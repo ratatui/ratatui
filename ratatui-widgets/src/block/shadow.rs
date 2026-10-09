@@ -1,3 +1,4 @@
+#[cfg(feature = "portable-atomic")]
 use alloc::boxed::Box;
 #[cfg(not(feature = "portable-atomic"))]
 use alloc::sync::Arc;
@@ -253,9 +254,12 @@ impl Shadow {
     /// The effect receives the shadow area, the original block area, and the target buffer. It is
     /// called after the shadow style has been applied.
     pub fn custom<F: CellEffect + 'static>(effect: F) -> Self {
+        #[cfg(not(feature = "portable-atomic"))]
+        let effect: Arc<dyn CellEffect> = Arc::new(effect);
         // portable-atomic's Arc does not implement CoerceUnsized on stable Rust, so erase the
         // concrete type through a Box first.
-        let effect = Arc::from(Box::new(effect) as Box<dyn CellEffect>);
+        #[cfg(feature = "portable-atomic")]
+        let effect: Arc<dyn CellEffect> = Arc::from(Box::new(effect) as Box<dyn CellEffect>);
         Self {
             effect: Effect::Custom(effect),
             style: Style::default(),
