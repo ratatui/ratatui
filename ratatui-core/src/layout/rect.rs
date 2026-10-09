@@ -333,8 +333,13 @@ impl Rect {
     }
 
     /// Returns true if the two `Rect`s intersect.
+    ///
+    /// An empty `Rect` covers no cells, so it never intersects, not even with itself. This matches
+    /// [`Rect::intersection`], which returns an empty `Rect` for the same pair.
     pub const fn intersects(self, other: Self) -> bool {
-        self.x < other.right()
+        !self.is_empty()
+            && !other.is_empty()
+            && self.x < other.right()
             && self.right() > other.x
             && self.y < other.bottom()
             && self.bottom() > other.y
@@ -843,6 +848,28 @@ mod tests {
     fn intersects() {
         assert!(Rect::new(1, 2, 3, 4).intersects(Rect::new(2, 3, 4, 5)));
         assert!(!Rect::new(1, 2, 3, 4).intersects(Rect::new(5, 6, 7, 8)));
+    }
+
+    /// An empty `Rect` covers no cells, so it cannot intersect anything.
+    #[rstest]
+    #[case::empty_inside(Rect::new(0, 0, 10, 10), Rect::new(5, 5, 0, 0))]
+    #[case::zero_height(Rect::new(0, 0, 1, 2), Rect::new(0, 1, 1, 0))]
+    #[case::zero_width(Rect::new(0, 0, 2, 1), Rect::new(1, 0, 0, 1))]
+    #[case::both_empty(Rect::new(3, 3, 0, 0), Rect::new(3, 3, 0, 0))]
+    fn intersects_empty(#[case] rect0: Rect, #[case] rect1: Rect) {
+        assert!(!rect0.intersects(rect1));
+        assert!(!rect1.intersects(rect0));
+        assert!(rect0.intersection(rect1).is_empty());
+    }
+
+    /// A one cell `Rect` is not empty, so it still intersects.
+    #[rstest]
+    #[case::single_cell_inside(Rect::new(0, 0, 10, 10), Rect::new(5, 5, 1, 1))]
+    #[case::single_cell_overlap(Rect::new(1, 2, 1, 1), Rect::new(1, 2, 1, 1))]
+    fn intersects_single_cell(#[case] rect0: Rect, #[case] rect1: Rect) {
+        assert!(rect0.intersects(rect1));
+        assert!(rect1.intersects(rect0));
+        assert!(!rect0.intersection(rect1).is_empty());
     }
 
     #[rstest]
