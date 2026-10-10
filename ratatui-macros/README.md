@@ -52,7 +52,7 @@ let modified_greeting = span!(Modifier::BOLD => "hello {name}");
 ```
 
 The [`line!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.line.html) macro creates a [`Line`] that contains a sequence of [`Span`]s. It is similar to
-the [`vec!`](https://doc.rust-lang.org/stable/alloc/macro.vec.html) macro. Each element is converted into a [`Span`] using [`Into::into`].
+the [`vec!`](https://doc.rust-lang.org/stable/alloc/macro.vec.html) macro. Each element is converted into a [`Span`] using [`Into::into`](https://doc.rust-lang.org/stable/core/convert/trait.Into.html#tymethod.into).
 
 ```rust
 let name = "world!";
@@ -65,7 +65,7 @@ let line = line![Color::Blue => "bye"; 2];
 ```
 
 The [`text!`](https://docs.rs/ratatui-macros/latest/ratatui_macros/macro.text.html) macro creates a [`Text`] that contains a sequence of [`Line`]. It is similar to
-the [`vec!`](https://doc.rust-lang.org/stable/alloc/macro.vec.html) macro. Each element is converted to a [`Line`] using [`Into::into`].
+the [`vec!`](https://doc.rust-lang.org/stable/alloc/macro.vec.html) macro. Each element is converted to a [`Line`] using [`Into::into`](https://doc.rust-lang.org/stable/core/convert/trait.Into.html#tymethod.into).
 
 ```rust
 let name = "world!";
