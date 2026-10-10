@@ -5,9 +5,6 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::widgets::{Paragraph, Widget, Wrap};
 
-/// because the scroll offset is a u16, the maximum number of lines that can be scrolled is 65535.
-/// This is a limitation of the current implementation and may be fixed by changing the type of the
-/// scroll offset to a u32.
 const NO_WRAP_WIDTH: u16 = 200;
 const WRAP_WIDTH: u16 = 100;
 const PARAGRAPH_DEFAULT_HEIGHT: u16 = 50;
