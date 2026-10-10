@@ -524,6 +524,11 @@ impl StatefulWidget for Scrollbar<'_> {
     type State = ScrollbarState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         if state.content_length == 0 || self.track_length_excluding_arrow_heads(area) == 0 {
             return;
         }
@@ -1285,5 +1290,51 @@ mod tests {
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar.render(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
+    }
+    #[rstest]
+    fn render_scrollbar_outside_buffer_is_noop(
+        #[values(
+            ScrollbarOrientation::VerticalLeft,
+            ScrollbarOrientation::VerticalRight,
+            ScrollbarOrientation::HorizontalTop,
+            ScrollbarOrientation::HorizontalBottom
+        )]
+        orientation: ScrollbarOrientation,
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let mut buf = Buffer::empty(Rect::new(10, 10, 30, 8));
+        let expected = buf.clone();
+        let mut state = ScrollbarState::new(10).position(3);
+        Scrollbar::new(orientation).render(area, &mut buf, &mut state);
+        assert_eq!(buf, expected);
+        assert_eq!(state, ScrollbarState::new(10).position(3));
+    }
+
+    #[rstest]
+    fn render_scrollbar_clips_to_offset_buffer(
+        #[values(
+            ScrollbarOrientation::VerticalLeft,
+            ScrollbarOrientation::VerticalRight,
+            ScrollbarOrientation::HorizontalTop,
+            ScrollbarOrientation::HorizontalBottom
+        )]
+        orientation: ScrollbarOrientation,
+    ) {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let mut state = ScrollbarState::new(10).position(3);
+        Scrollbar::new(orientation.clone()).render(Rect::new(9, 9, 40, 10), &mut buf, &mut state);
+        Scrollbar::new(orientation).render(area, &mut expected, &mut state);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }
