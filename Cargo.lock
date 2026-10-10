@@ -3683,7 +3683,7 @@ dependencies = [
  "parking_lot",
  "rustix 1.0.8",
  "signal-hook",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
