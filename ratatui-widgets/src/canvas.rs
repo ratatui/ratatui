@@ -153,13 +153,13 @@ struct PatternGrid<const W: usize, const H: usize> {
 
 impl<const W: usize, const H: usize> PatternGrid<W, H> {
     /// Statically check that the dimension of the pattern is supported.
-    const _PATTERN_DIMENSION_CHECK: usize = u8::BITS as usize - W * H;
+    const PATTERN_DIMENSION_CHECK: usize = u8::BITS as usize - W * H;
 
     /// Create a new `PatternGrid` with the given width and height measured in terminal columns
     /// and rows respectively.
     fn new(width: u16, height: u16, char_table: &'static [char]) -> Self {
         // Cause a static error if the pattern doesn't fit within 8 bits.
-        let _ = Self::_PATTERN_DIMENSION_CHECK;
+        let _ = Self::PATTERN_DIMENSION_CHECK;
 
         let length = usize::from(width) * usize::from(height);
         Self {
