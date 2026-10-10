@@ -123,11 +123,11 @@ impl<'a> TabsState<'a> {
     pub const fn new(titles: Vec<&'a str>) -> Self {
         Self { titles, index: 0 }
     }
-    pub fn next(&mut self) {
+    pub const fn next(&mut self) {
         self.index = (self.index + 1) % self.titles.len();
     }
 
-    pub fn previous(&mut self) {
+    pub const fn previous(&mut self) {
         if self.index > 0 {
             self.index -= 1;
         } else {
@@ -149,7 +149,7 @@ impl<T> StatefulList<T> {
         }
     }
 
-    pub fn next(&mut self) {
+    pub const fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
@@ -163,7 +163,7 @@ impl<T> StatefulList<T> {
         self.state.select(Some(i));
     }
 
-    pub fn previous(&mut self) {
+    pub const fn previous(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -297,23 +297,23 @@ impl<'a> App<'a> {
         }
     }
 
-    pub fn on_up(&mut self) {
+    pub const fn on_up(&mut self) {
         self.tasks.previous();
     }
 
-    pub fn on_down(&mut self) {
+    pub const fn on_down(&mut self) {
         self.tasks.next();
     }
 
-    pub fn on_right(&mut self) {
+    pub const fn on_right(&mut self) {
         self.tabs.next();
     }
 
-    pub fn on_left(&mut self) {
+    pub const fn on_left(&mut self) {
         self.tabs.previous();
     }
 
-    pub fn on_key(&mut self, c: char) {
+    pub const fn on_key(&mut self, c: char) {
         match c {
             'q' => {
                 self.should_quit = true;

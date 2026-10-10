@@ -1295,8 +1295,8 @@ mod tests {
     fn diff_skip() {
         let prev = Buffer::with_lines(["123"]);
         let mut next = Buffer::with_lines(["456"]);
-        for i in 1..3 {
-            next.content[i].set_diff_option(CellDiffOption::Skip);
+        for cell in &mut next.content[1..3] {
+            cell.set_diff_option(CellDiffOption::Skip);
         }
 
         let diff = prev.diff(&next);
