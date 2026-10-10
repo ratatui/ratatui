@@ -880,7 +880,14 @@ impl Layout {
         configure_variable_in_area_constraints(&mut solver, &variables, area_size)?;
         configure_variable_constraints(&mut solver, &variables)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
-        configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
+        configure_constraints(
+            &mut solver,
+            area_size,
+            &segments,
+            constraints,
+            flex,
+            spacing,
+        )?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
 
         if !flex.is_legacy() {
@@ -951,7 +958,16 @@ fn configure_constraints(
     segments: &[Element],
     constraints: &[Constraint],
     flex: Flex,
+    spacing: i16,
 ) -> Result<(), AddConstraintError> {
+    // `Percentage`/`Ratio` size themselves as a proportion of the area, but the area between
+    // `segments.len()` segments also contains `segments.len() - 1` inter-segment spacers.
+    // Positive `Spacing::Space` shrinks the space actually available to segments; negative
+    // `Spacing::Overlap` grows it. Subtracting the total spacing here keeps proportions based on
+    // the space segments actually occupy instead of the raw area (which double counts spacing).
+    let spacer_count = segments.len().saturating_sub(1) as i16;
+    let spacing_total = f64::from(spacing) * f64::from(spacer_count) * FLOAT_PRECISION_MULTIPLIER;
+
     for (&constraint, &segment) in constraints.iter().zip(segments.iter()) {
         match constraint {
             Constraint::Max(max) => {
@@ -970,12 +986,12 @@ fn configure_constraints(
                 solver.add_constraint(segment.has_int_size(length, LENGTH_SIZE_EQ))?;
             }
             Constraint::Percentage(p) => {
-                let size = area.size() * f64::from(p) / 100.00;
+                let size = (area.size() - spacing_total) * f64::from(p) / 100.00;
                 solver.add_constraint(segment.has_size(size, PERCENTAGE_SIZE_EQ))?;
             }
             Constraint::Ratio(num, den) => {
                 // avoid division by zero by using 1 when denominator is 0
-                let size = area.size() * f64::from(num) / f64::from(den.max(1));
+                let size = (area.size() - spacing_total) * f64::from(num) / f64::from(den.max(1));
                 solver.add_constraint(segment.has_size(size, RATIO_SIZE_EQ))?;
             }
             Constraint::Fill(_) => {
@@ -2874,6 +2890,27 @@ mod tests {
                 .split_with_spacers(rect);
             assert_eq!(s.len(), constraints.len() + 1);
             let result = s
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(result, expected);
+        }
+
+        /// <https://github.com/ratatui/ratatui/issues/2311>
+        #[rstest]
+        #[case::ratio_overlap(vec![(0, 6), (5, 6)], vec![Ratio(1, 2), Ratio(1, 2)], -1)]
+        #[case::ratio_no_spacing(vec![(0, 6), (6, 5)], vec![Ratio(1, 2), Ratio(1, 2)], 0)]
+        #[case::percentage_overlap(vec![(0, 6), (5, 6)], vec![Percentage(50), Percentage(50)], -1)]
+        fn ratio_and_percentage_account_for_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] spacing: i16,
+        ) {
+            let rect = Rect::new(0, 0, 11, 1);
+            let (segments, _) = Layout::horizontal(&constraints)
+                .spacing(spacing)
+                .split_with_spacers(rect);
+            let result = segments
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
