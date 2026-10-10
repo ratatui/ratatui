@@ -45,7 +45,7 @@ fn main() -> Result<()> {
         .init();
 
     match args.command.run() {
-        Ok(_) => (),
+        Ok(()) => (),
         Err(err) => {
             tracing::error!("{err}");
             std::process::exit(1);

@@ -2,6 +2,10 @@
 ///
 /// `line!` is similar to the [`vec!`] macro, but it returns a [`Line`] instead of a `Vec`.
 ///
+/// An optional `style =>` prefix sets the base style of the entire [`Line`], preserving styles
+/// on its children. The style can be anything convertible to [`Style`]. After `=>`, the usual
+/// empty, comma-separated, or `value; count` syntax applies.
+///
 /// # Examples
 ///
 /// * Create a [`Line`] containing a vector of [`Span`]s:
@@ -27,15 +31,30 @@
 /// # use ratatui_core::style::Modifier;
 /// use ratatui_macros::{line, span};
 ///
-/// let line = line![span!("hello {}", "world"), span!(Modifier::BOLD; "goodbye {}", "world")];
+/// let line = line![span!("hello {}", "world"), span!(Modifier::BOLD => "goodbye {}", "world")];
 /// ```
 ///
+/// * Set a base style while preserving child styles:
+///
+/// ```rust
+/// # use ratatui_core::style::{Color, Stylize};
+/// # use ratatui_macros::line;
+/// let line = line![Color::Blue => "hello", "world".red()];
+/// let repeated = line![Color::Blue => "hello"; 2];
+/// let empty = line![Color::Blue =>];
+/// ```
+///
+/// [`Style`]: ratatui_core::style::Style
 /// [`span!`]: crate::span
 /// [`Line`]: ratatui_core::text::Line
 /// [`Span`]: ratatui_core::text::Span
 /// [`vec!`]: alloc::vec!
 #[macro_export]
 macro_rules! line {
+    ($style:expr => $($content:tt)*) => {{
+        let style = $style;
+        $crate::line![$($content)*].style(style)
+    }};
     () => {
         $crate::ratatui_core::text::Line::default()
     };

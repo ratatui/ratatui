@@ -227,12 +227,12 @@ impl List<'_> {
         let mut scroll_padding = self.scroll_padding;
         while scroll_padding > 0 {
             let mut height_around_selected = 0;
-            for index in selected.saturating_sub(scroll_padding)
-                ..=selected
-                    .saturating_add(scroll_padding)
-                    .min(last_valid_index)
-            {
-                height_around_selected += self.items[index].height();
+            let start = selected.saturating_sub(scroll_padding);
+            let end = selected
+                .saturating_add(scroll_padding)
+                .min(last_valid_index);
+            for item in &self.items[start..=end] {
+                height_around_selected += item.height();
             }
             if height_around_selected <= max_height {
                 break;

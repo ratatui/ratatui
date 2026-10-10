@@ -35,7 +35,7 @@
 /// use ratatui_macros::{row, line, text, span};
 ///
 /// let row = row![
-///     line!["hello", "world"], span!(Modifier::BOLD; "goodbye {}", "world"),
+///     line!["hello", "world"], span!(Modifier::BOLD => "goodbye {}", "world"),
 ///     text!["hello", "world"],
 /// ];
 /// ```

@@ -1,8 +1,8 @@
-//! # Nested StatefulWidget Pattern
+//! # Nested `StatefulWidget` Pattern
 //!
 //! This example demonstrates composing multiple `StatefulWidget`s in a parent-child hierarchy.
 //! This pattern is ideal for complex applications where you need clean separation of concerns
-//! and want to leverage the benefits of the StatefulWidget pattern at multiple levels.
+//! and want to leverage the benefits of the `StatefulWidget` pattern at multiple levels.
 //!
 //! This example runs with the Ratatui library code in the branch that you are currently
 //! reading. See the [`latest`] branch for the code which works with the most recent Ratatui
@@ -44,18 +44,18 @@ use ratatui::layout::Rect;
 use ratatui::widgets::{StatefulWidget, Widget};
 use ratatui_state_examples::is_exit_key_pressed;
 
-/// Demonstrates the nested StatefulWidget pattern for mutable state management.
+/// Demonstrates the nested `StatefulWidget` pattern for mutable state management.
 ///
-/// Creates a parent-child widget hierarchy using StatefulWidgets and runs the application loop,
+/// Creates a parent-child widget hierarchy using `StatefulWidgets` and runs the application loop,
 /// updating the counter on each render cycle until the user exits.
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     ratatui::run(App::run)
 }
 
-/// The main application widget using the StatefulWidget pattern.
+/// The main application widget using the `StatefulWidget` pattern.
 ///
-/// Demonstrates how to compose multiple StatefulWidgets together while coordinating
+/// Demonstrates how to compose multiple `StatefulWidgets` together while coordinating
 /// between different child widgets.
 struct App;
 
@@ -65,7 +65,7 @@ impl App {
         let mut state = AppState { counter: 0 };
 
         loop {
-            terminal.draw(|frame| frame.render_stateful_widget(App, frame.area(), &mut state))?;
+            terminal.draw(|frame| frame.render_stateful_widget(Self, frame.area(), &mut state))?;
             if is_exit_key_pressed()? {
                 break Ok(());
             }
@@ -75,7 +75,7 @@ impl App {
 
 /// Application state that contains all the state needed by the app and its child widgets.
 ///
-/// Demonstrates how to organize hierarchical state in the StatefulWidget pattern.
+/// Demonstrates how to organize hierarchical state in the `StatefulWidget` pattern.
 struct AppState {
     counter: usize,
 }
@@ -88,7 +88,7 @@ impl StatefulWidget for App {
     }
 }
 
-/// A counter widget that uses StatefulWidget for clean state separation.
+/// A counter widget that uses `StatefulWidget` for clean state separation.
 ///
 /// Focuses purely on rendering logic and can be reused with different state instances.
 struct Counter;
