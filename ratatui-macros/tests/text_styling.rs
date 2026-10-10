@@ -22,7 +22,7 @@ fn span_formats_styled_content() {
         Span::styled("hello world: 0042", Style::new().blue().bold())
     );
     assert_eq!(
-        span!(Modifier::BOLD => "{} {value:04}", name, value = number,),
+        span!(Modifier::BOLD => "{name} {number:04}"),
         Span::styled("world 0042", Modifier::BOLD)
     );
 }
