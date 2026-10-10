@@ -19,3 +19,6 @@ octocrab.workspace = true
 ratatui.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream.workspace = true
+
+[lints]
+workspace = true
