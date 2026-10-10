@@ -137,7 +137,7 @@ ratatui-termwiz = { workspace = true, optional = true }
 ratatui-widgets = { workspace = true }
 serde = { workspace = true, optional = true }
 
-[target.'cfg(not(windows))'.dependencies]
+[target."cfg(not(windows))".dependencies]
 ratatui-termion = { workspace = true, optional = true }
 
 [dev-dependencies]
