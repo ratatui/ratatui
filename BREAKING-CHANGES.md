@@ -11,6 +11,7 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.31.0](#v0310)
+  - `Scrollbar` thumb now reaches the end of the track when the content is fully scrolled
   - `Backend` adds cursor save and restore methods
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
@@ -100,6 +101,17 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.31.0
+
+### `Scrollbar` thumb now reaches the end of the track when the content is fully scrolled
+
+The thumb's start position is now normalized over `content_length - viewport_content_length` — the
+furthest an application can actually scroll — instead of over `content_length - 1 +
+viewport_content_length`. Previously the thumb stopped short of the end of the track by a few cells
+once the content was fully scrolled, so the widget reported a scroll position the content never
+reached. See [#1681](https://github.com/ratatui/ratatui/issues/1681).
+
+Applications that clamp their scroll position to `content_length - 1` rather than to `content_length
+- viewport_content_length` will now see the thumb reach the end of the track slightly earlier.
 
 ### `Backend` adds cursor save and restore methods
 
