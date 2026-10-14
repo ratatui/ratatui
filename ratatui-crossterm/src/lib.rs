@@ -259,7 +259,7 @@ where
             let single_printable_ascii =
                 symbol.len() == 1 && matches!(symbol.as_bytes()[0], b' '..=b'~');
             let uncertain_width = !single_printable_ascii;
-            
+
             last = (!uncertain_width).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
@@ -914,7 +914,7 @@ mod tests {
     #[test]
     fn draw_uses_forced_width_for_cursor_tracking() {
         // A forced width lets the backend track the cursor advance of a printable ASCII cell.
-        
+
         let mut forced = Cell::new("a");
         forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
         let next = Cell::new("c");
