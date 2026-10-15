@@ -101,7 +101,7 @@ cfg_if::cfg_if! {
 #[cfg(all(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
 use crossterm_0_28 as _;
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::{Cell, CellWidth};
+use ratatui_core::buffer::{Cell, CellDiffOption, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 
@@ -252,6 +252,7 @@ where
             }
             let width = cell.cell_width();
             let symbol = cell.symbol();
+            let forced_width = matches!(cell.diff_option, CellDiffOption::ForcedWidth(_));
             // Terminals can disagree about how many columns any non-ASCII symbol occupies.
             // Clear the columns reserved by the buffer and reposition around every symbol that
             // is not a single printable ASCII character so that disagreement cannot shift later
@@ -287,7 +288,9 @@ where
                 underline_color = cell.underline_color;
             }
 
-            if uncertain_width {
+            // Forced-width cells can contain stateful escape sequences. Printing spaces before
+            // them could change what the sequence does, so only clear reserved columns for text.
+            if uncertain_width && !forced_width {
                 for _ in 0..width {
                     queue!(self.writer, Print(' '))?;
                 }
@@ -926,13 +929,15 @@ mod tests {
 
     #[test]
     fn draw_repositions_after_forced_width_escape_sequence() {
-        let mut forced = Cell::new("\u{1b}[?25hab");
+        let before = Cell::new("a");
+        let mut forced = Cell::new("\u{1b}[2b");
         forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
         let next = Cell::new("c");
-        let output = draw_to_string(&[(0, 0, &forced), (2, 0, &next)]);
+        let output = draw_to_string(&[(0, 0, &before), (1, 0, &forced), (3, 0, &next)]);
 
-        assert_eq!(output.matches(' ').count(), 2);
-        assert!(output.contains(&MoveTo(2, 0).to_string()));
+        assert!(output.contains("a\u{1b}[2b"));
+        assert!(!output.contains(" \u{1b}[2b"));
+        assert!(output.contains(&MoveTo(3, 0).to_string()));
     }
 
     #[test]
