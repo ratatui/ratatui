@@ -260,6 +260,7 @@ where
             let single_printable_ascii =
                 symbol.len() == 1 && matches!(symbol.as_bytes()[0], b' '..=b'~');
             let uncertain_width = !single_printable_ascii;
+            let contains_control = symbol.chars().any(char::is_control);
 
             last = (!uncertain_width).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
@@ -290,7 +291,9 @@ where
 
             // Forced-width cells can contain stateful escape sequences. Printing spaces before
             // them could change what the sequence does, so only clear reserved columns for text.
-            if uncertain_width && !forced_width {
+            // Escape/control payloads can have terminal side effects, so padding before them
+            // would change what the payload does.
+            if uncertain_width && !forced_width && !contains_control {
                 for _ in 0..width {
                     queue!(self.writer, Print(' '))?;
                 }
@@ -938,6 +941,15 @@ mod tests {
         assert!(output.contains("a\u{1b}[2b"));
         assert!(!output.contains(" \u{1b}[2b"));
         assert!(output.contains(&MoveTo(3, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_does_not_pad_unforced_escape_sequence() {
+        let payload = Cell::new("\u{1b}[2b");
+        let output = draw_to_string(&[(0, 0, &payload)]);
+
+        assert!(output.contains(payload.symbol()));
+        assert!(!output.contains(" \u{1b}[2b"));
     }
 
     #[test]
