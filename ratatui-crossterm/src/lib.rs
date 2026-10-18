@@ -101,6 +101,8 @@ cfg_if::cfg_if! {
 #[cfg(all(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
 use crossterm_0_28 as _;
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
+#[cfg(feature = "cell-extensions")]
+use ratatui_core::buffer::Hyperlink;
 use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -242,6 +244,9 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
+        // The OSC 8 hyperlink currently open, if any.
+        #[cfg(feature = "cell-extensions")]
+        let mut hyperlink: Option<&Hyperlink> = None;
         // Position and width of the last cell written, used to skip redundant cursor moves.
         let mut last: Option<(Position, u16)> = None;
         for (x, y, cell) in content {
@@ -279,8 +284,26 @@ where
                 queue!(self.writer, SetUnderlineColor(color))?;
                 underline_color = cell.underline_color;
             }
+            #[cfg(feature = "cell-extensions")]
+            if cell.hyperlink() != hyperlink {
+                // Opening a link implicitly ends the previous one, so only close a link when the
+                // next cell has none. Cursor moves don't affect the open link: terminals only
+                // attach it to the cells that are printed.
+                match cell.hyperlink() {
+                    Some(next) => queue!(self.writer, Print(next.open_sequence()))?,
+                    None => queue!(self.writer, Print(Hyperlink::CLOSE_SEQUENCE))?,
+                }
+                hyperlink = cell.hyperlink();
+            }
 
             queue!(self.writer, Print(cell.symbol()))?;
+        }
+
+        // Never leave a link open, so later output (e.g. `insert_before`, a panic message) isn't
+        // linked.
+        #[cfg(feature = "cell-extensions")]
+        if hyperlink.is_some() {
+            queue!(self.writer, Print(Hyperlink::CLOSE_SEQUENCE))?;
         }
 
         #[cfg(feature = "underline-color")]
@@ -1321,5 +1344,125 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(style.into_crossterm(), content_style);
+    }
+
+    #[cfg(feature = "cell-extensions")]
+    mod hyperlinks {
+        use pretty_assertions::assert_eq;
+        use ratatui_core::buffer::Hyperlink;
+
+        use super::*;
+
+        const CLOSE: &str = Hyperlink::CLOSE_SEQUENCE;
+
+        fn linked(symbol: &'static str, link: &Hyperlink) -> Cell {
+            let mut cell = Cell::new(symbol);
+            cell.set_hyperlink(Some(link));
+            cell
+        }
+
+        fn open(link: &Hyperlink) -> String {
+            link.open_sequence().to_string()
+        }
+
+        /// The SGR reset written at the end of every draw.
+        fn reset() -> String {
+            draw_to_string(&[])
+        }
+
+        #[test]
+        fn opens_once_per_run_and_closes_after_it() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let (a, b, c) = (linked("a", &link), linked("b", &link), Cell::new("c"));
+            let output = draw_to_string(&[(0, 0, &a), (1, 0, &b), (2, 0, &c)]);
+            assert_eq!(
+                output,
+                format!("{}{}ab{CLOSE}c{}", MoveTo(0, 0), open(&link), reset())
+            );
+        }
+
+        #[test]
+        fn closes_at_end_of_draw() {
+            let link = Hyperlink::new("https://ratatui.rs");
+            let a = linked("a", &link);
+            let output = draw_to_string(&[(0, 0, &a)]);
+            assert_eq!(
+                output,
+                format!("{}{}a{CLOSE}{}", MoveTo(0, 0), open(&link), reset())
+            );
+        }
+
+        #[test]
+        fn switching_links_opens_the_next_link_directly() {
+            let one = Hyperlink::new("https://one.example").with_id("1");
+            let two = Hyperlink::new("https://two.example").with_id("2");
+            let (a, b) = (linked("a", &one), linked("b", &two));
+            let output = draw_to_string(&[(0, 0, &a), (1, 0, &b)]);
+            assert_eq!(
+                output,
+                format!(
+                    "{}{}a{}b{CLOSE}{}",
+                    MoveTo(0, 0),
+                    open(&one),
+                    open(&two),
+                    reset()
+                )
+            );
+        }
+
+        /// A partial diff that only touches cells in the middle of a link re-opens it with the
+        /// same `id`, so terminals keep treating it as one link.
+        #[test]
+        fn partial_redraw_reopens_with_same_id() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let mut prev = Buffer::with_lines(["abcde"]);
+            prev.set_hyperlink(prev.area, Some(&link));
+            let mut next = prev.clone();
+            next[(2, 0)].set_fg(Color::Red);
+            let content: Vec<_> = prev.diff_iter(&next).collect();
+            let output = draw_to_string(&content);
+            assert_eq!(output.matches(&open(&link)).count(), 1);
+            assert_eq!(output.matches(CLOSE).count(), 1);
+            assert!(
+                output.find(&open(&link)) < output.find('c'),
+                "link must be open before the cell is printed: {output:?}"
+            );
+        }
+
+        #[test]
+        fn cursor_moves_keep_the_link_open() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let (a, b) = (linked("a", &link), linked("b", &link));
+            let output = draw_to_string(&[(0, 0, &a), (0, 1, &b)]);
+            assert_eq!(
+                output,
+                format!(
+                    "{}{}a{}b{CLOSE}{}",
+                    MoveTo(0, 0),
+                    open(&link),
+                    MoveTo(0, 1),
+                    reset()
+                )
+            );
+        }
+
+        #[test]
+        fn wide_glyph_inside_link() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            buf.set_line_with_hyperlink(0, 0, &"日本".into(), 4, &link);
+            let content: Vec<_> = Buffer::empty(buf.area).diff_iter(&buf).collect();
+            let output = draw_to_string(&content);
+            assert_eq!(
+                output,
+                format!("{}{}日本{CLOSE}{}", MoveTo(0, 0), open(&link), reset())
+            );
+        }
+
+        #[test]
+        fn no_link_writes_no_osc8() {
+            let a = Cell::new("a");
+            assert!(!draw_to_string(&[(0, 0, &a)]).contains("\x1b]8"));
+        }
     }
 }

@@ -27,6 +27,7 @@ impl Run for Clippy {
             "scrolling-regions",
             "unstable",
             "unstable-backend-writer",
+            "cell-extensions",
         ]
         .join(",");
 

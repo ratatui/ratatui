@@ -72,7 +72,10 @@ portable-atomic = ["ratatui-core/portable-atomic", "ratatui-widgets/portable-ato
 ## [`Cell`](crate::buffer::Cell).
 ##
 ## [OSC 8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
-cell-extensions = ["ratatui-core/cell-extensions"]
+cell-extensions = [
+  "ratatui-core/cell-extensions",
+  "ratatui-crossterm?/cell-extensions",
+]
 
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).

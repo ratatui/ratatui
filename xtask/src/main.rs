@@ -27,6 +27,7 @@ const CROSSTERM_COMMON_FEATURES: &[&str] = &[
     "scrolling-regions",
     "unstable",
     "unstable-backend-writer",
+    "cell-extensions",
 ];
 
 /// The available feature flags for crossterm versions.
