@@ -179,7 +179,8 @@ fn test() -> Result<()> {
     Ok(())
 }
 
-/// Run lib tests for the workspace's default packages
+/// Run lib tests for the workspace's default packages, plus the crossterm backend's integration
+/// tests for each crossterm version
 fn test_libs() -> Result<()> {
     run_cargo(vec![
         "hack",
@@ -199,6 +200,7 @@ fn test_libs() -> Result<()> {
             "--package",
             "ratatui-crossterm",
             "--lib",
+            "--tests",
             "--no-default-features",
             "--features",
             features.as_str(),
