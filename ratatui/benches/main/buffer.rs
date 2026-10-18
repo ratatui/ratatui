@@ -6,7 +6,10 @@ use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::text::Line;
 
+#[cfg(not(feature = "cell-extensions"))]
 criterion::criterion_group!(benches, empty, filled, with_lines, diff);
+#[cfg(feature = "cell-extensions")]
+criterion::criterion_group!(benches, empty, filled, with_lines, diff, diff_hyperlinks);
 
 const fn rect(size: u16) -> Rect {
     Rect::new(0, 0, size, size)
@@ -134,6 +137,47 @@ fn diff(c: &mut Criterion) {
                 b.iter(|| black_box(prev).diff_iter(black_box(next)).count());
             });
         }
+    }
+    group.finish();
+}
+
+/// Benchmarks `Buffer::diff_iter` on buffers where every 10th row is a hyperlink (10% of the
+/// cells), to compare with the plain `buffer/diff` results.
+///
+/// - `identical`: both buffers share the links (pointer-equal extensions).
+/// - `value_equal`: the links are equal but separately allocated, as when an app re-applies them
+///   every frame.
+/// - `link_changed`: the content is unchanged but every link points somewhere else.
+#[cfg(feature = "cell-extensions")]
+fn diff_hyperlinks(c: &mut Criterion) {
+    use ratatui::buffer::Hyperlink;
+
+    fn link_rows(buffer: &mut Buffer, uri: &str) {
+        let area = buffer.area;
+        for y in (area.top()..area.bottom()).step_by(10) {
+            let row = Rect::new(area.x, y, area.width, 1);
+            buffer.set_hyperlink(row, Some(&Hyperlink::new(format!("{uri}/{y}"))));
+        }
+    }
+
+    let mut group = c.benchmark_group("buffer/diff_hyperlinks");
+    let area = Rect::new(0, 0, 200, 50);
+    let plain = content_buffer(area, Content::Ascii, 0);
+    let mut prev = plain.clone();
+    link_rows(&mut prev, "https://ratatui.rs");
+    let mut value_equal = plain.clone();
+    link_rows(&mut value_equal, "https://ratatui.rs");
+    let mut link_changed = plain;
+    link_rows(&mut link_changed, "https://example.com");
+    let cases = [
+        ("identical", prev.clone()),
+        ("value_equal", value_equal),
+        ("link_changed", link_changed),
+    ];
+    for (name, next) in cases {
+        group.bench_with_input(name, &(&prev, &next), |b, (prev, next)| {
+            b.iter(|| black_box(prev).diff_iter(black_box(next)).count());
+        });
     }
     group.finish();
 }

@@ -66,6 +66,14 @@ palette = ["dep:palette", "ratatui-core/palette"]
 ## enables portable-atomic integration for targets that don't support atomic types.
 portable-atomic = ["ratatui-core/portable-atomic", "ratatui-widgets/portable-atomic"]
 
+## enables per-cell extensions such as [OSC 8] hyperlinks
+## ([`Buffer::set_hyperlink`](crate::buffer::Buffer::set_hyperlink)). Backends write extensions
+## around the cell's symbol, so they never affect text width. Adds 8 bytes to each
+## [`Cell`](crate::buffer::Cell).
+##
+## [OSC 8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
+cell-extensions = ["ratatui-core/cell-extensions"]
+
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).
 scrolling-regions = [

@@ -57,6 +57,11 @@ portable-atomic = ["kasuari/portable-atomic"]
 ## the Crossterm backend, and is not supported on Windows 7.
 underline-color = []
 
+## enables per-cell extensions: out-of-band data such as OSC 8 hyperlinks that backends write
+## around a cell's symbol. Adds 8 bytes to each [`Cell`](crate::buffer::Cell). Requires a target
+## with atomic pointer support (extensions are stored in an `Arc`).
+cell-extensions = []
+
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).
 scrolling-regions = []

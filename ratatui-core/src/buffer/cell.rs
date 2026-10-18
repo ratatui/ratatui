@@ -4,6 +4,8 @@ use compact_str::CompactString;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::buffer::cell_width::CellWidth;
+#[cfg(feature = "cell-extensions")]
+use crate::buffer::{CellExt, Hyperlink};
 use crate::style::{Color, Modifier, Style};
 use crate::symbols::merge::MergeStrategy;
 
@@ -70,6 +72,16 @@ pub struct Cell {
         note = "use `set_diff_option(CellDiffOption::Skip)` instead"
     )]
     pub skip: bool,
+
+    /// Out-of-band data such as a hyperlink, written by backends around the symbol.
+    ///
+    /// `None` when the cell has no extension; an empty [`CellExt`] is never stored.
+    #[cfg(feature = "cell-extensions")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    ext: Option<CellExt>,
 }
 
 impl Cell {
@@ -84,6 +96,8 @@ impl Cell {
         modifier: Modifier::empty(),
         diff_option: CellDiffOption::None,
         skip: false,
+        #[cfg(feature = "cell-extensions")]
+        ext: None,
     };
 
     /// Creates a new `Cell` with the given symbol.
@@ -150,28 +164,98 @@ impl Cell {
             .as_ref()
             .map_or(symbol, |s| strategy.merge(s, symbol));
         self.symbol = Some(CompactString::new(merged_symbol));
+        #[cfg(feature = "cell-extensions")]
+        {
+            self.ext = None;
+        }
         self
     }
 
     /// Sets the symbol of the cell.
+    ///
+    /// With the `cell-extensions` feature, this also removes the cell's extension (such as a
+    /// hyperlink), because the extension belongs to the content it was attached to. Text drawn
+    /// over a link, such as a popup, is therefore not linked. Attach extensions after drawing the
+    /// content, e.g. with [`Buffer::set_hyperlink`](crate::buffer::Buffer::set_hyperlink).
     pub fn set_symbol(&mut self, symbol: &str) -> &mut Self {
         self.symbol = Some(CompactString::new(symbol));
+        #[cfg(feature = "cell-extensions")]
+        {
+            self.ext = None;
+        }
         self
     }
 
     /// Appends a symbol to the cell.
     ///
-    /// This is particularly useful for adding zero-width characters to the cell.
+    /// This is particularly useful for adding zero-width characters to the cell. Unlike
+    /// [`set_symbol`](Self::set_symbol), this keeps the cell's extension.
     pub(crate) fn append_symbol(&mut self, symbol: &str) -> &mut Self {
         self.symbol.get_or_insert_default().push_str(symbol);
         self
     }
 
     /// Sets the symbol of the cell to a single character.
+    ///
+    /// Like [`set_symbol`](Self::set_symbol), this removes the cell's extension.
     pub fn set_char(&mut self, ch: char) -> &mut Self {
         let mut buf = [0; 4];
         self.symbol = Some(CompactString::new(ch.encode_utf8(&mut buf)));
+        #[cfg(feature = "cell-extensions")]
+        {
+            self.ext = None;
+        }
         self
+    }
+
+    /// Returns the extension of the cell, if any.
+    #[cfg(feature = "cell-extensions")]
+    #[must_use]
+    pub const fn ext(&self) -> Option<&CellExt> {
+        self.ext.as_ref()
+    }
+
+    /// Sets the extension of the cell. An empty [`CellExt`] is stored as `None`.
+    ///
+    /// The extension is kept by [`set_style`](Self::set_style) and removed by
+    /// [`set_symbol`](Self::set_symbol), [`set_char`](Self::set_char),
+    /// [`merge_symbol`](Self::merge_symbol) and [`reset`](Self::reset).
+    #[cfg(feature = "cell-extensions")]
+    pub fn set_ext(&mut self, ext: Option<CellExt>) -> &mut Self {
+        self.ext = ext.filter(|ext| !ext.is_empty());
+        self
+    }
+
+    /// Returns the hyperlink of the cell, if any.
+    #[cfg(feature = "cell-extensions")]
+    #[must_use]
+    pub fn hyperlink(&self) -> Option<&Hyperlink> {
+        self.ext.as_ref().and_then(CellExt::hyperlink)
+    }
+
+    /// Sets or removes the hyperlink of the cell, keeping any other extension data.
+    ///
+    /// This doesn't add an `id` to the link. To link several cells as one link, prefer
+    /// [`Buffer::set_hyperlink`](crate::buffer::Buffer::set_hyperlink), which also shares one
+    /// allocation between the cells.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui_core::buffer::{Cell, Hyperlink};
+    ///
+    /// let mut cell = Cell::new("r");
+    /// cell.set_hyperlink(Some(&Hyperlink::new("https://ratatui.rs")));
+    /// assert_eq!(cell.hyperlink().unwrap().uri(), "https://ratatui.rs");
+    ///
+    /// // writing a new symbol removes the link
+    /// cell.set_symbol("x");
+    /// assert_eq!(cell.hyperlink(), None);
+    /// ```
+    #[cfg(feature = "cell-extensions")]
+    pub fn set_hyperlink(&mut self, hyperlink: Option<&Hyperlink>) -> &mut Self {
+        let ext = self.ext.take().unwrap_or_default();
+        self.set_ext(Some(ext.with_hyperlink(hyperlink.cloned())))
     }
 
     /// Sets the foreground color of the cell.
@@ -269,9 +353,15 @@ impl PartialEq for Cell {
         #[allow(deprecated)]
         let skip_eq = self.skip == other.skip;
 
+        #[cfg(feature = "cell-extensions")]
+        let ext_eq = self.ext == other.ext;
+        #[cfg(not(feature = "cell-extensions"))]
+        let ext_eq = true;
+
         symbols_eq
             && underline_color_eq
             && skip_eq
+            && ext_eq
             && self.fg == other.fg
             && self.bg == other.bg
             && self.modifier == other.modifier
@@ -296,6 +386,8 @@ impl core::hash::Hash for Cell {
         self.diff_option.hash(state);
         #[allow(deprecated)]
         self.skip.hash(state);
+        #[cfg(feature = "cell-extensions")]
+        self.ext.hash(state);
     }
 }
 
@@ -383,6 +475,8 @@ mod tests {
                 modifier: Modifier::empty(),
                 diff_option: CellDiffOption::None,
                 skip: false,
+                #[cfg(feature = "cell-extensions")]
+                ext: None,
             }
         );
     }
@@ -494,11 +588,17 @@ mod tests {
     #[test]
     #[cfg(target_pointer_width = "64")]
     fn size() {
-        let expected = if cfg!(feature = "underline-color") {
-            48
+        let underline_color = if cfg!(feature = "underline-color") {
+            8
         } else {
-            40
+            0
         };
+        let ext = if cfg!(feature = "cell-extensions") {
+            8
+        } else {
+            0
+        };
+        let expected = 40 + underline_color + ext;
         assert_eq!(core::mem::size_of::<Cell>(), expected);
     }
 

@@ -6,6 +6,8 @@ use core::{cmp, fmt};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::buffer::{BufferDiff, Cell, CellWidth};
+#[cfg(feature = "cell-extensions")]
+use crate::buffer::{CellExt, Hyperlink};
 use crate::layout::{Position, Rect};
 use crate::style::Style;
 use crate::text::{Line, Span};
@@ -396,6 +398,134 @@ impl Buffer {
         self.set_stringn(x, y, &span.content, max_width as usize, span.style)
     }
 
+    /// Attaches a hyperlink to all cells in the given area, or removes it with `None`.
+    ///
+    /// Call this after drawing the linked content: writing a symbol to a cell removes its
+    /// extensions (see [`Cell::set_symbol`]). Styles are not affected, so style the link text
+    /// (e.g. underlined) as usual.
+    ///
+    /// If `hyperlink` has no [`id`](Hyperlink::id), one is derived from its URI and `area`. This
+    /// makes terminals treat the whole area as one link even when it spans several rows or is
+    /// redrawn in parts. All the cells share a single allocation.
+    ///
+    /// Only available with the `cell-extensions` feature.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui_core::buffer::{Buffer, Hyperlink};
+    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::style::{Style, Stylize};
+    ///
+    /// let mut buf = Buffer::empty(Rect::new(0, 0, 20, 1));
+    /// buf.set_string(0, 0, "ratatui.rs", Style::new().underlined());
+    /// buf.set_hyperlink(
+    ///     Rect::new(0, 0, 10, 1),
+    ///     Some(&Hyperlink::new("https://ratatui.rs")),
+    /// );
+    /// assert_eq!(buf[(9, 0)].hyperlink().unwrap().uri(), "https://ratatui.rs");
+    /// assert_eq!(buf[(10, 0)].hyperlink(), None);
+    /// ```
+    #[cfg(feature = "cell-extensions")]
+    pub fn set_hyperlink(&mut self, area: Rect, hyperlink: Option<&Hyperlink>) {
+        let hyperlink = hyperlink.map(|link| link.with_default_id(area));
+        let shared = hyperlink.clone().map(CellExt::from);
+        // Maps the last seen existing extension to its updated value, so runs of cells that
+        // shared an extension keep sharing one.
+        let mut last: Option<(CellExt, Option<CellExt>)> = None;
+        let area = self.area.intersection(area);
+        for y in area.top()..area.bottom() {
+            for x in area.left()..area.right() {
+                let cell = &mut self[(x, y)];
+                let Some(old) = cell.ext().cloned() else {
+                    cell.set_ext(shared.clone());
+                    continue;
+                };
+                let new = match &last {
+                    Some((from, to)) if from.ptr_eq(&old) => to.clone(),
+                    _ => {
+                        let new = old.clone().with_hyperlink(hyperlink.clone());
+                        let new = (!new.is_empty()).then_some(new);
+                        last = Some((old, new.clone()));
+                        new
+                    }
+                };
+                cell.set_ext(new);
+            }
+        }
+    }
+
+    /// Sets the extension of all cells in the given area, or removes it with `None`.
+    ///
+    /// This replaces any existing extension. To only change the hyperlink, use
+    /// [`Buffer::set_hyperlink`].
+    ///
+    /// Only available with the `cell-extensions` feature.
+    #[cfg(feature = "cell-extensions")]
+    pub fn set_ext(&mut self, area: Rect, ext: Option<&CellExt>) {
+        let area = self.area.intersection(area);
+        for y in area.top()..area.bottom() {
+            for x in area.left()..area.right() {
+                self[(x, y)].set_ext(ext.cloned());
+            }
+        }
+    }
+
+    /// Prints a span like [`Buffer::set_span`] and links the cells it wrote to `hyperlink`.
+    ///
+    /// Returns the position after the last printed cell. See [`Buffer::set_hyperlink`] for how
+    /// the link `id` is chosen.
+    ///
+    /// Only available with the `cell-extensions` feature.
+    #[cfg(feature = "cell-extensions")]
+    pub fn set_span_with_hyperlink(
+        &mut self,
+        x: u16,
+        y: u16,
+        span: &Span<'_>,
+        max_width: u16,
+        hyperlink: &Hyperlink,
+    ) -> (u16, u16) {
+        let end = self.set_span(x, y, span, max_width);
+        self.set_hyperlink(Rect::new(x, y, end.0.saturating_sub(x), 1), Some(hyperlink));
+        end
+    }
+
+    /// Prints a line like [`Buffer::set_line`] and links the cells it wrote to `hyperlink`.
+    ///
+    /// Returns the position after the last printed cell. See [`Buffer::set_hyperlink`] for how
+    /// the link `id` is chosen.
+    ///
+    /// Only available with the `cell-extensions` feature.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui_core::buffer::{Buffer, Hyperlink};
+    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::text::Line;
+    ///
+    /// let mut buf = Buffer::empty(Rect::new(0, 0, 20, 1));
+    /// let link = Hyperlink::new("https://ratatui.rs").with_id("home");
+    /// let end = buf.set_line_with_hyperlink(0, 0, &Line::from("Ratatui"), 20, &link);
+    /// assert_eq!(end, (7, 0));
+    /// assert_eq!(buf[(0, 0)].hyperlink(), Some(&link));
+    /// assert_eq!(buf[(7, 0)].hyperlink(), None);
+    /// ```
+    #[cfg(feature = "cell-extensions")]
+    pub fn set_line_with_hyperlink(
+        &mut self,
+        x: u16,
+        y: u16,
+        line: &Line<'_>,
+        max_width: u16,
+        hyperlink: &Hyperlink,
+    ) -> (u16, u16) {
+        let end = self.set_line(x, y, line, max_width);
+        self.set_hyperlink(Rect::new(x, y, end.0.saturating_sub(x), 1), Some(hyperlink));
+        end
+    }
+
     /// Set the style of all cells in the given area.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
@@ -566,6 +696,39 @@ impl<P: Into<Position>> IndexMut<P> for Buffer {
     }
 }
 
+impl Buffer {
+    /// Writes the `hyperlinks` section of the [`Debug`](fmt::Debug) output, if there are links.
+    #[cfg(feature = "cell-extensions")]
+    fn fmt_hyperlinks(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut runs: Vec<(usize, usize, usize, &Hyperlink)> = vec![];
+        for (y, line) in self.content.chunks(self.area.width as usize).enumerate() {
+            for (x, cell) in line.iter().enumerate() {
+                let Some(link) = cell.hyperlink() else {
+                    continue;
+                };
+                match runs.last_mut() {
+                    Some((run_x, run_y, width, run_link))
+                        if *run_y == y && *run_x + *width == x && *run_link == link =>
+                    {
+                        *width += 1;
+                    }
+                    _ => runs.push((x, y, 1, link)),
+                }
+            }
+        }
+        if runs.is_empty() {
+            return Ok(());
+        }
+        f.write_str(",\n    hyperlinks: [\n")?;
+        for (x, y, width, link) in runs {
+            f.write_fmt(format_args!(
+                "        x: {x}, y: {y}, width: {width}, {link:?},\n"
+            ))?;
+        }
+        f.write_str("    ]")
+    }
+}
+
 impl fmt::Debug for Buffer {
     /// Writes a debug representation of the buffer to the given formatter.
     ///
@@ -574,6 +737,9 @@ impl fmt::Debug for Buffer {
     /// * `content`: displayed as a list of strings representing the content of the buffer
     /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
     ///   modifier: Modifier::BOLD }` only showing a value when there is a change in style.
+    /// * `hyperlinks` (only with the `cell-extensions` feature, and only when the buffer contains
+    ///   links): displayed as a list of runs of linked cells: `x: 1, y: 2, width: 3, Hyperlink {
+    ///   uri: "https://ratatui.rs" }`.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!("Buffer {{\n    area: {:?}", self.area))?;
 
@@ -634,7 +800,10 @@ impl fmt::Debug for Buffer {
                 s.0, s.1, s.2, s.3, s.4
             ))?;
         }
-        f.write_str("    ]\n}")?;
+        f.write_str("    ]")?;
+        #[cfg(feature = "cell-extensions")]
+        self.fmt_hyperlinks(f)?;
+        f.write_str("\n}")?;
         Ok(())
     }
 }
