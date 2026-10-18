@@ -489,6 +489,19 @@ mod tests {
         assert_eq!(cell.symbol(), " ");
     }
 
+    /// `Cell` is stored twice per terminal cell (current and previous buffer), so its size is part
+    /// of Ratatui's memory footprint. See <https://github.com/ratatui/ratatui/issues/2397>.
+    #[test]
+    #[cfg(target_pointer_width = "64")]
+    fn size() {
+        let expected = if cfg!(feature = "underline-color") {
+            48
+        } else {
+            40
+        };
+        assert_eq!(core::mem::size_of::<Cell>(), expected);
+    }
+
     #[test]
     fn cell_eq() {
         let cell1 = Cell::new("あ");
