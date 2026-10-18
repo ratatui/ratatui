@@ -1122,4 +1122,49 @@ mod tests {
             backend.assert_buffer_lines(expected_buffer);
         }
     }
+
+    #[cfg(feature = "cell-extensions")]
+    mod hyperlinks {
+        use super::*;
+        use crate::buffer::Hyperlink;
+        use crate::layout::Rect;
+        use crate::style::Style;
+        use crate::terminal::Terminal;
+
+        /// Links go through the terminal's diff into the test backend's buffer, and are removed
+        /// again when the next frame has none.
+        #[test]
+        fn terminal_draws_link_changes() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let mut terminal = Terminal::new(TestBackend::new(10, 1)).unwrap();
+            terminal
+                .draw(|frame| {
+                    let buf = frame.buffer_mut();
+                    buf.set_string(0, 0, "ratatui", Style::new());
+                    buf.set_hyperlink(Rect::new(0, 0, 7, 1), Some(&link));
+                })
+                .unwrap();
+            let buffer = terminal.backend().buffer();
+            assert_eq!(buffer[(6, 0)].hyperlink(), Some(&link));
+            assert_eq!(buffer[(7, 0)].hyperlink(), None);
+
+            // same text, no link: only the link changed
+            terminal
+                .draw(|frame| frame.buffer_mut().set_string(0, 0, "ratatui", Style::new()))
+                .unwrap();
+            let buffer = terminal.backend().buffer();
+            assert!(buffer.content.iter().all(|cell| cell.hyperlink().is_none()));
+            terminal.backend().assert_buffer_lines(["ratatui   "]);
+        }
+
+        #[test]
+        #[should_panic = "buffer contents not equal"]
+        fn assert_buffer_compares_links() {
+            let mut backend = TestBackend::new(2, 1);
+            let mut cell = Cell::new(" ");
+            cell.set_hyperlink(Some(&Hyperlink::new("https://ratatui.rs")));
+            backend.draw([(0, 0, &cell)].into_iter()).unwrap();
+            backend.assert_buffer_lines(["  "]);
+        }
+    }
 }
