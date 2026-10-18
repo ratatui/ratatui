@@ -1281,10 +1281,20 @@ mod tests {
         }
 
         #[rstest]
-        fn render_out_of_bounds(mut small_buf: Buffer) {
-            let out_of_bounds_area = Rect::new(20, 20, 10, 1);
-            Text::from("Hello, world!").render(out_of_bounds_area, &mut small_buf);
-            assert_eq!(small_buf, Buffer::empty(small_buf.area));
+        #[case::right(Rect::new(0, 0, 15, 1), Rect::new(20, 0, 10, 1))]
+        #[case::bottom(Rect::new(0, 0, 15, 1), Rect::new(0, 20, 10, 1))]
+        #[case::both(Rect::new(0, 0, 15, 1), Rect::new(20, 20, 10, 1))]
+        #[case::single_row(Rect::new(0, 0, 57, 1), Rect::new(1, 1, 10, 1))]
+        #[case::zero_width_buffer(Rect::new(10, 10, 0, 1), Rect::new(10, 10, 10, 1))]
+        #[case::zero_height_buffer(Rect::new(10, 10, 10, 0), Rect::new(10, 10, 10, 1))]
+        #[case::empty_buffer(Rect::ZERO, Rect::new(0, 0, 10, 1))]
+        #[case::zero_width_area(Rect::new(0, 0, 15, 1), Rect::new(0, 0, 0, 1))]
+        #[case::zero_height_area(Rect::new(0, 0, 15, 1), Rect::new(0, 0, 10, 0))]
+        fn render_out_of_bounds(#[case] buffer_area: Rect, #[case] render_area: Rect) {
+            let mut buf = Buffer::empty(buffer_area);
+            let expected = buf.clone();
+            Text::raw("Hello, world!").render(render_area, &mut buf);
+            assert_eq!(buf, expected);
         }
 
         #[test]
