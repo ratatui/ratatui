@@ -353,19 +353,14 @@ impl PartialEq for Cell {
         #[allow(deprecated)]
         let skip_eq = self.skip == other.skip;
 
-        #[cfg(feature = "cell-extensions")]
-        let ext_eq = self.ext == other.ext;
-        #[cfg(not(feature = "cell-extensions"))]
-        let ext_eq = true;
-
         symbols_eq
             && underline_color_eq
             && skip_eq
-            && ext_eq
             && self.fg == other.fg
             && self.bg == other.bg
             && self.modifier == other.modifier
             && self.diff_option == other.diff_option
+            && ext_eq(self, other)
     }
 }
 
@@ -420,6 +415,20 @@ impl CellWidth for Cell {
             width
         }
     }
+}
+
+/// Compares the extensions of two cells. Kept out of the eager comparisons in [`Cell::eq`], so
+/// the common case of cells that already differ in symbol or style doesn't pay for it.
+#[cfg(feature = "cell-extensions")]
+#[inline]
+fn ext_eq(a: &Cell, b: &Cell) -> bool {
+    a.ext == b.ext
+}
+
+#[cfg(not(feature = "cell-extensions"))]
+#[inline]
+const fn ext_eq(_: &Cell, _: &Cell) -> bool {
+    true
 }
 
 /// Returns `true` if `symbol` is a single grapheme cluster.
