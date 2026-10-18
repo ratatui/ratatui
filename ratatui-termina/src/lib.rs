@@ -27,6 +27,8 @@ use std::fmt::{self, Write as FmtWrite};
 use std::io::{self, Write};
 
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
+#[cfg(feature = "cell-extensions")]
+use ratatui_core::buffer::Hyperlink;
 use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -146,6 +148,9 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
+        // The OSC 8 hyperlink currently open, if any.
+        #[cfg(feature = "cell-extensions")]
+        let mut hyperlink: Option<&Hyperlink> = None;
         // Position and width of the last cell written, used to skip redundant cursor moves.
         let mut last: Option<(Position, u16)> = None;
         for (x, y, cell) in content {
@@ -185,8 +190,24 @@ where
             if !attributes.is_empty() {
                 write!(string, "{}", Csi::Sgr(Sgr::Attributes(attributes))).unwrap();
             }
-
+            #[cfg(feature = "cell-extensions")]
+            if cell.hyperlink() != hyperlink {
+                // Opening a link implicitly ends the previous one, so only close a link when the
+                // next cell has none. Cursor moves don't affect the open link: terminals only
+                // attach it to the cells that are printed.
+                match cell.hyperlink() {
+                    Some(next) => write!(string, "{}", next.open_sequence()).unwrap(),
+                    None => string.push_str(Hyperlink::CLOSE_SEQUENCE),
+                }
+                hyperlink = cell.hyperlink();
+            }
             string.push_str(cell.symbol());
+        }
+        // Never leave a link open, so later output (e.g. `insert_before`, a panic message) isn't
+        // linked.
+        #[cfg(feature = "cell-extensions")]
+        if hyperlink.is_some() {
+            string.push_str(Hyperlink::CLOSE_SEQUENCE);
         }
 
         write!(self.terminal, "{string}{}", Csi::Sgr(Sgr::Reset))
@@ -925,5 +946,100 @@ mod tests {
             }
         );
         assert_eq!(one_based(0).unwrap(), OneBased::new(1).unwrap());
+    }
+
+    #[cfg(feature = "cell-extensions")]
+    mod hyperlinks {
+        use ratatui_core::buffer::{Buffer, Hyperlink};
+        use ratatui_core::layout::Rect;
+
+        use super::*;
+
+        const CLOSE: &str = Hyperlink::CLOSE_SEQUENCE;
+
+        fn draw_cells(content: &[(u16, u16, &Cell)]) -> String {
+            let mut backend = backend();
+            backend.draw(content.iter().copied()).unwrap();
+            backend.terminal.output()
+        }
+
+        fn linked(symbol: &'static str, link: &Hyperlink) -> Cell {
+            let mut cell = Cell::new(symbol);
+            cell.set_hyperlink(Some(link));
+            cell
+        }
+
+        /// Returns the output without cursor moves and SGR sequences.
+        fn strip_csi(output: &str) -> String {
+            let mut result = String::new();
+            let mut chars = output.chars().peekable();
+            while let Some(c) = chars.next() {
+                if c == '\x1b' && chars.peek() == Some(&'[') {
+                    // skip to the final byte of the sequence
+                    chars.find(|c| ('@'..='~').contains(c) && *c != '[');
+                } else {
+                    result.push(c);
+                }
+            }
+            result
+        }
+
+        #[test]
+        fn opens_once_per_run_and_closes_after_it() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let (a, b, c) = (linked("a", &link), linked("b", &link), Cell::new("c"));
+            let output = draw_cells(&[(0, 0, &a), (1, 0, &b), (2, 0, &c)]);
+            let open = link.open_sequence();
+            assert_eq!(strip_csi(&output), format!("{open}ab{CLOSE}c"));
+        }
+
+        #[test]
+        fn closes_at_end_of_draw() {
+            let link = Hyperlink::new("https://ratatui.rs");
+            let a = linked("a", &link);
+            let output = draw_cells(&[(0, 0, &a)]);
+            let open = link.open_sequence();
+            assert_eq!(strip_csi(&output), format!("{open}a{CLOSE}"));
+        }
+
+        #[test]
+        fn switching_links_opens_the_next_link_directly() {
+            let one = Hyperlink::new("https://one.example").with_id("1");
+            let two = Hyperlink::new("https://two.example").with_id("2");
+            let (a, b) = (linked("a", &one), linked("b", &two));
+            let output = draw_cells(&[(0, 0, &a), (1, 0, &b)]);
+            let (one, two) = (one.open_sequence(), two.open_sequence());
+            assert_eq!(strip_csi(&output), format!("{one}a{two}b{CLOSE}"));
+        }
+
+        #[test]
+        fn partial_redraw_reopens_with_same_id() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let mut prev = Buffer::with_lines(["abcde"]);
+            prev.set_hyperlink(prev.area, Some(&link));
+            let mut next = prev.clone();
+            next[(2, 0)].set_fg(Color::Red);
+            let content: Vec<_> = prev.diff_iter(&next).collect();
+            let output = draw_cells(&content);
+            let open = link.open_sequence();
+            assert_eq!(strip_csi(&output), format!("{open}c{CLOSE}"));
+        }
+
+        #[test]
+        fn wide_glyph_inside_link() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            buf.set_line_with_hyperlink(0, 0, &"日本".into(), 4, &link);
+            let content: Vec<_> = Buffer::empty(buf.area).diff_iter(&buf).collect();
+            let output = draw_cells(&content);
+            let open = link.open_sequence();
+            assert_eq!(strip_csi(&output), format!("{open}日本{CLOSE}"));
+        }
+
+        #[test]
+        fn no_link_writes_no_osc8() {
+            let a = Cell::new("a");
+            assert!(!draw_cells(&[(0, 0, &a)]).contains("\x1b]8"));
+        }
     }
 }

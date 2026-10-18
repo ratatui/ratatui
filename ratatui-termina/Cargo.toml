@@ -30,6 +30,10 @@ underline-color = ["ratatui-core/underline-color"]
 ## Enables terminal scrolling regions for Terminal::insert_before.
 scrolling-regions = ["ratatui-core/scrolling-regions"]
 
+## Writes cell extensions, such as hyperlinks set with `Buffer::set_hyperlink`, as OSC 8 escape
+## sequences. Enables `ratatui-core/cell-extensions`.
+cell-extensions = ["ratatui-core/cell-extensions"]
+
 #! The following features are unstable and may change in the future:
 
 ## Enable all unstable features.

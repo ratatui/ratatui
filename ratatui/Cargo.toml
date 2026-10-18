@@ -75,6 +75,7 @@ portable-atomic = ["ratatui-core/portable-atomic", "ratatui-widgets/portable-ato
 cell-extensions = [
   "ratatui-core/cell-extensions",
   "ratatui-crossterm?/cell-extensions",
+  "ratatui-termina?/cell-extensions",
   "ratatui-termion?/cell-extensions",
 ]
 
