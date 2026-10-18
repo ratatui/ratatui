@@ -1,4 +1,5 @@
 pub mod main {
+    pub mod backend;
     pub mod barchart;
     pub mod block;
     pub mod buffer;
@@ -15,6 +16,7 @@ pub mod main {
 pub use main::*;
 
 criterion::criterion_main!(
+    backend::benches,
     barchart::benches,
     block::benches,
     buffer::benches,
