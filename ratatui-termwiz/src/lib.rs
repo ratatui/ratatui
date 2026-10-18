@@ -40,9 +40,13 @@
 
 use std::error::Error;
 use std::io;
+#[cfg(feature = "cell-extensions")]
+use std::sync::Arc;
 
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
 use ratatui_core::buffer::Cell;
+#[cfg(feature = "cell-extensions")]
+use ratatui_core::buffer::Hyperlink;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 pub use termwiz;
@@ -155,6 +159,8 @@ impl Backend for TermwizBackend {
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
+        #[cfg(feature = "cell-extensions")]
+        let mut hyperlinks = HyperlinkCache::default();
         for (x, y, cell) in content {
             self.buffered_terminal.add_changes(vec![
                 Change::CursorPosition {
@@ -216,7 +222,20 @@ impl Backend for TermwizBackend {
                     },
                 )));
 
+            // termwiz tracks hyperlinks natively and writes them as OSC 8 when rendering.
+            #[cfg(feature = "cell-extensions")]
+            self.buffered_terminal
+                .add_change(Change::Attribute(AttributeChange::Hyperlink(
+                    hyperlinks.get(cell.hyperlink()),
+                )));
+
             self.buffered_terminal.add_change(cell.symbol());
+        }
+        // Don't link anything written after this draw, e.g. by `append_lines`.
+        #[cfg(feature = "cell-extensions")]
+        if hyperlinks.last.is_some() {
+            self.buffered_terminal
+                .add_change(Change::Attribute(AttributeChange::Hyperlink(None)));
         }
         Ok(())
     }
@@ -442,6 +461,51 @@ impl FromTermwiz<Blink> for Modifier {
             Blink::None => Self::empty(),
             Blink::Slow => Self::SLOW_BLINK,
             Blink::Rapid => Self::RAPID_BLINK,
+        }
+    }
+}
+
+/// Converts Ratatui hyperlinks to termwiz hyperlinks during a draw, reusing the termwiz value
+/// for consecutive cells with the same link.
+#[cfg(feature = "cell-extensions")]
+#[derive(Default)]
+struct HyperlinkCache<'a> {
+    last: Option<(&'a Hyperlink, Arc<termwiz::hyperlink::Hyperlink>)>,
+}
+
+#[cfg(feature = "cell-extensions")]
+impl<'a> HyperlinkCache<'a> {
+    fn get(&mut self, link: Option<&'a Hyperlink>) -> Option<Arc<termwiz::hyperlink::Hyperlink>> {
+        let link = link?;
+        match &self.last {
+            Some((cached, converted)) if *cached == link => Some(Arc::clone(converted)),
+            _ => {
+                let converted = Arc::new(link.into_termwiz());
+                self.last = Some((link, Arc::clone(&converted)));
+                Some(converted)
+            }
+        }
+    }
+}
+
+#[cfg(feature = "cell-extensions")]
+impl IntoTermwiz<termwiz::hyperlink::Hyperlink> for &Hyperlink {
+    fn into_termwiz(self) -> termwiz::hyperlink::Hyperlink {
+        match self.id() {
+            Some(id) => termwiz::hyperlink::Hyperlink::new_with_id(self.uri(), id),
+            None => termwiz::hyperlink::Hyperlink::new(self.uri()),
+        }
+    }
+}
+
+#[cfg(feature = "cell-extensions")]
+impl FromTermwiz<&termwiz::hyperlink::Hyperlink> for Hyperlink {
+    /// Converts a termwiz hyperlink, keeping its `id` parameter and dropping any others.
+    fn from_termwiz(termwiz: &termwiz::hyperlink::Hyperlink) -> Self {
+        let link = Self::new(termwiz.uri());
+        match termwiz.params().get("id") {
+            Some(id) => link.with_id(id),
+            None => link,
         }
     }
 }
@@ -896,5 +960,76 @@ mod tests {
             ),
             STYLE.underline_color(Color::Indexed(9))
         );
+    }
+
+    #[cfg(feature = "cell-extensions")]
+    mod hyperlinks {
+        use termwiz::surface::Surface;
+
+        use super::*;
+
+        #[test]
+        fn into_termwiz() {
+            let link = Hyperlink::new("https://ratatui.rs");
+            let converted: termwiz::hyperlink::Hyperlink = (&link).into_termwiz();
+            assert_eq!(converted.uri(), "https://ratatui.rs");
+            assert!(converted.params().is_empty());
+
+            let link = link.with_id("r");
+            let converted: termwiz::hyperlink::Hyperlink = (&link).into_termwiz();
+            assert_eq!(converted.params().get("id").map(String::as_str), Some("r"));
+        }
+
+        #[test]
+        fn from_termwiz() {
+            let link = termwiz::hyperlink::Hyperlink::new_with_id("https://ratatui.rs", "r");
+            assert_eq!(
+                Hyperlink::from_termwiz(&link),
+                Hyperlink::new("https://ratatui.rs").with_id("r")
+            );
+            let link = termwiz::hyperlink::Hyperlink::new("https://ratatui.rs\x1b");
+            assert_eq!(
+                Hyperlink::from_termwiz(&link),
+                Hyperlink::new("https://ratatui.rs")
+            );
+        }
+
+        #[test]
+        fn cache_reuses_the_converted_link() {
+            let one = Hyperlink::new("https://one.example").with_id("1");
+            let one_again = one.clone();
+            let two = Hyperlink::new("https://two.example");
+            let mut cache = HyperlinkCache::default();
+            assert!(cache.get(None).is_none());
+            let first = cache.get(Some(&one)).unwrap();
+            let second = cache.get(Some(&one_again)).unwrap();
+            assert!(Arc::ptr_eq(&first, &second));
+            let third = cache.get(Some(&two)).unwrap();
+            assert_eq!(third.uri(), "https://two.example");
+        }
+
+        /// termwiz attaches the link to the cells printed while it is set.
+        #[test]
+        fn surface_links_printed_cells() {
+            let link = Hyperlink::new("https://ratatui.rs").with_id("r");
+            let mut cache = HyperlinkCache::default();
+            let mut surface = Surface::new(4, 1);
+            surface.add_change(Change::Attribute(AttributeChange::Hyperlink(
+                cache.get(Some(&link)),
+            )));
+            surface.add_change("ab");
+            surface.add_change(Change::Attribute(AttributeChange::Hyperlink(None)));
+            surface.add_change("c");
+            let screen = surface.screen_lines();
+            let cell_links: Vec<_> = screen[0]
+                .visible_cells()
+                .map(|cell| {
+                    cell.attrs()
+                        .hyperlink()
+                        .map(|link| Hyperlink::from_termwiz(link.as_ref()))
+                })
+                .collect();
+            assert_eq!(cell_links, [Some(link.clone()), Some(link), None, None]);
+        }
     }
 }
