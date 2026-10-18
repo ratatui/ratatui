@@ -72,6 +72,7 @@ ratatui-core.workspace = true
 [dev-dependencies]
 pretty_assertions.workspace = true
 rstest.workspace = true
+vt100.workspace = true
 
 [lints]
 workspace = true

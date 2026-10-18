@@ -78,6 +78,7 @@ unicode-segmentation = "1.9"
 unicode-truncate = { version = "3", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
 unicode-width = ">=0.2.0"
+vt100 = "0.16"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
