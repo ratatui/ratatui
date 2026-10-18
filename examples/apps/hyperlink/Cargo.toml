@@ -8,8 +8,7 @@ rust-version.workspace = true
 [dependencies]
 color-eyre.workspace = true
 crossterm.workspace = true
-itertools.workspace = true
-ratatui.workspace = true
+ratatui = { workspace = true, features = ["cell-extensions"] }
 
 [lints]
 workspace = true
