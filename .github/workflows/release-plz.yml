@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+  # The privileged jobs below also require refs/heads/main for manual runs.
   workflow_dispatch:
 
 jobs:
@@ -20,7 +21,7 @@ jobs:
       contents: write
       id-token: write
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'ratatui' }}
+    if: ${{ github.repository_owner == 'ratatui' && github.ref == 'refs/heads/main' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,7 +49,7 @@ jobs:
       pull-requests: write
       contents: write
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'ratatui' }}
+    if: ${{ github.repository_owner == 'ratatui' && github.ref == 'refs/heads/main' }}
     concurrency:
       group: release-plz-${{ github.ref }}
       cancel-in-progress: false
