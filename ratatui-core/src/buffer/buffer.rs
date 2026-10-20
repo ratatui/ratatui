@@ -346,6 +346,9 @@ impl Buffer {
         S: Into<Style>,
     {
         let max_width = max_width.try_into().unwrap_or(u16::MAX);
+        if y < self.area.top() || y >= self.area.bottom() || x >= self.area.right() {
+            return (x, y);
+        }
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
@@ -1073,6 +1076,21 @@ mod tests {
             "ccccc".red(),
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn set_stringn_does_not_panic_when_out_of_area() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 57, 1));
+        // Calling with y outside the area (e.g. y = 1 on a 1-row buffer) should early return
+        // without panic
+        let res = buffer.set_stringn(1, 1, "hello", 10, Style::default());
+        assert_eq!(res, (1, 1));
+        assert_eq!(buffer, Buffer::empty(Rect::new(0, 0, 57, 1)));
+
+        // Calling with x outside area.right() should early return without panic
+        let res_x = buffer.set_stringn(60, 0, "hello", 10, Style::default());
+        assert_eq!(res_x, (60, 0));
+        assert_eq!(buffer, Buffer::empty(Rect::new(0, 0, 57, 1)));
     }
 
     #[test]
