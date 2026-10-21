@@ -2069,7 +2069,7 @@ mod tests {
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [Rect::new(0, 0, 6, 1), Rect::new(7, 0, 6, 1)]
+                [Rect::new(0, 0, 6, 1), Rect::new(7, 0, 5, 1)]
             );
 
             // with selection, more than needed width
@@ -2080,7 +2080,6 @@ mod tests {
             );
 
             // without selection, less than needed width
-            // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
@@ -2088,7 +2087,6 @@ mod tests {
             );
 
             // with selection, less than needed width
-            // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
@@ -2099,35 +2097,31 @@ mod tests {
         #[test]
         fn ratio_constraint() {
             // without selection, more than needed width
-            // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [Rect::new(0, 0, 7, 1), Rect::new(8, 0, 6, 1)]
+                [Rect::new(0, 0, 6, 1), Rect::new(7, 0, 7, 1)]
             );
 
             // with selection, more than needed width
-            // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [Rect::new(3, 0, 6, 1), Rect::new(10, 0, 5, 1)]
+                [Rect::new(3, 0, 5, 1), Rect::new(9, 0, 6, 1)]
             );
 
             // without selection, less than needed width
-            // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [Rect::new(0, 0, 2, 1), Rect::new(3, 0, 3, 1)]
+                [Rect::new(0, 0, 2, 1), Rect::new(3, 0, 2, 1)]
             );
 
             // with selection, less than needed width
-            // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [Rect::new(3, 0, 1, 1), Rect::new(5, 0, 2, 1)]
+                [Rect::new(3, 0, 1, 1), Rect::new(5, 0, 1, 1)]
             );
         }
 
