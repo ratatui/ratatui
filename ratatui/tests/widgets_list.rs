@@ -3,7 +3,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, HighlightSpacing, List, ListItem, ListState};
+use ratatui::widgets::{Block, Borders, List, ListHighlightSpacing, ListItem, ListState};
 use ratatui::{Terminal, symbols};
 use rstest::rstest;
 
@@ -281,7 +281,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
 }
 
 #[rstest]
-#[case::none_when_selected(None, HighlightSpacing::WhenSelected, [
+#[case::none_when_selected(None, ListHighlightSpacing::WhenSelected, [
     "┌─────────────┐",
     "│Item 1       │",
     "│Item 1a      │",
@@ -291,7 +291,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
     "│Item 3c      │",
     "└─────────────┘",
 ])]
-#[case::none_always(None, HighlightSpacing::Always, [
+#[case::none_always(None, ListHighlightSpacing::Always, [
     "┌─────────────┐",
     "│   Item 1    │",
     "│   Item 1a   │",
@@ -301,7 +301,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
     "│   Item 3c   │",
     "└─────────────┘",
 ])]
-#[case::none_never(None, HighlightSpacing::Never, [
+#[case::none_never(None, ListHighlightSpacing::Never, [
     "┌─────────────┐",
     "│Item 1       │",
     "│Item 1a      │",
@@ -311,7 +311,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
     "│Item 3c      │",
     "└─────────────┘",
 ])]
-#[case::first_when_selected(Some(0), HighlightSpacing::WhenSelected, [
+#[case::first_when_selected(Some(0), ListHighlightSpacing::WhenSelected, [
     "┌─────────────┐",
     "│>> Item 1    │",
     "│   Item 1a   │",
@@ -321,7 +321,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
     "│   Item 3c   │",
     "└─────────────┘",
 ])]
-#[case::first_always(Some(0), HighlightSpacing::Always, [
+#[case::first_always(Some(0), ListHighlightSpacing::Always, [
     "┌─────────────┐",
     "│>> Item 1    │",
     "│   Item 1a   │",
@@ -331,7 +331,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
     "│   Item 3c   │",
     "└─────────────┘",
 ])]
-#[case::first_never(Some(0), HighlightSpacing::Never, [
+#[case::first_never(Some(0), ListHighlightSpacing::Never, [
     "┌─────────────┐",
     "│Item 1       │",
     "│Item 1a      │",
@@ -343,7 +343,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
 ])]
 fn widgets_list_enable_always_highlight_spacing<'line, Lines>(
     #[case] selected: Option<usize>,
-    #[case] space: HighlightSpacing,
+    #[case] space: ListHighlightSpacing,
     #[case] expected: Lines,
 ) where
     Lines: IntoIterator,
