@@ -86,7 +86,7 @@ impl App {
         let paragraph = Paragraph::new(text.to_owned())
             .gray()
             .block(Self::create_block("Vertical scrollbar with arrows"))
-            .scroll((self.vertical_scroll as u16, 0));
+            .scroll_usize((self.vertical_scroll, 0));
         frame.render_widget(paragraph, chunks[1]);
         frame.render_stateful_widget(
             Scrollbar::new(ScrollbarOrientation::VerticalRight)
@@ -101,7 +101,7 @@ impl App {
             .block(Self::create_block(
                 "Vertical scrollbar without arrows, without track symbol and mirrored",
             ))
-            .scroll((self.vertical_scroll as u16, 0));
+            .scroll_usize((self.vertical_scroll, 0));
         frame.render_widget(paragraph, chunks[2]);
         frame.render_stateful_widget(
             Scrollbar::new(ScrollbarOrientation::VerticalLeft)
@@ -123,7 +123,7 @@ impl App {
             .block(Self::create_block(
                 "Horizontal scrollbar with only begin arrow & custom thumb symbol",
             ))
-            .scroll((0, self.horizontal_scroll as u16));
+            .scroll_usize((0, self.horizontal_scroll));
         frame.render_widget(paragraph, chunks[3]);
         frame.render_stateful_widget(
             Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
@@ -141,7 +141,7 @@ impl App {
             .block(Self::create_block(
                 "Horizontal scrollbar without arrows & custom thumb and track symbol",
             ))
-            .scroll((0, self.horizontal_scroll as u16));
+            .scroll_usize((0, self.horizontal_scroll));
         frame.render_widget(paragraph, chunks[4]);
         frame.render_stateful_widget(
             Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
