@@ -333,6 +333,8 @@ impl Buffer {
     /// until the end of the line. Skips zero-width graphemes and control characters.
     ///
     /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
+    ///
+    /// If `(x, y)` is outside the buffer's area, nothing is written and `(x, y)` is returned.
     pub fn set_stringn<T, S>(
         &mut self,
         mut x: u16,
@@ -346,7 +348,7 @@ impl Buffer {
         S: Into<Style>,
     {
         let max_width = max_width.try_into().unwrap_or(u16::MAX);
-        if y < self.area.top() || y >= self.area.bottom() || x >= self.area.right() {
+        if !self.area.contains(Position::new(x, y)) {
             return (x, y);
         }
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
@@ -1078,19 +1080,17 @@ mod tests {
         assert_eq!(buffer, expected);
     }
 
-    #[test]
-    fn set_stringn_does_not_panic_when_out_of_area() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 57, 1));
-        // Calling with y outside the area (e.g. y = 1 on a 1-row buffer) should early return
-        // without panic
-        let res = buffer.set_stringn(1, 1, "hello", 10, Style::default());
-        assert_eq!(res, (1, 1));
-        assert_eq!(buffer, Buffer::empty(Rect::new(0, 0, 57, 1)));
-
-        // Calling with x outside area.right() should early return without panic
-        let res_x = buffer.set_stringn(60, 0, "hello", 10, Style::default());
-        assert_eq!(res_x, (60, 0));
-        assert_eq!(buffer, Buffer::empty(Rect::new(0, 0, 57, 1)));
+    #[rstest]
+    #[case::left(5, 1)]
+    #[case::right(30, 1)]
+    #[case::above(15, 0)]
+    #[case::below(15, 2)]
+    fn set_stringn_out_of_area_is_noop(#[case] x: u16, #[case] y: u16) {
+        let area = Rect::new(10, 1, 20, 1);
+        let mut buffer = Buffer::empty(area);
+        let pos = buffer.set_stringn(x, y, "hello", 10, Style::default());
+        assert_eq!(pos, (x, y));
+        assert_eq!(buffer, Buffer::empty(area));
     }
 
     #[test]
