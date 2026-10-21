@@ -395,8 +395,12 @@ pub(crate) fn compute_inline_size<B: Backend>(
     height: u16,
     size: Size,
     offset_in_previous_viewport: u16,
+    cursor_position: Option<Position>,
 ) -> Result<(Rect, Position), B::Error> {
-    let pos = backend.get_cursor_position()?;
+    let pos = match cursor_position {
+        Some(position) => position,
+        None => backend.get_cursor_position()?,
+    };
     let mut row = pos.y;
 
     let max_height = size.height.min(height);
@@ -458,7 +462,7 @@ mod tests {
             .unwrap();
 
         let (area, observed_pos) =
-            compute_inline_size(&mut backend, 4, Size::new(10, 10), 1).unwrap();
+            compute_inline_size(&mut backend, 4, Size::new(10, 10), 1, None).unwrap();
 
         assert_eq!(observed_pos, Position { x: 0, y: 6 });
         assert_eq!(area, Rect::new(0, 5, 10, 4));
@@ -482,7 +486,7 @@ mod tests {
             .unwrap();
 
         let (area, _observed_pos) =
-            compute_inline_size(&mut backend, 4, Size::new(10, 10), 5).unwrap();
+            compute_inline_size(&mut backend, 4, Size::new(10, 10), 5, None).unwrap();
 
         assert_eq!(area, Rect::new(0, 0, 10, 4));
     }
