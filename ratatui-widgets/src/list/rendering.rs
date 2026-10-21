@@ -31,6 +31,11 @@ impl StatefulWidget for &List<'_> {
     type State = ListState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
         self.block.as_ref().render(area, buf);
         let list_area = self.block.inner_if_some(area);
@@ -1268,5 +1273,40 @@ mod tests {
         state.select(Some(0));
         StatefulWidget::render(list, single_line_buf.area, &mut single_line_buf, &mut state);
         assert_eq!(single_line_buf, Buffer::with_lines([expected]));
+    }
+
+    #[rstest]
+    fn render_list_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        let widget = List::new(["item 1", "item 2"]);
+        let mut state = ListState::default();
+        StatefulWidget::render(&widget, area, &mut buf, &mut state);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_list_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = List::new(["item 1", "item 2"]);
+        let mut state1 = ListState::default();
+        let mut state2 = ListState::default();
+        StatefulWidget::render(&widget, Rect::new(9, 9, 40, 10), &mut buf, &mut state1);
+        StatefulWidget::render(&widget, area, &mut expected, &mut state2);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }
