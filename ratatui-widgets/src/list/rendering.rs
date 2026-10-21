@@ -67,7 +67,7 @@ impl StatefulWidget for &List<'_> {
         let empty_symbol = " ".repeat(highlight_symbol_width as usize);
         let empty_symbol = empty_symbol.to_line();
 
-        let mut current_height = 0;
+        let mut current_height: usize = 0;
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
         for (i, item) in self
             .items
@@ -76,16 +76,25 @@ impl StatefulWidget for &List<'_> {
             .skip(state.offset)
             .take(last_visible_index - first_visible_index)
         {
-            let (x, y) = if self.direction == ListDirection::BottomToTop {
-                current_height += item.height() as u16;
-                (list_area.left(), list_area.bottom() - current_height)
+            let item_height = if self.truncate {
+                item.height().min(list_height - current_height)
             } else {
-                let pos = (list_area.left(), list_area.top() + current_height);
-                current_height += item.height() as u16;
+                item.height()
+            };
+
+            let (x, y) = if self.direction == ListDirection::BottomToTop {
+                current_height += item_height;
+                (
+                    list_area.left(),
+                    list_area.bottom().saturating_sub(current_height as u16),
+                )
+            } else {
+                let pos = (list_area.left(), list_area.top() + current_height as u16);
+                current_height += item_height;
                 pos
             };
 
-            let row_area = Rect::new(x, y, list_area.width, item.height() as u16);
+            let row_area = Rect::new(x, y, list_area.width, item_height as u16);
 
             let item_style = self.style.patch(item.style);
             buf.set_style(row_area, item_style);
@@ -107,7 +116,7 @@ impl StatefulWidget for &List<'_> {
                 buf.set_style(row_area, self.highlight_style);
             }
             if selection_spacing {
-                for j in 0..item.content.height() {
+                for j in 0..item_height {
                     // if the item is selected, we need to display the highlight symbol:
                     // - either for the first line of the item only,
                     // - or for each line of the item if the appropriate option is set
@@ -203,6 +212,21 @@ impl List<'_> {
             }
         }
 
+        // After ensuring the selected item is visible we may have left a gap, greedily include
+        // more items at the bottom as long as they fully fit into `max_height`
+        while last_visible_index < self.items.len()
+            && height_from_offset + self.items[last_visible_index].height() <= max_height
+        {
+            height_from_offset += self.items[last_visible_index].height();
+            last_visible_index += 1;
+        }
+
+        // Include the next overflowing item if truncating
+        if self.truncate && last_visible_index < self.items.len() && height_from_offset < max_height
+        {
+            last_visible_index += 1;
+        }
+
         (first_visible_index, last_visible_index)
     }
 
@@ -262,7 +286,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use ratatui_core::layout::{Alignment, Rect};
     use ratatui_core::style::{Color, Modifier, Style, Stylize};
-    use ratatui_core::text::Line;
+    use ratatui_core::text::{Line, Text};
     use ratatui_core::widgets::{StatefulWidget, Widget};
     use rstest::{fixture, rstest};
 
@@ -941,6 +965,47 @@ mod tests {
             state.offset, 4,
             "did not scroll the selected item into view"
         );
+    }
+
+    #[test]
+    fn ensuring_selected_item_is_visible_fills_remaining_space() {
+        let list = List::new([
+            Text::from(vec!["Multiline".into(), "Item".into()]),
+            "Item 1".into(),
+            "Item 2".into(),
+        ]);
+        let mut state = ListState::default().with_offset(0).with_selected(Some(1));
+        let buffer = stateful_widget(list, &mut state, 9, 2);
+
+        let expected = Buffer::with_lines(["Item 1   ", "Item 2  "]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn show_last_item_truncated_when_enabled_and_overflowing() {
+        let list = List::new([
+            "Item 1".into(),
+            Text::from(vec!["Multiline".into(), "Item".into()]),
+        ])
+        .truncate(true);
+        let mut state = ListState::default();
+        let buffer = stateful_widget(list, &mut state, 9, 2);
+
+        let expected = Buffer::with_lines(["Item 1   ", "Multiline"]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn does_not_show_last_item_truncated_when_disabled_and_overflowing() {
+        let list = List::new([
+            "Item 1".into(),
+            Text::from(vec!["Multiline".into(), "Item".into()]),
+        ]);
+        let mut state = ListState::default();
+        let buffer = stateful_widget(list, &mut state, 9, 2);
+
+        let expected = Buffer::with_lines(["Item 1   ", "         "]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
