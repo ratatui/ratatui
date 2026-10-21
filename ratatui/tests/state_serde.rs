@@ -106,7 +106,8 @@ const DEFAULT_STATE_REPR: &str = r#"{
   "table": {
     "offset": 0,
     "selected": null,
-    "selected_column": null
+    "selected_column": null,
+    "selected_changed": false
   },
   "scrollbar": {
     "content_length": 10,
@@ -144,7 +145,8 @@ const SELECTED_STATE_REPR: &str = r#"{
   "table": {
     "offset": 0,
     "selected": 1,
-    "selected_column": 0
+    "selected_column": 0,
+    "selected_changed": false
   },
   "scrollbar": {
     "content_length": 10,
@@ -184,7 +186,8 @@ const SCROLLED_STATE_REPR: &str = r#"{
   "table": {
     "offset": 4,
     "selected": 8,
-    "selected_column": 0
+    "selected_column": 0,
+    "selected_changed": false
   },
   "scrollbar": {
     "content_length": 10,
@@ -217,7 +220,8 @@ const OLD_TABLE_DESERIALIZE: &str = r#"{
 const NEW_TABLE_DESERIALIZE: &str = r#"{
     "offset": 0,
     "selected": 1,
-    "selected_column": null
+    "selected_column": null,
+    "selected_changed": false
 }"#;
 
 // This test is to check for backwards compatibility with the old states.

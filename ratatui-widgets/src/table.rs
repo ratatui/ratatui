@@ -274,6 +274,12 @@ pub struct Table<'a> {
 
     /// How many rows to try to keep visible before and after the selected row
     scroll_padding: usize,
+
+    /// Whether to move the selection into view on render
+    selection_must_be_visible: bool,
+
+    /// Whether to allow scrolling down further than is necessary to see the last row
+    allow_overscroll: bool,
 }
 
 impl Default for Table<'_> {
@@ -293,6 +299,8 @@ impl Default for Table<'_> {
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
             scroll_padding: 0,
+            selection_must_be_visible: true,
+            allow_overscroll: true,
         }
     }
 }
@@ -747,6 +755,51 @@ impl<'a> Table<'a> {
         self.scroll_padding = padding;
         self
     }
+
+    /// Set whether the table offset automatically adjusts to keep the selected row visible.
+    ///
+    /// By default this setting is enabled. When the selected row is above the visible area,
+    /// the table scrolls up until the selected row becomes visible. Likewise, if the selected row
+    /// is below the visible area, it scrolls down.
+    ///
+    /// In certain situations it can be desirable to disable it, for example when mapping mouse
+    /// scroll events to offset increments or decrements.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::Table;
+    ///
+    /// let table = Table::default().selection_must_be_visible(true);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn selection_must_be_visible(mut self, selection_must_be_visible: bool) -> Self {
+        self.selection_must_be_visible = selection_must_be_visible;
+        self
+    }
+
+    /// Set whether to allow scrolling past the last row
+    ///
+    /// By default this setting is enabled, which allows the table to scroll down until only the
+    /// last row is visible. When disabled, the table does not scroll down further than is
+    /// necessary to see the last row.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::Table;
+    ///
+    /// let table = Table::default().allow_overscroll(true);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn allow_overscroll(mut self, allow_overscroll: bool) -> Self {
+        self.allow_overscroll = allow_overscroll;
+        self
+    }
 }
 
 impl Widget for Table<'_> {
@@ -780,26 +833,21 @@ impl StatefulWidget for &Table<'_> {
         if table_area.is_empty() {
             return;
         }
+        let (header_area, rows_area, footer_area) = self.layout(table_area);
 
-        if state.selected.is_some_and(|s| s >= self.rows.len()) {
-            state.select(Some(self.rows.len().saturating_sub(1)));
+        self.ensure_offset_is_in_bounds(state);
+        self.ensure_selection_is_in_bounds(state);
+        if core::mem::take(&mut state.selected_changed) || self.selection_must_be_visible {
+            self.ensure_selection_is_visible(rows_area, state);
+            self.ensure_scroll_padding(rows_area, state);
         }
-
-        if self.rows.is_empty() {
-            state.select(None);
+        if !self.allow_overscroll {
+            self.prevent_overscroll(rows_area, state);
         }
 
         let column_count = self.column_count();
-        if state.selected_column.is_some_and(|s| s >= column_count) {
-            state.select_column(Some(column_count.saturating_sub(1)));
-        }
-        if column_count == 0 {
-            state.select_column(None);
-        }
-
         let selection_width = self.selection_width(state);
         let column_widths = self.get_column_widths(table_area.width, selection_width, column_count);
-        let (header_area, rows_area, footer_area) = self.layout(table_area);
 
         self.render_header(header_area, buf, &column_widths);
 
@@ -831,6 +879,134 @@ impl Table<'_> {
         .split(area);
         let (header_area, rows_area, footer_area) = (layout[1], layout[3], layout[5]);
         (header_area, rows_area, footer_area)
+    }
+
+    /// if the table is not empty, ensure at least one item is visible
+    fn ensure_offset_is_in_bounds(&self, state: &mut TableState) {
+        state.offset = state.offset.min(self.rows.len().saturating_sub(1));
+    }
+
+    /// ensures that the selection points to a valid row
+    fn ensure_selection_is_in_bounds(&self, state: &mut TableState) {
+        if state.selected.is_some_and(|s| s >= self.rows.len()) {
+            state.select(Some(self.rows.len().saturating_sub(1)));
+        }
+
+        if self.rows.is_empty() {
+            state.select(None);
+        }
+
+        let column_count = self.column_count();
+
+        if state.selected_column.is_some_and(|s| s >= column_count) {
+            state.select_column(Some(column_count.saturating_sub(1)));
+        }
+        if column_count == 0 {
+            state.select_column(None);
+        }
+    }
+
+    /// Scroll the table if necessary to ensure the selected row it is visible.
+    fn ensure_selection_is_visible(&self, rows_area: Rect, state: &mut TableState) {
+        let last_row = self.rows.len().saturating_sub(1);
+        let visible_rows = usize::from(rows_area.height);
+        if let Some(selected) = state.selected {
+            assert!(selected <= last_row);
+            let min_offset = selected.saturating_sub(visible_rows.saturating_sub(1));
+            state.offset = state.offset.min(selected).max(min_offset);
+        }
+    }
+
+    /// Scroll the table if necessary to ensure there is enough space above and below the selected
+    /// item according to the configured padding.
+    fn ensure_scroll_padding(&self, rows_area: Rect, state: &mut TableState) {
+        if let Some(selected) = state.selected {
+            let max_height = usize::from(rows_area.height);
+            let mut height = 0;
+            let mut start = state.offset;
+            let mut end = start;
+            let row_height = |idx: usize| usize::from(self.rows[idx].height_with_margin());
+
+            while end < self.rows.len() && height + row_height(end) <= max_height {
+                height += row_height(end);
+                end += 1;
+            }
+
+            let index_to_display =
+                self.apply_scroll_padding_to_selected_index(selected, max_height, start, end);
+
+            // scroll down until the target index is visible
+            while end <= index_to_display {
+                if start < end {
+                    height -= row_height(start);
+                } else {
+                    end += 1;
+                }
+                start += 1;
+                while end < self.rows.len() && height + row_height(end) <= max_height {
+                    height += row_height(end);
+                    end += 1;
+                }
+            }
+
+            // scroll up until the target index is visible
+            while index_to_display < start {
+                start -= 1;
+                height += row_height(start);
+                while height > max_height {
+                    end -= 1;
+                    height -= row_height(end);
+                }
+            }
+
+            state.offset = start;
+        }
+    }
+
+    /// prevents overscrolling i.e. the view doesn't scroll past the last item
+    fn prevent_overscroll(&self, rows_area: Rect, state: &mut TableState) {
+        let last_index = self.rows.len().saturating_sub(1);
+        let max_height = usize::from(rows_area.height);
+        let mut height = 0;
+        let mut start = state.offset;
+        let mut end = start;
+        let row_height = |idx: usize| usize::from(self.rows[idx].height_with_margin());
+
+        assert!(start <= last_index);
+
+        while end < self.rows.len() && height + row_height(end) <= max_height {
+            height += row_height(end);
+            end += 1;
+        }
+
+        if last_index >= end {
+            return;
+        }
+
+        // scroll up until last row is not visible anymore
+        while start > 0 && last_index < end {
+            start -= 1;
+            height += row_height(start);
+            while height > max_height {
+                end -= 1;
+                height -= row_height(end);
+            }
+        }
+        // scroll down one step, making the last row visible again
+        if last_index >= end {
+            if start < end {
+                height -= row_height(start);
+            } else {
+                end += 1;
+            }
+            start += 1;
+            while end < self.rows.len() && height + row_height(end) <= max_height {
+                height += row_height(end);
+                end += 1;
+            }
+        }
+
+        state.offset = start;
     }
 
     /// Render the header cells, if they are not `None`
@@ -872,7 +1048,7 @@ impl Table<'_> {
         area: Rect,
         buf: &mut Buffer,
         selection_width: u16,
-        state: &mut TableState,
+        state: &TableState,
         columns_widths: &[Rect],
     ) {
         if self.rows.is_empty() {
@@ -880,7 +1056,6 @@ impl Table<'_> {
         }
 
         let (start_index, end_index) = self.visible_rows(state, area);
-        state.offset = start_index;
 
         let mut y_offset = 0;
 
@@ -1017,64 +1192,22 @@ impl Table<'_> {
     /// The algorithm works as follows:
     /// - start at the offset and calculate the height of the rows that can be displayed within the
     ///   area.
-    /// - if the selected row is not visible, scroll the table to ensure it is visible.
-    /// - if scroll padding is set, ensure the padding number of rows are visible before and after
-    ///   the selected row, adjusting the padding down when items of inconsistent sizes make it
-    ///   impossible.
     /// - if there is still space to fill then there's a partial row at the end which should be
     ///   included in the view.
     fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
-        let last_row = self.rows.len().saturating_sub(1);
-        let mut start = state.offset.min(last_row);
-
-        if let Some(selected) = state.selected {
-            start = start.min(selected);
-        }
-
-        let mut end = start;
+        let max_height = usize::from(area.height);
         let mut height = 0;
+        let start = state.offset;
+        let mut end = start;
+        let row_height = move |idx: usize| usize::from(self.rows[idx].height_with_margin());
 
-        for item in self.rows.iter().skip(start) {
-            if height + item.height > area.height {
-                break;
-            }
-            height += item.height_with_margin();
+        while end < self.rows.len() && height + row_height(end) <= max_height {
+            height += row_height(end);
             end += 1;
         }
 
-        if let Some(selected) = state.selected {
-            let selected = selected.min(last_row);
-
-            let index_to_display = self.apply_scroll_padding_to_selected_index(
-                selected,
-                area.height as usize,
-                start,
-                end,
-            );
-
-            // scroll down until the target index is visible
-            while index_to_display >= end {
-                height = height.saturating_add(self.rows[end].height_with_margin());
-                end += 1;
-                while height > area.height {
-                    height = height.saturating_sub(self.rows[start].height_with_margin());
-                    start += 1;
-                }
-            }
-
-            // scroll up until the target index is visible
-            while index_to_display < start {
-                start -= 1;
-                height = height.saturating_add(self.rows[start].height_with_margin());
-                while height > area.height {
-                    end -= 1;
-                    height = height.saturating_sub(self.rows[end].height_with_margin());
-                }
-            }
-        }
-
         // Include a partial row if there is space
-        if height < area.height && end < self.rows.len() {
+        if height < max_height && end < self.rows.len() {
             end += 1;
         }
 
@@ -3040,6 +3173,110 @@ mod tests {
             let mut state = TableState::new()
                 .with_offset(offset)
                 .with_selected(selected);
+            StatefulWidget::render(table, buf.area, &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(expected));
+        }
+
+        #[rstest]
+        #[case::selection_not_visible_before(
+            4, // height
+            5, // offset
+            Some(0), // selected
+            [
+                "Row 5     ",
+                "          ",
+                "          ",
+                "          ",
+            ],
+            [
+                "Row 0     ",
+                "Row 1     ",
+                "Row 2     ",
+                "Row 3     ",
+            ]
+        )]
+        fn selection_visible_after_select<'line, Lines>(
+            #[case] render_height: u16,
+            #[case] offset: usize,
+            #[case] selected: Option<usize>,
+            #[case] expected_before_select: Lines,
+            #[case] expected_after_select: Lines,
+        ) where
+            Lines: IntoIterator,
+            Lines::Item: Into<Line<'line>>,
+        {
+            let rows = (0..6).map(|i| Row::new(vec![format!("Row {i}")]));
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).selection_must_be_visible(false);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, render_height));
+            let mut state = TableState::new()
+                .with_offset(offset)
+                .with_selected(selected);
+            StatefulWidget::render(&table, buf.area, &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(expected_before_select));
+            state.select(selected);
+            StatefulWidget::render(&table, buf.area, &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(expected_after_select));
+        }
+
+        #[rstest]
+        #[case::overscroll_exists(
+            4, // height
+            5, // offset
+            [
+                "Row 2     ",
+                "Row 3     ",
+                "Row 4     ",
+                "Row 5     ",
+            ]
+        )]
+        #[case::overscroll_doesnt_exist(
+            4, // height
+            0, // offset
+            [
+                "Row 0     ",
+                "Row 1     ",
+                "Row 2     ",
+                "Row 3     ",
+            ]
+        )]
+        #[case::overscroll_where_offset_is_past_the_last_item(
+            4, // height
+            99, // offset
+            [
+                "Row 2     ",
+                "Row 3     ",
+                "Row 4     ",
+                "Row 5     ",
+            ]
+        )]
+        #[case::overscroll_all_items_visible(
+            8, // height
+            0, // offset
+            [
+                "Row 0     ",
+                "Row 1     ",
+                "Row 2     ",
+                "Row 3     ",
+                "Row 4     ",
+                "Row 5     ",
+                "          ",
+                "          ",
+            ]
+        )]
+        fn no_overscroll<'line, Lines>(
+            #[case] render_height: u16,
+            #[case] offset: usize,
+            #[case] expected: Lines,
+        ) where
+            Lines: IntoIterator,
+            Lines::Item: Into<Line<'line>>,
+        {
+            let rows = (0..6).map(|i| Row::new(vec![format!("Row {i}")]));
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).allow_overscroll(false);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, render_height));
+            let mut state = TableState::new().with_offset(offset);
             StatefulWidget::render(table, buf.area, &mut buf, &mut state);
             assert_eq!(buf, Buffer::with_lines(expected));
         }
