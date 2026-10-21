@@ -276,7 +276,11 @@ impl<'a> Text<'a> {
         Self::raw(content).patch_style(style)
     }
 
-    /// Returns the max width of all the lines.
+    /// Returns the number of terminal cells the widest line occupies when
+    /// rendered.
+    ///
+    /// Each line is measured as rendering draws it rather than as raw content;
+    /// see [`Span::width`].
     ///
     /// # Examples
     ///
