@@ -14,6 +14,15 @@
 //!
 //! [OSC 8 hyperlinks]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
 
+// Extensions are shared between cells with `Arc`, which needs atomic pointers. Fail with a clear
+// message instead of an unresolved import on targets without them (e.g. thumbv6m-none-eabi).
+#[cfg(not(target_has_atomic = "ptr"))]
+compile_error!(
+    "the `cell-extensions` feature requires a target with atomic pointer support \
+     (`target_has_atomic = \"ptr\"`)"
+);
+
+#[cfg(target_has_atomic = "ptr")]
 use alloc::sync::Arc;
 use core::fmt;
 use core::hash::{Hash, Hasher};
