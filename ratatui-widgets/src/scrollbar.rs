@@ -497,6 +497,12 @@ impl ScrollbarState {
         self.position
     }
 
+    /// Returns the current configured `content_length`.
+    #[must_use]
+    pub const fn get_content_length(&self) -> usize {
+        self.content_length
+    }
+
     /// Returns `true` if the scroll position is at the start of the scrollable content.
     ///
     /// # See also
