@@ -5,7 +5,8 @@ different constraint types and values, add or remove layout blocks, change the s
 (including overlap), and compare how the `Flex` modes distribute the available space.
 
 Use the arrow keys to select and edit a block, `1`–`6` to change its constraint type, `a` and `x`
-to add or remove blocks, and `+` and `-` to change spacing. Press `q` or `Esc` to quit.
+to add or remove blocks, `s` to load a single `Length` block, and `+` and `-` to change spacing.
+Press `q` or `Esc` to quit.
 
 ![Constraint Explorer demo][constraint-explorer.gif]
 

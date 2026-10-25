@@ -1059,7 +1059,8 @@ fn configure_flex_constraints(
 
         // All spacers excluding first and last are the same size and will grow to fill
         // any remaining space after the constraints are satisfied.
-        // The first and last spacers are zero size.
+        // The first and last spacers are zero size, except for a single segment where the last
+        // spacer grows so the segment falls back to start alignment.
         Flex::SpaceBetween => {
             for [left, right] in spacers_except_first_and_last.iter().array_combinations() {
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?;
@@ -1070,7 +1071,13 @@ fn configure_flex_constraints(
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
-                solver.add_constraint(last.is_empty())?;
+                if spacers.len() == 2 {
+                    // Special case for one element: there are only the outer spacers.
+                    // Let the last spacer grow so the element is pulled to the start.
+                    solver.add_constraint(last.has_size(area, GROW))?;
+                } else {
+                    solver.add_constraint(last.is_empty())?;
+                }
             }
         }
 
@@ -2495,9 +2502,12 @@ mod tests {
         #[case::max_start(vec![Max(50)], vec![0..50], Flex::Start)]
         #[case::max_end(vec![Max(50)], vec![50..100], Flex::End)]
         #[case::max_center(vec![Max(50)], vec![25..75], Flex::Center)]
-        #[case::spacebetween_becomes_stretch1(vec![Min(1)], vec![0..100], Flex::SpaceBetween)]
-        #[case::spacebetween_becomes_stretch2(vec![Max(20)], vec![0..100], Flex::SpaceBetween)]
-        #[case::spacebetween_becomes_stretch3(vec![Length(20)], vec![0..100], Flex::SpaceBetween)]
+        #[case::spacebetween_single_min(vec![Min(1)], vec![0..100], Flex::SpaceBetween)]
+        #[case::spacebetween_single_fill(vec![Fill(1)], vec![0..100], Flex::SpaceBetween)]
+        #[case::spacebetween_single_max(vec![Max(20)], vec![0..20], Flex::SpaceBetween)]
+        #[case::spacebetween_single_length(vec![Length(20)], vec![0..20], Flex::SpaceBetween)]
+        #[case::spacebetween_single_percentage(vec![Percentage(20)], vec![0..20], Flex::SpaceBetween)]
+        #[case::spacebetween_single_ratio(vec![Ratio(1, 5)], vec![0..20], Flex::SpaceBetween)]
         #[case::length_legacy2(vec![Length(25), Length(25)], vec![0..25, 25..100], Flex::Legacy)]
         #[case::length_start2(vec![Length(25), Length(25)], vec![0..25, 25..50], Flex::Start)]
         #[case::length_center2(vec![Length(25), Length(25)], vec![25..50, 50..75], Flex::Center)]
@@ -2531,7 +2541,7 @@ mod tests {
         #[case::one_segment_start(vec![Length(50)], vec![0..50], Flex::Start)]
         #[case::one_segment_end(vec![Length(50)], vec![50..100], Flex::End)]
         #[case::one_segment_center(vec![Length(50)], vec![25..75], Flex::Center)]
-        #[case::one_segment_spacebetween(vec![Length(50)], vec![0..100], Flex::SpaceBetween)]
+        #[case::one_segment_spacebetween(vec![Length(50)], vec![0..50], Flex::SpaceBetween)]
         #[case::one_segment_spaceevenly(vec![Length(50)], vec![25..75], Flex::SpaceEvenly)]
         #[case::one_segment_spacearound(vec![Length(50)], vec![25..75], Flex::SpaceAround)]
         fn flex_constraint(
