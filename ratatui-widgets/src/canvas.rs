@@ -36,8 +36,6 @@ pub use self::map::{Map, MapResolution};
 pub use self::points::Points;
 pub use self::rectangle::Rectangle;
 use crate::block::{Block, BlockExt};
-#[cfg(not(feature = "std"))]
-use crate::polyfills::F64Polyfills;
 
 mod area;
 mod circle;
@@ -404,7 +402,8 @@ impl Grid for HalfBlockGrid {
 #[derive(Debug)]
 pub struct Painter<'a, 'b> {
     context: &'a mut Context<'b>,
-    resolution: (f64, f64),
+    /// Grid dots per canvas unit on each axis, or `None` when the bounds are empty or inverted.
+    scale: Option<(f64, f64)>,
 }
 
 impl Painter<'_, '_> {
@@ -454,13 +453,11 @@ impl Painter<'_, '_> {
         if !x.is_finite() || !y.is_finite() || x < left || x > right || y < bottom || y > top {
             return None;
         }
-        let width = right - left;
-        let height = top - bottom;
-        if width <= 0.0 || height <= 0.0 {
-            return None;
-        }
-        let x = ((x - left) * (self.resolution.0 - 1.0) / width).round() as usize;
-        let y = ((top - y) * (self.resolution.1 - 1.0) / height).round() as usize;
+        let (scale_x, scale_y) = self.scale?;
+        // Both products are non-negative here, so adding 0.5 and truncating rounds half away from
+        // zero, matching `f64::round` without the `i64` round trip.
+        let x = ((x - left) * scale_x + 0.5) as usize;
+        let y = ((top - y) * scale_y + 0.5) as usize;
         Some((x, y))
     }
 
@@ -501,11 +498,12 @@ impl Painter<'_, '_> {
 
 impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
     fn from(context: &'a mut Context<'b>) -> Self {
-        let resolution = context.grid.resolution();
-        Self {
-            context,
-            resolution,
-        }
+        let (resolution_x, resolution_y) = context.grid.resolution();
+        let width = context.x_bounds[1] - context.x_bounds[0];
+        let height = context.y_bounds[1] - context.y_bounds[0];
+        let scale = (width > 0.0 && height > 0.0)
+            .then(|| ((resolution_x - 1.0) / width, (resolution_y - 1.0) / height));
+        Self { context, scale }
     }
 }
 
@@ -1235,6 +1233,20 @@ mod tests {
         let mut ctx = Context::new(2, 2, [0.0, 10.0], [0.0, 10.0], Marker::Dot);
         let painter = Painter::from(&mut ctx);
         assert_eq!(painter.get_point(x, y), None);
+    }
+
+    #[rstest]
+    #[case::zero_width([5.0, 5.0], [0.0, 10.0])]
+    #[case::zero_height([0.0, 10.0], [5.0, 5.0])]
+    #[case::inverted_x([10.0, 0.0], [0.0, 10.0])]
+    #[case::inverted_y([0.0, 10.0], [10.0, 0.0])]
+    fn get_point_rejects_empty_or_inverted_bounds(
+        #[case] x_bounds: [f64; 2],
+        #[case] y_bounds: [f64; 2],
+    ) {
+        let mut ctx = Context::new(2, 2, x_bounds, y_bounds, Marker::Dot);
+        let painter = Painter::from(&mut ctx);
+        assert_eq!(painter.get_point(5.0, 5.0), None);
     }
     #[rstest]
     fn render_canvas_outside_buffer_is_noop(
