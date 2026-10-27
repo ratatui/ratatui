@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::layout::Position;
-use crate::terminal::{CompletedFrame, Frame, Terminal};
+use crate::terminal::{CompletedFrame, CursorVisibility, Frame, Terminal};
 
 impl<B: Backend> Terminal<B> {
     /// Draws a single frame to the terminal.
@@ -249,7 +249,9 @@ impl<B: Backend> Terminal<B> {
     ///
     /// This method will:
     ///
-    /// - show/hide the cursor based on `cursor_position` ([`None`] will hide the cursor)
+    /// - show/hide the cursor based on `cursor_position` ([`None`] will hide the cursor). When a
+    ///   position is given, a `Show` is only emitted if the cursor is not already known to be
+    ///   visible (see `CursorVisibility`); the `MoveTo` is always emitted.
     /// - call [`Terminal::swap_buffers`] to prepare for the next render pass
     /// - call [`Backend::flush`] to flush any buffered backend output
     /// - return a [`CompletedFrame`] with the current buffer and the area used for rendering
@@ -297,15 +299,32 @@ impl<B: Backend> Terminal<B> {
         match cursor_position {
             None => self.hide_cursor()?,
             Some(position) => {
-                self.show_cursor()?;
+                // Only emit `Show` when the cursor is not known to be visible. Re-showing an
+                // already-visible cursor is a redundant escape sequence that some terminals treat
+                // as a hint to re-arm the cursor blink, so it is skipped when the cursor is
+                // already known to be visible. When the visibility is `Unknown` (initial state or
+                // after a direct backend mutation) or `Hidden`, a `Show` is emitted for safety.
+                //
+                // The backend is called directly rather than via [`Terminal::show_cursor`] so the
+                // `Visible` state is only recorded after the flush below succeeds; a failure that
+                // leaves the cursor's visibility unknown must not be mistaken for `Visible`.
+                if self.cursor_visibility != CursorVisibility::Visible {
+                    self.backend.show_cursor()?;
+                }
                 self.set_cursor_position(position)?;
             }
         }
 
         self.swap_buffers();
 
-        // Flush any buffered backend output.
+        // Flush any buffered backend output. Only once this succeeds is the cursor
+        // provably at the requested position and visible, so the state is marked `Visible` here
+        // rather than when the `Show` sequence was emitted above. If this flush fails, the state
+        // is left as-is (`Unknown` or `Hidden`) and the next draw re-shows the cursor.
         self.backend.flush()?;
+        if cursor_position.is_some() {
+            self.cursor_visibility = CursorVisibility::Visible;
+        }
 
         let completed_frame = CompletedFrame {
             buffer: &self.buffers[1 - self.current],
@@ -327,7 +346,7 @@ mod tests {
     use crate::backend::{Backend, ClearType, TestBackend, WindowSize};
     use crate::buffer::{Buffer, Cell};
     use crate::layout::{Position, Rect};
-    use crate::terminal::{Terminal, TerminalOptions, Viewport};
+    use crate::terminal::{CursorVisibility, Terminal, TerminalOptions, Viewport};
 
     #[derive(Debug, Clone, Eq, PartialEq)]
     struct TestError(&'static str);
@@ -438,6 +457,158 @@ mod tests {
         }
     }
 
+    /// A wrapper around [`TestBackend`] that counts `show_cursor` and `hide_cursor` calls.
+    ///
+    /// [`TestBackend`] does not expose how many escape sequences were emitted, so this wrapper
+    /// records the cursor visibility calls so tests can assert exactly which sequences
+    /// `apply_buffer_with_cursor` emits (e.g. that a `Show` is skipped once the cursor is known to
+    /// be visible). Everything else is delegated unchanged to the inner [`TestBackend`].
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    struct RecordingCursorBackend {
+        inner: TestBackend,
+        pub show_calls: usize,
+        pub hide_calls: usize,
+    }
+
+    impl RecordingCursorBackend {
+        fn new(inner: TestBackend) -> Self {
+            Self {
+                inner,
+                show_calls: 0,
+                hide_calls: 0,
+            }
+        }
+
+        /// The wrapped [`TestBackend`], for inspecting its buffer and cursor state directly.
+        pub fn inner(&self) -> &TestBackend {
+            &self.inner
+        }
+    }
+
+    impl Backend for RecordingCursorBackend {
+        type Error = core::convert::Infallible;
+
+        fn draw<'a, I>(&mut self, content: I) -> Result<(), Self::Error>
+        where
+            I: Iterator<Item = (u16, u16, &'a crate::buffer::Cell)>,
+        {
+            self.inner.draw(content)
+        }
+
+        fn append_lines(&mut self, n: u16) -> Result<(), Self::Error> {
+            self.inner.append_lines(n)
+        }
+
+        fn hide_cursor(&mut self) -> Result<(), Self::Error> {
+            self.hide_calls += 1;
+            self.inner.hide_cursor()
+        }
+
+        fn show_cursor(&mut self) -> Result<(), Self::Error> {
+            self.show_calls += 1;
+            self.inner.show_cursor()
+        }
+
+        fn get_cursor_position(&mut self) -> Result<Position, Self::Error> {
+            self.inner.get_cursor_position()
+        }
+
+        fn set_cursor_position<P: Into<Position>>(
+            &mut self,
+            position: P,
+        ) -> Result<(), Self::Error> {
+            self.inner.set_cursor_position(position)
+        }
+
+        fn save_cursor_position(&mut self) -> Result<bool, Self::Error> {
+            self.inner.save_cursor_position()
+        }
+
+        fn restore_cursor_position(&mut self) -> Result<(), Self::Error> {
+            self.inner.restore_cursor_position()
+        }
+
+        fn clear(&mut self) -> Result<(), Self::Error> {
+            self.inner.clear()
+        }
+
+        fn clear_region(&mut self, clear_type: ClearType) -> Result<(), Self::Error> {
+            self.inner.clear_region(clear_type)
+        }
+
+        fn size(&self) -> Result<crate::layout::Size, Self::Error> {
+            self.inner.size()
+        }
+
+        fn window_size(&mut self) -> Result<WindowSize, Self::Error> {
+            self.inner.window_size()
+        }
+
+        fn flush(&mut self) -> Result<(), Self::Error> {
+            self.inner.flush()
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_up(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.inner.scroll_region_up(region, line_count)
+        }
+
+        #[cfg(feature = "scrolling-regions")]
+        fn scroll_region_down(
+            &mut self,
+            region: core::ops::Range<u16>,
+            line_count: u16,
+        ) -> Result<(), Self::Error> {
+            self.inner.scroll_region_down(region, line_count)
+        }
+    }
+
+    /// Every `Backend` method on [`RecordingCursorBackend`] is delegated to the inner
+    /// [`TestBackend`]. This exercises each delegation so the wrapper's lines stay covered, and
+    /// confirms the wrapper only records `show_cursor`/`hide_cursor` rather than changing behavior.
+    #[test]
+    fn recording_backend_delegates_all_methods() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 3));
+        let mut backend = backend;
+
+        let buffer = Buffer::with_lines(["abc", "def", "ghi"]);
+        let content = buffer.content().iter().enumerate().map(|(i, cell)| {
+            let x = (i % 3) as u16;
+            let y = (i / 3) as u16;
+            (x, y, cell)
+        });
+        backend.draw(content).unwrap();
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.clear_region(ClearType::All).unwrap(), ());
+        assert_eq!(backend.size().unwrap(), crate::layout::Size::new(3, 3));
+        let window = backend.window_size().unwrap();
+        assert_eq!(window.columns_rows, crate::layout::Size::new(3, 3));
+        backend.flush().unwrap();
+
+        backend.hide_cursor().unwrap();
+        backend.show_cursor().unwrap();
+        assert_eq!(backend.hide_calls, 1);
+        assert_eq!(backend.show_calls, 1);
+        // These just exercise the delegated calls; the exact position is the inner backend's.
+        let _ = backend.get_cursor_position();
+        backend
+            .set_cursor_position(Position { x: 1, y: 1 })
+            .unwrap();
+        backend.clear().unwrap();
+        assert!(backend.save_cursor_position().unwrap());
+        backend.restore_cursor_position().unwrap();
+
+        #[cfg(feature = "scrolling-regions")]
+        {
+            backend.scroll_region_up(0..1, 1).unwrap();
+            backend.scroll_region_down(0..1, 1).unwrap();
+        }
+    }
+
     /// `draw` hides the cursor when the frame does not request a cursor position.
     ///
     /// This asserts the end-to-end effect on the backend (buffer contents + cursor state) as well
@@ -468,7 +639,7 @@ mod tests {
             "completed buffer contains the rendered content"
         );
 
-        assert!(terminal.hidden_cursor);
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Hidden);
         assert!(!terminal.backend().cursor_visible());
         assert_eq!(
             terminal.frame_count, 1,
@@ -495,7 +666,7 @@ mod tests {
             })
             .unwrap();
 
-        assert!(!terminal.hidden_cursor);
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Visible);
         assert!(terminal.backend().cursor_visible());
         assert_eq!(
             terminal.backend().cursor_position(),
@@ -509,6 +680,83 @@ mod tests {
         );
     }
 
+    /// `apply_buffer_with_cursor` tracks cursor visibility across frames.
+    ///
+    /// After a draw with a cursor position, the visibility is recorded as `Visible` (only because
+    /// the backend flush succeeded), and a subsequent `Show` is skipped because the cursor is
+    /// already known to be visible.
+    #[test]
+    fn cursor_visibility_skips_redundant_show() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // First draw: the cursor starts Unknown, so a `Show` is emitted (plus the `MoveTo`).
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 1, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_calls,
+            1,
+            "the first draw shows the cursor from Unknown"
+        );
+        assert_eq!(
+            terminal.cursor_visibility,
+            CursorVisibility::Visible,
+            "a successful draw with a cursor records Visible"
+        );
+
+        // Second draw, same position: the cursor is already visible, so the redundant `Show` is
+        // skipped (the `MoveTo` is still emitted).
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 1, y: 1 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_calls,
+            1,
+            "the redundant Show is skipped once the cursor is already visible"
+        );
+        assert!(terminal.backend().inner().cursor_visible());
+    }
+
+    /// The cursor is re-shown after it was hidden, and a frame that requests no cursor position
+    /// hides it again.
+    #[test]
+    fn cursor_visibility_hides_and_reshows() {
+        let backend = RecordingCursorBackend::new(TestBackend::new(3, 2));
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // A frame with no cursor position hides the cursor.
+        terminal
+            .draw(|frame| {
+                frame.buffer_mut()[(0, 0)] = Cell::new("x");
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().hide_calls,
+            1,
+            "a frame without a cursor hides"
+        );
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Hidden);
+
+        // A subsequent frame that requests a position re-shows the (hidden) cursor.
+        terminal
+            .draw(|frame| {
+                frame.set_cursor_position(Position { x: 1, y: 0 });
+            })
+            .unwrap();
+        assert_eq!(
+            terminal.backend().show_calls,
+            1,
+            "a hidden cursor is re-shown on the next positional draw"
+        );
+        assert_eq!(terminal.backend().hide_calls, 1, "no extra hide is emitted");
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Visible);
+    }
+
     /// When the render callback returns an error, `try_draw` does not update the terminal.
     ///
     /// This is a characterization of the "no partial updates" behavior: backend contents and
@@ -520,7 +768,7 @@ mod tests {
 
         terminal.show_cursor().unwrap();
 
-        let was_hidden = terminal.hidden_cursor;
+        let was_hidden = terminal.cursor_visibility;
         let cursor_visible = terminal.backend().inner.cursor_visible();
         let cursor_position = terminal.backend().inner.cursor_position();
 
@@ -539,7 +787,7 @@ mod tests {
             "backend buffer is unchanged on error"
         );
         assert_eq!(
-            terminal.hidden_cursor, was_hidden,
+            terminal.cursor_visibility, was_hidden,
             "terminal cursor state is unchanged on error"
         );
         assert_eq!(
@@ -855,7 +1103,7 @@ mod tests {
             "completed buffer contains the rendered content"
         );
 
-        assert!(terminal.hidden_cursor);
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Hidden);
         assert!(!terminal.backend().cursor_visible());
         assert_eq!(
             terminal.frame_count, 1,
