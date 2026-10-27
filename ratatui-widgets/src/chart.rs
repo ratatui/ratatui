@@ -12,7 +12,7 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 use crate::block::{Block, BlockExt};
-use crate::canvas::{Canvas, FilledLine, Line as CanvasLine, Points};
+use crate::canvas::{Canvas, FilledLine, Line as CanvasLine, Points, Polyline};
 
 /// An X or Y axis for the [`Chart`] widget
 ///
@@ -1055,22 +1055,19 @@ impl Widget for &Chart<'_> {
                     ctx.marker(dataset.marker);
 
                     let color = dataset.style.fg.unwrap_or(Color::Reset);
-                    ctx.draw(&Points {
-                        coords: dataset.data,
-                        color,
-                    });
+                    if dataset.graph_type == GraphType::Line {
+                        // Draws the points and the segments between them, mapping each point once.
+                        ctx.draw(&Polyline {
+                            coords: dataset.data,
+                            color,
+                        });
+                    } else {
+                        ctx.draw(&Points {
+                            coords: dataset.data,
+                            color,
+                        });
+                    }
                     match dataset.graph_type {
-                        GraphType::Line => {
-                            for data in dataset.data.windows(2) {
-                                ctx.draw(&CanvasLine {
-                                    x1: data[0].0,
-                                    y1: data[0].1,
-                                    x2: data[1].0,
-                                    y2: data[1].1,
-                                    color,
-                                });
-                            }
-                        }
                         GraphType::Bar => {
                             for (x, y) in dataset.data {
                                 ctx.draw(&CanvasLine {
@@ -1095,7 +1092,7 @@ impl Widget for &Chart<'_> {
                             }
                         }
 
-                        GraphType::Scatter => {}
+                        GraphType::Line | GraphType::Scatter => {}
                     }
                 }
             })
