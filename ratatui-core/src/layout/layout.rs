@@ -137,9 +137,12 @@ impl From<i16> for Spacing {
 /// solver that computes positions and sizes to satisfy as many constraints as possible in order of
 /// their priorities.
 ///
-/// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
-/// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
-/// can be configured using [`Layout::init_cache()`] when the `layout-cache` feature is enabled.
+/// When the `layout-cache` feature is enabled, the result is cached so that subsequent calls with
+/// the same parameters are faster. The cache is a `LruCache` that is thread-local when the `std`
+/// feature is enabled, and a global behind a [`critical-section`] mutex otherwise. The size of the
+/// cache can be configured using [`Layout::init_cache()`].
+///
+/// [`critical-section`]: https://docs.rs/critical-section
 ///
 /// # Construction
 ///
@@ -216,6 +219,9 @@ impl Layout {
     /// row and every column, twice over, which should be enough for most apps. For those that need
     /// more, the cache size can be set with `Layout::init_cache()` (requires the `layout-cache`
     /// feature).
+    ///
+    /// On memory-constrained targets this default is usually too large. See
+    /// [`Layout::init_cache()`] for how to choose a smaller size.
     #[cfg(feature = "layout-cache")]
     pub const DEFAULT_CACHE_SIZE: usize = 500;
 
@@ -309,6 +315,34 @@ impl Layout {
     /// grows until `cache_size` is reached.
     ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
+    ///
+    /// The cache reserves space for `cache_size` entries when it is created, and each entry stores
+    /// a copy of the layout and the areas it produced. Memory use therefore grows with both the
+    /// cache size and the number of constraints in your layouts. This doesn't matter much on a
+    /// desktop, but on a microcontroller the default size can take tens of kilobytes of heap.
+    ///
+    /// For memory-constrained targets, call this once before the first draw with a size a little
+    /// larger than the number of distinct layout and area combinations your app computes per frame
+    /// (often a few dozen). Each cache miss falls back to running the layout solver, so a cache
+    /// that is too small is slower but still correct.
+    ///
+    /// Without the `std` feature, the cache is a global shared by every thread or core and is
+    /// guarded by a [`critical-section`] mutex. Your binary must link a `critical-section`
+    /// implementation; most embedded HALs and runtimes provide one through a feature flag. Host
+    /// tests for a `no_std` crate can use the `std` feature of `critical-section` as a
+    /// dev-dependency.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use core::num::NonZeroUsize;
+    ///
+    /// use ratatui_core::layout::Layout;
+    ///
+    /// Layout::init_cache(NonZeroUsize::new(64).unwrap());
+    /// ```
+    ///
+    /// [`critical-section`]: https://docs.rs/critical-section
     #[cfg(feature = "layout-cache")]
     pub fn init_cache(cache_size: NonZeroUsize) {
         Self::resize_cache(cache_size);
@@ -661,10 +695,11 @@ impl Layout {
     /// splitting the area up. (e.g. splitting 100 into [min 20, 50%, 50%], may not result in [20,
     /// 40, 40] but rather an indeterminate result between [20, 50, 30] and [20, 30, 50]).
     ///
-    /// This method stores the result of the computation in a thread-local cache keyed on the layout
-    /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default. If the cache
-    /// is initialized with [`Layout::init_cache()`], it grows until the initialized cache size.
+    /// When the `layout-cache` feature is enabled, this method stores the result of the computation
+    /// in a cache keyed on the layout and area, so that subsequent calls with the same parameters
+    /// are faster. The cache is a `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is
+    /// reached by default. If the cache is initialized with [`Layout::init_cache()`], it grows
+    /// until the initialized cache size.
     ///
     /// There is a helper method that can be used to split the whole area into smaller ones based on
     /// the layout: [`Layout::areas()`]. That method is a shortcut for calling this method. It
@@ -698,10 +733,11 @@ impl Layout {
     /// This method is similar to `split`, but it returns two sets of rectangles: one for the areas
     /// and one for the spacers.
     ///
-    /// This method stores the result of the computation in a thread-local cache keyed on the layout
-    /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default. If the cache
-    /// is initialized with [`Layout::init_cache()`], it grows until the initialized cache size.
+    /// When the `layout-cache` feature is enabled, this method stores the result of the computation
+    /// in a cache keyed on the layout and area, so that subsequent calls with the same parameters
+    /// are faster. The cache is a `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is
+    /// reached by default. If the cache is initialized with [`Layout::init_cache()`], it grows
+    /// until the initialized cache size.
     ///
     /// # Examples
     ///
