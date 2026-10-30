@@ -195,7 +195,8 @@ Shows how to create an interactive table. [Source](./apps/table/).
 
 ## Table detail TEA
 
-Shows how to create an interactive table with detail view using the Elm architecture. [Source](./apps/table-detail-tea/).
+Shows how to structure an app with the Elm architecture, using commands for background work and a
+tick that only runs while loading. [Source](./apps/table-detail-tea/).
 
 ![Table detail tea demo][table-detail-tea.gif]
 

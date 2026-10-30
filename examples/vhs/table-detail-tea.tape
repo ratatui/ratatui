@@ -18,3 +18,5 @@ Down 3
 Sleep 1s
 Up 1
 Sleep 1s
+Type "r"
+Sleep 3s

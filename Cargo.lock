@@ -3620,7 +3620,6 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "fakeit",
  "ratatui",
 ]
 

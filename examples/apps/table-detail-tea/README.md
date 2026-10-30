@@ -1,10 +1,9 @@
-# Table detail view
+# Table detail TEA demo
 
-This example shows how to create a table of items and a detail view.
+This example shows how to structure an app with [the Elm architecture (TEA)][TEA]: a table of teas
+with a detail view, loaded in the background with a spinner while it waits.
 
-It uses [the Elm architecture (TEA)][TEA].
-
-[TEA]: https://ratatui.rs/concepts/application-patterns/the-elm-architecture/
+[TEA]: https://guide.elm-lang.org/architecture/
 
 To run this demo:
 
