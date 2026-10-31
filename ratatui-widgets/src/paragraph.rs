@@ -37,6 +37,10 @@ use crate::reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine};
 /// Note: If neither wrapping or a block is needed, consider rendering the [`Text`], [`Line`], or
 /// [`Span`] widgets directly.
 ///
+/// To keep styled text in your application state without a lifetime parameter, see [Storing
+/// styled text]. To render stored text without cloning it, pass a reference to [`Paragraph::new`].
+///
+/// [Storing styled text]: ratatui_core::text#storing-styled-text
 /// [Textwrap crate]: https://crates.io/crates/textwrap
 /// [`wrap`]: Self::wrap
 /// [`alignment`]: Self::alignment
