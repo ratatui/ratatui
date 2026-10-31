@@ -14,6 +14,13 @@
 //! and [`Model::tick_rate`] asks for ticks only while the spinner is showing, so an idle app only
 //! wakes up for input.
 //!
+//! ```text
+//! Terminal input / ticks ─┐
+//!                         ├--> Message --> update --> Model --> view --> Screen
+//! Command result ─────────┘                  │
+//!                                            └--> Command --> Runtime --> Command result
+//! ```
+//!
 //! Unlike Elm, `update` changes the model through `&mut self` instead of returning a new one, so
 //! the model doesn't have to be rebuilt for every message. The data still flows one way: the only
 //! thing `view` writes back is the table's scroll offset.
