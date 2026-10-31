@@ -774,6 +774,11 @@ impl StatefulWidget for &Table<'_> {
     type State = TableState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
         self.block.as_ref().render(area, buf);
         let table_area = self.block.inner_if_some(area);
@@ -3043,5 +3048,46 @@ mod tests {
             StatefulWidget::render(table, buf.area, &mut buf, &mut state);
             assert_eq!(buf, Buffer::with_lines(expected));
         }
+    }
+
+    #[rstest]
+    fn render_table_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        Widget::render(
+            Table::new(
+                [Row::new(["one", "two"])],
+                [Constraint::Length(5), Constraint::Length(5)],
+            ),
+            area,
+            &mut buf,
+        );
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_table_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = Table::new(
+            [Row::new(["one", "two"])],
+            [Constraint::Length(5), Constraint::Length(5)],
+        );
+        Widget::render(&widget, Rect::new(9, 9, 40, 10), &mut buf);
+        Widget::render(&widget, area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }

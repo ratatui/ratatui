@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::buffer::{Buffer, Cell};
+use crate::buffer::{Buffer, Cell, CellWidth};
 use crate::layout::{Position, Rect, Size};
 use crate::terminal::{Terminal, Viewport};
 
@@ -308,9 +308,17 @@ impl<B: Backend> Terminal<B> {
         let width: usize = self.last_known_area.width.into();
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
         if lines_to_draw > 0 {
+            // Skip the cells hidden behind wide glyphs: drawn after the glyph, they erase it.
+            let mut hidden = 0;
             let iter = to_draw
                 .iter()
                 .enumerate()
+                .filter(|(i, c)| {
+                    // A glyph never hides cells on the next row.
+                    let visible = hidden == 0 || i % width == 0;
+                    hidden = if visible { c.cell_width() } else { hidden }.saturating_sub(1);
+                    visible
+                })
                 .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
             self.backend.draw(iter)?;
             self.backend.flush()?;
@@ -536,6 +544,30 @@ mod tests {
 
             assert_eq!(terminal.viewport_area, viewport_area);
             terminal.backend().assert_buffer_lines(["x  ", "   "]);
+        }
+
+        #[test]
+        fn insert_before_skips_cells_hidden_behind_wide_glyphs() {
+            let backend = TestBackend::new(3, 4);
+            let options = TerminalOptions {
+                viewport: Viewport::Inline(1),
+            };
+            let mut terminal = Terminal::with_options(backend, options).unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf[(0, 0)].set_symbol("界");
+                    // Hidden behind `界`: drawing it would erase the glyph.
+                    buf[(1, 0)].set_symbol("x");
+                    // A glyph in the last column hides nothing on the next row.
+                    buf[(2, 0)].set_symbol("界");
+                    buf[(0, 1)].set_symbol("b");
+                })
+                .unwrap();
+
+            let screen = terminal.backend().buffer();
+            assert_eq!(screen[(1, 0)].symbol(), " ");
+            assert_eq!(screen[(0, 1)].symbol(), "b");
         }
 
         #[test]

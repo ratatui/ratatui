@@ -222,8 +222,28 @@ impl fmt::Debug for Line<'_> {
 fn cow_to_spans<'a>(content: impl Into<Cow<'a, str>>) -> Vec<Span<'a>> {
     match content.into() {
         Cow::Borrowed(s) => s.lines().map(Span::raw).collect(),
-        Cow::Owned(s) => s.lines().map(|v| Span::raw(v.to_string())).collect(),
+        Cow::Owned(s) if s.is_empty() => Vec::new(),
+        Cow::Owned(s) => match into_single_line(s) {
+            Ok(line) => vec![Span::raw(line)],
+            Err(s) => s.lines().map(|v| Span::raw(v.to_string())).collect(),
+        },
     }
+}
+
+/// Converts an owned string that [`str::lines`] would split into exactly one line into that line,
+/// reusing the allocation.
+///
+/// Strips a single trailing `\n` or `\r\n`, as [`str::lines`] does. Returns the string unchanged
+/// in `Err` if it contains any other newline.
+pub fn into_single_line(mut s: String) -> Result<String, String> {
+    let line_len = match s.strip_suffix('\n') {
+        Some(rest) if rest.contains('\n') => return Err(s),
+        Some(rest) => rest.strip_suffix('\r').unwrap_or(rest).len(),
+        None if s.contains('\n') => return Err(s),
+        None => return Ok(s),
+    };
+    s.truncate(line_len);
+    Ok(s)
 }
 
 impl<'a> Line<'a> {
@@ -1311,10 +1331,20 @@ mod tests {
         }
 
         #[rstest]
-        fn render_out_of_bounds(hello_world: Line<'static>, mut small_buf: Buffer) {
-            let out_of_bounds = Rect::new(20, 20, 10, 1);
-            hello_world.render(out_of_bounds, &mut small_buf);
-            assert_eq!(small_buf, Buffer::empty(small_buf.area));
+        #[case::right(Rect::new(0, 0, 15, 1), Rect::new(20, 0, 10, 1))]
+        #[case::bottom(Rect::new(0, 0, 15, 1), Rect::new(0, 20, 10, 1))]
+        #[case::both(Rect::new(0, 0, 15, 1), Rect::new(20, 20, 10, 1))]
+        #[case::single_row(Rect::new(0, 0, 57, 1), Rect::new(1, 1, 10, 1))]
+        #[case::zero_width_buffer(Rect::new(10, 10, 0, 1), Rect::new(10, 10, 10, 1))]
+        #[case::zero_height_buffer(Rect::new(10, 10, 10, 0), Rect::new(10, 10, 10, 1))]
+        #[case::empty_buffer(Rect::ZERO, Rect::new(0, 0, 10, 1))]
+        #[case::zero_width_area(Rect::new(0, 0, 15, 1), Rect::new(0, 0, 0, 1))]
+        #[case::zero_height_area(Rect::new(0, 0, 15, 1), Rect::new(0, 0, 10, 0))]
+        fn render_out_of_bounds(#[case] buffer_area: Rect, #[case] render_area: Rect) {
+            let mut buf = Buffer::empty(buffer_area);
+            let expected = buf.clone();
+            Line::raw("Hello, world!").render(render_area, &mut buf);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1756,5 +1786,33 @@ mod tests {
     )]
     fn debug(#[case] line: Line, #[case] expected: &str) {
         assert_eq!(format!("{line:?}"), expected);
+    }
+
+    #[rstest]
+    #[case::empty("")]
+    #[case::single("abc")]
+    #[case::trailing_lf("abc\n")]
+    #[case::trailing_crlf("abc\r\n")]
+    #[case::trailing_cr("abc\r")]
+    #[case::only_lf("\n")]
+    #[case::only_crlf("\r\n")]
+    #[case::double_lf("abc\n\n")]
+    #[case::multiple("abc\ndef")]
+    fn from_string_matches_from_str(#[case] content: &str) {
+        assert_eq!(Line::from(String::from(content)), Line::from(content));
+    }
+
+    #[test]
+    fn from_string_reuses_allocation() {
+        let content = String::from("abc");
+        let ptr = content.as_ptr();
+        let line = Line::from(content);
+        assert_eq!(line.spans[0].content.as_ptr(), ptr);
+
+        let content = String::from("abc\r\n");
+        let ptr = content.as_ptr();
+        let line = Line::from(content);
+        assert_eq!(line.spans[0].content, "abc");
+        assert_eq!(line.spans[0].content.as_ptr(), ptr);
     }
 }

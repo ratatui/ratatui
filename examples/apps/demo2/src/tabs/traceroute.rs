@@ -18,12 +18,12 @@ pub struct TracerouteTab {
 
 impl TracerouteTab {
     /// Select the previous row (with wrap around).
-    pub fn prev_row(&mut self) {
+    pub const fn prev_row(&mut self) {
         self.row_index = self.row_index.saturating_add(HOPS.len() - 1) % HOPS.len();
     }
 
     /// Select the next row (with wrap around).
-    pub fn next_row(&mut self) {
+    pub const fn next_row(&mut self) {
         self.row_index = self.row_index.saturating_add(1) % HOPS.len();
     }
 }

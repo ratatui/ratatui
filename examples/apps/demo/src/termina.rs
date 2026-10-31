@@ -83,7 +83,7 @@ fn run_app(
     }
 }
 
-fn is_key_event(event: &Event) -> bool {
+const fn is_key_event(event: &Event) -> bool {
     matches!(event, Event::Key(_))
 }
 

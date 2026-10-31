@@ -86,12 +86,12 @@ impl App {
                 KeyCode::Char('j') | KeyCode::Down => self.next(),
                 KeyCode::Char('d') | KeyCode::Delete => self.destroy(),
                 _ => {}
-            };
+            }
         }
         Ok(())
     }
 
-    fn prev(&mut self) {
+    const fn prev(&mut self) {
         match self.tab {
             Tab::About => self.about_tab.prev_row(),
             Tab::Recipe => self.recipe_tab.prev(),
@@ -101,7 +101,7 @@ impl App {
         }
     }
 
-    fn next(&mut self) {
+    const fn next(&mut self) {
         match self.tab {
             Tab::About => self.about_tab.next_row(),
             Tab::Recipe => self.recipe_tab.next(),
@@ -119,7 +119,7 @@ impl App {
         self.tab = self.tab.next();
     }
 
-    fn destroy(&mut self) {
+    const fn destroy(&mut self) {
         self.mode = Mode::Destroy;
     }
 }
@@ -166,7 +166,7 @@ impl App {
             Tab::Email => self.email_tab.render(area, buf),
             Tab::Traceroute => self.traceroute_tab.render(area, buf),
             Tab::Weather => self.weather_tab.render(area, buf),
-        };
+        }
     }
 
     fn render_bottom_bar(area: Rect, buf: &mut Buffer) {
