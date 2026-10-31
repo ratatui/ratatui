@@ -2,8 +2,8 @@ pub mod main {
     pub mod barchart;
     pub mod block;
     pub mod buffer;
-    pub mod chart;
     pub mod canvas;
+    pub mod chart;
     pub mod constraints;
     pub mod from_string;
     pub mod gauge;

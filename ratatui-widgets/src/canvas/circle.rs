@@ -59,9 +59,11 @@ impl Shape for Circle {
         }
         // Everything below is in half dots, so dots are at even coordinates and, with the center
         // snapped, offsets from the center to rows and columns of dots are whole numbers.
-        let (width, height) = painter.resolution;
-        let (max_x, max_y) = (2.0 * (width - 1.0), 2.0 * (height - 1.0));
-        let (scale_x, scale_y) = (max_x / (right - left), max_y / (top - bottom));
+        let Some((scale_x, scale_y)) = painter.scale else {
+            return;
+        };
+        let (scale_x, scale_y) = (2.0 * scale_x, 2.0 * scale_y);
+        let (max_x, max_y) = ((right - left) * scale_x, (top - bottom) * scale_y);
         let center_x = ((self.x - left) * scale_x).round();
         let center_y = ((top - self.y) * scale_y).round();
         let radius_x = self.radius.abs() * scale_x;
