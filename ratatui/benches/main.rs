@@ -2,6 +2,7 @@ pub mod main {
     pub mod barchart;
     pub mod block;
     pub mod buffer;
+    pub mod canvas;
     pub mod constraints;
     pub mod gauge;
     pub mod line;
@@ -17,6 +18,7 @@ pub use main::*;
 criterion::criterion_main!(
     barchart::benches,
     block::benches,
+    canvas::benches,
     buffer::benches,
     line::benches,
     list::benches,
