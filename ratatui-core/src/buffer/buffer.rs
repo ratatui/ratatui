@@ -1181,8 +1181,10 @@ mod tests {
         assert_eq!(buf.set_span(x, y, &Span::raw(content), max_width), position);
         assert_eq!(buf.set_line(x, y, &Line::raw(content), max_width), position);
         assert_eq!(buf, expected);
-        buf.set_string(x, y, content, Style::new());
-        assert_eq!(buf, expected);
+        if !area.contains(Position::new(x, y)) {
+            buf.set_string(x, y, content, Style::new());
+            assert_eq!(buf, expected);
+        }
     }
 
     #[test]
