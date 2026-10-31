@@ -40,6 +40,7 @@ use crate::widgets::Widget;
 /// - [`Line::from`] creates a `Line` that borrows the content of a `&Line`.
 /// - [`String::from`] converts a line into a [`String`].
 /// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
+/// - [`Line::into_owned`] converts a line into a `Line<'static>` that owns its content.
 ///
 /// # Setter Methods
 ///
@@ -586,6 +587,45 @@ impl<'a> Line<'a> {
     /// ```
     pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
         self.spans.push(span.into());
+    }
+
+    /// Converts this `Line` into a `Line<'static>` that owns all of its content, cloning content
+    /// only where it is borrowed.
+    ///
+    /// Use this when a line needs to outlive the data it borrows from, for example to store styled
+    /// text in your app state without adding a lifetime parameter, or to send it to another
+    /// thread. Each span is converted with [`Span::into_owned`]. The style and alignment of the
+    /// line and of each span are kept.
+    ///
+    /// [`Clone`] does not do this: a cloned `Line<'a>` still borrows its content and keeps the
+    /// `'a` lifetime.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui_core::style::Stylize;
+    /// use ratatui_core::text::Line;
+    ///
+    /// struct App {
+    ///     title: Line<'static>,
+    /// }
+    ///
+    /// let name = String::from("inbox");
+    /// let line = Line::from(vec!["Folder: ".bold(), name.as_str().into()]).centered();
+    /// let app = App {
+    ///     title: line.into_owned(),
+    /// };
+    /// drop(name);
+    ///
+    /// assert_eq!(app.title.to_string(), "Folder: inbox");
+    /// ```
+    #[must_use]
+    pub fn into_owned(self) -> Line<'static> {
+        Line {
+            style: self.style,
+            alignment: self.alignment,
+            spans: self.spans.into_iter().map(Span::into_owned).collect(),
+        }
     }
 }
 
@@ -1294,6 +1334,40 @@ mod tests {
             line.spans,
             vec![Span::raw("A"), Span::raw("B"), Span::raw("C")]
         );
+    }
+
+    #[test]
+    fn into_owned() {
+        let hello = String::from("hello");
+        let line = Line::from(vec![hello.as_str().red(), Span::raw(" world")])
+            .style(Style::new().on_blue())
+            .centered();
+
+        let owned: Line<'static> = line.into_owned();
+        drop(hello);
+
+        assert!(
+            owned
+                .spans
+                .iter()
+                .all(|span| matches!(span.content, Cow::Owned(_)))
+        );
+        assert_eq!(
+            owned,
+            Line::from(vec!["hello".red(), Span::raw(" world")])
+                .style(Style::new().on_blue())
+                .centered()
+        );
+    }
+
+    #[test]
+    fn into_owned_reuses_owned_content() {
+        let content = String::from("hello");
+        let ptr = content.as_ptr();
+
+        let owned = Line::from(Span::raw(content)).into_owned();
+
+        assert_eq!(owned.spans[0].content.as_ptr(), ptr);
     }
 
     mod style {
