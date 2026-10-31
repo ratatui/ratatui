@@ -39,10 +39,16 @@ fn stored_text(c: &mut Criterion) {
 
         let clone_id = BenchmarkId::new("clone", &id);
         group.bench_with_input(clone_id, &input, clone);
+        let borrow_id = BenchmarkId::new("borrow", &id);
+        group.bench_with_input(borrow_id, &input, borrow);
         let clone_render_id = BenchmarkId::new("clone_render", &id);
         group.bench_with_input(clone_render_id, &input, clone_render);
+        let borrow_render_id = BenchmarkId::new("borrow_render", &id);
+        group.bench_with_input(borrow_render_id, &input, borrow_render);
         let clone_render_end_id = BenchmarkId::new("clone_render_end", &id);
         group.bench_with_input(clone_render_end_id, &input, clone_render_end);
+        let borrow_render_end_id = BenchmarkId::new("borrow_render_end", &id);
+        group.bench_with_input(borrow_render_end_id, &input, borrow_render_end);
         let slice_render_id = BenchmarkId::new("slice_render", &id);
         group.bench_with_input(slice_render_id, &input, slice_render);
     }
@@ -52,6 +58,11 @@ fn stored_text(c: &mut Criterion) {
 /// The cost of cloning the stored text by itself.
 fn clone(bencher: &mut Bencher, input: &StoredText) {
     bencher.iter(|| black_box(&input.text).clone());
+}
+
+/// The cost of borrowing the stored text as a new `Text`, without copying its strings.
+fn borrow(bencher: &mut Bencher, input: &StoredText) {
+    bencher.iter(|| Text::from(black_box(&input.text)));
 }
 
 /// Clone the stored text into a paragraph and render it.
@@ -64,12 +75,33 @@ fn clone_render(bencher: &mut Bencher, input: &StoredText) {
     });
 }
 
+/// Borrow the stored text into a paragraph and render it.
+fn borrow_render(bencher: &mut Bencher, input: &StoredText) {
+    let mut buffer = Buffer::empty(AREA);
+    bencher.iter(|| {
+        Paragraph::new(&input.text)
+            .wrap(WRAP)
+            .render(AREA, &mut buffer);
+    });
+}
+
 /// Clone the stored text into a paragraph and render it scrolled to the end, like a log viewer
 /// following its output.
 fn clone_render_end(bencher: &mut Bencher, input: &StoredText) {
     let mut buffer = Buffer::empty(AREA);
     bencher.iter(|| {
         Paragraph::new(input.text.clone())
+            .wrap(WRAP)
+            .scroll((input.scroll_end, 0))
+            .render(AREA, &mut buffer);
+    });
+}
+
+/// Borrow the stored text into a paragraph and render it scrolled to the end.
+fn borrow_render_end(bencher: &mut Bencher, input: &StoredText) {
+    let mut buffer = Buffer::empty(AREA);
+    bencher.iter(|| {
+        Paragraph::new(&input.text)
             .wrap(WRAP)
             .scroll((input.scroll_end, 0))
             .render(AREA, &mut buffer);
