@@ -10,6 +10,7 @@ pub mod main {
     pub mod paragraph;
     pub mod rect;
     pub mod sparkline;
+    pub mod stored_text;
     pub mod table;
     pub mod text;
 }
@@ -25,6 +26,7 @@ criterion::criterion_main!(
     paragraph::benches,
     rect::benches,
     sparkline::benches,
+    stored_text::benches,
     table::benches,
     text::benches,
     constraints::benches,
