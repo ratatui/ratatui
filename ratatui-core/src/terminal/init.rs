@@ -246,9 +246,6 @@ mod tests {
 
         assert_eq!(terminal.viewport_area, Rect::new(0, 3, 10, 4));
         assert_eq!(terminal.last_known_cursor_pos, Position { x: 0, y: 3 });
-        // `TestBackend::append_lines` queries its own cursor position once. Initialization must
-        // not make an additional query to discover the supplied position.
-        assert_eq!(terminal.backend().cursor_position_query_count(), 1);
     }
 
     #[test]
@@ -265,6 +262,9 @@ mod tests {
 
         assert_eq!(terminal.viewport_area, Rect::new(0, 3, 10, 4));
         assert_eq!(terminal.last_known_cursor_pos, Position { x: 0, y: 3 });
+        // `TestBackend::append_lines` queries its own cursor position once. Initialization must
+        // not make an additional query to discover the supplied position.
+        assert_eq!(terminal.backend().cursor_position_query_count(), 1);
     }
 
     #[test]
