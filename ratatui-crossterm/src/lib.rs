@@ -101,7 +101,7 @@ cfg_if::cfg_if! {
 #[cfg(all(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
 use crossterm_0_28 as _;
 use ratatui_core::backend::{Backend, ClearType, WindowSize};
-use ratatui_core::buffer::{Cell, CellWidth};
+use ratatui_core::buffer::{Cell, CellDiffOption, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
 
@@ -251,8 +251,17 @@ where
                 queue!(self.writer, MoveTo(x, y))?;
             }
             let width = cell.cell_width();
-            // A VS16 cluster's terminal cursor advance is not reliably predictable.
-            let uncertain_width = width > 1 && cell.symbol().chars().any(|c| c == '\u{FE0F}');
+            let symbol = cell.symbol();
+            let forced_width = matches!(cell.diff_option, CellDiffOption::ForcedWidth(_));
+            // Terminals can disagree about how many columns any non-ASCII symbol occupies.
+            // Clear the columns reserved by the buffer and reposition around every symbol that
+            // is not a single printable ASCII character so that disagreement cannot shift later
+            // cells or leave stale characters behind.
+            let single_printable_ascii =
+                symbol.len() == 1 && matches!(symbol.as_bytes()[0], b' '..=b'~');
+            let uncertain_width = !single_printable_ascii;
+            let contains_control = symbol.chars().any(char::is_control);
+
             last = (!uncertain_width).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
@@ -280,7 +289,17 @@ where
                 underline_color = cell.underline_color;
             }
 
-            queue!(self.writer, Print(cell.symbol()))?;
+            // Forced-width cells can contain stateful escape sequences. Printing spaces before
+            // them could change what the sequence does, so only clear reserved columns for text.
+            // Escape/control payloads can have terminal side effects, so padding before them
+            // would change what the payload does.
+            if uncertain_width && !forced_width && !contains_control {
+                for _ in 0..width {
+                    queue!(self.writer, Print(' '))?;
+                }
+                queue!(self.writer, MoveTo(x, y))?;
+            }
+            queue!(self.writer, Print(symbol))?;
         }
 
         #[cfg(feature = "underline-color")]
@@ -843,6 +862,53 @@ mod tests {
     }
 
     #[test]
+    fn draw_clears_reserved_cells_and_repositions_after_indic_grapheme() {
+        let grapheme = Cell::new("हा");
+        let next = Cell::new("b");
+        let output = draw_to_string(&[(0, 0, &grapheme), (2, 0, &next)]);
+
+        assert_eq!(output.matches(' ').count(), 2);
+        let grapheme_position = output.find("हा").unwrap();
+        let move_to_start = MoveTo(0, 0).to_string();
+        let before_grapheme = output.get(..grapheme_position).unwrap();
+        let clear_and_rewind = before_grapheme.rfind(&move_to_start).unwrap();
+        let move_to_next = output.find(&MoveTo(2, 0).to_string()).unwrap();
+        assert!(clear_and_rewind < grapheme_position && grapheme_position < move_to_next);
+    }
+
+    #[test]
+    fn draw_repositions_between_indic_graphemes_in_frame_diff() {
+        let area = Rect::new(0, 0, 18, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "\"Date\": \"Датаxyz\",", Style::default());
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "\"Date\": \"हाहा\",", Style::default());
+
+        let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        let output = draw_to_string(&updates);
+        let grapheme_len = "हा".len();
+        let first_grapheme = output.find("हा").unwrap();
+        let after_first_grapheme = output.get(first_grapheme + grapheme_len..).unwrap();
+        let second_grapheme =
+            first_grapheme + grapheme_len + after_first_grapheme.find("हा").unwrap();
+        let move_to_second_grapheme = MoveTo(11, 0).to_string();
+        let between_graphemes = output
+            .get(first_grapheme + grapheme_len..second_grapheme)
+            .unwrap();
+        assert!(between_graphemes.contains(&move_to_second_grapheme));
+
+        let after_second_grapheme = second_grapheme + grapheme_len;
+        let suffix = output.get(after_second_grapheme..).unwrap();
+        let quote = suffix.find("\",").unwrap();
+        assert!(
+            suffix
+                .get(..quote)
+                .unwrap()
+                .contains(&MoveTo(13, 0).to_string())
+        );
+    }
+
+    #[test]
     fn draw_skips_cursor_move_for_contiguous_cells() {
         let a = Cell::new("a");
         let b = Cell::new("b");
@@ -853,15 +919,37 @@ mod tests {
 
     #[test]
     fn draw_uses_forced_width_for_cursor_tracking() {
-        // A cell with an escape sequence has an arbitrary text width; the forced width tells
-        // us how far the terminal cursor actually advances.
-        let mut forced = Cell::new("\u{1b}[?25hab");
+        // A forced width lets the backend track the cursor advance of a printable ASCII cell.
+
+        let mut forced = Cell::new("a");
         forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
         let next = Cell::new("c");
         let output = draw_to_string(&[(0, 0, &forced), (2, 0, &next)]);
         assert!(!output.contains(&MoveTo(2, 0).to_string()));
         let output = draw_to_string(&[(0, 0, &forced), (1, 0, &next)]);
         assert!(output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_repositions_after_forced_width_escape_sequence() {
+        let before = Cell::new("a");
+        let mut forced = Cell::new("\u{1b}[2b");
+        forced.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
+        let next = Cell::new("c");
+        let output = draw_to_string(&[(0, 0, &before), (1, 0, &forced), (3, 0, &next)]);
+
+        assert!(output.contains("a\u{1b}[2b"));
+        assert!(!output.contains(" \u{1b}[2b"));
+        assert!(output.contains(&MoveTo(3, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_does_not_pad_unforced_escape_sequence() {
+        let payload = Cell::new("\u{1b}[2b");
+        let output = draw_to_string(&[(0, 0, &payload)]);
+
+        assert!(output.contains(payload.symbol()));
+        assert!(!output.contains(" \u{1b}[2b"));
     }
 
     #[test]
@@ -933,12 +1021,12 @@ mod tests {
     }
 
     #[test]
-    fn draw_skips_cursor_move_after_wide_symbol_when_contiguous() {
-        // The cell right after a wide glyph's trailing column is where the cursor already is.
+    fn draw_moves_cursor_after_wide_symbol_when_contiguous() {
+        // The terminal's width for a non-ASCII grapheme may differ from the buffer's width.
         let wide = Cell::new("\u{1F600}"); // 😀
         let next = Cell::new("a");
         let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
-        assert!(!output.contains(&MoveTo(2, 0).to_string()));
+        assert!(output.contains(&MoveTo(2, 0).to_string()));
     }
 
     #[test]
