@@ -209,7 +209,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         });
                     } else {
                         // single-width character, no position adjustment needed
-                        self.covered = (i + previous_width).min(len);
+                        self.covered = self.covered.max(i + previous_width).min(len);
                     }
 
                     let (x, y) = self.pos_of(i);
@@ -770,11 +770,12 @@ mod terminal_model {
     use alloc::string::{String, ToString};
     use alloc::vec;
     use alloc::vec::Vec;
+    use core::num::NonZeroU16;
 
     use rstest::rstest;
 
     use super::*;
-    use crate::buffer::Buffer;
+    use crate::buffer::{Buffer, CellDiffOption};
     use crate::style::Style;
 
     /// What is visibly occupying one terminal column.
@@ -995,6 +996,20 @@ mod terminal_model {
         let next = row(4, "────");
         let mut prev = next.clone();
         prev.content[1].set_symbol(glyph);
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
+    }
+
+    /// A covered range must remain covered when the old cell uses an explicit width > 2.
+    #[test]
+    fn stale_cells_after_forced_width_are_repainted() {
+        let next = row(4, "abcd");
+        let mut prev = next.clone();
+        prev.content[0]
+            .set_symbol("image")
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(4).unwrap()));
 
         for vs16_width in VS16_WIDTHS {
             assert_no_artifacts(vs16_width, &prev, &next);
