@@ -38,16 +38,16 @@ critical-section = "1.2"
 crossterm = "0.29"
 document-features = "0.2.11"
 fakeit = "1"
-futures = "0.3"
 hashbrown = "0.17"
 indoc = "2.0.5"
 instability = "0.3.7"
 itertools = { version = "0.15", default-features = false, features = ["use_alloc"] }
 kasuari = { version = "0.4.9", default-features = false }
 line-clipping = "0.3.8"
-lru = "0.18"
+lru = "0.19.0"
 octocrab = "0.54"
 palette = { version = "0.7.7", default-features = false, features = ["libm"] }
+portable-atomic-util = { version = "0.2.4", default-features = false }
 pretty_assertions = "1"
 rand = "0.10"
 rand_chacha = "0.10"
@@ -59,7 +59,7 @@ ratatui-termina = { path = "ratatui-termina", version = "0.1.0" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.2" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.2" }
 ratatui-widgets = { path = "ratatui-widgets", version = "0.3.2", default-features = false }
-rstest = "0.27"
+rstest = "0.28"
 serde = { version = "1.0.228", default-features = false, features = ["derive"] }
 serde_json = "1.0.142"
 strum = { version = "0.28", default-features = false, features = ["derive"] }

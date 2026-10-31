@@ -12,7 +12,7 @@ use ratatui_core::widgets::Widget;
 use strum::{Display, EnumString};
 
 use crate::block::{Block, BlockExt};
-use crate::canvas::{Canvas, FilledLine, Line as CanvasLine, Points};
+use crate::canvas::{Canvas, FilledLine, Line as CanvasLine, Points, Polyline};
 
 /// An X or Y axis for the [`Chart`] widget
 ///
@@ -1000,6 +1000,11 @@ impl Widget for Chart<'_> {
 impl Widget for &Chart<'_> {
     #[expect(clippy::too_many_lines)]
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
 
         self.block.as_ref().render(area, buf);
@@ -1050,22 +1055,19 @@ impl Widget for &Chart<'_> {
                     ctx.marker(dataset.marker);
 
                     let color = dataset.style.fg.unwrap_or(Color::Reset);
-                    ctx.draw(&Points {
-                        coords: dataset.data,
-                        color,
-                    });
+                    if dataset.graph_type == GraphType::Line {
+                        // Draws the points and the segments between them, mapping each point once.
+                        ctx.draw(&Polyline {
+                            coords: dataset.data,
+                            color,
+                        });
+                    } else {
+                        ctx.draw(&Points {
+                            coords: dataset.data,
+                            color,
+                        });
+                    }
                     match dataset.graph_type {
-                        GraphType::Line => {
-                            for data in dataset.data.windows(2) {
-                                ctx.draw(&CanvasLine {
-                                    x1: data[0].0,
-                                    y1: data[0].1,
-                                    x2: data[1].0,
-                                    y2: data[1].1,
-                                    color,
-                                });
-                            }
-                        }
                         GraphType::Bar => {
                             for (x, y) in dataset.data {
                                 ctx.draw(&CanvasLine {
@@ -1090,7 +1092,7 @@ impl Widget for &Chart<'_> {
                             }
                         }
 
-                        GraphType::Scatter => {}
+                        GraphType::Line | GraphType::Scatter => {}
                     }
                 }
             })
@@ -1714,5 +1716,37 @@ mod tests {
             .y_axis(Axis::default().bounds([0.0, 1.0]));
         // This should not panic, even if the buffer has zero size.
         chart.render(buffer.area, &mut buffer);
+    }
+    #[rstest]
+    fn render_chart_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        Chart::new(vec![Dataset::default().name("one").data(&[(0.0, 1.0)])]).render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_chart_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = Chart::new(vec![Dataset::default().name("one").data(&[(0.0, 1.0)])])
+            .x_axis(Axis::default().bounds([0.0, 1.0]))
+            .y_axis(Axis::default().bounds([0.0, 1.0]));
+        (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
+        (&widget).render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }
