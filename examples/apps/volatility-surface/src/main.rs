@@ -10,7 +10,7 @@ mod volatility;
 use std::time::{Duration, Instant};
 
 use color_eyre::Result;
-use crossterm::event::{self, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::event::{self, KeyCode, KeyModifiers};
 use display::{Surface3D, VolatilitySurface};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::palette::tailwind::SLATE;
@@ -84,8 +84,7 @@ impl App {
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
                 // Only handle key press events, not repeat or release
-                if let event::Event::Key(key) = event::read()?
-                    && key.kind == KeyEventKind::Press
+                if let Some(key) = event::read()?.as_key_press_event()
                     && self.handle_key(key.code, key.modifiers)
                 {
                     break;
