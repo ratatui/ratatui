@@ -28,22 +28,33 @@
 //! assert_eq!(text::Line::default(), ratatui::text::Line::from(vec![]));
 //! ```
 
+#[doc(no_inline)]
 pub use ratatui_core::backend::{self, Backend};
 #[cfg(feature = "crossterm")]
+#[doc(no_inline)]
 pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
 
 #[cfg(feature = "termina")]
+#[doc(no_inline)]
 pub use crate::backend::{FromTermina, IntoTermina, TerminaBackend};
 #[cfg(all(not(windows), feature = "termion"))]
+#[doc(no_inline)]
 pub use crate::backend::{FromTermion, IntoTermion, TermionBackend};
 #[cfg(feature = "termwiz")]
+#[doc(no_inline)]
 pub use crate::backend::{FromTermwiz, IntoTermwiz, TermwizBackend};
+#[doc(no_inline)]
 pub use crate::buffer::{self, Buffer};
+#[doc(no_inline)]
 pub use crate::layout::{
     self, Alignment, Constraint, Direction, HorizontalAlignment, Layout, Margin, Position, Rect,
     Size, VerticalAlignment,
 };
+#[doc(no_inline)]
 pub use crate::style::{self, Color, Modifier, Style, Stylize};
+#[doc(no_inline)]
 pub use crate::text::{self, Line, Masked, Span, Text};
+#[doc(no_inline)]
 pub use crate::widgets::{BlockExt, StatefulWidget, Widget};
+#[doc(no_inline)]
 pub use crate::{Frame, Terminal, symbols};

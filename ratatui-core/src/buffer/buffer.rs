@@ -333,6 +333,8 @@ impl Buffer {
     /// until the end of the line. Skips zero-width graphemes and control characters.
     ///
     /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
+    ///
+    /// If `(x, y)` is outside the buffer's area, nothing is written and `(x, y)` is returned.
     pub fn set_stringn<T, S>(
         &mut self,
         mut x: u16,
@@ -346,6 +348,9 @@ impl Buffer {
         S: Into<Style>,
     {
         let max_width = max_width.try_into().unwrap_or(u16::MAX);
+        if !self.area.contains(Position::new(x, y)) {
+            return (x, y);
+        }
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
@@ -1073,6 +1078,19 @@ mod tests {
             "ccccc".red(),
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::left(5, 1)]
+    #[case::right(30, 1)]
+    #[case::above(15, 0)]
+    #[case::below(15, 2)]
+    fn set_stringn_out_of_area_is_noop(#[case] x: u16, #[case] y: u16) {
+        let area = Rect::new(10, 1, 20, 1);
+        let mut buffer = Buffer::empty(area);
+        let pos = buffer.set_stringn(x, y, "hello", 10, Style::default());
+        assert_eq!(pos, (x, y));
+        assert_eq!(buffer, Buffer::empty(area));
     }
 
     #[test]
