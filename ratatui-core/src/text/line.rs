@@ -37,6 +37,7 @@ use crate::widgets::Widget;
 /// - [`Line::from`] creates a `Line` from a [`Vec`] of [`Span`]s.
 /// - [`Line::from`] creates a `Line` from a `&[Into<Span>]`.
 /// - [`Line::from`] creates a `Line` from single [`Span`].
+/// - [`Line::from`] creates a `Line` that borrows the content of a `&Line`.
 /// - [`String::from`] converts a line into a [`String`].
 /// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
 ///
@@ -644,6 +645,45 @@ where
     }
 }
 
+/// Creates a `Line` that borrows its content from another `Line`.
+///
+/// The new line keeps the style and alignment of the original line. It allocates a new `Vec` of
+/// spans, but each span borrows its content from the original (see the `From<&Span>` impl on
+/// [`Span`]), so no string data is copied. This is cheaper than [`Clone::clone`] when the original
+/// line owns its span strings.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::borrow::Cow;
+///
+/// use ratatui_core::style::Stylize;
+/// use ratatui_core::text::Line;
+///
+/// let stored = Line::from(vec![
+///     String::from("hello ").red(),
+///     String::from("world").bold(),
+/// ])
+/// .centered();
+/// let borrowed = Line::from(&stored);
+/// assert_eq!(borrowed, stored);
+/// assert!(
+///     borrowed
+///         .spans
+///         .iter()
+///         .all(|span| matches!(span.content, Cow::Borrowed(_)))
+/// );
+/// ```
+impl<'b, 'a: 'b> From<&'b Line<'a>> for Line<'b> {
+    fn from(line: &'b Line<'a>) -> Self {
+        Self {
+            style: line.style,
+            alignment: line.alignment,
+            spans: line.spans.iter().map(Span::from).collect(),
+        }
+    }
+}
+
 impl<'a> From<Span<'a>> for Line<'a> {
     fn from(span: Span<'a>) -> Self {
         Self::from(vec![span])
@@ -1012,6 +1052,26 @@ mod tests {
         let line2 = Line::from(&slice[1..]);
         assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
         assert_eq!(line2.spans, vec![Span::from("world!"), Span::from("Extra")]);
+    }
+
+    #[test]
+    fn from_ref_line_borrows_owned_content() {
+        let stored = Line::from(vec![
+            Span::from(String::from("Hello ")).red(),
+            Span::from(String::from("world!")).bold(),
+        ])
+        .style(Style::new().on_blue())
+        .right_aligned();
+        let line = Line::from(&stored);
+        assert_eq!(line, stored);
+        assert_eq!(line.style, Style::new().on_blue());
+        assert_eq!(line.alignment, Some(Alignment::Right));
+        for (span, stored_span) in line.iter().zip(&stored) {
+            let Cow::Borrowed(content) = span.content else {
+                panic!("expected borrowed content, got {:?}", span.content);
+            };
+            assert!(core::ptr::eq(content, stored_span.content.as_ref()));
+        }
     }
 
     #[test]
