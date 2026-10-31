@@ -15,7 +15,12 @@ use crate::layout::Rect;
 /// is currently marked as unstable as we are still evaluating the API and may make changes in the
 /// future. See <https://github.com/ratatui/ratatui/issues/1287> for more information.
 ///
-/// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
+/// A blanket implementation of `WidgetRef` for `&W` where `&W` implements `Widget` is provided, so
+/// any widget that renders by reference also implements `WidgetRef` through a reference.
+///
+/// `Cow<B>`, `Box<W>`, `Rc<W>`, and `Arc<W>` implement `WidgetRef` whenever the wrapped type
+/// implements `Widget` when rendered by reference, so `Box<str>` or `Rc<Paragraph>` can be rendered
+/// with `render_ref`.
 ///
 /// A blanket implementation of `WidgetRef` for `Option<W>` where `W` implements `WidgetRef` is
 /// provided. This is a convenience approach to make it easier to attach child widgets to parent
@@ -186,14 +191,14 @@ mod tests {
     }
 
     #[rstest]
-    fn render_ref_box(mut buf: Buffer) {
+    fn render_ref_box_dyn(mut buf: Buffer) {
         let widget: Box<dyn WidgetRef> = Box::new(&Greeting);
         widget.render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["Hello               "]));
     }
 
     #[rstest]
-    fn render_ref_box_vec(mut buf: Buffer) {
+    fn render_ref_box_dyn_vec(mut buf: Buffer) {
         let widgets: Vec<Box<dyn WidgetRef>> = vec![Box::new(&Greeting), Box::new(&Farewell)];
         for widget in widgets {
             widget.render_ref(buf.area, &mut buf);

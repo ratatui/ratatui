@@ -693,6 +693,7 @@ pub use {stateful_widget_ref::StatefulWidgetRef, widget_ref::WidgetRef};
 mod stateful_widget_ref;
 mod widget_ref;
 mod widget_ref_string;
+mod widget_ref_wrapper;
 
 use ratatui_core::layout::Rect;
 

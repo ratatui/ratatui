@@ -1,4 +1,3 @@
-use alloc::borrow::Cow;
 use alloc::string::String;
 
 use super::Widget;
@@ -33,31 +32,46 @@ impl Widget for String {
 }
 
 /// Renders a `String` reference as a widget.
+///
+/// This lets a `String` stored in app state be rendered from `&self` without moving it out or
+/// calling `.as_str()` first.
+///
+/// ```rust
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::widgets::Widget;
+///
+/// struct App {
+///     title: String,
+/// }
+///
+/// impl App {
+///     fn render(&self, area: Rect, buf: &mut Buffer) {
+///         (&self.title).render(area, buf);
+///     }
+/// }
+///
+/// let app = App {
+///     title: String::from("Inbox"),
+/// };
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+/// app.render(buf.area, &mut buf);
+/// assert_eq!(buf, Buffer::with_lines(["Inbox"]));
+/// ```
 impl Widget for &String {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.as_str().render(area, buf);
     }
 }
 
-/// Renders a `Cow<str>` object as a widget.
-///
-/// This implementation enables a borrowed or owned `Cow<str>` to be treated as a widget, which can
-/// be rendered on a [`Buffer`] within the bounds of a given [`Rect`].
-impl Widget for Cow<'_, str> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        self.as_ref().render(area, buf);
-    }
-}
-
-/// Renders a reference to a `Cow<str>` as a widget.
-impl Widget for &Cow<'_, str> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        self.as_ref().render(area, buf);
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use alloc::borrow::Cow;
+    use alloc::boxed::Box;
+    use alloc::rc::Rc;
+    #[cfg(target_has_atomic = "ptr")]
+    use alloc::sync::Arc;
+
     use rstest::{fixture, rstest};
 
     use super::*;
@@ -113,38 +127,62 @@ mod tests {
     }
 
     #[rstest]
-    fn render_cow_borrowed(mut buf: Buffer) {
+    fn render_cow_borrowed_str(mut buf: Buffer) {
         let cow: Cow<'_, str> = Cow::Borrowed("hello world");
-        cow.render(buf.area, &mut buf);
+        // Call by value so method resolution can't autoref to `&Cow`.
+        Widget::render(cow, buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 
     #[rstest]
-    fn render_cow_owned(mut buf: Buffer) {
+    fn render_cow_owned_str(mut buf: Buffer) {
         let cow: Cow<'_, str> = Cow::Owned(String::from("hello world"));
-        cow.render(buf.area, &mut buf);
+        // Call by value so method resolution can't autoref to `&Cow`.
+        Widget::render(cow, buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 
     #[rstest]
-    fn render_cow_ref(mut buf: Buffer) {
+    fn render_cow_ref_str(mut buf: Buffer) {
         let cow: Cow<'_, str> = Cow::Borrowed("hello world");
         (&cow).render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 
     #[rstest]
-    fn render_cow_truncate(mut buf: Buffer) {
+    fn render_cow_str_truncate(mut buf: Buffer) {
         let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
         let cow: Cow<'_, str> = Cow::Borrowed("hello world, just hello");
-        cow.render(area, &mut buf);
+        Widget::render(cow, area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 
     #[rstest]
-    fn render_option_cow(mut buf: Buffer) {
+    fn render_option_cow_str(mut buf: Buffer) {
         let cow: Cow<'_, str> = Cow::Borrowed("hello world");
         Some(cow).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_box_str(mut buf: Buffer) {
+        let boxed: Box<str> = Box::from("hello world");
+        (&boxed).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_rc_str(mut buf: Buffer) {
+        let rc: Rc<str> = Rc::from("hello world");
+        (&rc).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[cfg(target_has_atomic = "ptr")]
+    #[rstest]
+    fn render_arc_str(mut buf: Buffer) {
+        let arc: Arc<str> = Arc::from("hello world");
+        (&arc).render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 
@@ -184,6 +222,18 @@ mod tests {
         assert_eq!(buf, expected);
         cow.render(render_area, &mut buf);
         assert_eq!(buf, expected);
+        let boxed: Box<str> = Box::from("hello");
+        (&boxed).render(render_area, &mut buf);
+        assert_eq!(buf, expected);
+        let rc: Rc<str> = Rc::from("hello");
+        (&rc).render(render_area, &mut buf);
+        assert_eq!(buf, expected);
+        #[cfg(target_has_atomic = "ptr")]
+        {
+            let arc: Arc<str> = Arc::from("hello");
+            (&arc).render(render_area, &mut buf);
+            assert_eq!(buf, expected);
+        }
     }
 
     #[test]
@@ -205,5 +255,20 @@ mod tests {
         buf.reset();
         Cow::Borrowed("hello").render(Rect::new(9, 9, 10, 10), &mut buf);
         assert_eq!(buf, expected);
+        buf.reset();
+        let boxed: Box<str> = Box::from("hello");
+        (&boxed).render(Rect::new(9, 9, 10, 10), &mut buf);
+        assert_eq!(buf, expected);
+        buf.reset();
+        let rc: Rc<str> = Rc::from("hello");
+        (&rc).render(Rect::new(9, 9, 10, 10), &mut buf);
+        assert_eq!(buf, expected);
+        #[cfg(target_has_atomic = "ptr")]
+        {
+            buf.reset();
+            let arc: Arc<str> = Arc::from("hello");
+            (&arc).render(Rect::new(9, 9, 10, 10), &mut buf);
+            assert_eq!(buf, expected);
+        }
     }
 }
