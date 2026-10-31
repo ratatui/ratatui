@@ -10,6 +10,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
 use crate::style::{Style, Styled};
+use crate::text::line::into_single_line;
 use crate::text::{Line, Span};
 use crate::widgets::Widget;
 
@@ -244,7 +245,10 @@ impl<'a> Text<'a> {
             Cow::Borrowed("") => vec![Line::from("")],
             Cow::Borrowed(s) => s.lines().map(Line::from).collect(),
             Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
-            Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
+            Cow::Owned(s) => match into_single_line(s) {
+                Ok(line) => vec![Line::from(line)],
+                Err(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
+            },
         };
         Self::from(lines)
     }
@@ -1527,5 +1531,29 @@ mod tests {
                 ]),
             ]).on_blue().italic().centered()"#}
         );
+    }
+
+    #[rstest]
+    #[case::empty("")]
+    #[case::single("abc")]
+    #[case::trailing_lf("abc\n")]
+    #[case::trailing_crlf("abc\r\n")]
+    #[case::trailing_cr("abc\r")]
+    #[case::only_lf("\n")]
+    #[case::only_crlf("\r\n")]
+    #[case::double_lf("abc\n\n")]
+    #[case::multiple("abc\r\ndef\n")]
+    fn raw_string_matches_raw_str(#[case] content: &str) {
+        assert_eq!(Text::raw(String::from(content)), Text::raw(content));
+        assert_eq!(Text::from(String::from(content)), Text::from(content));
+    }
+
+    #[test]
+    fn raw_string_reuses_allocation() {
+        let content = String::from("abc\n");
+        let ptr = content.as_ptr();
+        let text = Text::raw(content);
+        assert_eq!(text.lines[0].spans[0].content, "abc");
+        assert_eq!(text.lines[0].spans[0].content.as_ptr(), ptr);
     }
 }
