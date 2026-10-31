@@ -3,6 +3,7 @@ pub mod main {
     pub mod block;
     pub mod buffer;
     pub mod canvas;
+    pub mod chart;
     pub mod constraints;
     pub mod from_string;
     pub mod gauge;
@@ -23,6 +24,7 @@ criterion::criterion_main!(
     canvas::benches,
     from_string::benches,
     buffer::benches,
+    chart::benches,
     line::benches,
     list::benches,
     paragraph::benches,
