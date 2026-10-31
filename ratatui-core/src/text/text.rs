@@ -37,6 +37,7 @@ use crate::widgets::Widget;
 /// - [`Text::from`] creates a `Text` that borrows the content of a `&Text`.
 /// - [`Text::from_iter`] creates a `Text` from an iterator of items that can be converted into
 ///   `Line`.
+/// - [`Text::into_owned`] converts a `Text` into a `Text<'static>` that owns its content.
 ///
 /// # Setter Methods
 ///
@@ -562,6 +563,48 @@ impl<'a> Text<'a> {
             last.push_span(span);
         } else {
             self.lines.push(Line::from(span));
+        }
+    }
+
+    /// Converts this `Text` into a `Text<'static>` that owns all of its content, cloning content
+    /// only where it is borrowed.
+    ///
+    /// Use this when text needs to outlive the data it borrows from, for example to store styled
+    /// text in your app state without adding a lifetime parameter, or to send it to another
+    /// thread. Each line is converted with [`Line::into_owned`]. The style and alignment of the
+    /// text, and of each line and span, are kept.
+    ///
+    /// [`Clone`] does not do this: a cloned `Text<'a>` still borrows its content and keeps the
+    /// `'a` lifetime.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui_core::layout::Alignment;
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Text;
+    ///
+    /// struct App {
+    ///     help: Text<'static>,
+    /// }
+    ///
+    /// let contents = String::from("q: quit\n?: help");
+    /// let text = Text::styled(contents.as_str(), Style::new().dim()).centered();
+    /// let app = App {
+    ///     help: text.into_owned(),
+    /// };
+    /// drop(contents);
+    ///
+    /// assert_eq!(app.help.height(), 2);
+    /// assert_eq!(app.help.style, Style::new().dim());
+    /// assert_eq!(app.help.alignment, Some(Alignment::Center));
+    /// ```
+    #[must_use]
+    pub fn into_owned(self) -> Text<'static> {
+        Text {
+            alignment: self.alignment,
+            style: self.style,
+            lines: self.lines.into_iter().map(Line::into_owned).collect(),
         }
     }
 }
@@ -1271,6 +1314,48 @@ mod tests {
         let mut text = Text::default();
         text.push_span(Span::raw("Hello, world!"));
         assert_eq!(text.lines, [Line::from(Span::raw("Hello, world!"))]);
+    }
+
+    #[test]
+    fn into_owned() {
+        let first = String::from("first");
+        let second = String::from("second");
+        let text = Text::from(vec![
+            Line::from(first.as_str()).centered(),
+            Line::from(second.as_str().red()).style(Style::new().bold()),
+        ])
+        .style(Style::new().on_blue())
+        .right_aligned();
+
+        let owned: Text<'static> = text.into_owned();
+        drop(first);
+        drop(second);
+
+        assert!(
+            owned
+                .iter()
+                .flat_map(Line::iter)
+                .all(|span| matches!(span.content, Cow::Owned(_)))
+        );
+        assert_eq!(
+            owned,
+            Text::from(vec![
+                Line::from("first").centered(),
+                Line::from("second".red()).style(Style::new().bold()),
+            ])
+            .style(Style::new().on_blue())
+            .right_aligned()
+        );
+    }
+
+    #[test]
+    fn into_owned_reuses_owned_content() {
+        let content = String::from("hello");
+        let ptr = content.as_ptr();
+
+        let owned = Text::from(Span::raw(content)).into_owned();
+
+        assert_eq!(owned.lines[0].spans[0].content.as_ptr(), ptr);
     }
 
     mod style {

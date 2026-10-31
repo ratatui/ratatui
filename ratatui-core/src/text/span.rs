@@ -35,6 +35,7 @@ use crate::widgets::Widget;
 /// - [`Span::reset_style`] resets the style of the span.
 /// - [`Span::width`] returns the unicode width of the content held by this span.
 /// - [`Span::styled_graphemes`] returns an iterator over the graphemes held by this span.
+/// - [`Span::into_owned`] converts a span into a `Span<'static>` that owns its content.
 ///
 /// # Examples
 ///
@@ -378,6 +379,44 @@ impl<'a> Span<'a> {
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()
     }
+
+    /// Converts this `Span` into a `Span<'static>` that owns its content, cloning the content only
+    /// if it is borrowed.
+    ///
+    /// Use this when a span needs to outlive the data it borrows from, for example to store styled
+    /// text in your app state without adding a lifetime parameter, or to send it to another
+    /// thread. The style is kept.
+    ///
+    /// [`Clone`] does not do this: a cloned `Span<'a>` still borrows its content and keeps the
+    /// `'a` lifetime.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Span;
+    ///
+    /// struct App {
+    ///     status: Span<'static>,
+    /// }
+    ///
+    /// let message = String::from("Connected");
+    /// let span = Span::raw(&message).green();
+    /// let app = App {
+    ///     status: span.into_owned(),
+    /// };
+    /// drop(message);
+    ///
+    /// assert_eq!(app.status.content, "Connected");
+    /// assert_eq!(app.status.style, Style::new().green());
+    /// ```
+    #[must_use]
+    pub fn into_owned(self) -> Span<'static> {
+        Span {
+            style: self.style,
+            content: Cow::Owned(self.content.into_owned()),
+        }
+    }
 }
 
 impl UnicodeWidthStr for Span<'_> {
@@ -588,6 +627,30 @@ mod tests {
         let span = Span::styled(content.clone(), style);
         assert_eq!(span.content, Cow::Owned::<str>(content));
         assert_eq!(span.style, style);
+    }
+
+    #[test]
+    fn into_owned_borrowed() {
+        let content = String::from("test content");
+        let span = Span::styled(content.as_str(), Style::new().green().italic());
+        assert!(matches!(span.content, Cow::Borrowed(_)));
+
+        let owned: Span<'static> = span.into_owned();
+        drop(content);
+
+        assert!(matches!(owned.content, Cow::Owned(_)));
+        assert_eq!(owned.content, "test content");
+        assert_eq!(owned.style, Style::new().green().italic());
+    }
+
+    #[test]
+    fn into_owned_reuses_owned_content() {
+        let content = String::from("test content");
+        let ptr = content.as_ptr();
+
+        let owned = Span::raw(content).into_owned();
+
+        assert_eq!(owned.content.as_ptr(), ptr);
     }
 
     #[test]

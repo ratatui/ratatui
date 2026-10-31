@@ -37,6 +37,36 @@ use crate::reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine};
 /// Note: If neither wrapping or a block is needed, consider rendering the [`Text`], [`Line`], or
 /// [`Span`] widgets directly.
 ///
+/// To keep styled text in your application state without a lifetime parameter, see [Storing
+/// styled text]. Stored text can be passed by reference, which borrows its content instead of
+/// cloning it:
+///
+/// ```rust
+/// use ratatui::buffer::Buffer;
+/// use ratatui::layout::Rect;
+/// use ratatui::text::Text;
+/// use ratatui::widgets::{Paragraph, Widget, Wrap};
+///
+/// struct App {
+///     log: Text<'static>,
+/// }
+///
+/// impl Widget for &App {
+///     fn render(self, area: Rect, buf: &mut Buffer) {
+///         Paragraph::new(&self.log)
+///             .wrap(Wrap { trim: false })
+///             .render(area, buf);
+///     }
+/// }
+///
+/// let app = App {
+///     log: Text::from(String::from("hello")),
+/// };
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+/// app.render(buf.area, &mut buf);
+/// ```
+///
+/// [Storing styled text]: ratatui_core::text#storing-styled-text
 /// [Textwrap crate]: https://crates.io/crates/textwrap
 /// [`wrap`]: Self::wrap
 /// [`alignment`]: Self::alignment
