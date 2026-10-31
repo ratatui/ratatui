@@ -89,6 +89,18 @@ If you're looking to get started quickly, you can use one of the available templ
 cargo generate ratatui/templates
 ```
 
+## Embedded and `no_std`
+
+Ratatui also runs on `no_std` targets such as microcontrollers, using a backend like [Mousefood].
+Turning off default features also turns off the layout cache, which matters most on these
+targets, so enable it again and size it for the device:
+
+```toml
+ratatui = { version = "0.30", default-features = false, features = ["layout-cache"] }
+```
+
+See [Using Ratatui without std] in the docs for details.
+
 ## Built with Ratatui
 
 [![Awesome](https://awesome.re/badge-flat2.svg)][awesome-ratatui]
@@ -141,6 +153,8 @@ This project is licensed under the [MIT License][License].
 [Ratatui Website]: https://ratatui.rs/
 [Ratatui Forum]: https://forum.ratatui.rs
 [Docs]: https://docs.rs/ratatui
+[Mousefood]: https://github.com/ratatui/mousefood
+[Using Ratatui without std]: https://docs.rs/ratatui/latest/ratatui/#using-ratatui-without-std
 [Widget Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui-widgets/examples
 [App Examples]: https://github.com/ratatui/ratatui/tree/main/examples
 [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md

@@ -2,6 +2,7 @@ use ratatui_core::layout::{Constraint, Rect};
 use ratatui_macros::{constraints, horizontal, vertical};
 
 #[test]
+#[expect(clippy::many_single_char_names)]
 fn layout_constraints_macro() {
     let rect = Rect {
         x: 0,
@@ -101,4 +102,5 @@ fn layout_constraints_macro() {
 fn fails() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/ui/fails.rs");
+    t.compile_fail("tests/ui/span_semicolon.rs");
 }

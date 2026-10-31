@@ -31,13 +31,12 @@ use ratatui_core::widgets::Widget;
 
 pub use self::area::Area;
 pub use self::circle::Circle;
+pub(crate) use self::line::Polyline;
 pub use self::line::{FilledLine, Line};
 pub use self::map::{Map, MapResolution};
 pub use self::points::Points;
 pub use self::rectangle::Rectangle;
 use crate::block::{Block, BlockExt};
-#[cfg(not(feature = "std"))]
-use crate::polyfills::F64Polyfills;
 
 mod area;
 mod circle;
@@ -153,13 +152,13 @@ struct PatternGrid<const W: usize, const H: usize> {
 
 impl<const W: usize, const H: usize> PatternGrid<W, H> {
     /// Statically check that the dimension of the pattern is supported.
-    const _PATTERN_DIMENSION_CHECK: usize = u8::BITS as usize - W * H;
+    const PATTERN_DIMENSION_CHECK: usize = u8::BITS as usize - W * H;
 
     /// Create a new `PatternGrid` with the given width and height measured in terminal columns
     /// and rows respectively.
     fn new(width: u16, height: u16, char_table: &'static [char]) -> Self {
         // Cause a static error if the pattern doesn't fit within 8 bits.
-        let _ = Self::_PATTERN_DIMENSION_CHECK;
+        let _ = Self::PATTERN_DIMENSION_CHECK;
 
         let length = usize::from(width) * usize::from(height);
         Self {
@@ -404,7 +403,8 @@ impl Grid for HalfBlockGrid {
 #[derive(Debug)]
 pub struct Painter<'a, 'b> {
     context: &'a mut Context<'b>,
-    resolution: (f64, f64),
+    /// Grid dots per canvas unit on each axis, or `None` when the bounds are empty or inverted.
+    scale: Option<(f64, f64)>,
 }
 
 impl Painter<'_, '_> {
@@ -454,13 +454,11 @@ impl Painter<'_, '_> {
         if !x.is_finite() || !y.is_finite() || x < left || x > right || y < bottom || y > top {
             return None;
         }
-        let width = right - left;
-        let height = top - bottom;
-        if width <= 0.0 || height <= 0.0 {
-            return None;
-        }
-        let x = ((x - left) * (self.resolution.0 - 1.0) / width).round() as usize;
-        let y = ((top - y) * (self.resolution.1 - 1.0) / height).round() as usize;
+        let (scale_x, scale_y) = self.scale?;
+        // Both products are non-negative here, so adding 0.5 and truncating rounds half away from
+        // zero, matching `f64::round` without the `i64` round trip.
+        let x = ((x - left) * scale_x + 0.5) as usize;
+        let y = ((top - y) * scale_y + 0.5) as usize;
         Some((x, y))
     }
 
@@ -501,11 +499,12 @@ impl Painter<'_, '_> {
 
 impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
     fn from(context: &'a mut Context<'b>) -> Self {
-        let resolution = context.grid.resolution();
-        Self {
-            context,
-            resolution,
-        }
+        let (resolution_x, resolution_y) = context.grid.resolution();
+        let width = context.x_bounds[1] - context.x_bounds[0];
+        let height = context.y_bounds[1] - context.y_bounds[0];
+        let scale = (width > 0.0 && height > 0.0)
+            .then(|| ((resolution_x - 1.0) / width, (resolution_y - 1.0) / height));
+        Self { context, scale }
     }
 }
 
@@ -864,6 +863,11 @@ where
     F: Fn(&mut Context),
 {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         self.block.as_ref().render(area, buf);
         let canvas_area = self.block.inner_if_some(area);
         if canvas_area.is_empty() {
@@ -1230,5 +1234,56 @@ mod tests {
         let mut ctx = Context::new(2, 2, [0.0, 10.0], [0.0, 10.0], Marker::Dot);
         let painter = Painter::from(&mut ctx);
         assert_eq!(painter.get_point(x, y), None);
+    }
+
+    #[rstest]
+    #[case::zero_width([5.0, 5.0], [0.0, 10.0])]
+    #[case::zero_height([0.0, 10.0], [5.0, 5.0])]
+    #[case::inverted_x([10.0, 0.0], [0.0, 10.0])]
+    #[case::inverted_y([0.0, 10.0], [10.0, 0.0])]
+    fn get_point_rejects_empty_or_inverted_bounds(
+        #[case] x_bounds: [f64; 2],
+        #[case] y_bounds: [f64; 2],
+    ) {
+        let mut ctx = Context::new(2, 2, x_bounds, y_bounds, Marker::Dot);
+        let painter = Painter::from(&mut ctx);
+        assert_eq!(painter.get_point(5.0, 5.0), None);
+    }
+    #[rstest]
+    fn render_canvas_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        Canvas::default()
+            .x_bounds([0.0, 1.0])
+            .y_bounds([0.0, 1.0])
+            .paint(|ctx| ctx.print(0.0, 0.0, "hello"))
+            .render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_canvas_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = Canvas::default()
+            .x_bounds([0.0, 1.0])
+            .y_bounds([0.0, 1.0])
+            .paint(|ctx| ctx.print(0.0, 0.0, "hello"));
+        (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
+        (&widget).render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }

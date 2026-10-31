@@ -146,6 +146,17 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new(Text::styled("Hello, world!", Style::default()));
     /// let paragraph = Paragraph::new(Line::from(vec!["Hello, ".into(), "world!".red()]));
     /// ```
+    ///
+    /// If you store a [`Text`] and render it every frame, pass a reference to it instead of
+    /// cloning it. The paragraph borrows the stored strings rather than copying them:
+    ///
+    /// ```rust
+    /// use ratatui::text::Text;
+    /// use ratatui::widgets::Paragraph;
+    ///
+    /// let stored_text = Text::from(String::from("Hello, world!"));
+    /// let paragraph = Paragraph::new(&stored_text);
+    /// ```
     pub fn new<T>(text: T) -> Self
     where
         T: Into<Text<'a>>,
@@ -498,6 +509,7 @@ impl Styled for Paragraph<'_> {
 #[cfg(test)]
 mod tests {
     use alloc::vec;
+    use alloc::vec::Vec;
 
     use ratatui_core::buffer::{Buffer, CellWidth};
     use ratatui_core::layout::{Alignment, Rect};
@@ -1032,6 +1044,19 @@ mod tests {
             &trimmed_paragraph,
             &Buffer::with_lines(["こんにちは,    ", "世界! 😃      "]),
         );
+    }
+
+    #[test]
+    fn repaints_cell_after_wide_grapheme() {
+        let next = Buffer::with_lines(["────"]);
+        let mut prev = next.clone();
+        Paragraph::new("1️⃣").render(Rect::new(1, 0, 2, 1), &mut prev);
+
+        assert_eq!(prev[(1, 0)].symbol(), "1️⃣");
+
+        let diff = prev.diff(&next);
+        let cols: Vec<_> = diff.iter().map(|(x, _, _)| *x).collect();
+        assert_eq!(cols, [1, 2]);
     }
 
     #[test]

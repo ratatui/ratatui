@@ -78,6 +78,11 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+// The layout cache only uses critical-section without std, which would otherwise trip cargo's
+// unused_dependencies lint.
+#[cfg(all(feature = "layout-cache", feature = "std"))]
+use critical_section as _;
+
 pub mod backend;
 pub mod buffer;
 pub mod layout;

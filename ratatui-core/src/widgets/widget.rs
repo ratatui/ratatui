@@ -83,6 +83,10 @@ pub trait Widget {
 /// drawing the text to the screen.
 impl Widget for &str {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
         buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
     }
 }
@@ -93,7 +97,7 @@ impl Widget for &str {
 /// on a [`Buffer`] within the bounds of a given [`Rect`].
 impl Widget for String {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
+        self.as_str().render(area, buf);
     }
 }
 
@@ -170,5 +174,49 @@ mod tests {
     fn render_option_string(mut buf: Buffer) {
         Some(String::from("hello world")).render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_string_widgets_outside_buffer(
+        #[values(
+            (Rect::new(10, 10, 5, 1), Rect::new(0, 10, 5, 1)),
+            (Rect::new(10, 10, 5, 1), Rect::new(15, 10, 5, 1)),
+            (Rect::new(10, 10, 5, 1), Rect::new(10, 9, 5, 1)),
+            (Rect::new(10, 10, 5, 1), Rect::new(10, 11, 5, 1)),
+            (Rect::new(10, 10, 5, 1), Rect::new(10, 10, 5, 0)),
+            (Rect::new(10, 10, 5, 1), Rect::new(10, 10, 0, 1)),
+            (Rect::new(10, 10, 0, 1), Rect::new(10, 10, 5, 1)),
+            (Rect::new(10, 10, 5, 0), Rect::new(10, 10, 5, 1)),
+            (Rect::ZERO, Rect::new(0, 0, 5, 1)),
+            (Rect::new(0, 0, 57, 1), Rect::new(0, 1, 57, 0))
+        )]
+        bounds: (Rect, Rect),
+    ) {
+        let (buffer_area, render_area) = bounds;
+        let mut buf = Buffer::empty(buffer_area);
+        let expected = buf.clone();
+
+        "hello".render(render_area, &mut buf);
+        assert_eq!(buf, expected);
+        String::from("hello").render(render_area, &mut buf);
+        assert_eq!(buf, expected);
+        Some("hello").render(render_area, &mut buf);
+        assert_eq!(buf, expected);
+        Some(String::from("hello")).render(render_area, &mut buf);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn render_string_widgets_clip_to_buffer() {
+        let area = Rect::new(10, 10, 4, 1);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::with_lines(["hell"]);
+        expected.area = area;
+
+        "hello".render(Rect::new(9, 9, 10, 10), &mut buf);
+        assert_eq!(buf, expected);
+        buf.reset();
+        String::from("hello").render(Rect::new(9, 9, 10, 10), &mut buf);
+        assert_eq!(buf, expected);
     }
 }

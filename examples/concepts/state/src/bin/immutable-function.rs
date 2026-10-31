@@ -68,7 +68,7 @@ struct Counter {
 
 impl Counter {
     /// Increment the counter value.
-    fn increment(&mut self) {
+    const fn increment(&mut self) {
         self.count += 1;
     }
 }
