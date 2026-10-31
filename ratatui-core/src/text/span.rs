@@ -399,6 +399,33 @@ where
     }
 }
 
+/// Creates a `Span` that borrows its content from another `Span`.
+///
+/// The new span keeps the style of the original span and its content is always
+/// [`Cow::Borrowed`], even when the original span owns its content, so no string data is copied.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::borrow::Cow;
+///
+/// use ratatui_core::style::Stylize;
+/// use ratatui_core::text::Span;
+///
+/// let stored = Span::from(String::from("hello")).red();
+/// let borrowed = Span::from(&stored);
+/// assert_eq!(borrowed, stored);
+/// assert!(matches!(borrowed.content, Cow::Borrowed(_)));
+/// ```
+impl<'b, 'a: 'b> From<&'b Span<'a>> for Span<'b> {
+    fn from(span: &'b Span<'a>) -> Self {
+        Self {
+            style: span.style,
+            content: Cow::Borrowed(span.content.as_ref()),
+        }
+    }
+}
+
 impl<'a> core::ops::Add<Self> for Span<'a> {
     type Output = Line<'a>;
 
@@ -599,6 +626,17 @@ mod tests {
         let span = Span::from(&content);
         assert_eq!(span.content, Cow::Borrowed(content.as_str()));
         assert_eq!(span.style, Style::default());
+    }
+
+    #[test]
+    fn from_ref_span_borrows_owned_content() {
+        let stored = Span::styled(String::from("test content"), Style::new().red().bold());
+        let span = Span::from(&stored);
+        assert_eq!(span, stored);
+        let Cow::Borrowed(content) = span.content else {
+            panic!("expected borrowed content, got {:?}", span.content);
+        };
+        assert!(core::ptr::eq(content, stored.content.as_ref()));
     }
 
     #[test]

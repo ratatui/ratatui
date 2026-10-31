@@ -146,6 +146,17 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new(Text::styled("Hello, world!", Style::default()));
     /// let paragraph = Paragraph::new(Line::from(vec!["Hello, ".into(), "world!".red()]));
     /// ```
+    ///
+    /// If you store a [`Text`] and render it every frame, pass a reference to it instead of
+    /// cloning it. The paragraph borrows the stored strings rather than copying them:
+    ///
+    /// ```rust
+    /// use ratatui::text::Text;
+    /// use ratatui::widgets::Paragraph;
+    ///
+    /// let stored_text = Text::from(String::from("Hello, world!"));
+    /// let paragraph = Paragraph::new(&stored_text);
+    /// ```
     pub fn new<T>(text: T) -> Self
     where
         T: Into<Text<'a>>,
