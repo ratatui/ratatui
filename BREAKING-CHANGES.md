@@ -12,6 +12,7 @@ This is a quick summary of the sections below:
 
 - [v0.31.0](#v0310)
   - `Backend` adds cursor save and restore methods
+  - `Paragraph::scroll` now accepts `(usize, usize)` instead of `(u16, u16)`
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -100,6 +101,23 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.31.0
+
+### `Paragraph::scroll` now accepts `(usize, usize)` instead of `(u16, u16)` ([#2803])
+
+[#2803]: https://github.com/ratatui/ratatui/pull/2803
+
+`Paragraph::scroll` previously limited offsets to `u16`, so content beyond 65,535 lines or columns
+could not be reached. The offsets are now `usize`. Integer literals such as `.scroll((0, 0))`
+continue to compile. If you cast a `usize` offset to `u16`, remove the cast. If your offset is
+stored as a `u16`, convert it with `.into()` (or store it as a `usize` instead).
+
+```diff
+- Paragraph::new(text).scroll((self.vertical_scroll as u16, 0))
++ Paragraph::new(text).scroll((self.vertical_scroll, 0))
+
+- Paragraph::new(text).scroll((app.scroll, 0)) // app.scroll: u16
++ Paragraph::new(text).scroll((app.scroll.into(), 0))
+```
 
 ### `Backend` adds cursor save and restore methods
 
