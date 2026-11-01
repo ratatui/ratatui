@@ -503,6 +503,12 @@ impl ScrollbarState {
         self.content_length
     }
 
+    /// Returns the current configured `viewport_content_length`.
+    #[must_use]
+    pub const fn get_viewport_content_length(&self) -> usize {
+        self.viewport_content_length
+    }
+
     /// Returns `true` if the scroll position is at the start of the scrollable content.
     ///
     /// # See also
@@ -781,6 +787,17 @@ mod tests {
         state.first();
         assert!(state.is_at_start());
         assert!(!state.is_at_end());
+    }
+
+    #[test]
+    fn scrollbar_state_getters() {
+        let state = ScrollbarState::new(10)
+            .position(4)
+            .viewport_content_length(2);
+
+        assert_eq!(state.get_content_length(), 10);
+        assert_eq!(state.get_position(), 4);
+        assert_eq!(state.get_viewport_content_length(), 2);
     }
 
     #[fixture]
