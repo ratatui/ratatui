@@ -96,25 +96,37 @@ struct Worker {
 }
 
 fn input_handling(tx: mpsc::Sender<Event>) {
+    thread::spawn(move || handle_input_events(&tx).expect("failed to read terminal events"));
+}
+
+/// Sends input and tick events until the main thread stops receiving them.
+fn handle_input_events(tx: &mpsc::Sender<Event>) -> Result<()> {
     let tick_rate = Duration::from_millis(200);
-    thread::spawn(move || {
-        let mut last_tick = Instant::now();
-        loop {
-            // poll for tick rate duration, if no events, sent tick event.
-            let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-            if event::poll(timeout).unwrap() {
-                match event::read().unwrap() {
-                    event::Event::Key(key) => tx.send(Event::Input(key)).unwrap(),
-                    event::Event::Resize(_, _) => tx.send(Event::Resize).unwrap(),
-                    _ => {}
-                }
-            }
-            if last_tick.elapsed() >= tick_rate {
-                tx.send(Event::Tick).unwrap();
-                last_tick = Instant::now();
-            }
+    let mut last_tick = Instant::now();
+    loop {
+        // poll for tick rate duration, if no events, send tick event.
+        let timeout = tick_rate.saturating_sub(last_tick.elapsed());
+        if event::poll(timeout)?
+            && let Some(event) = map_input_event(&event::read()?)
+            && tx.send(event).is_err()
+        {
+            return Ok(());
         }
-    });
+        if last_tick.elapsed() >= tick_rate {
+            if tx.send(Event::Tick).is_err() {
+                return Ok(());
+            }
+            last_tick = Instant::now();
+        }
+    }
+}
+
+fn map_input_event(event: &event::Event) -> Option<Event> {
+    match event {
+        event::Event::Key(key) if key.is_press() => Some(Event::Input(*key)),
+        event::Event::Resize(_, _) => Some(Event::Resize),
+        _ => None,
+    }
 }
 
 #[expect(clippy::cast_precision_loss, clippy::needless_pass_by_value)]
