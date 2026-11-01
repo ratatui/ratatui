@@ -3615,6 +3615,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "table-detail-tea"
+version = "0.0.0"
+dependencies = [
+ "color-eyre",
+ "crossterm 0.29.0",
+ "ratatui",
+]
+
+[[package]]
 name = "target-tuple"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
