@@ -13,6 +13,7 @@ This is a quick summary of the sections below:
 - [v0.31.0](#v0310)
   - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
   - `Backend` adds cursor save and restore methods
+  - `Widget` is implemented for `&Box<W>`, which conflicts with manual impls for boxed widgets
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -123,6 +124,29 @@ disambiguate such calls.
 Backends that can save the cursor without querying terminal input should override both methods and
 return `Ok(true)` from `save_cursor_position`. Other backends can use the default implementations,
 which select the cursor get-and-set fallback.
+
+### `Widget` is implemented for `&Box<W>` ([#2883])
+
+[#2883]: https://github.com/ratatui/ratatui/pull/2883
+
+`Widget` is now implemented for `&Box<W>` whenever `&W` implements `Widget`, so boxed widgets can be
+rendered directly. If your crate has its own impl for a boxed widget, it now conflicts with this
+one:
+
+```rust
+impl Widget for &MyWidget { ... }
+
+// error[E0119]: conflicting implementations of trait `Widget` for type `&Box<MyWidget>`
+impl Widget for &Box<MyWidget> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        (**self).render(area, buf);
+    }
+}
+```
+
+Remove the `&Box<MyWidget>` impl. The new impl renders the boxed widget the same way. Impls for
+boxed trait objects such as `&Box<dyn MyTrait>` are not affected unless `&dyn MyTrait` also
+implements `Widget`.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 

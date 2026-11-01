@@ -671,6 +671,12 @@ impl<'a> From<&'a str> for Text<'a> {
     }
 }
 
+impl<'a> From<&'a String> for Text<'a> {
+    fn from(s: &'a String) -> Self {
+        Self::raw(s)
+    }
+}
+
 impl<'a> From<Cow<'a, str>> for Text<'a> {
     fn from(s: Cow<'a, str>) -> Self {
         Self::raw(s)
@@ -928,6 +934,16 @@ mod tests {
     #[test]
     fn from_string() {
         let text = Text::from(String::from("The first line\nThe second line"));
+        assert_eq!(
+            text.lines,
+            vec![Line::from("The first line"), Line::from("The second line")]
+        );
+    }
+
+    #[test]
+    fn from_string_ref() {
+        let s = String::from("The first line\nThe second line");
+        let text = Text::from(&s);
         assert_eq!(
             text.lines,
             vec![Line::from("The first line"), Line::from("The second line")]
