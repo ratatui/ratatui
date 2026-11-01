@@ -82,8 +82,10 @@ pub struct Paragraph<'a> {
     wrap: Option<Wrap>,
     /// The text to display
     text: Text<'a>,
-    /// Scroll
-    scroll: (Vertical, Horizontal),
+    /// Number of lines to scroll
+    vertical_scroll: Vertical,
+    /// Number of columns to scroll
+    horizontal_scroll: Horizontal,
     /// Alignment of the text
     alignment: Alignment,
 }
@@ -157,7 +159,8 @@ impl<'a> Paragraph<'a> {
             style: Style::default(),
             wrap: None,
             text,
-            scroll: (0, 0),
+            vertical_scroll: 0,
+            horizontal_scroll: 0,
             alignment,
         }
     }
@@ -246,7 +249,8 @@ impl<'a> Paragraph<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
-        self.scroll = offset;
+        self.vertical_scroll = offset.0;
+        self.horizontal_scroll = offset.1;
         self
     }
 
@@ -443,7 +447,7 @@ impl Paragraph<'_> {
         if let Some(Wrap { trim }) = self.wrap {
             let mut line_composer = WordWrapper::new(styled, text_area.width, trim);
             // compute the lines iteratively until we reach the desired scroll offset.
-            for _ in 0..self.scroll.0 {
+            for _ in 0..self.vertical_scroll {
                 if line_composer.next_line().is_none() {
                     return;
                 }
@@ -451,9 +455,9 @@ impl Paragraph<'_> {
             render_lines(line_composer, text_area, buf);
         } else {
             // avoid unnecessary work by skipping directly to the relevant line before rendering
-            let lines = styled.skip(self.scroll.0);
+            let lines = styled.skip(self.vertical_scroll);
             let mut line_composer = LineTruncator::new(lines, text_area.width);
-            line_composer.set_horizontal_offset(self.scroll.1);
+            line_composer.set_horizontal_offset(self.horizontal_scroll);
             render_lines(line_composer, text_area, buf);
         }
     }
