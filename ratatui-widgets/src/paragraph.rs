@@ -229,6 +229,10 @@ impl<'a> Paragraph<'a> {
     /// Note: the order of the tuple is (y, x) instead of (x, y), which is different from general
     /// convention across the crate.
     ///
+    /// Prior to v0.31.0, the offsets were `(u16, u16)`, which limited scrolling to 65,535 lines or
+    /// columns. If you were casting a `usize` offset with `as u16`, remove the cast. If your offset
+    /// is stored as a `u16`, convert it with `.into()` or store it as a `usize`.
+    ///
     /// For more information about future scrolling design and concerns, see [RFC: Design of
     /// Scrollable Widgets](https://github.com/ratatui/ratatui/discussions/1924) on GitHub.
     ///
