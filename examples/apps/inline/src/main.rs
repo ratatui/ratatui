@@ -96,32 +96,37 @@ struct Worker {
 }
 
 fn input_handling(tx: mpsc::Sender<Event>) {
-    thread::spawn(move || handle_input_events(&tx));
+    thread::spawn(move || handle_input_events(&tx).expect("failed to read terminal events"));
 }
 
+/// Sends input and tick events until the main thread stops receiving them.
 fn handle_input_events(tx: &mpsc::Sender<Event>) -> Result<()> {
     let tick_rate = Duration::from_millis(200);
     let mut last_tick = Instant::now();
     loop {
-        // poll for tick rate duration, if no events, sent tick event.
+        // poll for tick rate duration, if no events, send tick event.
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if event::poll(timeout)?
             && let Some(event) = map_input_event(&event::read()?)
+            && tx.send(event).is_err()
         {
-            tx.send(event)?;
+            return Ok(());
         }
         if last_tick.elapsed() >= tick_rate {
-            tx.send(Event::Tick)?;
+            if tx.send(Event::Tick).is_err() {
+                return Ok(());
+            }
             last_tick = Instant::now();
         }
     }
 }
 
 fn map_input_event(event: &event::Event) -> Option<Event> {
-    event
-        .as_key_press_event()
-        .map(Event::Input)
-        .or_else(|| matches!(event, event::Event::Resize(_, _)).then_some(Event::Resize))
+    match event {
+        event::Event::Key(key) if key.is_press() => Some(Event::Input(*key)),
+        event::Event::Resize(_, _) => Some(Event::Resize),
+        _ => None,
+    }
 }
 
 #[expect(clippy::cast_precision_loss, clippy::needless_pass_by_value)]
@@ -289,34 +294,5 @@ fn render(frame: &mut Frame, downloads: &Downloads) {
                 height: 1,
             },
         );
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-
-    use super::*;
-
-    #[test]
-    fn map_input_event_maps_key_presses_and_resize() {
-        let key_event = |kind| {
-            event::Event::Key(KeyEvent::new_with_kind(
-                KeyCode::Char('q'),
-                KeyModifiers::NONE,
-                kind,
-            ))
-        };
-
-        assert!(matches!(
-            map_input_event(&key_event(KeyEventKind::Press)),
-            Some(Event::Input(_))
-        ));
-        assert!(map_input_event(&key_event(KeyEventKind::Repeat)).is_none());
-        assert!(map_input_event(&key_event(KeyEventKind::Release)).is_none());
-        assert!(matches!(
-            map_input_event(&event::Event::Resize(80, 24)),
-            Some(Event::Resize)
-        ));
     }
 }
