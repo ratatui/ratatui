@@ -103,6 +103,15 @@ mod tests {
     }
 
     #[test]
+    fn halfwidth_sound_marks_are_not_double_counted() {
+        // Each mark occupies exactly one cell.
+        assert_eq!(width("ﾞﾞ"), 2);
+        assert_eq!(width("ﾞﾟ"), 2);
+        assert_eq!(width("ｶﾞｶﾞ"), 4);
+        assert_eq!(width("aﾞbﾟc"), 5);
+    }
+
+    #[test]
     #[allow(clippy::unicode_not_nfc)]
     fn combining_dakuten_no_special_handling() {
         // Combining dakuten (U+3099) should follow unicode-width behavior.
