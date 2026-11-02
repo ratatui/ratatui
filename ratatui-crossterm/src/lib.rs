@@ -228,6 +228,45 @@ where
     }
 }
 
+fn width_is_uncertain(symbol: &str, width: u16, forced_width: bool) -> (bool, bool) {
+    if symbol.len() == 1 && matches!(symbol.as_bytes()[0], b' '..=b'~') {
+        return (false, false);
+    }
+
+    let mut chars = symbol.chars();
+    match (chars.next(), chars.next()) {
+        (Some(character), None) => {
+            let ambiguous =
+                UnicodeWidthChar::width(character) != UnicodeWidthChar::width_cjk(character);
+            (ambiguous, ambiguous)
+        }
+        (Some(first), Some(_)) => {
+            let first_width = UnicodeWidthChar::width(first).unwrap_or(0);
+            let symbol_width = if forced_width {
+                UnicodeWidthStr::width(symbol)
+            } else {
+                usize::from(width)
+            };
+            (
+                (forced_width && symbol_width != usize::from(width))
+                    || symbol_width > first_width
+                    || symbol.contains('\u{FE0F}')
+                    || symbol
+                        .chars()
+                        .filter(|character| {
+                            UnicodeWidthChar::width(*character).is_some_and(|width| width > 0)
+                        })
+                        .take(2)
+                        .count()
+                        > 1
+                    || symbol_width != UnicodeWidthStr::width_cjk(symbol),
+                false,
+            )
+        }
+        (None, _) => (false, false),
+    }
+}
+
 impl<W> Backend for CrosstermBackend<W>
 where
     W: Write,
@@ -245,6 +284,7 @@ where
         let mut modifier = Modifier::empty();
         // Position and width of the last cell written, used to skip redundant cursor moves.
         let mut last: Option<(Position, u16)> = None;
+        let mut last_written_position: Option<(u16, u16)> = None;
         for (x, y, cell) in content {
             // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
             // the previous one on the same row, accounting for the width of what was printed.
@@ -254,47 +294,15 @@ where
             let width = cell.cell_width();
             let symbol = cell.symbol();
             let forced_width = matches!(cell.diff_option, CellDiffOption::ForcedWidth(_));
-            // Terminals can disagree about the width of East Asian Ambiguous characters. Also
-            // keep the workaround for multi-scalar graphemes: terminals can shape these to a
-            // different width than unicode-width reports (for example, Indic syllables and VS16
-            // emoji). Single-scalar, non-ambiguous text can use the normal contiguous fast path.
-            let single_printable_ascii =
-                symbol.len() == 1 && matches!(symbol.as_bytes()[0], b' '..=b'~');
-            let uncertain_width = if single_printable_ascii {
-                false
-            } else {
-                let mut chars = symbol.chars();
-                match (chars.next(), chars.next()) {
-                    (Some(character), None) => {
-                        UnicodeWidthChar::width(character) != UnicodeWidthChar::width_cjk(character)
-                    }
-                    (Some(first), Some(_)) => {
-                        let first_width = UnicodeWidthChar::width(first).unwrap_or(0);
-                        let symbol_width = if forced_width {
-                            UnicodeWidthStr::width(symbol)
-                        } else {
-                            usize::from(width)
-                        };
-                        (forced_width && symbol_width != usize::from(width))
-                            || symbol_width > first_width
-                            || symbol.contains('\u{FE0F}')
-                            || symbol
-                                .chars()
-                                .filter(|character| {
-                                    UnicodeWidthChar::width(*character)
-                                        .is_some_and(|width| width > 0)
-                                })
-                                .take(2)
-                                .count()
-                                > 1
-                            || symbol_width != UnicodeWidthStr::width_cjk(symbol)
-                    }
-                    (None, _) => false,
-                }
-            };
+            // Terminals can shape graphemes to a width different from unicode-width reports.
+            let (uncertain_width, ambiguous_single_scalar) =
+                width_is_uncertain(symbol, width, forced_width);
             let contains_control = symbol.chars().any(char::is_control);
 
-            last = (!uncertain_width).then_some((Position { x, y }, width));
+            // Ambiguous single-scalar glyphs stay in the terminal's natural write stream.
+            // Repositioning to the next buffer column can land inside the glyph on CJK terminals.
+            last =
+                (!uncertain_width || ambiguous_single_scalar).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -325,13 +333,22 @@ where
             // them could change what the sequence does, so only clear reserved columns for text.
             // Escape/control payloads can have terminal side effects, so padding before them
             // would change what the payload does.
-            if uncertain_width && !forced_width && !contains_control {
+            let trailing_cell_was_updated = x
+                .checked_add(1)
+                .is_some_and(|trailing_x| last_written_position == Some((trailing_x, y)));
+            if uncertain_width
+                && !ambiguous_single_scalar
+                && !forced_width
+                && !contains_control
+                && !trailing_cell_was_updated
+            {
                 for _ in 0..width {
                     queue!(self.writer, Print(' '))?;
                 }
                 queue!(self.writer, MoveTo(x, y))?;
             }
             queue!(self.writer, Print(symbol))?;
+            last_written_position = Some((x, y));
         }
 
         #[cfg(feature = "underline-color")]
@@ -919,13 +936,43 @@ mod tests {
     }
 
     #[test]
-    fn draw_clears_and_repositions_for_east_asian_ambiguous_grapheme() {
+    fn draw_keeps_east_asian_ambiguous_graphemes_in_the_natural_write_stream() {
         let ambiguous = Cell::new("¡");
         let next = Cell::new("x");
         let output = draw_to_string(&[(0, 0, &ambiguous), (1, 0, &next)]);
 
-        assert_eq!(output.matches(' ').count(), 1);
-        assert!(output.contains(&MoveTo(1, 0).to_string()));
+        assert!(output.contains("¡x"));
+        assert!(!output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_preserves_a_changed_trailing_cell_after_a_vs16_grapheme() {
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "aaa", Style::default());
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "\u{2764}\u{FE0F}", Style::default());
+        next.set_string(1, 0, "X", Style::default());
+
+        let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        assert_eq!(
+            updates
+                .iter()
+                .map(|(x, _, cell)| (*x, cell.symbol()))
+                .collect::<Vec<_>>(),
+            [(1, "X"), (0, "\u{2764}\u{FE0F}"), (2, " ")]
+        );
+        let output = draw_to_string(&updates);
+        let changed_cell = output.find('X').unwrap();
+        let grapheme = output.find("\u{2764}\u{FE0F}").unwrap();
+        assert!(changed_cell < grapheme, "{output:?}");
+        assert!(
+            !output
+                .get(changed_cell..grapheme)
+                .expect("valid output boundaries")
+                .contains(' '),
+            "{output:?}"
+        );
     }
 
     #[test]

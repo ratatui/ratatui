@@ -5,8 +5,8 @@ pub mod main {
     pub mod canvas;
     pub mod chart;
     pub mod constraints;
-    pub mod from_string;
     pub mod crossterm_draw;
+    pub mod from_string;
     pub mod gauge;
     pub mod line;
     pub mod list;
