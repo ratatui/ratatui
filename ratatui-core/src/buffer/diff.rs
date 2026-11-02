@@ -29,9 +29,9 @@ pub struct BufferDiff<'prev, 'next> {
 struct TrailingState {
     next_index: usize,
     end: usize,
-    /// When `true`, all cells in the trailing range are emitted unconditionally: the previous
-    /// wide character's style was visible on blank cells, so the terminal may show stale style
-    /// there and every trailing cell must be refreshed.
+    /// When `true`, all cells in the trailing range are emitted unconditionally. This is needed
+    /// when a previous wide character's style was visible on blank cells, and when an uncertain-
+    /// width glyph is repainted so the backend sees unchanged next-buffer content.
     ///
     /// When `false`, only cells whose symbol changed are emitted.
     force: bool,
@@ -179,8 +179,8 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         return self.next();
                     }
 
-                    // Clear reserved columns first so they cannot overwrite the uncertain-width
-                    // glyph.
+                    // Yield the complete trailing range first so backends can account for
+                    // terminal width differences without overwriting next-buffer content.
                     let uncertain_width = cell_width > 1 && has_uncertain_width(current.symbol());
 
                     if uncertain_width {
@@ -188,7 +188,11 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
                             end: trailing_end,
-                            force: false,
+                            // Emit the complete next-buffer range before the leading cell. A
+                            // backend cannot otherwise distinguish an unchanged blank from
+                            // unchanged content that must remain visible on a one-column VS16
+                            // terminal, and it must clear stale content on a two-column terminal.
+                            force: true,
                             deferred_leading_cell: Some(i),
                         });
                         // Recurses once and returns the deferred leading cell.
@@ -436,7 +440,7 @@ mod tests {
     }
 
     #[test]
-    fn vs16_trailing_cell_unchanged() {
+    fn vs16_trailing_cell_is_emitted_before_repainting_the_glyph() {
         use crate::style::{Color, Style};
 
         let rect = Rect::new(0, 0, 4, 1);
@@ -448,12 +452,12 @@ mod tests {
         next.set_string(0, 0, "⌨️", Style::new().fg(Color::Red));
         next.set_string(2, 0, "ab", Style::new());
 
-        // Only the main emoji cell (0,0) differs (different style);
-        // the trailing cell (1,0) is identical in both buffers.
+        // The trailing cell is emitted even though it is identical in both buffers, so the
+        // backend can preserve its content if the terminal renders the glyph in one column.
         let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
-        assert_eq!(diff.len(), 1);
-        assert_eq!(diff[0].0, 0);
-        assert_eq!(diff[0].1, 0);
+        assert_eq!(diff.len(), 2);
+        assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
+        assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, "⌨️"));
     }
 
     #[test]
@@ -973,6 +977,24 @@ mod terminal_model {
         assert_no_artifacts_for_both_widths("ab", "❤️", 2);
         assert_no_artifacts_for_both_widths("abcd", "❤️cd", 4);
         assert_no_artifacts_for_both_widths("abcd", "ab❤️", 4);
+    }
+
+    #[test]
+    fn vs16_emoji_preserves_unchanged_trailing_content_on_one_column_terminals() {
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "aXc", Style::default());
+        let mut next = prev.clone();
+        next.content[0].set_symbol("❤️");
+
+        let updates: Vec<_> = BufferDiff::new(&prev, &next)
+            .map(|(x, _, cell)| (x, cell.symbol()))
+            .collect();
+        assert_eq!(updates, [(1, "X"), (0, "❤️")]);
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
     }
 
     /// Mixed rows: narrow, certain-width (`漢`, `😀`) and uncertain-width clusters interleaved.

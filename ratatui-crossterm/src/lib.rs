@@ -247,6 +247,14 @@ fn width_is_uncertain(symbol: &str, width: u16, forced_width: bool) -> (bool, bo
             } else {
                 usize::from(width)
             };
+            let ambiguous_grapheme = !forced_width
+                && UnicodeWidthStr::width(symbol) == usize::from(width)
+                && UnicodeWidthStr::width(symbol) != UnicodeWidthStr::width_cjk(symbol)
+                && UnicodeWidthChar::width(first) != UnicodeWidthChar::width_cjk(first)
+                && symbol
+                    .chars()
+                    .skip(1)
+                    .all(|character| UnicodeWidthChar::width(character) == Some(0));
             (
                 (forced_width && symbol_width != usize::from(width))
                     || symbol_width > first_width
@@ -260,11 +268,16 @@ fn width_is_uncertain(symbol: &str, width: u16, forced_width: bool) -> (bool, bo
                         .count()
                         > 1
                     || symbol_width != UnicodeWidthStr::width_cjk(symbol),
-                false,
+                ambiguous_grapheme,
             )
         }
         (None, _) => (false, false),
     }
+}
+
+fn bounded_padding_width(cell_width: u16, x: u16, terminal_width: Option<u16>) -> u16 {
+    let remaining_columns = terminal_width.map_or(cell_width, |columns| columns.saturating_sub(x));
+    cell_width.min(remaining_columns)
 }
 
 impl<W> Backend for CrosstermBackend<W>
@@ -285,6 +298,8 @@ where
         // Position and width of the last cell written, used to skip redundant cursor moves.
         let mut last: Option<(Position, u16)> = None;
         let mut last_written_position: Option<(u16, u16)> = None;
+        let mut terminal_width_checked = false;
+        let mut terminal_width = None;
         for (x, y, cell) in content {
             // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
             // the previous one on the same row, accounting for the width of what was printed.
@@ -295,14 +310,13 @@ where
             let symbol = cell.symbol();
             let forced_width = matches!(cell.diff_option, CellDiffOption::ForcedWidth(_));
             // Terminals can shape graphemes to a width different from unicode-width reports.
-            let (uncertain_width, ambiguous_single_scalar) =
+            let (uncertain_width, ambiguous_grapheme) =
                 width_is_uncertain(symbol, width, forced_width);
             let contains_control = symbol.chars().any(char::is_control);
 
-            // Ambiguous single-scalar glyphs stay in the terminal's natural write stream.
-            // Repositioning to the next buffer column can land inside the glyph on CJK terminals.
-            last =
-                (!uncertain_width || ambiguous_single_scalar).then_some((Position { x, y }, width));
+            // Ambiguous graphemes stay in the terminal's natural write stream. Repositioning to
+            // the next buffer column can land inside the glyph on CJK terminals.
+            last = (!uncertain_width || ambiguous_grapheme).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -337,12 +351,19 @@ where
                 .checked_add(1)
                 .is_some_and(|trailing_x| last_written_position == Some((trailing_x, y)));
             if uncertain_width
-                && !ambiguous_single_scalar
+                && !ambiguous_grapheme
                 && !forced_width
                 && !contains_control
                 && !trailing_cell_was_updated
             {
-                for _ in 0..width {
+                if !terminal_width_checked {
+                    terminal_width = terminal::size()
+                        .ok()
+                        .map(|(columns, _)| columns)
+                        .filter(|columns| *columns > 0);
+                    terminal_width_checked = true;
+                }
+                for _ in 0..bounded_padding_width(width, x, terminal_width) {
                     queue!(self.writer, Print(' '))?;
                 }
                 queue!(self.writer, MoveTo(x, y))?;
@@ -943,6 +964,23 @@ mod tests {
 
         assert!(output.contains("¡x"));
         assert!(!output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_keeps_ambiguous_graphemes_with_combining_marks_in_the_natural_stream() {
+        let ambiguous = Cell::new("¡\u{301}");
+        let next = Cell::new("x");
+        let output = draw_to_string(&[(0, 0, &ambiguous), (1, 0, &next)]);
+
+        assert!(output.contains("¡\u{301}x"));
+        assert!(!output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn padding_is_clamped_to_the_terminal_right_edge() {
+        assert_eq!(bounded_padding_width(2, 4, Some(5)), 1);
+        assert_eq!(bounded_padding_width(2, 3, Some(5)), 2);
+        assert_eq!(bounded_padding_width(2, 5, Some(5)), 0);
     }
 
     #[test]
