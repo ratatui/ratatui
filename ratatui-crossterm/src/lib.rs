@@ -295,16 +295,21 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
-        // Position and width of the last cell written, used to skip redundant cursor moves.
+        // Logical position and width of the last cell in the natural stream.
         let mut last: Option<(Position, u16)> = None;
+        // An ambiguous grapheme may advance the real terminal cursor beyond its buffer column.
+        let mut natural_stream = false;
         let mut last_written_position: Option<(u16, u16)> = None;
         let mut terminal_width_checked = false;
         let mut terminal_width = None;
         for (x, y, cell) in content {
-            // Move the cursor unless it already sits at (x, y), i.e. this cell directly follows
-            // the previous one on the same row, accounting for the width of what was printed.
-            if !matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y) {
+            // Keep an uninterrupted natural write stream after ambiguous graphemes: the terminal
+            // may have advanced beyond the buffer column, so moving back can overwrite a glyph.
+            let follows_last =
+                matches!(last, Some((p, w)) if p.x.checked_add(w) == Some(x) && y == p.y);
+            if !follows_last {
                 queue!(self.writer, MoveTo(x, y))?;
+                natural_stream = false;
             }
             let width = cell.cell_width();
             let symbol = cell.symbol();
@@ -314,9 +319,11 @@ where
                 width_is_uncertain(symbol, width, forced_width);
             let contains_control = symbol.chars().any(char::is_control);
 
-            // Ambiguous graphemes stay in the terminal's natural write stream. Repositioning to
-            // the next buffer column can land inside the glyph on CJK terminals.
-            last = (!uncertain_width || ambiguous_grapheme).then_some((Position { x, y }, width));
+            // Ambiguous graphemes can move the real cursor beyond the buffer's expected column.
+            // Keep writing naturally until a gap or row change makes an explicit MoveTo necessary.
+            natural_stream |= ambiguous_grapheme;
+            last = (natural_stream || !uncertain_width)
+                .then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -351,6 +358,7 @@ where
                 .checked_add(1)
                 .is_some_and(|trailing_x| last_written_position == Some((trailing_x, y)));
             if uncertain_width
+                && !natural_stream
                 && !ambiguous_grapheme
                 && !forced_width
                 && !contains_control
@@ -973,6 +981,16 @@ mod tests {
         let output = draw_to_string(&[(0, 0, &ambiguous), (1, 0, &next)]);
 
         assert!(output.contains("¡\u{301}x"));
+        assert!(!output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_does_not_rewind_after_cjk_ambiguous_prefix_before_indic_padding() {
+        let ambiguous = Cell::new("¡");
+        let indic = Cell::new("हा");
+        let output = draw_to_string(&[(0, 0, &ambiguous), (1, 0, &indic)]);
+
+        assert!(output.contains("¡हा"));
         assert!(!output.contains(&MoveTo(1, 0).to_string()));
     }
 
