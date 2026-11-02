@@ -1,18 +1,13 @@
 use unicode_width::UnicodeWidthStr;
 
-/// Halfwidth Katakana Voiced Sound Mark (dakuten).
-const HALFWIDTH_KATAKANA_VOICED_SOUND_MARK: char = '\u{FF9E}';
-/// Halfwidth Katakana Semi-Voiced Sound Mark (handakuten).
-const HALFWIDTH_KATAKANA_SEMI_VOICED_SOUND_MARK: char = '\u{FF9F}';
-
 /// Returns the display width of a value in terminal cells.
 ///
 /// This trait provides a unified way to compute cell widths for both string content
 /// and [`Cell`](super::Cell)s:
 ///
 /// - **`str`**: width is derived from [`UnicodeWidthStr`], with a fast path for single-byte ASCII
-///   characters and a terminal-compatibility adjustment for halfwidth katakana dakuten/handakuten
-///   (`U+FF9E`/`U+FF9F`).
+///   characters. Halfwidth katakana dakuten/handakuten (`U+FF9E`/`U+FF9F`) are one cell wide each,
+///   matching how terminals render them (requires `unicode-width` 0.2.3 or later).
 /// - **[`Cell`](super::Cell)**: returns the
 ///   [`CellDiffOption::ForcedWidth`](super::CellDiffOption::ForcedWidth) when set, otherwise falls
 ///   back to the width of the cell's symbol.
@@ -39,44 +34,19 @@ impl CellWidth for str {
             );
             1
         } else {
-            let width = self.width() as u16;
-            width.saturating_add(count_halfwidth_sound_marks(self))
+            self.width() as u16
         }
     }
-}
-
-/// Returns how many halfwidth dakuten/handakuten marks are present.
-///
-/// `unicode-width` reports U+FF9E (ﾞ) and U+FF9F (ﾟ) as zero-width because
-/// they have the `Grapheme_Extend` property, but terminals typically render
-/// them as independent halfwidth characters occupying one cell each.
-///
-/// We compensate for that terminal behavior by adding `+1` for each occurrence.
-/// This does not affect the combining variants U+3099 and U+309A, which keep
-/// their normal combining behavior and width handling through `unicode-width`.
-///
-/// # References
-///
-/// - Ruby reline PR [#832](https://github.com/ruby/reline/pull/832): Fix cursor positioning for
-///   invalid halfwidth dakuten/handakuten
-/// - Microsoft Terminal Issue [#18087](https://github.com/microsoft/terminal/issues/18087):
-///   Half-width Katakana and (han)dakuten should not overlap
-/// - [Unicode L2/19-039](https://www.unicode.org/L2/L2019/19039-grapheme-break.pdf): Grapheme break
-///   property for U+FF9E and U+FF9F
-fn count_halfwidth_sound_marks(s: &str) -> u16 {
-    s.chars()
-        .filter(|c| {
-            matches!(
-                *c,
-                HALFWIDTH_KATAKANA_VOICED_SOUND_MARK | HALFWIDTH_KATAKANA_SEMI_VOICED_SOUND_MARK
-            )
-        })
-        .count() as u16
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Halfwidth Katakana Voiced Sound Mark (dakuten).
+    const HALFWIDTH_KATAKANA_VOICED_SOUND_MARK: char = '\u{FF9E}';
+    /// Halfwidth Katakana Semi-Voiced Sound Mark (handakuten).
+    const HALFWIDTH_KATAKANA_SEMI_VOICED_SOUND_MARK: char = '\u{FF9F}';
 
     fn width(s: &str) -> u16 {
         s.cell_width()
