@@ -104,6 +104,7 @@ use ratatui_core::backend::{Backend, ClearType, WindowSize};
 use ratatui_core::buffer::{Cell, CellDiffOption, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 /// A [`Backend`] implementation that uses [Crossterm] to render to the terminal.
 ///
@@ -253,13 +254,44 @@ where
             let width = cell.cell_width();
             let symbol = cell.symbol();
             let forced_width = matches!(cell.diff_option, CellDiffOption::ForcedWidth(_));
-            // Terminals can disagree about how many columns any non-ASCII symbol occupies.
-            // Clear the columns reserved by the buffer and reposition around every symbol that
-            // is not a single printable ASCII character so that disagreement cannot shift later
-            // cells or leave stale characters behind.
+            // Terminals can disagree about the width of East Asian Ambiguous characters. Also
+            // keep the workaround for multi-scalar graphemes: terminals can shape these to a
+            // different width than unicode-width reports (for example, Indic syllables and VS16
+            // emoji). Single-scalar, non-ambiguous text can use the normal contiguous fast path.
             let single_printable_ascii =
                 symbol.len() == 1 && matches!(symbol.as_bytes()[0], b' '..=b'~');
-            let uncertain_width = !single_printable_ascii;
+            let uncertain_width = if single_printable_ascii {
+                false
+            } else {
+                let mut chars = symbol.chars();
+                match (chars.next(), chars.next()) {
+                    (Some(character), None) => {
+                        UnicodeWidthChar::width(character) != UnicodeWidthChar::width_cjk(character)
+                    }
+                    (Some(first), Some(_)) => {
+                        let first_width = UnicodeWidthChar::width(first).unwrap_or(0);
+                        let symbol_width = if forced_width {
+                            UnicodeWidthStr::width(symbol)
+                        } else {
+                            usize::from(width)
+                        };
+                        (forced_width && symbol_width != usize::from(width))
+                            || symbol_width > first_width
+                            || symbol.contains('\u{FE0F}')
+                            || symbol
+                                .chars()
+                                .filter(|character| {
+                                    UnicodeWidthChar::width(*character)
+                                        .is_some_and(|width| width > 0)
+                                })
+                                .take(2)
+                                .count()
+                                > 1
+                            || symbol_width != UnicodeWidthStr::width_cjk(symbol)
+                    }
+                    (None, _) => false,
+                }
+            };
             let contains_control = symbol.chars().any(char::is_control);
 
             last = (!uncertain_width).then_some((Position { x, y }, width));
@@ -877,6 +909,26 @@ mod tests {
     }
 
     #[test]
+    fn draw_uses_contiguous_fast_path_for_precomposed_latin_grapheme() {
+        let accented = Cell::new("é");
+        let next = Cell::new("x");
+        let output = draw_to_string(&[(0, 0, &accented), (1, 0, &next)]);
+
+        assert!(!output.contains(&MoveTo(1, 0).to_string()));
+        assert_eq!(output.matches(' ').count(), 0);
+    }
+
+    #[test]
+    fn draw_clears_and_repositions_for_east_asian_ambiguous_grapheme() {
+        let ambiguous = Cell::new("¡");
+        let next = Cell::new("x");
+        let output = draw_to_string(&[(0, 0, &ambiguous), (1, 0, &next)]);
+
+        assert_eq!(output.matches(' ').count(), 1);
+        assert!(output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
     fn draw_repositions_between_indic_graphemes_in_frame_diff() {
         let area = Rect::new(0, 0, 18, 1);
         let mut prev = Buffer::empty(area);
@@ -1021,12 +1073,13 @@ mod tests {
     }
 
     #[test]
-    fn draw_moves_cursor_after_wide_symbol_when_contiguous() {
-        // The terminal's width for a non-ASCII grapheme may differ from the buffer's width.
+    fn draw_tracks_contiguous_single_scalar_wide_symbol() {
+        // Single-scalar wide characters have a defined width, so the backend can track their
+        // cursor advance without padding or an extra cursor move.
         let wide = Cell::new("\u{1F600}"); // 😀
         let next = Cell::new("a");
         let output = draw_to_string(&[(0, 0, &wide), (2, 0, &next)]);
-        assert!(output.contains(&MoveTo(2, 0).to_string()));
+        assert!(!output.contains(&MoveTo(2, 0).to_string()));
     }
 
     #[test]
