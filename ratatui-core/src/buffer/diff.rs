@@ -228,12 +228,11 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
 /// Returns `true` if terminals disagree on how many columns `symbol` occupies.
 ///
-/// Emoji presentation sequences (those containing VS16, `U+FE0F`) are the known case:
-/// `unicode-width` and most modern terminals treat them as two columns, but some terminals draw
-/// them in one. The diff cannot assume either, so it must emit updates that are correct under
-/// both.
+/// Multi-scalar graphemes can render at a different width than `unicode-width` reserves.
+/// This includes VS16 emoji and Indic clusters; the diff emits trailing cells so backends can
+/// preserve next-buffer content when terminals render a glyph more narrowly.
 fn has_uncertain_width(symbol: &str) -> bool {
-    symbol.chars().any(|c| c == '\u{FE0F}')
+    symbol.chars().count() > 1
 }
 
 /// Returns `true` if this cell should be skipped during diffing.
@@ -458,6 +457,23 @@ mod tests {
         assert_eq!(diff.len(), 2);
         assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
         assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, "⌨️"));
+    }
+
+    #[test]
+    fn indic_grapheme_preserves_trailing_content_before_repainting() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "aXc", Style::default());
+
+        let mut next = prev.clone();
+        next.content[0].set_symbol("हा");
+
+        let updates: Vec<_> = BufferDiff::new(&prev, &next)
+            .map(|(x, _, cell)| (x, cell.symbol()))
+            .collect();
+        assert_eq!(updates, [(1, "X"), (0, "हा")]);
     }
 
     #[test]
