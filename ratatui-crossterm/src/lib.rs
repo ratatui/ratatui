@@ -322,8 +322,10 @@ where
             // Ambiguous graphemes can move the real cursor beyond the buffer's expected column.
             // Keep writing naturally until a gap or row change makes an explicit MoveTo necessary.
             natural_stream |= ambiguous_grapheme;
-            last = (natural_stream || !uncertain_width)
-                .then_some((Position { x, y }, width));
+            // An ambiguous-width glyph remains part of the natural stream, but a different
+            // uncertain-width grapheme can end at either column. Drop the cursor anchor after the
+            // latter so the next update is explicitly positioned.
+            last = (!uncertain_width || ambiguous_grapheme).then_some((Position { x, y }, width));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -992,6 +994,48 @@ mod tests {
 
         assert!(output.contains("¡हा"));
         assert!(!output.contains(&MoveTo(1, 0).to_string()));
+    }
+
+    #[test]
+    fn draw_replays_ambiguous_prefix_before_deferred_indic_cell() {
+        let area = Rect::new(0, 0, 3, 1);
+        let prev = Buffer::empty(area);
+        let mut next = Buffer::empty(area);
+        next.content[0].set_symbol("¡");
+        next.content[1].set_symbol("हा");
+
+        let updates: Vec<_> = prev.diff(&next).into_iter().collect();
+        let output = draw_to_string(&updates);
+        let replayed_prefix = output.rfind('¡').unwrap();
+        let indic_grapheme = output.find("हा").unwrap();
+
+        assert_eq!(output.matches('¡').count(), 2, "{output:?}");
+        assert!(replayed_prefix < indic_grapheme, "{output:?}");
+        assert!(
+            !output
+                .get(replayed_prefix + '¡'.len_utf8()..indic_grapheme)
+                .expect("valid output boundaries")
+                .contains(&MoveTo(1, 0).to_string()),
+            "{output:?}"
+        );
+    }
+
+    #[test]
+    fn draw_repositions_after_vs16_following_narrow_ambiguous_prefix() {
+        let prefix = Cell::new("¡");
+        let heart = Cell::new("❤️");
+        let following = Cell::new("X");
+        assert!(width_is_uncertain(prefix.symbol(), prefix.cell_width(), false).1);
+        let output = draw_to_string(&[(0, 0, &prefix), (1, 0, &heart), (3, 0, &following)]);
+        let after_heart = output.find("❤️").unwrap() + "❤️".len();
+
+        assert!(
+            output
+                .get(after_heart..)
+                .expect("valid output boundary")
+                .contains(&MoveTo(3, 0).to_string()),
+            "expected a cursor correction before X, got: {output:?}"
+        );
     }
 
     #[test]
