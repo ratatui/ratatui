@@ -47,7 +47,8 @@ fn line_count_accounts_for_single_side_borders_at_threshold() {
     let paragraph_vertical = Paragraph::new(text)
         .wrap(Wrap { trim: true })
         .block(Block::new().borders(Borders::TOP | Borders::BOTTOM));
-    // 0 horizontal border, 2 vertical borders: width 11 -> inner 11 (1 line + 2 = 3), width 10 -> inner 10 (2 lines + 2 = 4)
+    // 0 horizontal border, 2 vertical borders: width 11 -> inner 11 (1 line + 2 = 3), width 10 ->
+    // inner 10 (2 lines + 2 = 4)
     assert_eq!(paragraph_vertical.line_count(11), 3);
     assert_eq!(paragraph_vertical.line_count(10), 4);
 }
@@ -74,7 +75,8 @@ fn line_count_accounts_for_padding_at_threshold() {
 #[test]
 fn line_count_accounts_for_borders_and_padding_combined() {
     let text = "Hello World"; // 11 characters
-    // Bordered (2 horizontal, 2 vertical) + 1 horizontal pad on each side (2 horizontal) = 4 horizontal, 2 vertical
+    // Bordered (2 horizontal, 2 vertical) + 1 horizontal pad on each side (2 horizontal) = 4
+    // horizontal, 2 vertical
     let paragraph = Paragraph::new(text)
         .wrap(Wrap { trim: true })
         .block(Block::bordered().padding(Padding::horizontal(1)));
