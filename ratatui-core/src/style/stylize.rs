@@ -189,6 +189,36 @@ macro_rules! modifier {
             self.remove_modifier($variant)
         }
     };
+    ( $variant:expr, $modifier:ident(), _ -> $ty:ty ) => {
+        #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
+        fn $modifier(self) -> $ty {
+            self.add_modifier($variant)
+        }
+    };
+
+    (pub const $variant:expr, $modifier:ident(), _ -> $ty:ty ) => {
+        #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
+        pub const fn $modifier(self) -> $ty {
+            self.add_modifier($variant)
+        }
+    };
+    ( $variant:expr, _, $not_modifier:ident() -> $ty:ty ) => {
+        #[doc = concat!("Removes the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
+        fn $not_modifier(self) -> $ty {
+            self.remove_modifier($variant)
+        }
+    };
+
+    (pub const $variant:expr, _, $not_modifier:ident() -> $ty:ty ) => {
+        #[doc = concat!("Removes the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
+        pub const fn $not_modifier(self) -> $ty {
+            self.remove_modifier($variant)
+        }
+    };
 }
 
 /// An extension trait for styling objects.
