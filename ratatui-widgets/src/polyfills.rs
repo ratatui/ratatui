@@ -23,6 +23,37 @@ fn floor(val: f64) -> f64 {
     res
 }
 
+/// Polynomial arctangent for `-1 <= val <= 1`, max error about 0.0015 rad.
+#[inline]
+fn atan_unit(val: f64) -> f64 {
+    core::f64::consts::FRAC_PI_4 * val - val * (val.abs() - 1.0) * (0.2447 + 0.0663 * val.abs())
+}
+
+#[inline]
+fn atan2(y: f64, x: f64) -> f64 {
+    use core::f64::consts::{FRAC_PI_2, PI};
+    if x == 0.0 && y == 0.0 {
+        return 0.0;
+    }
+    if x.abs() >= y.abs() {
+        let angle = atan_unit(y / x);
+        if x > 0.0 {
+            angle
+        } else if y >= 0.0 {
+            angle + PI
+        } else {
+            angle - PI
+        }
+    } else {
+        let angle = -atan_unit(x / y);
+        if y > 0.0 {
+            angle + FRAC_PI_2
+        } else {
+            angle - FRAC_PI_2
+        }
+    }
+}
+
 pub(crate) trait F64Polyfills {
     /// Returns the nearest integer to `self`. If a value is half-way between two integers, round
     /// away from `0.0`.
@@ -30,6 +61,10 @@ pub(crate) trait F64Polyfills {
 
     /// Returns the largest integer less than or equal to `self`.
     fn floor(self) -> f64;
+
+    /// Returns the four quadrant arctangent of `self` (y) and `other` (x) in radians, within about
+    /// 0.0015 rad.
+    fn atan2(self, other: f64) -> f64;
 }
 
 impl F64Polyfills for f64 {
@@ -40,6 +75,10 @@ impl F64Polyfills for f64 {
     #[inline]
     fn floor(self) -> f64 {
         floor(self)
+    }
+    #[inline]
+    fn atan2(self, other: f64) -> f64 {
+        atan2(self, other)
     }
 }
 
@@ -81,6 +120,25 @@ mod tests {
             let expected = value.floor();
             let computed = floor(value);
             assert_with_error(computed, expected, MAX_ERROR);
+        }
+    }
+
+    #[test]
+    fn f64_atan2() {
+        for y in TEST_VALUES {
+            for x in TEST_VALUES {
+                let expected = y.atan2(x);
+                let computed = atan2(y, x);
+                if x == 0.0 && y == 0.0 {
+                    continue;
+                }
+                let delta = (computed - expected).abs();
+                let wrapped = (delta - TAU).abs();
+                assert!(
+                    delta.min(wrapped) <= 0.002,
+                    "atan2({y}, {x}): {computed} vs {expected}"
+                );
+            }
         }
     }
 }

@@ -47,6 +47,7 @@
 //! - [`RatatuiMascot`]: displays the Ratatui mascot.
 //! - [`Paragraph`]: displays a paragraph of optionally styled and wrapped text.
 //! - [`Scrollbar`]: displays a scrollbar.
+//! - [`Ring`]: displays progress as an arc around a braille ring.
 //! - [`Sparkline`]: displays a single dataset as a sparkline.
 //! - [`Table`]: displays multiple rows and columns in a grid and allows selection.
 //! - [`Tabs`]: displays a tab bar and allows selection.
@@ -64,6 +65,7 @@
 //! [`RatatuiLogo`]: crate::logo::RatatuiLogo
 //! [`RatatuiMascot`]: crate::mascot::RatatuiMascot
 //! [`Paragraph`]: crate::paragraph::Paragraph
+//! [`Ring`]: crate::ring::Ring
 //! [`Scrollbar`]: crate::scrollbar::Scrollbar
 //! [`Sparkline`]: crate::sparkline::Sparkline
 //! [`Table`]: crate::table::Table
@@ -124,6 +126,7 @@ pub mod list;
 pub mod logo;
 pub mod mascot;
 pub mod paragraph;
+pub mod ring;
 pub mod scrollbar;
 pub mod sparkline;
 pub mod table;

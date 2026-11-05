@@ -54,6 +54,7 @@
 //! - [`LineGauge`]: display progress as a line.
 //! - [`List`]: displays a list of items and allows selection.
 //! - [`Paragraph`]: displays a paragraph of optionally styled and wrapped text.
+//! - [`Ring`]: displays progress as an arc around a braille ring.
 //! - [`Scrollbar`]: displays a scrollbar.
 //! - [`Sparkline`]: display a single data set as a sparkline.
 //! - [`Table`]: displays multiple rows and columns in a grid and allows selection.
@@ -681,6 +682,7 @@ pub use ratatui_widgets::list::{List, ListDirection, ListItem, ListState};
 pub use ratatui_widgets::logo::{RatatuiLogo, Size as RatatuiLogoSize};
 pub use ratatui_widgets::mascot::{MascotEyeColor, RatatuiMascot};
 pub use ratatui_widgets::paragraph::{Paragraph, Wrap};
+pub use ratatui_widgets::ring::Ring;
 pub use ratatui_widgets::scrollbar::{
     ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState,
 };
