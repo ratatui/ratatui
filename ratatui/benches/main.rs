@@ -5,6 +5,7 @@ pub mod main {
     pub mod canvas;
     pub mod chart;
     pub mod constraints;
+    pub mod crossterm_draw;
     pub mod from_string;
     pub mod gauge;
     pub mod line;
@@ -35,4 +36,5 @@ criterion::criterion_main!(
     text::benches,
     constraints::benches,
     gauge::benches,
+    crossterm_draw::benches,
 );

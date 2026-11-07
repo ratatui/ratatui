@@ -1944,18 +1944,11 @@ mod tests {
         );
     }
 
-    /// Regression test for a bug where trailing cells of wide VS16 emojis would generate
-    /// unnecessary diff updates when only the style (not the symbol) changed.
-    ///
-    /// This caused visual artifacts when:
-    /// 1. A previous widget applied a foreground color to the entire area
-    /// 2. A border with VS16 emojis (like ⚠️) was rendered on top
-    /// 3. The trailing cells had different styles but the same symbol (space)
-    ///
-    /// The fix ensures that only symbol changes trigger trailing cell updates,
-    /// not style-only changes, since the style of hidden trailing cells is not visible.
+    /// An uncertain-width glyph update emits the next buffer's full trailing range before the
+    /// glyph, including cells whose symbols did not change. Backends use these cells to preserve
+    /// the next buffer when a terminal renders the glyph more narrowly than Ratatui reserves.
     #[test]
-    fn diff_ignores_style_only_changes_in_trailing_cells() {
+    fn diff_emits_next_buffer_trailing_cells_for_uncertain_width_glyphs() {
         use crate::style::Color;
 
         // Previous buffer: spaces with specific fg color
@@ -1983,16 +1976,11 @@ mod tests {
             "Diff should include first cell (0,0) because the symbol changed"
         );
 
-        // The diff should NOT contain an update for the trailing cell (1, 0)
-        // because the symbol is the same (space) - only the style changed,
-        // and the style of a hidden trailing cell is not visible.
-        assert!(
-            !diff.iter().any(|(x, y, _)| *x == 1 && *y == 0),
-            "Diff should not include trailing cell (1,0) when only style changed. \
-             Found updates: {:?}",
+        assert_eq!(
             diff.iter()
-                .map(|(x, y, c)| (x, y, c.symbol(), c.fg))
-                .collect::<Vec<_>>()
+                .map(|(x, y, c)| (*x, *y, c.symbol(), c.fg))
+                .collect::<Vec<_>>(),
+            [(1, 0, " ", Color::Reset), (0, 0, "⚠️", Color::Reset)]
         );
     }
 }

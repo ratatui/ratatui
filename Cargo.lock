@@ -2799,6 +2799,7 @@ dependencies = [
  "instability",
  "ratatui-core",
  "rstest",
+ "unicode-width",
 ]
 
 [[package]]

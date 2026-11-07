@@ -1,3 +1,5 @@
+use unicode_width::UnicodeWidthStr;
+
 use crate::buffer::{Buffer, Cell, CellDiffOption, CellWidth};
 use crate::layout::Rect;
 use crate::style::{Color, Modifier};
@@ -19,6 +21,12 @@ pub struct BufferDiff<'prev, 'next> {
     pos: usize,
     /// Tracks trailing cells and a leading cell that may be deferred until after they are cleared.
     trailing: Option<TrailingState>,
+    /// An ambiguous prefix that must be replayed after out-of-order trailing updates.
+    pending_prefix: Option<PrefixReplay>,
+    /// Leading cell to return after any pending prefix replay.
+    pending_leading_cell: Option<usize>,
+    /// Cells outside a deferred leading glyph's reserved range that need repainting afterward.
+    pending_restore: Option<(usize, usize)>,
     /// End of the previous cells that sat under a wide glyph which has since been overwritten.
     /// The terminal shows blanks there, whatever the previous buffer holds.
     covered: usize,
@@ -29,14 +37,25 @@ pub struct BufferDiff<'prev, 'next> {
 struct TrailingState {
     next_index: usize,
     end: usize,
-    /// When `true`, all cells in the trailing range are emitted unconditionally: the previous
-    /// wide character's style was visible on blank cells, so the terminal may show stale style
-    /// there and every trailing cell must be refreshed.
+    /// When `true`, all cells in the trailing range are emitted unconditionally. This is needed
+    /// when a previous wide character's style was visible on blank cells, and when an uncertain-
+    /// width glyph is repainted so the backend sees unchanged next-buffer content.
     ///
     /// When `false`, only cells whose symbol changed are emitted.
     force: bool,
     /// Leading cell to repaint after its trailing cells have been processed.
     deferred_leading_cell: Option<usize>,
+    /// Range of next-buffer cells to replay if trailing writes break an ambiguous prefix.
+    prefix_replay: Option<(usize, usize)>,
+    /// Whether the trailing range actually yielded a cell update.
+    emitted: bool,
+}
+
+/// Cells from an ambiguous prefix that are replayed after out-of-order trailing writes.
+#[derive(Debug)]
+struct PrefixReplay {
+    next_index: usize,
+    end: usize,
 }
 
 /// Modifiers that are visually apparent on a blank (space) cell.
@@ -73,6 +92,9 @@ impl<'prev, 'next> BufferDiff<'prev, 'next> {
             area,
             pos: 0,
             trailing: None,
+            pending_prefix: None,
+            pending_leading_cell: None,
+            pending_restore: None,
             covered: 0,
         }
     }
@@ -86,6 +108,90 @@ impl<'prev, 'next> BufferDiff<'prev, 'next> {
 
         (x as u16, y as u16)
     }
+
+    /// Finds the first ambiguous-width cell earlier on this row, if any.
+    fn ambiguous_prefix_start(&self, index: usize) -> Option<usize> {
+        let width = self.area.width as usize;
+        let row_start = index / width * width;
+        (row_start..index).find(|&i| {
+            let cell = &self.next[i];
+            !is_skip(cell)
+                && !matches!(cell.diff_option, CellDiffOption::ForcedWidth(_))
+                && !cell.symbol().chars().any(char::is_control)
+                && has_ambiguous_width(cell.symbol())
+        })
+    }
+
+    /// Returns the next deferred update, if one is pending.
+    fn next_pending(&mut self, len: usize) -> Option<(u16, u16, &'next Cell)> {
+        if let Some(mut trailing) = self.trailing.take() {
+            while trailing.next_index < trailing.end {
+                let index = trailing.next_index;
+                let cell_width = self.next[index].cell_width().max(1) as usize;
+                trailing.next_index += cell_width;
+                trailing.end = trailing.end.max(trailing.next_index).min(len);
+
+                if !is_skip(&self.next[index])
+                    && (trailing.force || self.prev[index].symbol() != self.next[index].symbol())
+                {
+                    trailing.emitted = true;
+                    let (x, y) = self.pos_of(index);
+                    self.trailing = Some(trailing);
+                    return Some((x, y, &self.next[index]));
+                }
+            }
+
+            self.pos = trailing.end;
+            if let Some(index) = trailing.deferred_leading_cell {
+                if trailing.emitted {
+                    self.pending_prefix = trailing.prefix_replay.map(|(start, end)| PrefixReplay {
+                        next_index: start,
+                        end,
+                    });
+                }
+                self.pending_leading_cell = Some(index);
+                let leading_end = (index + self.next[index].cell_width().max(1) as usize).min(len);
+                if trailing.end > leading_end {
+                    self.pending_restore = Some((leading_end, trailing.end));
+                }
+            }
+        }
+
+        if let Some(prefix) = &mut self.pending_prefix {
+            while prefix.next_index < prefix.end {
+                let index = prefix.next_index;
+                prefix.next_index += self.next[index].cell_width().max(1) as usize;
+                if !is_skip(&self.next[index]) {
+                    let (x, y) = self.pos_of(index);
+                    return Some((x, y, &self.next[index]));
+                }
+            }
+        }
+        self.pending_prefix = None;
+
+        if let Some(index) = self.pending_leading_cell.take() {
+            let (x, y) = self.pos_of(index);
+            return Some((x, y, &self.next[index]));
+        }
+
+        if let Some((start, end)) = self
+            .pending_restore
+            .take()
+            .filter(|(start, end)| start < end)
+        {
+            self.trailing = Some(TrailingState {
+                next_index: start,
+                end,
+                force: true,
+                deferred_leading_cell: None,
+                prefix_replay: None,
+                emitted: false,
+            });
+            return self.next_pending(len);
+        }
+
+        None
+    }
 }
 
 impl<'next> Iterator for BufferDiff<'_, 'next> {
@@ -93,40 +199,10 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let len = self.next.len().min(self.prev.len());
-
-        // First, yield any pending trailing cells.
-        if let Some(TrailingState {
-            next_index,
-            end,
-            force,
-            deferred_leading_cell,
-        }) = &mut self.trailing
-        {
-            while *next_index < *end {
-                let j = *next_index;
-                // Advance past this cell; if it is wide, also skip its own trailing column
-                // so the main loop does not emit a spurious EMPTY write over it.
-                let cell_width = self.next[j].cell_width().max(1) as usize;
-                *next_index += cell_width;
-                *end = (*end).max(*next_index).min(len);
-
-                if !is_skip(&self.next[j])
-                    && (*force || self.prev[j].symbol() != self.next[j].symbol())
-                {
-                    let (tx, ty) = self.pos_of(j);
-                    return Some((tx, ty, &self.next[j]));
-                }
-            }
-
-            // Resume after the wide glyph, repainting its deferred leading cell first.
-            self.pos = *end;
-            let deferred_leading_cell = deferred_leading_cell.take();
-            self.trailing = None;
-            if let Some(i) = deferred_leading_cell {
-                let (x, y) = self.pos_of(i);
-                return Some((x, y, &self.next[i]));
-            }
+        if let Some(item) = self.next_pending(len) {
+            return Some(item);
         }
+
         while self.pos < len {
             let i = self.pos;
             self.pos += 1;
@@ -175,12 +251,14 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                             end: (i + cell_width).min(len),
                             force: true,
                             deferred_leading_cell: Some(i),
+                            prefix_replay: None,
+                            emitted: false,
                         });
                         return self.next();
                     }
 
-                    // Clear reserved columns first so they cannot overwrite the uncertain-width
-                    // glyph.
+                    // Yield the complete trailing range first so backends can account for
+                    // terminal width differences without overwriting next-buffer content.
                     let uncertain_width = cell_width > 1 && has_uncertain_width(current.symbol());
 
                     if uncertain_width {
@@ -188,8 +266,14 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
                             end: trailing_end,
-                            force: false,
+                            // Emit the complete next-buffer range before the leading cell. A
+                            // backend cannot otherwise distinguish an unchanged blank from
+                            // unchanged content that must remain visible on a one-column VS16
+                            // terminal, and it must clear stale content on a two-column terminal.
+                            force: true,
                             deferred_leading_cell: Some(i),
+                            prefix_replay: self.ambiguous_prefix_start(i).map(|start| (start, i)),
+                            emitted: false,
                         });
                         // Recurses once and returns the deferred leading cell.
                         return self.next();
@@ -206,6 +290,8 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                             end: (i + previous_width).min(len),
                             force: true,
                             deferred_leading_cell: None,
+                            prefix_replay: None,
+                            emitted: false,
                         });
                     } else {
                         // single-width character, no position adjustment needed
@@ -224,12 +310,16 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
 /// Returns `true` if terminals disagree on how many columns `symbol` occupies.
 ///
-/// Emoji presentation sequences (those containing VS16, `U+FE0F`) are the known case:
-/// `unicode-width` and most modern terminals treat them as two columns, but some terminals draw
-/// them in one. The diff cannot assume either, so it must emit updates that are correct under
-/// both.
+/// Multi-scalar graphemes can render at a different width than `unicode-width` reserves.
+/// This includes VS16 emoji and Indic clusters; the diff emits trailing cells so backends can
+/// preserve next-buffer content when terminals render a glyph more narrowly.
 fn has_uncertain_width(symbol: &str) -> bool {
-    symbol.chars().any(|c| c == '\u{FE0F}')
+    symbol.chars().count() > 1
+}
+
+/// Returns `true` if the ambiguous-width setting changes how `symbol` is measured.
+fn has_ambiguous_width(symbol: &str) -> bool {
+    UnicodeWidthStr::width(symbol) != UnicodeWidthStr::width_cjk(symbol)
 }
 
 /// Returns `true` if this cell should be skipped during diffing.
@@ -436,7 +526,7 @@ mod tests {
     }
 
     #[test]
-    fn vs16_trailing_cell_unchanged() {
+    fn vs16_trailing_cell_is_emitted_before_repainting_the_glyph() {
         use crate::style::{Color, Style};
 
         let rect = Rect::new(0, 0, 4, 1);
@@ -448,12 +538,44 @@ mod tests {
         next.set_string(0, 0, "⌨️", Style::new().fg(Color::Red));
         next.set_string(2, 0, "ab", Style::new());
 
-        // Only the main emoji cell (0,0) differs (different style);
-        // the trailing cell (1,0) is identical in both buffers.
+        // The trailing cell is emitted even though it is identical in both buffers, so the
+        // backend can preserve its content if the terminal renders the glyph in one column.
         let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
-        assert_eq!(diff.len(), 1);
-        assert_eq!(diff[0].0, 0);
-        assert_eq!(diff[0].1, 0);
+        assert_eq!(diff.len(), 2);
+        assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
+        assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, "⌨️"));
+    }
+
+    #[test]
+    fn indic_grapheme_preserves_trailing_content_before_repainting() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "aXc", Style::default());
+
+        let mut next = prev.clone();
+        next.content[0].set_symbol("हा");
+
+        let updates: Vec<_> = BufferDiff::new(&prev, &next)
+            .map(|(x, _, cell)| (x, cell.symbol()))
+            .collect();
+        assert_eq!(updates, [(1, "X"), (0, "हा")]);
+    }
+
+    #[test]
+    fn ambiguous_prefix_is_replayed_after_deferred_indic_trailing_update() {
+        let area = Rect::new(0, 0, 3, 1);
+        let prev = Buffer::empty(area);
+        let mut next = Buffer::empty(area);
+        next.content[0].set_symbol("¡");
+        next.content[1].set_symbol("हा");
+
+        let updates: Vec<_> = BufferDiff::new(&prev, &next)
+            .map(|(x, _, cell)| (x, cell.symbol()))
+            .collect();
+
+        assert_eq!(updates, [(0, "¡"), (2, " "), (0, "¡"), (1, "हा")]);
     }
 
     #[test]
@@ -973,6 +1095,37 @@ mod terminal_model {
         assert_no_artifacts_for_both_widths("ab", "❤️", 2);
         assert_no_artifacts_for_both_widths("abcd", "❤️cd", 4);
         assert_no_artifacts_for_both_widths("abcd", "ab❤️", 4);
+    }
+
+    #[test]
+    fn vs16_emoji_preserves_unchanged_trailing_content_on_one_column_terminals() {
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "aXc", Style::default());
+        let mut next = prev.clone();
+        next.content[0].set_symbol("❤️");
+
+        let updates: Vec<_> = BufferDiff::new(&prev, &next)
+            .map(|(x, _, cell)| (x, cell.symbol()))
+            .collect();
+        assert_eq!(updates, [(1, "X"), (0, "❤️")]);
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
+    }
+
+    #[test]
+    fn wide_trailing_cell_replay_restores_content_beyond_leading_glyph() {
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.content[0].set_symbol("❤️");
+        prev.content[1].set_symbol("界");
+        prev.content[2].set_symbol("X");
+        let mut next = prev.clone();
+        next.content[0].fg = crate::style::Color::Red;
+
+        assert_no_artifacts(Vs16Width::TwoColumns, &prev, &next);
     }
 
     /// Mixed rows: narrow, certain-width (`漢`, `😀`) and uncertain-width clusters interleaved.
