@@ -351,34 +351,34 @@ impl<'a> Paragraph<'a> {
             return 0;
         }
 
-        let (top, bottom) = self
-            .block
-            .as_ref()
-            .map(Block::vertical_space)
-            .unwrap_or_default();
+        let dummy = Rect::new(0, 0, width, u16::MAX);
+        let inner = self.block.inner_if_some(dummy);
+        let vertical_space = usize::from(dummy.height.saturating_sub(inner.height));
 
         let count = if let Some(Wrap { trim }) = self.wrap {
-            let styled = self.text.iter().map(|line| {
-                let graphemes = line
-                    .spans
-                    .iter()
-                    .flat_map(|span| span.styled_graphemes(self.style));
-                let alignment = line.alignment.unwrap_or(self.alignment);
-                (graphemes, alignment)
-            });
-            let mut line_composer = WordWrapper::new(styled, width, trim);
-            let mut count = 0;
-            while line_composer.next_line().is_some() {
-                count += 1;
+            if inner.width == 0 {
+                0
+            } else {
+                let styled = self.text.iter().map(|line| {
+                    let graphemes = line
+                        .spans
+                        .iter()
+                        .flat_map(|span| span.styled_graphemes(self.style));
+                    let alignment = line.alignment.unwrap_or(self.alignment);
+                    (graphemes, alignment)
+                });
+                let mut line_composer = WordWrapper::new(styled, inner.width, trim);
+                let mut count = 0;
+                while line_composer.next_line().is_some() {
+                    count += 1;
+                }
+                count
             }
-            count
         } else {
             self.text.height()
         };
 
-        count
-            .saturating_add(top as usize)
-            .saturating_add(bottom as usize)
+        count.saturating_add(vertical_space)
     }
 
     /// Calculates the shortest line width needed to avoid any word being wrapped or truncated.
@@ -1129,11 +1129,15 @@ mod tests {
         let block = Block::bordered();
         let paragraph = paragraph.block(block).wrap(Wrap { trim: true });
         assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(13), 3);
+        assert_eq!(paragraph.line_count(12), 4);
         assert_eq!(paragraph.line_count(10), 4);
 
         let block = Block::bordered();
         let paragraph = paragraph.block(block).wrap(Wrap { trim: false });
         assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(13), 3);
+        assert_eq!(paragraph.line_count(12), 4);
         assert_eq!(paragraph.line_count(10), 4);
 
         let text = "Hello World ".repeat(100);
