@@ -1,0 +1,88 @@
+name: Daily Checks
+
+# Finds problems caused by changes outside this repository, such as new beta lints and advisories.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+# Avoid overlapping runs racing to update the tracking issues.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    name: Check Beta
+    if: ${{ github.repository_owner == 'ratatui' }}
+    runs-on: ubuntu-latest
+    env:
+      RUSTUP_TOOLCHAIN: beta
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: beta
+          components: clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - run: cargo xtask clippy
+      # Skip ratatui-macros: its trybuild tests snapshot complete rustc diagnostics, so reworded
+      # compiler errors on beta would fail without any problem for users. Stable CI still runs them.
+      - run: cargo test --workspace --exclude ratatui-macros --all-features --lib --tests
+
+  advisories:
+    name: Check Advisories
+    if: ${{ github.repository_owner == 'ratatui' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2
+        with:
+          rust-version: stable
+          log-level: info
+          arguments: --all-features --exclude-unpublished --config .config/deny.toml
+          command: check advisories
+
+  # Keeps one issue per check in sync with the latest result. Repeat failures edit the issue body
+  # instead of commenting, so an ongoing failure doesn't notify everyone watching the repo each day.
+  # The issue closes itself once the check passes again.
+  report:
+    name: Report ${{ matrix.title }}
+    needs: [beta, advisories]
+    if: ${{ !cancelled() && github.repository_owner == 'ratatui' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write # open, update and close the tracking issues
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - title: Daily check failed on beta Rust
+            result: ${{ needs.beta.result }}
+          - title: Daily check failed on security advisories
+            result: ${{ needs.advisories.result }}
+    steps:
+      - name: Sync the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RESULT: ${{ matrix.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TITLE: ${{ matrix.title }}
+        run: |
+          number=$(gh issue list --state open --search "\"$TITLE\" in:title" \
+            --json number --jq '.[0].number // empty')
+          if [ "$RESULT" = "success" ] && [ -n "$number" ]; then
+            gh issue close "$number" --comment "Passing again: $RUN_URL"
+          elif [ "$RESULT" = "failure" ] && [ -n "$number" ]; then
+            gh issue edit "$number" --body "Latest failed run: $RUN_URL"
+          elif [ "$RESULT" = "failure" ]; then
+            gh issue create --title "$TITLE" --label "Type: Maintenance" \
+              --body "Latest failed run: $RUN_URL"
+          fi
