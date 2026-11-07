@@ -1,4 +1,4 @@
-use alloc::borrow::Cow;
+use alloc::borrow::{Cow, ToOwned};
 use alloc::string::String;
 
 use super::Widget;
@@ -126,19 +126,34 @@ impl WidgetRef for String {
     }
 }
 
-/// Provides the ability to render a `Cow<str>` by reference.
+/// Provides the ability to render a `Cow<B>` by reference.
 ///
-/// This trait allows for a borrowed or owned `Cow<str>` to be rendered onto the [`Buffer`],
-/// similarly using the default style settings.
-impl WidgetRef for Cow<'_, str> {
+/// This renders the borrowed or owned value the same way as rendering `&B`, so `Cow<str>`,
+/// `Cow<Line>`, and similar types can be stored and rendered without giving up ownership.
+///
+/// ```rust
+/// # #[cfg(feature = "unstable-widget-ref")] {
+/// use std::borrow::Cow;
+///
+/// use ratatui::widgets::WidgetRef;
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+///
+/// let title: Cow<'static, str> = Cow::Owned(format!("{} unread", 3));
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 8, 1));
+/// title.render_ref(buf.area, &mut buf);
+/// // `title` is still usable after rendering
+/// assert_eq!(title, "3 unread");
+/// assert_eq!(buf, Buffer::with_lines(["3 unread"]));
+/// # }
+/// ```
+impl<B> WidgetRef for Cow<'_, B>
+where
+    B: ?Sized + ToOwned,
+    for<'a> &'a B: Widget,
+{
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_stringn(
-            area.x,
-            area.y,
-            self.as_ref(),
-            area.width as usize,
-            Style::new(),
-        );
+        (**self).render(area, buf);
     }
 }
 
@@ -294,6 +309,13 @@ mod tests {
     #[rstest]
     fn render_ref_cow_owned(mut buf: Buffer) {
         let cow: Cow<'_, str> = Cow::Owned(String::from("hello world"));
+        cow.render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_ref_cow_line(mut buf: Buffer) {
+        let cow: Cow<'_, Line> = Cow::Owned(Line::from("hello world"));
         cow.render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
