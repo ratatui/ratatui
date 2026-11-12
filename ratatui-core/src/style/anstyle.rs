@@ -137,13 +137,20 @@ impl From<Effects> for Modifier {
         if effect.contains(Effects::ITALIC) {
             modifier |= Self::ITALIC;
         }
-        if effect.contains(Effects::UNDERLINE)
-            || effect.contains(Effects::DOUBLE_UNDERLINE)
-            || effect.contains(Effects::CURLY_UNDERLINE)
-            || effect.contains(Effects::DOTTED_UNDERLINE)
-            || effect.contains(Effects::DASHED_UNDERLINE)
-        {
+        if effect.contains(Effects::UNDERLINE) {
             modifier |= Self::UNDERLINED;
+        }
+        if effect.contains(Effects::CURLY_UNDERLINE) {
+            modifier |= Self::UNDER_CURLED;
+        }
+        if effect.contains(Effects::DOUBLE_UNDERLINE) {
+            modifier |= Self::DOUBLE_UNDERLINED;
+        }
+        if effect.contains(Effects::DOTTED_UNDERLINE) {
+            modifier |= Self::UNDER_DOTTED;
+        }
+        if effect.contains(Effects::DASHED_UNDERLINE) {
+            modifier |= Self::UNDER_DASHED;
         }
         if effect.contains(Effects::BLINK) {
             modifier |= Self::SLOW_BLINK;
@@ -211,9 +218,9 @@ impl From<anstyle::Style> for Style {
             bg: style.get_bg_color().map(Color::from),
             #[cfg(feature = "underline-color")]
             underline_color: style.get_underline_color().map(Color::from),
-            add_modifier: style.get_effects().into(),
             ..Default::default()
         }
+        .add_modifier(style.get_effects().into())
     }
 }
 
@@ -313,6 +320,25 @@ mod tests {
         let modifier = Modifier::from(effects);
         assert!(modifier.contains(Modifier::BOLD));
         assert!(modifier.contains(Modifier::ITALIC));
+    }
+
+    #[rstest]
+    #[case(Effects::UNDERLINE, Modifier::UNDERLINED)]
+    #[case(Effects::CURLY_UNDERLINE, Modifier::UNDER_CURLED)]
+    #[case(Effects::DOUBLE_UNDERLINE, Modifier::DOUBLE_UNDERLINED)]
+    #[case(Effects::DOTTED_UNDERLINE, Modifier::UNDER_DOTTED)]
+    #[case(Effects::DASHED_UNDERLINE, Modifier::UNDER_DASHED)]
+    fn underline_conversions_preserve_type(#[case] effect: Effects, #[case] modifier: Modifier) {
+        assert_eq!(Modifier::from(effect), modifier);
+        assert_eq!(Effects::from(modifier), effect);
+
+        let style = Style::from(anstyle::Style::new().effects(effect));
+        assert_eq!(style.add_modifier, modifier);
+        assert_eq!(style.sub_modifier, Modifier::ALL_UNDERLINES - modifier);
+        assert_eq!(
+            Style::new().underlined().patch(style).add_modifier,
+            modifier
+        );
     }
 
     #[rstest]
