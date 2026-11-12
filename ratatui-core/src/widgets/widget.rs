@@ -1,5 +1,9 @@
-use alloc::borrow::Cow;
+use alloc::borrow::{Cow, ToOwned};
+use alloc::boxed::Box;
+use alloc::rc::Rc;
 use alloc::string::String;
+#[cfg(target_has_atomic = "ptr")]
+use alloc::sync::Arc;
 
 use crate::buffer::Buffer;
 use crate::layout::Rect;
@@ -34,7 +38,11 @@ use crate::style::Style;
 /// can be quite useful.
 ///
 /// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
-/// Widget is also implemented for `&str`, `String`, and `Cow<str>` types.
+/// Widget is also implemented for `&str`, `String`, and `&String`.
+///
+/// `Cow<B>`, `&Cow<B>`, `&Box<W>`, `&Rc<W>`, and `&Arc<W>` render the value they wrap, so they
+/// implement `Widget` whenever the wrapped type does when rendered by reference. For example,
+/// `Cow<str>`, `&Box<str>`, `&Rc<str>`, and `&Arc<Paragraph>` can all be rendered directly.
 ///
 /// # Examples
 ///
@@ -103,26 +111,213 @@ impl Widget for String {
 }
 
 /// Renders a `String` reference as a widget.
+///
+/// This lets a `String` stored in app state be rendered from `&self` without moving it out or
+/// calling `.as_str()` first.
+///
+/// ```rust
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::widgets::Widget;
+///
+/// struct App {
+///     title: String,
+/// }
+///
+/// impl App {
+///     fn render(&self, area: Rect, buf: &mut Buffer) {
+///         (&self.title).render(area, buf);
+///     }
+/// }
+///
+/// let app = App {
+///     title: String::from("Inbox"),
+/// };
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+/// app.render(buf.area, &mut buf);
+/// assert_eq!(buf, Buffer::with_lines(["Inbox"]));
+/// ```
 impl Widget for &String {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.as_str().render(area, buf);
     }
 }
 
-/// Renders a `Cow<str>` object as a widget.
+/// Renders a borrowed or owned `Cow<B>` as a widget.
 ///
-/// This implementation enables a borrowed or owned `Cow<str>` to be treated as a widget, which can
-/// be rendered on a [`Buffer`] within the bounds of a given [`Rect`].
-impl Widget for Cow<'_, str> {
+/// A `Cow` renders whatever it holds, so this works for any `B` that renders by reference and
+/// whose owned form renders by value: `Cow<str>` (holding a `&str` or a `String`), `Cow<Line>`,
+/// and so on.
+///
+/// A common source of `Cow<str>` is decoding bytes that may not be valid UTF-8, such as process
+/// output:
+///
+/// ```rust
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::widgets::Widget;
+///
+/// let output: &[u8] = b"build ok";
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 8, 1));
+/// String::from_utf8_lossy(output).render(buf.area, &mut buf);
+/// assert_eq!(buf, Buffer::with_lines(["build ok"]));
+/// ```
+impl<B> Widget for Cow<'_, B>
+where
+    B: ?Sized + ToOwned,
+    for<'a> &'a B: Widget,
+    B::Owned: Widget,
+{
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.as_ref().render(area, buf);
+        match self {
+            Cow::Borrowed(widget) => widget.render(area, buf),
+            Cow::Owned(widget) => widget.render(area, buf),
+        }
     }
 }
 
-/// Renders a reference to a `Cow<str>` as a widget.
-impl Widget for &Cow<'_, str> {
+/// Renders a reference to a `Cow<B>` as a widget.
+///
+/// `Cow<'static, str>` is a common field type for text that is usually a string literal but is
+/// sometimes built at runtime. This lets that field be rendered from `&self`.
+///
+/// ```rust
+/// use std::borrow::Cow;
+///
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::widgets::Widget;
+///
+/// struct StatusBar {
+///     message: Cow<'static, str>,
+/// }
+///
+/// impl Widget for &StatusBar {
+///     fn render(self, area: Rect, buf: &mut Buffer) {
+///         (&self.message).render(area, buf);
+///     }
+/// }
+///
+/// let ready = StatusBar {
+///     message: Cow::Borrowed("Ready"),
+/// };
+/// let saved = StatusBar {
+///     message: Cow::Owned(format!("Saved {} files", 3)),
+/// };
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 13, 1));
+/// ready.render(buf.area, &mut buf);
+/// assert_eq!(buf, Buffer::with_lines(["Ready        "]));
+/// saved.render(buf.area, &mut buf);
+/// assert_eq!(buf, Buffer::with_lines(["Saved 3 files"]));
+/// ```
+impl<'a, B> Widget for &'a Cow<'_, B>
+where
+    B: ?Sized + ToOwned,
+    &'a B: Widget,
+{
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.as_ref().render(area, buf);
+        (**self).render(area, buf);
+    }
+}
+
+/// Renders a reference to a `Box<W>` as a widget.
+///
+/// Rendering a `&Box<W>` renders the boxed `W` by reference, so a boxed widget can be rendered
+/// without unboxing it first. This also covers unsized values such as `Box<str>`.
+///
+/// ```rust
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::text::Line;
+/// use ratatui_core::widgets::Widget;
+///
+/// struct Header {
+///     title: Box<Line<'static>>,
+///     subtitle: Box<str>,
+/// }
+///
+/// let header = Header {
+///     title: Box::new(Line::from("Mail")),
+///     subtitle: Box::from("3 unread"),
+/// };
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 8, 2));
+/// (&header.title).render(Rect::new(0, 0, 8, 1), &mut buf);
+/// (&header.subtitle).render(Rect::new(0, 1, 8, 1), &mut buf);
+/// assert_eq!(buf, Buffer::with_lines(["Mail    ", "3 unread"]));
+/// ```
+impl<'a, W> Widget for &'a Box<W>
+where
+    W: ?Sized,
+    &'a W: Widget,
+{
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        (**self).render(area, buf);
+    }
+}
+
+/// Renders a reference to an `Rc<W>` as a widget.
+///
+/// Use `Rc` when several parts of the UI hold the same widget or text. Each holder can render it
+/// without cloning the contents.
+///
+/// ```rust
+/// use std::rc::Rc;
+///
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::widgets::Widget;
+///
+/// let user: Rc<str> = Rc::from("ferris");
+/// let sidebar = Rc::clone(&user);
+/// let title_bar = Rc::clone(&user);
+///
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 6, 2));
+/// (&sidebar).render(Rect::new(0, 0, 6, 1), &mut buf);
+/// (&title_bar).render(Rect::new(0, 1, 6, 1), &mut buf);
+/// assert_eq!(buf, Buffer::with_lines(["ferris", "ferris"]));
+/// ```
+impl<'a, W> Widget for &'a Rc<W>
+where
+    W: ?Sized,
+    &'a W: Widget,
+{
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        (**self).render(area, buf);
+    }
+}
+
+/// Renders a reference to an `Arc<W>` as a widget.
+///
+/// This is the thread-safe counterpart of the `Rc` impl. It is useful when the value is shared
+/// with another thread, such as a status message set by a background task.
+///
+/// ```rust
+/// use std::sync::{Arc, Mutex};
+/// use std::thread;
+///
+/// use ratatui_core::buffer::Buffer;
+/// use ratatui_core::layout::Rect;
+/// use ratatui_core::widgets::Widget;
+///
+/// let status: Arc<Mutex<Arc<str>>> = Arc::new(Mutex::new(Arc::from("Loading")));
+/// let worker_status = Arc::clone(&status);
+/// thread::spawn(move || *worker_status.lock().unwrap() = Arc::from("Done"))
+///     .join()
+///     .unwrap();
+///
+/// let mut buf = Buffer::empty(Rect::new(0, 0, 7, 1));
+/// let message = Arc::clone(&status.lock().unwrap());
+/// (&message).render(buf.area, &mut buf);
+/// assert_eq!(buf, Buffer::with_lines(["Done   "]));
+/// ```
+#[cfg(target_has_atomic = "ptr")]
+impl<'a, W> Widget for &'a Arc<W>
+where
+    W: ?Sized,
+    &'a W: Widget,
+{
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        (**self).render(area, buf);
     }
 }
 
@@ -234,6 +429,37 @@ mod tests {
         let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
         let cow: Cow<'_, str> = Cow::Borrowed("hello world, just hello");
         cow.render(area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_cow_line(mut buf: Buffer) {
+        let cow: Cow<'_, Line> = Cow::Owned(Line::from("hello world"));
+        (&cow).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+        buf.reset();
+        cow.render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_box_str(mut buf: Buffer) {
+        let boxed: Box<str> = Box::from("hello world");
+        (&boxed).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_rc_str(mut buf: Buffer) {
+        let rc: Rc<str> = Rc::from("hello world");
+        (&rc).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_arc_line(mut buf: Buffer) {
+        let arc = Arc::new(Line::from("hello world"));
+        (&arc).render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 

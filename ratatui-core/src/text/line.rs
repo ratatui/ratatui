@@ -678,6 +678,12 @@ impl<'a> From<&'a str> for Line<'a> {
     }
 }
 
+impl<'a> From<&'a String> for Line<'a> {
+    fn from(s: &'a String) -> Self {
+        Self::raw(s)
+    }
+}
+
 impl<'a> From<Cow<'a, str>> for Line<'a> {
     fn from(s: Cow<'a, str>) -> Self {
         Self::raw(s)
@@ -1072,6 +1078,13 @@ mod tests {
         let s = String::from("Hello\nworld!");
         let line = Line::from(s);
         assert_eq!(line.spans, [Span::from("Hello"), Span::from("world!")]);
+    }
+
+    #[test]
+    fn from_string_ref() {
+        let s = String::from("Hello, world!");
+        let line = Line::from(&s);
+        assert_eq!(line.spans, [Span::from("Hello, world!")]);
     }
 
     #[test]
