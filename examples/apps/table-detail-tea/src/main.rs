@@ -49,256 +49,6 @@ const TICK_RATE: Duration = Duration::from_millis(80);
 const LOAD_TIME: Duration = Duration::from_secs(2);
 const SPINNER: [char; 10] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
-fn main() -> Result<()> {
-    color_eyre::install()?;
-    ratatui::run(run)
-}
-
-/// The whole state of the app. Each variant holds only what exists in that state, so there is no
-/// selection to get wrong while the teas are still loading.
-enum Model {
-    Loading { spinner: usize },
-    Loaded { teas: Vec<Tea>, table: TableState },
-    Failed { error: String },
-}
-
-/// Everything that can happen to the model.
-enum Message {
-    GotTeas(Result<Vec<Tea>, String>),
-    Tick,
-    SelectNext,
-    SelectPrevious,
-    Reload,
-    Quit,
-}
-
-/// A side effect that `update` asks the runtime to perform.
-enum Command {
-    LoadTeas,
-    Quit,
-}
-
-impl Model {
-    const fn init() -> (Self, Option<Command>) {
-        (Self::Loading { spinner: 0 }, Some(Command::LoadTeas))
-    }
-
-    fn update(&mut self, message: Message) -> Option<Command> {
-        match (message, &mut *self) {
-            (Message::Quit, _) => return Some(Command::Quit),
-            (Message::Reload, Self::Loaded { .. } | Self::Failed { .. }) => {
-                let (model, command) = Self::init();
-                *self = model;
-                return command;
-            }
-            (Message::GotTeas(Ok(teas)), Self::Loading { .. }) => {
-                let table = TableState::default().with_selected((!teas.is_empty()).then_some(0));
-                *self = Self::Loaded { teas, table };
-            }
-            (Message::GotTeas(Err(error)), Self::Loading { .. }) => *self = Self::Failed { error },
-            (Message::Tick, Self::Loading { spinner }) => *spinner += 1,
-            (Message::SelectNext, Self::Loaded { teas, table }) => {
-                let last = teas.len().saturating_sub(1);
-                table.select(table.selected().map(|index| (index + 1).min(last)));
-            }
-            (Message::SelectPrevious, Self::Loaded { table, .. }) => {
-                table.select(table.selected().map(|index| index.saturating_sub(1)));
-            }
-            // A reload while loading would start a second loader, and the rest have nothing to
-            // change in the state they arrive in
-            (
-                Message::Reload | Message::SelectNext | Message::SelectPrevious,
-                Self::Loading { .. },
-            )
-            | (Message::SelectNext | Message::SelectPrevious, Self::Failed { .. })
-            | (Message::GotTeas(_) | Message::Tick, Self::Loaded { .. } | Self::Failed { .. }) => {}
-        }
-        None
-    }
-
-    /// Elm's `subscriptions`: the spinner ticks only while loading.
-    const fn tick_rate(&self) -> Option<Duration> {
-        match self {
-            Self::Loading { .. } => Some(TICK_RATE),
-            Self::Loaded { .. } | Self::Failed { .. } => None,
-        }
-    }
-
-    /// Takes `&mut self` because rendering the table stores its scroll offset in [`TableState`].
-    fn view(&mut self, frame: &mut Frame) {
-        let block = Block::bordered().title(" Teas ").title_bottom(self.help());
-        match self {
-            Self::Loading { spinner } => {
-                let spinner = SPINNER[*spinner % SPINNER.len()];
-                let text = format!("{spinner} Loading the tea menu");
-                frame.render_widget(Paragraph::new(text).block(block), frame.area());
-            }
-            Self::Loaded { teas, table } => {
-                let layout = Layout::vertical([Constraint::Fill(1); 2]);
-                let [table_area, detail_area] = frame.area().layout(&layout);
-                let rows = teas.iter().map(Row::from);
-                let widths = [
-                    Constraint::Length(18),
-                    Constraint::Length(8),
-                    Constraint::Fill(1),
-                ];
-                let tea_table = Table::new(rows, widths)
-                    .header(Row::new(Tea::COLUMNS).bold())
-                    .row_highlight_style(Style::new().reversed())
-                    .block(block);
-                frame.render_stateful_widget(tea_table, table_area, table);
-
-                let selected = table.selected().and_then(|index| teas.get(index));
-                frame.render_widget(view_detail(selected), detail_area);
-            }
-            Self::Failed { error } => {
-                let text = format!("Couldn't load the tea menu: {error}");
-                let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: true });
-                frame.render_widget(paragraph, frame.area());
-            }
-        }
-    }
-
-    /// The keys that do something in the current state.
-    const fn help(&self) -> &'static str {
-        match self {
-            Self::Loading { .. } => " (q) quit ",
-            Self::Loaded { .. } => " (↑/↓) select | (r) reload | (q) quit ",
-            Self::Failed { .. } => " (r) retry | (q) quit ",
-        }
-    }
-}
-
-fn view_detail(tea: Option<&Tea>) -> Paragraph<'static> {
-    let Some(tea) = tea else {
-        return Paragraph::new("No tea selected").block(Block::bordered());
-    };
-    let text = format!(
-        "Brew at {} for {}.\n\n{}",
-        tea.temperature, tea.steep, tea.note
-    );
-    let block = Block::bordered()
-        .title(format!(" {} ", tea.name))
-        .padding(Padding::uniform(1));
-    Paragraph::new(text).block(block).wrap(Wrap { trim: true })
-}
-
-impl Message {
-    fn from_event(event: &Event) -> Option<Self> {
-        match event.as_key_press_event()?.code {
-            KeyCode::Char('j') | KeyCode::Down => Some(Self::SelectNext),
-            KeyCode::Char('k') | KeyCode::Up => Some(Self::SelectPrevious),
-            KeyCode::Char('r') => Some(Self::Reload),
-            KeyCode::Char('q') | KeyCode::Esc => Some(Self::Quit),
-            _ => None,
-        }
-    }
-}
-
-/// What wakes the runtime up, besides ticks.
-enum RuntimeEvent {
-    Message(Message),
-    /// The terminal changed size, which needs a redraw but doesn't change the model.
-    Resize,
-    InputFailed(io::Error),
-}
-
-/// The runtime: performs the last command, draws the model and waits for the next event.
-fn run(terminal: &mut DefaultTerminal) -> Result<()> {
-    let (sender, events) = mpsc::channel();
-    spawn_input_reader(sender.clone());
-    let (mut model, mut command) = Model::init();
-    let mut next_tick = None;
-    loop {
-        match command.take() {
-            Some(Command::LoadTeas) => spawn_tea_loader(sender.clone()),
-            Some(Command::Quit) => return Ok(()),
-            None => {}
-        }
-        terminal.draw(|frame| model.view(frame))?;
-        match next_event(&events, model.tick_rate(), &mut next_tick)? {
-            RuntimeEvent::Message(message) => command = model.update(message),
-            RuntimeEvent::Resize => {}
-            RuntimeEvent::InputFailed(error) => return Err(error.into()),
-        }
-    }
-}
-
-/// Waits for the next event. While the model asks for ticks, a due tick goes before any queued
-/// event, so ticks keep coming however busy the input is, like Elm's `Time.every`.
-fn next_event(
-    events: &Receiver<RuntimeEvent>,
-    tick_rate: Option<Duration>,
-    next_tick: &mut Option<Instant>,
-) -> Result<RuntimeEvent> {
-    let Some(rate) = tick_rate else {
-        *next_tick = None;
-        return Ok(events.recv()?);
-    };
-    let deadline = *next_tick.get_or_insert_with(|| Instant::now() + rate);
-    let now = Instant::now();
-    if now < deadline {
-        match events.recv_timeout(deadline - now) {
-            Err(RecvTimeoutError::Timeout) => {}
-            received => return Ok(received?),
-        }
-    }
-    *next_tick = None;
-    Ok(RuntimeEvent::Message(Message::Tick))
-}
-
-/// Sends terminal input to the runtime for as long as the app runs.
-fn spawn_input_reader(sender: Sender<RuntimeEvent>) {
-    thread::spawn(move || {
-        if let Err(error) = forward_input(&sender) {
-            sender.send(RuntimeEvent::InputFailed(error)).ok();
-        }
-    });
-}
-
-fn forward_input(sender: &Sender<RuntimeEvent>) -> io::Result<()> {
-    loop {
-        let input = match event::read()? {
-            Event::Resize(..) => Some(RuntimeEvent::Resize),
-            other => Message::from_event(&other).map(RuntimeEvent::Message),
-        };
-        if let Some(input) = input
-            && sender.send(input).is_err()
-        {
-            return Ok(());
-        }
-    }
-}
-
-/// Performs [`Command::LoadTeas`]. The result comes back as [`Message::GotTeas`].
-fn spawn_tea_loader(sender: Sender<RuntimeEvent>) {
-    thread::spawn(move || {
-        thread::sleep(LOAD_TIME);
-        let teas = Message::GotTeas(Ok(TEAS.to_vec()));
-        sender.send(RuntimeEvent::Message(teas)).ok();
-    });
-}
-
-#[derive(Clone, Copy)]
-struct Tea {
-    name: &'static str,
-    kind: &'static str,
-    origin: &'static str,
-    temperature: &'static str,
-    steep: &'static str,
-    note: &'static str,
-}
-
-impl Tea {
-    const COLUMNS: [&str; 3] = ["Name", "Kind", "Origin"];
-}
-
-impl From<&Tea> for Row<'static> {
-    fn from(tea: &Tea) -> Self {
-        Self::new([tea.name, tea.kind, tea.origin])
-    }
-}
-
 const TEAS: [Tea; 14] = [
     Tea {
         name: "Sencha",
@@ -413,6 +163,253 @@ const TEAS: [Tea; 14] = [
         note: "Not tea at all but a caffeine-free bush, steeped the same way.",
     },
 ];
+
+#[derive(Clone, Copy)]
+struct Tea {
+    name: &'static str,
+    kind: &'static str,
+    origin: &'static str,
+    temperature: &'static str,
+    steep: &'static str,
+    note: &'static str,
+}
+
+impl Tea {
+    const COLUMNS: [&str; 3] = ["Name", "Kind", "Origin"];
+}
+
+impl From<&Tea> for Row<'static> {
+    fn from(tea: &Tea) -> Self {
+        Self::new([tea.name, tea.kind, tea.origin])
+    }
+}
+
+/// The whole state of the app. Each variant holds only what exists in that state, so there is no
+/// selection to get wrong while the teas are still loading.
+enum Model {
+    Loading { spinner: usize },
+    Loaded { teas: Vec<Tea>, table: TableState },
+    Failed { error: String },
+}
+
+/// Everything that can happen to the model.
+enum Message {
+    GotTeas(Result<Vec<Tea>, String>),
+    Tick,
+    SelectNext,
+    SelectPrevious,
+    Reload,
+    Quit,
+}
+
+impl Message {
+    fn from_event(event: &Event) -> Option<Self> {
+        match event.as_key_press_event()?.code {
+            KeyCode::Char('j') | KeyCode::Down => Some(Self::SelectNext),
+            KeyCode::Char('k') | KeyCode::Up => Some(Self::SelectPrevious),
+            KeyCode::Char('r') => Some(Self::Reload),
+            KeyCode::Char('q') | KeyCode::Esc => Some(Self::Quit),
+            _ => None,
+        }
+    }
+}
+
+/// A side effect that `update` asks the runtime to perform.
+enum Command {
+    LoadTeas,
+    Quit,
+}
+
+/// What wakes the runtime up, besides ticks.
+enum RuntimeEvent {
+    Message(Message),
+    /// The terminal changed size, which needs a redraw but doesn't change the model.
+    Resize,
+    InputFailed(io::Error),
+}
+
+impl Model {
+    const fn init() -> (Self, Option<Command>) {
+        (Self::Loading { spinner: 0 }, Some(Command::LoadTeas))
+    }
+
+    fn update(&mut self, message: Message) -> Option<Command> {
+        match (message, &mut *self) {
+            (Message::Quit, _) => return Some(Command::Quit),
+            (Message::Reload, Self::Loaded { .. } | Self::Failed { .. }) => {
+                let (model, command) = Self::init();
+                *self = model;
+                return command;
+            }
+            (Message::GotTeas(Ok(teas)), Self::Loading { .. }) => {
+                let table = TableState::default().with_selected((!teas.is_empty()).then_some(0));
+                *self = Self::Loaded { teas, table };
+            }
+            (Message::GotTeas(Err(error)), Self::Loading { .. }) => *self = Self::Failed { error },
+            (Message::Tick, Self::Loading { spinner }) => *spinner += 1,
+            (Message::SelectNext, Self::Loaded { teas, table }) => {
+                let last = teas.len().saturating_sub(1);
+                table.select(table.selected().map(|index| (index + 1).min(last)));
+            }
+            (Message::SelectPrevious, Self::Loaded { table, .. }) => {
+                table.select(table.selected().map(|index| index.saturating_sub(1)));
+            }
+            // A reload while loading would start a second loader, and the rest have nothing to
+            // change in the state they arrive in
+            (
+                Message::Reload | Message::SelectNext | Message::SelectPrevious,
+                Self::Loading { .. },
+            )
+            | (Message::SelectNext | Message::SelectPrevious, Self::Failed { .. })
+            | (Message::GotTeas(_) | Message::Tick, Self::Loaded { .. } | Self::Failed { .. }) => {}
+        }
+        None
+    }
+
+    /// Elm's `subscriptions`: the spinner ticks only while loading.
+    const fn tick_rate(&self) -> Option<Duration> {
+        match self {
+            Self::Loading { .. } => Some(TICK_RATE),
+            Self::Loaded { .. } | Self::Failed { .. } => None,
+        }
+    }
+
+    /// Takes `&mut self` because rendering the table stores its scroll offset in [`TableState`].
+    fn view(&mut self, frame: &mut Frame) {
+        let help = match self {
+            Self::Loading { .. } => " (q) quit ",
+            Self::Loaded { .. } => " (↑/↓) select | (r) reload | (q) quit ",
+            Self::Failed { .. } => " (r) retry | (q) quit ",
+        };
+        let block = Block::bordered().title(" Teas ");
+        match self {
+            Self::Loading { spinner } => {
+                let spinner = SPINNER[*spinner % SPINNER.len()];
+                let text = format!("{spinner} Loading the tea menu");
+                let paragraph = Paragraph::new(text).block(block.title_bottom(help));
+                frame.render_widget(paragraph, frame.area());
+            }
+            Self::Loaded { teas, table } => {
+                let layout = Layout::vertical([Constraint::Fill(1); 2]);
+                let [table_area, detail_area] = frame.area().layout(&layout);
+                let rows = teas.iter().map(Row::from);
+                let widths = [
+                    Constraint::Length(18),
+                    Constraint::Length(8),
+                    Constraint::Fill(1),
+                ];
+                let tea_table = Table::new(rows, widths)
+                    .header(Row::new(Tea::COLUMNS).bold())
+                    .row_highlight_style(Style::new().reversed())
+                    .block(block);
+                frame.render_stateful_widget(tea_table, table_area, table);
+
+                let selected = table.selected().and_then(|index| teas.get(index));
+                frame.render_widget(view_detail(selected, help), detail_area);
+            }
+            Self::Failed { error } => {
+                let text = format!("Couldn't load the tea menu: {error}");
+                let paragraph = Paragraph::new(text)
+                    .block(block.title_bottom(help))
+                    .wrap(Wrap { trim: true });
+                frame.render_widget(paragraph, frame.area());
+            }
+        }
+    }
+}
+
+fn view_detail(tea: Option<&Tea>, help: &'static str) -> Paragraph<'static> {
+    let block = Block::bordered().title_bottom(help);
+    let Some(tea) = tea else {
+        return Paragraph::new("No tea selected").block(block);
+    };
+    let text = format!(
+        "Brew at {} for {}.\n\n{}",
+        tea.temperature, tea.steep, tea.note
+    );
+    let block = block
+        .title(format!(" {} ", tea.name))
+        .padding(Padding::uniform(1));
+    Paragraph::new(text).block(block).wrap(Wrap { trim: true })
+}
+
+/// Waits for the next event. While the model asks for ticks, a due tick goes before any queued
+/// event, so ticks keep coming however busy the input is, like Elm's `Time.every`.
+fn next_event(
+    events: &Receiver<RuntimeEvent>,
+    tick_rate: Option<Duration>,
+    next_tick: &mut Option<Instant>,
+) -> Result<RuntimeEvent> {
+    let Some(rate) = tick_rate else {
+        *next_tick = None;
+        return Ok(events.recv()?);
+    };
+    let deadline = *next_tick.get_or_insert_with(|| Instant::now() + rate);
+    let now = Instant::now();
+    if now < deadline {
+        match events.recv_timeout(deadline - now) {
+            Err(RecvTimeoutError::Timeout) => {}
+            received => return Ok(received?),
+        }
+    }
+    *next_tick = None;
+    Ok(RuntimeEvent::Message(Message::Tick))
+}
+
+/// Sends terminal input to the runtime for as long as the app runs.
+fn forward_input(sender: &Sender<RuntimeEvent>) -> io::Result<()> {
+    loop {
+        let input = match event::read()? {
+            Event::Resize(..) => Some(RuntimeEvent::Resize),
+            other => Message::from_event(&other).map(RuntimeEvent::Message),
+        };
+        if let Some(input) = input
+            && sender.send(input).is_err()
+        {
+            return Ok(());
+        }
+    }
+}
+
+/// The runtime: performs the last command, draws the model and waits for the next event.
+fn run(terminal: &mut DefaultTerminal) -> Result<()> {
+    let (sender, events) = mpsc::channel();
+    let input_sender = sender.clone();
+    thread::spawn(move || {
+        if let Err(error) = forward_input(&input_sender) {
+            input_sender.send(RuntimeEvent::InputFailed(error)).ok();
+        }
+    });
+
+    let (mut model, mut command) = Model::init();
+    let mut next_tick = None;
+    loop {
+        match command.take() {
+            Some(Command::LoadTeas) => {
+                let sender = sender.clone();
+                thread::spawn(move || {
+                    thread::sleep(LOAD_TIME);
+                    let teas = Message::GotTeas(Ok(TEAS.to_vec()));
+                    sender.send(RuntimeEvent::Message(teas)).ok();
+                });
+            }
+            Some(Command::Quit) => return Ok(()),
+            None => {}
+        }
+
+        terminal.draw(|frame| model.view(frame))?;
+        match next_event(&events, model.tick_rate(), &mut next_tick)? {
+            RuntimeEvent::Message(message) => command = model.update(message),
+            RuntimeEvent::Resize => {}
+            RuntimeEvent::InputFailed(error) => return Err(error.into()),
+        }
+    }
+}
+
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    ratatui::run(run)
+}
 
 #[cfg(test)]
 mod tests {
