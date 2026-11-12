@@ -1,82 +1,114 @@
 /// A Ratatui example that demonstrates how to use modifiers.
 ///
-/// It will render a grid of combinations of foreground and background colors with all
-/// modifiers applied to them.
+/// Each row shows a modifier, each column uses a different foreground color, and tabs select
+/// the background color.
 ///
 /// This example runs with the Ratatui library code in the branch that you are currently
 /// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
 /// release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
-use std::{error::Error, iter::once, result};
+use std::iter::{once, repeat_n};
 
-use crossterm::event;
-use itertools::Itertools;
+use color_eyre::Result;
+use crossterm::event::{self, KeyCode};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::Paragraph;
+use ratatui::widgets::{Block, Cell, Paragraph, Row, Table, Tabs};
 
-type Result<T> = result::Result<T, Box<dyn Error>>;
+const COLORS: [(&str, Color); 5] = [
+    ("Black", Color::Black),
+    ("Dark gray", Color::DarkGray),
+    ("Gray", Color::Gray),
+    ("White", Color::White),
+    ("Red", Color::Red),
+];
+
+const MODIFIERS: [(&str, Modifier); 14] = [
+    ("None", Modifier::empty()),
+    ("Bold", Modifier::BOLD),
+    ("Dim", Modifier::DIM),
+    ("Italic", Modifier::ITALIC),
+    ("Single underline", Modifier::UNDERLINED),
+    ("Double underline", Modifier::DOUBLE_UNDERLINED),
+    ("Curly underline", Modifier::UNDER_CURLED),
+    ("Dotted underline", Modifier::UNDER_DOTTED),
+    ("Dashed underline", Modifier::UNDER_DASHED),
+    ("Slow blink", Modifier::SLOW_BLINK),
+    ("Rapid blink", Modifier::RAPID_BLINK),
+    ("Reversed", Modifier::REVERSED),
+    ("Hidden", Modifier::HIDDEN),
+    ("Strikethrough", Modifier::CROSSED_OUT),
+];
 
 fn main() -> Result<()> {
     color_eyre::install()?;
+    let mut background = 0;
     ratatui::run(|terminal| {
         loop {
-            terminal.draw(render)?;
-            if event::read()?.is_key_press() {
-                break Ok(());
+            terminal.draw(|frame| render(frame, background))?;
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => break Ok(()),
+                    KeyCode::Right | KeyCode::Tab => background = (background + 1) % COLORS.len(),
+                    KeyCode::Left | KeyCode::BackTab => {
+                        background = (background + COLORS.len() - 1) % COLORS.len();
+                    }
+                    _ => {}
+                }
             }
         }
     })
 }
 
-fn render(frame: &mut Frame) {
-    let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    let [text_area, main_area] = frame.area().layout(&layout);
-    frame.render_widget(
-        Paragraph::new("Note: not all terminals support all modifiers")
-            .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
-        text_area,
-    );
-    let layout = Layout::vertical([Constraint::Length(1); 50])
-        .split(main_area)
-        .iter()
-        .flat_map(|area| {
-            Layout::horizontal([Constraint::Percentage(20); 5])
-                .split(*area)
-                .to_vec()
-        })
-        .collect_vec();
+fn render(frame: &mut Frame, background: usize) {
+    let [area] = frame
+        .area()
+        .layout(&Layout::horizontal([Constraint::Max(76)]));
+    let [tabs_area, table_area, help_area] = area.layout(&Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(0),
+        Constraint::Length(2),
+    ]));
 
-    let colors = [
-        Color::Black,
-        Color::DarkGray,
-        Color::Gray,
-        Color::White,
-        Color::Red,
-    ];
-    let all_modifiers = once(Modifier::empty())
-        .chain(Modifier::all().iter())
-        .collect_vec();
-    let mut index = 0;
-    for bg in &colors {
-        for fg in &colors {
-            for modifier in &all_modifiers {
-                let modifier_name = format!("{modifier:11?}");
-                let padding = (" ").repeat(12 - modifier_name.len());
-                let paragraph = Paragraph::new(Line::from(vec![
-                    modifier_name.fg(*fg).bg(*bg).add_modifier(*modifier),
-                    padding.fg(*fg).bg(*bg).add_modifier(*modifier),
-                    // This is a hack to work around a bug in VHS which is used for rendering the
-                    // examples to gifs. The bug is that the background color of a paragraph seems
-                    // to bleed into the next character.
-                    ".".black().on_black(),
-                ]));
-                frame.render_widget(paragraph, layout[index]);
-                index += 1;
-            }
-        }
-    }
+    frame.render_widget(
+        Tabs::new(COLORS.map(|(name, _)| name))
+            .select(background)
+            .highlight_style(Style::new().black().on_yellow().bold())
+            .block(Block::bordered().title(" Background ")),
+        tabs_area,
+    );
+
+    let header = Row::new(once("Modifier").chain(COLORS.map(|(name, _)| name)))
+        .bold()
+        .bottom_margin(1);
+    let rows = MODIFIERS.map(|(name, modifier)| {
+        let samples = COLORS.map(|(_, foreground)| {
+            Cell::from("Sample").style(
+                Style::new()
+                    .fg(foreground)
+                    .bg(COLORS[background].1)
+                    .add_modifier(modifier),
+            )
+        });
+        Row::new(once(Cell::from(name)).chain(samples))
+    });
+    let widths = once(Constraint::Length(16)).chain(repeat_n(Constraint::Fill(1), COLORS.len()));
+    frame.render_widget(
+        Table::new(rows, widths)
+            .header(header)
+            .column_spacing(2)
+            .block(Block::bordered().title(" Foreground colors ")),
+        table_area,
+    );
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::from("←/→ or Tab: background   q/Esc: quit"),
+            Line::from("Some effects depend on your terminal; hidden samples are blank.")
+                .dark_gray(),
+        ]),
+        help_area,
+    );
 }
