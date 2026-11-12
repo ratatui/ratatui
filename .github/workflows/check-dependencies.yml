@@ -1,0 +1,48 @@
+name: Check Dependencies
+
+# Checks dependencies with cargo-deny on PRs that change them. These results can only change with
+# the files below, so other PRs skip this workflow. Advisories published at other times are handled
+# by the daily checks, so unrelated PRs don't fail because of them.
+#
+# This must not be a required check or part of the `required` job in ci.yml: a required check from a
+# path-filtered workflow stays pending on PRs that don't touch these paths. A failure here is visible
+# but doesn't block merging, so a maintainer can still merge when an advisory has no fix yet.
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/check-dependencies.yml
+      - Cargo.lock
+      - "**/Cargo.toml"
+      - .config/deny.toml
+
+permissions: {}
+
+# Only the latest run for a PR matters, so subsequent pushes cancel the previous run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # Check for any disallowed dependencies in the codebase due to license / security issues.
+  # See <https://github.com/EmbarkStudios/cargo-deny>
+  cargo-deny:
+    name: Check ${{ matrix.checks }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2
+        with:
+          rust-version: stable
+          log-level: info
+          arguments: --all-features --exclude-unpublished --config .config/deny.toml
+          command: check ${{ matrix.checks }}

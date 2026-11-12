@@ -1,3 +1,4 @@
+use alloc::borrow::Cow;
 use alloc::string::String;
 
 use crate::buffer::Buffer;
@@ -33,7 +34,7 @@ use crate::style::Style;
 /// can be quite useful.
 ///
 /// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
-/// Widget is also implemented for `&str` and `String` types.
+/// Widget is also implemented for `&str`, `String`, and `Cow<str>` types.
 ///
 /// # Examples
 ///
@@ -98,6 +99,30 @@ impl Widget for &str {
 impl Widget for String {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.as_str().render(area, buf);
+    }
+}
+
+/// Renders a `String` reference as a widget.
+impl Widget for &String {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.as_str().render(area, buf);
+    }
+}
+
+/// Renders a `Cow<str>` object as a widget.
+///
+/// This implementation enables a borrowed or owned `Cow<str>` to be treated as a widget, which can
+/// be rendered on a [`Buffer`] within the bounds of a given [`Rect`].
+impl Widget for Cow<'_, str> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.as_ref().render(area, buf);
+    }
+}
+
+/// Renders a reference to a `Cow<str>` as a widget.
+impl Widget for &Cow<'_, str> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.as_ref().render(area, buf);
     }
 }
 
@@ -177,6 +202,49 @@ mod tests {
     }
 
     #[rstest]
+    fn render_string_ref(mut buf: Buffer) {
+        let s = String::from("hello world");
+        (&s).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_cow_borrowed(mut buf: Buffer) {
+        let cow: Cow<'_, str> = Cow::Borrowed("hello world");
+        cow.render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_cow_owned(mut buf: Buffer) {
+        let cow: Cow<'_, str> = Cow::Owned(String::from("hello world"));
+        cow.render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_cow_ref(mut buf: Buffer) {
+        let cow: Cow<'_, str> = Cow::Borrowed("hello world");
+        (&cow).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_cow_truncate(mut buf: Buffer) {
+        let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
+        let cow: Cow<'_, str> = Cow::Borrowed("hello world, just hello");
+        cow.render(area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_option_cow(mut buf: Buffer) {
+        let cow: Cow<'_, str> = Cow::Borrowed("hello world");
+        Some(cow).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
     fn render_string_widgets_outside_buffer(
         #[values(
             (Rect::new(10, 10, 5, 1), Rect::new(0, 10, 5, 1)),
@@ -204,6 +272,14 @@ mod tests {
         assert_eq!(buf, expected);
         Some(String::from("hello")).render(render_area, &mut buf);
         assert_eq!(buf, expected);
+        let s = String::from("hello");
+        (&s).render(render_area, &mut buf);
+        assert_eq!(buf, expected);
+        let cow = Cow::Borrowed("hello");
+        (&cow).render(render_area, &mut buf);
+        assert_eq!(buf, expected);
+        cow.render(render_area, &mut buf);
+        assert_eq!(buf, expected);
     }
 
     #[test]
@@ -217,6 +293,13 @@ mod tests {
         assert_eq!(buf, expected);
         buf.reset();
         String::from("hello").render(Rect::new(9, 9, 10, 10), &mut buf);
+        assert_eq!(buf, expected);
+        buf.reset();
+        let s = String::from("hello");
+        (&s).render(Rect::new(9, 9, 10, 10), &mut buf);
+        assert_eq!(buf, expected);
+        buf.reset();
+        Cow::Borrowed("hello").render(Rect::new(9, 9, 10, 10), &mut buf);
         assert_eq!(buf, expected);
     }
 }

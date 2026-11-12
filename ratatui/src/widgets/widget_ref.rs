@@ -1,3 +1,4 @@
+use alloc::borrow::Cow;
 use alloc::string::String;
 
 use super::Widget;
@@ -125,14 +126,29 @@ impl WidgetRef for String {
     }
 }
 
-/// A blanket implementation of `WidgetExt` for `Option<W>` where `W` implements `WidgetRef`.
+/// Provides the ability to render a `Cow<str>` by reference.
+///
+/// This trait allows for a borrowed or owned `Cow<str>` to be rendered onto the [`Buffer`],
+/// similarly using the default style settings.
+impl WidgetRef for Cow<'_, str> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        buf.set_stringn(
+            area.x,
+            area.y,
+            self.as_ref(),
+            area.width as usize,
+            Style::new(),
+        );
+    }
+}
+
+/// A blanket implementation of `WidgetRef` for `Option<W>` where `W` implements `WidgetRef`.
 ///
 /// This is a convenience implementation that makes it easy to attach child widgets to parent
 /// widgets. It allows you to render an optional widget by reference.
 ///
 /// The internal widgets use this pattern to render the optional `Block` widgets that are included
 /// on most widgets.
-/// Blanket implementation of `WidgetExt` for `Option<W>` where `W` implements `WidgetRef`.
 ///
 /// # Examples
 ///
@@ -265,6 +281,27 @@ mod tests {
     #[rstest]
     fn render_ref_option_string(mut buf: Buffer) {
         Some(String::from("hello world")).render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_ref_cow_borrowed(mut buf: Buffer) {
+        let cow: Cow<'_, str> = Cow::Borrowed("hello world");
+        cow.render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_ref_cow_owned(mut buf: Buffer) {
+        let cow: Cow<'_, str> = Cow::Owned(String::from("hello world"));
+        cow.render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn render_ref_option_cow(mut buf: Buffer) {
+        let cow: Cow<'_, str> = Cow::Borrowed("hello world");
+        Some(cow).render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 }
