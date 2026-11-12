@@ -122,8 +122,8 @@ bitflags! {
     }
 }
 
-/// Implement some constant values for `Modifier` for easier usage.
 impl Modifier {
+    /// All underline types. Adding an underline replaces any other underline type.
     pub const ALL_UNDERLINES: Self = Self::UNDERLINED
         .union(Self::UNDER_CURLED)
         .union(Self::DOUBLE_UNDERLINED)
@@ -410,6 +410,11 @@ impl Style {
     ///
     /// When applied, it adds the given modifier to the `Style` modifiers.
     ///
+    /// Adding an underline replaces any other underline type. If multiple underline types are
+    /// supplied together, the first in this order takes precedence: [`Modifier::UNDERLINED`],
+    /// [`Modifier::UNDER_CURLED`], [`Modifier::DOUBLE_UNDERLINED`], [`Modifier::UNDER_DOTTED`],
+    /// [`Modifier::UNDER_DASHED`].
+    ///
     /// ## Examples
     ///
     /// ```rust
@@ -436,6 +441,9 @@ impl Style {
         } else {
             Modifier::empty()
         };
+        let modifier = modifier
+            .difference(Modifier::ALL_UNDERLINES)
+            .union(underline_type);
 
         if !underline_type.is_empty() {
             self.sub_modifier = self.sub_modifier.union(Modifier::ALL_UNDERLINES);
@@ -443,10 +451,7 @@ impl Style {
         }
 
         self.sub_modifier = self.sub_modifier.difference(modifier);
-        self.add_modifier = self.add_modifier.union(underline_type);
-        self.add_modifier = self
-            .add_modifier
-            .union(modifier.difference(Modifier::ALL_UNDERLINES));
+        self.add_modifier = self.add_modifier.union(modifier);
         self
     }
 
@@ -517,14 +522,10 @@ impl Style {
             self.underline_color = other.underline_color.or(self.underline_color);
         }
 
-        // Assuming the Style have `sub_modifier` for all underlines except for the one in the
-        // `add_modifier`, If an underline exists.
-        self.add_modifier.remove(other.sub_modifier);
-        self.add_modifier.insert(other.add_modifier);
-        self.sub_modifier.remove(other.add_modifier);
-        self.sub_modifier.insert(other.sub_modifier);
-
-        self
+        // Use the setters to replace competing underlines even when `other` was constructed
+        // directly. Apply explicit removals last so they take precedence over additions.
+        self.add_modifier(other.add_modifier)
+            .remove_modifier(other.sub_modifier)
     }
 
     /// Formats the style in a way that can be copy-pasted into code using the style shorthands.
@@ -817,6 +818,14 @@ mod tests {
             Style::new().remove_modifier(Modifier::ITALIC),
             Style::new().add_modifier(Modifier::ITALIC | Modifier::BOLD),
             Style::new().remove_modifier(Modifier::ITALIC | Modifier::BOLD),
+            Style::new().underlined(),
+            Style::new().under_curled(),
+            Style::new().double_underlined(),
+            Style::new().under_dotted(),
+            Style::new().under_dashed(),
+            Style::new().not_underlined(),
+            Style::new().remove_modifier(Modifier::UNDER_CURLED),
+            Style::new().add_modifier(Modifier::UNDERLINED | Modifier::UNDER_CURLED),
         ];
         for &a in &styles {
             for &b in &styles {
@@ -1134,6 +1143,36 @@ mod tests {
             cell.modifier,
             Modifier::ITALIC | Modifier::DOUBLE_UNDERLINED | Modifier::DIM
         );
+    }
+
+    #[rstest]
+    #[case(Modifier::ALL_UNDERLINES, Modifier::UNDERLINED)]
+    #[case(Modifier::UNDERLINED | Modifier::UNDER_CURLED, Modifier::UNDERLINED)]
+    #[case(Modifier::UNDER_CURLED | Modifier::DOUBLE_UNDERLINED, Modifier::UNDER_CURLED)]
+    #[case(Modifier::DOUBLE_UNDERLINED | Modifier::UNDER_DOTTED, Modifier::DOUBLE_UNDERLINED)]
+    #[case(Modifier::UNDER_DOTTED | Modifier::UNDER_DASHED, Modifier::UNDER_DOTTED)]
+    fn combined_underlines_replace_existing_type(
+        #[case] modifiers: Modifier,
+        #[case] expected: Modifier,
+        #[values(
+            Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED
+        )]
+        existing: Modifier,
+    ) {
+        let style = Style::new().add_modifier(modifiers | Modifier::BOLD);
+        assert_eq!(style.add_modifier, expected | Modifier::BOLD);
+        assert_eq!(style.sub_modifier, Modifier::ALL_UNDERLINES - expected);
+
+        let patched = Style::new().add_modifier(existing).patch(style);
+        assert_eq!(patched.add_modifier, expected | Modifier::BOLD);
+
+        let mut cell = Cell::new("a");
+        cell.set_style(existing).set_style(style);
+        assert_eq!(cell.modifier, expected | Modifier::BOLD);
     }
 
     #[cfg(feature = "serde")]
