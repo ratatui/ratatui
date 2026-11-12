@@ -446,7 +446,8 @@ impl IntoCrossterm<CrosstermColor> for Color {
 }
 
 impl IntoCrossterm<ContentStyle> for Style {
-    fn into_crossterm(self) -> ContentStyle {
+    fn into_crossterm(mut self) -> ContentStyle {
+        self = Self::new().patch(self);
         let mut attributes = CrosstermAttributes::default();
 
         // Add modifiers
@@ -720,41 +721,7 @@ impl FromCrossterm<ContentStyle> for Style {
             sub_modifier |= Modifier::CROSSED_OUT;
         }
         if value.attributes.has(CrosstermAttribute::NoUnderline) {
-            sub_modifier |= Modifier::UNDERLINED;
-            sub_modifier |= Modifier::UNDER_CURLED;
-            sub_modifier |= Modifier::DOUBLE_UNDERLINED;
-            sub_modifier |= Modifier::UNDER_DOTTED;
-            sub_modifier |= Modifier::UNDER_DASHED;
-        }
-        if value.attributes.has(CrosstermAttribute::Underlined) {
-            sub_modifier |= Modifier::UNDER_CURLED;
-            sub_modifier |= Modifier::DOUBLE_UNDERLINED;
-            sub_modifier |= Modifier::UNDER_DOTTED;
-            sub_modifier |= Modifier::UNDER_DASHED;
-        }
-        if value.attributes.has(CrosstermAttribute::Undercurled) {
-            sub_modifier |= Modifier::UNDERLINED;
-            sub_modifier |= Modifier::DOUBLE_UNDERLINED;
-            sub_modifier |= Modifier::UNDER_DOTTED;
-            sub_modifier |= Modifier::UNDER_DASHED;
-        }
-        if value.attributes.has(CrosstermAttribute::DoubleUnderlined) {
-            sub_modifier |= Modifier::UNDERLINED;
-            sub_modifier |= Modifier::UNDER_CURLED;
-            sub_modifier |= Modifier::UNDER_DOTTED;
-            sub_modifier |= Modifier::UNDER_DASHED;
-        }
-        if value.attributes.has(CrosstermAttribute::Underdotted) {
-            sub_modifier |= Modifier::UNDERLINED;
-            sub_modifier |= Modifier::UNDER_CURLED;
-            sub_modifier |= Modifier::DOUBLE_UNDERLINED;
-            sub_modifier |= Modifier::UNDER_DASHED;
-        }
-        if value.attributes.has(CrosstermAttribute::Underdashed) {
-            sub_modifier |= Modifier::UNDERLINED;
-            sub_modifier |= Modifier::DOUBLE_UNDERLINED;
-            sub_modifier |= Modifier::UNDER_CURLED;
-            sub_modifier |= Modifier::UNDER_DOTTED;
+            sub_modifier |= Modifier::ALL_UNDERLINES;
         }
         if value.attributes.has(CrosstermAttribute::NoHidden) {
             sub_modifier |= Modifier::HIDDEN;
@@ -766,14 +733,15 @@ impl FromCrossterm<ContentStyle> for Style {
             sub_modifier |= Modifier::REVERSED;
         }
 
-        Self {
+        let style = Self {
             fg: value.foreground_color.map(FromCrossterm::from_crossterm),
             bg: value.background_color.map(FromCrossterm::from_crossterm),
             #[cfg(feature = "underline-color")]
             underline_color: value.underline_color.map(FromCrossterm::from_crossterm),
             add_modifier: Modifier::from_crossterm(value.attributes),
             sub_modifier,
-        }
+        };
+        Self::new().patch(style)
     }
 }
 
@@ -1298,6 +1266,30 @@ mod tests {
         assert_eq!(Style::from_crossterm(content_style), style);
     }
 
+    #[rstest]
+    #[case(&[CrosstermAttribute::Underlined, CrosstermAttribute::Undercurled], Modifier::UNDERLINED)]
+    #[case(&[CrosstermAttribute::Undercurled, CrosstermAttribute::DoubleUnderlined], Modifier::UNDER_CURLED)]
+    #[case(&[CrosstermAttribute::DoubleUnderlined, CrosstermAttribute::Underdotted], Modifier::DOUBLE_UNDERLINED)]
+    #[case(&[CrosstermAttribute::Underdotted, CrosstermAttribute::Underdashed], Modifier::UNDER_DOTTED)]
+    #[case(&[CrosstermAttribute::Underlined, CrosstermAttribute::Undercurled, CrosstermAttribute::NoUnderline], Modifier::empty())]
+    fn from_crossterm_combined_underlines(
+        #[case] attributes: &[CrosstermAttribute],
+        #[case] expected: Modifier,
+    ) {
+        let mut attributes = CrosstermAttributes::from(attributes);
+        attributes.set(CrosstermAttribute::Bold);
+        let style = Style::from_crossterm(ContentStyle {
+            attributes,
+            ..Default::default()
+        });
+        assert_eq!(style.add_modifier, expected | Modifier::BOLD);
+        assert_eq!(style.sub_modifier, Modifier::ALL_UNDERLINES - expected);
+
+        let mut cell = Cell::new("a");
+        cell.set_style(Modifier::UNDER_DASHED).set_style(style);
+        assert_eq!(cell.modifier, expected | Modifier::BOLD);
+    }
+
     #[test]
     #[cfg(feature = "underline-color")]
     fn from_crossterm_content_style_underline() {
@@ -1309,6 +1301,75 @@ mod tests {
             Style::from_crossterm(content_style),
             Style::default().underline_color(Color::Red)
         );
+    }
+
+    #[rstest]
+    fn into_crossterm_explicit_underline_removal(
+        #[values(
+            Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED
+        )]
+        modifier: Modifier,
+    ) {
+        let style = Style {
+            add_modifier: modifier | Modifier::BOLD,
+            sub_modifier: modifier,
+            ..Style::new()
+        };
+        let content_style: ContentStyle = style.into_crossterm();
+        assert_eq!(
+            content_style.attributes,
+            CrosstermAttributes::from(
+                [CrosstermAttribute::Bold, CrosstermAttribute::NoUnderline].as_ref()
+            )
+        );
+
+        let mut cell = Cell::new("a");
+        cell.set_style(Modifier::UNDER_DASHED).set_style(style);
+        assert_eq!(cell.modifier, Modifier::BOLD);
+    }
+
+    #[rstest]
+    #[case(CrosstermAttribute::Bold, CrosstermAttribute::NoBold, Modifier::BOLD)]
+    #[case(
+        CrosstermAttribute::Italic,
+        CrosstermAttribute::NoItalic,
+        Modifier::ITALIC
+    )]
+    #[case(
+        CrosstermAttribute::Reverse,
+        CrosstermAttribute::NoReverse,
+        Modifier::REVERSED
+    )]
+    #[case(
+        CrosstermAttribute::Hidden,
+        CrosstermAttribute::NoHidden,
+        Modifier::HIDDEN
+    )]
+    #[case(
+        CrosstermAttribute::CrossedOut,
+        CrosstermAttribute::NotCrossedOut,
+        Modifier::CROSSED_OUT
+    )]
+    fn non_underline_conflicts_preserve_conversion_flags(
+        #[case] add: CrosstermAttribute,
+        #[case] remove: CrosstermAttribute,
+        #[case] modifier: Modifier,
+    ) {
+        let content_style = ContentStyle {
+            attributes: CrosstermAttributes::from([add, remove].as_ref()),
+            ..Default::default()
+        };
+        let style = Style {
+            add_modifier: modifier,
+            sub_modifier: modifier,
+            ..Style::new()
+        };
+        assert_eq!(Style::from_crossterm(content_style), style);
+        assert_eq!(style.into_crossterm(), content_style);
     }
 
     #[rstest]
