@@ -38,7 +38,7 @@ struct TrailingState {
 
 /// Modifiers that are visually apparent on a blank (space) cell.
 const VISIBLE_ON_BLANK: Modifier = Modifier::REVERSED
-    .union(Modifier::UNDERLINED)
+    .union(Modifier::ALL_UNDERLINES)
     .union(Modifier::SLOW_BLINK)
     .union(Modifier::RAPID_BLINK)
     .union(Modifier::CROSSED_OUT);
@@ -236,6 +236,7 @@ mod tests {
     use core::num::NonZeroU16;
 
     use compact_str::CompactString;
+    use rstest::rstest;
 
     use super::*;
     use crate::buffer::Buffer;
@@ -330,6 +331,39 @@ mod tests {
             assert_eq!((diff[0].0, diff[0].1, diff[0].2.symbol()), (1, 0, " "));
             assert_eq!((diff[1].0, diff[1].1, diff[1].2.symbol()), (0, 0, glyph));
         }
+    }
+
+    #[rstest]
+    fn removing_underline_clears_wide_glyph_trailing_cell(
+        #[values(
+            Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED
+        )]
+        modifier: Modifier,
+        #[values("한", "a")] replacement: &str,
+    ) {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 3, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "한", Style::new().add_modifier(modifier));
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, replacement, Style::new());
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+        let positions: Vec<_> = diff.iter().map(|(x, y, _)| (*x, *y)).collect();
+        let expected = if replacement == "한" {
+            [(1, 0), (0, 0)]
+        } else {
+            [(0, 0), (1, 0)]
+        };
+        assert_eq!(positions, expected);
+        let trailing = diff.iter().find(|(x, _, _)| *x == 1).unwrap().2;
+        assert_eq!(trailing.symbol(), " ");
+        assert_eq!(trailing.modifier, Modifier::empty());
     }
 
     #[test]
