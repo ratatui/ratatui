@@ -3,7 +3,7 @@ name: Daily Checks
 # Finds problems caused by changes outside this repository, such as new beta lints and advisories.
 on:
   schedule:
-    - cron: "17 6 * * *"
+    - cron: "30 6 * * *"
   workflow_dispatch:
 
 permissions: {}
