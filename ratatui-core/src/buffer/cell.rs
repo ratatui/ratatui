@@ -202,7 +202,7 @@ impl Cell {
         if let Some(c) = style.underline_color {
             self.underline_color = c;
         }
-        self.modifier = style.add_modifier;
+        self.modifier = style.add_modifier.difference(style.sub_modifier);
         self
     }
 
