@@ -12,6 +12,7 @@ This is a quick summary of the sections below:
 
 - [v0.31.0](#v0310)
   - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
+  - `Scrollbar` thumb now reaches the end of the track when the content is fully scrolled
   - `Backend` adds cursor save and restore methods
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
@@ -111,6 +112,17 @@ now falls back to start alignment because there is no space to distribute betwee
 `Min` and `Fill` constraints still grow to fill the available area. If you relied on the previous
 single-item stretching behavior with a fixed-size constraint, use `Flex::Legacy` or switch the item
 to a growing constraint such as `Fill` or `Min`.
+
+### `Scrollbar` thumb now reaches the end of the track when the content is fully scrolled
+
+The thumb's start position is now normalized over `content_length - viewport_content_length` — the
+furthest an application can actually scroll — instead of over `content_length - 1 +
+viewport_content_length`. Previously the thumb stopped short of the end of the track by a few cells
+once the content was fully scrolled, so the widget reported a scroll position the content never
+reached. See [#1681](https://github.com/ratatui/ratatui/issues/1681).
+
+Applications that clamp their scroll position to `content_length - 1` rather than to `content_length
+- viewport_content_length` will now see the thumb reach the end of the track slightly earlier.
 
 ### `Backend` adds cursor save and restore methods
 
