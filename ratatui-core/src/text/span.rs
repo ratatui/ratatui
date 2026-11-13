@@ -334,12 +334,6 @@ impl<'a> Span<'a> {
         Line::from(self).left_aligned()
     }
 
-    #[expect(clippy::wrong_self_convention)]
-    #[deprecated(since = "0.26.2", note = "use `into_left_aligned_line()` instead")]
-    pub fn to_left_aligned_line(self) -> Line<'a> {
-        self.into_left_aligned_line()
-    }
-
     /// Converts this Span into a center-aligned [`Line`]
     ///
     /// # Example
@@ -354,12 +348,6 @@ impl<'a> Span<'a> {
         Line::from(self).centered()
     }
 
-    #[expect(clippy::wrong_self_convention)]
-    #[deprecated(since = "0.26.2", note = "use `into_centered_line()` instead")]
-    pub fn to_centered_line(self) -> Line<'a> {
-        self.into_centered_line()
-    }
-
     /// Converts this Span into a right-aligned [`Line`]
     ///
     /// # Example
@@ -372,12 +360,6 @@ impl<'a> Span<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn into_right_aligned_line(self) -> Line<'a> {
         Line::from(self).right_aligned()
-    }
-
-    #[expect(clippy::wrong_self_convention)]
-    #[deprecated(since = "0.26.2", note = "use `into_right_aligned_line()` instead")]
-    pub fn to_right_aligned_line(self) -> Line<'a> {
-        self.into_right_aligned_line()
     }
 
     /// Converts this `Span` into a `Span<'static>` that owns its content, cloning the content only

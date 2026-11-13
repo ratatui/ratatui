@@ -13,6 +13,7 @@ This is a quick summary of the sections below:
 - [v0.31.0](#v0310)
   - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
   - `Backend` adds cursor save and restore methods
+  - Removed APIs deprecated in v0.26.2 and v0.26.3
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -123,6 +124,18 @@ disambiguate such calls.
 Backends that can save the cursor without querying terminal input should override both methods and
 return `Ok(true)` from `save_cursor_position`. Other backends can use the default implementations,
 which select the cursor get-and-set fallback.
+
+### Removed APIs deprecated in v0.26.2 and v0.26.3
+
+The following APIs, deprecated since April and May 2024, have been removed:
+
+- `Span::to_left_aligned_line`, `Span::to_centered_line` and `Span::to_right_aligned_line`. Use
+  `Span::into_left_aligned_line`, `Span::into_centered_line` and `Span::into_right_aligned_line`
+  instead.
+- `assert_buffer_eq!`. Use `assert_eq!(&actual, &expected)` instead.
+
+`TestBackend::assert_buffer` now uses `assert_eq!` internally, so its panic message is the standard
+``assertion `left == right` failed`` output instead of the `assert_buffer_eq!` message.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 

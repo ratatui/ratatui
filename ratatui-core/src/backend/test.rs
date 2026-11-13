@@ -161,11 +161,9 @@ impl TestBackend {
     ///
     /// When they are not equal, a panic occurs with a detailed error message showing the
     /// differences between the expected and actual buffers.
-    #[expect(deprecated)]
     #[track_caller]
     pub fn assert_buffer(&self, expected: &Buffer) {
-        // TODO: use assert_eq!()
-        crate::assert_buffer_eq!(&self.buffer, expected);
+        assert_eq!(&self.buffer, expected);
     }
 
     /// Asserts that the `TestBackend`'s scrollback buffer is equal to the expected buffer.
@@ -548,7 +546,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic = "buffer contents not equal"]
+    #[should_panic = "assertion `left == right` failed"]
     fn assert_buffer_panics() {
         let backend = TestBackend::new(10, 2);
         backend.assert_buffer_lines(["aaaaaaaaaa"; 2]);
