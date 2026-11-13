@@ -897,8 +897,8 @@ fn spans_after_width<'a>(
         })
         .map(|(span, span_width, available_width)| {
             if span_width <= available_width {
-                // Span is fully visible. Clone here is fast as the underlying content is `Cow`.
-                return (span.clone(), span_width, 0u16);
+                // Span is fully visible. Borrow it, as cloning would copy owned content.
+                return (Span::from(span), span_width, 0u16);
             }
             // Span is only partially visible. As the end is truncated by the area width, only
             // truncate the start of the span.
@@ -1451,6 +1451,23 @@ mod tests {
                 Span::styled("world!", GREEN),
             ])
             .style(ITALIC)
+        }
+
+        #[test]
+        fn spans_after_width_borrows_owned_content() {
+            let line = Line::from(vec![
+                Span::from(String::from("Hello ")).red(),
+                Span::from(String::from("world!")).bold(),
+            ]);
+            let visible: Vec<_> = spans_after_width(&line.spans, 0).collect();
+            assert_eq!(visible.len(), line.spans.len());
+            for ((span, _, _), stored_span) in visible.iter().zip(&line.spans) {
+                let Cow::Borrowed(content) = span.content else {
+                    panic!("expected borrowed content, got {:?}", span.content);
+                };
+                assert!(core::ptr::eq(content, stored_span.content.as_ref()));
+                assert_eq!(span.style, stored_span.style);
+            }
         }
 
         #[test]
