@@ -172,6 +172,11 @@ impl<DS: DateStyler> Widget for Monthly<'_, DS> {
 
 impl<DS: DateStyler> Widget for &Monthly<'_, DS> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
         self.render_monthly(inner, buf);
@@ -209,7 +214,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 
         let mut y = days_area.y;
         // go through all the weeks containing a day in the target month.
-        while curr_day.month() != self.display_date.month().next() {
+        while curr_day.month() != self.display_date.month().next() && y < days_area.bottom() {
             let mut spans = Vec::with_capacity(14);
             for i in 0..7 {
                 // Draw the gutter. Do it here so we can avoid worrying about
@@ -222,9 +227,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
                 spans.push(self.format_date(curr_day));
                 curr_day += Duration::DAY;
             }
-            if buf.area.height > y {
-                buf.set_line(days_area.x, y, &spans.into(), area.width);
-            }
+            buf.set_line(days_area.x, y, &spans.into(), days_area.width);
             y += 1;
         }
     }
@@ -315,6 +318,7 @@ impl Default for CalendarEventStore {
 #[cfg(test)]
 mod tests {
     use ratatui_core::style::{Color, Style};
+    use rstest::rstest;
     use time::Month;
 
     use super::*;
@@ -454,5 +458,60 @@ mod tests {
         assert_eq!(sunday_based_weeks(sunday_start), 4);
         assert_eq!(sunday_based_weeks(saturday_start), 6);
         assert_eq!(sunday_based_weeks(leap_year), 5);
+    }
+
+    #[rstest]
+    fn render_calendar_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        let calendar = Monthly::new(
+            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
+            CalendarEventStore::default(),
+        );
+        calendar.render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_calendar_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = Monthly::new(
+            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
+            CalendarEventStore::default(),
+        );
+        (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
+        (&widget).render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
+    }
+
+    #[test]
+    fn render_calendar_stays_within_requested_rows() {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let calendar = Monthly::new(
+            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
+            CalendarEventStore::default(),
+        );
+        calendar.render(Rect::new(10, 11, 30, 1), &mut buf);
+        assert_ne!(buf[(11, 11)].symbol(), "x");
+        for y in [10, 12, 13, 14, 15, 16, 17] {
+            for x in 10..40 {
+                assert_eq!(buf[(x, y)].symbol(), "x");
+            }
+        }
     }
 }

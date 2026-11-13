@@ -17,12 +17,12 @@ pub struct WeatherTab {
 
 impl WeatherTab {
     /// Simulate a download indicator by decrementing the row index.
-    pub fn prev(&mut self) {
+    pub const fn prev(&mut self) {
         self.download_progress = self.download_progress.saturating_sub(1);
     }
 
     /// Simulate a download indicator by incrementing the row index.
-    pub fn next(&mut self) {
+    pub const fn next(&mut self) {
         self.download_progress = self.download_progress.saturating_add(1);
     }
 }

@@ -27,7 +27,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
         1 => draw_second_tab(frame, app, chunks[1]),
         2 => draw_third_tab(frame, app, chunks[1]),
         _ => {}
-    };
+    }
 }
 
 fn draw_first_tab(frame: &mut Frame, app: &mut App, area: Rect) {
@@ -179,7 +179,7 @@ fn draw_charts(frame: &mut Frame, app: &mut App, area: Rect) {
             ),
             Span::raw(format!(
                 "{}",
-                (app.signals.window[0] + app.signals.window[1]) / 2.0
+                f64::midpoint(app.signals.window[0], app.signals.window[1])
             )),
             Span::styled(
                 format!("{}", app.signals.window[1]),

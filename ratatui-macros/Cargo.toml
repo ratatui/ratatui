@@ -15,3 +15,6 @@ ratatui-widgets.workspace = true
 
 [dev-dependencies]
 trybuild = { workspace = true, features = ["diff"] }
+
+[lints]
+workspace = true

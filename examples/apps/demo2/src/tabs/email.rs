@@ -53,12 +53,12 @@ pub struct EmailTab {
 
 impl EmailTab {
     /// Select the previous email (with wrap around).
-    pub fn prev(&mut self) {
+    pub const fn prev(&mut self) {
         self.row_index = self.row_index.saturating_add(EMAILS.len() - 1) % EMAILS.len();
     }
 
     /// Select the next email (with wrap around).
-    pub fn next(&mut self) {
+    pub const fn next(&mut self) {
         self.row_index = self.row_index.saturating_add(1) % EMAILS.len();
     }
 }

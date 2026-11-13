@@ -71,7 +71,7 @@ struct Counter {
 
 impl Counter {
     /// Create a new counter.
-    fn new() -> Self {
+    const fn new() -> Self {
         Self { count: 0 }
     }
 
@@ -79,7 +79,7 @@ impl Counter {
     ///
     /// This method modifies the counter's state outside of the rendering process,
     /// maintaining the separation between state updates and rendering.
-    fn increment(&mut self) {
+    const fn increment(&mut self) {
         self.count += 1;
     }
 }

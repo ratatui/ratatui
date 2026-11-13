@@ -57,14 +57,16 @@ serde = [
   "ratatui-widgets/serde",
 ]
 
-## enables layout cache
+## enables the layout cache, which avoids rerunning the layout solver for repeated layouts. Keep this
+## enabled when building with `default-features = false` for `no_std` targets; without `std` it
+## needs a [`critical-section`](https://docs.rs/critical-section) implementation.
 layout-cache = ["ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["dep:palette", "ratatui-core/palette"]
 
 ## enables portable-atomic integration for targets that don't support atomic types.
-portable-atomic = ["ratatui-core/portable-atomic"]
+portable-atomic = ["ratatui-core/portable-atomic", "ratatui-widgets/portable-atomic"]
 
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).

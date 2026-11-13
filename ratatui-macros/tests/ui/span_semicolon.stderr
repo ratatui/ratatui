@@ -1,0 +1,28 @@
+error: use of deprecated constant `main::SEMICOLON_STYLE`: `span!(style; content)` is deprecated; replace the semicolon after the style with `=>`: `span!(style => content)`
+ --> tests/ui/span_semicolon.rs:8:13
+  |
+8 |     let _ = span!(Color::Blue; "hello");
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+note: the lint level is defined here
+ --> tests/ui/span_semicolon.rs:1:9
+  |
+1 | #![deny(deprecated)]
+  |         ^^^^^^^^^^
+  = note: this error originates in the macro `span` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: use of deprecated constant `main::SEMICOLON_STYLE`: `span!(style; content)` is deprecated; replace the semicolon after the style with `=>`: `span!(style => content)`
+ --> tests/ui/span_semicolon.rs:9:13
+  |
+9 |     let _ = span!(Color::Blue; "hello {}", "world");
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `span` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: use of deprecated constant `main::SEMICOLON_STYLE`: `span!(style; content)` is deprecated; replace the semicolon after the style with `=>`: `span!(style => content)`
+  --> tests/ui/span_semicolon.rs:10:13
+   |
+10 |     let _ = span!(Color::Blue; content);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in the macro `span` (in Nightly builds, run with -Z macro-backtrace for more info)

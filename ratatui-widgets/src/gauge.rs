@@ -159,6 +159,11 @@ impl Widget for Gauge<'_> {
 
 impl Widget for &Gauge<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
         self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
@@ -423,6 +428,11 @@ impl Widget for LineGauge<'_> {
 
 impl Widget for &LineGauge<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
         self.block.as_ref().render(area, buf);
         let gauge_area = self.block.inner_if_some(area);
@@ -482,6 +492,7 @@ impl Styled for LineGauge<'_> {
 mod tests {
     use ratatui_core::style::{Color, Modifier, Style, Stylize};
     use ratatui_core::symbols;
+    use rstest::rstest;
 
     use super::*;
 
@@ -619,5 +630,72 @@ mod tests {
         let line_gauge = LineGauge::default().ratio(0.5);
         // This should not panic, even if the buffer has zero size.
         line_gauge.render(buffer.area, &mut buffer);
+    }
+    #[rstest]
+    fn render_gauge_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        Gauge::default()
+            .ratio(0.5)
+            .label("hello")
+            .render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_gauge_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = Gauge::default().ratio(0.5).label("hello");
+        (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
+        (&widget).render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
+    }
+
+    #[rstest]
+    fn render_line_gauge_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        LineGauge::default()
+            .ratio(0.5)
+            .label("hello")
+            .render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_line_gauge_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = LineGauge::default().ratio(0.5).label("hello");
+        (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
+        (&widget).render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }
