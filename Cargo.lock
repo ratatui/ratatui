@@ -1992,7 +1992,6 @@ version = "0.0.0"
 dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
- "itertools 0.15.0",
  "ratatui",
 ]
 

@@ -189,6 +189,36 @@ macro_rules! modifier {
             self.remove_modifier($variant)
         }
     };
+    ( $variant:expr, $modifier:ident(), _ -> $ty:ty ) => {
+        #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
+        fn $modifier(self) -> $ty {
+            self.add_modifier($variant)
+        }
+    };
+
+    (pub const $variant:expr, $modifier:ident(), _ -> $ty:ty ) => {
+        #[doc = concat!("Adds the [`", stringify!($modifier), "`](", stringify!($variant), ") modifier.")]
+        #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
+        pub const fn $modifier(self) -> $ty {
+            self.add_modifier($variant)
+        }
+    };
+    ( $variant:expr, _, $not_modifier:ident() -> $ty:ty ) => {
+        #[doc = concat!("Removes the [`", stringify!($not_modifier), "`](", stringify!($variant), ") modifiers.")]
+        #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
+        fn $not_modifier(self) -> $ty {
+            self.remove_modifier($variant)
+        }
+    };
+
+    (pub const $variant:expr, _, $not_modifier:ident() -> $ty:ty ) => {
+        #[doc = concat!("Removes the [`", stringify!($not_modifier), "`](", stringify!($variant), ") modifiers.")]
+        #[must_use = concat!("`", stringify!($not_modifier), "` returns the modified style without modifying the original")]
+        pub const fn $not_modifier(self) -> $ty {
+            self.remove_modifier($variant)
+        }
+    };
 }
 
 /// An extension trait for styling objects.
@@ -262,7 +292,12 @@ pub trait Stylize<'a, T>: Sized {
     modifier!(Modifier::BOLD, bold(), not_bold() -> T);
     modifier!(Modifier::DIM, dim(), not_dim() -> T);
     modifier!(Modifier::ITALIC, italic(), not_italic() -> T);
-    modifier!(Modifier::UNDERLINED, underlined(), not_underlined() -> T);
+    modifier!(Modifier::ALL_UNDERLINES, _, not_underlined() -> T);
+    modifier!(Modifier::UNDERLINED, underlined(), _ -> T);
+    modifier!(Modifier::UNDER_CURLED, under_curled(), _ -> T);
+    modifier!(Modifier::DOUBLE_UNDERLINED, double_underlined(), _ -> T);
+    modifier!(Modifier::UNDER_DOTTED, under_dotted(), _ -> T);
+    modifier!(Modifier::UNDER_DASHED, under_dashed(), _ -> T);
     modifier!(Modifier::SLOW_BLINK, slow_blink(), not_slow_blink() -> T);
     modifier!(Modifier::RAPID_BLINK, rapid_blink(), not_rapid_blink() -> T);
     modifier!(Modifier::REVERSED, reversed(), not_reversed() -> T);
@@ -460,6 +495,20 @@ mod tests {
         );
 
         assert_eq!("hello".reset(), Span::from("hello").reset());
+    }
+
+    #[rstest]
+    #[case("hello".underlined(), Modifier::UNDERLINED)]
+    #[case("hello".under_curled(), Modifier::UNDER_CURLED)]
+    #[case("hello".double_underlined(), Modifier::DOUBLE_UNDERLINED)]
+    #[case("hello".under_dotted(), Modifier::UNDER_DOTTED)]
+    #[case("hello".under_dashed(), Modifier::UNDER_DASHED)]
+    fn underline_helpers(#[case] span: Span<'_>, #[case] modifier: Modifier) {
+        assert_eq!(span.style.add_modifier, modifier);
+
+        let cleared = span.not_underlined();
+        assert_eq!(cleared.style.add_modifier, Modifier::empty());
+        assert_eq!(cleared.style.sub_modifier, Modifier::ALL_UNDERLINES);
     }
 
     #[test]

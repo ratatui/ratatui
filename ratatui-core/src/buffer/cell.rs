@@ -191,7 +191,7 @@ impl Cell {
     ///  `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     pub fn set_style<S: Into<Style>>(&mut self, style: S) -> &mut Self {
-        let style = style.into();
+        let style = self.style().patch(style);
         if let Some(c) = style.fg {
             self.fg = c;
         }
@@ -202,8 +202,7 @@ impl Cell {
         if let Some(c) = style.underline_color {
             self.underline_color = c;
         }
-        self.modifier.insert(style.add_modifier);
-        self.modifier.remove(style.sub_modifier);
+        self.modifier = style.add_modifier.difference(style.sub_modifier);
         self
     }
 
@@ -341,6 +340,8 @@ fn is_single_grapheme(symbol: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     #[test]
@@ -481,6 +482,37 @@ mod tests {
                 sub_modifier: Modifier::empty(),
             }
         );
+    }
+
+    #[rstest]
+    fn copied_style_replaces_existing_underline(
+        #[values(
+            Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED
+        )]
+        existing: Modifier,
+        #[values(
+            Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED
+        )]
+        replacement: Modifier,
+    ) {
+        let mut source = Cell::new("a");
+        source.set_style(replacement);
+        let style = source.style();
+
+        let patched = Style::new().add_modifier(existing).patch(style);
+        assert_eq!(patched.add_modifier, replacement);
+
+        let mut target = Cell::new("b");
+        target.set_style(existing).set_style(style);
+        assert_eq!(target.modifier, replacement);
     }
 
     #[test]
