@@ -503,7 +503,7 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
         let width = context.x_bounds[1] - context.x_bounds[0];
         let height = context.y_bounds[1] - context.y_bounds[0];
         let scale = (width > 0.0 && height > 0.0)
-            .then(|| ((resolution_x - 1.0) / width, (resolution_y - 1.0) / height));
+            .then_some(((resolution_x - 1.0) / width, (resolution_y - 1.0) / height));
         Self { context, scale }
     }
 }

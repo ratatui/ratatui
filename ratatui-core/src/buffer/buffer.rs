@@ -160,7 +160,10 @@ impl Buffer {
     /// assert_eq!(buffer.cell((1, 1)).map(|cell| cell.symbol()), None);
     /// ```
     #[track_caller]
-    #[deprecated = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell((x, y))`. Both methods take `impl Into<Position>`."]
+    #[deprecated(
+        since = "0.28.0",
+        note = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell((x, y))`. Both methods take `impl Into<Position>`."
+    )]
     #[must_use]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
@@ -202,7 +205,10 @@ impl Buffer {
     /// assert_eq!(buffer.cell_mut((1, 1)), None);
     /// ```
     #[track_caller]
-    #[deprecated = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell_mut((x, y))`. Both methods take `impl Into<Position>`."]
+    #[deprecated(
+        since = "0.28.0",
+        note = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell_mut((x, y))`. Both methods take `impl Into<Position>`."
+    )]
     #[must_use]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);
