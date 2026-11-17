@@ -16,6 +16,12 @@ use crate::widgets::Widget;
 /// A `Span` is the smallest unit of text that can be styled. It is usually combined in the [`Line`]
 /// type to represent a line of text where each `Span` may have a different style.
 ///
+/// Control characters in the content are dropped when the span is rendered, so ANSI escape
+/// sequences are shown as plain text rather than changing the style. See [ANSI escape sequences]
+/// for how to convert them.
+///
+/// [ANSI escape sequences]: crate::text#ansi-escape-sequences
+///
 /// # Constructor Methods
 ///
 /// - [`Span::default`] creates an span with empty content and the default style.
