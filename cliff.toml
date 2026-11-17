@@ -15,7 +15,7 @@ All notable changes to this project will be documented in this file.
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 """
 # template for the changelog body
-# https://keats.github.io/tera/docs/#introduction
+# https://git-cliff.org/docs/templating/syntax
 # note that the - before / after the % controls whether whitespace is rendered between each line.
 # Getting this right so that the markdown renders with the correct number of lines between headings
 # code fences and list items is pretty finicky. Note also that the 4 backticks in the commit macro
