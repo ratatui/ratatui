@@ -35,7 +35,6 @@
 //!
 //! - [`BarChart`]: displays multiple datasets as bars with optional grouping.
 //! - [`Block`]: a basic widget that draws a block with optional borders, titles, and styles.
-//! - [`calendar::Monthly`]: displays a single month.
 //! - [`Canvas`]: draws arbitrary shapes using drawing characters.
 //! - [`Chart`]: displays multiple datasets as lines or scatter graphs.
 //! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
@@ -53,7 +52,6 @@
 //!
 //! [`BarChart`]: crate::barchart::BarChart
 //! [`Block`]: crate::block::Block
-//! [`calendar::Monthly`]: crate::calendar::Monthly
 //! [`Canvas`]: crate::canvas::Canvas
 //! [`Chart`]: crate::chart::Chart
 //! [`Clear`]: crate::clear::Clear
@@ -134,5 +132,3 @@ mod polyfills;
 mod reflow;
 
 mod as_ref;
-#[cfg(feature = "calendar")]
-pub mod calendar;
