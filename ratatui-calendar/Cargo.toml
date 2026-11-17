@@ -21,20 +21,22 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = []
 
 ## enables std, which is needed for [`CalendarEventStore::today`].
-std = ["time/local-offset"]
+std = ["jiff/std", "jiff/tz-system", "jiff/tzdb-bundle-platform", "jiff/tzdb-zoneinfo"]
 
 [dependencies]
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
+jiff.workspace = true
 ratatui-core.workspace = true
 ratatui-widgets.workspace = true
-time.workspace = true
 
 [dev-dependencies]
+chrono = { workspace = true, features = ["clock"] }
 color-eyre.workspace = true
 crossterm.workspace = true
 ratatui = { path = "../ratatui" }
 rstest.workspace = true
+time = { workspace = true, features = ["std"] }
 
 [lints]
 workspace = true

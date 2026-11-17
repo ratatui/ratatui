@@ -19,10 +19,15 @@ Most applications use this crate through `ratatui::widgets::calendar` by enablin
 `ratatui-calendar` directly if you are building a widget library, or if you want finer-grained
 dependencies than the `ratatui` crate gives you.
 
+Dates are [`jiff::civil::Date`](https://docs.rs/jiff/latest/jiff/civil/date/struct.Date.html) values from the [jiff] crate. Use [`jiff::civil::date`](https://docs.rs/jiff/latest/jiff/civil/fn.date.html) to
+build one from a year, month and day.
+
 The calendar previously lived in the `calendar` module of `ratatui-widgets`. It moved to its
 own crate because it is the only built-in widget whose public API uses a third-party type (the
 date type), and a separate crate lets that dependency change without a breaking release of
 `ratatui-widgets`.
+
+[jiff]: https://crates.io/crates/jiff
 
 ## Installation
 
@@ -46,23 +51,23 @@ headers show the month name and the weekdays, and a [`Block`] can wrap the calen
 for laying it out with a fixed-size constraint.
 
 ```rust
+use jiff::civil::date;
 use ratatui_calendar::{CalendarEventStore, Monthly};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Color, Modifier, Style};
 use ratatui_core::widgets::Widget;
 use ratatui_widgets::block::Block;
-use time::{Date, Month};
 
-let date = Date::from_calendar_date(2026, Month::November, 1).unwrap();
+let november = date(2026, 11, 1);
 
 let mut events = CalendarEventStore::default();
 events.add(
-    Date::from_calendar_date(2026, Month::November, 26).unwrap(),
+    date(2026, 11, 26),
     Style::new().fg(Color::Red).add_modifier(Modifier::BOLD),
 );
 
-let calendar = Monthly::new(date, events)
+let calendar = Monthly::new(november, events)
     .show_month_header(Style::new().add_modifier(Modifier::BOLD))
     .show_weekdays_header(Style::new().fg(Color::Cyan))
     .show_surrounding(Style::new().fg(Color::DarkGray))
@@ -73,11 +78,27 @@ let mut buf = Buffer::empty(area);
 calendar.render(area, &mut buf);
 ```
 
-See the [calendar example] and the [calendar explorer] for more.
+## Examples
+
+Run these with `cargo run -p ratatui-calendar --example <name>`.
+
+The main example is [`calendar-explorer`]. It is intentionally the most complex one, to show
+off the features: every style option across a whole year, with holidays and recurring events
+computed using jiff, and keyboard navigation.
+
+The smaller examples are easier to start from:
+
+- [`minimal`]: the current month in a bordered block.
+- [`calendar`]: two months side by side with different styles.
+- [`time`]: an app that keeps its own dates as `time::Date` and converts them at the boundary.
+- [`chrono`]: the same for an app that uses `chrono::NaiveDate`.
 
 [`Block`]: https://docs.rs/ratatui_widgets/latest/ratatui_widgets/block/struct.Block.html
-[calendar example]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/calendar.rs
-[calendar explorer]: https://github.com/ratatui/ratatui/tree/main/examples/apps/calendar-explorer
+[`calendar-explorer`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/calendar-explorer.rs
+[`minimal`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/minimal.rs
+[`calendar`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/calendar.rs
+[`time`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/time.rs
+[`chrono`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/chrono.rs
 
 ## Crate Organization
 

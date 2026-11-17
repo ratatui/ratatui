@@ -14,6 +14,7 @@ This is a quick summary of the sections below:
   - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
   - `Backend` adds cursor save and restore methods
   - The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
+  - The calendar widget uses `jiff` dates instead of `time` dates
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -124,6 +125,41 @@ disambiguate such calls.
 Backends that can save the cursor without querying terminal input should override both methods and
 return `Ok(true)` from `save_cursor_position`. Other backends can use the default implementations,
 which select the cursor get-and-set fallback.
+
+### The calendar widget uses `jiff` dates instead of `time` dates
+
+`ratatui-calendar` (and so `ratatui::widgets::calendar`) now uses [`jiff::civil::Date`] instead of
+`time::Date`. This affects `Monthly::new`, `DateStyler::get_style`, `CalendarEventStore::add` and
+the `HashMap` inside `CalendarEventStore`. `ratatui` no longer depends on `time`.
+
+Build dates with [`jiff::civil::date`][jiff-date-fn] and get today's date with `jiff::ZonedDateTime::now()`:
+
+```diff
+- use time::{Date, Month, OffsetDateTime};
++ use jiff::ZonedDateTime;
++ use jiff::civil::date;
+
+- let new_year = Date::from_calendar_date(2026, Month::January, 1)?;
++ let new_year = date(2026, 1, 1);
+- let today = OffsetDateTime::now_local()?.date();
++ let today = ZonedDateTime::now().date();
+```
+
+If the rest of your app keeps using `time`, convert at the boundary:
+
+```rust
+fn to_jiff(date: time::Date) -> jiff::civil::Date {
+    let year = i16::try_from(date.year()).expect("year in jiff's range");
+    jiff::civil::date(year, u8::from(date.month()) as i8, date.day() as i8)
+}
+```
+
+`CalendarEventStore::today` now uses the system time zone through jiff. Previously it used `time`'s
+local offset, which fails in multithreaded programs on Unix, so `today` could silently fall back to
+UTC and mark the wrong day.
+
+[`jiff::civil::Date`]: https://docs.rs/jiff/latest/jiff/civil/struct.Date.html
+[jiff-date-fn]: https://docs.rs/jiff/latest/jiff/civil/fn.date.html
 
 ### The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
 

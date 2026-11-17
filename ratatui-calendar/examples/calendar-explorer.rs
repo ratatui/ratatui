@@ -1,71 +1,89 @@
-//! A Ratatui example that demonstrates how to render calendar with different styles.
+//! # [Ratatui] calendar `calendar-explorer` example
 //!
-//! Marks the holidays and seasons on the calendar.
+//! This is the most complete calendar example, and deliberately the most complex: it shows every
+//! `Monthly` style option across a whole year. It marks holidays, seasons and fortnightly
+//! paydays, computing the dates that move each year (US Thanksgiving and the paydays) with jiff
+//! rather than listing them by hand. Move around with the arrow keys or `hjkl`, change month with
+//! `n` and `p`, cycle styles with `s`, and quit with `q` or Esc.
 //!
-//! This example runs with the Ratatui library code in the branch that you are currently reading.
-//! See the [`latest`] branch for the code which works with the most recent Ratatui release.
+//! For something easier to start from, see the smaller examples in the same folder: [`minimal`],
+//! [`calendar`], and [`time`] or [`chrono`] for apps that use those crates for their own dates.
 //!
-//! [`latest`]: https://github.com/ratatui/ratatui/tree/latest
-//! [`BarChart`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html
+//! The latest version of this example is available in the [calendar examples] folder in the
+//! repository. The examples are designed to be run against the `main` branch of the GitHub
+//! repository, so they may not compile with the latest release on crates.io.
+//!
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [calendar examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples
+//! [`minimal`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/minimal.rs
+//! [`calendar`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/calendar.rs
+//! [`time`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/time.rs
+//! [`chrono`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/chrono.rs
 
 use std::fmt;
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
+use jiff::civil::{Date, Weekday, date};
+use jiff::{ToSpan, ZonedDateTime};
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Text};
 use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
 use ratatui::{DefaultTerminal, Frame};
-use time::ext::NumericalDuration;
-use time::{Date, Month, OffsetDateTime};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    ratatui::run(run)
+    ratatui::run(|terminal| App::new().run(terminal))
 }
 
-/// Run the application.
-fn run(terminal: &mut DefaultTerminal) -> Result<()> {
-    let mut selected_date = OffsetDateTime::now_local()?.date();
-    let mut calendar_style = StyledCalendar::Default;
-    loop {
-        terminal.draw(|frame| render(frame, calendar_style, selected_date))?;
-        if let Some(key) = event::read()?.as_key_press_event() {
-            match key.code {
-                KeyCode::Char('q') => break Ok(()),
-                KeyCode::Char('s') => calendar_style = calendar_style.next(),
-                KeyCode::Char('n') | KeyCode::Tab => selected_date = next_month(selected_date),
-                KeyCode::Char('p') | KeyCode::BackTab => selected_date = prev_month(selected_date),
-                KeyCode::Char('h') | KeyCode::Left => selected_date -= 1.days(),
-                KeyCode::Char('j') | KeyCode::Down => selected_date += 1.weeks(),
-                KeyCode::Char('k') | KeyCode::Up => selected_date -= 1.weeks(),
-                KeyCode::Char('l') | KeyCode::Right => selected_date += 1.days(),
-                _ => {}
-            }
+/// The calendar explorer's state.
+struct App {
+    selected_date: Date,
+    calendar_style: StyledCalendar,
+    exit: bool,
+}
+
+impl App {
+    fn new() -> Self {
+        Self {
+            selected_date: ZonedDateTime::now().date(),
+            calendar_style: StyledCalendar::Default,
+            exit: false,
         }
     }
-}
 
-fn next_month(date: Date) -> Date {
-    if date.month() == Month::December {
-        date.replace_month(Month::January)
-            .unwrap()
-            .replace_year(date.year() + 1)
-            .unwrap()
-    } else {
-        date.replace_month(date.month().next()).unwrap()
+    /// Run the application until the user quits.
+    fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        while !self.exit {
+            terminal.draw(|frame| render(frame, self.calendar_style, self.selected_date))?;
+            if let Some(key) = event::read()?.as_key_press_event() {
+                self.handle_key(key.code);
+            }
+        }
+        Ok(())
     }
-}
 
-fn prev_month(date: Date) -> Date {
-    if date.month() == Month::January {
-        date.replace_month(Month::December)
-            .unwrap()
-            .replace_year(date.year() - 1)
-            .unwrap()
-    } else {
-        date.replace_month(date.month().previous()).unwrap()
+    fn handle_key(&mut self, code: KeyCode) {
+        let step = match code {
+            KeyCode::Char('q') | KeyCode::Esc => {
+                self.exit = true;
+                return;
+            }
+            KeyCode::Char('s') => {
+                self.calendar_style = self.calendar_style.next();
+                return;
+            }
+            KeyCode::Char('n') | KeyCode::Tab => 1.month(),
+            KeyCode::Char('p') | KeyCode::BackTab => -1.month(),
+            KeyCode::Char('h') | KeyCode::Left => -1.day(),
+            KeyCode::Char('j') | KeyCode::Down => 1.week(),
+            KeyCode::Char('k') | KeyCode::Up => -1.week(),
+            KeyCode::Char('l') | KeyCode::Right => 1.day(),
+            _ => return,
+        };
+        // saturate at the first and last dates jiff supports instead of panicking
+        self.selected_date = self.selected_date.saturating_add(step);
     }
 }
 
@@ -74,7 +92,7 @@ fn render(frame: &mut Frame, calendar_style: StyledCalendar, selected_date: Date
     let header = Text::from_iter([
         Line::from("Calendar Example".bold()),
         Line::from(
-            "<q> Quit | <s> Change Style | <n> Next Month | <p> Previous Month, <hjkl> Move",
+            "<q/Esc> Quit | <s> Change Style | <n> Next Month | <p> Previous Month, <hjkl> Move",
         ),
         Line::from(format!(
             "Current date: {selected_date} | Current style: {calendar_style}"
@@ -139,12 +157,8 @@ impl StyledCalendar {
             .layout_vec(&vertical)
             .into_iter()
             .flat_map(|row| row.layout_vec(horizontal));
-        for (i, area) in areas.enumerate() {
-            let month = date
-                .replace_day(1)
-                .unwrap()
-                .replace_month(Month::try_from(i as u8 + 1).unwrap())
-                .unwrap();
+        let months = date.first_of_year().series(1.month());
+        for (area, month) in areas.zip(months) {
             self.render_month(frame, area, month, &events);
         }
         Ok(())
@@ -194,6 +208,7 @@ fn events(selected_date: Date) -> Result<CalendarEventStore> {
         .fg(Color::Green)
         .bg(Color::Black)
         .add_modifier(Modifier::UNDERLINED);
+    const PAYDAY: Style = Style::new().fg(Color::Yellow);
 
     let mut list = CalendarEventStore::today(
         Style::default()
@@ -203,31 +218,44 @@ fn events(selected_date: Date) -> Result<CalendarEventStore> {
     let y = selected_date.year();
 
     // new year's
-    list.add(Date::from_calendar_date(y, Month::January, 1)?, HOLIDAY);
+    list.add(date(y, 1, 1), HOLIDAY);
     // next new_year's for December "show surrounding"
-    list.add(Date::from_calendar_date(y + 1, Month::January, 1)?, HOLIDAY);
+    let next_new_year = selected_date.last_of_year().tomorrow()?;
+    list.add(next_new_year, HOLIDAY);
     // groundhog day
-    list.add(Date::from_calendar_date(y, Month::February, 2)?, HOLIDAY);
+    list.add(date(y, 2, 2), HOLIDAY);
     // april fool's
-    list.add(Date::from_calendar_date(y, Month::April, 1)?, HOLIDAY);
+    list.add(date(y, 4, 1), HOLIDAY);
     // earth day
-    list.add(Date::from_calendar_date(y, Month::April, 22)?, HOLIDAY);
+    list.add(date(y, 4, 22), HOLIDAY);
     // star wars day
-    list.add(Date::from_calendar_date(y, Month::May, 4)?, HOLIDAY);
+    list.add(date(y, 5, 4), HOLIDAY);
+    // thanksgiving (US), the fourth Thursday of November
+    let thanksgiving = date(y, 11, 1).nth_weekday_of_month(4, Weekday::Thursday)?;
+    list.add(thanksgiving, HOLIDAY);
     // festivus
-    list.add(Date::from_calendar_date(y, Month::December, 23)?, HOLIDAY);
+    list.add(date(y, 12, 23), HOLIDAY);
     // new year's eve
-    list.add(Date::from_calendar_date(y, Month::December, 31)?, HOLIDAY);
+    list.add(date(y, 12, 31), HOLIDAY);
 
     // seasons
     // spring equinox
-    list.add(Date::from_calendar_date(y, Month::March, 22)?, SEASON);
+    list.add(date(y, 3, 22), SEASON);
     // summer solstice
-    list.add(Date::from_calendar_date(y, Month::June, 21)?, SEASON);
+    list.add(date(y, 6, 21), SEASON);
     // fall equinox
-    list.add(Date::from_calendar_date(y, Month::September, 22)?, SEASON);
+    list.add(date(y, 9, 22), SEASON);
     // winter solstice
-    list.add(Date::from_calendar_date(y, Month::December, 21)?, SEASON);
+    list.add(date(y, 12, 21), SEASON);
+
+    // payday, every other Friday from the first Friday of the year
+    let first_friday = date(y, 1, 1).nth_weekday_of_month(1, Weekday::Friday)?;
+    for payday in first_friday
+        .series(2.weeks())
+        .take_while(|day| day.year() == y)
+    {
+        list.add(payday, PAYDAY);
+    }
 
     // selected date
     list.add(selected_date, SELECTED);

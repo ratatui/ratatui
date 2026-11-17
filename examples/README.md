@@ -73,7 +73,9 @@ Shows how to fetch data from GitHub API asynchronously. [Source](./apps/async-gi
 
 ## Calendar Explorer
 
-Shows how to render a calendar with different styles. [Source](./apps/calendar-explorer/).
+Shows how to render a calendar with different styles. This now lives with the calendar widget in
+[`ratatui-calendar/examples`](../ratatui-calendar/examples/calendar-explorer.rs), alongside smaller
+calendar examples.
 
 ![Calendar explorer demo][calendar-explorer.gif]
 
