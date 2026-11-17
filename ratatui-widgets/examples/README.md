@@ -31,10 +31,6 @@ cargo run -p ratatui-widgets --example example-name
 
 ![Block][block.gif]
 
-## Calendar
-
-![Calendar][calendar.gif]
-
 ## Canvas
 
 ![Canvas][canvas.gif]
@@ -86,7 +82,6 @@ cargo run -p ratatui-widgets --example example-name
 [barchart-grouped.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/barchart-grouped.gif?raw=true
 [barchart.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/barchart.gif?raw=true
 [block.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/block.gif?raw=true
-[calendar.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/calendar.gif?raw=true
 [canvas.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/canvas.gif?raw=true
 [chart.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/chart.gif?raw=true
 [collapsed-borders.gif]: https://github.com/ratatui/ratatui/blob/images/widget-examples/collapsed-borders.gif?raw=true

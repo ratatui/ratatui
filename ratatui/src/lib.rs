@@ -82,6 +82,7 @@
 //! - [`ratatui-core`] for widget libraries, custom integrations, and lower-level rendering
 //!   contracts
 //! - [`ratatui-widgets`] when you only need the built-in widgets crate as a dependency
+//! - [`ratatui-calendar`] when you only need the calendar widget as a dependency
 //! - [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termina`], or [`ratatui-termwiz`] when
 //!   your application needs backend-specific APIs or a direct backend dependency
 //!
@@ -150,6 +151,7 @@
 //! - **[`ratatui`](crate)**: Main crate with complete functionality (recommended for apps)
 //! - **[`ratatui-core`]**: Core traits and types for widget libraries
 //! - **[`ratatui-widgets`]**: Built-in widget implementations
+//! - **[`ratatui-calendar`]**: The calendar widget
 //! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termina`],
 //!   [`ratatui-termwiz`]
 //! - **[`ratatui-macros`]**: Macros for simplifying the boilerplate
@@ -475,6 +477,7 @@
 //! [tui-rs]: https://crates.io/crates/tui
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [`ratatui-calendar`]: https://crates.io/crates/ratatui-calendar
 //! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
 //! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
 //! [`ratatui-termina`]: https://crates.io/crates/ratatui-termina
@@ -500,6 +503,7 @@
 //! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [`ratatui-calendar`]: https://crates.io/crates/ratatui-calendar
 //! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
 //! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
 //! [`ratatui-termina`]: https://crates.io/crates/ratatui-termina

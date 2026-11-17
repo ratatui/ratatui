@@ -1,0 +1,40 @@
+[package]
+name = "ratatui-calendar"
+version = "0.1.0"
+description = "A calendar widget for Ratatui terminal user interfaces."
+documentation = "https://docs.rs/ratatui-calendar"
+readme = "README.md"
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+license.workspace = true
+exclude.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+
+## enables std, which is needed for [`CalendarEventStore::today`].
+std = ["time/local-offset"]
+
+[dependencies]
+document-features = { workspace = true, optional = true }
+hashbrown.workspace = true
+ratatui-core.workspace = true
+ratatui-widgets.workspace = true
+time.workspace = true
+
+[dev-dependencies]
+color-eyre.workspace = true
+crossterm.workspace = true
+ratatui = { path = "../ratatui" }
+rstest.workspace = true
+
+[lints]
+workspace = true

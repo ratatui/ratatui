@@ -664,14 +664,14 @@
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 //! [no-std concept guide]: https://ratatui.rs/concepts/no-std/
 
+#[cfg(feature = "widget-calendar")]
+pub use ratatui_calendar as calendar;
 pub use ratatui_core::widgets::{StatefulWidget, Widget};
 pub use ratatui_widgets::barchart::{Bar, BarChart, BarGroup};
 pub use ratatui_widgets::block::{
     Block, BlockExt, CellEffect, Dimmed, Padding, Shadow, TitlePosition, dimmed,
 };
 pub use ratatui_widgets::borders::{BorderType, Borders};
-#[cfg(feature = "widget-calendar")]
-pub use ratatui_widgets::calendar;
 pub use ratatui_widgets::canvas;
 pub use ratatui_widgets::chart::{Axis, Chart, Dataset, GraphType, LegendPosition};
 pub use ratatui_widgets::clear::Clear;

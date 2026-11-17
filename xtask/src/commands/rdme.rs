@@ -15,6 +15,7 @@ pub struct Readme {
 /// Notably, we removed `ratatui` from this list as we have a more specifically crafted README for
 /// the main crate.
 const PROJECTS: &[&str] = &[
+    "ratatui-calendar",
     "ratatui-core",
     "ratatui-crossterm",
     "ratatui-macros",

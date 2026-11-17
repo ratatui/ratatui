@@ -13,6 +13,7 @@ This is a quick summary of the sections below:
 - [v0.31.0](#v0310)
   - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
   - `Backend` adds cursor save and restore methods
+  - The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -123,6 +124,26 @@ disambiguate such calls.
 Backends that can save the cursor without querying terminal input should override both methods and
 return `Ok(true)` from `save_cursor_position`. Other backends can use the default implementations,
 which select the cursor get-and-set fallback.
+
+### The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
+
+The `calendar` module of `ratatui-widgets` (`Monthly`, `DateStyler` and `CalendarEventStore`) has
+moved to the new `ratatui-calendar` crate. `ratatui-widgets` no longer has the `calendar` and
+`all-widgets` features, its default features are now empty, and it no longer depends on `time`.
+
+If you use the calendar through `ratatui::widgets::calendar`, nothing changes: the
+`widget-calendar` feature (enabled by default through `all-widgets`) now pulls in
+`ratatui-calendar` and re-exports it at the same path.
+
+If you depend on `ratatui-widgets` directly and use its calendar, add `ratatui-calendar` and update
+the imports:
+
+```diff
+- use ratatui_widgets::calendar::{CalendarEventStore, Monthly};
++ use ratatui_calendar::{CalendarEventStore, Monthly};
+```
+
+Remove `calendar` and `all-widgets` from any `features` list for `ratatui-widgets`.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 
