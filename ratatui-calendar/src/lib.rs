@@ -159,6 +159,7 @@ pub struct Monthly<'a, DS: DateStyler> {
     show_surrounding: Option<Style>,
     show_weekday: Option<Style>,
     show_month: Option<Style>,
+    show_week_numbers: Option<Style>,
     default_style: Style,
     first_day_of_week: Weekday,
     block: Option<Block<'a>>,
@@ -173,6 +174,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
             show_surrounding: None,
             show_weekday: None,
             show_month: None,
+            show_week_numbers: None,
             default_style: Style::new(),
             first_day_of_week: Weekday::Sunday,
             block: None,
@@ -214,6 +216,23 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_month_header<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_month = Some(style.into());
+        self
+    }
+
+    /// Display an ISO 8601 week number at the start of each week
+    ///
+    /// Each row is numbered with the ISO week of the Monday in that row. ISO weeks run from Monday
+    /// to Sunday, so the numbers match the rows exactly when weeks start on Monday (see
+    /// [`Monthly::first_day_of_week`]). With the default Sunday start, each row's Sunday belongs
+    /// to the previous ISO week. When the weekday header is shown, it labels the column `Wk`.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
+    /// [`Color`]: ratatui_core::style::Color
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn show_week_numbers<S: Into<Style>>(mut self, style: S) -> Self {
+        self.show_week_numbers = Some(style.into());
         self
     }
 
@@ -262,6 +281,9 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
         const DAY_WIDTH: u16 = 2;
 
         let mut width = DAYS_PER_WEEK * (GUTTER_WIDTH + DAY_WIDTH);
+        if self.show_week_numbers.is_some() {
+            width += WEEK_NUMBER_WIDTH;
+        }
         if let Some(block) = &self.block {
             let (left, right) = block.horizontal_space();
             width = width.saturating_add(left).saturating_add(right);
@@ -374,7 +396,12 @@ impl<DS: DateStyler> Monthly<'_, DS> {
                 .take(7)
                 .flat_map(|weekday| [" ", weekday_abbreviation(weekday)])
                 .collect();
-            Span::styled(header, style).render(days_header, buf);
+            let mut line = Line::default();
+            if let Some(week_number_style) = self.show_week_numbers {
+                line.push_span(Span::styled("Wk ", week_number_style));
+            }
+            line.push_span(Span::styled(header, style));
+            line.render(days_header, buf);
         }
 
         // Start the calendar on the first day of the week on or before the 1st. The series ends
@@ -394,8 +421,22 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 
         let weeks = usize::from(self.weeks());
         for row in days_area.rows().take(weeks) {
-            let mut spans = Vec::with_capacity(14);
-            for i in 0..7 {
+            let week: Vec<Option<Date>> = (0..7)
+                .map(|_| {
+                    if leading_padding > 0 {
+                        leading_padding -= 1;
+                        None
+                    } else {
+                        days.next()
+                    }
+                })
+                .collect();
+            let mut spans = Vec::with_capacity(15);
+            if let Some(style) = self.show_week_numbers {
+                let dates: Vec<Date> = week.iter().flatten().copied().collect();
+                spans.push(week_number(&dates, style));
+            }
+            for (i, &day) in week.iter().enumerate() {
                 // Draw the gutter. Do it here so we can avoid worrying about
                 // styling the ' ' in the format_date method
                 if i == 0 {
@@ -403,12 +444,6 @@ impl<DS: DateStyler> Monthly<'_, DS> {
                 } else {
                     spans.push(Span::styled(" ", self.default_bg()));
                 }
-                let day = if leading_padding > 0 {
-                    leading_padding -= 1;
-                    None
-                } else {
-                    days.next()
-                };
                 spans.push(day.map_or_else(
                     || Span::styled("  ", Style::default()),
                     |day| self.format_date(day),
@@ -417,6 +452,22 @@ impl<DS: DateStyler> Monthly<'_, DS> {
             buf.set_line(row.x, row.y, &spans.into(), row.width);
         }
     }
+}
+
+/// How many columns the week number takes: two digits and a space.
+const WEEK_NUMBER_WIDTH: u16 = 3;
+
+/// The ISO week number of the Monday in `week`, padded to [`WEEK_NUMBER_WIDTH`].
+///
+/// Every full row has exactly one Monday. A row cut short at the last date jiff supports might
+/// not, and then the column is left blank.
+fn week_number(week: &[Date], style: Style) -> Span<'static> {
+    let monday = week.iter().find(|day| day.weekday() == Weekday::Monday);
+    let text = match monday {
+        Some(monday) => format!("{:2} ", monday.iso_week_date().week()),
+        None => format!("{:1$}", "", usize::from(WEEK_NUMBER_WIDTH)),
+    };
+    Span::styled(text, style)
 }
 
 /// The two-letter English abbreviation for `weekday`, used in the weekday header.
@@ -550,6 +601,72 @@ mod tests {
                 " 12 13 14 15 16 17 18",
                 " 19 20 21 22 23 24 25",
                 " 26 27 28 29 30 31   ",
+            ])
+        );
+    }
+
+    #[test]
+    fn render_week_numbers_monday_start() {
+        let calendar = Monthly::new(date(2026, 11, 1), CalendarEventStore::default())
+            .first_day_of_week(Weekday::Monday)
+            .show_week_numbers(Style::default())
+            .show_weekdays_header(Style::default())
+            .show_surrounding(Style::default());
+        let area = Rect::new(0, 0, calendar.width(), calendar.height());
+        let mut buf = Buffer::empty(area);
+        calendar.render(area, &mut buf);
+        assert_eq!(
+            buf,
+            Buffer::with_lines([
+                "Wk  Mo Tu We Th Fr Sa Su",
+                "44  26 27 28 29 30 31  1",
+                "45   2  3  4  5  6  7  8",
+                "46   9 10 11 12 13 14 15",
+                "47  16 17 18 19 20 21 22",
+                "48  23 24 25 26 27 28 29",
+                "49  30  1  2  3  4  5  6",
+            ])
+        );
+    }
+
+    /// 2026 has 53 ISO weeks, so the first row of January 2027 is week 53 and the next is week 1.
+    #[test]
+    fn render_week_numbers_across_year_boundary() {
+        let calendar = Monthly::new(date(2027, 1, 1), CalendarEventStore::default())
+            .first_day_of_week(Weekday::Monday)
+            .show_week_numbers(Style::default());
+        let area = Rect::new(0, 0, calendar.width(), calendar.height());
+        let mut buf = Buffer::empty(area);
+        calendar.render(area, &mut buf);
+        assert_eq!(
+            buf,
+            Buffer::with_lines([
+                "53               1  2  3",
+                " 1   4  5  6  7  8  9 10",
+                " 2  11 12 13 14 15 16 17",
+                " 3  18 19 20 21 22 23 24",
+                " 4  25 26 27 28 29 30 31",
+            ])
+        );
+    }
+
+    /// With Sunday-start weeks, each row is numbered by the ISO week of its Monday.
+    #[test]
+    fn render_week_numbers_sunday_start() {
+        let calendar = Monthly::new(date(2026, 11, 1), CalendarEventStore::default())
+            .show_week_numbers(Style::default())
+            .show_surrounding(Style::default());
+        let area = Rect::new(0, 0, calendar.width(), calendar.height());
+        let mut buf = Buffer::empty(area);
+        calendar.render(area, &mut buf);
+        assert_eq!(
+            buf,
+            Buffer::with_lines([
+                "45   1  2  3  4  5  6  7",
+                "46   8  9 10 11 12 13 14",
+                "47  15 16 17 18 19 20 21",
+                "48  22 23 24 25 26 27 28",
+                "49  29 30  1  2  3  4  5",
             ])
         );
     }

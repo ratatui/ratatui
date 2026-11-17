@@ -5,7 +5,7 @@
 //! paydays, computing the dates that move each year (US Thanksgiving and the paydays) with jiff
 //! rather than listing them by hand. Move around with the arrow keys or `hjkl`, change month with
 //! `n` and `p`, cycle styles with `s`, switch weeks between starting on Sunday and Monday with
-//! `w`, and quit with `q` or Esc.
+//! `w`, toggle ISO week numbers with `i`, and quit with `q` or Esc.
 //!
 //! For something easier to start from, see the smaller examples in the same folder: [`minimal`],
 //! [`calendar`], and [`time`] or [`chrono`] for apps that use those crates for their own dates.
@@ -43,6 +43,7 @@ struct App {
     selected_date: Date,
     calendar_style: StyledCalendar,
     first_day_of_week: Weekday,
+    show_week_numbers: bool,
     exit: bool,
 }
 
@@ -52,6 +53,7 @@ impl App {
             selected_date: ZonedDateTime::now().date(),
             calendar_style: StyledCalendar::Default,
             first_day_of_week: Weekday::Sunday,
+            show_week_numbers: false,
             exit: false,
         }
     }
@@ -72,8 +74,8 @@ impl App {
         let header = Text::from_iter([
             Line::from("Calendar Example".bold()),
             Line::from(
-                "<q/Esc> Quit | <s> Change Style | <w> Week Start | <n> Next Month | <p> Previous \
-                 Month, <hjkl> Move",
+                "<q/Esc> Quit | <s> Change Style | <w> Week Start | <i> ISO Week Numbers | <n> Next \
+                 Month | <p> Previous Month, <hjkl> Move",
             ),
             Line::from(format!(
                 "Current date: {} | Current style: {} | Week starts: {:?}",
@@ -86,9 +88,32 @@ impl App {
             Constraint::Fill(1),
         ]));
         frame.render_widget(header.centered(), text_area);
-        self.calendar_style
-            .render_year(frame, area, self.selected_date, self.first_day_of_week)
-            .unwrap();
+        self.render_year(frame, area).unwrap();
+    }
+
+    /// Render all twelve months of the selected year in a 4x3 grid.
+    fn render_year(&self, frame: &mut Frame, area: Rect) -> Result<()> {
+        let events = events(self.selected_date)?;
+
+        let vertical = Layout::vertical([Constraint::Ratio(1, 3); 3]);
+        let horizontal = &Layout::horizontal([Constraint::Ratio(1, 4); 4]);
+        let areas = area
+            .inner(Margin::new(1, 1))
+            .layout_vec(&vertical)
+            .into_iter()
+            .flat_map(|row| row.layout_vec(horizontal));
+        let months = self.selected_date.first_of_year().series(1.month());
+        for (area, month) in areas.zip(months) {
+            let mut calendar = self
+                .calendar_style
+                .calendar(month, &events)
+                .first_day_of_week(self.first_day_of_week);
+            if self.show_week_numbers {
+                calendar = calendar.show_week_numbers(Style::new().dim());
+            }
+            frame.render_widget(calendar, area);
+        }
+        Ok(())
     }
 
     fn handle_key(&mut self, code: KeyCode) {
@@ -99,6 +124,10 @@ impl App {
             }
             KeyCode::Char('s') => {
                 self.calendar_style = self.calendar_style.next();
+                return;
+            }
+            KeyCode::Char('i') => {
+                self.show_week_numbers = !self.show_week_numbers;
                 return;
             }
             KeyCode::Char('w') => {
@@ -159,38 +188,13 @@ impl fmt::Display for StyledCalendar {
 }
 
 impl StyledCalendar {
-    fn render_year(
+    /// A calendar for the month containing `date`, in this style.
+    fn calendar(
         self,
-        frame: &mut Frame,
-        area: Rect,
-        date: Date,
-        first_day_of_week: Weekday,
-    ) -> Result<()> {
-        let events = events(date)?;
-
-        let vertical = Layout::vertical([Constraint::Ratio(1, 3); 3]);
-        let horizontal = &Layout::horizontal([Constraint::Ratio(1, 4); 4]);
-        let areas = area
-            .inner(Margin::new(1, 1))
-            .layout_vec(&vertical)
-            .into_iter()
-            .flat_map(|row| row.layout_vec(horizontal));
-        let months = date.first_of_year().series(1.month());
-        for (area, month) in areas.zip(months) {
-            self.render_month(frame, area, month, &events, first_day_of_week);
-        }
-        Ok(())
-    }
-
-    fn render_month(
-        self,
-        frame: &mut Frame,
-        area: Rect,
         date: Date,
         events: &CalendarEventStore,
-        first_day_of_week: Weekday,
-    ) {
-        let calendar = match self {
+    ) -> Monthly<'static, &CalendarEventStore> {
+        match self {
             Self::Default => Monthly::new(date, events)
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
                 .show_month_header(Style::default()),
@@ -215,8 +219,7 @@ impl StyledCalendar {
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
                 .show_month_header(Style::default())
                 .show_weekdays_header(Style::new().bold().dim().light_yellow()),
-        };
-        frame.render_widget(calendar.first_day_of_week(first_day_of_week), area);
+        }
     }
 }
 
