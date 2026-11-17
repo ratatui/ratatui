@@ -138,12 +138,12 @@ extern crate alloc;
 extern crate std;
 
 use alloc::format;
-use alloc::string::ToString;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use hashbrown::HashMap;
 use jiff::ToSpan;
-use jiff::civil::Date;
+use jiff::civil::{Date, Weekday};
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui_core::style::Style;
@@ -160,6 +160,7 @@ pub struct Monthly<'a, DS: DateStyler> {
     show_weekday: Option<Style>,
     show_month: Option<Style>,
     default_style: Style,
+    first_day_of_week: Weekday,
     block: Option<Block<'a>>,
 }
 
@@ -173,6 +174,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
             show_weekday: None,
             show_month: None,
             default_style: Style::new(),
+            first_day_of_week: Weekday::Sunday,
             block: None,
         }
     }
@@ -227,6 +229,24 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
         self
     }
 
+    /// Start each week on `weekday` instead of Sunday
+    ///
+    /// The weekday header and the day grid both start on this day. For example, use
+    /// [`Weekday::Monday`] for the ISO 8601 week used in much of Europe and Asia.
+    ///
+    /// ```rust
+    /// use jiff::civil::{Weekday, date};
+    /// use ratatui_calendar::{CalendarEventStore, Monthly};
+    ///
+    /// let calendar = Monthly::new(date(2026, 11, 1), CalendarEventStore::default())
+    ///     .first_day_of_week(Weekday::Monday);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn first_day_of_week(mut self, weekday: Weekday) -> Self {
+        self.first_day_of_week = weekday;
+        self
+    }
+
     /// Render the calendar within a [Block]
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Self {
@@ -252,7 +272,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// Return the height required to render the calendar.
     #[must_use]
     pub fn height(&self) -> u16 {
-        let mut height = u16::from(sunday_based_weeks(self.display_date))
+        let mut height = u16::from(self.weeks())
             .saturating_add(u16::from(self.show_month.is_some()))
             .saturating_add(u16::from(self.show_weekday.is_some()));
 
@@ -314,6 +334,22 @@ impl<DS: DateStyler> Widget for &Monthly<'_, DS> {
 }
 
 impl<DS: DateStyler> Monthly<'_, DS> {
+    /// The days before the 1st in its first week.
+    fn leading_days(&self) -> i8 {
+        self.display_date
+            .first_of_month()
+            .weekday()
+            .since(self.first_day_of_week)
+    }
+
+    /// How many week rows the month needs: the leading days plus the days of the month, rounded
+    /// up to whole weeks. Both rendering and [`Monthly::height`] use this, so they always agree.
+    fn weeks(&self) -> u8 {
+        let days = u8::try_from(self.leading_days() + self.display_date.days_in_month())
+            .expect("at most 6 leading days plus 31 days");
+        days.div_ceil(7)
+    }
+
     fn render_monthly(&self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::vertical([
             Constraint::Length(self.show_month.is_some().into()),
@@ -332,13 +368,19 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 
         // Draw days of week
         if let Some(style) = self.show_weekday {
-            Span::styled(" Su Mo Tu We Th Fr Sa", style).render(days_header, buf);
+            let header: String = self
+                .first_day_of_week
+                .cycle_forward()
+                .take(7)
+                .flat_map(|weekday| [" ", weekday_abbreviation(weekday)])
+                .collect();
+            Span::styled(header, style).render(days_header, buf);
         }
 
-        // Start the calendar on the Sunday before the 1st (or the 1st itself if it is a Sunday).
-        // The series ends early only past the last date jiff supports (9999-12-31).
+        // Start the calendar on the first day of the week on or before the 1st. The series ends
+        // early only past the last date jiff supports (9999-12-31).
         let first_of_month = self.display_date.first_of_month();
-        let leading_days = first_of_month.weekday().to_sunday_zero_offset();
+        let leading_days = self.leading_days();
         let mut days = first_of_month
             .saturating_sub(leading_days.days())
             .series(1.day());
@@ -350,7 +392,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
             0
         };
 
-        let weeks = usize::from(sunday_based_weeks(self.display_date));
+        let weeks = usize::from(self.weeks());
         for row in days_area.rows().take(weeks) {
             let mut spans = Vec::with_capacity(14);
             for i in 0..7 {
@@ -377,18 +419,17 @@ impl<DS: DateStyler> Monthly<'_, DS> {
     }
 }
 
-/// Compute how many Sunday-based week rows are needed to render `display_date`.
-///
-/// This is the days before the 1st in its week, plus the days of the month, rounded up to whole
-/// weeks. Both rendering and [`Monthly::height`] use it, so they always agree.
-fn sunday_based_weeks(display_date: Date) -> u8 {
-    let leading_days = display_date
-        .first_of_month()
-        .weekday()
-        .to_sunday_zero_offset();
-    let days = u8::try_from(leading_days + display_date.days_in_month())
-        .expect("at most 6 leading days plus 31 days");
-    days.div_ceil(7)
+/// The two-letter English abbreviation for `weekday`, used in the weekday header.
+const fn weekday_abbreviation(weekday: Weekday) -> &'static str {
+    match weekday {
+        Weekday::Monday => "Mo",
+        Weekday::Tuesday => "Tu",
+        Weekday::Wednesday => "We",
+        Weekday::Thursday => "Th",
+        Weekday::Friday => "Fr",
+        Weekday::Saturday => "Sa",
+        Weekday::Sunday => "Su",
+    }
 }
 
 /// Provides a method for styling a given date. [Monthly] is generic on this trait, so any type
@@ -614,13 +655,52 @@ mod tests {
 
     #[test]
     fn sunday_based_weeks_shapes() {
-        let sunday_start = date(2015, 2, 11);
-        let saturday_start = date(2023, 4, 9);
-        let leap_year = date(2024, 2, 29);
+        let sunday_start = Monthly::new(date(2015, 2, 11), CalendarEventStore::default());
+        let saturday_start = Monthly::new(date(2023, 4, 9), CalendarEventStore::default());
+        let leap_year = Monthly::new(date(2024, 2, 29), CalendarEventStore::default());
 
-        assert_eq!(sunday_based_weeks(sunday_start), 4);
-        assert_eq!(sunday_based_weeks(saturday_start), 6);
-        assert_eq!(sunday_based_weeks(leap_year), 5);
+        assert_eq!(sunday_start.weeks(), 4);
+        assert_eq!(saturday_start.weeks(), 6);
+        assert_eq!(leap_year.weeks(), 5);
+    }
+
+    #[test]
+    fn monday_based_weeks_shapes() {
+        // February 2015 starts on a Sunday, so it needs a fifth row when weeks start on Monday.
+        let sunday_start = Monthly::new(date(2015, 2, 11), CalendarEventStore::default())
+            .first_day_of_week(Weekday::Monday);
+        // April 2023 starts on a Saturday.
+        let saturday_start = Monthly::new(date(2023, 4, 9), CalendarEventStore::default())
+            .first_day_of_week(Weekday::Monday);
+        // June 2026 starts on a Monday.
+        let monday_start = Monthly::new(date(2026, 6, 1), CalendarEventStore::default())
+            .first_day_of_week(Weekday::Monday);
+
+        assert_eq!(sunday_start.weeks(), 5);
+        assert_eq!(saturday_start.weeks(), 5);
+        assert_eq!(monday_start.weeks(), 5);
+    }
+
+    #[test]
+    fn render_monday_start() {
+        let calendar = Monthly::new(date(2015, 2, 1), CalendarEventStore::default())
+            .first_day_of_week(Weekday::Monday)
+            .show_weekdays_header(Style::default())
+            .show_surrounding(Style::default());
+        let area = Rect::new(0, 0, calendar.width(), calendar.height());
+        let mut buf = Buffer::empty(area);
+        calendar.render(area, &mut buf);
+        assert_eq!(
+            buf,
+            Buffer::with_lines([
+                " Mo Tu We Th Fr Sa Su",
+                " 26 27 28 29 30 31  1",
+                "  2  3  4  5  6  7  8",
+                "  9 10 11 12 13 14 15",
+                " 16 17 18 19 20 21 22",
+                " 23 24 25 26 27 28  1",
+            ])
+        );
     }
 
     #[rstest]
