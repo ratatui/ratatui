@@ -40,6 +40,12 @@ use crate::widgets::Widget;
 ///   `Line`.
 /// - [`Text::into_owned`] converts a `Text` into a `Text<'static>` that owns its content.
 ///
+/// To build a `Text` from a string that contains ANSI escape sequences, use the [`ansi-to-tui`]
+/// crate. See [the module docs](crate::text#ansi-escape-sequences) for why the sequences are not
+/// interpreted directly.
+///
+/// [`ansi-to-tui`]: https://crates.io/crates/ansi-to-tui
+///
 /// # Setter Methods
 ///
 /// These methods are fluent setters. They return a `Text` with the property set.
