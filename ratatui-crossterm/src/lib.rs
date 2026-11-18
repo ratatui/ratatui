@@ -683,6 +683,9 @@ impl FromCrossterm<ContentStyle> for Style {
         if value.attributes.has(CrosstermAttribute::NoBold) {
             sub_modifier |= Modifier::BOLD;
         }
+        if value.attributes.has(CrosstermAttribute::NormalIntensity) {
+            sub_modifier |= Modifier::BOLD | Modifier::DIM;
+        }
         if value.attributes.has(CrosstermAttribute::NoItalic) {
             sub_modifier |= Modifier::ITALIC;
         }
@@ -1097,6 +1100,13 @@ mod tests {
             ..Default::default()
         },
         Style::default().remove_modifier(Modifier::BOLD)
+    )]
+    #[case(
+        ContentStyle {
+            attributes: CrosstermAttributes::from(CrosstermAttribute::NormalIntensity),
+            ..Default::default()
+        },
+        Style::default().remove_modifier(Modifier::BOLD | Modifier::DIM)
     )]
     #[case(
         ContentStyle {
