@@ -431,7 +431,7 @@
 //! [Showcase]: https://ratatui.rs/showcase/
 //! [Rendering]: https://ratatui.rs/concepts/rendering/
 //! [Application Patterns]: https://ratatui.rs/concepts/application-patterns/
-//! [Hello World tutorial]: https://ratatui.rs/tutorials/hello-world/
+//! [Hello World tutorial]: https://ratatui.rs/tutorials/hello-ratatui/
 //! [Backends]: https://ratatui.rs/concepts/backends/
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Widgets]: https://ratatui.rs/recipes/widgets/

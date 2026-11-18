@@ -331,7 +331,7 @@ The minimum supported Rust version (MSRV) is now 1.86.0.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 
-[#1735]: https://github.com/ratatui/ratatui/pull/1691
+[#1735]: https://github.com/ratatui/ratatui/pull/1735
 
 The `Alignment` enum has been renamed to `HorizontalAlignment` to better reflect its purpose. A type
 alias has been added to maintain backwards compatibility, however there are some cases where type
@@ -657,7 +657,7 @@ This change simplifies the trait and makes it easier to implement.
 
 ### List no clamps the selected index to list ([#1159])
 
-[#1149]: https://github.com/ratatui/ratatui/pull/1149
+[#1159]: https://github.com/ratatui/ratatui/pull/1159
 
 The `List` widget now clamps the selected index to the bounds of the list when navigating with
 `first`, `last`, `previous`, and `next`, as well as when setting the index directly with `select`.
@@ -777,7 +777,7 @@ flexible types from calling scopes, though it can break some type inference in t
 
 ### `LineGauge::gauge_style` is deprecated ([#565])
 
-[#565]: https://github.com/ratatui/ratatui/pull/1148
+[#565]: https://github.com/ratatui/ratatui/pull/565
 
 `LineGauge::gauge_style` is deprecated and replaced with `LineGauge::filled_style` and `LineGauge::unfilled_style`:
 
