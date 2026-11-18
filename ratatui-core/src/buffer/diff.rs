@@ -77,6 +77,29 @@ impl<'prev, 'next> BufferDiff<'prev, 'next> {
         }
     }
 
+    /// Moves past the trailing columns of the wide glyph at `i`. A previous wide glyph starting
+    /// under those columns is destroyed when this glyph overwrites its left half: the terminal
+    /// blanks its columns past this glyph, in this glyph's background, whatever both buffers hold
+    /// there, so those are force-emitted after this glyph.
+    fn pass_wide_glyph(&mut self, i: usize, cell_width: usize, len: usize) {
+        let end = (i + cell_width).min(len);
+        let orphaned_end = (i + 1..end)
+            .map(|j| j + self.prev[j].cell_width() as usize)
+            .max()
+            .unwrap_or(end)
+            .min(len);
+        if orphaned_end > end {
+            self.trailing = Some(TrailingState {
+                next_index: end,
+                end: orphaned_end,
+                force: true,
+                deferred_leading_cell: None,
+            });
+        } else {
+            self.pos += cell_width.saturating_sub(1);
+        }
+    }
+
     /// Converts a flat index to (x, y) coordinates.
     const fn pos_of(&self, index: usize) -> (u16, u16) {
         let w = self.area.width as usize;
@@ -194,7 +217,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         // Recurses once and returns the deferred leading cell.
                         return self.next();
                     } else if cell_width > 1 {
-                        self.pos += cell_width.saturating_sub(1);
+                        self.pass_wide_glyph(i, cell_width, len);
                     } else if previous_width > cell_width && previous_style_is_visible_on_blank {
                         // The previous wide character's style is visible on blank cells, so the
                         // terminal may still show it on the trailing columns even after the
@@ -579,6 +602,32 @@ mod tests {
                 "expected no update for trailing cell at x={x}"
             );
         }
+    }
+
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2933>: a wide glyph drawn over
+    /// the left half of a previous wide glyph. The terminal destroys the whole old glyph, so it
+    /// blanks the old glyph's right half - the column after the new glyph - in the new glyph's
+    /// background. That column is the same blank cell in both buffers, so it must be repainted
+    /// even though the buffers agree.
+    #[test]
+    fn wide_glyph_over_half_of_a_wide_glyph_repaints_the_other_half() {
+        use crate::style::{Color, Style};
+
+        // "ab重": "重" at columns 2-3. "a辑": "辑" at columns 1-2, over the left half of "重".
+        let rect = Rect::new(0, 0, 6, 1);
+        let mut prev = Buffer::empty(rect);
+        prev.set_string(0, 0, "ab重", Style::default());
+
+        let mut next = Buffer::empty(rect);
+        next.set_string(0, 0, "a", Style::default());
+        next.set_string(1, 0, "辑", Style::new().bg(Color::Red));
+
+        let columns: Vec<u16> = BufferDiff::new(&prev, &next).map(|(x, _, _)| x).collect();
+        assert_eq!(
+            columns,
+            [1, 3],
+            "\"辑\", then the right half of \"重\" it orphaned"
+        );
     }
 
     #[test]
