@@ -2,7 +2,7 @@ use crate::backend::Backend;
 use crate::buffer::Buffer;
 use crate::layout::Position;
 use crate::terminal::inline::compute_inline_size;
-use crate::terminal::{Terminal, TerminalOptions, Viewport};
+use crate::terminal::{CursorVisibility, Terminal, TerminalOptions, Viewport};
 
 impl<B: Backend> Terminal<B> {
     /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
@@ -135,7 +135,7 @@ impl<B: Backend> Terminal<B> {
             backend,
             buffers: [Buffer::empty(viewport_area), Buffer::empty(viewport_area)],
             current: 0,
-            hidden_cursor: false,
+            cursor_visibility: CursorVisibility::Unknown,
             viewport: options.viewport,
             viewport_area,
             last_known_area: area,
@@ -149,7 +149,7 @@ impl<B: Backend> Terminal<B> {
 mod tests {
     use crate::backend::{Backend, TestBackend};
     use crate::layout::{Position, Rect};
-    use crate::terminal::{Terminal, TerminalOptions, Viewport};
+    use crate::terminal::{CursorVisibility, Terminal, TerminalOptions, Viewport};
 
     #[test]
     fn new_fullscreen_initializes_state() {
@@ -161,7 +161,11 @@ mod tests {
         assert_eq!(terminal.last_known_area, Rect::new(0, 0, 10, 5));
         assert_eq!(terminal.last_known_cursor_pos, Position::ORIGIN);
         assert_eq!(terminal.current, 0);
-        assert!(!terminal.hidden_cursor);
+        assert_eq!(
+            terminal.cursor_visibility,
+            CursorVisibility::Unknown,
+            "cursor visibility is Unknown before any cursor operation"
+        );
         assert_eq!(terminal.frame_count, 0);
         assert_eq!(terminal.buffers[0].area, terminal.viewport_area);
         assert_eq!(terminal.buffers[1].area, terminal.viewport_area);
