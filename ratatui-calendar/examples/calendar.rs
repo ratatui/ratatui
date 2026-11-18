@@ -11,7 +11,7 @@
 //! library you are using.
 //!
 //! [Ratatui]: https://github.com/ratatui/ratatui
-//! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-widgets/examples
+//! [widget examples]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;

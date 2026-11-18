@@ -5,6 +5,7 @@ default-members = [
   "examples/apps/*",
   "examples/concepts/*",
   "ratatui",
+  "ratatui-calendar",
   "ratatui-core",
   "ratatui-crossterm",
   "ratatui-macros",
@@ -52,6 +53,7 @@ pretty_assertions = "1"
 rand = "0.10"
 rand_chacha = "0.10"
 ratatui = { path = "ratatui", version = "0.30.2" }
+ratatui-calendar = { path = "ratatui-calendar", version = "0.1.0", default-features = false }
 ratatui-core = { path = "ratatui-core", version = "0.1.2" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.2" }
 ratatui-macros = { path = "ratatui-macros", version = "0.7.2" }

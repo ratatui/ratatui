@@ -2749,6 +2749,7 @@ dependencies = [
  "palette",
  "pretty_assertions",
  "rand 0.10.3",
+ "ratatui-calendar",
  "ratatui-core",
  "ratatui-crossterm",
  "ratatui-macros",
@@ -2759,6 +2760,21 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
+ "time",
+]
+
+[[package]]
+name = "ratatui-calendar"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "crossterm 0.29.0",
+ "document-features",
+ "hashbrown 0.17.1",
+ "ratatui",
+ "ratatui-core",
+ "ratatui-widgets",
+ "rstest",
  "time",
 ]
 
@@ -2859,7 +2875,6 @@ dependencies = [
  "color-eyre",
  "crossterm 0.29.0",
  "document-features",
- "hashbrown 0.17.1",
  "indoc",
  "instability",
  "itertools 0.15.0",
@@ -2871,7 +2886,6 @@ dependencies = [
  "rstest",
  "serde",
  "strum",
- "time",
  "unicode-segmentation",
  "unicode-width",
 ]
