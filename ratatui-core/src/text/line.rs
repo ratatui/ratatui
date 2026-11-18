@@ -24,6 +24,12 @@ use crate::widgets::Widget;
 /// Any newlines in the content are removed when creating a [`Line`] using the constructor or
 /// conversion methods.
 ///
+/// Other control characters are dropped when the line is rendered, so ANSI escape sequences in a
+/// string are shown as plain text rather than changing the style. See [ANSI escape sequences] for
+/// how to convert them.
+///
+/// [ANSI escape sequences]: crate::text#ansi-escape-sequences
+///
 /// # Constructor Methods
 ///
 /// - [`Line::default`] creates a line with empty content and the default style.

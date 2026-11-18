@@ -121,6 +121,22 @@
 //! strings. The usual pattern is to keep the styled text in your state and build the widget from a
 //! reference to it in each frame, for example `Paragraph::new(&app.log)`. A widget you keep around
 //! can also be rendered by reference, because `Paragraph` implements `Widget` for `&Paragraph`.
+//!
+//! # ANSI escape sequences
+//!
+//! Strings that contain ANSI escape sequences, such as colored output from `ls --color` or `git
+//! diff`, are not interpreted. Style is stored separately for each cell of the buffer, and the
+//! escape character is a control character, which is dropped when text is rendered. The rest of
+//! each sequence is shown as plain text, so `"\x1b[31mred\x1b[0m"` renders as `[31mred[0m`.
+//!
+//! To display ANSI-styled text, convert it into a [`Text`] first with the [`ansi-to-tui`] crate,
+//! which turns each escape sequence into a [`Style`] on the matching [`Span`]. If you only need
+//! the plain text, strip the escape sequences instead. The [Ratatui FAQ] explains this in more
+//! detail.
+//!
+//! [`ansi-to-tui`]: https://crates.io/crates/ansi-to-tui
+//! [`Style`]: crate::style::Style
+//! [Ratatui FAQ]: https://ratatui.rs/faq/#why-does-text-with-ansi-color-codes-show-up-as-31m-garbage
 
 mod grapheme;
 pub use grapheme::StyledGrapheme;
