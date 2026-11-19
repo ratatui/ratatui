@@ -22,6 +22,9 @@ pub struct BufferDiff<'prev, 'next> {
     /// End of the previous cells that sat under a wide glyph which has since been overwritten.
     /// The terminal shows blanks there, whatever the previous buffer holds.
     covered: usize,
+    /// End of the cells that must be repainted even if unchanged: the terminal blanked them with
+    /// a style that may not match the buffer.
+    repaint: usize,
 }
 
 /// Tracks pending trailing-cell yields for a wide character update.
@@ -74,6 +77,40 @@ impl<'prev, 'next> BufferDiff<'prev, 'next> {
             pos: 0,
             trailing: None,
             covered: 0,
+            repaint: 0,
+        }
+    }
+
+    /// Returns the previous cell at `index` as the terminal shows it.
+    const fn previous(&self, index: usize) -> &'prev Cell {
+        if index < self.covered {
+            &Cell::EMPTY
+        } else {
+            &self.prev[index]
+        }
+    }
+
+    /// Marks the columns of previous glyphs that a new glyph at `index`, `width` columns wide,
+    /// overwrites only in part.
+    ///
+    /// Printing over any column of a wide glyph makes the terminal blank the whole glyph, so a
+    /// previous glyph that starts under the new one but reaches past it leaves blanks after it,
+    /// whatever the previous buffer holds there. The terminal blanks them with the current style,
+    /// so they are repainted unconditionally when either glyph's style shows on a blank cell.
+    fn cover_overwritten_glyphs(&mut self, index: usize, width: usize, len: usize) {
+        if width < 2 {
+            return;
+        }
+        let end = (index + width).min(len);
+        for j in index.max(self.covered)..end {
+            let previous = &self.prev[j];
+            let previous_end = (j + previous.cell_width().max(1) as usize).min(len);
+            if previous_end > end {
+                self.covered = self.covered.max(previous_end);
+                if is_visible_on_blank(previous) || is_visible_on_blank(&self.next[index]) {
+                    self.repaint = self.repaint.max(previous_end);
+                }
+            }
         }
     }
 
@@ -132,11 +169,8 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
             self.pos += 1;
 
             let current = &self.next[i];
-            let previous = if i < self.covered {
-                &Cell::EMPTY
-            } else {
-                &self.prev[i]
-            };
+            let previous = self.previous(i);
+            let unchanged = i >= self.repaint && current == previous;
 
             match current.diff_option {
                 CellDiffOption::Skip => {}
@@ -146,22 +180,24 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                     self.pos = self
                         .pos
                         .saturating_add(width.get().saturating_sub(1) as usize);
-                    if current != previous {
+                    if !unchanged {
+                        self.cover_overwritten_glyphs(i, width.get() as usize, len);
                         let (x, y) = self.pos_of(i);
                         return Some((x, y, &self.next[i]));
                     }
                 }
                 CellDiffOption::None | CellDiffOption::AlwaysUpdate => {
                     let cell_width = current.cell_width() as usize;
-                    if matches!(current.diff_option, CellDiffOption::None) && current == previous {
+                    if matches!(current.diff_option, CellDiffOption::None) && unchanged {
                         // Equal cells still need to account for multi-width skip.
                         self.pos += cell_width.saturating_sub(1);
                         continue;
                     }
 
+                    self.cover_overwritten_glyphs(i, cell_width, len);
+
                     let previous_width = previous.cell_width() as usize;
-                    let previous_style_is_visible_on_blank = previous.bg != Color::Reset
-                        || previous.modifier.intersects(VISIBLE_ON_BLANK);
+                    let previous_style_is_visible_on_blank = is_visible_on_blank(previous);
 
                     // Clear stale styles from an unchanged wide glyph's trailing cells before
                     // repainting it.
@@ -230,6 +266,11 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 /// both.
 fn has_uncertain_width(symbol: &str) -> bool {
     symbol.chars().any(|c| c == '\u{FE0F}')
+}
+
+/// Returns `true` if the cell's style shows on a blank cell, e.g. a background color.
+fn is_visible_on_blank(cell: &Cell) -> bool {
+    cell.bg != Color::Reset || cell.modifier.intersects(VISIBLE_ON_BLANK)
 }
 
 /// Returns `true` if this cell should be skipped during diffing.
@@ -748,6 +789,65 @@ mod tests {
         assert_eq!(diff[0].2.symbol(), "a");
     }
 
+    /// Regression for <https://github.com/ratatui/ratatui/issues/2933>: a wide glyph that
+    /// overwrites the left half of a previous wide glyph makes the terminal blank the right half
+    /// too, which lies past the new glyph. That column must be repainted even though it holds the
+    /// same cell in both buffers.
+    #[test]
+    fn wide_glyph_over_left_half_of_wide_glyph_repaints_right_half() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 6, 1);
+        let row = Style::new().bg(Color::Blue);
+        // prev: [a][b][重][trailing], all blue.
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "ab重", row);
+        prev.set_style(area, row);
+        // next: [a][辑 (red)][trailing][ ], everything but `辑` blue.
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "a", row);
+        next.set_string(1, 0, "辑", Style::new().bg(Color::Red));
+        next.set_style(Rect::new(2, 0, 4, 1), row);
+        assert_eq!(prev[(3, 0)], next[(3, 0)]);
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        let updates: Vec<_> = diff.iter().map(|(x, y, _)| (*x, *y)).collect();
+        assert_eq!(updates, [(1, 0), (3, 0)]);
+        assert_eq!(diff[1].2, &next[(3, 0)]);
+    }
+
+    /// The terminal blanks the right half of the overwritten glyph with the new glyph's style, so
+    /// a blank cell must be repainted when that style shows on blanks.
+    #[test]
+    fn wide_glyph_over_wide_glyph_repaints_blank_after_styled_glyph() {
+        use crate::style::Style;
+
+        let area = Rect::new(0, 0, 4, 1);
+        let mut prev = Buffer::empty(area);
+        prev.set_string(0, 0, "a重", Style::default());
+        let mut next = Buffer::empty(area);
+        next.set_string(0, 0, "辑", Style::new().bg(Color::Red));
+        assert_eq!(next[(2, 0)], Cell::EMPTY);
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        let updates: Vec<_> = diff.iter().map(|(x, y, _)| (*x, *y)).collect();
+        assert_eq!(updates, [(0, 0), (2, 0)]);
+    }
+
+    /// Without a style that shows on blanks, the blanked half already matches a blank cell.
+    #[test]
+    fn wide_glyph_over_wide_glyph_skips_unstyled_blank() {
+        let prev = Buffer::with_lines(["a重 "]);
+        let next = Buffer::with_lines(["辑  "]);
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        let updates: Vec<_> = diff.iter().map(|(x, y, _)| (*x, *y)).collect();
+        assert_eq!(updates, [(0, 0)]);
+    }
+
     #[test]
     #[should_panic(expected = "buffer areas must have the same x, y, and width")]
     fn mismatched_widths_panics() {
@@ -996,6 +1096,41 @@ mod terminal_model {
         let next = row(4, "────");
         let mut prev = next.clone();
         prev.content[1].set_symbol(glyph);
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
+    }
+
+    /// <https://github.com/ratatui/ratatui/issues/2933>: a wide glyph overwriting the left half
+    /// of another wide glyph blanks its right half, past the new glyph. A widget that writes cells
+    /// directly can leave content hidden behind that right half, which must be repainted.
+    #[rstest]
+    #[case::fullwidth("辑")]
+    #[case::emoji("😀")]
+    #[case::heart("❤️")]
+    #[case::keycap("1️⃣")]
+    fn wide_glyph_over_left_half_of_wide_glyph_repaints_right_half(#[case] glyph: &str) {
+        let mut prev = row(5, "ab重");
+        prev.content[3].set_symbol("c");
+        let mut next = row(5, "a");
+        next.set_string(1, 0, glyph, Style::default());
+        next.content[3].set_symbol("c");
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
+    }
+
+    /// The same with an explicit width: the new cell spans the left part of the old one.
+    #[test]
+    fn forced_width_over_part_of_forced_width_repaints_rest() {
+        let width = |w| CellDiffOption::ForcedWidth(NonZeroU16::new(w).unwrap());
+        let next = row(5, "abcde");
+        let mut prev = next.clone();
+        prev.content[2].set_symbol("old").set_diff_option(width(3));
+        let mut next = next;
+        next.content[1].set_symbol("new").set_diff_option(width(2));
 
         for vs16_width in VS16_WIDTHS {
             assert_no_artifacts(vs16_width, &prev, &next);
