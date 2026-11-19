@@ -22,6 +22,8 @@ pub struct BufferDiff<'prev, 'next> {
     /// End of the previous cells that sat under a wide glyph which has since been overwritten.
     /// The terminal shows blanks there, whatever the previous buffer holds.
     covered: usize,
+    /// Next visible glyph start in the previous buffer, skipping wide glyphs' trailing cells.
+    previous_glyph: usize,
     /// End of the cells that must be repainted even if unchanged: the terminal blanked them with
     /// a style that may not match the buffer.
     repaint: usize,
@@ -77,6 +79,7 @@ impl<'prev, 'next> BufferDiff<'prev, 'next> {
             pos: 0,
             trailing: None,
             covered: 0,
+            previous_glyph: 0,
             repaint: 0,
         }
     }
@@ -94,17 +97,27 @@ impl<'prev, 'next> BufferDiff<'prev, 'next> {
     /// overwrites only in part.
     ///
     /// Printing over any column of a wide glyph makes the terminal blank the whole glyph, so a
-    /// previous glyph that starts under the new one but reaches past it leaves blanks after it,
-    /// whatever the previous buffer holds there. The terminal blanks them with the current style,
-    /// so they are repainted unconditionally when either glyph's style shows on a blank cell.
+    /// visible previous glyph that starts under the new one but reaches past it leaves blanks after
+    /// it, whatever the previous buffer holds there. The terminal blanks them with the current
+    /// style, so they are repainted unconditionally when either glyph's style shows on a blank
+    /// cell.
     fn cover_overwritten_glyphs(&mut self, index: usize, width: usize, len: usize) {
         if width < 2 {
             return;
         }
         let end = (index + width).min(len);
-        for j in index.max(self.covered)..end {
+        let row_width = self.area.width as usize;
+        let row_start = index / row_width * row_width;
+        let row_end = (row_start + row_width).min(len);
+        self.previous_glyph = self.previous_glyph.max(row_start);
+        while self.previous_glyph < end.min(row_end) {
+            let j = self.previous_glyph;
             let previous = &self.prev[j];
             let previous_end = (j + previous.cell_width().max(1) as usize).min(len);
+            self.previous_glyph = previous_end.min(row_end);
+            if j < index || j < self.covered {
+                continue;
+            }
             if previous_end > end {
                 self.covered = self.covered.max(previous_end);
                 if is_visible_on_blank(previous) || is_visible_on_blank(&self.next[index]) {
@@ -849,6 +862,34 @@ mod tests {
     }
 
     #[test]
+    fn hidden_previous_wide_glyph_does_not_cover_visible_cell() {
+        let mut prev = Buffer::empty(Rect::new(0, 0, 3, 1));
+        prev[(0, 0)].set_symbol("重");
+        prev[(1, 0)].set_symbol("好");
+        prev[(2, 0)].set_symbol("X");
+        let mut next = Buffer::empty(prev.area);
+        next[(0, 0)].set_symbol("辑");
+
+        let diff: Vec<_> = BufferDiff::new(&prev, &next).collect();
+
+        assert_eq!(diff, [(0, 0, &next[(0, 0)]), (2, 0, &Cell::EMPTY)]);
+    }
+
+    #[test]
+    fn previous_glyph_walk_restarts_at_row_boundary() {
+        let mut prev = Buffer::empty(Rect::new(0, 0, 3, 2));
+        prev[(2, 0)].set_symbol("重");
+        prev[(1, 1)].set_symbol("好");
+        let next = Buffer::empty(prev.area);
+        let mut diff = BufferDiff::new(&prev, &next);
+
+        diff.cover_overwritten_glyphs(1, 2, prev.content.len());
+        diff.cover_overwritten_glyphs(3, 2, prev.content.len());
+
+        assert_eq!(diff.covered, 6);
+    }
+
+    #[test]
     #[should_panic(expected = "buffer areas must have the same x, y, and width")]
     fn mismatched_widths_panics() {
         let prev = Buffer::empty(Rect::new(0, 0, 5, 1));
@@ -1116,6 +1157,17 @@ mod terminal_model {
         let mut next = row(5, "a");
         next.set_string(1, 0, glyph, Style::default());
         next.content[3].set_symbol("c");
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
+    }
+
+    #[test]
+    fn hidden_previous_wide_glyph_does_not_cover_visible_cell() {
+        let mut prev = row(3, "重X");
+        prev[(1, 0)].set_symbol("好");
+        let next = row(3, "辑");
 
         for vs16_width in VS16_WIDTHS {
             assert_no_artifacts(vs16_width, &prev, &next);
