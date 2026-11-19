@@ -163,6 +163,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                 if !is_skip(&self.next[j])
                     && (*force || self.prev[j].symbol() != self.next[j].symbol())
                 {
+                    self.cover_overwritten_glyphs(j, cell_width, len);
                     let (tx, ty) = self.pos_of(j);
                     return Some((tx, ty, &self.next[j]));
                 }
@@ -230,9 +231,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
 
                     // Clear reserved columns first so they cannot overwrite the uncertain-width
                     // glyph.
-                    let uncertain_width = cell_width > 1 && has_uncertain_width(current.symbol());
-
-                    if uncertain_width {
+                    if cell_width > 1 && has_uncertain_width(current.symbol()) {
                         let trailing_end = (i + cell_width).min(len);
                         self.trailing = Some(TrailingState {
                             next_index: i + 1,
@@ -1168,6 +1167,26 @@ mod terminal_model {
         let mut prev = row(3, "重X");
         prev[(1, 0)].set_symbol("好");
         let next = row(3, "辑");
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
+    }
+
+    /// <https://github.com/ratatui/ratatui/issues/2933> through the trailing-cell path: a styled
+    /// wide glyph replaced by a narrow one emits the cells under its right half from the trailing
+    /// state, and a wide glyph emitted there overwrites the left half of the next previous wide
+    /// glyph. Its right half, past the new glyph, must still be repainted.
+    #[test]
+    fn wide_glyph_from_trailing_cells_over_left_half_of_wide_glyph_repaints_right_half() {
+        // prev: [重 (blue)][重][c hidden behind its right half][ ]
+        let mut prev = row(5, "重重");
+        prev.content[0].set_bg(Color::Blue);
+        prev.content[3].set_symbol("c");
+        // next: [a][辑][c][ ]
+        let mut next = row(5, "a");
+        next.set_string(1, 0, "辑", Style::default());
+        next.content[3].set_symbol("c");
 
         for vs16_width in VS16_WIDTHS {
             assert_no_artifacts(vs16_width, &prev, &next);
