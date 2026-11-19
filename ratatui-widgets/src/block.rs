@@ -684,8 +684,8 @@ impl<'a> Block<'a> {
     ///     .merge_borders(MergeStrategy::Exact);
     /// ```
     ///
-    /// Rendering these blocks with `MergeStrategy::Exact` or `MergeStrategy::Fuzzy` will collapse
-    /// the borders, resulting in a clean layout without connected borders.
+    /// Rendering these blocks with `MergeStrategy::Exact` or `MergeStrategy::Fuzzy` collapses the
+    /// borders into connected lines.
     ///
     /// ```plain
     /// ┌───┐    ┌───┐  ┌───┲━━━┓┌───┐
@@ -697,6 +697,22 @@ impl<'a> Block<'a> {
     ///     ┃ 2 ┃  ┗━━━┛         ┃ 2 ┃
     ///     ┃   ┃                ┃   ┃
     ///     ┗━━━┛                ┗━━━┛
+    /// ```
+    ///
+    /// Borders made of block element quadrants, such as [`BorderType::QuadrantInside`] and
+    /// [`BorderType::QuadrantOutside`], collapse too. Where two borders meet, the cell shows the
+    /// quadrants of both:
+    ///
+    /// ```plain
+    /// ▗▄▄▄▖     ▗▄▄▄▖   ▗▄▄▄▄▄▄▄▖ ▗▄▄▄▖
+    /// ▐   ▌     ▐ 1 ▌   ▐   █   ▌ ▐   ▌
+    /// ▐ 1 ▌     ▐ ▗▄▙▄▖ ▐ 1 █ 2 ▌ ▐ 1 ▌
+    /// ▐   ▌     ▐ ▐ ▌ ▌ ▐   █   ▌ ▐   ▌
+    /// ▝▀▀▀▚▄▄▄▖ ▝▀▜▀▘ ▌ ▝▀▀▀▀▀▀▀▘ ▐███▌
+    ///     ▐   ▌   ▐ 2 ▌           ▐   ▌
+    ///     ▐ 2 ▌   ▝▀▀▀▘           ▐ 2 ▌
+    ///     ▐   ▌                   ▐   ▌
+    ///     ▝▀▀▀▘                   ▝▀▀▀▘
     /// ```
     ///
     /// [collapse borders recipe]: https://ratatui.rs/recipes/layout/collapse-borders/
@@ -1195,6 +1211,7 @@ impl Styled for Block<'_> {
 #[cfg(test)]
 mod tests {
     use alloc::{format, vec};
+    use core::fmt;
 
     use itertools::iproduct;
     use ratatui_core::layout::Offset;
@@ -2009,6 +2026,38 @@ mod tests {
             BorderType::LightQuadrupleDashed,
             BorderType::HeavyQuadrupleDashed,
         ];
+        let border_sets =
+            border_types.map(|border_type| (border_type, border_type.to_border_set()));
+        let buffer = render_merged_border_sets(strategy, &border_sets);
+        pretty_assertions::assert_eq!(Buffer::with_lines(expected.lines()), buffer);
+    }
+
+    /// Renders a series of blocks with all the border sets made of block element quadrants and
+    /// merges them. Quadrants always merge into an existing character, so both strategies render
+    /// the same output. The plain border set shows that lines and quadrants replace each other.
+    #[rstest]
+    #[case::exact(MergeStrategy::Exact)]
+    #[case::fuzzy(MergeStrategy::Fuzzy)]
+    fn render_merged_quadrant_borders(#[case] strategy: MergeStrategy) {
+        let border_sets = [
+            ("Plain", border::PLAIN),
+            ("QuadrantInside", border::QUADRANT_INSIDE),
+            ("QuadrantOutside", border::QUADRANT_OUTSIDE),
+            ("ProportionalWide", border::PROPORTIONAL_WIDE),
+            ("ProportionalTall", border::PROPORTIONAL_TALL),
+            ("Full", border::FULL),
+        ];
+        let buffer = render_merged_border_sets(strategy, &border_sets);
+        let expected = include_str!("../tests/block/merge_quadrant.txt");
+        pretty_assertions::assert_eq!(Buffer::with_lines(expected.lines()), buffer);
+    }
+
+    /// Renders every pair of border sets as two blocks that touch at a corner, overlap, touch
+    /// vertical edges and touch horizontal edges. The first block of each pair is rendered first.
+    fn render_merged_border_sets<Name: fmt::Display>(
+        strategy: MergeStrategy,
+        border_sets: &[(Name, border::Set)],
+    ) -> Buffer {
         let rects = [
             // touching at corners
             (Rect::new(0, 0, 5, 5), Rect::new(4, 4, 5, 5)),
@@ -2019,28 +2068,43 @@ mod tests {
             // touching horizontal edges
             (Rect::new(28, 0, 5, 5), Rect::new(28, 4, 5, 5)),
         ];
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 43, 1000));
+        let pairs = iproduct!(border_sets, border_sets)
+            .map(|((name_1, set_1), (name_2, set_2))| {
+                (format!("{name_1} + {name_2}"), set_1, set_2)
+            })
+            .collect_vec();
+        // The expected output has no trailing spaces, so its width is that of the widest line.
+        let width = pairs
+            .iter()
+            .map(|(title, ..)| title.len() as u16)
+            .chain(
+                rects
+                    .iter()
+                    .flat_map(|(rect_1, rect_2)| [rect_1.right(), rect_2.right()]),
+            )
+            .max()
+            .unwrap_or_default();
+        let height = pairs.len() as u16 * 10;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, width, height));
 
         let mut offset = Offset::ZERO;
-        for (border_type_1, border_type_2) in iproduct!(border_types, border_types) {
-            let title = format!("{border_type_1} + {border_type_2}");
-            let title_area = Rect::new(0, 0, 43, 1) + offset;
+        for (title, set_1, set_2) in pairs {
+            let title_area = Rect::new(0, 0, width, 1) + offset;
             title.render(title_area, &mut buffer);
             offset.y += 1;
             for (rect_1, rect_2) in rects {
                 Block::bordered()
-                    .border_type(border_type_1)
+                    .border_set(*set_1)
                     .merge_borders(strategy)
                     .render(rect_1 + offset, &mut buffer);
                 Block::bordered()
-                    .border_type(border_type_2)
+                    .border_set(*set_2)
                     .merge_borders(strategy)
                     .render(rect_2 + offset, &mut buffer);
             }
             offset.y += 9;
         }
-        pretty_assertions::assert_eq!(Buffer::with_lines(expected.lines()), buffer);
+        buffer
     }
 
     #[rstest]

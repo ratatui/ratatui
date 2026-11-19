@@ -10,6 +10,8 @@
 //! [collapsing borders]: https://ratatui.rs/recipes/layout/collapse-borders
 use core::str::FromStr;
 
+use crate::symbols::border;
+
 /// A strategy for merging two symbols into one.
 ///
 /// This enum defines how two symbols should be merged together, allowing for different behaviors
@@ -32,6 +34,28 @@ use core::str::FromStr;
 /// - Combining any double segments with any thick segments (e.g. `═` with `┃` or `━`).
 /// - Combining some double segments with some plain segments (e.g. `┐` with `╔`).
 ///
+/// Block elements made of quadrants merge into the block element that fills the quadrants of both
+/// symbols. Unicode has a character for every combination, so [`Self::Exact`] and [`Self::Fuzzy`]
+/// always merge them. This collapses borders drawn with [`border::QUADRANT_INSIDE`],
+/// [`border::QUADRANT_OUTSIDE`], [`border::PROPORTIONAL_WIDE`], [`border::PROPORTIONAL_TALL`] and
+/// [`border::FULL`]. No character combines a box drawing line with a quadrant, so merging one with
+/// the other falls back to [`Self::Replace`].
+///
+/// The following diagram shows blocks with [`border::QUADRANT_INSIDE`] borders merged with either
+/// strategy:
+///
+/// ```text
+/// ▗▄▄▄▖     ▗▄▄▄▖   ▗▄▄▄▄▄▄▄▖ ▗▄▄▄▖
+/// ▐   ▌     ▐   ▌   ▐   █   ▌ ▐   ▌
+/// ▐   ▌     ▐ ▗▄▙▄▖ ▐   █   ▌ ▐   ▌
+/// ▐   ▌     ▐ ▐ ▌ ▌ ▐   █   ▌ ▐   ▌
+/// ▝▀▀▀▚▄▄▄▖ ▝▀▜▀▘ ▌ ▝▀▀▀▀▀▀▀▘ ▐███▌
+///     ▐   ▌   ▐   ▌           ▐   ▌
+///     ▐   ▌   ▝▀▀▀▘           ▐   ▌
+///     ▐   ▌                   ▐   ▌
+///     ▝▀▀▀▘                   ▝▀▀▀▘
+/// ```
+///
 /// The merging strategies include:
 ///
 /// - [`Self::Replace`]: Replaces the previous symbol with the next one.
@@ -51,6 +75,7 @@ use core::str::FromStr;
 /// assert_eq!(MergeStrategy::Replace.merge("│", "━"), "━");
 /// assert_eq!(MergeStrategy::Exact.merge("│", "─"), "┼");
 /// assert_eq!(MergeStrategy::Fuzzy.merge("┘", "╔"), "╬");
+/// assert_eq!(MergeStrategy::Exact.merge("▌", "▐"), "█");
 /// ```
 ///
 /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
@@ -277,9 +302,11 @@ impl MergeStrategy {
     /// This method takes two string slices representing the previous and next symbols, and
     /// returns a string slice representing the merged symbol based on the merge strategy.
     ///
-    /// If either of the symbols are not in the [Box Drawing Unicode block], the `next` symbol is
-    /// returned as is. If both symbols are valid, they are merged according to the rules defined
-    /// in the [`MergeStrategy`].
+    /// Characters from the [Box Drawing Unicode block] and block elements made of quadrants are
+    /// merged according to the rules defined in the [`MergeStrategy`]. Other symbols are never
+    /// merged. If `next` is one of them, it is returned as is. If only `prev` is one of them,
+    /// [`Self::Exact`] and [`Self::Fuzzy`] return `prev`, so a border drawn over text, such as a
+    /// block title, keeps the text.
     ///
     /// Most code using this method will use the [`Cell::merge_symbol`] method, which uses this
     /// method internally to merge the symbols of a cell.
@@ -295,6 +322,9 @@ impl MergeStrategy {
     /// assert_eq!(strategy.merge("╎", "╍"), "┿"); // replaces dashed with plain
     /// assert_eq!(strategy.merge("┐", "╔"), "╦"); // merges double with plain
     /// assert_eq!(strategy.merge("╔", "┐"), "┬"); // merges plain with double
+    /// assert_eq!(strategy.merge("▖", "▝"), "▞"); // fills the quadrants of both symbols
+    /// assert_eq!(strategy.merge("▀", "─"), "─"); // replaces a quadrant with a line
+    /// assert_eq!(strategy.merge("a", "─"), "a"); // keeps text under a border
     /// ```
     ///
     /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
@@ -305,22 +335,91 @@ impl MergeStrategy {
             return next;
         }
 
-        match (BorderSymbol::from_str(prev), BorderSymbol::from_str(next)) {
-            (Ok(prev_symbol), Ok(next_symbol)) => prev_symbol
-                .merge(next_symbol, self)
-                .try_into()
-                .unwrap_or(next),
+        match (MergeableSymbol::parse(prev), MergeableSymbol::parse(next)) {
+            (Some(prev_symbol), Some(next_symbol)) => {
+                prev_symbol.merge(next_symbol, self).unwrap_or(next)
+            }
             // Non-border symbols take precedence in strategies other than Replace.
-            (Err(_), Ok(_)) => prev,
-            (_, Err(_)) => next,
+            (None, Some(_)) => prev,
+            (_, None) => next,
         }
+    }
+}
+
+/// A symbol that a [`MergeStrategy`] can combine with another symbol.
+#[derive(Debug, Copy, Clone)]
+enum MergeableSymbol {
+    /// A box drawing character.
+    Line(BorderSymbol),
+    /// A block element made of quadrants.
+    Quadrant(QuadrantSymbol),
+}
+
+impl MergeableSymbol {
+    fn parse(symbol: &str) -> Option<Self> {
+        QuadrantSymbol::parse(symbol)
+            .map(Self::Quadrant)
+            .or_else(|| BorderSymbol::from_str(symbol).ok().map(Self::Line))
+    }
+
+    /// Merges `next` into this symbol, returning `None` if no character represents the result.
+    fn merge(self, next: Self, strategy: MergeStrategy) -> Option<&'static str> {
+        match (self, next) {
+            (Self::Line(prev), Self::Line(next)) => prev.merge(next, strategy).try_into().ok(),
+            (Self::Quadrant(prev), Self::Quadrant(next)) => Some(prev.union(next).as_str()),
+            // No character combines a box drawing line with a quadrant.
+            (Self::Line(_), Self::Quadrant(_)) | (Self::Quadrant(_), Self::Line(_)) => None,
+        }
+    }
+}
+
+/// A block element that fills one or more quadrants of a cell.
+///
+/// Bit 0 is the top left quadrant, bit 1 the top right, bit 2 the bottom left and bit 3 the bottom
+/// right. Unicode has a character for every non-empty combination of quadrants, so two quadrant
+/// symbols always merge into an existing character.
+#[derive(Debug, Copy, Clone)]
+struct QuadrantSymbol(u8);
+
+impl QuadrantSymbol {
+    /// The block elements for the quadrant bits `0b0001` to `0b1111`, in that order.
+    const SYMBOLS: [&'static str; 15] = [
+        border::QUADRANT_TOP_LEFT,
+        border::QUADRANT_TOP_RIGHT,
+        border::QUADRANT_TOP_HALF,
+        border::QUADRANT_BOTTOM_LEFT,
+        border::QUADRANT_LEFT_HALF,
+        border::QUADRANT_TOP_RIGHT_BOTTOM_LEFT,
+        border::QUADRANT_TOP_LEFT_TOP_RIGHT_BOTTOM_LEFT,
+        border::QUADRANT_BOTTOM_RIGHT,
+        border::QUADRANT_TOP_LEFT_BOTTOM_RIGHT,
+        border::QUADRANT_RIGHT_HALF,
+        border::QUADRANT_TOP_LEFT_TOP_RIGHT_BOTTOM_RIGHT,
+        border::QUADRANT_BOTTOM_HALF,
+        border::QUADRANT_TOP_LEFT_BOTTOM_LEFT_BOTTOM_RIGHT,
+        border::QUADRANT_TOP_RIGHT_BOTTOM_LEFT_BOTTOM_RIGHT,
+        border::QUADRANT_BLOCK,
+    ];
+
+    fn parse(symbol: &str) -> Option<Self> {
+        let index = Self::SYMBOLS.iter().position(|&s| s == symbol)?;
+        Some(Self(index as u8 + 1))
+    }
+
+    /// Returns the symbol that fills the quadrants of both symbols.
+    const fn union(self, other: Self) -> Self {
+        Self(self.0 | other.0)
+    }
+
+    const fn as_str(self) -> &'static str {
+        Self::SYMBOLS[self.0 as usize - 1]
     }
 }
 
 /// Represents a composite border symbol using individual line components.
 ///
 /// This is an internal type for now specifically used to make the merge logic easier to implement.
-/// At some point in the future, we might make a similar type public to represent the
+/// At some point in the future, we might make a similar type public.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 struct BorderSymbol {
     right: LineStyle,
@@ -657,6 +756,9 @@ define_symbols!(
 
 #[cfg(test)]
 mod tests {
+    use itertools::iproduct;
+    use rstest::rstest;
+
     use super::*;
 
     #[test]
@@ -670,7 +772,8 @@ mod tests {
             "╄", "╅", "╆", "╇", "╈", "╉", "╊", "╋", "╌", "╍", "╎", "╏", "═", "║", "╒", "╓", "╔",
             "╕", "╖", "╗", "╘", "╙", "╚", "╛", "╜", "╝", "╞", "╟", "╠", "╡", "╢", "╣", "╤", "╥",
             "╦", "╧", "╨", "╩", "╪", "╫", "╬", "╭", "╮", "╯", "╰", "╴", "╵", "╶", "╷", "╸", "╹",
-            "╺", "╻", "╼", "╽", "╾", "╿", " ", "a", "b",
+            "╺", "╻", "╼", "╽", "╾", "╿", "▘", "▝", "▀", "▖", "▌", "▞", "▛", "▗", "▚", "▐", "▜",
+            "▄", "▙", "▟", "█", " ", "a", "b",
         ];
 
         for a in symbols {
@@ -744,5 +847,66 @@ mod tests {
         assert_eq!(strategy.merge("┌", "a"), "a");
         assert_eq!(strategy.merge("a", "╭"), "a");
         assert_eq!(strategy.merge("a", "b"), "b");
+    }
+
+    const QUADRANT_SYMBOLS: [&str; 15] = [
+        "▘", "▝", "▀", "▖", "▌", "▞", "▛", "▗", "▚", "▐", "▜", "▄", "▙", "▟", "█",
+    ];
+
+    #[rstest]
+    #[case::same_quadrant("▘", "▘", "▘")]
+    #[case::top_quadrants("▘", "▝", "▀")]
+    #[case::bottom_quadrants("▖", "▗", "▄")]
+    #[case::left_quadrants("▘", "▖", "▌")]
+    #[case::right_quadrants("▝", "▗", "▐")]
+    #[case::falling_diagonal("▘", "▗", "▚")]
+    #[case::rising_diagonal("▝", "▖", "▞")]
+    #[case::left_and_right_halves("▌", "▐", "█")]
+    #[case::top_and_bottom_halves("▀", "▄", "█")]
+    #[case::top_half_and_left_half("▀", "▌", "▛")]
+    #[case::top_half_and_right_half("▀", "▐", "▜")]
+    #[case::bottom_half_and_left_half("▄", "▌", "▙")]
+    #[case::bottom_half_and_right_half("▄", "▐", "▟")]
+    #[case::diagonals("▚", "▞", "█")]
+    #[case::three_quadrants_and_missing_quadrant("▛", "▗", "█")]
+    #[case::three_quadrants_and_contained_quadrant("▙", "▘", "▙")]
+    #[case::full_block("█", "▝", "█")]
+    fn merge_quadrants(
+        #[values(MergeStrategy::Exact, MergeStrategy::Fuzzy)] strategy: MergeStrategy,
+        #[case] prev: &str,
+        #[case] next: &str,
+        #[case] expected: &str,
+    ) {
+        assert_eq!(strategy.merge(prev, next), expected);
+    }
+
+    #[rstest]
+    #[case::line_then_quadrant("─", "▀", "▀")]
+    #[case::quadrant_then_line("▀", "─", "─")]
+    #[case::text_then_quadrant("a", "▀", "a")]
+    #[case::quadrant_then_text("▀", "a", "a")]
+    #[case::space_then_quadrant(" ", "▄", " ")]
+    #[case::quadrant_then_space("▄", " ", " ")]
+    #[case::one_eighth_then_quadrant("▏", "▌", "▏")]
+    #[case::quadrant_then_one_eighth("▌", "▏", "▏")]
+    fn merge_quadrants_with_other_symbols(
+        #[values(MergeStrategy::Exact, MergeStrategy::Fuzzy)] strategy: MergeStrategy,
+        #[case] prev: &str,
+        #[case] next: &str,
+        #[case] expected: &str,
+    ) {
+        assert_eq!(strategy.merge(prev, next), expected);
+    }
+
+    #[rstest]
+    fn merge_quadrants_keeps_both_symbols(
+        #[values(MergeStrategy::Exact, MergeStrategy::Fuzzy)] strategy: MergeStrategy,
+    ) {
+        for (prev, next) in iproduct!(QUADRANT_SYMBOLS, QUADRANT_SYMBOLS) {
+            let merged = strategy.merge(prev, next);
+            assert_eq!(merged, strategy.merge(next, prev), "{prev} {next}");
+            assert_eq!(strategy.merge(merged, prev), merged, "{prev} {next}");
+            assert_eq!(strategy.merge(merged, next), merged, "{prev} {next}");
+        }
     }
 }
