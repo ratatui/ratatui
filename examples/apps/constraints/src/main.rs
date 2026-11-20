@@ -5,6 +5,8 @@
 /// release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+use std::sync::LazyLock;
+
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
 use ratatui::buffer::Buffer;
@@ -24,15 +26,10 @@ const SPACER_HEIGHT: u16 = 0;
 const ILLUSTRATION_HEIGHT: u16 = 4;
 const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 
-// priority 2
-const MIN_COLOR: Color = tailwind::BLUE.c900;
-const MAX_COLOR: Color = tailwind::BLUE.c800;
-// priority 3
-const LENGTH_COLOR: Color = tailwind::SLATE.c700;
-const PERCENTAGE_COLOR: Color = tailwind::SLATE.c800;
-const RATIO_COLOR: Color = tailwind::SLATE.c900;
-// priority 4
-const FILL_COLOR: Color = tailwind::SLATE.c950;
+// Colors are resolved once at startup. On terminals that don't support 24-bit color
+// (e.g. Apple Terminal.app before build 465) the truecolor tailwind palette looks bad,
+// so we fall back to indexed colors. See issue #1972.
+static THEME: LazyLock<Theme> = LazyLock::new(Theme::new);
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -255,14 +252,14 @@ impl SelectedTab {
     fn to_tab_title(value: Self) -> Line<'static> {
         let text = format!("  {value}  ");
         let color = match value {
-            Self::Length => LENGTH_COLOR,
-            Self::Percentage => PERCENTAGE_COLOR,
-            Self::Ratio => RATIO_COLOR,
-            Self::Fill => FILL_COLOR,
-            Self::Min => MIN_COLOR,
-            Self::Max => MAX_COLOR,
+            Self::Length => THEME.length,
+            Self::Percentage => THEME.percentage,
+            Self::Ratio => THEME.ratio,
+            Self::Fill => THEME.fill,
+            Self::Min => THEME.min,
+            Self::Max => THEME.max,
         };
-        text.fg(tailwind::SLATE.c200).bg(color).into()
+        text.fg(THEME.tab_fg).bg(color).into()
     }
 }
 
@@ -368,12 +365,12 @@ impl Widget for Example {
 impl Example {
     fn illustration(constraint: Constraint, width: u16) -> impl Widget {
         let color = match constraint {
-            Constraint::Length(_) => LENGTH_COLOR,
-            Constraint::Percentage(_) => PERCENTAGE_COLOR,
-            Constraint::Ratio(_, _) => RATIO_COLOR,
-            Constraint::Fill(_) => FILL_COLOR,
-            Constraint::Min(_) => MIN_COLOR,
-            Constraint::Max(_) => MAX_COLOR,
+            Constraint::Length(_) => THEME.length,
+            Constraint::Percentage(_) => THEME.percentage,
+            Constraint::Ratio(_, _) => THEME.ratio,
+            Constraint::Fill(_) => THEME.fill,
+            Constraint::Min(_) => THEME.min,
+            Constraint::Max(_) => THEME.max,
         };
         let fg = Color::White;
         let title = format!("{constraint}");
@@ -384,5 +381,134 @@ impl Example {
             .border_style(Style::reset().fg(color).reversed())
             .style(Style::default().fg(fg).bg(color));
         Paragraph::new(text).centered().block(block)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+struct Theme {
+    min: Color,
+    max: Color,
+    length: Color,
+    percentage: Color,
+    ratio: Color,
+    fill: Color,
+    tab_fg: Color,
+}
+
+impl Theme {
+    fn new() -> Self {
+        let term_program = std::env::var("TERM_PROGRAM").ok();
+        let term_program_version = std::env::var("TERM_PROGRAM_VERSION").ok();
+        let is_true_color =
+            Self::supports_true_color(term_program.as_deref(), term_program_version.as_deref());
+        Self::from_true_color(is_true_color)
+    }
+
+    // Builds the theme for a terminal that either does or does not support 24-bit color.
+    fn from_true_color(is_true_color: bool) -> Self {
+        use tailwind::{BLUE, SLATE};
+
+        let color = |true_color, indexed_color| {
+            if is_true_color {
+                true_color
+            } else {
+                indexed_color
+            }
+        };
+
+        Self {
+            min: color(BLUE.c900, Color::Indexed(24)),
+            max: color(BLUE.c800, Color::Indexed(25)),
+            length: color(SLATE.c700, Color::Indexed(67)),
+            percentage: color(SLATE.c800, Color::Indexed(18)),
+            ratio: color(SLATE.c900, Color::Indexed(17)),
+            fill: color(SLATE.c950, Color::Indexed(16)),
+            tab_fg: color(SLATE.c200, Color::Indexed(252)),
+        }
+    }
+
+    // Checks whether truecolor (24-bit color) is supported by the current terminal.
+    //
+    // Terminals known *not* to support truecolor:
+    // - Apple Terminal.app: all versions before build 465
+    //
+    // Environment variables used:
+    // - `TERM_PROGRAM`: identifies the terminal application in use
+    // - `TERM_PROGRAM_VERSION`: build number of that terminal application
+    fn supports_true_color(term_program: Option<&str>, term_program_version: Option<&str>) -> bool {
+        if term_program != Some("Apple_Terminal") {
+            return true;
+        }
+        let build_number = term_program_version
+            .and_then(|version| version.split('.').next())
+            .and_then(|version| version.parse::<u32>().ok())
+            .unwrap_or(0);
+        build_number >= 465
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ratatui::style::Color;
+
+    use super::Theme;
+
+    #[test]
+    fn apple_terminal_before_build_465_does_not_support_true_color() {
+        assert!(!Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("464")
+        ));
+        assert!(!Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("455.1")
+        ));
+        assert!(!Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("unknown")
+        ));
+        assert!(!Theme::supports_true_color(Some("Apple_Terminal"), None));
+    }
+
+    #[test]
+    fn apple_terminal_build_465_and_later_supports_true_color() {
+        assert!(Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("465")
+        ));
+        assert!(Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("465.1")
+        ));
+        assert!(Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("500")
+        ));
+    }
+
+    #[test]
+    fn other_terminals_support_true_color() {
+        assert!(Theme::supports_true_color(Some("iTerm.app"), Some("3.5.0")));
+        assert!(Theme::supports_true_color(Some("WezTerm"), None));
+        assert!(Theme::supports_true_color(None, None));
+    }
+
+    #[test]
+    fn theme_falls_back_to_indexed_colors_without_true_color() {
+        let theme = Theme::from_true_color(false);
+        assert_eq!(theme.min, Color::Indexed(24));
+        assert_eq!(theme.max, Color::Indexed(25));
+        assert_eq!(theme.length, Color::Indexed(67));
+        assert_eq!(theme.percentage, Color::Indexed(18));
+        assert_eq!(theme.ratio, Color::Indexed(17));
+        assert_eq!(theme.fill, Color::Indexed(16));
+        assert_eq!(theme.tab_fg, Color::Indexed(252));
+    }
+
+    #[test]
+    fn theme_uses_truecolor_when_supported() {
+        let theme = Theme::from_true_color(true);
+        assert!(matches!(theme.min, Color::Rgb(..)));
+        assert!(matches!(theme.tab_fg, Color::Rgb(..)));
     }
 }
