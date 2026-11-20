@@ -5,6 +5,7 @@ default-members = [
   "examples/apps/*",
   "examples/concepts/*",
   "ratatui",
+  "ratatui-calendar",
   "ratatui-core",
   "ratatui-crossterm",
   "ratatui-macros",
@@ -30,6 +31,7 @@ rust-version = "1.88.0"
 [workspace.dependencies]
 anstyle = "1.0.3"
 bitflags = "2.11"
+chrono = { version = "0.4.41", default-features = false }
 clap = { version = "4.5", features = ["derive"] }
 color-eyre = "0.6"
 compact_str = { version = "0.10", default-features = false }
@@ -38,20 +40,22 @@ critical-section = "1.2"
 crossterm = "0.29"
 document-features = "0.2.11"
 fakeit = "1"
-futures = "0.3"
 hashbrown = "0.17"
 indoc = "2.0.5"
 instability = "0.3.7"
+jiff = { version = "1.0.0", default-features = false }
 itertools = { version = "0.15", default-features = false, features = ["use_alloc"] }
 kasuari = { version = "0.4.9", default-features = false }
 line-clipping = "0.3.8"
-lru = "0.18"
+lru = "0.19.0"
 octocrab = "0.54"
 palette = { version = "0.7.7", default-features = false, features = ["libm"] }
+portable-atomic-util = { version = "0.2.4", default-features = false }
 pretty_assertions = "1"
 rand = "0.10"
 rand_chacha = "0.10"
 ratatui = { path = "ratatui", version = "0.30.2" }
+ratatui-calendar = { path = "ratatui-calendar", version = "0.1.0", default-features = false }
 ratatui-core = { path = "ratatui-core", version = "0.1.2" }
 ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.2" }
 ratatui-macros = { path = "ratatui-macros", version = "0.7.2" }
@@ -59,7 +63,7 @@ ratatui-termina = { path = "ratatui-termina", version = "0.1.0" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.2" }
 ratatui-termwiz = { path = "ratatui-termwiz", version = "0.1.2" }
 ratatui-widgets = { path = "ratatui-widgets", version = "0.3.2", default-features = false }
-rstest = "0.27"
+rstest = "0.28"
 serde = { version = "1.0.228", default-features = false, features = ["derive"] }
 serde_json = "1.0.142"
 strum = { version = "0.28", default-features = false, features = ["derive"] }
@@ -67,7 +71,7 @@ termina = "0.4"
 termion = "4"
 termwiz = "0.23"
 thiserror = { version = "2.0.12", default-features = false }
-time = { version = "0.3.37", default-features = false }
+time = { version = "0.3.55", default-features = false }
 tokio = "1.35"
 tokio-stream = "0.1"
 tracing = "0.1.37"
@@ -77,7 +81,7 @@ trybuild = "1.0.19"
 unicode-segmentation = "1.9"
 unicode-truncate = { version = "3", default-features = false }
 # See <https://github.com/ratatui/ratatui/issues/1271> for information about why we pin unicode-width
-unicode-width = ">=0.2.0"
+unicode-width = ">=0.2.3"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -19,6 +19,9 @@ pub struct BufferDiff<'prev, 'next> {
     pos: usize,
     /// Tracks trailing cells and a leading cell that may be deferred until after they are cleared.
     trailing: Option<TrailingState>,
+    /// End of the previous cells that sat under a wide glyph which has since been overwritten.
+    /// The terminal shows blanks there, whatever the previous buffer holds.
+    covered: usize,
 }
 
 /// Tracks pending trailing-cell yields for a wide character update.
@@ -70,6 +73,7 @@ impl<'prev, 'next> BufferDiff<'prev, 'next> {
             area,
             pos: 0,
             trailing: None,
+            covered: 0,
         }
     }
 
@@ -128,7 +132,11 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
             self.pos += 1;
 
             let current = &self.next[i];
-            let previous = &self.prev[i];
+            let previous = if i < self.covered {
+                &Cell::EMPTY
+            } else {
+                &self.prev[i]
+            };
 
             match current.diff_option {
                 CellDiffOption::Skip => {}
@@ -201,6 +209,7 @@ impl<'next> Iterator for BufferDiff<'_, 'next> {
                         });
                     } else {
                         // single-width character, no position adjustment needed
+                        self.covered = self.covered.max(i + previous_width).min(len);
                     }
 
                     let (x, y) = self.pos_of(i);
@@ -761,11 +770,12 @@ mod terminal_model {
     use alloc::string::{String, ToString};
     use alloc::vec;
     use alloc::vec::Vec;
+    use core::num::NonZeroU16;
 
     use rstest::rstest;
 
     use super::*;
-    use crate::buffer::Buffer;
+    use crate::buffer::{Buffer, CellDiffOption};
     use crate::style::Style;
 
     /// What is visibly occupying one terminal column.
@@ -974,5 +984,35 @@ mod terminal_model {
         assert_no_artifacts_for_both_widths("int value8;;", "a❤️b漢c😀d", 12);
         assert_no_artifacts_for_both_widths("a❤️b漢c😀d", "int value8;;", 12);
         assert_no_artifacts_for_both_widths("a❤️b漢c😀d", "漢a❤️b😀c", 12);
+    }
+
+    /// A widget that writes cells directly can leave old content in a cell after a wide glyph,
+    /// but such cells won't actually be displayed.  If the wide glyph is later replaced with a
+    /// single-column glyph, these trailing glyphs must be redrawn.
+    #[rstest]
+    #[case::keycap("1️⃣")]
+    #[case::fullwidth("＋")]
+    fn stale_cell_after_wide_glyph_is_repainted(#[case] glyph: &str) {
+        let next = row(4, "────");
+        let mut prev = next.clone();
+        prev.content[1].set_symbol(glyph);
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
+    }
+
+    /// A covered range must remain covered when the old cell uses an explicit width > 2.
+    #[test]
+    fn stale_cells_after_forced_width_are_repainted() {
+        let next = row(4, "abcd");
+        let mut prev = next.clone();
+        prev.content[0]
+            .set_symbol("image")
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(4).unwrap()));
+
+        for vs16_width in VS16_WIDTHS {
+            assert_no_artifacts(vs16_width, &prev, &next);
+        }
     }
 }

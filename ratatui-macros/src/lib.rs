@@ -27,6 +27,10 @@
 //!
 //! # Text Macros
 //!
+//! All three text macros accept an optional `style =>` prefix. It sets the style of the resulting
+//! span, line, or text while preserving child styles. Content after `=>` follows the macro's usual
+//! syntax: formatting for spans, and lists or repetition for lines and text.
+//!
 //! The [`span!`] macro creates raw or styled [`Span`]s.
 //!
 //! ```rust
@@ -34,9 +38,9 @@
 //! # use ratatui_macros::span;
 //! let name = "world!";
 //! let raw_greeting = span!("hello {name}");
-//! let styled_greeting = span!(Style::new().green(); "hello {name}");
-//! let colored_greeting = span!(Color::Green; "hello {name}");
-//! let modified_greeting = span!(Modifier::BOLD; "hello {name}");
+//! let styled_greeting = span!(Style::new().green() => "hello {name}");
+//! let colored_greeting = span!(Color::Green => "hello {name}");
+//! let modified_greeting = span!(Modifier::BOLD => "hello {name}");
 //! ```
 //!
 //! The [`line!`] macro creates a [`Line`] that contains a sequence of [`Span`]s. It is similar to
@@ -47,9 +51,11 @@
 //! # use ratatui_macros::{line, span};
 //! let name = "world!";
 //! let line = line!["hello", format!("{name}")];
-//! let line = line!["hello ", span!(Color::Green; "{name}")];
+//! let line = line!["hello ", span!(Color::Green => "{name}")];
 //! let line = line!["Name: ".bold(), "Remy".italic()];
 //! let line = line!["bye"; 2];
+//! let line = line![Color::Blue => "hello ", name];
+//! let line = line![Color::Blue => "bye"; 2];
 //! ```
 //!
 //! The [`text!`] macro creates a [`Text`] that contains a sequence of [`Line`]. It is similar to
@@ -61,8 +67,10 @@
 //! let name = "world!";
 //! let text = text!["hello", format!("{name}")];
 //! let text = text!["bye"; 2];
+//! let text = text![Modifier::BOLD => "hello", name];
+//! let text = text![Modifier::BOLD => "bye"; 2];
 //! let name = "Bye!!!";
-//! let text = text![line!["hello", "world".bold()], span!(Modifier::BOLD; "{name}")];
+//! let text = text![line!["hello", "world".bold()], span!(Modifier::BOLD => "{name}")];
 //! ```
 //!
 //! # Layout Macros
@@ -110,7 +118,7 @@
 //!     row!["goodbye", "world"],
 //!     row![
 //!         text!["line 1", line!["Line", "2".bold()]],
-//!         span!(Modifier::BOLD; "Cell 2"),
+//!         span!(Modifier::BOLD => "Cell 2"),
 //!     ],
 //! ];
 //! let table = Table::new(rows, constraints![==20, *=1]);

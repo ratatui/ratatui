@@ -29,6 +29,10 @@ license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
 
 [advisories]
 version = 2
+ignore = [
+  # chrono is only a dev dependency for ratatui-calendar's interoperability example.
+  { id = "RUSTSEC-2026-0543", reason = "Used only by a dev-only compatibility example; downstream users do not compile it." },
+]
 
 [bans]
 multiple-versions = "allow"

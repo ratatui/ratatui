@@ -703,6 +703,11 @@ impl Widget for BarChart<'_> {
 
 impl Widget for &BarChart<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
 
         self.block.as_ref().render(area, buf);
@@ -1572,5 +1577,37 @@ mod tests {
             .data(BarGroup::new([Bar::new(1).text_value("中文")]));
         widget.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["████████", "██中文██"]));
+    }
+    #[rstest]
+    fn render_barchart_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        BarChart::default()
+            .data(&[("one", 1)])
+            .render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_barchart_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = BarChart::default().data(&[("one", 1)]);
+        (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
+        (&widget).render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }

@@ -82,8 +82,41 @@
 //! - [`ratatui-core`] for widget libraries, custom integrations, and lower-level rendering
 //!   contracts
 //! - [`ratatui-widgets`] when you only need the built-in widgets crate as a dependency
+//! - [`ratatui-calendar`] when you only need the calendar widget as a dependency
 //! - [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termina`], or [`ratatui-termwiz`] when
 //!   your application needs backend-specific APIs or a direct backend dependency
+//!
+//! ## Using Ratatui without std
+//!
+//! Ratatui can run on `no_std` targets such as microcontrollers, with a backend like
+//! [Mousefood]. Turning off default features removes the terminal backends and `std`, but it also
+//! turns off the `layout-cache` feature. Without the cache, every layout is recomputed by the
+//! constraint solver on each frame. That solver uses `f64` arithmetic, which is slow on chips
+//! without a double-precision FPU, so turn the cache back on:
+//!
+//! ```toml
+//! [dependencies]
+//! ratatui = { version = "0.30", default-features = false, features = ["layout-cache"] }
+//! ```
+//!
+//! The default cache holds [`Layout::DEFAULT_CACHE_SIZE`] entries, which can exhaust a small heap.
+//! Call [`Layout::init_cache()`] once before the first draw with a size that fits your app,
+//! for example a few dozen entries:
+//!
+//! ```rust
+//! # #[cfg(feature = "layout-cache")] {
+//! use core::num::NonZeroUsize;
+//!
+//! use ratatui::layout::Layout;
+//!
+//! Layout::init_cache(NonZeroUsize::new(64).unwrap());
+//! # }
+//! ```
+//!
+//! Without `std`, the cache is guarded by a [`critical-section`] mutex, so your binary must link a
+//! `critical-section` implementation. Most embedded HALs and runtimes provide one through a
+//! feature flag. To run host tests for a `no_std` crate, add `critical-section` with its `std`
+//! feature as a dev-dependency.
 //!
 //! # Other documentation
 //!
@@ -118,6 +151,7 @@
 //! - **[`ratatui`](crate)**: Main crate with complete functionality (recommended for apps)
 //! - **[`ratatui-core`]**: Core traits and types for widget libraries
 //! - **[`ratatui-widgets`]**: Built-in widget implementations
+//! - **[`ratatui-calendar`]**: The calendar widget
 //! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termina`],
 //!   [`ratatui-termwiz`]
 //! - **[`ratatui-macros`]**: Macros for simplifying the boilerplate
@@ -390,12 +424,14 @@
 //! [Counter App]: https://ratatui.rs/tutorials/counter-app/
 //! [Recipes]: https://ratatui.rs/recipes/
 //! [FAQ]: https://ratatui.rs/faq/
+//! [Mousefood]: https://github.com/ratatui/mousefood
+//! [`critical-section`]: https://docs.rs/critical-section
 //! [Templates]: https://ratatui.rs/templates/
 //! [Cargo Generate]: https://cargo-generate.github.io/cargo-generate/
 //! [Showcase]: https://ratatui.rs/showcase/
 //! [Rendering]: https://ratatui.rs/concepts/rendering/
 //! [Application Patterns]: https://ratatui.rs/concepts/application-patterns/
-//! [Hello World tutorial]: https://ratatui.rs/tutorials/hello-world/
+//! [Hello World tutorial]: https://ratatui.rs/tutorials/hello-ratatui/
 //! [Backends]: https://ratatui.rs/concepts/backends/
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Widgets]: https://ratatui.rs/recipes/widgets/
@@ -421,6 +457,8 @@
 //! [`render_widget`]: Frame::render_widget
 //! [`Widget`]: widgets::Widget
 //! [`Layout`]: layout::Layout
+//! [`Layout::DEFAULT_CACHE_SIZE`]: layout::Layout::DEFAULT_CACHE_SIZE
+//! [`Layout::init_cache()`]: layout::Layout::init_cache
 //! [`Text`]: text::Text
 //! [`Line`]: text::Line
 //! [`Span`]: text::Span
@@ -439,6 +477,7 @@
 //! [tui-rs]: https://crates.io/crates/tui
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [`ratatui-calendar`]: https://crates.io/crates/ratatui-calendar
 //! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
 //! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
 //! [`ratatui-termina`]: https://crates.io/crates/ratatui-termina
@@ -464,6 +503,7 @@
 //! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [`ratatui-calendar`]: https://crates.io/crates/ratatui-calendar
 //! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
 //! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
 //! [`ratatui-termina`]: https://crates.io/crates/ratatui-termina

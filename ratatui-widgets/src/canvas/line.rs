@@ -69,6 +69,41 @@ impl Shape for Line {
     }
 }
 
+/// The points of a series together with the line segments joining consecutive points.
+///
+/// Draws the same dots as a [`Points`](super::Points) shape plus a [`Line`] per consecutive pair,
+/// but maps each point to the grid once. Clipping leaves a segment with both ends inside the
+/// canvas bounds unchanged, so those are drawn directly in grid space; the rest fall back to
+/// [`Line`] so they are clipped.
+pub(crate) struct Polyline<'a> {
+    pub coords: &'a [(f64, f64)],
+    pub color: Color,
+}
+
+impl Shape for Polyline<'_> {
+    fn draw(&self, painter: &mut Painter) {
+        let Some(&(mut x1, mut y1)) = self.coords.first() else {
+            return;
+        };
+        let mut start = painter.get_point(x1, y1);
+        if let Some((x, y)) = start {
+            painter.paint(x, y, self.color);
+        }
+        for &(x2, y2) in &self.coords[1..] {
+            let end = painter.get_point(x2, y2);
+            if let (Some((x1, y1)), Some((x2, y2))) = (start, end) {
+                draw_line(painter, x1, y1, x2, y2, self.color);
+            } else {
+                if let Some((x, y)) = end {
+                    painter.paint(x, y, self.color);
+                }
+                Line::new(x1, y1, x2, y2, self.color).draw(painter);
+            }
+            (x1, y1, start) = (x2, y2, end);
+        }
+    }
+}
+
 fn clip_line(
     &[xmin, xmax]: &[f64; 2],
     &[ymin, ymax]: &[f64; 2],
@@ -622,5 +657,53 @@ mod tests {
         canvas.render(buffer.area, &mut buffer);
 
         assert_eq!(buffer, Buffer::with_lines(["          "; 10]));
+    }
+
+    /// `Polyline` must draw exactly what `Points` plus a `Line` per consecutive pair draws,
+    /// including points outside the bounds, segments crossing the edges, and non-finite points.
+    #[rstest]
+    fn polyline_matches_points_and_lines(
+        #[values(Marker::Dot, Marker::HalfBlock, Marker::Braille)] marker: Marker,
+    ) {
+        let coords = [
+            (0.0, 0.0),
+            (2.5, 7.25),
+            (5.0, 5.0),
+            (12.0, 3.0),
+            (15.0, -4.0),
+            (7.5, 12.0),
+            (8.0, 9.5),
+            (f64::NAN, 4.0),
+            (9.0, 1.0),
+            (f64::INFINITY, 2.0),
+            (1.0, 8.0),
+            (-3.0, 6.0),
+            (10.0, 10.0),
+            (10.0, 0.0),
+        ];
+        let render = |paint: &dyn Fn(&mut crate::canvas::Context)| {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 6));
+            Canvas::default()
+                .marker(marker)
+                .x_bounds([0.0, 10.0])
+                .y_bounds([0.0, 10.0])
+                .paint(|ctx| paint(ctx))
+                .render(buffer.area, &mut buffer);
+            buffer
+        };
+        let expected = render(&|ctx| {
+            ctx.draw(&crate::canvas::Points::new(&coords, Color::Red));
+            for pair in coords.windows(2) {
+                let [(x1, y1), (x2, y2)] = [pair[0], pair[1]];
+                ctx.draw(&Line::new(x1, y1, x2, y2, Color::Red));
+            }
+        });
+        let actual = render(&|ctx| {
+            ctx.draw(&Polyline {
+                coords: &coords,
+                color: Color::Red,
+            });
+        });
+        assert_eq!(actual, expected);
     }
 }

@@ -16,8 +16,8 @@ Our release strategy is:
 [vhs](https://github.com/charmbracelet/vhs) (installation instructions in README).
 
    ```shell
-   cargo build --example demo2
-   vhs examples/demo2.tape
+   cargo build -p demo2
+   vhs examples/vhs/demo2.tape
    ```
 
 1. Switch branches to the images branch and copy demo2.gif to examples/, commit, and push.

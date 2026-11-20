@@ -1,9 +1,77 @@
+use core::cmp::Ordering;
+
 use crate::backend::Backend;
-use crate::buffer::{Buffer, Cell};
+use crate::buffer::{Buffer, Cell, CellWidth};
 use crate::layout::{Position, Rect, Size};
 use crate::terminal::{Terminal, Viewport};
 
 impl<B: Backend> Terminal<B> {
+    /// Sets the height of an inline viewport and resizes it accordingly.
+    ///
+    /// This method only works with inline viewports. For other viewport types, it has no effect.
+    /// The viewport will be resized to the new height, and the buffers will be cleared and
+    /// reallocated to match the new size.
+    ///
+    /// Unlike [`Terminal::resize`], which handles changes to the terminal's dimensions, this
+    /// changes the inline viewport's requested height. It keeps the current top row when possible;
+    /// when growing would extend past the bottom of the terminal, it scrolls the screen to make
+    /// room. Shrinking keeps the current top row. The visible viewport is capped at the terminal
+    /// height, but the requested height is retained if the terminal is later resized larger.
+    ///
+    /// # Arguments
+    ///
+    /// * `new_height` - The new height for the inline viewport in lines
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// use ratatui::{Terminal, TerminalOptions, Viewport};
+    ///
+    /// let mut terminal = Terminal::with_options(backend, TerminalOptions {
+    ///     viewport: Viewport::Inline(8),
+    /// })?;
+    ///
+    /// // Later, resize the viewport to 12 lines
+    /// terminal.set_viewport_height(12)?;
+    /// ```
+    pub fn set_viewport_height(&mut self, new_height: u16) -> Result<(), B::Error> {
+        let Viewport::Inline(height) = &mut self.viewport else {
+            return Ok(());
+        };
+        if *height == new_height {
+            return Ok(());
+        }
+
+        *height = new_height;
+        let new_height = new_height.min(self.last_known_area.height);
+        let old_height = self.viewport_area.height;
+        self.clear()?;
+
+        let new_y = match new_height.cmp(&old_height) {
+            Ordering::Greater => {
+                let overflow = self
+                    .viewport_area
+                    .y
+                    .saturating_add(new_height)
+                    .saturating_sub(self.last_known_area.height);
+                if overflow > 0 {
+                    self.scroll_up(overflow)?;
+                    self.viewport_area.y.saturating_sub(overflow)
+                } else {
+                    self.viewport_area.y
+                }
+            }
+            _ => self.viewport_area.y,
+        };
+
+        self.set_viewport_area(Rect {
+            height: new_height,
+            y: new_y,
+            ..self.viewport_area
+        });
+        self.clear()
+    }
+
     /// Insert some content before the current inline viewport. This has no effect when the
     /// viewport is not inline.
     ///
@@ -308,9 +376,17 @@ impl<B: Backend> Terminal<B> {
         let width: usize = self.last_known_area.width.into();
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
         if lines_to_draw > 0 {
+            // Skip the cells hidden behind wide glyphs: drawn after the glyph, they erase it.
+            let mut hidden = 0;
             let iter = to_draw
                 .iter()
                 .enumerate()
+                .filter(|(i, c)| {
+                    // A glyph never hides cells on the next row.
+                    let visible = hidden == 0 || i % width == 0;
+                    hidden = if visible { c.cell_width() } else { hidden }.saturating_sub(1);
+                    visible
+                })
                 .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
             self.backend.draw(iter)?;
             self.backend.flush()?;
@@ -348,10 +424,9 @@ impl<B: Backend> Terminal<B> {
 
     /// Scroll the whole screen up by the given number of lines.
     ///
-    /// This is used by [`Terminal::insert_before`] when the `scrolling-regions` feature is
-    /// disabled.
+    /// This is used when growing an inline viewport and by [`Terminal::insert_before`] when the
+    /// `scrolling-regions` feature is disabled.
     /// It scrolls by moving the cursor to the last row and calling [`Backend::append_lines`].
-    #[cfg(not(feature = "scrolling-regions"))]
     fn scroll_up(&mut self, lines_to_scroll: u16) -> Result<(), B::Error> {
         if lines_to_scroll > 0 {
             self.set_cursor_position(Position::new(
@@ -395,8 +470,12 @@ pub(crate) fn compute_inline_size<B: Backend>(
     height: u16,
     size: Size,
     offset_in_previous_viewport: u16,
+    cursor_position: Option<Position>,
 ) -> Result<(Rect, Position), B::Error> {
-    let pos = backend.get_cursor_position()?;
+    let pos = match cursor_position {
+        Some(position) => position,
+        None => backend.get_cursor_position()?,
+    };
     let mut row = pos.y;
 
     let max_height = size.height.min(height);
@@ -434,6 +513,177 @@ mod tests {
     use crate::terminal::{Terminal, TerminalOptions, Viewport};
 
     #[test]
+    fn set_viewport_height_does_nothing_for_non_inline_viewports() {
+        let backend = TestBackend::new(10, 10);
+        let area = Rect::new(1, 2, 3, 4);
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Fixed(area),
+            },
+        )
+        .unwrap();
+
+        terminal.set_viewport_height(8).unwrap();
+
+        assert_eq!(terminal.viewport, Viewport::Fixed(area));
+        assert_eq!(terminal.viewport_area, area);
+    }
+
+    #[test]
+    fn set_viewport_height_resizes_inline_viewport_and_buffers() {
+        let mut backend = TestBackend::new(10, 10);
+        backend.set_cursor_position(Position::new(0, 2)).unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(3),
+            },
+        )
+        .unwrap();
+
+        terminal.set_viewport_height(5).unwrap();
+
+        let expected_area = Rect::new(0, 2, 10, 5);
+        assert_eq!(terminal.viewport, Viewport::Inline(5));
+        assert_eq!(terminal.viewport_area, expected_area);
+        assert_eq!(terminal.buffers[terminal.current].area, expected_area);
+        assert_eq!(terminal.buffers[1 - terminal.current].area, expected_area);
+    }
+
+    #[test]
+    fn set_viewport_height_clears_the_old_viewport_before_redrawing() {
+        let mut backend = TestBackend::with_lines([
+            "before    ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]);
+        backend.set_cursor_position(Position::new(0, 1)).unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(3),
+            },
+        )
+        .unwrap();
+
+        terminal
+            .draw(|frame| frame.render_widget("old", frame.area()))
+            .unwrap();
+        terminal.backend().assert_buffer_lines([
+            "before    ",
+            "old       ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]);
+
+        terminal.set_viewport_height(5).unwrap();
+
+        terminal.backend().assert_buffer_lines([
+            "before    ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]);
+        terminal
+            .draw(|frame| frame.render_widget("new", frame.area()))
+            .unwrap();
+        terminal.backend().assert_buffer_lines([
+            "before    ",
+            "new       ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]);
+    }
+
+    #[test]
+    fn set_viewport_height_scrolls_to_make_room() {
+        let mut backend = TestBackend::new(10, 10);
+        backend.set_cursor_position(Position::new(0, 7)).unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(3),
+            },
+        )
+        .unwrap();
+
+        terminal.set_viewport_height(5).unwrap();
+
+        assert_eq!(terminal.viewport, Viewport::Inline(5));
+        assert_eq!(terminal.viewport_area, Rect::new(0, 5, 10, 5));
+    }
+
+    #[test]
+    fn set_viewport_height_caps_area_to_terminal_height() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.set_cursor_position(Position::new(0, 2)).unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(3),
+            },
+        )
+        .unwrap();
+
+        terminal.set_viewport_height(20).unwrap();
+
+        assert_eq!(terminal.viewport, Viewport::Inline(20));
+        assert_eq!(terminal.viewport_area, Rect::new(0, 0, 10, 5));
+        assert_eq!(
+            terminal.buffers[terminal.current].area,
+            terminal.viewport_area
+        );
+        assert_eq!(
+            terminal.buffers[1 - terminal.current].area,
+            terminal.viewport_area
+        );
+    }
+
+    #[test]
+    fn set_viewport_height_keeps_origin_when_shrinking() {
+        let mut backend = TestBackend::new(10, 10);
+        backend.set_cursor_position(Position::new(0, 2)).unwrap();
+        let mut terminal = Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(5),
+            },
+        )
+        .unwrap();
+
+        terminal.set_viewport_height(3).unwrap();
+
+        assert_eq!(terminal.viewport, Viewport::Inline(3));
+        assert_eq!(terminal.viewport_area, Rect::new(0, 2, 10, 3));
+    }
+
+    #[test]
     fn compute_inline_size_uses_cursor_offset_when_space_available() {
         // Diagram (terminal height = 10, requested viewport height = 4):
         //
@@ -458,7 +708,7 @@ mod tests {
             .unwrap();
 
         let (area, observed_pos) =
-            compute_inline_size(&mut backend, 4, Size::new(10, 10), 1).unwrap();
+            compute_inline_size(&mut backend, 4, Size::new(10, 10), 1, None).unwrap();
 
         assert_eq!(observed_pos, Position { x: 0, y: 6 });
         assert_eq!(area, Rect::new(0, 5, 10, 4));
@@ -482,7 +732,7 @@ mod tests {
             .unwrap();
 
         let (area, _observed_pos) =
-            compute_inline_size(&mut backend, 4, Size::new(10, 10), 5).unwrap();
+            compute_inline_size(&mut backend, 4, Size::new(10, 10), 5, None).unwrap();
 
         assert_eq!(area, Rect::new(0, 0, 10, 4));
     }
@@ -536,6 +786,30 @@ mod tests {
 
             assert_eq!(terminal.viewport_area, viewport_area);
             terminal.backend().assert_buffer_lines(["x  ", "   "]);
+        }
+
+        #[test]
+        fn insert_before_skips_cells_hidden_behind_wide_glyphs() {
+            let backend = TestBackend::new(3, 4);
+            let options = TerminalOptions {
+                viewport: Viewport::Inline(1),
+            };
+            let mut terminal = Terminal::with_options(backend, options).unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf[(0, 0)].set_symbol("界");
+                    // Hidden behind `界`: drawing it would erase the glyph.
+                    buf[(1, 0)].set_symbol("x");
+                    // A glyph in the last column hides nothing on the next row.
+                    buf[(2, 0)].set_symbol("界");
+                    buf[(0, 1)].set_symbol("b");
+                })
+                .unwrap();
+
+            let screen = terminal.backend().buffer();
+            assert_eq!(screen[(1, 0)].symbol(), " ");
+            assert_eq!(screen[(0, 1)].symbol(), "b");
         }
 
         #[test]
