@@ -192,11 +192,11 @@ impl App {
         frame.render_widget(message_list, messages_area);
 
         // Bottom info with dynamic gauge showing height percentage
-        let height_percentage = (f64::from(self.height) / 20.0).min(1.0);
+        let height_percentage = (f64::from(self.height) / f64::from(MAX_HEIGHT)).min(1.0);
         let gauge = Gauge::default()
             .gauge_style(Color::Blue)
             .ratio(height_percentage)
-            .label(format!("Height: {}/20", self.height));
+            .label(format!("Height: {}/{MAX_HEIGHT}", self.height));
         frame.render_widget(gauge, bottom_area);
     }
 }
