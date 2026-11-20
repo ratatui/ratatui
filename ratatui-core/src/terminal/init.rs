@@ -138,14 +138,14 @@ impl<B: Backend> Terminal<B> {
     /// let options = TerminalOptions {
     ///     viewport: Viewport::Inline(4),
     /// };
-    /// let terminal = Terminal::with_options_and_cursor_position(
+    /// let terminal = Terminal::with_cursor_position(
     ///     TestBackend::new(80, 24),
     ///     options,
     ///     Position { x: 0, y: 3 },
     /// )?;
     /// # Ok::<(), core::convert::Infallible>(())
     /// ```
-    pub fn with_options_and_cursor_position(
+    pub fn with_cursor_position(
         backend: B,
         options: TerminalOptions,
         cursor_position: Position,
@@ -249,9 +249,9 @@ mod tests {
     }
 
     #[test]
-    fn with_options_and_cursor_position_uses_supplied_position() {
+    fn with_cursor_position_uses_supplied_position() {
         let backend = TestBackend::new(10, 10);
-        let terminal = Terminal::with_options_and_cursor_position(
+        let terminal = Terminal::with_cursor_position(
             backend,
             TerminalOptions {
                 viewport: Viewport::Inline(4),
