@@ -1,13 +1,121 @@
-//! A simple calendar widget. `(feature: widget-calendar)`
+#![no_std]
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
+)]
+#![warn(missing_docs)]
+#![warn(clippy::std_instead_of_core)]
+#![warn(clippy::std_instead_of_alloc)]
+#![warn(clippy::alloc_instead_of_core)]
+//! **ratatui-calendar** provides a monthly calendar widget for [Ratatui] terminal user
+//! interfaces.
 //!
+//! [Ratatui]: https://crates.io/crates/ratatui
 //!
+//! Most applications use this crate through `ratatui::widgets::calendar` by enabling the
+//! `widget-calendar` feature of the `ratatui` crate (on by default via `all-widgets`). Depend on
+//! `ratatui-calendar` directly if you are building a widget library, or if you want finer-grained
+//! dependencies than the `ratatui` crate gives you.
 //!
-//! The [`Monthly`] widget will display a calendar for the month provided in `display_date`. Days
-//! are styled using the default style unless:
-//! * `show_surrounding` is set, then days not in the `display_date` month will use that style.
-//! * a style is returned by the [`DateStyler`] for the day
+//! The calendar previously lived in the `calendar` module of `ratatui-widgets`. It moved to its
+//! own crate because it is the only built-in widget whose public API uses a third-party type (the
+//! date type), and a separate crate lets that dependency change without a breaking release of
+//! `ratatui-widgets`.
 //!
-//! [`Monthly`] has several controls for what should be displayed
+//! # Installation
+//!
+//! Run the following command to add this crate to your project:
+//!
+//! ```sh
+//! cargo add ratatui-calendar
+//! ```
+//!
+//! # Usage
+//!
+//! [`Monthly`] renders the month that contains its `display_date`, one row per week starting on
+//! Sunday. Each day uses the default style unless the [`DateStyler`] returns a style for it, and
+//! days outside the month are only drawn when [`Monthly::show_surrounding`] is set. Optional
+//! headers show the month name and the weekdays, and a [`Block`] can wrap the calendar.
+//!
+//! [`CalendarEventStore`] is a ready-made [`DateStyler`] that maps dates to styles. Implement
+//! [`DateStyler`] yourself to compute styles on the fly, for example from an events database.
+//!
+//! [`Monthly::width`] and [`Monthly::height`] report the size the calendar needs, which is useful
+//! for laying it out with a fixed-size constraint.
+//!
+//! ```rust
+//! use ratatui_calendar::{CalendarEventStore, Monthly};
+//! use ratatui_core::buffer::Buffer;
+//! use ratatui_core::layout::Rect;
+//! use ratatui_core::style::{Color, Modifier, Style};
+//! use ratatui_core::widgets::Widget;
+//! use ratatui_widgets::block::Block;
+//! use time::{Date, Month};
+//!
+//! let date = Date::from_calendar_date(2026, Month::November, 1).unwrap();
+//!
+//! let mut events = CalendarEventStore::default();
+//! events.add(
+//!     Date::from_calendar_date(2026, Month::November, 26).unwrap(),
+//!     Style::new().fg(Color::Red).add_modifier(Modifier::BOLD),
+//! );
+//!
+//! let calendar = Monthly::new(date, events)
+//!     .show_month_header(Style::new().add_modifier(Modifier::BOLD))
+//!     .show_weekdays_header(Style::new().fg(Color::Cyan))
+//!     .show_surrounding(Style::new().fg(Color::DarkGray))
+//!     .block(Block::bordered().title("Calendar"));
+//!
+//! let area = Rect::new(0, 0, calendar.width(), calendar.height());
+//! let mut buf = Buffer::empty(area);
+//! calendar.render(area, &mut buf);
+//! ```
+//!
+//! See the [calendar example] and the [calendar explorer] for more.
+//!
+//! [`Block`]: ratatui_widgets::block::Block
+//! [calendar example]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/calendar.rs
+//! [calendar explorer]: https://github.com/ratatui/ratatui/tree/main/examples/apps/calendar-explorer
+//!
+//! # Crate Organization
+//!
+//! `ratatui-calendar` is part of the Ratatui workspace. It builds on [`ratatui-core`] for the
+//! widget traits and on [`ratatui-widgets`] for [`Block`], and the main [`ratatui`] crate
+//! re-exports it as `ratatui::widgets::calendar`.
+//!
+//! **When to use `ratatui-calendar`:**
+//!
+//! - Building widget libraries that embed or wrap the calendar
+//! - You want finer-grained dependencies than the `ratatui` crate
+//!
+//! **When to use the main [`ratatui`] crate:**
+//!
+//! - Building applications (recommended - includes everything you need)
+//!
+//! For detailed information about the workspace organization, see [ARCHITECTURE.md].
+//!
+//! [`ratatui`]: https://crates.io/crates/ratatui
+//! [`ratatui-core`]: https://crates.io/crates/ratatui-core
+//! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
+#![cfg_attr(feature = "document-features", doc = "\n## Features")]
+#![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
+//!
+//! # Contributing
+//!
+//! Contributions are welcome! Please open an issue or submit a pull request on GitHub. For more
+//! details on contributing, please see the [CONTRIBUTING](../CONTRIBUTING.md) document.
+//!
+//! # License
+//!
+//! This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
+
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
+
 use alloc::format;
 use alloc::vec::Vec;
 
@@ -17,9 +125,8 @@ use ratatui_core::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui_core::style::Style;
 use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
+use ratatui_widgets::block::{Block, BlockExt};
 use time::{Date, Duration};
-
-use crate::block::{Block, BlockExt};
 
 /// Display a month calendar for the month containing `display_date`
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -172,6 +279,11 @@ impl<DS: DateStyler> Widget for Monthly<'_, DS> {
 
 impl<DS: DateStyler> Widget for &Monthly<'_, DS> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         self.block.as_ref().render(area, buf);
         let inner = self.block.inner_if_some(area);
         self.render_monthly(inner, buf);
@@ -209,7 +321,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 
         let mut y = days_area.y;
         // go through all the weeks containing a day in the target month.
-        while curr_day.month() != self.display_date.month().next() {
+        while curr_day.month() != self.display_date.month().next() && y < days_area.bottom() {
             let mut spans = Vec::with_capacity(14);
             for i in 0..7 {
                 // Draw the gutter. Do it here so we can avoid worrying about
@@ -222,9 +334,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
                 spans.push(self.format_date(curr_day));
                 curr_day += Duration::DAY;
             }
-            if buf.area.height > y {
-                buf.set_line(days_area.x, y, &spans.into(), area.width);
-            }
+            buf.set_line(days_area.x, y, &spans.into(), days_area.width);
             y += 1;
         }
     }
@@ -312,13 +422,24 @@ impl Default for CalendarEventStore {
     }
 }
 
+/// Lets generic code that takes `impl AsRef<Monthly>` accept either an owned [`Monthly`] or a
+/// reference to one, matching the other Ratatui widgets.
+///
+/// The standard library has no blanket `impl<T> AsRef<T> for T`, so each widget implements it.
+impl<DS: DateStyler> AsRef<Self> for Monthly<'_, DS> {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use ratatui_core::style::{Color, Style};
+    use ratatui_widgets::block::{Block, Padding};
+    use rstest::rstest;
     use time::Month;
 
     use super::*;
-    use crate::block::{Block, Padding};
 
     #[test]
     fn event_store() {
@@ -345,6 +466,14 @@ mod tests {
         );
     }
 
+    #[test]
+    fn monthly_implements_as_ref() {
+        let date = Date::from_calendar_date(2024, Month::January, 1).unwrap();
+        let calendar = Monthly::new(date, CalendarEventStore::default());
+        let _: &Monthly<_> = calendar.as_ref();
+    }
+
+    #[cfg(feature = "std")]
     #[test]
     fn test_today() {
         CalendarEventStore::today(Style::default());
@@ -454,5 +583,60 @@ mod tests {
         assert_eq!(sunday_based_weeks(sunday_start), 4);
         assert_eq!(sunday_based_weeks(saturday_start), 6);
         assert_eq!(sunday_based_weeks(leap_year), 5);
+    }
+
+    #[rstest]
+    fn render_calendar_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        let calendar = Monthly::new(
+            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
+            CalendarEventStore::default(),
+        );
+        calendar.render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_calendar_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = Monthly::new(
+            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
+            CalendarEventStore::default(),
+        );
+        (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
+        (&widget).render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
+    }
+
+    #[test]
+    fn render_calendar_stays_within_requested_rows() {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let calendar = Monthly::new(
+            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
+            CalendarEventStore::default(),
+        );
+        calendar.render(Rect::new(10, 11, 30, 1), &mut buf);
+        assert_ne!(buf[(11, 11)].symbol(), "x");
+        for y in [10, 12, 13, 14, 15, 16, 17] {
+            for x in 10..40 {
+                assert_eq!(buf[(x, y)].symbol(), "x");
+            }
+        }
     }
 }

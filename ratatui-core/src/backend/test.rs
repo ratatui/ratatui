@@ -34,6 +34,8 @@ pub struct TestBackend {
     scrollback: Buffer,
     cursor: bool,
     pos: (u16, u16),
+    saved_pos: Option<(u16, u16)>,
+    cursor_position_queries: usize,
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
@@ -74,6 +76,8 @@ impl TestBackend {
             scrollback: Buffer::empty(Rect::new(0, 0, width, 0)),
             cursor: false,
             pos: (0, 0),
+            saved_pos: None,
+            cursor_position_queries: 0,
         }
     }
 
@@ -96,6 +100,8 @@ impl TestBackend {
             scrollback,
             cursor: false,
             pos: (0, 0),
+            saved_pos: None,
+            cursor_position_queries: 0,
         }
     }
 
@@ -115,6 +121,11 @@ impl TestBackend {
             x: self.pos.0,
             y: self.pos.1,
         }
+    }
+
+    /// Returns the number of times the cursor position has been queried.
+    pub const fn cursor_position_query_count(&self) -> usize {
+        self.cursor_position_queries
     }
 
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
@@ -270,11 +281,24 @@ impl Backend for TestBackend {
     }
 
     fn get_cursor_position(&mut self) -> Result<Position> {
+        self.cursor_position_queries += 1;
         Ok(self.pos.into())
     }
 
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<()> {
         self.pos = position.into().into();
+        Ok(())
+    }
+
+    fn save_cursor_position(&mut self) -> Result<bool> {
+        self.saved_pos = Some(self.pos);
+        Ok(true)
+    }
+
+    fn restore_cursor_position(&mut self) -> Result<()> {
+        if let Some(position) = self.saved_pos {
+            self.pos = position;
+        }
         Ok(())
     }
 
@@ -480,6 +504,8 @@ mod tests {
                 scrollback: Buffer::empty(Rect::new(0, 0, 10, 0)),
                 cursor: false,
                 pos: (0, 0),
+                saved_pos: None,
+                cursor_position_queries: 0,
             }
         );
     }
@@ -583,6 +609,16 @@ mod tests {
             .set_cursor_position(Position { x: 5, y: 5 })
             .unwrap();
         assert_eq!(backend.pos, (5, 5));
+    }
+
+    #[test]
+    fn save_and_restore_cursor_position() {
+        let mut backend = TestBackend::new(10, 10);
+        backend.set_cursor_position((5, 5)).unwrap();
+        assert!(backend.save_cursor_position().unwrap());
+        backend.set_cursor_position((1, 2)).unwrap();
+        backend.restore_cursor_position().unwrap();
+        backend.assert_cursor_position((5, 5));
     }
 
     #[test]

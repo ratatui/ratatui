@@ -42,7 +42,7 @@ termina = ["dep:ratatui-termina", "std"]
 termwiz = ["dep:ratatui-termwiz", "std"]
 
 ## enables std
-std = ["ratatui-core/std", "ratatui-widgets/std", "serde?/std"]
+std = ["ratatui-calendar?/std", "ratatui-core/std", "ratatui-widgets/std", "serde?/std"]
 
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
@@ -57,14 +57,16 @@ serde = [
   "ratatui-widgets/serde",
 ]
 
-## enables layout cache
+## enables the layout cache, which avoids rerunning the layout solver for repeated layouts. Keep this
+## enabled when building with `default-features = false` for `no_std` targets; without `std` it
+## needs a [`critical-section`](https://docs.rs/critical-section) implementation.
 layout-cache = ["ratatui-core/layout-cache"]
 
 ## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
 palette = ["dep:palette", "ratatui-core/palette"]
 
 ## enables portable-atomic integration for targets that don't support atomic types.
-portable-atomic = ["ratatui-core/portable-atomic"]
+portable-atomic = ["ratatui-core/portable-atomic", "ratatui-widgets/portable-atomic"]
 
 ## Use terminal scrolling regions to make some operations less prone to
 ## flickering. (i.e. Terminal::insert_before).
@@ -86,7 +88,7 @@ all-widgets = ["widget-calendar"]
 #! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
 #! dependencies. The available features are:
 ## enables the [`calendar`](widgets::calendar) widget module.
-widget-calendar = ["ratatui-widgets/calendar"]
+widget-calendar = ["dep:ratatui-calendar"]
 
 #! The following optional features are only available for some backends:
 
@@ -129,6 +131,7 @@ unstable-backend-writer = [
 document-features = { workspace = true, optional = true }
 instability.workspace = true
 palette = { workspace = true, optional = true }
+ratatui-calendar = { workspace = true, optional = true }
 ratatui-core = { workspace = true }
 ratatui-crossterm = { workspace = true, optional = true }
 ratatui-macros = { workspace = true, optional = true }

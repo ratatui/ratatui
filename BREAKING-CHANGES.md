@@ -10,6 +10,10 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.31.0](#v0310)
+  - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
+  - `Backend` adds cursor save and restore methods
+  - The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -96,6 +100,50 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## v0.31.0
+
+### `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
+
+Previously, `Flex::SpaceBetween` stretched a single layout item to fill the full area, even when the
+item used a fixed-size constraint such as `Length`, `Max`, `Percentage`, or `Ratio`. A single item
+now falls back to start alignment because there is no space to distribute between items.
+
+`Min` and `Fill` constraints still grow to fill the available area. If you relied on the previous
+single-item stretching behavior with a fixed-size constraint, use `Flex::Legacy` or switch the item
+to a growing constraint such as `Fill` or `Min`.
+
+### `Backend` adds cursor save and restore methods
+
+`Backend` now provides default `save_cursor_position` and `restore_cursor_position` methods.
+Existing backend implementations continue to compile because both methods have default
+implementations. However, this may cause method-call ambiguity in the unlikely case that another
+trait in scope defines a method with the same name for a backend type. Use fully qualified syntax to
+disambiguate such calls.
+
+Backends that can save the cursor without querying terminal input should override both methods and
+return `Ok(true)` from `save_cursor_position`. Other backends can use the default implementations,
+which select the cursor get-and-set fallback.
+
+### The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
+
+The `calendar` module of `ratatui-widgets` (`Monthly`, `DateStyler` and `CalendarEventStore`) has
+moved to the new `ratatui-calendar` crate. `ratatui-widgets` no longer has the `calendar` and
+`all-widgets` features, its default features are now empty, and it no longer depends on `time`.
+
+If you use the calendar through `ratatui::widgets::calendar`, nothing changes: the
+`widget-calendar` feature (enabled by default through `all-widgets`) now pulls in
+`ratatui-calendar` and re-exports it at the same path.
+
+If you depend on `ratatui-widgets` directly and use its calendar, add `ratatui-calendar` and update
+the imports:
+
+```diff
+- use ratatui_widgets::calendar::{CalendarEventStore, Monthly};
++ use ratatui_calendar::{CalendarEventStore, Monthly};
+```
+
+Remove `calendar` and `all-widgets` from any `features` list for `ratatui-widgets`.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 
@@ -283,7 +331,7 @@ The minimum supported Rust version (MSRV) is now 1.86.0.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 
-[#1735]: https://github.com/ratatui/ratatui/pull/1691
+[#1735]: https://github.com/ratatui/ratatui/pull/1735
 
 The `Alignment` enum has been renamed to `HorizontalAlignment` to better reflect its purpose. A type
 alias has been added to maintain backwards compatibility, however there are some cases where type
@@ -609,7 +657,7 @@ This change simplifies the trait and makes it easier to implement.
 
 ### List no clamps the selected index to list ([#1159])
 
-[#1149]: https://github.com/ratatui/ratatui/pull/1149
+[#1159]: https://github.com/ratatui/ratatui/pull/1159
 
 The `List` widget now clamps the selected index to the bounds of the list when navigating with
 `first`, `last`, `previous`, and `next`, as well as when setting the index directly with `select`.
@@ -729,7 +777,7 @@ flexible types from calling scopes, though it can break some type inference in t
 
 ### `LineGauge::gauge_style` is deprecated ([#565])
 
-[#565]: https://github.com/ratatui/ratatui/pull/1148
+[#565]: https://github.com/ratatui/ratatui/pull/565
 
 `LineGauge::gauge_style` is deprecated and replaced with `LineGauge::filled_style` and `LineGauge::unfilled_style`:
 

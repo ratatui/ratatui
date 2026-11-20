@@ -66,7 +66,76 @@
 //! );
 //! ```
 //!
+//! # How styles combine
+//!
+//! A [`Style`] describes a change, not a final appearance. When a style is applied to a cell in
+//! the [`Buffer`], only the parts the style sets are changed:
+//!
+//! - [`fg`], [`bg`] and [`underline_color`] replace the cell's color when they are [`Some`], and
+//!   leave it alone when they are [`None`].
+//! - Modifiers in [`add_modifier`] are turned on, modifiers in [`sub_modifier`] are turned off, and
+//!   every other modifier keeps whatever value the cell already had.
+//!
+//! Widgets rely on this to layer styles. A widget usually sets its own style on its whole area
+//! first, then renders its contents with their styles on top. For example a [`Line`] applies its
+//! style to its area and then each [`Span`] patches its style over the line's, a [`Block`] applies
+//! its style, then its border and title styles, and a [`List`] applies its style, then each item's
+//! style, then the highlight style on the selected row. Whatever is rendered later wins for the
+//! parts it sets, and inherits the rest.
+//!
+//! Because modifiers can be removed as well as added, a later style can turn a modifier off in
+//! part of an area that has already been rendered. Here the whole line is bold, and one span opts
+//! out with [`not_bold`](Stylize::not_bold) (shorthand for [`Style::remove_modifier`] with
+//! [`Modifier::BOLD`]) while keeping the line's color:
+//!
+//! ```
+//! use ratatui_core::buffer::Buffer;
+//! use ratatui_core::layout::Rect;
+//! use ratatui_core::style::{Color, Modifier, Stylize};
+//! use ratatui_core::text::Line;
+//! use ratatui_core::widgets::Widget;
+//!
+//! let line = Line::from(vec!["hello ".into(), "world".not_bold()])
+//!     .red()
+//!     .bold();
+//! let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 1));
+//! line.render(buffer.area, &mut buffer);
+//!
+//! let hello = &buffer[(0, 0)];
+//! let world = &buffer[(6, 0)];
+//! assert!(hello.modifier.contains(Modifier::BOLD));
+//! assert!(!world.modifier.contains(Modifier::BOLD));
+//! assert_eq!(world.fg, Color::Red);
+//! ```
+//!
+//! If a style only had a single set of modifiers there would be no way to say "turn bold off
+//! here", because a missing bit would also have to mean "leave bold as it is". This is the same
+//! model terminals use: ANSI escape sequences turn each attribute on or off independently, and
+//! anything not mentioned stays as it was.
+//!
+//! To clear everything that came before instead of layering on top of it, use [`Style::reset`].
+//! Each [`Cell`] in the buffer stores the result of all the styles applied to it as a single
+//! resolved [`modifier`](crate::buffer::Cell::modifier) set.
+//!
 //! [`Span`]: crate::text::Span
+//! [`Buffer`]: crate::buffer::Buffer
+//! [`Line`]: crate::text::Line
+//! [`Block`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.Block.html
+//! [`List`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html
+//! [`fg`]: field@Style::fg
+//! [`bg`]: field@Style::bg
+//! [`add_modifier`]: field@Style::add_modifier
+//! [`sub_modifier`]: field@Style::sub_modifier
+//! [`Cell`]: crate::buffer::Cell
+
+#![cfg_attr(
+    feature = "underline-color",
+    doc = "[`underline_color`]: field@Style::underline_color"
+)]
+#![cfg_attr(
+    not(feature = "underline-color"),
+    doc = "[`underline_color`]: https://docs.rs/ratatui-core/latest/ratatui_core/style/struct.Style.html#structfield.underline_color"
+)]
 
 use core::fmt;
 
@@ -169,6 +238,12 @@ impl fmt::Debug for Modifier {
 /// terminal buffer, the style of this cell will be the result of the merge of S1, S2 and S3, not
 /// just S3.
 ///
+/// This is why a style has both [`add_modifier`](field@Style::add_modifier) and
+/// [`sub_modifier`](field@Style::sub_modifier) rather than a single set of modifiers: a style needs
+/// to be able to turn a modifier off in an area that an earlier style turned it on, as well as
+/// leave it untouched. See [How styles combine](crate::style#how-styles-combine) for how widgets
+/// layer styles and an example.
+///
 /// ```rust
 /// use ratatui_core::buffer::Buffer;
 /// use ratatui_core::layout::Rect;
@@ -247,7 +322,10 @@ pub struct Style {
     #[cfg(feature = "underline-color")]
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub underline_color: Option<Color>,
-    /// The modifiers to add.
+    /// The modifiers this style turns on.
+    ///
+    /// Modifiers in neither [`add_modifier`](field@Style::add_modifier) nor
+    /// [`sub_modifier`](field@Style::sub_modifier) are left as they were.
     #[cfg_attr(
         feature = "serde",
         serde(
@@ -257,7 +335,10 @@ pub struct Style {
         )
     )]
     pub add_modifier: Modifier,
-    /// The modifiers to remove.
+    /// The modifiers this style turns off.
+    ///
+    /// Modifiers in neither [`add_modifier`](field@Style::add_modifier) nor
+    /// [`sub_modifier`](field@Style::sub_modifier) are left as they were.
     #[cfg_attr(
         feature = "serde",
         serde(
@@ -389,9 +470,17 @@ impl Style {
         self
     }
 
-    /// Changes the text emphasis.
+    /// Turns the given modifiers on.
     ///
-    /// When applied, it adds the given modifier to the `Style` modifiers.
+    /// When this style is applied, the given modifiers are turned on and all other modifiers keep
+    /// the value they already had. If this style previously removed any of the given modifiers,
+    /// that removal is replaced, so the last call wins.
+    ///
+    /// The [`Stylize`] shorthands such as [`bold`](Stylize::bold) and [`italic`](Stylize::italic)
+    /// call this method.
+    ///
+    /// See [How styles combine](crate::style#how-styles-combine) for how this interacts with
+    /// styles rendered earlier.
     ///
     /// ## Examples
     ///
@@ -411,9 +500,18 @@ impl Style {
         self
     }
 
-    /// Changes the text emphasis.
+    /// Turns the given modifiers off.
     ///
-    /// When applied, it removes the given modifier from the `Style` modifiers.
+    /// When this style is applied, the given modifiers are turned off and all other modifiers keep
+    /// the value they already had. If this style previously added any of the given modifiers, that
+    /// addition is replaced, so the last call wins.
+    ///
+    /// Use this to opt part of an area out of a modifier that an earlier style turned on, such as
+    /// one span in a bold line. The [`Stylize`] shorthands such as [`not_bold`](Stylize::not_bold)
+    /// and [`not_italic`](Stylize::not_italic)
+    /// call this method. To turn off every modifier and color, use [`Style::reset`] instead.
+    ///
+    /// See [How styles combine](crate::style#how-styles-combine) for an example.
     ///
     /// ## Examples
     ///

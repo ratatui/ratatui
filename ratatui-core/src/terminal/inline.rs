@@ -2,7 +2,7 @@ use core::cmp::Ordering;
 use core::mem;
 
 use crate::backend::Backend;
-use crate::buffer::{Buffer, Cell};
+use crate::buffer::{Buffer, Cell, CellWidth};
 use crate::layout::{Position, Rect, Size};
 use crate::terminal::{Terminal, Viewport};
 
@@ -127,6 +127,8 @@ impl<B: Backend> Terminal<B> {
     /// directly into the terminal's scrollback buffer. At the limit, if the viewport takes up the
     /// whole screen, all lines will be inserted directly into the scrollback buffer.
     ///
+    /// This is a no-op for non-inline viewports and when the terminal has no rows.
+    ///
     /// # Examples
     ///
     /// ## Insert a single line before the current viewport
@@ -172,6 +174,7 @@ impl<B: Backend> Terminal<B> {
         F: FnOnce(&mut Buffer),
     {
         match self.viewport {
+            Viewport::Inline(_) if self.last_known_area.height == 0 => Ok(()),
             #[cfg(feature = "scrolling-regions")]
             Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),
             #[cfg(not(feature = "scrolling-regions"))]
@@ -366,9 +369,17 @@ impl<B: Backend> Terminal<B> {
         let width: usize = self.last_known_area.width.into();
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
         if lines_to_draw > 0 {
+            // Skip the cells hidden behind wide glyphs: drawn after the glyph, they erase it.
+            let mut hidden = 0;
             let iter = to_draw
                 .iter()
                 .enumerate()
+                .filter(|(i, c)| {
+                    // A glyph never hides cells on the next row.
+                    let visible = hidden == 0 || i % width == 0;
+                    hidden = if visible { c.cell_width() } else { hidden }.saturating_sub(1);
+                    visible
+                })
                 .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
             self.backend.draw(iter)?;
             self.backend.flush()?;
@@ -619,6 +630,22 @@ mod tests {
         assert_eq!(area, Rect::new(0, 0, 10, 4));
     }
 
+    #[test]
+    fn insert_before_is_noop_when_terminal_has_no_rows() {
+        let backend = TestBackend::new(5, 0);
+        let options = TerminalOptions {
+            viewport: Viewport::Inline(3),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+        let scrollback = terminal.backend().scrollback().clone();
+
+        terminal
+            .insert_before(2, |buf| buf.set_string(0, 0, "aaaaa", Style::default()))
+            .unwrap();
+
+        assert_eq!(terminal.backend().scrollback(), &scrollback);
+    }
+
     #[cfg(not(feature = "scrolling-regions"))]
     mod no_scrolling_regions {
         use super::*;
@@ -652,6 +679,30 @@ mod tests {
 
             assert_eq!(terminal.viewport_area, viewport_area);
             terminal.backend().assert_buffer_lines(["x  ", "   "]);
+        }
+
+        #[test]
+        fn insert_before_skips_cells_hidden_behind_wide_glyphs() {
+            let backend = TestBackend::new(3, 4);
+            let options = TerminalOptions {
+                viewport: Viewport::Inline(1),
+            };
+            let mut terminal = Terminal::with_options(backend, options).unwrap();
+
+            terminal
+                .insert_before(2, |buf| {
+                    buf[(0, 0)].set_symbol("界");
+                    // Hidden behind `界`: drawing it would erase the glyph.
+                    buf[(1, 0)].set_symbol("x");
+                    // A glyph in the last column hides nothing on the next row.
+                    buf[(2, 0)].set_symbol("界");
+                    buf[(0, 1)].set_symbol("b");
+                })
+                .unwrap();
+
+            let screen = terminal.backend().buffer();
+            assert_eq!(screen[(1, 0)].symbol(), " ");
+            assert_eq!(screen[(0, 1)].symbol(), "b");
         }
 
         #[test]
