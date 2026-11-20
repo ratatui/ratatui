@@ -111,10 +111,44 @@ fn line_count_edge_cases() {
     assert_eq!(paragraph.line_count(2), 2); // 0 text lines + 2 vertical borders
     assert_eq!(paragraph.line_count(1), 2); // 0 text lines + 2 vertical borders
 
-    // Unwrapped paragraph should ignore horizontal border constraints
+    // Unwrapped paragraph should ignore horizontal border constraints when inner width > 0,
+    // but return only vertical space when inner width is zero
     let unwrapped = Paragraph::new(text).block(Block::bordered());
     assert_eq!(unwrapped.line_count(20), 3);
     assert_eq!(unwrapped.line_count(10), 3);
-    assert_eq!(unwrapped.line_count(2), 3);
+    assert_eq!(unwrapped.line_count(2), 2);
+    assert_eq!(unwrapped.line_count(1), 2);
     assert_eq!(unwrapped.line_count(0), 0);
+}
+
+#[test]
+fn line_count_zero_inner_width_vertical_space() {
+    let text = "Hello World";
+
+    // Left and right borders only: consuming 2 columns leaves zero inner width and zero vertical borders
+    let paragraph_lr = Paragraph::new(text).block(Block::new().borders(Borders::LEFT | Borders::RIGHT));
+    assert_eq!(paragraph_lr.line_count(2), 0);
+    assert_eq!(paragraph_lr.line_count(1), 0);
+    assert_eq!(paragraph_lr.line_count(0), 0);
+
+    let paragraph_lr_wrapped = Paragraph::new(text)
+        .wrap(Wrap { trim: false })
+        .block(Block::new().borders(Borders::LEFT | Borders::RIGHT));
+    assert_eq!(paragraph_lr_wrapped.line_count(2), 0);
+    assert_eq!(paragraph_lr_wrapped.line_count(1), 0);
+    assert_eq!(paragraph_lr_wrapped.line_count(0), 0);
+
+    // Padding: left 1, right 1 (width 2 leaves zero inner width); top 1, bottom 2 (3 vertical space)
+    let pad_block = Block::new().padding(Padding::new(1, 1, 1, 2));
+    let paragraph_pad = Paragraph::new(text).block(pad_block);
+    assert_eq!(paragraph_pad.line_count(2), 3);
+    assert_eq!(paragraph_pad.line_count(1), 3);
+    assert_eq!(paragraph_pad.line_count(0), 0);
+
+    let paragraph_pad_wrapped = Paragraph::new(text)
+        .wrap(Wrap { trim: false })
+        .block(Block::new().padding(Padding::new(1, 1, 1, 2)));
+    assert_eq!(paragraph_pad_wrapped.line_count(2), 3);
+    assert_eq!(paragraph_pad_wrapped.line_count(1), 3);
+    assert_eq!(paragraph_pad_wrapped.line_count(0), 0);
 }
