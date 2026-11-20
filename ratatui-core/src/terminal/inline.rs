@@ -1,5 +1,4 @@
 use core::cmp::Ordering;
-use core::mem;
 
 use crate::backend::Backend;
 use crate::buffer::{Buffer, Cell, CellWidth};
