@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use jiff::ZonedDateTime;
 use palette::Okhsv;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Direction, Layout, Margin, Rect};
@@ -6,7 +7,6 @@ use ratatui::style::{Color, Style};
 use ratatui::symbols;
 use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
 use ratatui::widgets::{Bar, BarChart, BarGroup, Block, Clear, LineGauge, Padding, Widget};
-use time::OffsetDateTime;
 
 use crate::{RgbSwatch, THEME, color_from_oklab};
 
@@ -60,7 +60,7 @@ impl Widget for WeatherTab {
 }
 
 fn render_calendar(area: Rect, buf: &mut Buffer) {
-    let date = OffsetDateTime::now_utc().date();
+    let date = ZonedDateTime::now().date();
     Monthly::new(date, CalendarEventStore::today(Style::new().red().bold()))
         .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
         .show_month_header(Style::new().bold())

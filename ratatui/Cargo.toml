@@ -152,7 +152,7 @@ pretty_assertions.workspace = true
 rand.workspace = true
 rstest.workspace = true
 serde_json.workspace = true
-time = { workspace = true, features = ["local-offset"] }
+jiff = { workspace = true, features = ["std"] }
 
 [lints]
 workspace = true

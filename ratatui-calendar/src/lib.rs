@@ -19,17 +19,22 @@
 //! `ratatui-calendar` directly if you are building a widget library, or if you want finer-grained
 //! dependencies than the `ratatui` crate gives you.
 //!
+//! Dates are [`jiff::civil::Date`] values from the [jiff] crate. Use [`jiff::civil::date`] to
+//! build one from a year, month and day.
+//!
 //! The calendar previously lived in the `calendar` module of `ratatui-widgets`. It moved to its
 //! own crate because it is the only built-in widget whose public API uses a third-party type (the
 //! date type), and a separate crate lets that dependency change without a breaking release of
 //! `ratatui-widgets`.
+//!
+//! [jiff]: https://crates.io/crates/jiff
 //!
 //! # Installation
 //!
 //! Run the following command to add this crate to your project:
 //!
 //! ```sh
-//! cargo add ratatui-calendar
+//! cargo add ratatui-calendar jiff
 //! ```
 //!
 //! # Usage
@@ -46,23 +51,23 @@
 //! for laying it out with a fixed-size constraint.
 //!
 //! ```rust
+//! use jiff::civil::date;
 //! use ratatui_calendar::{CalendarEventStore, Monthly};
 //! use ratatui_core::buffer::Buffer;
 //! use ratatui_core::layout::Rect;
 //! use ratatui_core::style::{Color, Modifier, Style};
 //! use ratatui_core::widgets::Widget;
 //! use ratatui_widgets::block::Block;
-//! use time::{Date, Month};
 //!
-//! let date = Date::from_calendar_date(2026, Month::November, 1).unwrap();
+//! let november = date(2026, 11, 1);
 //!
 //! let mut events = CalendarEventStore::default();
 //! events.add(
-//!     Date::from_calendar_date(2026, Month::November, 26).unwrap(),
+//!     date(2026, 11, 26),
 //!     Style::new().fg(Color::Red).add_modifier(Modifier::BOLD),
 //! );
 //!
-//! let calendar = Monthly::new(date, events)
+//! let calendar = Monthly::new(november, events)
 //!     .show_month_header(Style::new().add_modifier(Modifier::BOLD))
 //!     .show_weekdays_header(Style::new().fg(Color::Cyan))
 //!     .show_surrounding(Style::new().fg(Color::DarkGray))
@@ -73,11 +78,27 @@
 //! calendar.render(area, &mut buf);
 //! ```
 //!
-//! See the [calendar example] and the [calendar explorer] for more.
+//! # Examples
+//!
+//! Run these with `cargo run -p ratatui-calendar --example <name>`.
+//!
+//! The main example is [`calendar-explorer`]. It is intentionally the most complex one, to show
+//! off the features: every style option across a whole year, with holidays and recurring events
+//! computed using jiff, and keyboard navigation.
+//!
+//! The smaller examples are easier to start from:
+//!
+//! - [`minimal`]: the current month in a bordered block.
+//! - [`calendar`]: two months side by side with different styles.
+//! - [`time`]: an app that keeps its own dates as `time::Date` and converts them at the boundary.
+//! - [`chrono`]: the same for an app that uses `chrono::NaiveDate`.
 //!
 //! [`Block`]: ratatui_widgets::block::Block
-//! [calendar example]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/calendar.rs
-//! [calendar explorer]: https://github.com/ratatui/ratatui/tree/main/examples/apps/calendar-explorer
+//! [`calendar-explorer`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/calendar-explorer.rs
+//! [`minimal`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/minimal.rs
+//! [`calendar`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/calendar.rs
+//! [`time`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/time.rs
+//! [`chrono`]: https://github.com/ratatui/ratatui/blob/main/ratatui-calendar/examples/chrono.rs
 //!
 //! # Crate Organization
 //!
@@ -117,16 +138,18 @@ extern crate alloc;
 extern crate std;
 
 use alloc::format;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 
 use hashbrown::HashMap;
+use jiff::ToSpan;
+use jiff::civil::Date;
 use ratatui_core::buffer::Buffer;
 use ratatui_core::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui_core::style::Style;
 use ratatui_core::text::{Line, Span};
 use ratatui_core::widgets::Widget;
 use ratatui_widgets::block::{Block, BlockExt};
-use time::{Date, Duration};
 
 /// Display a month calendar for the month containing `display_date`
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -253,7 +276,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     fn format_date(&self, date: Date) -> Span<'_> {
         if date.month() == self.display_date.month() {
             Span::styled(
-                format!("{:2?}", date.day()),
+                format!("{:2}", date.day()),
                 self.default_style.patch(self.events.get_style(date)),
             )
         } else {
@@ -264,7 +287,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
                         .default_style
                         .patch(s)
                         .patch(self.events.get_style(date));
-                    Span::styled(format!("{:2?}", date.day()), style)
+                    Span::styled(format!("{:2}", date.day()), style)
                 }
             }
         }
@@ -301,12 +324,10 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 
         // Draw the month name and year
         if let Some(style) = self.show_month {
-            Line::styled(
-                format!("{} {}", self.display_date.month(), self.display_date.year()),
-                style,
-            )
-            .alignment(Alignment::Center)
-            .render(month_header, buf);
+            let header = self.display_date.strftime("%B %Y").to_string();
+            Line::styled(header, style)
+                .alignment(Alignment::Center)
+                .render(month_header, buf);
         }
 
         // Draw days of week
@@ -314,14 +335,23 @@ impl<DS: DateStyler> Monthly<'_, DS> {
             Span::styled(" Su Mo Tu We Th Fr Sa", style).render(days_header, buf);
         }
 
-        // Set the start of the calendar to the Sunday before the 1st (or the sunday of the first)
-        let first_of_month = self.display_date.replace_day(1).unwrap();
-        let offset = Duration::days(first_of_month.weekday().number_days_from_sunday().into());
-        let mut curr_day = first_of_month - offset;
+        // Start the calendar on the Sunday before the 1st (or the 1st itself if it is a Sunday).
+        // The series ends early only past the last date jiff supports (9999-12-31).
+        let first_of_month = self.display_date.first_of_month();
+        let leading_days = first_of_month.weekday().to_sunday_zero_offset();
+        let mut days = first_of_month
+            .saturating_sub(leading_days.days())
+            .series(1.day());
+        // `Date::MIN` has no preceding dates to start the series from. Keep its weekday
+        // alignment by rendering those cells as blanks before the first supported date.
+        let mut leading_padding = if first_of_month == Date::MIN {
+            leading_days
+        } else {
+            0
+        };
 
-        let mut y = days_area.y;
-        // go through all the weeks containing a day in the target month.
-        while curr_day.month() != self.display_date.month().next() && y < days_area.bottom() {
+        let weeks = usize::from(sunday_based_weeks(self.display_date));
+        for row in days_area.rows().take(weeks) {
             let mut spans = Vec::with_capacity(14);
             for i in 0..7 {
                 // Draw the gutter. Do it here so we can avoid worrying about
@@ -331,29 +361,34 @@ impl<DS: DateStyler> Monthly<'_, DS> {
                 } else {
                     spans.push(Span::styled(" ", self.default_bg()));
                 }
-                spans.push(self.format_date(curr_day));
-                curr_day += Duration::DAY;
+                let day = if leading_padding > 0 {
+                    leading_padding -= 1;
+                    None
+                } else {
+                    days.next()
+                };
+                spans.push(day.map_or_else(
+                    || Span::styled("  ", Style::default()),
+                    |day| self.format_date(day),
+                ));
             }
-            buf.set_line(days_area.x, y, &spans.into(), days_area.width);
-            y += 1;
+            buf.set_line(row.x, row.y, &spans.into(), row.width);
         }
     }
 }
 
 /// Compute how many Sunday-based week rows are needed to render `display_date`.
 ///
-/// Mirrors the rendering logic by taking the difference between the first and last day
-/// Sunday-based week numbers (inclusive).
+/// This is the days before the 1st in its week, plus the days of the month, rounded up to whole
+/// weeks. Both rendering and [`Monthly::height`] use it, so they always agree.
 fn sunday_based_weeks(display_date: Date) -> u8 {
-    let first_of_month = display_date
-        .replace_day(1)
-        .expect("valid first day of month");
-    let last_of_month = first_of_month
-        .replace_day(first_of_month.month().length(first_of_month.year()))
-        .expect("valid last of month");
-    let first_week = first_of_month.sunday_based_week();
-    let last_week = last_of_month.sunday_based_week();
-    last_week.saturating_sub(first_week) + 1
+    let leading_days = display_date
+        .first_of_month()
+        .weekday()
+        .to_sunday_zero_offset();
+    let days = u8::try_from(leading_days + display_date.days_in_month())
+        .expect("at most 6 leading days plus 31 days");
+    days.div_ceil(7)
 }
 
 /// Provides a method for styling a given date. [Monthly] is generic on this trait, so any type
@@ -376,14 +411,8 @@ impl CalendarEventStore {
     /// [`Color`]: ratatui_core::style::Color
     #[cfg(feature = "std")]
     pub fn today<S: Into<Style>>(style: S) -> Self {
-        use time::OffsetDateTime;
         let mut res = Self::default();
-        res.add(
-            OffsetDateTime::now_local()
-                .unwrap_or_else(|_| OffsetDateTime::now_utc())
-                .date(),
-            style.into(),
-        );
+        res.add(jiff::ZonedDateTime::now().date(), style.into());
         res
     }
 
@@ -434,21 +463,18 @@ impl<DS: DateStyler> AsRef<Self> for Monthly<'_, DS> {
 
 #[cfg(test)]
 mod tests {
+    use jiff::civil::date;
     use ratatui_core::style::{Color, Style};
     use ratatui_widgets::block::{Block, Padding};
     use rstest::rstest;
-    use time::Month;
 
     use super::*;
 
     #[test]
     fn event_store() {
-        let a = (
-            Date::from_calendar_date(2023, Month::January, 1).unwrap(),
-            Style::default(),
-        );
+        let a = (date(2023, 1, 1), Style::default());
         let b = (
-            Date::from_calendar_date(2023, Month::January, 2).unwrap(),
+            date(2023, 1, 2),
             Style::default().bg(Color::Red).fg(Color::Blue),
         );
         let mut s = CalendarEventStore::default();
@@ -466,9 +492,30 @@ mod tests {
         );
     }
 
+    /// The week after 9999-12-31 is past the last date jiff supports, so rendering stops there
+    /// instead of panicking.
+    #[test]
+    fn render_last_supported_month() {
+        let calendar = Monthly::new(date(9999, 12, 1), CalendarEventStore::default())
+            .show_surrounding(Style::default());
+        let area = Rect::new(0, 0, calendar.width(), calendar.height());
+        let mut buf = Buffer::empty(area);
+        calendar.render(area, &mut buf);
+        assert_eq!(
+            buf,
+            Buffer::with_lines([
+                " 28 29 30  1  2  3  4",
+                "  5  6  7  8  9 10 11",
+                " 12 13 14 15 16 17 18",
+                " 19 20 21 22 23 24 25",
+                " 26 27 28 29 30 31   ",
+            ])
+        );
+    }
+
     #[test]
     fn monthly_implements_as_ref() {
-        let date = Date::from_calendar_date(2024, Month::January, 1).unwrap();
+        let date = date(2024, 1, 1);
         let calendar = Monthly::new(date, CalendarEventStore::default());
         let _: &Monthly<_> = calendar.as_ref();
     }
@@ -482,10 +529,7 @@ mod tests {
     #[test]
     fn render_in_minimal_buffer() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
-        let calendar = Monthly::new(
-            Date::from_calendar_date(1984, Month::January, 1).unwrap(),
-            CalendarEventStore::default(),
-        );
+        let calendar = Monthly::new(date(1984, 1, 1), CalendarEventStore::default());
         // This should not panic, even if the buffer is too small to render the calendar.
         calendar.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines([" "]));
@@ -494,24 +538,21 @@ mod tests {
     #[test]
     fn render_in_zero_size_buffer() {
         let mut buffer = Buffer::empty(Rect::ZERO);
-        let calendar = Monthly::new(
-            Date::from_calendar_date(1984, Month::January, 1).unwrap(),
-            CalendarEventStore::default(),
-        );
+        let calendar = Monthly::new(date(1984, 1, 1), CalendarEventStore::default());
         // This should not panic, even if the buffer has zero size.
         calendar.render(buffer.area, &mut buffer);
     }
 
     #[test]
     fn calendar_width_reflects_grid_layout() {
-        let date = Date::from_calendar_date(2023, Month::January, 1).unwrap();
+        let date = date(2023, 1, 1);
         let calendar = Monthly::new(date, CalendarEventStore::default());
         assert_eq!(calendar.width(), 21);
     }
 
     #[test]
     fn calendar_height_counts_weeks_and_headers() {
-        let date = Date::from_calendar_date(2015, Month::February, 1).unwrap();
+        let date = date(2015, 2, 1);
         let base_calendar = Monthly::new(date, CalendarEventStore::default());
         assert_eq!(base_calendar.height(), 4);
 
@@ -524,7 +565,7 @@ mod tests {
     #[test]
     fn calendar_dimensions_examples() {
         // Feb 2015 starts Sunday and spans 4 rows.
-        let feb_2015 = Date::from_calendar_date(2015, Month::February, 1).unwrap();
+        let feb_2015 = date(2015, 2, 1);
         let cal = Monthly::new(feb_2015, CalendarEventStore::default());
         assert_eq!(cal.width(), 21, "4w base width");
         assert_eq!(cal.height(), 4, "Feb 2015 rows");
@@ -540,7 +581,7 @@ mod tests {
         assert_eq!(cal.height(), 9, "Padding grows height");
 
         // Feb 2024 starts Thursday and spans 5 rows.
-        let feb_2024 = Date::from_calendar_date(2024, Month::February, 1).unwrap();
+        let feb_2024 = date(2024, 2, 1);
         let cal = Monthly::new(feb_2024, CalendarEventStore::default());
         assert_eq!(cal.width(), 21, "5w base width");
         assert_eq!(cal.height(), 5, "Feb 2024 rows");
@@ -555,7 +596,7 @@ mod tests {
         assert_eq!(cal.height(), 7, "Border adds 2 rows");
 
         // Apr 2023 starts Saturday and spans 6 rows.
-        let apr_2023 = Date::from_calendar_date(2023, Month::April, 1).unwrap();
+        let apr_2023 = date(2023, 4, 1);
         let cal = Monthly::new(apr_2023, CalendarEventStore::default());
         assert_eq!(cal.width(), 21, "6w base width");
         assert_eq!(cal.height(), 6, "Apr 2023 rows");
@@ -573,12 +614,9 @@ mod tests {
 
     #[test]
     fn sunday_based_weeks_shapes() {
-        let sunday_start =
-            Date::from_calendar_date(2015, Month::February, 11).expect("valid test date");
-        let saturday_start =
-            Date::from_calendar_date(2023, Month::April, 9).expect("valid test date");
-        let leap_year =
-            Date::from_calendar_date(2024, Month::February, 29).expect("valid test date");
+        let sunday_start = date(2015, 2, 11);
+        let saturday_start = date(2023, 4, 9);
+        let leap_year = date(2024, 2, 29);
 
         assert_eq!(sunday_based_weeks(sunday_start), 4);
         assert_eq!(sunday_based_weeks(saturday_start), 6);
@@ -600,10 +638,7 @@ mod tests {
         let buffer_area = Rect::new(10, 10, 30, 8);
         let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
         let expected = buf.clone();
-        let calendar = Monthly::new(
-            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
-            CalendarEventStore::default(),
-        );
+        let calendar = Monthly::new(date(2026, 10, 8), CalendarEventStore::default());
         calendar.render(area, &mut buf);
         assert_eq!(buf, expected, "rendering into {area:?}");
     }
@@ -613,10 +648,7 @@ mod tests {
         let area = Rect::new(10, 10, 30, 8);
         let mut buf = Buffer::empty(area);
         let mut expected = Buffer::empty(area);
-        let widget = Monthly::new(
-            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
-            CalendarEventStore::default(),
-        );
+        let widget = Monthly::new(date(2026, 10, 8), CalendarEventStore::default());
         (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
         (&widget).render(area, &mut expected);
         assert_eq!(buf, expected);
@@ -627,10 +659,7 @@ mod tests {
     fn render_calendar_stays_within_requested_rows() {
         let buffer_area = Rect::new(10, 10, 30, 8);
         let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
-        let calendar = Monthly::new(
-            Date::from_calendar_date(2026, Month::October, 8).expect("valid date"),
-            CalendarEventStore::default(),
-        );
+        let calendar = Monthly::new(date(2026, 10, 8), CalendarEventStore::default());
         calendar.render(Rect::new(10, 11, 30, 1), &mut buf);
         assert_ne!(buf[(11, 11)].symbol(), "x");
         for y in [10, 12, 13, 14, 15, 16, 17] {

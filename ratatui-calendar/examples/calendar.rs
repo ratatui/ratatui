@@ -16,27 +16,31 @@
 
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
-use ratatui::Frame;
+use jiff::ZonedDateTime;
+use jiff::civil::date;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
 use ratatui::widgets::{Block, Padding};
-use time::{Date, Month, OffsetDateTime};
+use ratatui::{DefaultTerminal, Frame};
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    ratatui::run(|terminal| {
-        loop {
-            terminal.draw(render)?;
-            if let Some(key) = event::read()?.as_key_press_event() {
-                match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => break Ok(()),
-                    _ => {}
-                }
+    ratatui::run(run)
+}
+
+/// Run the app until `q` or Esc is pressed.
+fn run(terminal: &mut DefaultTerminal) -> Result<()> {
+    loop {
+        terminal.draw(render)?;
+        if let Some(key) = event::read()?.as_key_press_event() {
+            match key.code {
+                KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                _ => {}
             }
         }
-    })
+    }
 }
 
 /// Render the UI with 2 monthly calendars side by side.
@@ -58,7 +62,7 @@ fn render(frame: &mut Frame) {
 
 /// Render the current month calendar.
 fn render_current_month(frame: &mut Frame, area: Rect) {
-    let date = OffsetDateTime::now_utc().date();
+    let date = ZonedDateTime::now().date();
 
     let monthly = Monthly::new(
         date,
@@ -73,7 +77,7 @@ fn render_current_month(frame: &mut Frame, area: Rect) {
 /// Render an arbitrary month with more styles.
 fn render_styled_month(frame: &mut Frame, area: Rect) {
     // Release date of the movie Ratatouille.
-    let date = Date::from_calendar_date(2007, Month::June, 29).unwrap();
+    let date = date(2007, 6, 29);
 
     let mut event_store = CalendarEventStore::today(Style::default().red().bold());
     event_store.add(date, Style::default().blue().italic());
