@@ -2917,6 +2917,20 @@ mod tests {
             assert_eq!(result, expected);
         }
 
+        #[test]
+        fn percentage_constraints_with_more_segments_than_area() {
+            let constraints = vec![Percentage(10); 10];
+            let (segments, _) = Layout::horizontal(&constraints)
+                .spacing(1)
+                .split_with_spacers(Rect::new(0, 0, 5, 1));
+
+            let widths = segments
+                .iter()
+                .map(|segment| segment.width)
+                .collect::<Vec<_>>();
+            assert_eq!(widths, vec![0; constraints.len()]);
+        }
+
         #[rstest]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
