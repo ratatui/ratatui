@@ -13,6 +13,8 @@ This is a quick summary of the sections below:
 - [v0.31.0](#v0310)
   - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
   - `Backend` adds cursor save and restore methods
+  - The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
+  - The calendar widget uses `jiff` dates instead of `time` dates
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -123,6 +125,61 @@ disambiguate such calls.
 Backends that can save the cursor without querying terminal input should override both methods and
 return `Ok(true)` from `save_cursor_position`. Other backends can use the default implementations,
 which select the cursor get-and-set fallback.
+
+### The calendar widget uses `jiff` dates instead of `time` dates
+
+`ratatui-calendar` (and so `ratatui::widgets::calendar`) now uses [`jiff::civil::Date`] instead of
+`time::Date`. This affects `Monthly::new`, `DateStyler::get_style`, `CalendarEventStore::add` and
+the `HashMap` inside `CalendarEventStore`. `ratatui` no longer depends on `time`.
+
+Build dates with [`jiff::civil::date`][jiff-date-fn] and get today's date with `jiff::ZonedDateTime::now()`:
+
+```diff
+- use time::{Date, Month, OffsetDateTime};
++ use jiff::ZonedDateTime;
++ use jiff::civil::date;
+
+- let new_year = Date::from_calendar_date(2026, Month::January, 1)?;
++ let new_year = date(2026, 1, 1);
+- let today = OffsetDateTime::now_local()?.date();
++ let today = ZonedDateTime::now().date();
+```
+
+If the rest of your app keeps using `time`, convert at the boundary:
+
+```rust
+fn to_jiff(date: time::Date) -> jiff::civil::Date {
+    let year = i16::try_from(date.year()).expect("year in jiff's range");
+    jiff::civil::date(year, u8::from(date.month()) as i8, date.day() as i8)
+}
+```
+
+`CalendarEventStore::today` now uses the system time zone through jiff. Previously it used `time`'s
+local offset, which fails in multithreaded programs on Unix, so `today` could silently fall back to
+UTC and mark the wrong day.
+
+[`jiff::civil::Date`]: https://docs.rs/jiff/latest/jiff/civil/struct.Date.html
+[jiff-date-fn]: https://docs.rs/jiff/latest/jiff/civil/fn.date.html
+
+### The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
+
+The `calendar` module of `ratatui-widgets` (`Monthly`, `DateStyler` and `CalendarEventStore`) has
+moved to the new `ratatui-calendar` crate. `ratatui-widgets` no longer has the `calendar` and
+`all-widgets` features, its default features are now empty, and it no longer depends on `time`.
+
+If you use the calendar through `ratatui::widgets::calendar`, nothing changes: the
+`widget-calendar` feature (enabled by default through `all-widgets`) now pulls in
+`ratatui-calendar` and re-exports it at the same path.
+
+If you depend on `ratatui-widgets` directly and use its calendar, add `ratatui-calendar` and update
+the imports:
+
+```diff
+- use ratatui_widgets::calendar::{CalendarEventStore, Monthly};
++ use ratatui_calendar::{CalendarEventStore, Monthly};
+```
+
+Remove `calendar` and `all-widgets` from any `features` list for `ratatui-widgets`.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 
@@ -310,7 +367,7 @@ The minimum supported Rust version (MSRV) is now 1.86.0.
 
 ### `layout::Alignment` is renamed to `layout::HorizontalAlignment` ([#1735])
 
-[#1735]: https://github.com/ratatui/ratatui/pull/1691
+[#1735]: https://github.com/ratatui/ratatui/pull/1735
 
 The `Alignment` enum has been renamed to `HorizontalAlignment` to better reflect its purpose. A type
 alias has been added to maintain backwards compatibility, however there are some cases where type
@@ -636,7 +693,7 @@ This change simplifies the trait and makes it easier to implement.
 
 ### List no clamps the selected index to list ([#1159])
 
-[#1149]: https://github.com/ratatui/ratatui/pull/1149
+[#1159]: https://github.com/ratatui/ratatui/pull/1159
 
 The `List` widget now clamps the selected index to the bounds of the list when navigating with
 `first`, `last`, `previous`, and `next`, as well as when setting the index directly with `select`.
@@ -756,7 +813,7 @@ flexible types from calling scopes, though it can break some type inference in t
 
 ### `LineGauge::gauge_style` is deprecated ([#565])
 
-[#565]: https://github.com/ratatui/ratatui/pull/1148
+[#565]: https://github.com/ratatui/ratatui/pull/565
 
 `LineGauge::gauge_style` is deprecated and replaced with `LineGauge::filled_style` and `LineGauge::unfilled_style`:
 

@@ -40,7 +40,11 @@ use crate::reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine};
 /// To keep styled text in your application state without a lifetime parameter, see [Storing
 /// styled text]. To render stored text without cloning it, pass a reference to [`Paragraph::new`].
 ///
+/// Text that contains ANSI escape sequences, such as colored output from another command, must be
+/// converted into a [`Text`] before it is passed in. See [ANSI escape sequences].
+///
 /// [Storing styled text]: ratatui_core::text#storing-styled-text
+/// [ANSI escape sequences]: ratatui_core::text#ansi-escape-sequences
 /// [Textwrap crate]: https://crates.io/crates/textwrap
 /// [`wrap`]: Self::wrap
 /// [`alignment`]: Self::alignment

@@ -70,11 +70,6 @@ impl_as_ref!(crate::scrollbar::Scrollbar<'a>, <'a>);
 impl_as_ref!(crate::sparkline::Sparkline<'a>, <'a>);
 impl_as_ref!(crate::table::Table<'a>, <'a>);
 impl_as_ref!(crate::tabs::Tabs<'a>, <'a>);
-#[cfg(feature = "calendar")]
-impl_as_ref!(
-    crate::calendar::Monthly<'a, DS>,
-    <'a, DS> where DS: crate::calendar::DateStyler
-);
 
 #[cfg(test)]
 mod tests {
@@ -97,15 +92,5 @@ mod tests {
         let _ = crate::sparkline::Sparkline::default().as_ref();
         let _ = crate::table::Table::default().as_ref();
         let _ = crate::tabs::Tabs::default().as_ref();
-    }
-
-    #[cfg(feature = "calendar")]
-    #[test]
-    fn calendar_widget_implements_as_ref() {
-        use time::{Date, Month};
-
-        let date = Date::from_calendar_date(2024, Month::January, 1).unwrap();
-        let _ = crate::calendar::Monthly::new(date, crate::calendar::CalendarEventStore::default())
-            .as_ref();
     }
 }

@@ -73,7 +73,9 @@ Shows how to fetch data from GitHub API asynchronously. [Source](./apps/async-gi
 
 ## Calendar Explorer
 
-Shows how to render a calendar with different styles. [Source](./apps/calendar-explorer/).
+Shows how to render a calendar with different styles. This now lives with the calendar widget in
+[`ratatui-calendar/examples`](../ratatui-calendar/examples/calendar-explorer.rs), alongside smaller
+calendar examples.
 
 ![Calendar explorer demo][calendar-explorer.gif]
 
@@ -148,6 +150,12 @@ Shows different types of gauges. [Source](./apps/gauge/).
 Shows how to use the inlined viewport to render in a specific area of the screen. [Source](./apps/inline/).
 
 ![Inline demo][inline.gif]
+
+## Inline Resizable
+
+Shows how to create an inline viewport that can be resized dynamically. [Source](./apps/inline-resizable/).
+
+![Inline Resizable demo][inline-resizable.gif]
 
 ## Input Form
 
@@ -271,6 +279,7 @@ vhs/generate.bash
 [hello-world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello-world.gif?raw=true
 [hyperlink.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hyperlink.gif?raw=true
 [inline.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline.gif?raw=true
+[inline-resizable.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline-resizable.gif?raw=true
 [minimal.gif]: https://github.com/ratatui/ratatui/blob/images/examples/minimal.gif?raw=true
 [modifiers.gif]: https://github.com/ratatui/ratatui/blob/images/examples/modifiers.gif?raw=true
 [panic.gif]: https://github.com/ratatui/ratatui/blob/images/examples/panic.gif?raw=true
