@@ -34,7 +34,7 @@ date type), and a separate crate lets that dependency change without a breaking 
 Run the following command to add this crate to your project:
 
 ```sh
-cargo add ratatui-calendar
+cargo add ratatui-calendar jiff
 ```
 
 ## Usage
