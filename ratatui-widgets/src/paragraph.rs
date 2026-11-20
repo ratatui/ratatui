@@ -775,7 +775,8 @@ mod tests {
 
     #[test]
     fn wrapped_cjk_glyphs_do_not_leave_stale_cells_outside_the_area() {
-        use ratatui::{Terminal, backend::TestBackend};
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
 
         let text = concat!(
             "\u{2502} \u{6784}\u{5efa} \u{2502} \u{7f16}\u{8bd1}\u{6574}\u{4e2a}\u{5de5}",
