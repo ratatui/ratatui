@@ -20,5 +20,3 @@ Sleep 1s Type "---------------"
 Sleep 1s Type "iiiii"
 Sleep 1s Type "+++++"
 Sleep 2s
-Type "q"
-Sleep 1s
