@@ -125,8 +125,10 @@ fn line_count_edge_cases() {
 fn line_count_zero_inner_width_vertical_space() {
     let text = "Hello World";
 
-    // Left and right borders only: consuming 2 columns leaves zero inner width and zero vertical borders
-    let paragraph_lr = Paragraph::new(text).block(Block::new().borders(Borders::LEFT | Borders::RIGHT));
+    // Left and right borders only: consuming 2 columns leaves zero inner width and zero vertical
+    // borders
+    let paragraph_lr =
+        Paragraph::new(text).block(Block::new().borders(Borders::LEFT | Borders::RIGHT));
     assert_eq!(paragraph_lr.line_count(2), 0);
     assert_eq!(paragraph_lr.line_count(1), 0);
     assert_eq!(paragraph_lr.line_count(0), 0);
@@ -138,7 +140,8 @@ fn line_count_zero_inner_width_vertical_space() {
     assert_eq!(paragraph_lr_wrapped.line_count(1), 0);
     assert_eq!(paragraph_lr_wrapped.line_count(0), 0);
 
-    // Padding: left 1, right 1 (width 2 leaves zero inner width); top 1, bottom 2 (3 vertical space)
+    // Padding: left 1, right 1 (width 2 leaves zero inner width); top 1, bottom 2 (3 vertical
+    // space)
     let pad_block = Block::new().padding(Padding::new(1, 1, 1, 2));
     let paragraph_pad = Paragraph::new(text).block(pad_block);
     assert_eq!(paragraph_pad.line_count(2), 3);
