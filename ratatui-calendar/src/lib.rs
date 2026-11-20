@@ -34,7 +34,7 @@
 //! Run the following command to add this crate to your project:
 //!
 //! ```sh
-//! cargo add ratatui-calendar
+//! cargo add ratatui-calendar jiff
 //! ```
 //!
 //! # Usage
@@ -342,11 +342,18 @@ impl<DS: DateStyler> Monthly<'_, DS> {
         let mut days = first_of_month
             .saturating_sub(leading_days.days())
             .series(1.day());
+        // `Date::MIN` has no preceding dates to start the series from. Keep its weekday
+        // alignment by rendering those cells as blanks before the first supported date.
+        let mut leading_padding = if first_of_month == Date::MIN {
+            leading_days
+        } else {
+            0
+        };
 
         let weeks = usize::from(sunday_based_weeks(self.display_date));
         for row in days_area.rows().take(weeks) {
             let mut spans = Vec::with_capacity(14);
-            for (i, day) in days.by_ref().take(7).enumerate() {
+            for i in 0..7 {
                 // Draw the gutter. Do it here so we can avoid worrying about
                 // styling the ' ' in the format_date method
                 if i == 0 {
@@ -354,7 +361,16 @@ impl<DS: DateStyler> Monthly<'_, DS> {
                 } else {
                     spans.push(Span::styled(" ", self.default_bg()));
                 }
-                spans.push(self.format_date(day));
+                let day = if leading_padding > 0 {
+                    leading_padding -= 1;
+                    None
+                } else {
+                    days.next()
+                };
+                spans.push(day.map_or_else(
+                    || Span::styled("  ", Style::default()),
+                    |day| self.format_date(day),
+                ));
             }
             buf.set_line(row.x, row.y, &spans.into(), row.width);
         }
