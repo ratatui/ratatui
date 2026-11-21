@@ -3,7 +3,9 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, HighlightSpacing, List, ListItem, ListState};
+use ratatui::widgets::{
+    Block, Borders, HighlightSpacing, List, ListItem, ListState, SelectionMode,
+};
 use ratatui::{Terminal, symbols};
 use rstest::rstest;
 
@@ -370,27 +372,41 @@ fn widgets_list_enable_always_highlight_spacing<'line, Lines>(
         .assert_buffer(&Buffer::with_lines(expected));
 }
 
-#[test]
-fn widgets_list_select_next_should_not_exceed_item_count() {
+#[rstest]
+fn widgets_list_updates_bounds_when_items_change(
+    #[values(SelectionMode::Clamp, SelectionMode::Wrap)] mode: SelectionMode,
+) {
     let backend = TestBackend::new(10, 3);
     let mut terminal = Terminal::new(backend).unwrap();
-    let mut state = ListState::default();
-    let items = vec!["Item 0", "Item 1", "Item 2"];
-    state.select(Some(2)); // select last item
+    let mut state = ListState::default().with_selection_mode(mode);
+    state.select_last();
 
-    terminal
-        .draw(|f| {
-            let list = List::new(items.clone()).highlight_symbol(">> ");
-            f.render_stateful_widget(list, f.area(), &mut state);
-        })
-        .unwrap();
+    let mut render = |items: &[&str], state: &mut ListState| {
+        terminal
+            .draw(|f| {
+                f.render_stateful_widget(List::new(items.iter().copied()), f.area(), state);
+            })
+            .unwrap();
+    };
+    render(&["Item 0", "Item 1", "Item 2"], &mut state);
+    assert_eq!(state.item_count(), Some(3));
+    assert_eq!(state.selected(), Some(2));
 
-    state.select_next(); // clamped to last item
+    // An explicit selection can target an item added since the previous render.
+    state.select(Some(3));
+    render(&["Item 0", "Item 1", "Item 2", "Item 3"], &mut state);
+    assert_eq!(state.item_count(), Some(4));
+    assert_eq!(state.selected(), Some(3));
 
-    let selected = state.selected().unwrap();
-    assert!(
-        selected < items.len(),
-        "selected index ({selected}) should be within bounds (len: {})",
-        items.len(),
-    );
+    render(&["Item 0"], &mut state);
+    assert_eq!(state.item_count(), Some(1));
+    assert_eq!(state.selected(), Some(0));
+    render(&[], &mut state);
+    assert_eq!(state.item_count(), Some(0));
+    assert_eq!(state.selected(), None);
+    assert_eq!(state.offset(), 0);
+
+    state.select(Some(0));
+    render(&["New item"], &mut state);
+    assert_eq!(state.selected(), Some(0));
 }

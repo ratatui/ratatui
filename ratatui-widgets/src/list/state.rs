@@ -5,14 +5,27 @@
 /// that the selected item is visible. This will modify the [`ListState`] object passed to the
 /// `Frame::render_stateful_widget` method.
 ///
-/// The state consists of three fields:
+/// The state consists of four fields:
 /// - [`offset`]: the index of the first item to be displayed
 /// - [`selected`]: the index of the selected item, which can be `None` if no item is selected
-/// - [`item_count`]: the number of items in the list, set during rendering
+/// - [`item_count`]: an optional item count that enables bounded navigation
+/// - [`selection_mode`]: whether navigation clamps at the ends or wraps around
 ///
 /// [`offset`]: ListState::offset()
 /// [`selected`]: ListState::selected()
 /// [`item_count`]: ListState::item_count()
+/// [`selection_mode`]: ListState::selection_mode()
+///
+/// By default, navigation can select an index beyond the list's bounds; rendering clamps it.
+/// Choose [`with_selection_mode`](Self::with_selection_mode) to enable bounded navigation after
+/// rendering discovers the item count. Supply [`with_item_count`](Self::with_item_count) to enable
+/// it before rendering. Rendering refreshes the count once either option is enabled. If items
+/// change between renders, update [`item_count_mut`](Self::item_count_mut) before navigating.
+/// Direct selection assignments are only clamped during rendering, so you can select an item
+/// that will be added on the next render.
+///
+/// Serialization preserves the offset and selection. Reapply any navigation settings after
+/// deserialization.
 ///
 /// See the list in the [Examples] directory for a more in-depth example of the various
 /// configuration options and for how to handle state.
@@ -47,7 +60,25 @@
 pub struct ListState {
     pub(crate) offset: usize,
     pub(crate) selected: Option<usize>,
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub(crate) item_count: Option<usize>,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub(super) selection_mode: Option<SelectionMode>,
+}
+
+/// How list navigation behaves at the first and last items.
+///
+/// This applies to [`ListState::select_next`], [`ListState::select_previous`],
+/// [`ListState::scroll_down_by`] and [`ListState::scroll_up_by`] when the item count is known.
+/// Direct selection assignments are clamped during rendering instead of wrapping.
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum SelectionMode {
+    /// Stop at the first or last item.
+    #[default]
+    Clamp,
+    /// Continue from the other end, including when moving by more than the list length.
+    Wrap,
 }
 
 impl ListState {
@@ -87,7 +118,10 @@ impl ListState {
 
     /// Sets the number of items in the list
     ///
-    /// Fluent setter method which must be chained or used as it consumes self
+    /// `Some(count)` enables bounded navigation before rendering. Rendering refreshes the count
+    /// when a count or selection mode has been supplied. `None` clears the count; rendering
+    /// discovers it again if a mode was explicitly chosen. This does not change the selection.
+    /// The count is not serialized.
     ///
     /// # Examples
     ///
@@ -101,6 +135,48 @@ impl ListState {
         self.item_count = count;
         self
     }
+
+    /// Sets whether navigation clamps at the ends or wraps around.
+    ///
+    /// Enables item-count tracking during rendering, including when choosing
+    /// [`SelectionMode::Clamp`]. Supply [`with_item_count`](Self::with_item_count) to enable bounded
+    /// navigation before rendering. The mode is not serialized.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::{ListState, SelectionMode};
+    ///
+    /// let mut state = ListState::default()
+    ///     .with_item_count(Some(3))
+    ///     .with_selection_mode(SelectionMode::Wrap);
+    /// state.select_first();
+    /// state.select_previous();
+    /// assert_eq!(state.selected(), Some(2));
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn with_selection_mode(mut self, mode: SelectionMode) -> Self {
+        self.selection_mode = Some(mode);
+        self
+    }
+
+    /// Returns how navigation behaves at the ends of the list. Defaults to
+    /// [`SelectionMode::Clamp`]. Reading the mode does not enable item-count tracking.
+    pub const fn selection_mode(&self) -> SelectionMode {
+        match self.selection_mode {
+            Some(mode) => mode,
+            None => SelectionMode::Clamp,
+        }
+    }
+
+    /// Mutable reference to how navigation behaves at the ends of the list.
+    ///
+    /// Calling this method enables item-count tracking during rendering.
+    pub const fn selection_mode_mut(&mut self) -> &mut SelectionMode {
+        self.selection_mode = Some(self.selection_mode());
+        self.selection_mode.as_mut().unwrap()
+    }
+
     /// Index of the first item to be displayed
     ///
     /// # Examples
@@ -131,7 +207,8 @@ impl ListState {
 
     /// Index of the selected item
     ///
-    /// Bounded by `item_count` when known
+    /// Navigation is bounded by the item count when known. Direct selection assignments may be
+    /// out of bounds until rendering clamps them.
     ///
     /// Returns `None` if no item is selected
     ///
@@ -151,8 +228,8 @@ impl ListState {
     ///
     /// Returns `None` if no item is selected
     ///
-    /// Note: this bypasses clamping. The `selected` value will be clamped on the next render
-    /// or navigation method call.
+    /// This bypasses bounds checks. Rendering or navigation with a known item count corrects
+    /// out-of-bounds selections.
     ///
     /// # Examples
     ///
@@ -170,9 +247,8 @@ impl ListState {
     ///
     /// Set to `None` if no item is selected. This will also reset the offset to `0`.
     ///
-    /// Clamped by `item_count` if known.
-    ///
-    /// If the `item_count` is zero, any `selected` index results in `None`.
+    /// Bounds are checked during rendering, allowing selection of items added on the next render.
+    /// Rendering an empty list clears the selection.
     ///
     /// # Examples
     ///
@@ -181,22 +257,21 @@ impl ListState {
     ///
     /// let mut state = ListState::default();
     /// state.select(Some(1));
-    /// # assert_eq!(state.selected(), Some(1));
     /// ```
     pub const fn select(&mut self, index: Option<usize>) {
         self.selected = index;
         if index.is_none() {
             self.offset = 0;
         }
-        self.clamp_selected();
     }
 
-    /// Mutable reference of `item_count`.
+    /// Mutable reference to the number of items in the list.
     ///
-    /// Returns `None` if `item_count` is not set.
-    ///
-    /// Note: this bypasses clamping. The `selected` value will be clamped on the next render
-    /// or navigation method call.
+    /// Set this before navigating when items change between renders. This does not change the
+    /// selection; rendering or bounded navigation corrects out-of-bounds selections. Rendering
+    /// refreshes the count when a count or selection mode has been supplied. Set to `None` to
+    /// clear the count; rendering discovers it again if a mode was explicitly chosen. The count
+    /// is not serialized.
     ///
     /// # Examples
     ///
@@ -212,54 +287,27 @@ impl ListState {
 
     /// Returns the number of items in the list, if known.
     ///
-    /// This value is set during rendering.
-    /// Returns `None` if the list hasn't been rendered yet.
+    /// Returns `None` by default. Rendering discovers the count when a selection mode has been
+    /// explicitly chosen, or refreshes a manually supplied count.
     pub const fn item_count(&self) -> Option<usize> {
         self.item_count
     }
 
-    /// Updates the number of items in the list.
-    ///
-    /// This value is updated during rendering.
-    /// You can update it manually to enable clamping before the first render,
-    /// or change the upper bound of the clamp between renders.
-    ///
-    /// This will immediately clamp the `selected` to be less than `item_count`.
-    /// # Examples
-    ///
-    /// ```rust
-    /// use ratatui::widgets::ListState;
-    ///
-    /// let mut state = ListState::default();
-    /// state.update_item_count(Some(5));
-    ///
-    /// // Clamping
-    /// let mut state = ListState::default();
-    /// state.select(Some(4));
-    /// state.update_item_count(Some(2));
-    /// assert_eq!(state.selected(), Some(1)); // (0-indexed)
-    /// ```
-    pub const fn update_item_count(&mut self, count: Option<usize>) {
-        self.item_count = count;
-        self.clamp_selected();
-    }
-
     /// Clamps the `selected` index to valid bounds if `item_count` is known.
-    const fn clamp_selected(&mut self) {
-        if let (Some(selected), Some(count)) = (self.selected, self.item_count) {
-            if count == 0 {
-                self.selected = None;
-            } else if selected >= count {
+    pub(super) const fn clamp_selected(&mut self) {
+        match (self.selected, self.item_count) {
+            (_, Some(0)) => self.select(None),
+            (Some(selected), Some(count)) if selected >= count => {
                 self.selected = Some(count - 1);
-            } else {
-                // selected is already within bounds, nothing to do
             }
+            _ => {}
         }
     }
 
     /// Selects the next item or the first one if no item is selected
     ///
-    /// Bounded by `item_count` when known, otherwise falls back to `usize::MAX`
+    /// Clamps or wraps according to [`selection_mode`](Self::selection_mode) when the item count
+    /// is known. An empty list selects `None`. With an unknown count, saturates at `usize::MAX`.
     ///
     /// # Examples
     ///
@@ -270,16 +318,18 @@ impl ListState {
     /// state.select_next();
     /// ```
     pub fn select_next(&mut self) {
-        let next = self.selected.map_or(0, |i| i.saturating_add(1));
-        self.select(Some(next));
+        if self.selected.is_none() {
+            self.select_first();
+        } else {
+            self.scroll_down_by(1);
+        }
     }
 
     /// Selects the previous item or the last one if no item is selected
     ///
-    /// If `item_count` is know, last item is `item_count - 1`, otherwise falls back to
+    /// Clamps or wraps according to [`selection_mode`](Self::selection_mode) when the item count
+    /// is known. An empty list selects `None`. With an unknown count, the last index is
     /// `usize::MAX`.
-    ///
-    /// If `item_count` is `Some(0)`, then `selected` will be clamped and set to `None`.
     ///
     /// # Examples
     ///
@@ -290,15 +340,16 @@ impl ListState {
     /// state.select_previous();
     /// ```
     pub fn select_previous(&mut self) {
-        let index_max = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
-        let previous = self.selected.map_or(index_max, |i| i.saturating_sub(1));
-        self.select(Some(previous));
+        if self.selected.is_none() {
+            self.select_last();
+        } else {
+            self.scroll_up_by(1);
+        }
     }
 
     /// Selects the first item or `None` if the `item_count` is `0`.
     ///
-    /// Note: until the list is rendered, the number of items is not known, so the index is set to
-    /// `0` and will be corrected when the list is rendered
+    /// With an unknown item count, selects `0`, which is corrected during rendering.
     ///
     /// # Examples
     ///
@@ -310,13 +361,13 @@ impl ListState {
     /// ```
     pub const fn select_first(&mut self) {
         self.select(Some(0));
+        self.clamp_selected();
     }
 
     /// Selects the last item
     ///
-    /// Note: until the list is rendered, the number of items is not known. In this case,
-    /// the function will select `usize::MAX` as the last item.
-    /// If `item_count` is known, the function will select `item_count - 1` as the last item.
+    /// Selects `item_count - 1` when known, or `None` for an empty list. With an unknown count,
+    /// selects `usize::MAX`, which is clamped to the last item during rendering.
     ///
     /// # Examples
     ///
@@ -326,16 +377,20 @@ impl ListState {
     /// let mut state = ListState::default();
     /// state.select_last();
     /// ```
-    pub fn select_last(&mut self) {
-        let last = self.item_count.map_or(usize::MAX, |c| c.saturating_sub(1));
+    pub const fn select_last(&mut self) {
+        let last = match self.item_count {
+            Some(count) => count.saturating_sub(1),
+            None => usize::MAX,
+        };
         self.select(Some(last));
+        self.clamp_selected();
     }
 
     /// Scrolls down by a specified `amount` in the list.
     ///
-    /// This method updates the selected index by moving it down by the given `amount`.
-    /// If the `amount` causes the index to go out of bounds (i.e., if the index is greater than
-    /// the length of the list), the last item in the list will be selected.
+    /// Moves the selection down, starting at index `0` if nothing is selected. With a known count,
+    /// clamps or wraps according to [`selection_mode`](Self::selection_mode); an empty list selects
+    /// `None`. With an unknown count, saturates at `usize::MAX`.
     ///
     /// # Examples
     ///
@@ -346,15 +401,29 @@ impl ListState {
     /// state.scroll_down_by(4);
     /// ```
     pub fn scroll_down_by(&mut self, amount: u16) {
+        self.clamp_selected();
         let selected = self.selected.unwrap_or_default();
-        self.select(Some(selected.saturating_add(amount as usize)));
+        let next = match (self.selection_mode(), self.item_count) {
+            (SelectionMode::Wrap, Some(count)) if count > 0 => {
+                let amount = usize::from(amount) % count;
+                let remaining = count - selected;
+                if amount >= remaining {
+                    amount - remaining
+                } else {
+                    selected + amount
+                }
+            }
+            _ => selected.saturating_add(usize::from(amount)),
+        };
+        self.select(Some(next));
+        self.clamp_selected();
     }
 
     /// Scrolls up by a specified `amount` in the list.
     ///
-    /// This method updates the selected index by moving it up by the given `amount`.
-    /// If the `amount` causes the index to go out of bounds (i.e., less than zero),
-    /// the first item in the list will be selected.
+    /// Moves the selection up, starting at index `0` if nothing is selected. With a known count,
+    /// clamps or wraps according to [`selection_mode`](Self::selection_mode); an empty list selects
+    /// `None`. With an unknown count, saturates at `0`.
     ///
     /// # Examples
     ///
@@ -365,16 +434,30 @@ impl ListState {
     /// state.scroll_up_by(4);
     /// ```
     pub fn scroll_up_by(&mut self, amount: u16) {
+        self.clamp_selected();
         let selected = self.selected.unwrap_or_default();
-        self.select(Some(selected.saturating_sub(amount as usize)));
+        let previous = match (self.selection_mode(), self.item_count) {
+            (SelectionMode::Wrap, Some(count)) if count > 0 => {
+                let amount = usize::from(amount) % count;
+                if amount > selected {
+                    count - (amount - selected)
+                } else {
+                    selected - amount
+                }
+            }
+            _ => selected.saturating_sub(usize::from(amount)),
+        };
+        self.select(Some(previous));
+        self.clamp_selected();
     }
 }
 
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
+    use rstest::rstest;
 
-    use crate::list::ListState;
+    use crate::list::{ListState, SelectionMode};
 
     #[test]
     fn selected() {
@@ -476,5 +559,125 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(state.item_count(), Some(42));
+    }
+
+    #[rstest]
+    #[case::clamp_end(SelectionMode::Clamp, Some(3), Some(2), Some(2), Some(1))]
+    #[case::clamp_start(SelectionMode::Clamp, Some(3), Some(0), Some(1), Some(0))]
+    #[case::wrap_end(SelectionMode::Wrap, Some(3), Some(2), Some(0), Some(1))]
+    #[case::wrap_start(SelectionMode::Wrap, Some(3), Some(0), Some(1), Some(2))]
+    #[case::no_selection(SelectionMode::Wrap, Some(3), None, Some(0), Some(2))]
+    #[case::unknown_count(SelectionMode::Wrap, None, None, Some(0), Some(usize::MAX))]
+    #[case::unknown_end(SelectionMode::Wrap, None, Some(usize::MAX), Some(usize::MAX), Some(usize::MAX - 1))]
+    #[case::empty(SelectionMode::Wrap, Some(0), Some(2), None, None)]
+    #[case::single_item(SelectionMode::Wrap, Some(1), Some(0), Some(0), Some(0))]
+    #[case::stale_selection(SelectionMode::Clamp, Some(3), Some(10), Some(2), Some(1))]
+    fn bounded_navigation(
+        #[case] mode: SelectionMode,
+        #[case] count: Option<usize>,
+        #[case] selected: Option<usize>,
+        #[case] next: Option<usize>,
+        #[case] previous: Option<usize>,
+    ) {
+        let state = ListState::default()
+            .with_item_count(count)
+            .with_selected(selected)
+            .with_selection_mode(mode);
+        let mut next_state = state;
+        next_state.select_next();
+        assert_eq!(next_state.selected(), next);
+        let mut previous_state = state;
+        previous_state.select_previous();
+        assert_eq!(previous_state.selected(), previous);
+    }
+
+    #[rstest]
+    fn scrolling_matches_repeated_steps(
+        #[values(SelectionMode::Clamp, SelectionMode::Wrap)] mode: SelectionMode,
+        #[values(None, Some(0), Some(1), Some(3), Some(usize::MAX))] count: Option<usize>,
+        #[values(None, Some(0), Some(2), Some(usize::MAX))] selected: Option<usize>,
+    ) {
+        let state = ListState::default()
+            .with_item_count(count)
+            .with_selected(selected)
+            .with_selection_mode(mode);
+        for (scroll, step) in [
+            (
+                ListState::scroll_down_by as fn(&mut ListState, u16),
+                ListState::select_next as fn(&mut ListState),
+            ),
+            (
+                ListState::scroll_up_by as fn(&mut ListState, u16),
+                ListState::select_previous as fn(&mut ListState),
+            ),
+        ] {
+            let mut once = state;
+            scroll(&mut once, 0); // Resolve an initial selection using scroll_by semantics.
+            let mut repeated = once;
+            scroll(&mut once, 17);
+            for _ in 0..17 {
+                step(&mut repeated);
+            }
+            assert_eq!(once, repeated);
+        }
+    }
+
+    #[rstest]
+    #[case(5, 1, 100, 1, 1)]
+    #[case(5, 2, 3, 0, 4)]
+    #[case(usize::MAX, usize::MAX - 1, u16::MAX, usize::from(u16::MAX) - 1, usize::MAX - 1 - usize::from(u16::MAX))]
+    fn wrapping_scroll(
+        #[case] count: usize,
+        #[case] selected: usize,
+        #[case] amount: u16,
+        #[case] down: usize,
+        #[case] up: usize,
+    ) {
+        let state = ListState::default()
+            .with_item_count(Some(count))
+            .with_selected(Some(selected))
+            .with_selection_mode(SelectionMode::Wrap);
+        let mut down_state = state;
+        down_state.scroll_down_by(amount);
+        assert_eq!(down_state.selected(), Some(down));
+        let mut up_state = state;
+        up_state.scroll_up_by(amount);
+        assert_eq!(up_state.selected(), Some(up));
+    }
+
+    #[rstest]
+    #[case(None, Some(0), Some(usize::MAX))]
+    #[case(Some(0), None, None)]
+    #[case(Some(3), Some(0), Some(2))]
+    fn first_and_last_are_bounded_and_const(
+        #[case] count: Option<usize>,
+        #[case] first: Option<usize>,
+        #[case] last: Option<usize>,
+        #[values(SelectionMode::Clamp, SelectionMode::Wrap)] mode: SelectionMode,
+    ) {
+        const fn first_and_last(mut state: ListState) -> (Option<usize>, Option<usize>) {
+            state.select_first();
+            let first = state.selected();
+            state.select_last();
+            (first, state.selected())
+        }
+        let state = ListState::default()
+            .with_item_count(count)
+            .with_selection_mode(mode);
+        assert_eq!(first_and_last(state), (first, last));
+    }
+
+    #[test]
+    fn update_count_before_navigation() {
+        let mut state = ListState::default()
+            .with_item_count(Some(1))
+            .with_selected(Some(0));
+        *state.item_count_mut() = Some(3);
+        state.select_next();
+        assert_eq!(state.selected(), Some(1));
+        *state.selection_mode_mut() = SelectionMode::Wrap;
+        state.select_first();
+        state.select_previous();
+        assert_eq!(state.selected(), Some(2));
     }
 }

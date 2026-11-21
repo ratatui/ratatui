@@ -8,7 +8,7 @@ use ratatui_core::text::Line;
 use strum::{Display, EnumString};
 
 pub use self::item::ListItem;
-pub use self::state::ListState;
+pub use self::state::{ListState, SelectionMode};
 use crate::block::Block;
 use crate::table::HighlightSpacing;
 

@@ -19,8 +19,8 @@ use ratatui::backend::TestBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::text::Line;
 use ratatui::widgets::{
-    Block, Borders, List, ListState, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table,
-    TableState,
+    Block, Borders, List, ListState, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
+    SelectionMode, Table, TableState,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -101,8 +101,7 @@ const DEFAULT_STATE_BUFFER: [&str; 5] = [
 const DEFAULT_STATE_REPR: &str = r#"{
   "list": {
     "offset": 0,
-    "selected": null,
-    "item_count": 10
+    "selected": null
   },
   "table": {
     "offset": 0,
@@ -140,8 +139,7 @@ const SELECTED_STATE_BUFFER: [&str; 5] = [
 const SELECTED_STATE_REPR: &str = r#"{
   "list": {
     "offset": 0,
-    "selected": 1,
-    "item_count": 10
+    "selected": 1
   },
   "table": {
     "offset": 0,
@@ -181,8 +179,7 @@ const SCROLLED_STATE_BUFFER: [&str; 5] = [
 const SCROLLED_STATE_REPR: &str = r#"{
   "list": {
     "offset": 4,
-    "selected": 8,
-    "item_count": 10
+    "selected": 8
   },
   "table": {
     "offset": 4,
@@ -229,4 +226,27 @@ fn table_state_backwards_compatibility() {
     let old_state: TableState = serde_json::from_str(OLD_TABLE_DESERIALIZE).unwrap();
     let new_state: TableState = serde_json::from_str(NEW_TABLE_DESERIALIZE).unwrap();
     assert_eq!(old_state, new_state);
+}
+
+#[test]
+fn list_state_backwards_compatibility() {
+    let state: ListState = serde_json::from_str(r#"{"offset": 4, "selected": 8}"#).unwrap();
+    assert_eq!(state.offset(), 4);
+    assert_eq!(state.selected(), Some(8));
+    assert_eq!(state.item_count(), None);
+    assert_eq!(state.selection_mode(), SelectionMode::Clamp);
+}
+
+#[test]
+fn list_state_preserves_serialized_format() {
+    let state = ListState::default()
+        .with_item_count(Some(3))
+        .with_selected(Some(2))
+        .with_selection_mode(SelectionMode::Wrap);
+    let json = serde_json::to_string(&state).unwrap();
+    assert_eq!(json, r#"{"offset":0,"selected":2}"#);
+    let restored: ListState = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored.selected(), state.selected());
+    assert_eq!(restored.item_count(), None);
+    assert_eq!(restored.selection_mode(), SelectionMode::Clamp);
 }
