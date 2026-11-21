@@ -1,11 +1,12 @@
 use alloc::string::{String, ToString};
 
-use ratatui_core::buffer::Buffer;
+use ratatui_core::buffer::{Buffer, CellWidth};
 use ratatui_core::layout::Rect;
 use ratatui_core::style::{Style, Styled};
 use ratatui_core::text::Line;
 use ratatui_core::widgets::Widget;
-use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 /// A bar to be shown by the [`BarChart`](super::BarChart) widget.
 ///
@@ -218,29 +219,27 @@ impl<'a> Bar<'a> {
         // while rendering. Render the first part with the default value style
         buf.set_stringn(area.x, area.y, text, bar_length, style);
 
-        // `bar_length` and `Buffer::set_stringn` both work in terminal cells. Split the overflow
-        // by display width (not UTF-8 byte length) so multi-byte and wide characters stay aligned.
-        let text_width = text.width();
-        if text_width <= bar_length {
-            return;
-        }
-
-        // `text_width > bar_length` means some character cannot fit in the bar, so the loop
-        // always breaks with `split_byte` at a `char_indices` boundary and a non-empty suffix.
+        // Match `Buffer::set_stringn`: measure whole graphemes in terminal cells and skip controls.
         let mut used_width = 0usize;
-        let mut split_byte = 0usize;
-        for (i, ch) in text.char_indices() {
-            let ch_width = UnicodeWidthChar::width(ch).unwrap_or(0);
-            if used_width.saturating_add(ch_width) > bar_length {
+        let mut split_byte = text.len();
+        for (i, grapheme) in text
+            .grapheme_indices(true)
+            .filter(|(_, grapheme)| !grapheme.contains(char::is_control))
+        {
+            let width = usize::from(grapheme.cell_width());
+            if used_width.saturating_add(width) > bar_length {
                 split_byte = i;
                 break;
             }
-            used_width = used_width.saturating_add(ch_width);
+            used_width = used_width.saturating_add(width);
+        }
+        if split_byte == text.len() {
+            return;
         }
 
         let style = bar_style.patch(self.style);
         let remaining = (area.width as usize).saturating_sub(used_width);
-        // `split_byte` comes from `char_indices`, so it is always a char boundary.
+        // `split_byte` comes from `grapheme_indices`, so it is always a grapheme boundary.
         #[allow(clippy::string_slice)]
         let second = &text[split_byte..];
         buf.set_stringn(

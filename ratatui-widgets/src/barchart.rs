@@ -732,6 +732,8 @@ impl Styled for BarChart<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use itertools::iproduct;
     use ratatui_core::layout::Alignment;
     use ratatui_core::style::{Color, Modifier, Stylize};
@@ -1622,6 +1624,79 @@ mod tests {
         for x in 0..5 {
             expected[(x, 1)].set_fg(Color::Yellow);
         }
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::joined_emoji("👨‍👩‍👧‍👦", 2)]
+    #[case::flag("🇹🇷", 2)]
+    #[case::emoji_presentation("❤️", 2)]
+    #[case::combining_mark("e\u{301}", 1)]
+    #[case::halfwidth_kana("ｶﾞ", 2)]
+    #[case::halfwidth_sound_mark("ﾞ", 1)]
+    fn horizontal_text_value_preserves_graphemes(#[case] grapheme: &str, #[case] width: u16) {
+        let bar = Bar::new(u64::from(width))
+            .text_value(format!("{grapheme}x"))
+            .value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(u64::from(width + 1))
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, width + 1, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer[(0, 0)].symbol(), grapheme);
+        assert_eq!(buffer[(0, 0)].fg, Color::Red);
+        assert_eq!(buffer[(width, 0)].symbol(), "x");
+        assert_eq!(buffer[(width, 0)].fg, Color::Yellow);
+    }
+
+    #[rstest]
+    #[case::empty_bar(0, Color::Yellow, Color::Yellow)]
+    #[case::inside_wide_grapheme(1, Color::Yellow, Color::Yellow)]
+    #[case::after_wide_grapheme(2, Color::Red, Color::Yellow)]
+    #[case::full_bar(3, Color::Red, Color::Red)]
+    fn horizontal_joined_emoji_at_style_boundary(
+        #[case] value: u64,
+        #[case] emoji_color: Color,
+        #[case] suffix_color: Color,
+    ) {
+        let bar = Bar::new(value)
+            .text_value("👨‍👩‍👧‍👦x")
+            .value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(3)
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(2, 1, 3, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["👨‍👩‍👧‍👦x"]);
+        expected[(0, 0)].set_fg(emoji_color);
+        expected[(2, 0)].set_fg(suffix_color);
+        expected.area = buffer.area;
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::control("a\nb")]
+    #[case::carriage_return_line_feed("a\r\nb")]
+    #[case::zero_width("\u{200b}ab")]
+    fn horizontal_text_value_skips_nonprinting_graphemes(#[case] text: &str) {
+        let bar = Bar::new(1).text_value(text).value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(2)
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["ab"]);
+        expected[(0, 0)].set_fg(Color::Red);
+        expected[(1, 0)].set_fg(Color::Yellow);
         assert_eq!(buffer, expected);
     }
 
