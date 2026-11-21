@@ -32,6 +32,7 @@ impl<B: Backend> Terminal<B> {
                     height,
                     area.as_size(),
                     offset_in_previous_viewport,
+                    None,
                 )?;
                 (next_area, Some(cursor_position))
             }
@@ -504,7 +505,7 @@ mod tests {
             ..old_area
         };
 
-        terminal.resize(new_area);
+        terminal.resize(new_area).unwrap();
         assert_eq!(terminal.viewport_area, new_area);
         let all_clear = terminal
             .current_buffer_mut()

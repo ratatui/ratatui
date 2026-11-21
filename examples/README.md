@@ -73,7 +73,9 @@ Shows how to fetch data from GitHub API asynchronously. [Source](./apps/async-gi
 
 ## Calendar Explorer
 
-Shows how to render a calendar with different styles. [Source](./apps/calendar-explorer/).
+Shows how to render a calendar with different styles. This now lives with the calendar widget in
+[`ratatui-calendar/examples`](../ratatui-calendar/examples/calendar-explorer.rs), alongside smaller
+calendar examples.
 
 ![Calendar explorer demo][calendar-explorer.gif]
 
@@ -149,6 +151,12 @@ Shows how to use the inlined viewport to render in a specific area of the screen
 
 ![Inline demo][inline.gif]
 
+## Inline Resizable
+
+Shows how to create an inline viewport that can be resized dynamically. [Source](./apps/inline-resizable/).
+
+![Inline Resizable demo][inline-resizable.gif]
+
 ## Input Form
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
@@ -192,6 +200,13 @@ Shows how to render different types of scrollbars. [Source](./apps/scrollbar/).
 Shows how to create an interactive table. [Source](./apps/table/).
 
 ![Table demo][table.gif]
+
+## Table detail TEA
+
+Shows how to structure an app with the Elm architecture, using commands for background work and a
+tick that only runs while loading. [Source](./apps/table-detail-tea/).
+
+![Table detail tea demo][table-detail-tea.gif]
 
 ## Todo List
 
@@ -264,12 +279,14 @@ vhs/generate.bash
 [hello-world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello-world.gif?raw=true
 [hyperlink.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hyperlink.gif?raw=true
 [inline.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline.gif?raw=true
+[inline-resizable.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline-resizable.gif?raw=true
 [minimal.gif]: https://github.com/ratatui/ratatui/blob/images/examples/minimal.gif?raw=true
 [modifiers.gif]: https://github.com/ratatui/ratatui/blob/images/examples/modifiers.gif?raw=true
 [panic.gif]: https://github.com/ratatui/ratatui/blob/images/examples/panic.gif?raw=true
 [popup.gif]: https://github.com/ratatui/ratatui/blob/images/examples/popup.gif?raw=true
 [scrollbar.gif]: https://github.com/ratatui/ratatui/blob/images/examples/scrollbar.gif?raw=true
 [table.gif]: https://github.com/ratatui/ratatui/blob/images/examples/table.gif?raw=true
+[table-detail-tea.gif]: https://github.com/ratatui/ratatui/blob/images/examples/table-detail-tea.gif?raw=true
 [todo-list.gif]: https://github.com/ratatui/ratatui/blob/images/examples/todo-list.gif?raw=true
 [tracing.gif]: https://github.com/ratatui/ratatui/blob/images/examples/tracing.gif?raw=true
 [user-input.gif]: https://github.com/ratatui/ratatui/blob/images/examples/user-input.gif?raw=true

@@ -114,6 +114,7 @@ macro_rules! span {
     };
     ($style:expr; $string:literal) => {{
         #[deprecated(
+            since = "0.8.0",
             note = "`span!(style; content)` is deprecated; replace the semicolon \
                     after the style with `=>`: `span!(style => content)`"
         )]
@@ -123,6 +124,7 @@ macro_rules! span {
     }};
     ($style:expr; $string:literal, $($arg:tt)*) => {{
         #[deprecated(
+            since = "0.8.0",
             note = "`span!(style; content)` is deprecated; replace the semicolon \
                     after the style with `=>`: `span!(style => content)`"
         )]
@@ -132,6 +134,7 @@ macro_rules! span {
     }};
     ($style:expr; $expr:expr) => {{
         #[deprecated(
+            since = "0.8.0",
             note = "`span!(style; content)` is deprecated; replace the semicolon \
                     after the style with `=>`: `span!(style => content)`"
         )]

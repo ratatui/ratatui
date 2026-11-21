@@ -40,7 +40,11 @@ use crate::reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine};
 /// To keep styled text in your application state without a lifetime parameter, see [Storing
 /// styled text]. To render stored text without cloning it, pass a reference to [`Paragraph::new`].
 ///
+/// Text that contains ANSI escape sequences, such as colored output from another command, must be
+/// converted into a [`Text`] before it is passed in. See [ANSI escape sequences].
+///
 /// [Storing styled text]: ratatui_core::text#storing-styled-text
+/// [ANSI escape sequences]: ratatui_core::text#ansi-escape-sequences
 /// [Textwrap crate]: https://crates.io/crates/textwrap
 /// [`wrap`]: Self::wrap
 /// [`alignment`]: Self::alignment
@@ -753,6 +757,54 @@ mod tests {
                 "word.       ",
             ]),
         );
+    }
+
+    #[test]
+    fn wrapped_cjk_glyphs_do_not_leave_stale_cells_outside_the_area() {
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
+
+        let text = concat!(
+            "\u{2502} \u{6784}\u{5efa} \u{2502} \u{7f16}\u{8bd1}\u{6574}\u{4e2a}\u{5de5}",
+            "\u{4f5c}\u{533a}\u{5e76}\u{8fd0}\u{884c}\u{5168}\u{90e8}\u{6d4b}\u{8bd5}",
+            "\u{7528}\u{4f8b} \u{2502} \u{30d3}\u{30eb}\u{30c9} \u{2502} ",
+            "\u{30ef}\u{30fc}\u{30af}\u{30b9}\u{30da}\u{30fc}\u{30b9}\u{5168}",
+            "\u{4f53}\u{3092}\u{30c6}\u{30b9}\u{30c8}\u{3059}\u{308b} \u{2502} ",
+            "\u{be4c}\u{b4dc} \u{2502} \u{c791}\u{c5c5} \u{acf5}\u{ac04} ",
+            "\u{c804}\u{ccb4}\u{b97c} \u{d14c}\u{c2a4}\u{d2b8}\u{d569}\u{b2c8}\u{b2e4}"
+        );
+        let height = 40;
+
+        for width in 8..=56 {
+            let mut terminal = Terminal::new(TestBackend::new(width + 4, height)).unwrap();
+
+            // Seed the cells just outside the paragraph so a wide glyph that spills out
+            // can cause the buffer diff to skip clearing them on the next frame.
+            terminal
+                .draw(|frame| {
+                    for y in 0..height {
+                        frame.render_widget(Paragraph::new("X"), Rect::new(width, y, 1, 1));
+                    }
+                })
+                .unwrap();
+
+            terminal
+                .draw(|frame| {
+                    frame.render_widget(
+                        Paragraph::new(text).wrap(Wrap { trim: false }),
+                        Rect::new(0, 0, width, height),
+                    );
+                })
+                .unwrap();
+
+            for y in 0..height {
+                assert_eq!(
+                    terminal.backend().buffer()[(width, y)].symbol(),
+                    " ",
+                    "stale cell outside paragraph at ({width}, {y})"
+                );
+            }
+        }
     }
 
     #[test]

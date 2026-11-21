@@ -1111,10 +1111,21 @@ impl Block<'_> {
         }
     }
 
-    /// Calculate the left, and right space the [`Block`] will take up.
+    /// Returns the space the [`Block`] takes up on its left and right sides, as `(left, right)`.
     ///
-    /// The result takes the [`Block`]'s, [`Borders`], and [`Padding`] into account.
-    pub(crate) fn horizontal_space(&self) -> (u16, u16) {
+    /// This counts the [`Borders`] and [`Padding`]. Widgets that wrap their content in a block can
+    /// add this to their content width to find the width they need.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::widgets::{Block, Padding};
+    ///
+    /// let block = Block::bordered().padding(Padding::horizontal(2));
+    /// assert_eq!(block.horizontal_space(), (3, 3));
+    /// ```
+    #[must_use]
+    pub fn horizontal_space(&self) -> (u16, u16) {
         let left = self
             .padding
             .left
@@ -1126,11 +1137,22 @@ impl Block<'_> {
         (left, right)
     }
 
-    /// Calculate the top, and bottom space that the [`Block`] will take up.
+    /// Returns the space the [`Block`] takes up on its top and bottom sides, as `(top, bottom)`.
     ///
-    /// Takes the [`Padding`], [`TitlePosition`], and the [`Borders`] that are selected into
-    /// account when calculating the result.
-    pub(crate) fn vertical_space(&self) -> (u16, u16) {
+    /// This counts the [`Borders`], [`Padding`], and any titles, which take up a row even when
+    /// there is no border on that side (see [`TitlePosition`]). Widgets that wrap their content in
+    /// a block can add this to their content height to find the height they need.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ratatui::widgets::{Block, Padding};
+    ///
+    /// let block = Block::new().title("Title").padding(Padding::vertical(1));
+    /// assert_eq!(block.vertical_space(), (2, 1));
+    /// ```
+    #[must_use]
+    pub fn vertical_space(&self) -> (u16, u16) {
         let has_top =
             self.borders.contains(Borders::TOP) || self.has_title_at_position(TitlePosition::Top);
         let top = self.padding.top.saturating_add(u16::from(has_top));

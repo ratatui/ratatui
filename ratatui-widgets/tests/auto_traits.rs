@@ -2,7 +2,6 @@ use core::panic::{RefUnwindSafe, UnwindSafe};
 
 use ratatui_widgets::barchart::BarChart;
 use ratatui_widgets::block::Block;
-use ratatui_widgets::calendar::{CalendarEventStore, Monthly};
 use ratatui_widgets::canvas::{Canvas, Context};
 use ratatui_widgets::chart::Chart;
 use ratatui_widgets::gauge::{Gauge, LineGauge};
@@ -30,7 +29,6 @@ fn block_backed_widgets_keep_auto_traits() {
     assert_auto_traits::<BarChart<'static>>();
     assert_auto_traits::<Canvas<'static, fn(&mut Context)>>();
     assert_auto_traits::<List<'static>>();
-    assert_auto_traits::<Monthly<'static, CalendarEventStore>>();
     assert_auto_traits::<Gauge<'static>>();
     assert_auto_traits::<Tabs<'static>>();
 }

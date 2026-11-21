@@ -158,7 +158,7 @@ fn widgets_gauge_applies_styles() {
 fn widgets_gauge_fills_cell_immediately_after_label() {
     // Regression: the filled-area condition treated the cell at `label_col +
     // label_width` as part of the label background, leaving a stray empty cell
-    // inside the filled area. See https://github.com/ratatui/ratatui/issues/2547.
+    // inside the filled area. See https://github.com/ratatui/ratatui/pull/2579.
     let backend = TestBackend::new(10, 1);
     let mut terminal = Terminal::new(backend).unwrap();
 

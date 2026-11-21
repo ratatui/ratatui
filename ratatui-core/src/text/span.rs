@@ -16,6 +16,12 @@ use crate::widgets::Widget;
 /// A `Span` is the smallest unit of text that can be styled. It is usually combined in the [`Line`]
 /// type to represent a line of text where each `Span` may have a different style.
 ///
+/// Control characters in the content are dropped when the span is rendered, so ANSI escape
+/// sequences are shown as plain text rather than changing the style. See [ANSI escape sequences]
+/// for how to convert them.
+///
+/// [ANSI escape sequences]: crate::text#ansi-escape-sequences
+///
 /// # Constructor Methods
 ///
 /// - [`Span::default`] creates an span with empty content and the default style.
@@ -335,7 +341,7 @@ impl<'a> Span<'a> {
     }
 
     #[expect(clippy::wrong_self_convention)]
-    #[deprecated = "use `into_left_aligned_line()` instead"]
+    #[deprecated(since = "0.26.2", note = "use `into_left_aligned_line()` instead")]
     pub fn to_left_aligned_line(self) -> Line<'a> {
         self.into_left_aligned_line()
     }
@@ -355,7 +361,7 @@ impl<'a> Span<'a> {
     }
 
     #[expect(clippy::wrong_self_convention)]
-    #[deprecated = "use `into_centered_line()` instead"]
+    #[deprecated(since = "0.26.2", note = "use `into_centered_line()` instead")]
     pub fn to_centered_line(self) -> Line<'a> {
         self.into_centered_line()
     }
@@ -375,7 +381,7 @@ impl<'a> Span<'a> {
     }
 
     #[expect(clippy::wrong_self_convention)]
-    #[deprecated = "use `into_right_aligned_line()` instead"]
+    #[deprecated(since = "0.26.2", note = "use `into_right_aligned_line()` instead")]
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()
     }

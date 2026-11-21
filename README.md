@@ -5,7 +5,6 @@
 - [Documentation](#documentation)
 - [Templates](#templates)
 - [Built with Ratatui](#built-with-ratatui)
-- [Alternatives](#alternatives)
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
@@ -107,11 +106,6 @@ See [Using Ratatui without std] in the docs for details.
 
 Check out the [showcase] section of the website, or the [awesome-ratatui] repository for a curated
 list of awesome apps and libraries built with Ratatui!
-
-## Alternatives
-
-- [Cursive](https://crates.io/crates/cursive) - a ncurses-based TUI library.
-- [iocraft](https://crates.io/crates/iocraft) - a declarative TUI library.
 
 ## Contributing
 
