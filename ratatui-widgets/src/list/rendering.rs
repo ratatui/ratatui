@@ -31,6 +31,11 @@ impl StatefulWidget for &List<'_> {
     type State = ListState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        if state.item_count.is_some() || state.selection_mode.is_some() {
+            state.item_count = Some(self.items.len());
+            state.clamp_selected();
+        }
+
         let area = area.intersection(buf.area);
         if area.is_empty() {
             return;
@@ -273,7 +278,7 @@ mod tests {
 
     use super::*;
     use crate::block::Block;
-    use crate::list::ListItem;
+    use crate::list::{ListItem, SelectionMode};
     use crate::table::HighlightSpacing;
 
     #[fixture]
@@ -290,6 +295,83 @@ mod tests {
         state.select_first();
         StatefulWidget::render(list, single_line_buf.area, &mut single_line_buf, &mut state);
         assert_eq!(state.selected, None);
+    }
+
+    #[rstest]
+    fn updates_bounds_without_visible_items(
+        #[values(Rect::new(0, 0, 0, 0), Rect::new(0, 0, 2, 2))] area: Rect,
+    ) {
+        let list = List::new(["one", "two"]).block(Block::bordered());
+        let mut state = ListState::default()
+            .with_item_count(Some(10))
+            .with_selected(Some(10));
+        let mut buffer = Buffer::empty(area);
+        StatefulWidget::render(list, area, &mut buffer, &mut state);
+        assert_eq!(state.item_count(), Some(2));
+        assert_eq!(state.selected(), Some(1));
+        state.select_next();
+        assert_eq!(state.selected(), Some(1));
+    }
+
+    #[test]
+    fn bounded_navigation_is_opt_in() {
+        let list = List::new(["one", "two", "three"]);
+        let mut state = ListState::default().with_selected(Some(2));
+        assert_eq!(state.selection_mode(), SelectionMode::Clamp);
+        let original_state = state;
+        stateful_widget(list.clone(), &mut state, 10, 3);
+        assert_eq!(state, original_state);
+        state.select_next();
+        assert_eq!(state.selected(), Some(3));
+
+        stateful_widget(list.clone(), &mut state, 10, 3);
+        assert_eq!(state.selected(), Some(2));
+        state.select_last();
+        assert_eq!(state.selected(), Some(usize::MAX));
+        state.select(None);
+        state.select_previous();
+        assert_eq!(state.selected(), Some(usize::MAX));
+
+        *state.item_count_mut() = Some(3);
+        stateful_widget(list.clone(), &mut state, 10, 3);
+        state.select_next();
+        assert_eq!(state.selected(), Some(2));
+
+        *state.item_count_mut() = None;
+        stateful_widget(list, &mut state, 10, 3);
+        state.select_next();
+        assert_eq!(state.selected(), Some(3));
+
+        stateful_widget(List::default(), &mut state, 10, 3);
+        state.select_first();
+        assert_eq!(state.selected(), Some(0));
+    }
+
+    #[rstest]
+    #[case::clamp(SelectionMode::Clamp, Some(2))]
+    #[case::wrap(SelectionMode::Wrap, Some(0))]
+    fn selection_mode_enables_count_tracking(
+        #[case] mode: SelectionMode,
+        #[case] next: Option<usize>,
+    ) {
+        let mut state_from_mut = ListState::default();
+        *state_from_mut.selection_mode_mut() = mode;
+        for mut state in [
+            ListState::default().with_selection_mode(mode),
+            state_from_mut,
+        ] {
+            assert_eq!(state.item_count(), None);
+            state.select_last();
+            stateful_widget(List::new(["one", "two", "three"]), &mut state, 10, 3);
+            assert_eq!(state.item_count(), Some(3));
+            assert_eq!(state.selected(), Some(2));
+            state.select_next();
+            assert_eq!(state.selected(), next);
+
+            *state.item_count_mut() = None;
+            stateful_widget(List::new(["one", "two"]), &mut state, 10, 3);
+            assert_eq!(state.item_count(), Some(2));
+        }
     }
 
     #[rstest]
@@ -1291,9 +1373,11 @@ mod tests {
         let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
         let expected = buf.clone();
         let widget = List::new(["item 1", "item 2"]);
-        let mut state = ListState::default();
+        let mut state = ListState::default().with_offset(4).with_selected(Some(10));
+        let expected_state = state;
         StatefulWidget::render(&widget, area, &mut buf, &mut state);
         assert_eq!(buf, expected, "rendering into {area:?}");
+        assert_eq!(state, expected_state);
     }
 
     #[test]
