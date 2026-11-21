@@ -117,20 +117,16 @@ to a growing constraint such as `Fill` or `Min`.
 
 ### `Scrollbar` thumb now reaches the end of the track when the content is fully scrolled
 
-The thumb's start position is now normalized over `content_length - viewport_content_length`, the
-furthest an application can scroll with a full viewport, instead of over
-`content_length - 1 + viewport_content_length`. Previously the thumb stopped short of the end of the
-track by a few cells once the content was fully scrolled, so the widget reported a scroll position
-the content never reached. See [#1681](https://github.com/ratatui/ratatui/issues/1681).
+The scrollbar handle (thumb) now reaches the end when the last page is fully visible. With 100 items,
+22 visible, and scroll position 78:
 
-Applications that clamp their scroll position to `content_length - 1` rather than to `content_length
-- viewport_content_length` will now see the thumb reach the end of the track slightly earlier.
+```text
+Before: <--------------####---->
+After:  <------------------####>
+```
 
-When `viewport_content_length` is explicitly set, `ScrollbarState::next`, `last`, and `is_at_end`
-now use `content_length.saturating_sub(viewport_content_length)` as the end position. This is zero
-when the content fits in the viewport. With the viewport length left at zero, these helpers retain
-the previous `content_length.saturating_sub(1)` boundary because the state cannot infer the rendered
-area's size.
+Set `viewport_content_length` to the number of visible items so the built-in scrolling controls
+also stop at the last full page. Leaving it at zero preserves their previous behavior.
 
 ### `Backend` adds cursor save and restore methods
 
