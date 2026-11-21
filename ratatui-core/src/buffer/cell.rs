@@ -110,9 +110,8 @@ impl Cell {
     /// Merges the symbol of the cell with the one already on the cell, using the provided
     /// [`MergeStrategy`].
     ///
-    /// Merges [Box Drawing Unicode block] characters to create a single character representing
-    /// their combination, useful for [border collapsing]. Currently limited to box drawing
-    /// characters, with potential future support for others.
+    /// Merges [Box Drawing Unicode block] characters and block elements made of quadrants to
+    /// create a single character representing their combination, useful for [border collapsing].
     ///
     /// Merging may not be perfect due to Unicode limitations; some symbol combinations might not
     /// produce a valid character. [`MergeStrategy`] defines how to handle such cases, e.g.,
@@ -139,6 +138,13 @@ impl Cell {
     ///         .merge_symbol("┘", MergeStrategy::Fuzzy)
     ///         .symbol(),
     ///     "┼",
+    /// );
+    ///
+    /// assert_eq!(
+    ///     Cell::new("▌")
+    ///         .merge_symbol("▐", MergeStrategy::Exact)
+    ///         .symbol(),
+    ///     "█",
     /// );
     /// ```
     ///
