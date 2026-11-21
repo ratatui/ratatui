@@ -4,6 +4,4373 @@ All notable changes to this project will be documented in this file.
 <!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
+## [0.30.2+ratatui](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2) - 2026-06-19
+
+### Features
+
+- [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a) *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+https://github.com/ratatui/ratatui/pull/2561)
+
+  > ## Summary
+  >
+  > - add the `ratatui-termina` backend crate using the published `termina`
+  > crate
+  > - expose the backend through the `termina` feature and Ratatui
+  > prelude/backend re-exports
+  > - add a small Termina event-loop example and wire the backend into CI,
+  > xtask, README generation, and docs
+  >
+  > Refs #1784
+  >
+  > ## Validation
+  >
+  > - `cargo +nightly fmt`
+  > - `cargo check -p ratatui-termina --all-features --all-targets`
+  > - `cargo check -p ratatui --no-default-features --features termina`
+  > - `cargo check -p xtask`
+  > - `cargo check -p release-header`
+  > - `cargo xtask check-backend termina`
+  > - `cargo xtask test-backend termina`
+  > - `cargo xtask rdme --check`
+  > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  > .github/ISSUE_TEMPLATE/bug_report.md`
+  >
+  > ---------
+
+### Miscellaneous Tasks
+
+- [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0) *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+https://github.com/ratatui/ratatui/pull/2599)
+
+  > Adds cargo xtask udeps and runs it from CI as a required job.
+  >
+  > This complements cargo-machete rather than replacing it. cargo-machete
+  > is a fast static source scan, which is why it missed the package-level
+  > unused deps fixed in #2598 when the same dependency names were still
+  > referenced by example crates. cargo-udeps compiles the workspace and
+  > checks rustc dep-info, so it can catch unused dependency declarations
+  > for the package being checked.
+  >
+  > To make the new job pass, this also removes the remaining true-positive
+  > unused dev-deps and records explicit cargo-udeps ignores for current
+  > false positives / intentional cases: ratatui-core critical-section,
+  > ratatui-crossterm's duplicate crossterm version feature shape, and
+  > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >
+  > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  > udeps". I did not find prior ratatui discussion about adopting
+  > cargo-udeps; the only hits were Dependabot PR bodies for
+  > taiki-e/install-action release notes mentioning cargo-udeps version
+  > updates, for example #1971, #2095, #2194, and #2522.
+  >
+  > Validation:- cargo xtask udeps
+  > - cargo xtask format --check
+  >
+  > ---------
+
+- [e665c36](https://github.com/ratatui/ratatui/commit/e665c36cb14752a61cd777fbd06dbef8474f2add) *(ratatui)* Unleash the rats v0.30.2 by `@github-actions[bot]` in [#2581](
+https://github.com/ratatui/ratatui/pull/2581)
+
+  > ## 🤖 New release
+  >
+  > * `ratatui-core`: 0.1.1 -> 0.1.2
+  > * `ratatui-crossterm`: 0.1.1 -> 0.1.2
+  > * `ratatui-widgets`: 0.3.1 -> 0.3.2
+  > * `ratatui-termina`: 0.1.0
+  > * `ratatui-termwiz`: 0.1.1 -> 0.1.2
+  > * `ratatui-termion`: 0.1.1 -> 0.1.2
+  > * `ratatui`: 0.30.1 -> 0.30.2
+  > * `ratatui-macros`: 0.7.1 -> 0.7.2
+  >
+  > <details><summary><i><b>Changelog</b></i></summary><p>
+  >
+  > ## `ratatui-core`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-core](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79)
+  > *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in
+  > [#2587](
+  > https://github.com/ratatui/ratatui/pull/2587)
+  >
+  > > When a wide cell from the previous buffer is replaced by a
+  > short/normal
+  > > cell, the trailing cell does not get an update if its content does not
+  >   > change. But if the wide cell has a background (or other) style, the
+  >   > terminal *did* render the trailing cell with that style.
+  >   >
+  > > Force trailing cells to update if background, underline, or modifiers
+  >   > are different than the wide cell. We can ignore foreground.
+  >   >
+  >   > Fixes #2585 (see that for the detailed visual reports)
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-crossterm`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-crossterm](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-widgets`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.3.2+ratatui-widgets](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2)
+  > - 2026-06-19
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409)
+  > *(scrollbar)* Keep a large thumb within the track at the end by
+  > `@satyakwok` in [#2594](
+  > https://github.com/ratatui/ratatui/pull/2594)
+  >   >
+  >   > Closes #2582.
+  >   >
+  >   > ## Problem
+  >   >
+  >   > When the content is shorter than the viewport, the thumb is large
+  >   > relative to the track. With the position at the end, `part_lengths`
+  >   > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  >   > clamped independently to `[1, track_length]`, so `thumb_start +
+  >   > thumb_length` could exceed `track_length`.
+  >   >
+  > > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > > and zips it against the cells of the area. When the thumb overruns the
+  > > track, `track_end` saturates to `0` but the thumb still emits more
+  > cells
+  > > than the track can hold, so the trailing `end` symbol is pushed past
+  > the
+  > > end of the area. The last visible cell ends up being a thumb (`█`)
+  > where
+  >   > the end arrow (`▼`) should be.
+  >   >
+  > > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  >   > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >   >
+  > > This is a regression from v0.30.0, where `thumb_length` was derived as
+  >   > `thumb_end - thumb_start` and therefore always fit within the track.
+  >   >
+  >   > ## Fix
+  >   >
+  >   > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > > `track_length - 1`) so the thumb always fits within the track and the
+  >   > end symbol is preserved.
+  >   >
+  >   > ## Test
+  >   >
+  >   > Two regression tests, both fail on `main` and pass with the fix:
+  >   >
+  >   > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  >   > `part_lengths` directly with the issue's parameters — asserts
+  > > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  >   > the track length.
+  > > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the
+  > #2582
+  > > case (both arrows, large thumb at the end) and asserts the end symbol
+  > is
+  >   > drawn rather than overwritten by a thumb cell.
+  >   >
+  >   > All existing scrollbar tests still pass.
+  >
+  > -
+  > [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c)
+  > *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](
+  > https://github.com/ratatui/ratatui/pull/2584)
+  >
+  >   > ## Summary
+  >   >
+  > > - require custom shadow effects to preserve the auto traits expected
+  > by
+  >   > Block-backed widgets
+  >   > - document the CellEffect auto-trait contract
+  > > - add a public widget regression test for the affected
+  > ratatui::widgets
+  >   > re-exports
+  >   >
+  >   > Fixes #2583
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2
+  > </blockquote>
+  >
+  > ## `ratatui-termina`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.0+ratatui-termina](https://github.com/ratatui/ratatui/releases/tag/ratatui-termina-v0.1.0)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  > </blockquote>
+  >
+  > ## `ratatui-termwiz`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termwiz](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-termion`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termion](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.30.2+ratatui](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+  > </blockquote>
+  >
+  > ## `ratatui-macros`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2)
+  > - 2026-06-19
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2
+  > </blockquote>
+  >
+  >
+  > </p></details>
+  >
+  > ---
+  > This PR was generated with
+  > [release-plz](https://github.com/release-plz/release-plz/).
+  >
+  > ---------
+
+- [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4) *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+https://github.com/ratatui/ratatui/pull/2598)
+
+  > Audit removes these dependencies that are not used:
+  >
+  >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   - futures
+  >   - rand_chacha
+  >   - tokio
+  >   - tracing
+  >   - tracing-appender
+  >   - tracing-subscriber
+  >
+  > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  > [dev-dependencies]:
+  >   - indoc
+  >
+  > ---------
+
+
+
+
+## [0.1.2+ratatui-termion](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2) - 2026-06-19
+
+### Miscellaneous Tasks
+
+- [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0) *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+https://github.com/ratatui/ratatui/pull/2599)
+
+  > Adds cargo xtask udeps and runs it from CI as a required job.
+  >
+  > This complements cargo-machete rather than replacing it. cargo-machete
+  > is a fast static source scan, which is why it missed the package-level
+  > unused deps fixed in #2598 when the same dependency names were still
+  > referenced by example crates. cargo-udeps compiles the workspace and
+  > checks rustc dep-info, so it can catch unused dependency declarations
+  > for the package being checked.
+  >
+  > To make the new job pass, this also removes the remaining true-positive
+  > unused dev-deps and records explicit cargo-udeps ignores for current
+  > false positives / intentional cases: ratatui-core critical-section,
+  > ratatui-crossterm's duplicate crossterm version feature shape, and
+  > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >
+  > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  > udeps". I did not find prior ratatui discussion about adopting
+  > cargo-udeps; the only hits were Dependabot PR bodies for
+  > taiki-e/install-action release notes mentioning cargo-udeps version
+  > updates, for example #1971, #2095, #2194, and #2522.
+  >
+  > Validation:- cargo xtask udeps
+  > - cargo xtask format --check
+  >
+  > ---------
+
+- [e665c36](https://github.com/ratatui/ratatui/commit/e665c36cb14752a61cd777fbd06dbef8474f2add) *(ratatui)* Unleash the rats v0.30.2 by `@github-actions[bot]` in [#2581](
+https://github.com/ratatui/ratatui/pull/2581)
+
+  > ## 🤖 New release
+  >
+  > * `ratatui-core`: 0.1.1 -> 0.1.2
+  > * `ratatui-crossterm`: 0.1.1 -> 0.1.2
+  > * `ratatui-widgets`: 0.3.1 -> 0.3.2
+  > * `ratatui-termina`: 0.1.0
+  > * `ratatui-termwiz`: 0.1.1 -> 0.1.2
+  > * `ratatui-termion`: 0.1.1 -> 0.1.2
+  > * `ratatui`: 0.30.1 -> 0.30.2
+  > * `ratatui-macros`: 0.7.1 -> 0.7.2
+  >
+  > <details><summary><i><b>Changelog</b></i></summary><p>
+  >
+  > ## `ratatui-core`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-core](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79)
+  > *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in
+  > [#2587](
+  > https://github.com/ratatui/ratatui/pull/2587)
+  >
+  > > When a wide cell from the previous buffer is replaced by a
+  > short/normal
+  > > cell, the trailing cell does not get an update if its content does not
+  >   > change. But if the wide cell has a background (or other) style, the
+  >   > terminal *did* render the trailing cell with that style.
+  >   >
+  > > Force trailing cells to update if background, underline, or modifiers
+  >   > are different than the wide cell. We can ignore foreground.
+  >   >
+  >   > Fixes #2585 (see that for the detailed visual reports)
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-crossterm`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-crossterm](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-widgets`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.3.2+ratatui-widgets](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2)
+  > - 2026-06-19
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409)
+  > *(scrollbar)* Keep a large thumb within the track at the end by
+  > `@satyakwok` in [#2594](
+  > https://github.com/ratatui/ratatui/pull/2594)
+  >   >
+  >   > Closes #2582.
+  >   >
+  >   > ## Problem
+  >   >
+  >   > When the content is shorter than the viewport, the thumb is large
+  >   > relative to the track. With the position at the end, `part_lengths`
+  >   > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  >   > clamped independently to `[1, track_length]`, so `thumb_start +
+  >   > thumb_length` could exceed `track_length`.
+  >   >
+  > > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > > and zips it against the cells of the area. When the thumb overruns the
+  > > track, `track_end` saturates to `0` but the thumb still emits more
+  > cells
+  > > than the track can hold, so the trailing `end` symbol is pushed past
+  > the
+  > > end of the area. The last visible cell ends up being a thumb (`█`)
+  > where
+  >   > the end arrow (`▼`) should be.
+  >   >
+  > > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  >   > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >   >
+  > > This is a regression from v0.30.0, where `thumb_length` was derived as
+  >   > `thumb_end - thumb_start` and therefore always fit within the track.
+  >   >
+  >   > ## Fix
+  >   >
+  >   > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > > `track_length - 1`) so the thumb always fits within the track and the
+  >   > end symbol is preserved.
+  >   >
+  >   > ## Test
+  >   >
+  >   > Two regression tests, both fail on `main` and pass with the fix:
+  >   >
+  >   > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  >   > `part_lengths` directly with the issue's parameters — asserts
+  > > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  >   > the track length.
+  > > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the
+  > #2582
+  > > case (both arrows, large thumb at the end) and asserts the end symbol
+  > is
+  >   > drawn rather than overwritten by a thumb cell.
+  >   >
+  >   > All existing scrollbar tests still pass.
+  >
+  > -
+  > [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c)
+  > *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](
+  > https://github.com/ratatui/ratatui/pull/2584)
+  >
+  >   > ## Summary
+  >   >
+  > > - require custom shadow effects to preserve the auto traits expected
+  > by
+  >   > Block-backed widgets
+  >   > - document the CellEffect auto-trait contract
+  > > - add a public widget regression test for the affected
+  > ratatui::widgets
+  >   > re-exports
+  >   >
+  >   > Fixes #2583
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2
+  > </blockquote>
+  >
+  > ## `ratatui-termina`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.0+ratatui-termina](https://github.com/ratatui/ratatui/releases/tag/ratatui-termina-v0.1.0)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  > </blockquote>
+  >
+  > ## `ratatui-termwiz`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termwiz](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-termion`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termion](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.30.2+ratatui](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+  > </blockquote>
+  >
+  > ## `ratatui-macros`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2)
+  > - 2026-06-19
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2
+  > </blockquote>
+  >
+  >
+  > </p></details>
+  >
+  > ---
+  > This PR was generated with
+  > [release-plz](https://github.com/release-plz/release-plz/).
+  >
+  > ---------
+
+
+
+
+## [0.1.2+ratatui-termwiz](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2) - 2026-06-19
+
+### Miscellaneous Tasks
+
+- [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0) *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+https://github.com/ratatui/ratatui/pull/2599)
+
+  > Adds cargo xtask udeps and runs it from CI as a required job.
+  >
+  > This complements cargo-machete rather than replacing it. cargo-machete
+  > is a fast static source scan, which is why it missed the package-level
+  > unused deps fixed in #2598 when the same dependency names were still
+  > referenced by example crates. cargo-udeps compiles the workspace and
+  > checks rustc dep-info, so it can catch unused dependency declarations
+  > for the package being checked.
+  >
+  > To make the new job pass, this also removes the remaining true-positive
+  > unused dev-deps and records explicit cargo-udeps ignores for current
+  > false positives / intentional cases: ratatui-core critical-section,
+  > ratatui-crossterm's duplicate crossterm version feature shape, and
+  > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >
+  > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  > udeps". I did not find prior ratatui discussion about adopting
+  > cargo-udeps; the only hits were Dependabot PR bodies for
+  > taiki-e/install-action release notes mentioning cargo-udeps version
+  > updates, for example #1971, #2095, #2194, and #2522.
+  >
+  > Validation:- cargo xtask udeps
+  > - cargo xtask format --check
+  >
+  > ---------
+
+- [e665c36](https://github.com/ratatui/ratatui/commit/e665c36cb14752a61cd777fbd06dbef8474f2add) *(ratatui)* Unleash the rats v0.30.2 by `@github-actions[bot]` in [#2581](
+https://github.com/ratatui/ratatui/pull/2581)
+
+  > ## 🤖 New release
+  >
+  > * `ratatui-core`: 0.1.1 -> 0.1.2
+  > * `ratatui-crossterm`: 0.1.1 -> 0.1.2
+  > * `ratatui-widgets`: 0.3.1 -> 0.3.2
+  > * `ratatui-termina`: 0.1.0
+  > * `ratatui-termwiz`: 0.1.1 -> 0.1.2
+  > * `ratatui-termion`: 0.1.1 -> 0.1.2
+  > * `ratatui`: 0.30.1 -> 0.30.2
+  > * `ratatui-macros`: 0.7.1 -> 0.7.2
+  >
+  > <details><summary><i><b>Changelog</b></i></summary><p>
+  >
+  > ## `ratatui-core`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-core](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79)
+  > *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in
+  > [#2587](
+  > https://github.com/ratatui/ratatui/pull/2587)
+  >
+  > > When a wide cell from the previous buffer is replaced by a
+  > short/normal
+  > > cell, the trailing cell does not get an update if its content does not
+  >   > change. But if the wide cell has a background (or other) style, the
+  >   > terminal *did* render the trailing cell with that style.
+  >   >
+  > > Force trailing cells to update if background, underline, or modifiers
+  >   > are different than the wide cell. We can ignore foreground.
+  >   >
+  >   > Fixes #2585 (see that for the detailed visual reports)
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-crossterm`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-crossterm](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-widgets`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.3.2+ratatui-widgets](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2)
+  > - 2026-06-19
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409)
+  > *(scrollbar)* Keep a large thumb within the track at the end by
+  > `@satyakwok` in [#2594](
+  > https://github.com/ratatui/ratatui/pull/2594)
+  >   >
+  >   > Closes #2582.
+  >   >
+  >   > ## Problem
+  >   >
+  >   > When the content is shorter than the viewport, the thumb is large
+  >   > relative to the track. With the position at the end, `part_lengths`
+  >   > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  >   > clamped independently to `[1, track_length]`, so `thumb_start +
+  >   > thumb_length` could exceed `track_length`.
+  >   >
+  > > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > > and zips it against the cells of the area. When the thumb overruns the
+  > > track, `track_end` saturates to `0` but the thumb still emits more
+  > cells
+  > > than the track can hold, so the trailing `end` symbol is pushed past
+  > the
+  > > end of the area. The last visible cell ends up being a thumb (`█`)
+  > where
+  >   > the end arrow (`▼`) should be.
+  >   >
+  > > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  >   > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >   >
+  > > This is a regression from v0.30.0, where `thumb_length` was derived as
+  >   > `thumb_end - thumb_start` and therefore always fit within the track.
+  >   >
+  >   > ## Fix
+  >   >
+  >   > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > > `track_length - 1`) so the thumb always fits within the track and the
+  >   > end symbol is preserved.
+  >   >
+  >   > ## Test
+  >   >
+  >   > Two regression tests, both fail on `main` and pass with the fix:
+  >   >
+  >   > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  >   > `part_lengths` directly with the issue's parameters — asserts
+  > > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  >   > the track length.
+  > > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the
+  > #2582
+  > > case (both arrows, large thumb at the end) and asserts the end symbol
+  > is
+  >   > drawn rather than overwritten by a thumb cell.
+  >   >
+  >   > All existing scrollbar tests still pass.
+  >
+  > -
+  > [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c)
+  > *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](
+  > https://github.com/ratatui/ratatui/pull/2584)
+  >
+  >   > ## Summary
+  >   >
+  > > - require custom shadow effects to preserve the auto traits expected
+  > by
+  >   > Block-backed widgets
+  >   > - document the CellEffect auto-trait contract
+  > > - add a public widget regression test for the affected
+  > ratatui::widgets
+  >   > re-exports
+  >   >
+  >   > Fixes #2583
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2
+  > </blockquote>
+  >
+  > ## `ratatui-termina`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.0+ratatui-termina](https://github.com/ratatui/ratatui/releases/tag/ratatui-termina-v0.1.0)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  > </blockquote>
+  >
+  > ## `ratatui-termwiz`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termwiz](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-termion`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termion](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.30.2+ratatui](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+  > </blockquote>
+  >
+  > ## `ratatui-macros`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2)
+  > - 2026-06-19
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2
+  > </blockquote>
+  >
+  >
+  > </p></details>
+  >
+  > ---
+  > This PR was generated with
+  > [release-plz](https://github.com/release-plz/release-plz/).
+  >
+  > ---------
+
+
+
+
+## [0.1.0+ratatui-termina](https://github.com/ratatui/ratatui/releases/tag/ratatui-termina-v0.1.0) - 2026-06-19
+
+### Features
+
+- [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a) *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+https://github.com/ratatui/ratatui/pull/2561)
+
+  > ## Summary
+  >
+  > - add the `ratatui-termina` backend crate using the published `termina`
+  > crate
+  > - expose the backend through the `termina` feature and Ratatui
+  > prelude/backend re-exports
+  > - add a small Termina event-loop example and wire the backend into CI,
+  > xtask, README generation, and docs
+  >
+  > Refs #1784
+  >
+  > ## Validation
+  >
+  > - `cargo +nightly fmt`
+  > - `cargo check -p ratatui-termina --all-features --all-targets`
+  > - `cargo check -p ratatui --no-default-features --features termina`
+  > - `cargo check -p xtask`
+  > - `cargo check -p release-header`
+  > - `cargo xtask check-backend termina`
+  > - `cargo xtask test-backend termina`
+  > - `cargo xtask rdme --check`
+  > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  > .github/ISSUE_TEMPLATE/bug_report.md`
+  >
+  > ---------
+
+### Miscellaneous Tasks
+
+- [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0) *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+https://github.com/ratatui/ratatui/pull/2599)
+
+  > Adds cargo xtask udeps and runs it from CI as a required job.
+  >
+  > This complements cargo-machete rather than replacing it. cargo-machete
+  > is a fast static source scan, which is why it missed the package-level
+  > unused deps fixed in #2598 when the same dependency names were still
+  > referenced by example crates. cargo-udeps compiles the workspace and
+  > checks rustc dep-info, so it can catch unused dependency declarations
+  > for the package being checked.
+  >
+  > To make the new job pass, this also removes the remaining true-positive
+  > unused dev-deps and records explicit cargo-udeps ignores for current
+  > false positives / intentional cases: ratatui-core critical-section,
+  > ratatui-crossterm's duplicate crossterm version feature shape, and
+  > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >
+  > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  > udeps". I did not find prior ratatui discussion about adopting
+  > cargo-udeps; the only hits were Dependabot PR bodies for
+  > taiki-e/install-action release notes mentioning cargo-udeps version
+  > updates, for example #1971, #2095, #2194, and #2522.
+  >
+  > Validation:- cargo xtask udeps
+  > - cargo xtask format --check
+  >
+  > ---------
+
+
+
+
+## [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2) - 2026-06-19
+
+### Miscellaneous Tasks
+
+- [e665c36](https://github.com/ratatui/ratatui/commit/e665c36cb14752a61cd777fbd06dbef8474f2add) *(ratatui)* Unleash the rats v0.30.2 by `@github-actions[bot]` in [#2581](
+https://github.com/ratatui/ratatui/pull/2581)
+
+  > ## 🤖 New release
+  >
+  > * `ratatui-core`: 0.1.1 -> 0.1.2
+  > * `ratatui-crossterm`: 0.1.1 -> 0.1.2
+  > * `ratatui-widgets`: 0.3.1 -> 0.3.2
+  > * `ratatui-termina`: 0.1.0
+  > * `ratatui-termwiz`: 0.1.1 -> 0.1.2
+  > * `ratatui-termion`: 0.1.1 -> 0.1.2
+  > * `ratatui`: 0.30.1 -> 0.30.2
+  > * `ratatui-macros`: 0.7.1 -> 0.7.2
+  >
+  > <details><summary><i><b>Changelog</b></i></summary><p>
+  >
+  > ## `ratatui-core`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-core](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79)
+  > *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in
+  > [#2587](
+  > https://github.com/ratatui/ratatui/pull/2587)
+  >
+  > > When a wide cell from the previous buffer is replaced by a
+  > short/normal
+  > > cell, the trailing cell does not get an update if its content does not
+  >   > change. But if the wide cell has a background (or other) style, the
+  >   > terminal *did* render the trailing cell with that style.
+  >   >
+  > > Force trailing cells to update if background, underline, or modifiers
+  >   > are different than the wide cell. We can ignore foreground.
+  >   >
+  >   > Fixes #2585 (see that for the detailed visual reports)
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-crossterm`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-crossterm](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-widgets`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.3.2+ratatui-widgets](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2)
+  > - 2026-06-19
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409)
+  > *(scrollbar)* Keep a large thumb within the track at the end by
+  > `@satyakwok` in [#2594](
+  > https://github.com/ratatui/ratatui/pull/2594)
+  >   >
+  >   > Closes #2582.
+  >   >
+  >   > ## Problem
+  >   >
+  >   > When the content is shorter than the viewport, the thumb is large
+  >   > relative to the track. With the position at the end, `part_lengths`
+  >   > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  >   > clamped independently to `[1, track_length]`, so `thumb_start +
+  >   > thumb_length` could exceed `track_length`.
+  >   >
+  > > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > > and zips it against the cells of the area. When the thumb overruns the
+  > > track, `track_end` saturates to `0` but the thumb still emits more
+  > cells
+  > > than the track can hold, so the trailing `end` symbol is pushed past
+  > the
+  > > end of the area. The last visible cell ends up being a thumb (`█`)
+  > where
+  >   > the end arrow (`▼`) should be.
+  >   >
+  > > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  >   > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >   >
+  > > This is a regression from v0.30.0, where `thumb_length` was derived as
+  >   > `thumb_end - thumb_start` and therefore always fit within the track.
+  >   >
+  >   > ## Fix
+  >   >
+  >   > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > > `track_length - 1`) so the thumb always fits within the track and the
+  >   > end symbol is preserved.
+  >   >
+  >   > ## Test
+  >   >
+  >   > Two regression tests, both fail on `main` and pass with the fix:
+  >   >
+  >   > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  >   > `part_lengths` directly with the issue's parameters — asserts
+  > > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  >   > the track length.
+  > > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the
+  > #2582
+  > > case (both arrows, large thumb at the end) and asserts the end symbol
+  > is
+  >   > drawn rather than overwritten by a thumb cell.
+  >   >
+  >   > All existing scrollbar tests still pass.
+  >
+  > -
+  > [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c)
+  > *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](
+  > https://github.com/ratatui/ratatui/pull/2584)
+  >
+  >   > ## Summary
+  >   >
+  > > - require custom shadow effects to preserve the auto traits expected
+  > by
+  >   > Block-backed widgets
+  >   > - document the CellEffect auto-trait contract
+  > > - add a public widget regression test for the affected
+  > ratatui::widgets
+  >   > re-exports
+  >   >
+  >   > Fixes #2583
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2
+  > </blockquote>
+  >
+  > ## `ratatui-termina`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.0+ratatui-termina](https://github.com/ratatui/ratatui/releases/tag/ratatui-termina-v0.1.0)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  > </blockquote>
+  >
+  > ## `ratatui-termwiz`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termwiz](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-termion`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termion](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.30.2+ratatui](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+  > </blockquote>
+  >
+  > ## `ratatui-macros`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2)
+  > - 2026-06-19
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2
+  > </blockquote>
+  >
+  >
+  > </p></details>
+  >
+  > ---
+  > This PR was generated with
+  > [release-plz](https://github.com/release-plz/release-plz/).
+  >
+  > ---------
+
+
+
+
+## [0.3.2+ratatui-widgets](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2) - 2026-06-19
+
+### Bug Fixes
+
+- [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409) *(scrollbar)* Keep a large thumb within the track at the end by `@satyakwok` in [#2594](
+https://github.com/ratatui/ratatui/pull/2594)
+  >
+  > Closes #2582.
+  >
+  > ## Problem
+  >
+  > When the content is shorter than the viewport, the thumb is large
+  > relative to the track. With the position at the end, `part_lengths`
+  > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  > clamped independently to `[1, track_length]`, so `thumb_start +
+  > thumb_length` could exceed `track_length`.
+  >
+  > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > and zips it against the cells of the area. When the thumb overruns the
+  > track, `track_end` saturates to `0` but the thumb still emits more cells
+  > than the track can hold, so the trailing `end` symbol is pushed past the
+  > end of the area. The last visible cell ends up being a thumb (`█`) where
+  > the end arrow (`▼`) should be.
+  >
+  > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >
+  > This is a regression from v0.30.0, where `thumb_length` was derived as
+  > `thumb_end - thumb_start` and therefore always fit within the track.
+  >
+  > ## Fix
+  >
+  > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > `track_length - 1`) so the thumb always fits within the track and the
+  > end symbol is preserved.
+  >
+  > ## Test
+  >
+  > Two regression tests, both fail on `main` and pass with the fix:
+  >
+  > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  > `part_lengths` directly with the issue's parameters — asserts
+  > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  > the track length.
+  > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the #2582
+  > case (both arrows, large thumb at the end) and asserts the end symbol is
+  > drawn rather than overwritten by a thumb cell.
+  >
+  > All existing scrollbar tests still pass.
+
+- [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c) *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](
+https://github.com/ratatui/ratatui/pull/2584)
+
+  > ## Summary
+  >
+  > - require custom shadow effects to preserve the auto traits expected by
+  > Block-backed widgets
+  > - document the CellEffect auto-trait contract
+  > - add a public widget regression test for the affected ratatui::widgets
+  > re-exports
+  >
+  > Fixes #2583
+  >
+  > ---------
+
+### Miscellaneous Tasks
+
+- [e665c36](https://github.com/ratatui/ratatui/commit/e665c36cb14752a61cd777fbd06dbef8474f2add) *(ratatui)* Unleash the rats v0.30.2 by `@github-actions[bot]` in [#2581](
+https://github.com/ratatui/ratatui/pull/2581)
+
+  > ## 🤖 New release
+  >
+  > * `ratatui-core`: 0.1.1 -> 0.1.2
+  > * `ratatui-crossterm`: 0.1.1 -> 0.1.2
+  > * `ratatui-widgets`: 0.3.1 -> 0.3.2
+  > * `ratatui-termina`: 0.1.0
+  > * `ratatui-termwiz`: 0.1.1 -> 0.1.2
+  > * `ratatui-termion`: 0.1.1 -> 0.1.2
+  > * `ratatui`: 0.30.1 -> 0.30.2
+  > * `ratatui-macros`: 0.7.1 -> 0.7.2
+  >
+  > <details><summary><i><b>Changelog</b></i></summary><p>
+  >
+  > ## `ratatui-core`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-core](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79)
+  > *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in
+  > [#2587](
+  > https://github.com/ratatui/ratatui/pull/2587)
+  >
+  > > When a wide cell from the previous buffer is replaced by a
+  > short/normal
+  > > cell, the trailing cell does not get an update if its content does not
+  >   > change. But if the wide cell has a background (or other) style, the
+  >   > terminal *did* render the trailing cell with that style.
+  >   >
+  > > Force trailing cells to update if background, underline, or modifiers
+  >   > are different than the wide cell. We can ignore foreground.
+  >   >
+  >   > Fixes #2585 (see that for the detailed visual reports)
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-crossterm`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-crossterm](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-widgets`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.3.2+ratatui-widgets](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2)
+  > - 2026-06-19
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409)
+  > *(scrollbar)* Keep a large thumb within the track at the end by
+  > `@satyakwok` in [#2594](
+  > https://github.com/ratatui/ratatui/pull/2594)
+  >   >
+  >   > Closes #2582.
+  >   >
+  >   > ## Problem
+  >   >
+  >   > When the content is shorter than the viewport, the thumb is large
+  >   > relative to the track. With the position at the end, `part_lengths`
+  >   > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  >   > clamped independently to `[1, track_length]`, so `thumb_start +
+  >   > thumb_length` could exceed `track_length`.
+  >   >
+  > > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > > and zips it against the cells of the area. When the thumb overruns the
+  > > track, `track_end` saturates to `0` but the thumb still emits more
+  > cells
+  > > than the track can hold, so the trailing `end` symbol is pushed past
+  > the
+  > > end of the area. The last visible cell ends up being a thumb (`█`)
+  > where
+  >   > the end arrow (`▼`) should be.
+  >   >
+  > > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  >   > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >   >
+  > > This is a regression from v0.30.0, where `thumb_length` was derived as
+  >   > `thumb_end - thumb_start` and therefore always fit within the track.
+  >   >
+  >   > ## Fix
+  >   >
+  >   > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > > `track_length - 1`) so the thumb always fits within the track and the
+  >   > end symbol is preserved.
+  >   >
+  >   > ## Test
+  >   >
+  >   > Two regression tests, both fail on `main` and pass with the fix:
+  >   >
+  >   > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  >   > `part_lengths` directly with the issue's parameters — asserts
+  > > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  >   > the track length.
+  > > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the
+  > #2582
+  > > case (both arrows, large thumb at the end) and asserts the end symbol
+  > is
+  >   > drawn rather than overwritten by a thumb cell.
+  >   >
+  >   > All existing scrollbar tests still pass.
+  >
+  > -
+  > [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c)
+  > *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](
+  > https://github.com/ratatui/ratatui/pull/2584)
+  >
+  >   > ## Summary
+  >   >
+  > > - require custom shadow effects to preserve the auto traits expected
+  > by
+  >   > Block-backed widgets
+  >   > - document the CellEffect auto-trait contract
+  > > - add a public widget regression test for the affected
+  > ratatui::widgets
+  >   > re-exports
+  >   >
+  >   > Fixes #2583
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2
+  > </blockquote>
+  >
+  > ## `ratatui-termina`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.0+ratatui-termina](https://github.com/ratatui/ratatui/releases/tag/ratatui-termina-v0.1.0)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  > </blockquote>
+  >
+  > ## `ratatui-termwiz`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termwiz](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-termion`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termion](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.30.2+ratatui](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+  > </blockquote>
+  >
+  > ## `ratatui-macros`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2)
+  > - 2026-06-19
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2
+  > </blockquote>
+  >
+  >
+  > </p></details>
+  >
+  > ---
+  > This PR was generated with
+  > [release-plz](https://github.com/release-plz/release-plz/).
+  >
+  > ---------
+
+
+
+
+## [0.1.2+ratatui-crossterm](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2) - 2026-06-19
+
+### Miscellaneous Tasks
+
+- [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0) *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+https://github.com/ratatui/ratatui/pull/2599)
+
+  > Adds cargo xtask udeps and runs it from CI as a required job.
+  >
+  > This complements cargo-machete rather than replacing it. cargo-machete
+  > is a fast static source scan, which is why it missed the package-level
+  > unused deps fixed in #2598 when the same dependency names were still
+  > referenced by example crates. cargo-udeps compiles the workspace and
+  > checks rustc dep-info, so it can catch unused dependency declarations
+  > for the package being checked.
+  >
+  > To make the new job pass, this also removes the remaining true-positive
+  > unused dev-deps and records explicit cargo-udeps ignores for current
+  > false positives / intentional cases: ratatui-core critical-section,
+  > ratatui-crossterm's duplicate crossterm version feature shape, and
+  > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >
+  > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  > udeps". I did not find prior ratatui discussion about adopting
+  > cargo-udeps; the only hits were Dependabot PR bodies for
+  > taiki-e/install-action release notes mentioning cargo-udeps version
+  > updates, for example #1971, #2095, #2194, and #2522.
+  >
+  > Validation:- cargo xtask udeps
+  > - cargo xtask format --check
+  >
+  > ---------
+
+- [e665c36](https://github.com/ratatui/ratatui/commit/e665c36cb14752a61cd777fbd06dbef8474f2add) *(ratatui)* Unleash the rats v0.30.2 by `@github-actions[bot]` in [#2581](
+https://github.com/ratatui/ratatui/pull/2581)
+
+  > ## 🤖 New release
+  >
+  > * `ratatui-core`: 0.1.1 -> 0.1.2
+  > * `ratatui-crossterm`: 0.1.1 -> 0.1.2
+  > * `ratatui-widgets`: 0.3.1 -> 0.3.2
+  > * `ratatui-termina`: 0.1.0
+  > * `ratatui-termwiz`: 0.1.1 -> 0.1.2
+  > * `ratatui-termion`: 0.1.1 -> 0.1.2
+  > * `ratatui`: 0.30.1 -> 0.30.2
+  > * `ratatui-macros`: 0.7.1 -> 0.7.2
+  >
+  > <details><summary><i><b>Changelog</b></i></summary><p>
+  >
+  > ## `ratatui-core`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-core](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79)
+  > *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in
+  > [#2587](
+  > https://github.com/ratatui/ratatui/pull/2587)
+  >
+  > > When a wide cell from the previous buffer is replaced by a
+  > short/normal
+  > > cell, the trailing cell does not get an update if its content does not
+  >   > change. But if the wide cell has a background (or other) style, the
+  >   > terminal *did* render the trailing cell with that style.
+  >   >
+  > > Force trailing cells to update if background, underline, or modifiers
+  >   > are different than the wide cell. We can ignore foreground.
+  >   >
+  >   > Fixes #2585 (see that for the detailed visual reports)
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-crossterm`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-crossterm](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-widgets`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.3.2+ratatui-widgets](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2)
+  > - 2026-06-19
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409)
+  > *(scrollbar)* Keep a large thumb within the track at the end by
+  > `@satyakwok` in [#2594](
+  > https://github.com/ratatui/ratatui/pull/2594)
+  >   >
+  >   > Closes #2582.
+  >   >
+  >   > ## Problem
+  >   >
+  >   > When the content is shorter than the viewport, the thumb is large
+  >   > relative to the track. With the position at the end, `part_lengths`
+  >   > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  >   > clamped independently to `[1, track_length]`, so `thumb_start +
+  >   > thumb_length` could exceed `track_length`.
+  >   >
+  > > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > > and zips it against the cells of the area. When the thumb overruns the
+  > > track, `track_end` saturates to `0` but the thumb still emits more
+  > cells
+  > > than the track can hold, so the trailing `end` symbol is pushed past
+  > the
+  > > end of the area. The last visible cell ends up being a thumb (`█`)
+  > where
+  >   > the end arrow (`▼`) should be.
+  >   >
+  > > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  >   > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >   >
+  > > This is a regression from v0.30.0, where `thumb_length` was derived as
+  >   > `thumb_end - thumb_start` and therefore always fit within the track.
+  >   >
+  >   > ## Fix
+  >   >
+  >   > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > > `track_length - 1`) so the thumb always fits within the track and the
+  >   > end symbol is preserved.
+  >   >
+  >   > ## Test
+  >   >
+  >   > Two regression tests, both fail on `main` and pass with the fix:
+  >   >
+  >   > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  >   > `part_lengths` directly with the issue's parameters — asserts
+  > > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  >   > the track length.
+  > > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the
+  > #2582
+  > > case (both arrows, large thumb at the end) and asserts the end symbol
+  > is
+  >   > drawn rather than overwritten by a thumb cell.
+  >   >
+  >   > All existing scrollbar tests still pass.
+  >
+  > -
+  > [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c)
+  > *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](
+  > https://github.com/ratatui/ratatui/pull/2584)
+  >
+  >   > ## Summary
+  >   >
+  > > - require custom shadow effects to preserve the auto traits expected
+  > by
+  >   > Block-backed widgets
+  >   > - document the CellEffect auto-trait contract
+  > > - add a public widget regression test for the affected
+  > ratatui::widgets
+  >   > re-exports
+  >   >
+  >   > Fixes #2583
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2
+  > </blockquote>
+  >
+  > ## `ratatui-termina`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.0+ratatui-termina](https://github.com/ratatui/ratatui/releases/tag/ratatui-termina-v0.1.0)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  > </blockquote>
+  >
+  > ## `ratatui-termwiz`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termwiz](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-termion`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termion](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.30.2+ratatui](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+  > </blockquote>
+  >
+  > ## `ratatui-macros`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2)
+  > - 2026-06-19
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2
+  > </blockquote>
+  >
+  >
+  > </p></details>
+  >
+  > ---
+  > This PR was generated with
+  > [release-plz](https://github.com/release-plz/release-plz/).
+  >
+  > ---------
+
+
+
+
+## [0.1.2+ratatui-core](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2) - 2026-06-19
+
+### Features
+
+- [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a) *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+https://github.com/ratatui/ratatui/pull/2561)
+
+  > ## Summary
+  >
+  > - add the `ratatui-termina` backend crate using the published `termina`
+  > crate
+  > - expose the backend through the `termina` feature and Ratatui
+  > prelude/backend re-exports
+  > - add a small Termina event-loop example and wire the backend into CI,
+  > xtask, README generation, and docs
+  >
+  > Refs #1784
+  >
+  > ## Validation
+  >
+  > - `cargo +nightly fmt`
+  > - `cargo check -p ratatui-termina --all-features --all-targets`
+  > - `cargo check -p ratatui --no-default-features --features termina`
+  > - `cargo check -p xtask`
+  > - `cargo check -p release-header`
+  > - `cargo xtask check-backend termina`
+  > - `cargo xtask test-backend termina`
+  > - `cargo xtask rdme --check`
+  > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  > .github/ISSUE_TEMPLATE/bug_report.md`
+  >
+  > ---------
+
+### Bug Fixes
+
+- [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79) *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in [#2587](
+https://github.com/ratatui/ratatui/pull/2587)
+
+  > When a wide cell from the previous buffer is replaced by a short/normal
+  > cell, the trailing cell does not get an update if its content does not
+  > change. But if the wide cell has a background (or other) style, the
+  > terminal *did* render the trailing cell with that style.
+  >
+  > Force trailing cells to update if background, underline, or modifiers
+  > are different than the wide cell. We can ignore foreground.
+  >
+  > Fixes #2585 (see that for the detailed visual reports)
+
+### Miscellaneous Tasks
+
+- [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0) *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+https://github.com/ratatui/ratatui/pull/2599)
+
+  > Adds cargo xtask udeps and runs it from CI as a required job.
+  >
+  > This complements cargo-machete rather than replacing it. cargo-machete
+  > is a fast static source scan, which is why it missed the package-level
+  > unused deps fixed in #2598 when the same dependency names were still
+  > referenced by example crates. cargo-udeps compiles the workspace and
+  > checks rustc dep-info, so it can catch unused dependency declarations
+  > for the package being checked.
+  >
+  > To make the new job pass, this also removes the remaining true-positive
+  > unused dev-deps and records explicit cargo-udeps ignores for current
+  > false positives / intentional cases: ratatui-core critical-section,
+  > ratatui-crossterm's duplicate crossterm version feature shape, and
+  > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >
+  > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  > udeps". I did not find prior ratatui discussion about adopting
+  > cargo-udeps; the only hits were Dependabot PR bodies for
+  > taiki-e/install-action release notes mentioning cargo-udeps version
+  > updates, for example #1971, #2095, #2194, and #2522.
+  >
+  > Validation:- cargo xtask udeps
+  > - cargo xtask format --check
+  >
+  > ---------
+
+- [e665c36](https://github.com/ratatui/ratatui/commit/e665c36cb14752a61cd777fbd06dbef8474f2add) *(ratatui)* Unleash the rats v0.30.2 by `@github-actions[bot]` in [#2581](
+https://github.com/ratatui/ratatui/pull/2581)
+
+  > ## 🤖 New release
+  >
+  > * `ratatui-core`: 0.1.1 -> 0.1.2
+  > * `ratatui-crossterm`: 0.1.1 -> 0.1.2
+  > * `ratatui-widgets`: 0.3.1 -> 0.3.2
+  > * `ratatui-termina`: 0.1.0
+  > * `ratatui-termwiz`: 0.1.1 -> 0.1.2
+  > * `ratatui-termion`: 0.1.1 -> 0.1.2
+  > * `ratatui`: 0.30.1 -> 0.30.2
+  > * `ratatui-macros`: 0.7.1 -> 0.7.2
+  >
+  > <details><summary><i><b>Changelog</b></i></summary><p>
+  >
+  > ## `ratatui-core`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-core](https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [e306ce6](https://github.com/ratatui/ratatui/commit/e306ce69df3113d41c00c483e36ba3ecc88f3c79)
+  > *(buffer)* Create updates for "uncovered" cells by `@benjajaja` in
+  > [#2587](
+  > https://github.com/ratatui/ratatui/pull/2587)
+  >
+  > > When a wide cell from the previous buffer is replaced by a
+  > short/normal
+  > > cell, the trailing cell does not get an update if its content does not
+  >   > change. But if the wide cell has a background (or other) style, the
+  >   > terminal *did* render the trailing cell with that style.
+  >   >
+  > > Force trailing cells to update if background, underline, or modifiers
+  >   > are different than the wide cell. We can ignore foreground.
+  >   >
+  >   > Fixes #2585 (see that for the detailed visual reports)
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-core-v0.1.1...ratatui-core-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-crossterm`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-crossterm](https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-crossterm-v0.1.1...ratatui-crossterm-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-widgets`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.3.2+ratatui-widgets](https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2)
+  > - 2026-06-19
+  >
+  > ### Bug Fixes
+  >
+  > -
+  > [81e667f](https://github.com/ratatui/ratatui/commit/81e667f354489a809e0db1f95e378efe859dd409)
+  > *(scrollbar)* Keep a large thumb within the track at the end by
+  > `@satyakwok` in [#2594](
+  > https://github.com/ratatui/ratatui/pull/2594)
+  >   >
+  >   > Closes #2582.
+  >   >
+  >   > ## Problem
+  >   >
+  >   > When the content is shorter than the viewport, the thumb is large
+  >   > relative to the track. With the position at the end, `part_lengths`
+  >   > clamped `thumb_start` to `track_length - 1` while `thumb_length` was
+  >   > clamped independently to `[1, track_length]`, so `thumb_start +
+  >   > thumb_length` could exceed `track_length`.
+  >   >
+  > > `bar_symbols` lays out `begin + track_start + thumb + track_end + end`
+  > > and zips it against the cells of the area. When the thumb overruns the
+  > > track, `track_end` saturates to `0` but the thumb still emits more
+  > cells
+  > > than the track can hold, so the trailing `end` symbol is pushed past
+  > the
+  > > end of the area. The last visible cell ends up being a thumb (`█`)
+  > where
+  >   > the end arrow (`▼`) should be.
+  >   >
+  > > Concretely, for the issue's repro (`VerticalRight`, `content_length =
+  > > 9`, `position = 8`, height `24`): track is `22`, `thumb_length = 17`,
+  >   > `thumb_start = 6`, and `6 + 17 = 23 > 22`.
+  >   >
+  > > This is a regression from v0.30.0, where `thumb_length` was derived as
+  >   > `thumb_end - thumb_start` and therefore always fit within the track.
+  >   >
+  >   > ## Fix
+  >   >
+  >   > Clamp `thumb_start` to `track_length - thumb_length` (instead of
+  > > `track_length - 1`) so the thumb always fits within the track and the
+  >   > end symbol is preserved.
+  >   >
+  >   > ## Test
+  >   >
+  >   > Two regression tests, both fail on `main` and pass with the fix:
+  >   >
+  >   > - `thumb_stays_within_track_for_large_thumb_at_end` checks
+  >   > `part_lengths` directly with the issue's parameters — asserts
+  > > `thumb_start + thumb_length <= track_length` and that the parts sum to
+  >   > the track length.
+  > > - `render_scrollbar_keeps_end_symbol_for_large_thumb` renders the
+  > #2582
+  > > case (both arrows, large thumb at the end) and asserts the end symbol
+  > is
+  >   > drawn rather than overwritten by a thumb cell.
+  >   >
+  >   > All existing scrollbar tests still pass.
+  >
+  > -
+  > [fce3c80](https://github.com/ratatui/ratatui/commit/fce3c80d53d5cf367e62cadf1d5c819947d23e4c)
+  > *(widgets)* Require thread-safe shadow effects by `@joshka` in [#2584](
+  > https://github.com/ratatui/ratatui/pull/2584)
+  >
+  >   > ## Summary
+  >   >
+  > > - require custom shadow effects to preserve the auto traits expected
+  > by
+  >   > Block-backed widgets
+  >   > - document the CellEffect auto-trait contract
+  > > - add a public widget regression test for the affected
+  > ratatui::widgets
+  >   > re-exports
+  >   >
+  >   > Fixes #2583
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-widgets-v0.3.1...ratatui-widgets-v0.3.2
+  > </blockquote>
+  >
+  > ## `ratatui-termina`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.0+ratatui-termina](https://github.com/ratatui/ratatui/releases/tag/ratatui-termina-v0.1.0)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  > </blockquote>
+  >
+  > ## `ratatui-termwiz`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termwiz](https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termwiz-v0.1.1...ratatui-termwiz-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui-termion`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.1.2+ratatui-termion](https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2)
+  > - 2026-06-19
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-termion-v0.1.1...ratatui-termion-v0.1.2
+  > </blockquote>
+  >
+  > ## `ratatui`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.30.2+ratatui](https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2)
+  > - 2026-06-19
+  >
+  > ### Features
+  >
+  > -
+  > [90639c1](https://github.com/ratatui/ratatui/commit/90639c179ddcbe483ea05f21b1ce3fa09767441a)
+  > *(uncategorized)* Add Termina backend by `@joshka` in [#2561](
+  > https://github.com/ratatui/ratatui/pull/2561)
+  >
+  >   > ## Summary
+  >   >
+  > > - add the `ratatui-termina` backend crate using the published
+  > `termina`
+  >   > crate
+  >   > - expose the backend through the `termina` feature and Ratatui
+  >   > prelude/backend re-exports
+  > > - add a small Termina event-loop example and wire the backend into CI,
+  >   > xtask, README generation, and docs
+  >   >
+  >   > Refs #1784
+  >   >
+  >   > ## Validation
+  >   >
+  >   > - `cargo +nightly fmt`
+  >   > - `cargo check -p ratatui-termina --all-features --all-targets`
+  >   > - `cargo check -p ratatui --no-default-features --features termina`
+  >   > - `cargo check -p xtask`
+  >   > - `cargo check -p release-header`
+  >   > - `cargo xtask check-backend termina`
+  >   > - `cargo xtask test-backend termina`
+  >   > - `cargo xtask rdme --check`
+  >   > - `markdownlint-cli2 ARCHITECTURE.md ratatui-termina/README.md
+  >   > .github/ISSUE_TEMPLATE/bug_report.md`
+  >   >
+  >   > ---------
+  >
+  > ### Miscellaneous Tasks
+  >
+  > -
+  > [c75d778](https://github.com/ratatui/ratatui/commit/c75d7782be5c8157b0c140821090a13fd8cb8eb0)
+  > *(ci)* Add cargo-udeps dependency check by `@joshka` in [#2599](
+  > https://github.com/ratatui/ratatui/pull/2599)
+  >
+  >   > Adds cargo xtask udeps and runs it from CI as a required job.
+  >   >
+  > > This complements cargo-machete rather than replacing it. cargo-machete
+  > > is a fast static source scan, which is why it missed the package-level
+  >   > unused deps fixed in #2598 when the same dependency names were still
+  >   > referenced by example crates. cargo-udeps compiles the workspace and
+  > > checks rustc dep-info, so it can catch unused dependency declarations
+  >   > for the package being checked.
+  >   >
+  > > To make the new job pass, this also removes the remaining
+  > true-positive
+  >   > unused dev-deps and records explicit cargo-udeps ignores for current
+  >   > false positives / intentional cases: ratatui-core critical-section,
+  >   > ratatui-crossterm's duplicate crossterm version feature shape, and
+  >   > ratatui-termwiz's doc-example-only ratatui dev-dependency.
+  >   >
+  >   > I searched existing issues and PRs for udeps / cargo-udeps / "cargo
+  >   > udeps". I did not find prior ratatui discussion about adopting
+  >   > cargo-udeps; the only hits were Dependabot PR bodies for
+  >   > taiki-e/install-action release notes mentioning cargo-udeps version
+  >   > updates, for example #1971, #2095, #2194, and #2522.
+  >   >
+  >   > Validation:- cargo xtask udeps
+  >   > - cargo xtask format --check
+  >   >
+  >   > ---------
+  >
+  > -
+  > [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4)
+  > *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+  > https://github.com/ratatui/ratatui/pull/2598)
+  >
+  >   > Audit removes these dependencies that are not used:
+  >   >
+  >   >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   >   - futures
+  >   >   - rand_chacha
+  >   >   - tokio
+  >   >   - tracing
+  >   >   - tracing-appender
+  >   >   - tracing-subscriber
+  >   >
+  >   > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  >   > [dev-dependencies]:
+  >   >   - indoc
+  >   >
+  >   > ---------
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-v0.30.1...ratatui-v0.30.2
+  > </blockquote>
+  >
+  > ## `ratatui-macros`
+  >
+  > <blockquote>
+  >
+  > ##
+  > [0.7.2+ratatui-macros](https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2)
+  > - 2026-06-19
+  >
+  > **Full Changelog**:
+  > https://github.com/ratatui/ratatui/compare/ratatui-macros-v0.7.1...ratatui-macros-v0.7.2
+  > </blockquote>
+  >
+  >
+  > </p></details>
+  >
+  > ---
+  > This PR was generated with
+  > [release-plz](https://github.com/release-plz/release-plz/).
+  >
+  > ---------
+
+- [4a63d41](https://github.com/ratatui/ratatui/commit/4a63d41b21b730e1986d95853596d1df527d76b4) *(uncategorized)* Remove unused dependencies by `@KikiKian` in [#2598](
+https://github.com/ratatui/ratatui/pull/2598)
+
+  > Audit removes these dependencies that are not used:
+  >
+  >   ratatui/Cargo.toml — Removed from [dev-dependencies]:
+  >   - futures
+  >   - rand_chacha
+  >   - tokio
+  >   - tracing
+  >   - tracing-appender
+  >   - tracing-subscriber
+  >
+  > ratatui-core/Cargo.toml — Moved from [dependencies] →
+  > [dev-dependencies]:
+  >   - indoc
+  >
+  > ---------
+
+
+
+
 ## [0.30.2](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.2) - 2026-06-19
 
 ![a gift](https://github.com/ratatui/ratatui-website/raw/refs/heads/main/src/assets/a-gift.png)
