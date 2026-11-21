@@ -326,40 +326,77 @@ impl<'a> Paragraph<'a> {
         self.alignment(Alignment::Right)
     }
 
-    /// Calculates the number of lines needed to fully render.
+    /// Calculates the height needed to render this paragraph at the given width.
     ///
-    /// Given a max line width, this method calculates the number of lines that a paragraph will
-    /// need in order to be fully rendered. For paragraphs that do not use wrapping, this count is
-    /// simply the number of lines present in the paragraph.
+    /// The `width` includes the [`Block`]'s borders and padding, if set through [`Self::block`].
     ///
-    /// This method will also account for the [`Block`] if one is set through [`Self::block`].
+    /// Returns `0` if `width` is zero. If the block's borders and padding consume all available
+    /// width, no text rows are rendered, but the returned height still includes the block's
+    /// vertical borders and padding.
+    ///
+    /// Text is wrapped according to [`Wrap`] if set through [`Self::wrap`]. Without wrapping, text
+    /// exceeding the available width is horizontally clipped, and the returned height is the number
+    /// of text lines plus the block's vertical borders and padding.
     ///
     /// Note: The design for text wrapping is not stable and might affect this API.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```ignore
-    /// use ratatui::{widgets::{Paragraph, Wrap}};
+    /// use ratatui::widgets::{Paragraph, Wrap};
     ///
     /// let paragraph = Paragraph::new("Hello World")
     ///     .wrap(Wrap { trim: false });
     /// assert_eq!(paragraph.line_count(20), 1);
     /// assert_eq!(paragraph.line_count(10), 2);
     /// ```
+    ///
+    /// ## Determining Rendered Height
+    ///
+    /// The returned height can be used to size the render area for the given width.
+    ///
+    /// ```ignore
+    /// use ratatui::buffer::Buffer;
+    /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{Block, Paragraph, Widget, Wrap};
+    ///
+    /// let paragraph = Paragraph::new("Hello World")
+    ///     .block(Block::bordered())
+    ///     .wrap(Wrap { trim: false });
+    ///
+    /// let width = 10;
+    /// let height = paragraph.line_count(width) as u16;
+    /// assert_eq!(height, 4);
+    ///
+    /// let area = Rect::new(0, 0, width, height);
+    /// let mut buffer = Buffer::empty(area);
+    /// paragraph.render(area, &mut buffer);
+    /// assert_eq!(
+    ///     buffer,
+    ///     Buffer::with_lines([
+    ///         "┌────────┐",
+    ///         "│Hello   │",
+    ///         "│World   │",
+    ///         "└────────┘",
+    ///     ]),
+    /// );
+    /// ```
     #[instability::unstable(
         feature = "rendered-line-info",
         issue = "https://github.com/ratatui/ratatui/issues/293"
     )]
     pub fn line_count(&self, width: u16) -> usize {
-        if width < 1 {
+        if width == 0 {
             return 0;
         }
 
-        let (top, bottom) = self
-            .block
-            .as_ref()
-            .map(Block::vertical_space)
-            .unwrap_or_default();
+        let dummy = Rect::new(0, 0, width, u16::MAX);
+        let inner = self.block.inner_if_some(dummy);
+        let vertical_space = usize::from(dummy.height.saturating_sub(inner.height));
+
+        if inner.width == 0 {
+            return vertical_space;
+        }
 
         let count = if let Some(Wrap { trim }) = self.wrap {
             let styled = self.text.iter().map(|line| {
@@ -370,7 +407,7 @@ impl<'a> Paragraph<'a> {
                 let alignment = line.alignment.unwrap_or(self.alignment);
                 (graphemes, alignment)
             });
-            let mut line_composer = WordWrapper::new(styled, width, trim);
+            let mut line_composer = WordWrapper::new(styled, inner.width, trim);
             let mut count = 0;
             while line_composer.next_line().is_some() {
                 count += 1;
@@ -380,9 +417,7 @@ impl<'a> Paragraph<'a> {
             self.text.height()
         };
 
-        count
-            .saturating_add(top as usize)
-            .saturating_add(bottom as usize)
+        count.saturating_add(vertical_space)
     }
 
     /// Calculates the shortest line width needed to avoid any word being wrapped or truncated.
@@ -1181,11 +1216,15 @@ mod tests {
         let block = Block::bordered();
         let paragraph = paragraph.block(block).wrap(Wrap { trim: true });
         assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(13), 3);
+        assert_eq!(paragraph.line_count(12), 4);
         assert_eq!(paragraph.line_count(10), 4);
 
         let block = Block::bordered();
         let paragraph = paragraph.block(block).wrap(Wrap { trim: false });
         assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(13), 3);
+        assert_eq!(paragraph.line_count(12), 4);
         assert_eq!(paragraph.line_count(10), 4);
 
         let text = "Hello World ".repeat(100);
@@ -1212,6 +1251,8 @@ mod tests {
         let paragraph = paragraph.block(block);
         assert_eq!(paragraph.line_count(11), 1);
         assert_eq!(paragraph.line_count(6), 1);
+        assert_eq!(paragraph.line_count(2), 0);
+        assert_eq!(paragraph.line_count(0), 0);
     }
 
     #[test]
