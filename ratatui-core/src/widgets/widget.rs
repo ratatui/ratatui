@@ -29,8 +29,11 @@ use crate::layout::Rect;
 /// you want the widget to be mutable. The mutable widget pattern is used infrequently in apps, but
 /// can be quite useful.
 ///
-/// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
-/// Widget is also implemented for `&str`, `String`, and `Cow<str>` types.
+/// Widget is implemented for `&str`, `String`, and `&String`.
+///
+/// `Cow<B>`, `&Cow<B>`, `&Box<W>`, `&Rc<W>`, and `&Arc<W>` render the value they wrap, so they
+/// implement `Widget` whenever the wrapped type does when rendered by reference. For example,
+/// `Cow<str>`, `&Box<str>`, `&Rc<str>`, and `&Arc<Paragraph>` can all be rendered directly.
 ///
 /// # Examples
 ///
@@ -92,9 +95,12 @@ mod tests {
         Buffer::empty(Rect::new(0, 0, 20, 1))
     }
 
+    /// A widget that only renders by reference, so these tests don't depend on the impls for
+    /// text types.
+    #[derive(Clone)]
     struct Greeting;
 
-    impl Widget for Greeting {
+    impl Widget for &Greeting {
         fn render(self, area: Rect, buf: &mut Buffer) {
             Line::from("Hello").render(area, buf);
         }
@@ -102,8 +108,19 @@ mod tests {
 
     #[rstest]
     fn render(mut buf: Buffer) {
-        let widget = Greeting;
-        widget.render(buf.area, &mut buf);
+        (&Greeting).render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["Hello               "]));
+    }
+
+    #[rstest]
+    fn render_option_some(mut buf: Buffer) {
+        Some(&Greeting).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["Hello               "]));
+    }
+
+    #[rstest]
+    fn render_option_none(mut buf: Buffer) {
+        None::<&Greeting>.render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["                    "]));
     }
 }

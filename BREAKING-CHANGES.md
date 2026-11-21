@@ -16,6 +16,8 @@ This is a quick summary of the sections below:
   - `Backend` adds cursor save and restore methods
   - The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
   - The calendar widget uses `jiff` dates instead of `time` dates
+  - `Widget` is implemented for `&Box<W>` and `WidgetRef` for `Box<W>`, which conflicts with manual
+    impls for boxed widgets
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -194,6 +196,33 @@ the imports:
 ```
 
 Remove `calendar` and `all-widgets` from any `features` list for `ratatui-widgets`.
+
+### `Widget` is implemented for `&Box<W>` and `WidgetRef` for `Box<W>` ([#2883])
+
+[#2883]: https://github.com/ratatui/ratatui/pull/2883
+
+`Widget` is now implemented for `&Box<W>` whenever `&W` implements `Widget`, so boxed widgets can be
+rendered directly. If your crate has its own impl for a boxed widget, it now conflicts with this
+one:
+
+```rust
+impl Widget for &MyWidget { ... }
+
+// error[E0119]: conflicting implementations of trait `Widget` for type `&Box<MyWidget>`
+impl Widget for &Box<MyWidget> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        (**self).render(area, buf);
+    }
+}
+```
+
+Remove the `&Box<MyWidget>` impl. The new impl renders the boxed widget the same way. Impls for
+boxed trait objects such as `&Box<dyn MyTrait>` are not affected unless `&dyn MyTrait` also
+implements `Widget`.
+
+With the `unstable-widget-ref` feature, `WidgetRef` is likewise implemented for `Box<W>`, `Rc<W>`,
+and `Arc<W>` whenever `&W` implements `Widget`. Remove any `impl WidgetRef for Box<MyWidget>` in
+the same way.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 

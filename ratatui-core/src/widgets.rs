@@ -8,3 +8,4 @@ pub use self::widget::Widget;
 mod stateful_widget;
 mod widget;
 mod widget_string;
+mod widget_wrapper;
