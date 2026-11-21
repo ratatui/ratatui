@@ -13,7 +13,7 @@ use ratatui::style::palette::tailwind::{BLUE, GREEN, SLATE};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::{
-    Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
+    Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph, SelectionMode,
     StatefulWidget, Widget, Wrap,
 };
 use ratatui::{DefaultTerminal, symbols};
@@ -104,8 +104,9 @@ impl FromIterator<(Status, &'static str, &'static str)> for TodoList {
         let items = iter
             .into_iter()
             .map(|(status, todo, info)| TodoItem::new(status, todo, info))
-            .collect();
-        let state = ListState::default();
+            .collect::<Vec<_>>();
+        // Choosing a mode enables item-count tracking on the first render.
+        let state = ListState::default().with_selection_mode(SelectionMode::Clamp);
         Self { items, state }
     }
 }
@@ -139,6 +140,7 @@ impl App {
             KeyCode::Char('k') | KeyCode::Up => self.select_previous(),
             KeyCode::Char('g') | KeyCode::Home => self.select_first(),
             KeyCode::Char('G') | KeyCode::End => self.select_last(),
+            KeyCode::Char('t') => self.toggle_selection_mode(),
             KeyCode::Char('l') | KeyCode::Right | KeyCode::Enter => {
                 self.toggle_status();
             }
@@ -161,8 +163,16 @@ impl App {
         self.todo_list.state.select_first();
     }
 
-    fn select_last(&mut self) {
+    const fn select_last(&mut self) {
         self.todo_list.state.select_last();
+    }
+
+    const fn toggle_selection_mode(&mut self) {
+        let mode = self.todo_list.state.selection_mode_mut();
+        *mode = match *mode {
+            SelectionMode::Clamp => SelectionMode::Wrap,
+            SelectionMode::Wrap => SelectionMode::Clamp,
+        };
     }
 
     /// Changes the status of the selected list item
@@ -181,7 +191,7 @@ impl Widget for &mut App {
         let main_layout = Layout::vertical([
             Constraint::Length(2),
             Constraint::Fill(1),
-            Constraint::Length(1),
+            Constraint::Length(2),
         ]);
         let [header_area, content_area, footer_area] = area.layout(&main_layout);
 
@@ -189,7 +199,7 @@ impl Widget for &mut App {
         let [list_area, item_area] = content_area.layout(&content_layout);
 
         App::render_header(header_area, buf);
-        App::render_footer(footer_area, buf);
+        self.render_footer(footer_area, buf);
         self.render_list(list_area, buf);
         self.render_selected_item(item_area, buf);
     }
@@ -204,10 +214,17 @@ impl App {
             .render(area, buf);
     }
 
-    fn render_footer(area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Use ↓↑ to move, ← to unselect, → to change status, g/G to go top/bottom.")
-            .centered()
-            .render(area, buf);
+    fn render_footer(&self, area: Rect, buf: &mut Buffer) {
+        let mode = match self.todo_list.state.selection_mode() {
+            SelectionMode::Clamp => "clamp",
+            SelectionMode::Wrap => "wrap",
+        };
+        Paragraph::new(vec![
+            Line::raw("Use ↓↑ to move, ← to unselect, → to change status, g/G to go top/bottom."),
+            Line::raw(format!("t: toggle clamp/wrap ({mode}) | q/Esc: quit")),
+        ])
+        .centered()
+        .render(area, buf);
     }
 
     fn render_list(&mut self, area: Rect, buf: &mut Buffer) {
