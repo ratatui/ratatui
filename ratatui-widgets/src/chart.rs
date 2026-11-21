@@ -608,7 +608,8 @@ impl<'a> Chart<'a> {
 
     /// Sets the X [`Axis`]
     ///
-    /// The default is an empty [`Axis`], i.e. only a line.
+    /// The default is an empty [`Axis`], which draws no axis line: the line is only drawn once
+    /// the axis has labels.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -632,7 +633,8 @@ impl<'a> Chart<'a> {
 
     /// Sets the Y [`Axis`]
     ///
-    /// The default is an empty [`Axis`], i.e. only a line.
+    /// The default is an empty [`Axis`], which draws no axis line: the line is only drawn once
+    /// the axis has labels.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -658,17 +660,19 @@ impl<'a> Chart<'a> {
     ///
     /// The tuple's first constraint is used for the width and the second for the height. If the
     /// legend takes more space than what is allowed by any constraint, the legend is hidden.
-    /// [`Constraint::Min`] is an exception and will always show the legend.
+    ///
+    /// Both constraints are applied to the graph area: the chart inside its block, without the axis
+    /// lines and labels.
     ///
     /// If this is not set, the default behavior is to hide the legend if it is greater than 25% of
-    /// the chart, either horizontally or vertically.
+    /// the graph area, either horizontally or vertically.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// # Examples
     ///
-    /// Hide the legend when either its width is greater than 33% of the total widget width or if
-    /// its height is greater than 25% of the total widget height.
+    /// Hide the legend when either its width is greater than 33% of the graph area width or if its
+    /// height is greater than 25% of the graph area height.
     ///
     /// ```
     /// use ratatui::layout::Constraint;
@@ -678,14 +682,14 @@ impl<'a> Chart<'a> {
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
-    /// Always show the legend, note the second constraint doesn't matter in this case since the
-    /// first one is always true.
+    /// Allow the legend to use the whole graph area. It is still hidden if it does not fit,
+    /// counting one row for each axis title that is displayed.
     ///
     /// ```
     /// use ratatui::layout::Constraint;
     /// use ratatui::widgets::Chart;
     ///
-    /// let constraints = (Constraint::Min(0), Constraint::Ratio(1, 4));
+    /// let constraints = (Constraint::Percentage(100), Constraint::Percentage(100));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
