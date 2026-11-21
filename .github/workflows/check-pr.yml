@@ -62,11 +62,11 @@ jobs:
         id: check_breaking_change
         run: |
           pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!:'
-          # Check if pattern matches
-          if echo "${PR_TITLE}" | grep -qE "$pattern"; then
-            echo "breaking_change=true" >> $GITHUB_OUTPUT
+          # Keep the untrusted title as data; never interpolate it into shell source.
+          if printf '%s\n' "$PR_TITLE" | grep -qE -- "$pattern"; then
+            echo "breaking_change=true" >> "$GITHUB_OUTPUT"
           else
-            echo "breaking_change=false" >> $GITHUB_OUTPUT
+            echo "breaking_change=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Add label
         if: steps.check_breaking_change.outputs.breaking_change == 'true'
