@@ -138,8 +138,14 @@ pub enum ScrollbarOrientation {
 /// └───────────────┘
 /// ```
 ///
-/// If you don't have multi-line content, you can leave the `viewport_content_length` set to the
-/// default and it'll use the track size as a `viewport_content_length`.
+/// Set [`ScrollbarState::viewport_content_length`] so that [`ScrollbarState::next`],
+/// [`ScrollbarState::last`], and [`ScrollbarState::is_at_end`] use
+/// `content_length.saturating_sub(viewport_content_length)` as the end position. When all the
+/// content fits in the viewport, the end position is zero.
+///
+/// If `viewport_content_length` is left at its default of zero, rendering uses the scrollbar
+/// area's width or height as the viewport length. The state helpers cannot infer that length,
+/// so they use `content_length.saturating_sub(1)` as the end position instead.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ScrollbarState {
@@ -447,7 +453,10 @@ impl ScrollbarState {
         self
     }
 
-    /// Sets the items' size.
+    /// Sets the number of content items visible in the viewport.
+    ///
+    /// This determines the end position used by the scrolling helpers. A value of zero leaves
+    /// the viewport length unspecified. See [`ScrollbarState`] for details.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -461,12 +470,11 @@ impl ScrollbarState {
         self.position = self.position.saturating_sub(1);
     }
 
-    /// Increments the scroll position by one, ensuring it doesn't exceed the length of the content.
+    /// Increments the scroll position by one, ensuring it doesn't exceed the end position.
+    ///
+    /// The end position accounts for the configured [`Self::viewport_content_length`].
     pub fn next(&mut self) {
-        self.position = self
-            .position
-            .saturating_add(1)
-            .min(self.content_length.saturating_sub(1));
+        self.position = self.position.saturating_add(1).min(self.max_position());
     }
 
     /// Sets the scroll position to the start of the scrollable content.
@@ -475,8 +483,10 @@ impl ScrollbarState {
     }
 
     /// Sets the scroll position to the end of the scrollable content.
+    ///
+    /// The end position accounts for the configured [`Self::viewport_content_length`].
     pub const fn last(&mut self) {
-        self.position = self.content_length.saturating_sub(1);
+        self.position = self.max_position();
     }
 
     /// Changes the scroll position based on the provided [`ScrollDirection`].
@@ -514,7 +524,9 @@ impl ScrollbarState {
         self.position == 0
     }
 
-    /// Returns `true` if the scroll position is at the end of the scrollable content.
+    /// Returns `true` if the scroll position is at or beyond the end of the scrollable content.
+    ///
+    /// The end position accounts for the configured [`Self::viewport_content_length`].
     ///
     /// # See also
     ///
@@ -522,7 +534,18 @@ impl ScrollbarState {
     /// - [`ScrollbarState::last`] to scroll to the end of the scrollable content.
     #[must_use = "returns whether the scroll position is at the end of the scrollable content"]
     pub const fn is_at_end(&self) -> bool {
-        self.position >= self.content_length.saturating_sub(1)
+        self.position >= self.max_position()
+    }
+
+    const fn max_position(&self) -> usize {
+        let viewport_length = if self.viewport_content_length == 0 {
+            // The state cannot infer the rendered area's size. Keep the existing boundary
+            // unless the viewport length is explicitly configured.
+            1
+        } else {
+            self.viewport_content_length
+        };
+        self.content_length.saturating_sub(viewport_length)
     }
 }
 
@@ -801,6 +824,85 @@ mod tests {
         state.first();
         assert!(state.is_at_start());
         assert!(!state.is_at_end());
+    }
+
+    #[rstest]
+    #[case::before_end(77, false)]
+    #[case::at_end(78, true)]
+    #[case::past_end(99, true)]
+    fn scrollbar_state_is_at_end_with_viewport(
+        #[case] position: usize,
+        #[case] expected_at_end: bool,
+    ) {
+        let state = ScrollbarState::new(100)
+            .viewport_content_length(22)
+            .position(position);
+
+        assert_eq!(state.is_at_end(), expected_at_end);
+    }
+
+    #[rstest]
+    #[case::viewport_unset(100, 0, 99)]
+    #[case::viewport_of_one(100, 1, 99)]
+    #[case::scrollable_content(100, 22, 78)]
+    #[case::content_fits_viewport(22, 22, 0)]
+    #[case::content_shorter_than_viewport(10, 22, 0)]
+    #[case::empty_content(0, 22, 0)]
+    #[case::empty_content_with_viewport_unset(0, 0, 0)]
+    #[case::maximum_viewport(100, usize::MAX, 0)]
+    fn scrollbar_state_scrolling_stops_at_end_of_viewport(
+        #[case] content_length: usize,
+        #[case] viewport_content_length: usize,
+        #[case] expected_position: usize,
+    ) {
+        let mut state = ScrollbarState::new(content_length)
+            .viewport_content_length(viewport_content_length)
+            .position(expected_position.saturating_sub(1));
+
+        state.next();
+        assert_eq!(state.get_position(), expected_position);
+        assert!(state.is_at_end());
+
+        state.next();
+        assert_eq!(state.get_position(), expected_position);
+
+        state = state.position(usize::MAX);
+        state.next();
+        assert_eq!(state.get_position(), expected_position);
+
+        state.first();
+        state.last();
+        assert_eq!(state.get_position(), expected_position);
+        assert!(state.is_at_end());
+    }
+
+    #[rstest]
+    fn scrollbar_state_helpers_follow_rendered_viewport_boundary(scrollbar_no_arrows: Scrollbar) {
+        let mut state = ScrollbarState::new(10).viewport_content_length(2);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+
+        state.last();
+        scrollbar_no_arrows
+            .clone()
+            .render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(state.get_position(), 8);
+        assert!(state.is_at_end());
+        assert_eq!(buffer, Buffer::with_lines(["--------##"]));
+
+        state.scroll(ScrollDirection::Backward);
+        scrollbar_no_arrows
+            .clone()
+            .render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(state.get_position(), 7);
+        assert!(!state.is_at_end());
+        assert_eq!(buffer, Buffer::with_lines(["-------##-"]));
+
+        state.scroll(ScrollDirection::Forward);
+        state.scroll(ScrollDirection::Forward);
+        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(state.get_position(), 8);
+        assert!(state.is_at_end());
+        assert_eq!(buffer, Buffer::with_lines(["--------##"]));
     }
 
     #[fixture]

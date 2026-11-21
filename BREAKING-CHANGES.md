@@ -124,6 +124,12 @@ reached. See [#1681](https://github.com/ratatui/ratatui/issues/1681).
 Applications that clamp their scroll position to `content_length - 1` rather than to `content_length
 - viewport_content_length` will now see the thumb reach the end of the track slightly earlier.
 
+When `viewport_content_length` is explicitly set, `ScrollbarState::next`, `last`, and `is_at_end`
+now use `content_length.saturating_sub(viewport_content_length)` as the end position. This is zero
+when the content fits in the viewport. With the viewport length left at zero, these helpers retain
+the previous `content_length.saturating_sub(1)` boundary because the state cannot infer the rendered
+area's size.
+
 ### `Backend` adds cursor save and restore methods
 
 `Backend` now provides default `save_cursor_position` and `restore_cursor_position` methods.
