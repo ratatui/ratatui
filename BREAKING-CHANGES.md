@@ -12,6 +12,7 @@ This is a quick summary of the sections below:
 
 - [v0.31.0](#v0310)
   - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
+  - `Scrollbar` thumb now reaches the end of the track when the content is fully scrolled
   - `Backend` adds cursor save and restore methods
   - The calendar widget moved from `ratatui-widgets` to the new `ratatui-calendar` crate
   - The calendar widget uses `jiff` dates instead of `time` dates
@@ -113,6 +114,19 @@ now falls back to start alignment because there is no space to distribute betwee
 `Min` and `Fill` constraints still grow to fill the available area. If you relied on the previous
 single-item stretching behavior with a fixed-size constraint, use `Flex::Legacy` or switch the item
 to a growing constraint such as `Fill` or `Min`.
+
+### `Scrollbar` thumb now reaches the end of the track when the content is fully scrolled
+
+The scrollbar handle (thumb) now reaches the end when the last page is fully visible. With 100 items,
+22 visible, and scroll position 78:
+
+```text
+Before: <--------------####---->
+After:  <------------------####>
+```
+
+Set `viewport_content_length` to the number of visible items so the built-in scrolling controls
+also stop at the last full page. Leaving it at zero preserves their previous behavior.
 
 ### `Backend` adds cursor save and restore methods
 
