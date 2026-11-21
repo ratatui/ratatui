@@ -10,6 +10,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::buffer::Buffer;
 use crate::layout::{Alignment, Rect};
 use crate::style::{Style, Styled};
+use crate::text::line::into_single_line;
 use crate::text::{Line, Span};
 use crate::widgets::Widget;
 
@@ -33,8 +34,17 @@ use crate::widgets::Widget;
 /// - [`Text::from`] creates a `Text` from a [`Span`].
 /// - [`Text::from`] creates a `Text` from a [`Line`].
 /// - [`Text::from`] creates a `Text` from a `Vec<Line>`.
+/// - [`Text::from`] creates a `Text` from a `&[Into<Line>]`.
+/// - [`Text::from`] creates a `Text` that borrows the content of a `&Text`.
 /// - [`Text::from_iter`] creates a `Text` from an iterator of items that can be converted into
 ///   `Line`.
+/// - [`Text::into_owned`] converts a `Text` into a `Text<'static>` that owns its content.
+///
+/// To build a `Text` from a string that contains ANSI escape sequences, use the [`ansi-to-tui`]
+/// crate. See [the module docs](crate::text#ansi-escape-sequences) for why the sequences are not
+/// interpreted directly.
+///
+/// [`ansi-to-tui`]: https://crates.io/crates/ansi-to-tui
 ///
 /// # Setter Methods
 ///
@@ -243,7 +253,10 @@ impl<'a> Text<'a> {
             Cow::Borrowed("") => vec![Line::from("")],
             Cow::Borrowed(s) => s.lines().map(Line::from).collect(),
             Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
-            Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
+            Cow::Owned(s) => match into_single_line(s) {
+                Ok(line) => vec![Line::from(line)],
+                Err(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
+            },
         };
         Self::from(lines)
     }
@@ -299,7 +312,7 @@ impl<'a> Text<'a> {
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
-    pub fn height(&self) -> usize {
+    pub const fn height(&self) -> usize {
         self.lines.len()
     }
 
@@ -310,6 +323,9 @@ impl<'a> Text<'a> {
     /// Note: This field was added in v0.26.0. Prior to that, the style of a text was determined
     /// only by the style of each [`Line`] contained in the line. For this reason, this field may
     /// not be supported by all widgets (outside of the `ratatui` crate itself).
+    ///
+    /// When rendered, this style is the base for the text. Each [`Line`] style, and then each
+    /// [`Span`] style, is patched on top, so fields set by the more specific style take precedence.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
@@ -559,6 +575,48 @@ impl<'a> Text<'a> {
             self.lines.push(Line::from(span));
         }
     }
+
+    /// Converts this `Text` into a `Text<'static>` that owns all of its content, cloning content
+    /// only where it is borrowed.
+    ///
+    /// Use this when text needs to outlive the data it borrows from, for example to store styled
+    /// text in your app state without adding a lifetime parameter, or to send it to another
+    /// thread. Each line is converted with [`Line::into_owned`]. The style and alignment of the
+    /// text, and of each line and span, are kept.
+    ///
+    /// [`Clone`] does not do this: a cloned `Text<'a>` still borrows its content and keeps the
+    /// `'a` lifetime.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui_core::layout::Alignment;
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Text;
+    ///
+    /// struct App {
+    ///     help: Text<'static>,
+    /// }
+    ///
+    /// let contents = String::from("q: quit\n?: help");
+    /// let text = Text::styled(contents.as_str(), Style::new().dim()).centered();
+    /// let app = App {
+    ///     help: text.into_owned(),
+    /// };
+    /// drop(contents);
+    ///
+    /// assert_eq!(app.help.height(), 2);
+    /// assert_eq!(app.help.style, Style::new().dim());
+    /// assert_eq!(app.help.alignment, Some(Alignment::Center));
+    /// ```
+    #[must_use]
+    pub fn into_owned(self) -> Text<'static> {
+        Text {
+            alignment: self.alignment,
+            style: self.style,
+            lines: self.lines.into_iter().map(Line::into_owned).collect(),
+        }
+    }
 }
 
 impl UnicodeWidthStr for Text<'_> {
@@ -648,6 +706,58 @@ impl<'a> From<Vec<Line<'a>>> for Text<'a> {
         Self {
             lines,
             ..Default::default()
+        }
+    }
+}
+
+impl<'a, 'b, T> From<&'b [T]> for Text<'a>
+where
+    T: Into<Line<'a>> + Clone,
+{
+    fn from(value: &'b [T]) -> Self {
+        Self {
+            lines: value.iter().cloned().map(Into::into).collect(),
+            ..Default::default()
+        }
+    }
+}
+
+/// Creates a `Text` that borrows its content from another `Text`.
+///
+/// The new text keeps the style and alignment of the original text and of each of its lines. It
+/// allocates new `Vec`s for the lines and spans, but each span borrows its content from the
+/// original, so no string data is copied. This is cheaper than [`Clone::clone`] when the original
+/// text owns its span strings.
+///
+/// This is useful when an app stores a `Text` and renders it every frame with a widget that takes
+/// `impl Into<Text>`, such as `Paragraph::new(&stored_text)`.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::borrow::Cow;
+///
+/// use ratatui_core::style::Stylize;
+/// use ratatui_core::text::Text;
+///
+/// let stored = Text::from(String::from("first line\nsecond line"))
+///     .yellow()
+///     .centered();
+/// let borrowed = Text::from(&stored);
+/// assert_eq!(borrowed, stored);
+/// assert!(
+///     borrowed
+///         .iter()
+///         .flat_map(|line| line.iter())
+///         .all(|span| matches!(span.content, Cow::Borrowed(_)))
+/// );
+/// ```
+impl<'b, 'a: 'b> From<&'b Text<'a>> for Text<'b> {
+    fn from(text: &'b Text<'a>) -> Self {
+        Self {
+            alignment: text.alignment,
+            style: text.style,
+            lines: text.lines.iter().map(Line::from).collect(),
         }
     }
 }
@@ -822,26 +932,6 @@ mod tests {
     }
 
     #[test]
-    fn patch_style() {
-        let style = Style::new().yellow().italic();
-        let style2 = Style::new().red().underlined();
-        let text = Text::styled("The first line\nThe second line", style).patch_style(style2);
-
-        let expected_style = Style::new().red().italic().underlined();
-        let expected_text = Text::styled("The first line\nThe second line", expected_style);
-
-        assert_eq!(text, expected_text);
-    }
-
-    #[test]
-    fn reset_style() {
-        let style = Style::new().yellow().italic();
-        let text = Text::styled("The first line\nThe second line", style).reset_style();
-
-        assert_eq!(text.style, Style::reset());
-    }
-
-    #[test]
     fn from_string() {
         let text = Text::from(String::from("The first line\nThe second line"));
         assert_eq!(
@@ -885,6 +975,81 @@ mod tests {
     fn from_line() {
         let text = Text::from(Line::from("The first line"));
         assert_eq!(text.lines, [Line::from("The first line")]);
+    }
+
+    #[test]
+    fn from_slice_of_spans() {
+        let slice = [
+            Span::from("Hello"),
+            Span::from("world!"),
+            Span::from("Extra"),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_ref_text_borrows_owned_content() {
+        let stored = Text::from(vec![
+            Line::from(String::from("first line")).centered().red(),
+            Line::from(vec![
+                Span::from(String::from("second ")).bold(),
+                Span::from(String::from("line")).italic(),
+            ]),
+        ])
+        .style(Style::new().on_blue())
+        .right_aligned();
+        let text = Text::from(&stored);
+        assert_eq!(text, stored);
+        assert_eq!(text.style, Style::new().on_blue());
+        assert_eq!(text.alignment, Some(Alignment::Right));
+        assert_eq!(text.lines[0].alignment, Some(Alignment::Center));
+        assert_eq!(text.lines[0].style, Style::new().red());
+        let spans = text.iter().flat_map(|line| line.iter());
+        let stored_spans = stored.iter().flat_map(|line| line.iter());
+        for (span, stored_span) in spans.zip(stored_spans) {
+            let Cow::Borrowed(content) = span.content else {
+                panic!("expected borrowed content, got {:?}", span.content);
+            };
+            assert!(core::ptr::eq(content, stored_span.content.as_ref()));
+        }
+    }
+
+    #[test]
+    fn from_slice_of_lines() {
+        let slice = [
+            Line::from("Hello"),
+            Line::from("world!"),
+            Line::from("Extra"),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strs() {
+        let slice = ["Hello", "world!", "Extra"];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
+    }
+
+    #[test]
+    fn from_slice_of_strings() {
+        let slice = [
+            "Hello".to_string(),
+            "world!".to_string(),
+            "Extra".to_string(),
+        ];
+        let text = Text::from(&slice[0..1]);
+        let text2 = Text::from(&slice[1..]);
+        assert_eq!(text.lines, [Line::from("Hello")]);
+        assert_eq!(text2.lines, [Line::from("world!"), Line::from("Extra")]);
     }
 
     #[rstest]
@@ -1098,16 +1263,6 @@ mod tests {
     }
 
     #[test]
-    fn stylize() {
-        assert_eq!(Text::default().green().style, Color::Green.into());
-        assert_eq!(
-            Text::default().on_green().style,
-            Style::new().bg(Color::Green)
-        );
-        assert_eq!(Text::default().italic().style, Modifier::ITALIC.into());
-    }
-
-    #[test]
     fn left_aligned() {
         let text = Text::from("Hello, world!").left_aligned();
         assert_eq!(text.alignment, Some(Alignment::Left));
@@ -1171,6 +1326,111 @@ mod tests {
         assert_eq!(text.lines, [Line::from(Span::raw("Hello, world!"))]);
     }
 
+    #[test]
+    fn into_owned() {
+        let first = String::from("first");
+        let second = String::from("second");
+        let text = Text::from(vec![
+            Line::from(first.as_str()).centered(),
+            Line::from(second.as_str().red()).style(Style::new().bold()),
+        ])
+        .style(Style::new().on_blue())
+        .right_aligned();
+
+        let owned: Text<'static> = text.into_owned();
+        drop(first);
+        drop(second);
+
+        assert!(
+            owned
+                .iter()
+                .flat_map(Line::iter)
+                .all(|span| matches!(span.content, Cow::Owned(_)))
+        );
+        assert_eq!(
+            owned,
+            Text::from(vec![
+                Line::from("first").centered(),
+                Line::from("second".red()).style(Style::new().bold()),
+            ])
+            .style(Style::new().on_blue())
+            .right_aligned()
+        );
+    }
+
+    #[test]
+    fn into_owned_reuses_owned_content() {
+        let content = String::from("hello");
+        let ptr = content.as_ptr();
+
+        let owned = Text::from(Span::raw(content)).into_owned();
+
+        assert_eq!(owned.lines[0].spans[0].content.as_ptr(), ptr);
+    }
+
+    mod style {
+        use super::*;
+
+        #[test]
+        fn style() {
+            let text = Text::default().style(Style::new().red());
+            assert_eq!(text.style, Style::new().red());
+        }
+
+        #[test]
+        fn patch_style() {
+            let style = Style::new().yellow().italic();
+            let style2 = Style::new().red().underlined();
+            let text = Text::styled("The first line\nThe second line", style).patch_style(style2);
+
+            let expected_style = Style::new().red().italic().underlined();
+            let expected_text = Text::styled("The first line\nThe second line", expected_style);
+
+            assert_eq!(text, expected_text);
+        }
+
+        #[test]
+        fn reset_style() {
+            let style = Style::new().yellow().italic();
+            let text = Text::styled("The first line\nThe second line", style).reset_style();
+
+            assert_eq!(text.style, Style::reset());
+        }
+
+        #[test]
+        fn stylize() {
+            assert_eq!(Text::default().green().style, Color::Green.into());
+            assert_eq!(
+                Text::default().on_green().style,
+                Style::new().bg(Color::Green)
+            );
+            assert_eq!(Text::default().italic().style, Modifier::ITALIC.into());
+        }
+
+        #[test]
+        fn render_line_style_overrides_text_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 2));
+            Text::from(Line::from("hi").blue())
+                .red()
+                .on_green()
+                .render(buf.area, &mut buf);
+            let mut expected = Buffer::with_lines(["hi  ", "    "]);
+            expected.set_style(Rect::new(0, 0, 4, 1), Style::new().blue().on_green());
+            expected.set_style(Rect::new(0, 1, 4, 1), Style::new().red().on_green());
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_overrides_prerendered_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            buf.set_style(buf.area, Style::new().red().on_green().italic());
+            Text::from("hi").blue().render(buf.area, &mut buf);
+            let mut expected = Buffer::with_lines(["hi  "]);
+            expected.set_style(expected.area, Style::new().blue().on_green().italic());
+            assert_eq!(buf, expected);
+        }
+    }
+
     mod widget {
         use super::*;
 
@@ -1184,10 +1444,20 @@ mod tests {
         }
 
         #[rstest]
-        fn render_out_of_bounds(mut small_buf: Buffer) {
-            let out_of_bounds_area = Rect::new(20, 20, 10, 1);
-            Text::from("Hello, world!").render(out_of_bounds_area, &mut small_buf);
-            assert_eq!(small_buf, Buffer::empty(small_buf.area));
+        #[case::right(Rect::new(0, 0, 15, 1), Rect::new(20, 0, 10, 1))]
+        #[case::bottom(Rect::new(0, 0, 15, 1), Rect::new(0, 20, 10, 1))]
+        #[case::both(Rect::new(0, 0, 15, 1), Rect::new(20, 20, 10, 1))]
+        #[case::single_row(Rect::new(0, 0, 57, 1), Rect::new(1, 1, 10, 1))]
+        #[case::zero_width_buffer(Rect::new(10, 10, 0, 1), Rect::new(10, 10, 10, 1))]
+        #[case::zero_height_buffer(Rect::new(10, 10, 10, 0), Rect::new(10, 10, 10, 1))]
+        #[case::empty_buffer(Rect::ZERO, Rect::new(0, 0, 10, 1))]
+        #[case::zero_width_area(Rect::new(0, 0, 15, 1), Rect::new(0, 0, 0, 1))]
+        #[case::zero_height_area(Rect::new(0, 0, 15, 1), Rect::new(0, 0, 10, 0))]
+        fn render_out_of_bounds(#[case] buffer_area: Rect, #[case] render_area: Rect) {
+            let mut buf = Buffer::empty(buffer_area);
+            let expected = buf.clone();
+            Text::raw("Hello, world!").render(render_area, &mut buf);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1430,5 +1700,29 @@ mod tests {
                 ]),
             ]).on_blue().italic().centered()"#}
         );
+    }
+
+    #[rstest]
+    #[case::empty("")]
+    #[case::single("abc")]
+    #[case::trailing_lf("abc\n")]
+    #[case::trailing_crlf("abc\r\n")]
+    #[case::trailing_cr("abc\r")]
+    #[case::only_lf("\n")]
+    #[case::only_crlf("\r\n")]
+    #[case::double_lf("abc\n\n")]
+    #[case::multiple("abc\r\ndef\n")]
+    fn raw_string_matches_raw_str(#[case] content: &str) {
+        assert_eq!(Text::raw(String::from(content)), Text::raw(content));
+        assert_eq!(Text::from(String::from(content)), Text::from(content));
+    }
+
+    #[test]
+    fn raw_string_reuses_allocation() {
+        let content = String::from("abc\n");
+        let ptr = content.as_ptr();
+        let text = Text::raw(content);
+        assert_eq!(text.lines[0].spans[0].content, "abc");
+        assert_eq!(text.lines[0].spans[0].content.as_ptr(), ptr);
     }
 }

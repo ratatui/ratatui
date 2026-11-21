@@ -286,6 +286,11 @@
 //! explicitly enabling the `layout-cache` feature when using `ratatui-core` directly. When
 //! enabled, layout results are cached based on the area and layout configuration.
 //!
+//! The cache matters most on targets without a double-precision FPU, such as many
+//! microcontrollers, where the layout solver's `f64` arithmetic is emulated in software. Building
+//! `ratatui` with `default-features = false` for `no_std` also turns off `layout-cache`, so enable
+//! it again explicitly and size it for the device with [`Layout::init_cache()`].
+//!
 //! # Related Documentation
 //!
 //! For more detailed information and practical examples:
@@ -305,10 +310,10 @@
 //!
 //! - [`constraints`](https://github.com/ratatui/ratatui/blob/main/examples/apps/constraints/) -
 //!   Demonstrates different constraint types
+//! - [`constraint-explorer`](https://github.com/ratatui/ratatui/tree/main/examples/apps/constraint-explorer/)
+//!   - Interactively compares constraint types, flex modes, spacing, and overlap
 //! - [`flex`](https://github.com/ratatui/ratatui/blob/main/examples/apps/flex/) - Shows flex space
 //!   distribution
-//! - [`layout`](https://github.com/ratatui/ratatui/blob/main/examples/apps/layout/) - Basic layout
-//!   examples
 
 mod alignment;
 mod constraint;

@@ -142,7 +142,7 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn new<T: Into<Vec<Bar<'a>>>>(bars: T) -> Self {
         Self {
-            data: vec![BarGroup::new(bars.into())],
+            data: Self::non_empty_groups(vec![BarGroup::new(bars.into())]),
             direction: Direction::Vertical,
             ..Default::default()
         }
@@ -166,7 +166,7 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn horizontal(bars: impl Into<Vec<Bar<'a>>>) -> Self {
         Self {
-            data: vec![BarGroup::new(bars.into())],
+            data: Self::non_empty_groups(vec![BarGroup::new(bars.into())]),
             direction: Direction::Horizontal,
             ..Default::default()
         }
@@ -192,9 +192,17 @@ impl<'a> BarChart<'a> {
     /// ```
     pub fn grouped<T: Into<Vec<BarGroup<'a>>>>(groups: T) -> Self {
         Self {
-            data: groups.into(),
+            data: Self::non_empty_groups(groups.into()),
             ..Default::default()
         }
+    }
+
+    /// Returns a new vector of groups without the empty ones.
+    fn non_empty_groups(groups: Vec<BarGroup<'a>>) -> Vec<BarGroup<'a>> {
+        groups
+            .into_iter()
+            .filter(|group| !group.bars.is_empty())
+            .collect()
     }
 
     /// Add group of bars to the `BarChart`
@@ -453,11 +461,17 @@ impl BarChart<'_> {
                         .bars
                         .iter()
                         .take(n as usize)
-                        .map(|bar| bar.value * u64::from(bar_max_length) * 8 / max)
+                        .map(|bar| Self::scale_ticks(bar.value, max, bar_max_length))
                         .collect()
                 })
             })
             .collect()
+    }
+
+    fn scale_ticks(value: u64, max: u64, max_length: u16) -> u64 {
+        let max_ticks = u128::from(max_length) * 8;
+        let ticks = u128::from(value) * max_ticks / u128::from(max);
+        ticks.min(max_ticks) as u64
     }
 
     /// Get label information.
@@ -689,6 +703,11 @@ impl Widget for BarChart<'_> {
 
 impl Widget for &BarChart<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
 
         self.block.as_ref().render(area, buf);
@@ -718,6 +737,8 @@ impl Styled for BarChart<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use itertools::iproduct;
     use ratatui_core::layout::Alignment;
     use ratatui_core::style::{Color, Modifier, Stylize};
@@ -733,6 +754,26 @@ mod tests {
         let widget = BarChart::default();
         widget.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["          "; 3]));
+    }
+
+    #[test]
+    fn horizontal_empty_barchart_does_not_panic() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        let widget = BarChart::horizontal(Vec::<Bar>::new());
+
+        widget.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn constructors_ignore_empty_groups() {
+        assert_eq!(BarChart::new(Vec::<Bar>::new()).data, Vec::new());
+        assert_eq!(BarChart::horizontal(Vec::<Bar>::new()).data, Vec::new());
+
+        let chart = BarChart::grouped([
+            BarGroup::new(Vec::<Bar>::new()),
+            BarGroup::new([Bar::new(1)]),
+        ]);
+        assert_eq!(chart.data, vec![BarGroup::new([Bar::new(1)])]);
     }
 
     #[test]
@@ -1429,6 +1470,27 @@ mod tests {
     }
 
     #[test]
+    fn render_handles_u64_max_value() {
+        let chart = BarChart::new([Bar::new(u64::MAX)]).max(u64::MAX);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 5));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(["█    "; 5]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_keeps_integer_precision_for_large_values() {
+        let chart = BarChart::new([Bar::new(u64::MAX - 1)]).max(u64::MAX);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(["▇"]));
+    }
+
+    #[test]
     fn test_barchart_new() {
         let bars = [Bar::with_label("Red", 1), Bar::with_label("Green", 2)];
 
@@ -1503,5 +1565,195 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::ZERO);
         // This should not panic, even if the buffer has zero size.
         chart.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn wide_value_label_centered_by_display_width() {
+        // A double-width (CJK) value label must be centered by its display width,
+        // not its byte length. "中文" is 4 columns wide, so in an 8-wide bar it
+        // gets 2 columns of padding on each side. Centering by byte length (6)
+        // would instead give only 1 column on the left.
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 2));
+        let widget = BarChart::default()
+            .bar_width(8)
+            .data(BarGroup::new([Bar::new(1).text_value("中文")]));
+        widget.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["████████", "██中文██"]));
+    }
+
+    /// Empty `text_value` skips value painting and leaves only the bar fill.
+    #[test]
+    fn horizontal_empty_text_value_skips_value_paint() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(BarGroup::default().bars(&[Bar::default().value(5).text_value("")]));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["█████"]));
+    }
+
+    /// Multi-byte single-width characters must be split by display width on
+    /// horizontal bars, not by UTF-8 byte length.
+    ///
+    /// `"α"` is two bytes and one cell. With `bar_length == 3` the value
+    /// `"ααααα"` must paint all five cells; the first three use `value_style`
+    /// and the rest use the bar style. Splitting on byte indices leaves a
+    /// filled-block cell in the middle and styles the overflow incorrectly.
+    #[test]
+    fn horizontal_multibyte_text_value_split_by_display_width() {
+        let bar = Bar::default()
+            .value(3)
+            .text_value("ααααα")
+            .value_style(Style::default().red());
+        let chart = BarChart::default()
+            .data(BarGroup::default().bars(&[bar, Bar::default().value(5)]))
+            .direction(Direction::Horizontal)
+            .bar_style(Style::default().yellow())
+            .value_style(Style::default().italic())
+            .bar_gap(0);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 2));
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["ααααα", "5████"]);
+        for x in 0..3 {
+            let cell = &mut expected[(x, 0)];
+            cell.set_fg(Color::Red);
+            cell.modifier.insert(Modifier::ITALIC);
+        }
+        for x in 3..5 {
+            expected[(x, 0)].set_fg(Color::Yellow);
+        }
+        expected[(0, 1)].modifier.insert(Modifier::ITALIC);
+        for x in 0..5 {
+            expected[(x, 1)].set_fg(Color::Yellow);
+        }
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::joined_emoji("👨‍👩‍👧‍👦", 2)]
+    #[case::flag("🇹🇷", 2)]
+    #[case::emoji_presentation("❤️", 2)]
+    #[case::combining_mark("e\u{301}", 1)]
+    #[case::halfwidth_kana("ｶﾞ", 2)]
+    #[case::halfwidth_sound_mark("ﾞ", 1)]
+    fn horizontal_text_value_preserves_graphemes(#[case] grapheme: &str, #[case] width: u16) {
+        let bar = Bar::new(u64::from(width))
+            .text_value(format!("{grapheme}x"))
+            .value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(u64::from(width + 1))
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, width + 1, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer[(0, 0)].symbol(), grapheme);
+        assert_eq!(buffer[(0, 0)].fg, Color::Red);
+        assert_eq!(buffer[(width, 0)].symbol(), "x");
+        assert_eq!(buffer[(width, 0)].fg, Color::Yellow);
+    }
+
+    #[rstest]
+    #[case::empty_bar(0, Color::Yellow, Color::Yellow)]
+    #[case::inside_wide_grapheme(1, Color::Yellow, Color::Yellow)]
+    #[case::after_wide_grapheme(2, Color::Red, Color::Yellow)]
+    #[case::full_bar(3, Color::Red, Color::Red)]
+    fn horizontal_joined_emoji_at_style_boundary(
+        #[case] value: u64,
+        #[case] emoji_color: Color,
+        #[case] suffix_color: Color,
+    ) {
+        let bar = Bar::new(value)
+            .text_value("👨‍👩‍👧‍👦x")
+            .value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(3)
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(2, 1, 3, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["👨‍👩‍👧‍👦x"]);
+        expected[(0, 0)].set_fg(emoji_color);
+        expected[(2, 0)].set_fg(suffix_color);
+        expected.area = buffer.area;
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::control("a\nb")]
+    #[case::carriage_return_line_feed("a\r\nb")]
+    #[case::zero_width("\u{200b}ab")]
+    fn horizontal_text_value_skips_nonprinting_graphemes(#[case] text: &str) {
+        let bar = Bar::new(1).text_value(text).value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(2)
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["ab"]);
+        expected[(0, 0)].set_fg(Color::Red);
+        expected[(1, 0)].set_fg(Color::Yellow);
+        assert_eq!(buffer, expected);
+    }
+
+    /// CJK text values are multi-byte and double-width. On a full-width bar the
+    /// old byte-length split could subtract a larger byte count from
+    /// `area.width`, overflowing in debug builds.
+    #[test]
+    fn horizontal_cjk_text_value_does_not_panic_when_longer_than_bar() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(
+                BarGroup::default()
+                    .bars(&[Bar::default().value(10).text_value("一二三四五六七八九十")]),
+            );
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        chart.render(buffer.area, &mut buffer);
+        // First five CJK glyphs fill the 10-wide area (2 cells each); the rest
+        // is truncated by the buffer width.
+        assert_eq!(buffer, Buffer::with_lines(["一二三四五"]));
+    }
+
+    #[rstest]
+    fn render_barchart_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        BarChart::default()
+            .data(&[("one", 1)])
+            .render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_barchart_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = BarChart::default().data(&[("one", 1)]);
+        (&widget).render(Rect::new(9, 9, 40, 10), &mut buf);
+        (&widget).render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }

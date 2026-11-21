@@ -5,7 +5,7 @@ use core::fmt;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::buffer::Buffer;
+use crate::buffer::{Buffer, CellWidth};
 use crate::layout::Rect;
 use crate::style::{Style, Styled};
 use crate::text::{Line, StyledGrapheme};
@@ -15,6 +15,12 @@ use crate::widgets::Widget;
 ///
 /// A `Span` is the smallest unit of text that can be styled. It is usually combined in the [`Line`]
 /// type to represent a line of text where each `Span` may have a different style.
+///
+/// Control characters in the content are dropped when the span is rendered, so ANSI escape
+/// sequences are shown as plain text rather than changing the style. See [ANSI escape sequences]
+/// for how to convert them.
+///
+/// [ANSI escape sequences]: crate::text#ansi-escape-sequences
 ///
 /// # Constructor Methods
 ///
@@ -35,6 +41,7 @@ use crate::widgets::Widget;
 /// - [`Span::reset_style`] resets the style of the span.
 /// - [`Span::width`] returns the unicode width of the content held by this span.
 /// - [`Span::styled_graphemes`] returns an iterator over the graphemes held by this span.
+/// - [`Span::into_owned`] converts a span into a `Span<'static>` that owns its content.
 ///
 /// # Examples
 ///
@@ -199,6 +206,9 @@ impl<'a> Span<'a> {
     /// In contrast to [`Span::patch_style`], this method replaces the style of the span instead of
     /// patching it.
     ///
+    /// When rendered inside a [`Line`] or [`Text`], this style is patched on top of those styles,
+    /// so any field it sets takes precedence over them.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
@@ -212,6 +222,7 @@ impl<'a> Span<'a> {
     /// ```
     ///
     /// [`Color`]: crate::style::Color
+    /// [`Text`]: crate::text::Text
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -330,7 +341,7 @@ impl<'a> Span<'a> {
     }
 
     #[expect(clippy::wrong_self_convention)]
-    #[deprecated = "use `into_left_aligned_line()` instead"]
+    #[deprecated(since = "0.26.2", note = "use `into_left_aligned_line()` instead")]
     pub fn to_left_aligned_line(self) -> Line<'a> {
         self.into_left_aligned_line()
     }
@@ -350,7 +361,7 @@ impl<'a> Span<'a> {
     }
 
     #[expect(clippy::wrong_self_convention)]
-    #[deprecated = "use `into_centered_line()` instead"]
+    #[deprecated(since = "0.26.2", note = "use `into_centered_line()` instead")]
     pub fn to_centered_line(self) -> Line<'a> {
         self.into_centered_line()
     }
@@ -370,9 +381,47 @@ impl<'a> Span<'a> {
     }
 
     #[expect(clippy::wrong_self_convention)]
-    #[deprecated = "use `into_right_aligned_line()` instead"]
+    #[deprecated(since = "0.26.2", note = "use `into_right_aligned_line()` instead")]
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()
+    }
+
+    /// Converts this `Span` into a `Span<'static>` that owns its content, cloning the content only
+    /// if it is borrowed.
+    ///
+    /// Use this when a span needs to outlive the data it borrows from, for example to store styled
+    /// text in your app state without adding a lifetime parameter, or to send it to another
+    /// thread. The style is kept.
+    ///
+    /// [`Clone`] does not do this: a cloned `Span<'a>` still borrows its content and keeps the
+    /// `'a` lifetime.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui_core::style::{Style, Stylize};
+    /// use ratatui_core::text::Span;
+    ///
+    /// struct App {
+    ///     status: Span<'static>,
+    /// }
+    ///
+    /// let message = String::from("Connected");
+    /// let span = Span::raw(&message).green();
+    /// let app = App {
+    ///     status: span.into_owned(),
+    /// };
+    /// drop(message);
+    ///
+    /// assert_eq!(app.status.content, "Connected");
+    /// assert_eq!(app.status.style, Style::new().green());
+    /// ```
+    #[must_use]
+    pub fn into_owned(self) -> Span<'static> {
+        Span {
+            style: self.style,
+            content: Cow::Owned(self.content.into_owned()),
+        }
     }
 }
 
@@ -392,6 +441,33 @@ where
 {
     fn from(s: T) -> Self {
         Span::raw(s.into())
+    }
+}
+
+/// Creates a `Span` that borrows its content from another `Span`.
+///
+/// The new span keeps the style of the original span and its content is always
+/// [`Cow::Borrowed`], even when the original span owns its content, so no string data is copied.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::borrow::Cow;
+///
+/// use ratatui_core::style::Stylize;
+/// use ratatui_core::text::Span;
+///
+/// let stored = Span::from(String::from("hello")).red();
+/// let borrowed = Span::from(&stored);
+/// assert_eq!(borrowed, stored);
+/// assert!(matches!(borrowed.content, Cow::Borrowed(_)));
+/// ```
+impl<'b, 'a: 'b> From<&'b Span<'a>> for Span<'b> {
+    fn from(span: &'b Span<'a>) -> Self {
+        Self {
+            style: span.style,
+            content: Cow::Borrowed(span.content.as_ref()),
+        }
     }
 }
 
@@ -429,8 +505,8 @@ impl Widget for &Span<'_> {
         }
         let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
-            let symbol_width = grapheme.symbol.width();
-            let next_x = x.saturating_add(symbol_width as u16);
+            let symbol_width = grapheme.symbol.cell_width();
+            let next_x = x.saturating_add(symbol_width);
             if next_x > area.right() {
                 break;
             }
@@ -474,7 +550,7 @@ impl Widget for &Span<'_> {
 /// A trait for converting a value to a [`Span`].
 ///
 /// This trait is automatically implemented for any type that implements the [`Display`] trait. As
-/// such, `ToSpan` shouln't be implemented directly: [`Display`] should be implemented instead, and
+/// such, `ToSpan` shouldn't be implemented directly: [`Display`] should be implemented instead, and
 /// you get the `ToSpan` implementation for free.
 ///
 /// [`Display`]: std::fmt::Display
@@ -560,15 +636,33 @@ mod tests {
     }
 
     #[test]
-    fn set_content() {
-        let span = Span::default().content("test content");
-        assert_eq!(span.content, Cow::Borrowed("test content"));
+    fn into_owned_borrowed() {
+        let content = String::from("test content");
+        let span = Span::styled(content.as_str(), Style::new().green().italic());
+        assert!(matches!(span.content, Cow::Borrowed(_)));
+
+        let owned: Span<'static> = span.into_owned();
+        drop(content);
+
+        assert!(matches!(owned.content, Cow::Owned(_)));
+        assert_eq!(owned.content, "test content");
+        assert_eq!(owned.style, Style::new().green().italic());
     }
 
     #[test]
-    fn set_style() {
-        let span = Span::default().style(Style::new().green());
-        assert_eq!(span.style, Style::new().green());
+    fn into_owned_reuses_owned_content() {
+        let content = String::from("test content");
+        let ptr = content.as_ptr();
+
+        let owned = Span::raw(content).into_owned();
+
+        assert_eq!(owned.content.as_ptr(), ptr);
+    }
+
+    #[test]
+    fn set_content() {
+        let span = Span::default().content("test content");
+        assert_eq!(span.content, Cow::Borrowed("test content"));
     }
 
     #[test]
@@ -604,22 +698,20 @@ mod tests {
     }
 
     #[test]
+    fn from_ref_span_borrows_owned_content() {
+        let stored = Span::styled(String::from("test content"), Style::new().red().bold());
+        let span = Span::from(&stored);
+        assert_eq!(span, stored);
+        let Cow::Borrowed(content) = span.content else {
+            panic!("expected borrowed content, got {:?}", span.content);
+        };
+        assert!(core::ptr::eq(content, stored.content.as_ref()));
+    }
+
+    #[test]
     fn to_span() {
         assert_eq!(42.to_span(), Span::raw("42"));
         assert_eq!("test".to_span(), Span::raw("test"));
-    }
-
-    #[test]
-    fn reset_style() {
-        let span = Span::styled("test content", Style::new().green()).reset_style();
-        assert_eq!(span.style, Style::reset());
-    }
-
-    #[test]
-    fn patch_style() {
-        let span = Span::styled("test content", Style::new().green().on_yellow())
-            .patch_style(Style::new().red().bold());
-        assert_eq!(span.style, Style::new().red().on_yellow().bold());
     }
 
     #[test]
@@ -629,18 +721,6 @@ mod tests {
         assert_eq!(Span::raw("test content").width(), 12);
         // Needs reconsideration: https://github.com/ratatui/ratatui/issues/1271
         assert_eq!(Span::raw("test\ncontent").width(), 12);
-    }
-
-    #[test]
-    fn stylize() {
-        let span = Span::raw("test content").green();
-        assert_eq!(span.content, Cow::Borrowed("test content"));
-        assert_eq!(span.style, Style::new().green());
-
-        let span = Span::styled("test content", Style::new().green());
-        let stylized = span.on_yellow().bold();
-        assert_eq!(stylized.content, Cow::Borrowed("test content"));
-        assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
     }
 
     #[test]
@@ -684,6 +764,53 @@ mod tests {
         assert_eq!(line.alignment, Some(Alignment::Right));
     }
 
+    mod style {
+        use super::*;
+
+        #[test]
+        fn style() {
+            let span = Span::default().style(Style::new().green());
+            assert_eq!(span.style, Style::new().green());
+        }
+
+        #[test]
+        fn reset_style() {
+            let span = Span::styled("test content", Style::new().green()).reset_style();
+            assert_eq!(span.style, Style::reset());
+        }
+
+        #[test]
+        fn patch_style() {
+            let span = Span::styled("test content", Style::new().green().on_yellow())
+                .patch_style(Style::new().red().bold());
+            assert_eq!(span.style, Style::new().red().on_yellow().bold());
+        }
+
+        #[test]
+        fn stylize() {
+            let span = Span::raw("test content").green();
+            assert_eq!(span.content, Cow::Borrowed("test content"));
+            assert_eq!(span.style, Style::new().green());
+
+            let span = Span::styled("test content", Style::new().green());
+            let stylized = span.on_yellow().bold();
+            assert_eq!(stylized.content, Cow::Borrowed("test content"));
+            assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
+        }
+
+        #[test]
+        fn render_overrides_prerendered_style() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 4, 1));
+            buf.set_style(buf.area, Style::new().red().on_green().italic());
+            Span::from("hi").blue().render(buf.area, &mut buf);
+            let expected = Buffer::with_lines([Line::from(vec![
+                "hi".blue().on_green().italic(),
+                "  ".red().on_green().italic(),
+            ])]);
+            assert_eq!(buf, expected);
+        }
+    }
+
     mod widget {
         use rstest::rstest;
 
@@ -703,13 +830,20 @@ mod tests {
         }
 
         #[rstest]
-        #[case::x(20, 0)]
-        #[case::y(0, 20)]
-        #[case::both(20, 20)]
-        fn render_out_of_bounds(mut small_buf: Buffer, #[case] x: u16, #[case] y: u16) {
-            let out_of_bounds = Rect::new(x, y, 10, 1);
-            Span::raw("Hello, World!").render(out_of_bounds, &mut small_buf);
-            assert_eq!(small_buf, Buffer::empty(small_buf.area));
+        #[case::right(Rect::new(0, 0, 15, 1), Rect::new(20, 0, 10, 1))]
+        #[case::bottom(Rect::new(0, 0, 15, 1), Rect::new(0, 20, 10, 1))]
+        #[case::both(Rect::new(0, 0, 15, 1), Rect::new(20, 20, 10, 1))]
+        #[case::single_row(Rect::new(0, 0, 57, 1), Rect::new(1, 1, 10, 1))]
+        #[case::zero_width_buffer(Rect::new(10, 10, 0, 1), Rect::new(10, 10, 10, 1))]
+        #[case::zero_height_buffer(Rect::new(10, 10, 10, 0), Rect::new(10, 10, 10, 1))]
+        #[case::empty_buffer(Rect::ZERO, Rect::new(0, 0, 10, 1))]
+        #[case::zero_width_area(Rect::new(0, 0, 15, 1), Rect::new(0, 0, 0, 1))]
+        #[case::zero_height_area(Rect::new(0, 0, 15, 1), Rect::new(0, 0, 10, 0))]
+        fn render_out_of_bounds(#[case] buffer_area: Rect, #[case] render_area: Rect) {
+            let mut buf = Buffer::empty(buffer_area);
+            let expected = buf.clone();
+            Span::raw("Hello, world!").render(render_area, &mut buf);
+            assert_eq!(buf, expected);
         }
 
         /// When the content of the span is longer than the area passed to render, the content

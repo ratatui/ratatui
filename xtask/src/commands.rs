@@ -13,7 +13,7 @@ use self::clippy::Clippy;
 use self::docs::Docs;
 use self::format::Format;
 use self::typos::Typos;
-use crate::{CROSSTERM_COMMON_FEATURES, ExpressionExt, Run, run_cargo};
+use crate::{CROSSTERM_COMMON_FEATURES, ExpressionExt, Run, run_cargo, run_cargo_nightly};
 
 mod backend;
 mod check;
@@ -77,6 +77,9 @@ pub enum Command {
     #[command(visible_alias = "ty")]
     Typos(Typos),
 
+    /// Check for unused dependencies with cargo-udeps
+    Udeps,
+
     /// Test backend
     #[command(visible_alias = "tb")]
     TestBackend(TestBackend),
@@ -97,23 +100,24 @@ pub enum Command {
 impl Run for Command {
     fn run(self) -> crate::Result<()> {
         match self {
-            Command::CI => ci(),
-            Command::Build => build(),
-            Command::Check(command) => command.run(),
-            Command::CheckBackend(command) => command.run(),
-            Command::Readme(command) => command.run(),
-            Command::Coverage(command) => command.run(),
-            Command::Lint => lint(),
-            Command::Clippy(command) => command.run(),
-            Command::Docs(command) => command.run(),
-            Command::Format(command) => command.run(),
-            Command::Typos(command) => command.run(),
-            Command::LintMarkdown => lint_markdown(),
-            Command::Test => test(),
-            Command::TestBackend(command) => command.run(),
-            Command::TestDocs => test_docs::test_docs(),
-            Command::TestLibs => test_libs(),
-            Command::Hack => hack(),
+            Self::CI => ci(),
+            Self::Build => build(),
+            Self::Check(command) => command.run(),
+            Self::CheckBackend(command) => command.run(),
+            Self::Readme(command) => command.run(),
+            Self::Coverage(command) => command.run(),
+            Self::Lint => lint(),
+            Self::Clippy(command) => command.run(),
+            Self::Docs(command) => command.run(),
+            Self::Format(command) => command.run(),
+            Self::Typos(command) => command.run(),
+            Self::Udeps => udeps(),
+            Self::LintMarkdown => lint_markdown(),
+            Self::Test => test(),
+            Self::TestBackend(command) => command.run(),
+            Self::TestDocs => test_docs::test_docs(),
+            Self::TestLibs => test_libs(),
+            Self::Hack => hack(),
         }
     }
 }
@@ -149,10 +153,26 @@ fn lint_markdown() -> Result<()> {
     Ok(())
 }
 
+/// Check for unused dependencies using rustc dep-info.
+fn udeps() -> Result<()> {
+    run_cargo_nightly(vec![
+        "udeps",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+    ])
+}
+
 /// Run tests for libs, backends, and docs
 fn test() -> Result<()> {
     test_libs()?;
-    for backend in [Backend::Crossterm, Backend::Termion, Backend::Termwiz] {
+    for backend in [
+        Backend::Crossterm,
+        Backend::Termion,
+        Backend::Termina,
+        Backend::Termwiz,
+    ] {
         TestBackend { backend }.run()?;
     }
     test_docs::test_docs()?; // run last because it's slow

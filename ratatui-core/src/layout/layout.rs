@@ -32,20 +32,29 @@ type Spacers = Rects;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
-#[cfg(feature = "layout-cache")]
+// With std: cache can store Rc directly (no Send needed thanks to thread_local)
+#[cfg(all(feature = "layout-cache", feature = "std"))]
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
+
+// Without std: cache stores Vec instead (Send-safe for critical_section::Mutex)
+#[cfg(all(feature = "layout-cache", not(feature = "std")))]
+type Cache = LruCache<(Rect, Layout), (Vec<Rect>, Vec<Rect>)>;
 
 // Multiplier that decides floating point precision when rounding.
 // The number of zeros in this number is the precision for the rounding of f64 to u16 in layout
 // calculations.
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
-#[cfg(feature = "layout-cache")]
+#[cfg(all(feature = "layout-cache", feature = "std"))]
 std::thread_local! {
     static LAYOUT_CACHE: core::cell::RefCell<Cache> = core::cell::RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
 }
+
+#[cfg(all(feature = "layout-cache", not(feature = "std")))]
+static LAYOUT_CACHE: critical_section::Mutex<core::cell::RefCell<Option<Cache>>> =
+    critical_section::Mutex::new(core::cell::RefCell::new(None));
 
 /// Represents the spacing between segments in a layout.
 ///
@@ -128,9 +137,12 @@ impl From<i16> for Spacing {
 /// solver that computes positions and sizes to satisfy as many constraints as possible in order of
 /// their priorities.
 ///
-/// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
-/// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
-/// can be configured using [`Layout::init_cache()`] when the `layout-cache` feature is enabled.
+/// When the `layout-cache` feature is enabled, the result is cached so that subsequent calls with
+/// the same parameters are faster. The cache is a `LruCache` that is thread-local when the `std`
+/// feature is enabled, and a global behind a [`critical-section`] mutex otherwise. The size of the
+/// cache can be configured using [`Layout::init_cache()`].
+///
+/// [`critical-section`]: https://docs.rs/critical-section
 ///
 /// # Construction
 ///
@@ -178,8 +190,9 @@ impl From<i16> for Spacing {
 /// }
 /// ```
 ///
-/// See the `layout`, `flex`, and `constraints` examples in the [Examples] folder for more details
-/// about how to use layouts.
+/// See the [constraint-explorer example] for an interactive exploration of how constraints, flex
+/// modes, and spacing affect the areas produced by a layout. The `flex` and `constraints` examples
+/// in the [Examples] folder show focused examples of each feature.
 ///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 ///
@@ -188,6 +201,7 @@ impl From<i16> for Spacing {
 ///
 /// [`kasuari`]: https://crates.io/crates/kasuari
 /// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
+/// [constraint-explorer example]: https://github.com/ratatui/ratatui/tree/main/examples/apps/constraint-explorer/
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Layout {
@@ -205,6 +219,9 @@ impl Layout {
     /// row and every column, twice over, which should be enough for most apps. For those that need
     /// more, the cache size can be set with `Layout::init_cache()` (requires the `layout-cache`
     /// feature).
+    ///
+    /// On memory-constrained targets this default is usually too large. See
+    /// [`Layout::init_cache()`] for how to choose a smaller size.
     #[cfg(feature = "layout-cache")]
     pub const DEFAULT_CACHE_SIZE: usize = 500;
 
@@ -298,9 +315,53 @@ impl Layout {
     /// grows until `cache_size` is reached.
     ///
     /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
+    ///
+    /// The cache reserves space for `cache_size` entries when it is created, and each entry stores
+    /// a copy of the layout and the areas it produced. Memory use therefore grows with both the
+    /// cache size and the number of constraints in your layouts. This doesn't matter much on a
+    /// desktop, but on a microcontroller the default size can take tens of kilobytes of heap.
+    ///
+    /// For memory-constrained targets, call this once before the first draw with a size a little
+    /// larger than the number of distinct layout and area combinations your app computes per frame
+    /// (often a few dozen). Each cache miss falls back to running the layout solver, so a cache
+    /// that is too small is slower but still correct.
+    ///
+    /// Without the `std` feature, the cache is a global shared by every thread or core and is
+    /// guarded by a [`critical-section`] mutex. Your binary must link a `critical-section`
+    /// implementation; most embedded HALs and runtimes provide one through a feature flag. Host
+    /// tests for a `no_std` crate can use the `std` feature of `critical-section` as a
+    /// dev-dependency.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use core::num::NonZeroUsize;
+    ///
+    /// use ratatui_core::layout::Layout;
+    ///
+    /// Layout::init_cache(NonZeroUsize::new(64).unwrap());
+    /// ```
+    ///
+    /// [`critical-section`]: https://docs.rs/critical-section
     #[cfg(feature = "layout-cache")]
     pub fn init_cache(cache_size: NonZeroUsize) {
+        Self::resize_cache(cache_size);
+    }
+
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    fn resize_cache(cache_size: NonZeroUsize) {
         LAYOUT_CACHE.with_borrow_mut(|cache| cache.resize(cache_size));
+    }
+
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn resize_cache(cache_size: NonZeroUsize) {
+        critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+            match cache.as_mut() {
+                Some(c) => c.resize(cache_size),
+                None => *cache = Some(Cache::new(cache_size)),
+            }
+        });
     }
 
     /// Set the direction of the layout.
@@ -634,10 +695,11 @@ impl Layout {
     /// splitting the area up. (e.g. splitting 100 into [min 20, 50%, 50%], may not result in [20,
     /// 40, 40] but rather an indeterminate result between [20, 50, 30] and [20, 30, 50]).
     ///
-    /// This method stores the result of the computation in a thread-local cache keyed on the layout
-    /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default. If the cache
-    /// is initialized with [`Layout::init_cache()`], it grows until the initialized cache size.
+    /// When the `layout-cache` feature is enabled, this method stores the result of the computation
+    /// in a cache keyed on the layout and area, so that subsequent calls with the same parameters
+    /// are faster. The cache is a `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is
+    /// reached by default. If the cache is initialized with [`Layout::init_cache()`], it grows
+    /// until the initialized cache size.
     ///
     /// There is a helper method that can be used to split the whole area into smaller ones based on
     /// the layout: [`Layout::areas()`]. That method is a shortcut for calling this method. It
@@ -671,10 +733,11 @@ impl Layout {
     /// This method is similar to `split`, but it returns two sets of rectangles: one for the areas
     /// and one for the spacers.
     ///
-    /// This method stores the result of the computation in a thread-local cache keyed on the layout
-    /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default. If the cache
-    /// is initialized with [`Layout::init_cache()`], it grows until the initialized cache size.
+    /// When the `layout-cache` feature is enabled, this method stores the result of the computation
+    /// in a cache keyed on the layout and area, so that subsequent calls with the same parameters
+    /// are faster. The cache is a `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is
+    /// reached by default. If the cache is initialized with [`Layout::init_cache()`], it grows
+    /// until the initialized cache size.
     ///
     /// # Examples
     ///
@@ -711,18 +774,62 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
-        let split = || self.try_split(area).expect("failed to split");
-
         #[cfg(feature = "layout-cache")]
         {
-            LAYOUT_CACHE.with_borrow_mut(|cache| {
-                let key = (area, self.clone());
-                cache.get_or_insert(key, split).clone()
-            })
+            self.cached_split(area)
         }
 
         #[cfg(not(feature = "layout-cache"))]
-        split()
+        {
+            self.split_layout(area)
+        }
+    }
+
+    // std builds: use a thread-local cache with cheap Rc cloning and no locking.
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
+    fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
+        LAYOUT_CACHE.with_borrow_mut(|cache| {
+            let key = (area, self.clone());
+            cache.get_or_insert(key, || self.split_layout(area)).clone()
+        })
+    }
+
+    // no_std builds: use a critical-section cache and compute layouts outside locks.
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn cached_split(&self, area: Rect) -> (Segments, Spacers) {
+        // Check cache inside critical section, but compute outside to avoid
+        // blocking interrupts during the (expensive) constraint solver.
+        let cached = critical_section::with(|cs| {
+            let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+            let cache = cache.get_or_insert_with(|| {
+                Cache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap())
+            });
+            let key = (area, self.clone());
+            cache
+                .get(&key)
+                .map(|(s, sp)| (Rc::from(s.as_slice()), Rc::from(sp.as_slice())))
+        });
+
+        match cached {
+            Some(result) => result,
+            None => {
+                let result = self.split_layout(area);
+
+                critical_section::with(|cs| {
+                    let mut cache = LAYOUT_CACHE.borrow(cs).borrow_mut();
+                    if let Some(cache) = cache.as_mut() {
+                        let key = (area, self.clone());
+                        cache.put(key, (result.0.to_vec(), result.1.to_vec()));
+                    }
+                });
+
+                result
+            }
+        }
+    }
+
+    fn split_layout(&self, area: Rect) -> (Segments, Spacers) {
+        self.try_split(area).expect("failed to split")
     }
 
     fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
@@ -809,7 +916,14 @@ impl Layout {
         configure_variable_in_area_constraints(&mut solver, &variables, area_size)?;
         configure_variable_constraints(&mut solver, &variables)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
-        configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
+        configure_constraints(
+            &mut solver,
+            area_size,
+            &segments,
+            constraints,
+            flex,
+            spacing,
+        )?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
 
         if !flex.is_legacy() {
@@ -880,7 +994,16 @@ fn configure_constraints(
     segments: &[Element],
     constraints: &[Constraint],
     flex: Flex,
+    spacing: i16,
 ) -> Result<(), AddConstraintError> {
+    // `Percentage`/`Ratio` size themselves as a proportion of the area, but the area between
+    // `segments.len()` segments also contains `segments.len() - 1` inter-segment spacers.
+    // Positive `Spacing::Space` shrinks the space actually available to segments; negative
+    // `Spacing::Overlap` grows it. Subtracting the total spacing here keeps proportions based on
+    // the space segments actually occupy instead of the raw area (which double counts spacing).
+    let spacer_count = segments.len().saturating_sub(1) as i16;
+    let spacing_total = f64::from(spacing) * f64::from(spacer_count) * FLOAT_PRECISION_MULTIPLIER;
+
     for (&constraint, &segment) in constraints.iter().zip(segments.iter()) {
         match constraint {
             Constraint::Max(max) => {
@@ -899,12 +1022,12 @@ fn configure_constraints(
                 solver.add_constraint(segment.has_int_size(length, LENGTH_SIZE_EQ))?;
             }
             Constraint::Percentage(p) => {
-                let size = area.size() * f64::from(p) / 100.00;
+                let size = (area.size() - spacing_total) * f64::from(p) / 100.00;
                 solver.add_constraint(segment.has_size(size, PERCENTAGE_SIZE_EQ))?;
             }
             Constraint::Ratio(num, den) => {
                 // avoid division by zero by using 1 when denominator is 0
-                let size = area.size() * f64::from(num) / f64::from(den.max(1));
+                let size = (area.size() - spacing_total) * f64::from(num) / f64::from(den.max(1));
                 solver.add_constraint(segment.has_size(size, RATIO_SIZE_EQ))?;
             }
             Constraint::Fill(_) => {
@@ -943,7 +1066,7 @@ fn configure_flex_constraints(
         Flex::SpaceAround => {
             if spacers.len() <= 2 {
                 // If there are two or less spacers, fallback to Flex::SpaceEvenly
-                for (left, right) in spacers.iter().tuple_combinations() {
+                for [left, right] in spacers.iter().array_combinations() {
                     solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
                 }
                 for spacer in spacers {
@@ -956,7 +1079,7 @@ fn configure_flex_constraints(
                 let (last, middle) = rest.split_last().unwrap();
 
                 // All middle spacers should be equal in size
-                for (left, right) in middle.iter().tuple_combinations() {
+                for [left, right] in middle.iter().array_combinations() {
                     solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
                 }
 
@@ -977,7 +1100,7 @@ fn configure_flex_constraints(
         // All spacers are the same size and will grow to fill any remaining space after the
         // constraints are satisfied
         Flex::SpaceEvenly => {
-            for (left, right) in spacers.iter().tuple_combinations() {
+            for [left, right] in spacers.iter().array_combinations() {
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
             }
             for spacer in spacers {
@@ -988,9 +1111,10 @@ fn configure_flex_constraints(
 
         // All spacers excluding first and last are the same size and will grow to fill
         // any remaining space after the constraints are satisfied.
-        // The first and last spacers are zero size.
+        // The first and last spacers are zero size, except for a single segment where the last
+        // spacer grows so the segment falls back to start alignment.
         Flex::SpaceBetween => {
-            for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
+            for [left, right] in spacers_except_first_and_last.iter().array_combinations() {
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?;
             }
             for spacer in spacers_except_first_and_last {
@@ -999,7 +1123,11 @@ fn configure_flex_constraints(
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
-                solver.add_constraint(last.is_empty())?;
+                if spacers.len() == 2 {
+                    solver.add_constraint(last.has_size(area, GROW))?;
+                } else {
+                    solver.add_constraint(last.is_empty())?;
+                }
             }
         }
 
@@ -1055,11 +1183,14 @@ fn configure_fill_constraints(
     constraints: &[Constraint],
     flex: Flex,
 ) -> Result<(), AddConstraintError> {
-    for ((&left_constraint, &left_segment), (&right_constraint, &right_segment)) in constraints
+    for [
+        (&left_constraint, &left_segment),
+        (&right_constraint, &right_segment),
+    ] in constraints
         .iter()
         .zip(segments.iter())
         .filter(|(c, _)| c.is_fill() || (!flex.is_legacy() && c.is_min()))
-        .tuple_combinations()
+        .array_combinations()
     {
         let left_scaling_factor = match left_constraint {
             Constraint::Fill(scale) => f64::from(scale).max(1e-6),
@@ -1317,7 +1448,7 @@ mod tests {
         use strengths::*;
         assert!(SPACER_SIZE_EQ > MAX_SIZE_LE);
         assert!(MAX_SIZE_LE > MAX_SIZE_EQ);
-        assert!(MIN_SIZE_GE == MAX_SIZE_LE);
+        assert_eq!(MIN_SIZE_GE, MAX_SIZE_LE);
         assert!(MAX_SIZE_LE > LENGTH_SIZE_EQ);
         assert!(LENGTH_SIZE_EQ > PERCENTAGE_SIZE_EQ);
         assert!(PERCENTAGE_SIZE_EQ > RATIO_SIZE_EQ);
@@ -1329,7 +1460,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "layout-cache")]
+    #[cfg(all(feature = "layout-cache", feature = "std"))]
     fn cache_size() {
         LAYOUT_CACHE.with_borrow(|cache| {
             assert_eq!(cache.cap().get(), Layout::DEFAULT_CACHE_SIZE);
@@ -1338,6 +1469,25 @@ mod tests {
         Layout::init_cache(NonZeroUsize::new(10).unwrap());
         LAYOUT_CACHE.with_borrow(|cache| {
             assert_eq!(cache.cap().get(), 10);
+        });
+    }
+
+    #[test]
+    #[cfg(all(feature = "layout-cache", not(feature = "std")))]
+    fn cache_size() {
+        Layout::init_cache(NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap());
+        critical_section::with(|cs| {
+            let cache = LAYOUT_CACHE.borrow(cs).borrow();
+            assert_eq!(
+                cache.as_ref().unwrap().cap().get(),
+                Layout::DEFAULT_CACHE_SIZE
+            );
+        });
+
+        Layout::init_cache(NonZeroUsize::new(10).unwrap());
+        critical_section::with(|cs| {
+            let cache = LAYOUT_CACHE.borrow(cs).borrow();
+            assert_eq!(cache.as_ref().unwrap().cap().get(), 10);
         });
     }
 
@@ -2402,9 +2552,12 @@ mod tests {
         #[case::max_start(vec![Max(50)], vec![0..50], Flex::Start)]
         #[case::max_end(vec![Max(50)], vec![50..100], Flex::End)]
         #[case::max_center(vec![Max(50)], vec![25..75], Flex::Center)]
-        #[case::spacebetween_becomes_stretch1(vec![Min(1)], vec![0..100], Flex::SpaceBetween)]
-        #[case::spacebetween_becomes_stretch2(vec![Max(20)], vec![0..100], Flex::SpaceBetween)]
-        #[case::spacebetween_becomes_stretch3(vec![Length(20)], vec![0..100], Flex::SpaceBetween)]
+        #[case::spacebetween_single_min(vec![Min(1)], vec![0..100], Flex::SpaceBetween)]
+        #[case::spacebetween_single_fill(vec![Fill(1)], vec![0..100], Flex::SpaceBetween)]
+        #[case::spacebetween_single_max(vec![Max(20)], vec![0..20], Flex::SpaceBetween)]
+        #[case::spacebetween_single_length(vec![Length(20)], vec![0..20], Flex::SpaceBetween)]
+        #[case::spacebetween_single_percentage(vec![Percentage(20)], vec![0..20], Flex::SpaceBetween)]
+        #[case::spacebetween_single_ratio(vec![Ratio(1, 5)], vec![0..20], Flex::SpaceBetween)]
         #[case::length_legacy2(vec![Length(25), Length(25)], vec![0..25, 25..100], Flex::Legacy)]
         #[case::length_start2(vec![Length(25), Length(25)], vec![0..25, 25..50], Flex::Start)]
         #[case::length_center2(vec![Length(25), Length(25)], vec![25..50, 50..75], Flex::Center)]
@@ -2438,7 +2591,7 @@ mod tests {
         #[case::one_segment_start(vec![Length(50)], vec![0..50], Flex::Start)]
         #[case::one_segment_end(vec![Length(50)], vec![50..100], Flex::End)]
         #[case::one_segment_center(vec![Length(50)], vec![25..75], Flex::Center)]
-        #[case::one_segment_spacebetween(vec![Length(50)], vec![0..100], Flex::SpaceBetween)]
+        #[case::one_segment_spacebetween(vec![Length(50)], vec![0..50], Flex::SpaceBetween)]
         #[case::one_segment_spaceevenly(vec![Length(50)], vec![25..75], Flex::SpaceEvenly)]
         #[case::one_segment_spacearound(vec![Length(50)], vec![25..75], Flex::SpaceAround)]
         fn flex_constraint(
@@ -2785,6 +2938,41 @@ mod tests {
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(result, expected);
+        }
+
+        /// <https://github.com/ratatui/ratatui/issues/2311>
+        #[rstest]
+        #[case::ratio_overlap(vec![(0, 6), (5, 6)], vec![Ratio(1, 2), Ratio(1, 2)], -1)]
+        #[case::ratio_no_spacing(vec![(0, 6), (6, 5)], vec![Ratio(1, 2), Ratio(1, 2)], 0)]
+        #[case::percentage_overlap(vec![(0, 6), (5, 6)], vec![Percentage(50), Percentage(50)], -1)]
+        fn ratio_and_percentage_account_for_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] spacing: i16,
+        ) {
+            let rect = Rect::new(0, 0, 11, 1);
+            let (segments, _) = Layout::horizontal(&constraints)
+                .spacing(spacing)
+                .split_with_spacers(rect);
+            let result = segments
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(result, expected);
+        }
+
+        #[test]
+        fn percentage_constraints_with_more_segments_than_area() {
+            let constraints = vec![Percentage(10); 10];
+            let (segments, _) = Layout::horizontal(&constraints)
+                .spacing(1)
+                .split_with_spacers(Rect::new(0, 0, 5, 1));
+
+            let widths = segments
+                .iter()
+                .map(|segment| segment.width)
+                .collect::<Vec<_>>();
+            assert_eq!(widths, vec![0; constraints.len()]);
         }
 
         #[rstest]

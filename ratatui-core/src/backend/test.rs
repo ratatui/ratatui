@@ -6,10 +6,8 @@ use alloc::vec;
 use core::fmt::{self, Write};
 use core::iter;
 
-use unicode_width::UnicodeWidthStr;
-
 use crate::backend::{Backend, ClearType, WindowSize};
-use crate::buffer::{Buffer, Cell};
+use crate::buffer::{Buffer, Cell, CellWidth};
 use crate::layout::{Position, Rect, Size};
 
 /// A [`Backend`] implementation used for integration testing that renders to an memory buffer.
@@ -36,6 +34,8 @@ pub struct TestBackend {
     scrollback: Buffer,
     cursor: bool,
     pos: (u16, u16),
+    saved_pos: Option<(u16, u16)>,
+    cursor_position_queries: usize,
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
@@ -48,15 +48,16 @@ fn buffer_view(buffer: &Buffer) -> String {
     let mut view = String::with_capacity(buffer.content.len() + buffer.area.height as usize * 3);
     for cells in buffer.content.chunks(buffer.area.width as usize) {
         let mut overwritten = vec![];
-        let mut skip: usize = 0;
+        let mut skip: u16 = 0;
         view.push('"');
         for (x, c) in cells.iter().enumerate() {
+            let sym = c.symbol();
             if skip == 0 {
-                view.push_str(c.symbol());
+                view.push_str(sym);
             } else {
-                overwritten.push((x, c.symbol()));
+                overwritten.push((x, sym));
             }
-            skip = core::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+            skip = core::cmp::max(skip, c.cell_width()).saturating_sub(1);
         }
         view.push('"');
         if !overwritten.is_empty() {
@@ -75,6 +76,8 @@ impl TestBackend {
             scrollback: Buffer::empty(Rect::new(0, 0, width, 0)),
             cursor: false,
             pos: (0, 0),
+            saved_pos: None,
+            cursor_position_queries: 0,
         }
     }
 
@@ -97,12 +100,32 @@ impl TestBackend {
             scrollback,
             cursor: false,
             pos: (0, 0),
+            saved_pos: None,
+            cursor_position_queries: 0,
         }
     }
 
     /// Returns a reference to the internal buffer of the `TestBackend`.
     pub const fn buffer(&self) -> &Buffer {
         &self.buffer
+    }
+
+    /// Returns whether the cursor is visible.
+    pub const fn cursor_visible(&self) -> bool {
+        self.cursor
+    }
+
+    /// Returns the current cursor position.
+    pub const fn cursor_position(&self) -> Position {
+        Position {
+            x: self.pos.0,
+            y: self.pos.1,
+        }
+    }
+
+    /// Returns the number of times the cursor position has been queried.
+    pub const fn cursor_position_query_count(&self) -> usize {
+        self.cursor_position_queries
     }
 
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
@@ -258,11 +281,24 @@ impl Backend for TestBackend {
     }
 
     fn get_cursor_position(&mut self) -> Result<Position> {
+        self.cursor_position_queries += 1;
         Ok(self.pos.into())
     }
 
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<()> {
         self.pos = position.into().into();
+        Ok(())
+    }
+
+    fn save_cursor_position(&mut self) -> Result<bool> {
+        self.saved_pos = Some(self.pos);
+        Ok(true)
+    }
+
+    fn restore_cursor_position(&mut self) -> Result<()> {
+        if let Some(position) = self.saved_pos {
+            self.pos = position;
+        }
         Ok(())
     }
 
@@ -275,12 +311,12 @@ impl Backend for TestBackend {
         let region = match clear_type {
             ClearType::All => return self.clear(),
             ClearType::AfterCursor => {
-                let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
                 &mut self.buffer.content[index..]
             }
             ClearType::BeforeCursor => {
                 let index = self.buffer.index_of(self.pos.0, self.pos.1);
-                &mut self.buffer.content[..index]
+                &mut self.buffer.content[..=index]
             }
             ClearType::CurrentLine => {
                 let line_start_index = self.buffer.index_of(0, self.pos.1);
@@ -468,6 +504,8 @@ mod tests {
                 scrollback: Buffer::empty(Rect::new(0, 0, 10, 0)),
                 cursor: false,
                 pos: (0, 0),
+                saved_pos: None,
+                cursor_position_queries: 0,
             }
         );
     }
@@ -574,6 +612,16 @@ mod tests {
     }
 
     #[test]
+    fn save_and_restore_cursor_position() {
+        let mut backend = TestBackend::new(10, 10);
+        backend.set_cursor_position((5, 5)).unwrap();
+        assert!(backend.save_cursor_position().unwrap());
+        backend.set_cursor_position((1, 2)).unwrap();
+        backend.restore_cursor_position().unwrap();
+        backend.assert_cursor_position((5, 5));
+    }
+
+    #[test]
     fn clear() {
         let mut backend = TestBackend::new(4, 2);
         let cell = Cell::new("a");
@@ -620,7 +668,7 @@ mod tests {
         backend.assert_buffer_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
-            "aaaa      ",
+            "aaa       ",
             "          ",
             "          ",
         ]);
@@ -644,7 +692,7 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "     aaaaa",
+            "      aaaa",
             "aaaaaaaaaa",
         ]);
     }

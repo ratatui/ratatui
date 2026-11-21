@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 use rand_chacha::rand_core::SeedableRng;
 use ratatui::Frame;
 use ratatui::buffer::Buffer;

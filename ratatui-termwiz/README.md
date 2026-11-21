@@ -2,10 +2,15 @@
 
 <!-- cargo-rdme start -->
 
-This module provides the [`TermwizBackend`] implementation for the [`Backend`] trait. It uses
+This module provides the [`TermwizBackend`](https://docs.rs/ratatui-termwiz/latest/ratatui_termwiz/struct.TermwizBackend.html) implementation for the [`Backend`] trait. It uses
 the [Termwiz] crate to interact with the terminal.
 
-[`Backend`]: trait.Backend.html
+Most application authors should start with the main [`ratatui`] crate and only depend on
+`ratatui-termwiz` directly when they specifically want the Termwiz backend or its advanced
+terminal capabilities. This crate is the backend layer, not the primary docs.rs entry point for
+building applications.
+
+[`Backend`]: https://docs.rs/ratatui_core/latest/ratatui_core/backend/trait.Backend.html
 [Termwiz]: https://crates.io/crates/termwiz
 
 ## Crate Organization
@@ -15,15 +20,13 @@ This crate provides the [Termwiz] backend implementation for Ratatui.
 
 **When to use `ratatui-termwiz`:**
 
-- You need fine-grained control over dependencies
-- Building a widget library that needs backend functionality
-- You want to use only the Termwiz backend without other backends
+- You want to depend on the Termwiz backend crate directly
 - You need Termwiz's advanced terminal capabilities
 
 **When to use the main [`ratatui`] crate:**
 
-- Building applications (recommended - includes termwiz backend when enabled)
-- You want the convenience of having everything available
+- Building applications
+- You want backend selection to stay behind Ratatui's re-exports
 
 For detailed information about the workspace organization, see [ARCHITECTURE.md].
 

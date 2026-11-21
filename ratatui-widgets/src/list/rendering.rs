@@ -31,6 +31,11 @@ impl StatefulWidget for &List<'_> {
     type State = ListState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
         self.block.as_ref().render(area, buf);
         let list_area = self.block.inner_if_some(area);
@@ -220,19 +225,19 @@ impl List<'_> {
         let last_valid_index = self.items.len().saturating_sub(1);
         let selected = selected?.min(last_valid_index);
 
-        // The bellow loop handles situations where the list item sizes may not be consistent,
+        // The below loop handles situations where the list item sizes may not be consistent,
         // where the offset would have excluded some items that we want to include, or could
         // cause the offset value to be set to an inconsistent value each time we render.
         // The padding value will be reduced in case any of these issues would occur
         let mut scroll_padding = self.scroll_padding;
         while scroll_padding > 0 {
             let mut height_around_selected = 0;
-            for index in selected.saturating_sub(scroll_padding)
-                ..=selected
-                    .saturating_add(scroll_padding)
-                    .min(last_valid_index)
-            {
-                height_around_selected += self.items[index].height();
+            let start = selected.saturating_sub(scroll_padding);
+            let end = selected
+                .saturating_add(scroll_padding)
+                .min(last_valid_index);
+            for item in &self.items[start..=end] {
+                height_around_selected += item.height();
             }
             if height_around_selected <= max_height {
                 break;
@@ -1219,7 +1224,7 @@ mod tests {
         assert_eq!(buffer, Buffer::with_lines(expected));
     }
 
-    // Tests to make sure when it's pushing back the first visible index value that it doesnt
+    // Tests to make sure when it's pushing back the first visible index value that it doesn't
     // include an item that's too large
     #[test]
     fn padding_offset_pushback_break() {
@@ -1268,5 +1273,40 @@ mod tests {
         state.select(Some(0));
         StatefulWidget::render(list, single_line_buf.area, &mut single_line_buf, &mut state);
         assert_eq!(single_line_buf, Buffer::with_lines([expected]));
+    }
+
+    #[rstest]
+    fn render_list_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        let widget = List::new(["item 1", "item 2"]);
+        let mut state = ListState::default();
+        StatefulWidget::render(&widget, area, &mut buf, &mut state);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_list_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = List::new(["item 1", "item 2"]);
+        let mut state1 = ListState::default();
+        let mut state2 = ListState::default();
+        StatefulWidget::render(&widget, Rect::new(9, 9, 40, 10), &mut buf, &mut state1);
+        StatefulWidget::render(&widget, area, &mut expected, &mut state2);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }

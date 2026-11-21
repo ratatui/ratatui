@@ -1,7 +1,36 @@
-use compact_str::CompactString;
+use core::num::NonZeroU16;
 
+use compact_str::CompactString;
+use unicode_segmentation::UnicodeSegmentation;
+
+use crate::buffer::cell_width::CellWidth;
 use crate::style::{Color, Modifier, Style};
 use crate::symbols::merge::MergeStrategy;
+
+/// Cell diffing options
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CellDiffOption {
+    #[default]
+    /// No special option.
+    None,
+    /// Skip this cell when diffing.
+    ///
+    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
+    /// covered by something from an escape sequence, such as graphics or links.
+    Skip,
+    /// Always update this cell when diffing.
+    ///
+    /// This bypasses the equality check against the previous buffer. Use it when another
+    /// renderer may draw over the same area, such as an external image pipeline, so Ratatui can
+    /// redraw text there on the next render.
+    AlwaysUpdate,
+    /// Force a width regardless of the symbol text width.
+    ///
+    /// Escape sequences will have some computed width that does match what is written to the
+    /// screen.
+    ForcedWidth(NonZeroU16),
+}
 
 /// A buffer cell
 #[derive(Debug, Default, Clone)]
@@ -30,12 +59,22 @@ pub struct Cell {
     /// The modifier of the cell.
     pub modifier: Modifier,
 
+    /// Special option applied when copying (diffing) the buffer to the screen (or another buffer).
+    pub diff_option: CellDiffOption,
+
     /// Whether the cell should be skipped when copying (diffing) the buffer to the screen.
+    ///
+    /// Use [`CellDiffOption::Skip`] via [`set_diff_option`](Self::set_diff_option) instead.
+    #[deprecated(
+        since = "0.30.1",
+        note = "use `set_diff_option(CellDiffOption::Skip)` instead"
+    )]
     pub skip: bool,
 }
 
 impl Cell {
     /// An empty `Cell`
+    #[allow(deprecated)]
     pub const EMPTY: Self = Self {
         symbol: None,
         fg: Color::Reset,
@@ -43,6 +82,7 @@ impl Cell {
         #[cfg(feature = "underline-color")]
         underline_color: Color::Reset,
         modifier: Modifier::empty(),
+        diff_option: CellDiffOption::None,
         skip: false,
     };
 
@@ -151,7 +191,7 @@ impl Cell {
     ///  `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     pub fn set_style<S: Into<Style>>(&mut self, style: S) -> &mut Self {
-        let style = style.into();
+        let style = self.style().patch(style);
         if let Some(c) = style.fg {
             self.fg = c;
         }
@@ -162,8 +202,7 @@ impl Cell {
         if let Some(c) = style.underline_color {
             self.underline_color = c;
         }
-        self.modifier.insert(style.add_modifier);
-        self.modifier.remove(style.sub_modifier);
+        self.modifier = style.add_modifier.difference(style.sub_modifier);
         self
     }
 
@@ -184,12 +223,28 @@ impl Cell {
     ///
     /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
     /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
+    #[deprecated(
+        since = "0.30.1",
+        note = "use `set_diff_option(CellDiffOption::Skip)` instead"
+    )]
+    #[allow(deprecated)]
     pub const fn set_skip(&mut self, skip: bool) -> &mut Self {
         self.skip = skip;
         self
     }
 
+    /// Sets cell [`CellDiffOption`].
+    ///
+    /// The diff options are for dealing with cells that are wider than a unit, that should always
+    /// be updated, or that should not be updated at all (skip output due to preceding wider
+    /// cells).
+    pub const fn set_diff_option(&mut self, diff_option: CellDiffOption) -> &mut Self {
+        self.diff_option = diff_option;
+        self
+    }
+
     /// Resets the cell to the empty state.
+    #[allow(deprecated)]
     pub fn reset(&mut self) {
         *self = Self::EMPTY;
     }
@@ -210,12 +265,16 @@ impl PartialEq for Cell {
         #[cfg(not(feature = "underline-color"))]
         let underline_color_eq = true;
 
+        #[allow(deprecated)]
+        let skip_eq = self.skip == other.skip;
+
         symbols_eq
             && underline_color_eq
+            && skip_eq
             && self.fg == other.fg
             && self.bg == other.bg
             && self.modifier == other.modifier
-            && self.skip == other.skip
+            && self.diff_option == other.diff_option
     }
 }
 
@@ -233,6 +292,8 @@ impl core::hash::Hash for Cell {
         #[cfg(feature = "underline-color")]
         self.underline_color.hash(state);
         self.modifier.hash(state);
+        self.diff_option.hash(state);
+        #[allow(deprecated)]
         self.skip.hash(state);
     }
 }
@@ -245,11 +306,71 @@ impl From<char> for Cell {
     }
 }
 
+impl CellWidth for Cell {
+    /// Returns [`CellDiffOption::ForcedWidth`] when set, otherwise computes the width from the
+    /// cell's symbol.
+    ///
+    /// A cell holds a single grapheme cluster, so the unicode width of its symbol is the number
+    /// of columns it takes on screen. Low-level callers can store anything in a symbol though,
+    /// and image protocols store a whole escape sequence there while still occupying a single
+    /// column. Such a symbol has no meaningful unicode width, so it counts as one column.
+    /// Use [`CellDiffOption::ForcedWidth`] to declare the real width of these cells.
+    fn cell_width(&self) -> u16 {
+        if let CellDiffOption::ForcedWidth(width) = self.diff_option {
+            return width.get();
+        }
+        let symbol = self.symbol();
+        let width = symbol.cell_width();
+        if width > 1 && !is_single_grapheme(symbol) {
+            1
+        } else {
+            width
+        }
+    }
+}
+
+/// Returns `true` if `symbol` is a single grapheme cluster.
+///
+/// Stops after the second cluster, so this stays cheap for the long escape payloads that make
+/// the check necessary in the first place.
+fn is_single_grapheme(symbol: &str) -> bool {
+    let mut graphemes = symbol.graphemes(true);
+    graphemes.next().is_some() && graphemes.next().is_none()
+}
+
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     #[test]
+    fn cell_width_of_wide_grapheme() {
+        assert_eq!(Cell::new("あ").cell_width(), 2);
+        assert_eq!(Cell::new("a").cell_width(), 1);
+    }
+
+    /// Image protocols keep a whole escape sequence in one symbol. Its unicode width says
+    /// hundreds of columns, but the cell covers one, so it must not be reported as wide.
+    #[test]
+    fn cell_width_of_escape_sequence_symbol() {
+        let payload = "\u{1b}[s".repeat(400);
+        let mut cell = Cell::EMPTY;
+        cell.set_symbol(&payload);
+        assert_eq!(cell.cell_width(), 1);
+    }
+
+    #[test]
+    fn cell_width_of_forced_width_symbol() {
+        let payload = "\u{1b}[s".repeat(400);
+        let mut cell = Cell::EMPTY;
+        cell.set_symbol(&payload);
+        cell.set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(24).unwrap()));
+        assert_eq!(cell.cell_width(), 24);
+    }
+
+    #[test]
+    #[allow(deprecated)]
     fn new() {
         let cell = Cell::new("あ");
         assert_eq!(
@@ -261,6 +382,7 @@ mod tests {
                 #[cfg(feature = "underline-color")]
                 underline_color: Color::Reset,
                 modifier: Modifier::empty(),
+                diff_option: CellDiffOption::None,
                 skip: false,
             }
         );
@@ -321,8 +443,15 @@ mod tests {
     #[test]
     fn set_skip() {
         let mut cell = Cell::EMPTY;
-        cell.set_skip(true);
-        assert!(cell.skip);
+        cell.set_diff_option(CellDiffOption::Skip);
+        assert_eq!(cell.diff_option, CellDiffOption::Skip);
+    }
+
+    #[test]
+    fn set_always_update() {
+        let mut cell = Cell::EMPTY;
+        cell.set_diff_option(CellDiffOption::AlwaysUpdate);
+        assert_eq!(cell.diff_option, CellDiffOption::AlwaysUpdate);
     }
 
     #[test]
@@ -331,12 +460,12 @@ mod tests {
         cell.set_symbol("あ");
         cell.set_fg(Color::Red);
         cell.set_bg(Color::Blue);
-        cell.set_skip(true);
+        cell.set_diff_option(CellDiffOption::Skip);
         cell.reset();
         assert_eq!(cell.symbol(), " ");
         assert_eq!(cell.fg, Color::Reset);
         assert_eq!(cell.bg, Color::Reset);
-        assert!(!cell.skip);
+        assert_eq!(cell.diff_option, CellDiffOption::None);
     }
 
     #[test]
@@ -353,6 +482,37 @@ mod tests {
                 sub_modifier: Modifier::empty(),
             }
         );
+    }
+
+    #[rstest]
+    fn copied_style_replaces_existing_underline(
+        #[values(
+            Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED
+        )]
+        existing: Modifier,
+        #[values(
+            Modifier::UNDERLINED,
+            Modifier::UNDER_CURLED,
+            Modifier::DOUBLE_UNDERLINED,
+            Modifier::UNDER_DOTTED,
+            Modifier::UNDER_DASHED
+        )]
+        replacement: Modifier,
+    ) {
+        let mut source = Cell::new("a");
+        source.set_style(replacement);
+        let style = source.style();
+
+        let patched = Style::new().add_modifier(existing).patch(style);
+        assert_eq!(patched.add_modifier, replacement);
+
+        let mut target = Cell::new("b");
+        target.set_style(existing).set_style(style);
+        assert_eq!(target.modifier, replacement);
     }
 
     #[test]

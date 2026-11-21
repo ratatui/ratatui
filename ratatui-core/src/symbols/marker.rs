@@ -53,6 +53,8 @@ pub enum Marker {
     /// unicode that is less broadly supported than Braille dots. If your terminal does not support
     /// this, you will see unicode replacement characters (`�`) instead of octants (`𜴇`, `𜷀`, `𜴷`).
     Octant,
+    /// Custom marker where the supplied char is applied once per cell
+    Custom(char),
 }
 
 #[cfg(test)]
@@ -69,6 +71,7 @@ mod tests {
         assert_eq!(Marker::Block.to_string(), "Block");
         assert_eq!(Marker::Bar.to_string(), "Bar");
         assert_eq!(Marker::Braille.to_string(), "Braille");
+        assert_eq!(Marker::Custom('+').to_string(), "Custom");
     }
 
     #[test]

@@ -15,7 +15,7 @@ All notable changes to this project will be documented in this file.
 <!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 """
 # template for the changelog body
-# https://keats.github.io/tera/docs/#introduction
+# https://git-cliff.org/docs/templating/syntax
 # note that the - before / after the % controls whether whitespace is rendered between each line.
 # Getting this right so that the markdown renders with the correct number of lines between headings
 # code fences and list items is pretty finicky. Note also that the 4 backticks in the commit macro
@@ -25,7 +25,7 @@ body = """
 ## [unreleased]
 {% else -%}
 {%- if package -%} {# release-plz specific variable #}
-## {{ package }} - [{{ version }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+## [{{ version }}+{{ package }}]({{ release_link }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {%- else -%}
 ## [{{ version }}]({{ self::remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {%- endif %}
@@ -34,7 +34,7 @@ body = """
 {% macro commit(commit) -%}
 - [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui/ratatui/commit/" ~ commit.id }}) \
   *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first | trim }}\
-  {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}\
+  {% if commit.remote.username %} by `@{{ commit.remote.username }}`{%- endif -%}\
   {% if commit.remote.pr_number %} in [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}){%- endif %}\
 {%- if commit.breaking %} [**breaking**]{% endif %}
 {%- if commit.body %}\n\n{{ commit.body | indent(prefix="  > ", first=true, blank=true) }}
@@ -66,7 +66,7 @@ body = """
 ### New Contributors
 {%- endif %}\
 {% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
-* @{{ contributor.username }} made their first contribution
+* `@{{ contributor.username }}` made their first contribution
 {%- if contributor.pr_number %} in \
 [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
 {%- endif %}
@@ -97,8 +97,8 @@ https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
 trim = false
 # postprocessors for the changelog body
 postprocessors = [
-  { pattern = '<!-- Please read CONTRIBUTING.md before submitting any pull request. -->', replace = "" },
-  { pattern = '>---+\n', replace = '' },
+  { pattern = "<!-- Please read CONTRIBUTING.md before submitting any pull request. -->", replace = "" },
+  { pattern = '>---+\n', replace = "" },
   { pattern = ' +\n', replace = "\n" },
 ]
 
@@ -112,10 +112,10 @@ split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
   { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
-  { pattern = '(better safe shared layout cache)', replace = "perf(layout): ${1}" },
-  { pattern = '(Clarify README.md)', replace = "docs(readme): ${1}" },
-  { pattern = '(Update README.md)', replace = "docs(readme): ${1}" },
-  { pattern = '(fix typos|Fix typos)', replace = "fix: ${1}" },
+  { pattern = "(better safe shared layout cache)", replace = "perf(layout): ${1}" },
+  { pattern = "(Clarify README.md)", replace = "docs(readme): ${1}" },
+  { pattern = "(Update README.md)", replace = "docs(readme): ${1}" },
+  { pattern = "(fix typos|Fix typos)", replace = "fix: ${1}" },
   # Typos that squeaked through and which would otherwise trigger the typos linter.
   # Regex obsfucation is to avoid triggering the linter in this file until there's a per file config
   # See https://github.com/crate-ci/typos/issues/724
@@ -123,6 +123,7 @@ commit_preprocessors = [
   { pattern = '\<[f]eatuers\>', replace = "features" },
   { pattern = '\<[s]pecically\>', replace = "specially" },
   { pattern = '\<[g]ague\>', replace = "gauge" },
+  { pattern = '\<[a]rithmentic\>', replace = "arithmetic" },
   { pattern = '\<[i]ntructions\>', replace = "instructions" },
   { pattern = '\<[i]mplementated\>', replace = "implemented" },
 ]

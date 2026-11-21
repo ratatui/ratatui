@@ -1,7 +1,9 @@
-/// A Ratatui example that demonstrates how different layout constraints work.
+use std::cmp::Ordering;
+
+/// A Ratatui example that demonstrates how different layout constraints and flex modes work.
 ///
-/// It also supports swapping constraints, adding and removing blocks, and changing the spacing
-/// between blocks.
+/// It compares how each flex mode distributes space and supports swapping constraints, adding
+/// and removing blocks, and changing the spacing between blocks.
 ///
 /// This example runs with the Ratatui library code in the branch that you are currently
 /// reading. See the [`latest`] branch for the code which works with the most recent Ratatui
@@ -30,7 +32,7 @@ fn main() -> Result<()> {
 #[derive(Default)]
 struct App {
     mode: AppMode,
-    spacing: u16,
+    spacing: i16,
     constraints: Vec<Constraint>,
     selected_index: usize,
     value: u16,
@@ -156,7 +158,7 @@ impl App {
     }
 
     /// select the next block with wrap around
-    fn next_block(&mut self) {
+    const fn next_block(&mut self) {
         if self.constraints.is_empty() {
             return;
         }
@@ -165,7 +167,7 @@ impl App {
     }
 
     /// select the previous block with wrap around
-    fn prev_block(&mut self) {
+    const fn prev_block(&mut self) {
         if self.constraints.is_empty() {
             return;
         }
@@ -269,7 +271,8 @@ impl App {
     }
 
     fn instructions() -> impl Widget {
-        let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, + -: spacing";
+        let text =
+            "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q/Esc: quit, +/-: spacing";
         Paragraph::new(text)
             .fg(Self::TEXT_COLOR)
             .centered()
@@ -307,10 +310,12 @@ impl App {
     ///
     /// Only shows the gap when spacing is not zero
     fn axis(&self, width: u16) -> impl Widget {
-        let label = if self.spacing != 0 {
-            format!("{} px (gap: {} px)", width, self.spacing)
-        } else {
-            format!("{width} px")
+        let label = match self.spacing.cmp(&0) {
+            Ordering::Greater => format!("{width} px (gap: {} px)", self.spacing),
+            Ordering::Less => {
+                format!("{width} px (overlap: {} px)", self.spacing.unsigned_abs())
+            }
+            Ordering::Equal => format!("{width} px"),
         };
         let bar_width = width.saturating_sub(2) as usize; // we want to `<` and `>` at the ends
         let width_bar = format!("<{label:-^bar_width$}>");
@@ -324,14 +329,16 @@ impl App {
         self.render_user_constraints_legend(user_constraints, buf);
 
         let [
+            legacy,
             start,
             center,
             end,
             space_between,
             space_around,
             space_evenly,
-        ] = area.layout(&Layout::vertical([Length(7); 6]));
+        ] = area.layout(&Layout::vertical([Length(7); 7]));
 
+        self.render_layout_block(Flex::Legacy, legacy, buf);
         self.render_layout_block(Flex::Start, start, buf);
         self.render_layout_block(Flex::Center, center, buf);
         self.render_layout_block(Flex::End, end, buf);

@@ -272,7 +272,7 @@ impl App {
 }
 
 const fn alternate_colors(i: usize) -> Color {
-    if i % 2 == 0 {
+    if i.is_multiple_of(2) {
         NORMAL_ROW_BG
     } else {
         ALT_ROW_BG_COLOR

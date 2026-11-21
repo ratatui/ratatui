@@ -1,0 +1,11 @@
+{
+  "[toml]": {
+    "editor.defaultFormatter": "tombi-toml.tombi"
+  },
+  "rust-analyzer.cargo.features": "all",
+  "rust-analyzer.imports.granularity.enforce": true,
+  "rust-analyzer.imports.granularity.group": "module",
+  "rust-analyzer.imports.group.enable": true,
+  "rust-analyzer.imports.preferNoStd": true,
+  "rust-analyzer.rustfmt.extraArgs": ["+nightly"]
+}

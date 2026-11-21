@@ -12,11 +12,11 @@ pub struct AboutTab {
 }
 
 impl AboutTab {
-    pub fn prev_row(&mut self) {
+    pub const fn prev_row(&mut self) {
         self.row_index = self.row_index.saturating_sub(1);
     }
 
-    pub fn next_row(&mut self) {
+    pub const fn next_row(&mut self) {
         self.row_index = self.row_index.saturating_add(1);
     }
 }
@@ -27,7 +27,7 @@ impl Widget for AboutTab {
         let layout = Layout::horizontal([Constraint::Length(34), Constraint::Min(0)]);
         let [logo_area, description] = area.layout(&layout);
         render_crate_description(description, buf);
-        let eye_state = if self.row_index % 2 == 0 {
+        let eye_state = if self.row_index.is_multiple_of(2) {
             MascotEyeColor::Default
         } else {
             MascotEyeColor::Red

@@ -403,7 +403,7 @@ impl<'a> List<'a> {
     ///
     /// # Example
     ///
-    /// A padding value of 1 will keep 1 item above and 1 item bellow visible if possible
+    /// A padding value of 1 will keep 1 item above and 1 item below visible if possible
     ///
     /// ```rust
     /// use ratatui::widgets::List;
@@ -418,12 +418,12 @@ impl<'a> List<'a> {
     }
 
     /// Returns the number of [`ListItem`]s in the list
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.items.len()
     }
 
     /// Returns true if the list contains no elements.
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
 }

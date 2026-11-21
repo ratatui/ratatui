@@ -143,6 +143,11 @@ impl RatatuiLogo {
 
 impl Widget for RatatuiLogo {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         let logo = self.size.as_str();
         Text::raw(logo).render(area, buf);
     }
@@ -256,5 +261,35 @@ mod tests {
         let logo = RatatuiLogo::new(size);
         // This should not panic, even if the buffer has zero size.
         logo.render(buffer.area, &mut buffer);
+    }
+
+    #[rstest]
+    fn render_logo_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        RatatuiLogo::tiny().render(area, &mut buf);
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_logo_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        RatatuiLogo::tiny().render(Rect::new(9, 9, 40, 10), &mut buf);
+        RatatuiLogo::tiny().render(area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }

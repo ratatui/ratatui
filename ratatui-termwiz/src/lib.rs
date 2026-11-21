@@ -8,7 +8,12 @@
 //! This module provides the [`TermwizBackend`] implementation for the [`Backend`] trait. It uses
 //! the [Termwiz] crate to interact with the terminal.
 //!
-//! [`Backend`]: trait.Backend.html
+//! Most application authors should start with the main [`ratatui`] crate and only depend on
+//! `ratatui-termwiz` directly when they specifically want the Termwiz backend or its advanced
+//! terminal capabilities. This crate is the backend layer, not the primary docs.rs entry point for
+//! building applications.
+//!
+//! [`Backend`]: ratatui_core::backend::Backend
 //! [Termwiz]: https://crates.io/crates/termwiz
 //!
 //! # Crate Organization
@@ -18,15 +23,13 @@
 //!
 //! **When to use `ratatui-termwiz`:**
 //!
-//! - You need fine-grained control over dependencies
-//! - Building a widget library that needs backend functionality
-//! - You want to use only the Termwiz backend without other backends
+//! - You want to depend on the Termwiz backend crate directly
 //! - You need Termwiz's advanced terminal capabilities
 //!
 //! **When to use the main [`ratatui`] crate:**
 //!
-//! - Building applications (recommended - includes termwiz backend when enabled)
-//! - You want the convenience of having everything available
+//! - Building applications
+//! - You want backend selection to stay behind Ratatui's re-exports
 //!
 //! For detailed information about the workspace organization, see [ARCHITECTURE.md].
 //!
@@ -56,6 +59,12 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// commands to the terminal. It provides methods for drawing content, manipulating the cursor, and
 /// clearing the terminal screen.
 ///
+/// Termwiz tracks the cursor position in the [`BufferedTerminal`] surface rather than emitting
+/// terminal save and restore commands. [`Backend::save_cursor_position`] therefore returns `false`,
+/// and operations such as [`Terminal::clear`](ratatui_core::terminal::Terminal::clear) use the
+/// cursor get-and-set fallback. That fallback reads and updates Termwiz's local surface state
+/// without querying terminal input.
+///
 /// Most applications should not call the methods on `TermwizBackend` directly, but will instead
 /// use the [`Terminal`] struct, which provides a more ergonomic interface.
 ///
@@ -80,14 +89,14 @@ use termwiz::terminal::{ScreenSize, SystemTerminal, Terminal};
 /// # std::result::Result::Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
-/// See the the [Examples] directory for more examples. See the [`backend`] module documentation
+/// See the [Examples] directory for more examples. See the [`backend`] module documentation
 /// for more details on raw mode and alternate screen.
 ///
 /// [`backend`]: ratatui_core::backend
 /// [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 /// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
 /// [Termwiz]: https://crates.io/crates/termwiz
-/// [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }
@@ -176,6 +185,14 @@ impl Backend for TermwizBackend {
                 .add_change(Change::Attribute(AttributeChange::Underline(
                     if cell.modifier.contains(Modifier::UNDERLINED) {
                         Underline::Single
+                    } else if cell.modifier.contains(Modifier::UNDER_CURLED) {
+                        Underline::Curly
+                    } else if cell.modifier.contains(Modifier::DOUBLE_UNDERLINED) {
+                        Underline::Double
+                    } else if cell.modifier.contains(Modifier::UNDER_DOTTED) {
+                        Underline::Dotted
+                    } else if cell.modifier.contains(Modifier::UNDER_DASHED) {
+                        Underline::Dashed
                     } else {
                         Underline::None
                     },
@@ -239,6 +256,9 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
+    // Termwiz intentionally uses the default cursor save and restore methods. Its buffered surface
+    // has no corresponding Change variants, and raw escape sequences could desynchronize the
+    // tracked state. The get-and-set fallback uses the local surface state without reading input.
     fn clear(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::ClearScreen(termwiz::color::ColorAttribute::Default));
@@ -419,7 +439,11 @@ impl FromTermwiz<Underline> for Modifier {
     fn from_termwiz(value: Underline) -> Self {
         match value {
             Underline::None => Self::empty(),
-            _ => Self::UNDERLINED,
+            Underline::Single => Self::UNDERLINED,
+            Underline::Double => Self::DOUBLE_UNDERLINED,
+            Underline::Curly => Self::UNDER_CURLED,
+            Underline::Dotted => Self::UNDER_DOTTED,
+            Underline::Dashed => Self::UNDER_DASHED,
         }
     }
 }
@@ -775,19 +799,19 @@ mod tests {
             );
             assert_eq!(
                 Modifier::from_termwiz(Underline::Double),
-                Modifier::UNDERLINED
+                Modifier::DOUBLE_UNDERLINED
             );
             assert_eq!(
                 Modifier::from_termwiz(Underline::Curly),
-                Modifier::UNDERLINED
+                Modifier::UNDER_CURLED
             );
             assert_eq!(
                 Modifier::from_termwiz(Underline::Dashed),
-                Modifier::UNDERLINED
+                Modifier::UNDER_DASHED
             );
             assert_eq!(
                 Modifier::from_termwiz(Underline::Dotted),
-                Modifier::UNDERLINED
+                Modifier::UNDER_DOTTED
             );
         }
 

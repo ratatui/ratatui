@@ -152,10 +152,10 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
             continue;
         }
         match event::read()? {
-            Event::Key(key) => {
-                if handle_key_event(key, &mut button_states, &mut selected_button).is_break() {
-                    break;
-                }
+            Event::Key(key)
+                if handle_key_event(key, &mut button_states, &mut selected_button).is_break() =>
+            {
+                break;
             }
             Event::Mouse(mouse) => {
                 handle_mouse_event(mouse, &mut button_states, &mut selected_button);

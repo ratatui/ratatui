@@ -1,11 +1,11 @@
 #![cfg(feature = "widget-calendar")]
+use jiff::civil::date;
 use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::buffer::Buffer;
 use ratatui::style::Style;
 use ratatui::widgets::Widget;
 use ratatui::widgets::calendar::{CalendarEventStore, Monthly};
-use time::{Date, Month};
 
 #[track_caller]
 fn test_render<W: Widget>(widget: W, width: u16, height: u16, expected: &Buffer) {
@@ -19,10 +19,7 @@ fn test_render<W: Widget>(widget: W, width: u16, height: u16, expected: &Buffer)
 
 #[test]
 fn days_layout() {
-    let c = Monthly::new(
-        Date::from_calendar_date(2023, Month::January, 1).unwrap(),
-        CalendarEventStore::default(),
-    );
+    let c = Monthly::new(date(2023, 1, 1), CalendarEventStore::default());
     let expected = Buffer::with_lines([
         "  1  2  3  4  5  6  7",
         "  8  9 10 11 12 13 14",
@@ -35,11 +32,8 @@ fn days_layout() {
 
 #[test]
 fn days_layout_show_surrounding() {
-    let c = Monthly::new(
-        Date::from_calendar_date(2023, Month::December, 1).unwrap(),
-        CalendarEventStore::default(),
-    )
-    .show_surrounding(Style::default());
+    let c = Monthly::new(date(2023, 12, 1), CalendarEventStore::default())
+        .show_surrounding(Style::default());
     let expected = Buffer::with_lines([
         " 26 27 28 29 30  1  2",
         "  3  4  5  6  7  8  9",
@@ -53,11 +47,8 @@ fn days_layout_show_surrounding() {
 
 #[test]
 fn show_month_header() {
-    let c = Monthly::new(
-        Date::from_calendar_date(2023, Month::January, 1).unwrap(),
-        CalendarEventStore::default(),
-    )
-    .show_month_header(Style::default());
+    let c = Monthly::new(date(2023, 1, 1), CalendarEventStore::default())
+        .show_month_header(Style::default());
     let expected = Buffer::with_lines([
         "    January 2023     ",
         "  1  2  3  4  5  6  7",
@@ -71,11 +62,8 @@ fn show_month_header() {
 
 #[test]
 fn show_weekdays_header() {
-    let c = Monthly::new(
-        Date::from_calendar_date(2023, Month::January, 1).unwrap(),
-        CalendarEventStore::default(),
-    )
-    .show_weekdays_header(Style::default());
+    let c = Monthly::new(date(2023, 1, 1), CalendarEventStore::default())
+        .show_weekdays_header(Style::default());
     let expected = Buffer::with_lines([
         " Su Mo Tu We Th Fr Sa",
         "  1  2  3  4  5  6  7",
@@ -89,13 +77,10 @@ fn show_weekdays_header() {
 
 #[test]
 fn show_combo() {
-    let c = Monthly::new(
-        Date::from_calendar_date(2023, Month::January, 1).unwrap(),
-        CalendarEventStore::default(),
-    )
-    .show_weekdays_header(Style::default())
-    .show_month_header(Style::default())
-    .show_surrounding(Style::default());
+    let c = Monthly::new(date(2023, 1, 1), CalendarEventStore::default())
+        .show_weekdays_header(Style::default())
+        .show_month_header(Style::default())
+        .show_surrounding(Style::default());
     let expected = Buffer::with_lines([
         "    January 2023     ",
         " Su Mo Tu We Th Fr Sa",

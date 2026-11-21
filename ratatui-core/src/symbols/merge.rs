@@ -56,7 +56,7 @@ use core::str::FromStr;
 /// [Box Drawing Unicode block]: https://en.wikipedia.org/wiki/Box_Drawing
 /// [collapsing borders]: https://ratatui.rs/recipes/layout/collapse-borders
 /// [`Block::merge_borders`]:
-///     https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html#method.merge_borders
+///     https://docs.rs/ratatui/latest/ratatui/widgets/struct.Block.html#method.merge_borders
 /// [`Cell::merge_symbol`]: crate::buffer::Cell::merge_symbol
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub enum MergeStrategy {
