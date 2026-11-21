@@ -39,7 +39,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`RED`]</div>
+//! [`RED`]
+//!
+//! </div>
 //!     <div style="background-color: #FFEBEE"></div>
 //!     <div style="background-color: #FFCDD2"></div>
 //!     <div style="background-color: #EF9A9A"></div>
@@ -58,7 +60,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`PINK`]</div>
+//! [`PINK`]
+//!
+//! </div>
 //!     <div style="background-color: #FCE4EC"></div>
 //!     <div style="background-color: #F8BBD0"></div>
 //!     <div style="background-color: #F48FB1"></div>
@@ -77,7 +81,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`PURPLE`]</div>
+//! [`PURPLE`]
+//!
+//! </div>
 //!     <div style="background-color: #F3E5F5"></div>
 //!     <div style="background-color: #E1BEE7"></div>
 //!     <div style="background-color: #CE93D8"></div>
@@ -96,7 +102,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`DEEP_PURPLE`]</div>
+//! [`DEEP_PURPLE`]
+//!
+//! </div>
 //!     <div style="background-color: #EDE7F6"></div>
 //!     <div style="background-color: #D1C4E9"></div>
 //!     <div style="background-color: #B39DDB"></div>
@@ -115,7 +123,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`INDIGO`]</div>
+//! [`INDIGO`]
+//!
+//! </div>
 //!     <div style="background-color: #E8EAF6"></div>
 //!     <div style="background-color: #C5CAE9"></div>
 //!     <div style="background-color: #9FA8DA"></div>
@@ -134,7 +144,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`BLUE`]</div>
+//! [`BLUE`]
+//!
+//! </div>
 //!     <div style="background-color: #E3F2FD"></div>
 //!     <div style="background-color: #BBDEFB"></div>
 //!     <div style="background-color: #90CAF9"></div>
@@ -153,7 +165,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`LIGHT_BLUE`]</div>
+//! [`LIGHT_BLUE`]
+//!
+//! </div>
 //!     <div style="background-color: #E1F5FE"></div>
 //!     <div style="background-color: #B3E5FC"></div>
 //!     <div style="background-color: #81D4FA"></div>
@@ -172,7 +186,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`CYAN`]</div>
+//! [`CYAN`]
+//!
+//! </div>
 //!     <div style="background-color: #E0F7FA"></div>
 //!     <div style="background-color: #B2EBF2"></div>
 //!     <div style="background-color: #80DEEA"></div>
@@ -191,7 +207,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`TEAL`]</div>
+//! [`TEAL`]
+//!
+//! </div>
 //!     <div style="background-color: #E0F2F1"></div>
 //!     <div style="background-color: #B2DFDB"></div>
 //!     <div style="background-color: #80CBC4"></div>
@@ -210,7 +228,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`GREEN`]</div>
+//! [`GREEN`]
+//!
+//! </div>
 //!     <div style="background-color: #E8F5E9"></div>
 //!     <div style="background-color: #C8E6C9"></div>
 //!     <div style="background-color: #A5D6A7"></div>
@@ -229,7 +249,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`LIGHT_GREEN`]</div>
+//! [`LIGHT_GREEN`]
+//!
+//! </div>
 //!     <div style="background-color: #F1F8E9"></div>
 //!     <div style="background-color: #DCEDC8"></div>
 //!     <div style="background-color: #C5E1A5"></div>
@@ -248,7 +270,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`LIME`]</div>
+//! [`LIME`]
+//!
+//! </div>
 //!     <div style="background-color: #F9FBE7"></div>
 //!     <div style="background-color: #F0F4C3"></div>
 //!     <div style="background-color: #E6EE9C"></div>
@@ -267,7 +291,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`YELLOW`]</div>
+//! [`YELLOW`]
+//!
+//! </div>
 //!     <div style="background-color: #FFFDE7"></div>
 //!     <div style="background-color: #FFF9C4"></div>
 //!     <div style="background-color: #FFF59D"></div>
@@ -286,7 +312,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`AMBER`]</div>
+//! [`AMBER`]
+//!
+//! </div>
 //!     <div style="background-color: #FFF8E1"></div>
 //!     <div style="background-color: #FFECB3"></div>
 //!     <div style="background-color: #FFE082"></div>
@@ -305,7 +333,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`ORANGE`]</div>
+//! [`ORANGE`]
+//!
+//! </div>
 //!     <div style="background-color: #FFF3E0"></div>
 //!     <div style="background-color: #FFE0B2"></div>
 //!     <div style="background-color: #FFCC80"></div>
@@ -324,7 +354,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`DEEP_ORANGE`]</div>
+//! [`DEEP_ORANGE`]
+//!
+//! </div>
 //!     <div style="background-color: #FBE9E7"></div>
 //!     <div style="background-color: #FFCCBC"></div>
 //!     <div style="background-color: #FFAB91"></div>
@@ -343,7 +375,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`BROWN`]</div>
+//! [`BROWN`]
+//!
+//! </div>
 //!     <div style="background-color: #EFEBE9"></div>
 //!     <div style="background-color: #D7CCC8"></div>
 //!     <div style="background-color: #BCAAA4"></div>
@@ -358,7 +392,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`GRAY`]</div>
+//! [`GRAY`]
+//!
+//! </div>
 //!     <div style="background-color: #FAFAFA"></div>
 //!     <div style="background-color: #F5F5F5"></div>
 //!     <div style="background-color: #EEEEEE"></div>
@@ -373,7 +409,9 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`BLUE_GRAY`]</div>
+//! [`BLUE_GRAY`]
+//!
+//! </div>
 //!     <div style="background-color: #ECEFF1"></div>
 //!     <div style="background-color: #CFD8DC"></div>
 //!     <div style="background-color: #B0BEC5"></div>
@@ -388,13 +426,17 @@
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`BLACK`]</div>
+//! [`BLACK`]
+//!
+//! </div>
 //!     <div class="bw" style="width: 350px; background-color: #000000"></div>
 //! </div>
 //! <div class="color">
 //!     <div class="name">
 //!
-//! [`WHITE`]</div>
+//! [`WHITE`]
+//!
+//! </div>
 //!     <div style="width: 350px; background-color: #FFFFFF"></div>
 //! </div>
 //! </div>

@@ -57,7 +57,7 @@ impl Padding {
     }
 
     /// Creates a `Padding` with all fields set to `0`.
-    #[deprecated = "use `Padding::ZERO` instead"]
+    #[deprecated(since = "0.27.0", note = "use `Padding::ZERO` instead")]
     pub const fn zero() -> Self {
         Self::ZERO
     }

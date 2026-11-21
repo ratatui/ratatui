@@ -173,8 +173,8 @@ impl App {
                     KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
                     KeyCode::Char('j') | KeyCode::Down => self.next_row(),
                     KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
-                    KeyCode::Char('l') | KeyCode::Right if shift_pressed => self.next_color(),
-                    KeyCode::Char('h') | KeyCode::Left if shift_pressed => {
+                    KeyCode::Char('L') | KeyCode::Right if shift_pressed => self.next_color(),
+                    KeyCode::Char('H') | KeyCode::Left if shift_pressed => {
                         self.previous_color();
                     }
                     KeyCode::Char('l') | KeyCode::Right => self.next_column(),

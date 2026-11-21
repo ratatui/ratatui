@@ -36,7 +36,6 @@ cargo add ratatui-widgets
 
 - [`BarChart`]: displays multiple datasets as bars with optional grouping.
 - [`Block`]: a basic widget that draws a block with optional borders, titles, and styles.
-- [`calendar::Monthly`]: displays a single month.
 - [`Canvas`]: draws arbitrary shapes using drawing characters.
 - [`Chart`]: displays multiple datasets as lines or scatter graphs.
 - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
@@ -54,7 +53,6 @@ cargo add ratatui-widgets
 
 [`BarChart`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/barchart/struct.BarChart.html
 [`Block`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/block/struct.Block.html
-[`calendar::Monthly`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/calendar/struct.Monthly.html
 [`Canvas`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/canvas/struct.Canvas.html
 [`Chart`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/chart/struct.Chart.html
 [`Clear`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/clear/struct.Clear.html

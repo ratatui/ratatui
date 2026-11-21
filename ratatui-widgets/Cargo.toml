@@ -20,23 +20,21 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["all-widgets"]
+default = []
 
 ## enables std
-std = ["serde?/std", "time?/local-offset"]
+std = ["serde?/std"]
 
 ## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "ratatui-core/serde"]
 
-#! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
-#! dependencies. The available features are:
-
-## enables all widgets.
-all-widgets = ["calendar"]
-
-## enables the [`calendar`](calendar) widget module and adds a dependency on [`time`].
-calendar = ["dep:time"]
+## enables portable-atomic integration for targets that don't support atomic types.
+portable-atomic = [
+  "dep:portable-atomic-util",
+  "portable-atomic-util/alloc",
+  "ratatui-core/portable-atomic",
+]
 
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info"]
@@ -50,15 +48,14 @@ unstable-rendered-line-info = []
 [dependencies]
 bitflags.workspace = true
 document-features = { workspace = true, optional = true }
-hashbrown.workspace = true
 indoc.workspace = true
 instability.workspace = true
 itertools.workspace = true
 line-clipping.workspace = true
+portable-atomic-util = { workspace = true, optional = true }
 ratatui-core = { workspace = true }
 serde = { workspace = true, optional = true }
 strum.workspace = true
-time = { workspace = true, optional = true }
 unicode-segmentation.workspace = true
 unicode-width.workspace = true
 

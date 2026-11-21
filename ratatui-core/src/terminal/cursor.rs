@@ -37,14 +37,20 @@ impl<B: Backend> Terminal<B> {
     ///
     /// This queries the backend for the current cursor position and returns it as an `(x, y)`
     /// tuple.
-    #[deprecated = "use `get_cursor_position()` instead which returns `Result<Position>`"]
+    #[deprecated(
+        since = "0.28.0",
+        note = "use `get_cursor_position()` instead which returns `Result<Position>`"
+    )]
     pub fn get_cursor(&mut self) -> Result<(u16, u16), B::Error> {
         let Position { x, y } = self.get_cursor_position()?;
         Ok((x, y))
     }
 
     /// Sets the cursor position.
-    #[deprecated = "use `set_cursor_position((x, y))` instead which takes `impl Into<Position>`"]
+    #[deprecated(
+        since = "0.28.0",
+        note = "use `set_cursor_position((x, y))` instead which takes `impl Into<Position>`"
+    )]
     pub fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), B::Error> {
         self.set_cursor_position(Position { x, y })
     }

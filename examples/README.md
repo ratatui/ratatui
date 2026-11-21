@@ -57,13 +57,13 @@ easily be productive in creating applications:
 This is the original demo example from the main README. It is available for each of the backends.
 [Source](./apps/demo/).
 
-![Demo](demo.gif)
+![Demo][demo.gif]
 
 ## Demo2
 
 This is the demo example from the main README and crate page. [Source](./apps/demo2/).
 
-![Demo2](demo2.gif)
+![Demo2][demo2.gif]
 
 ## Async GitHub
 
@@ -73,7 +73,9 @@ Shows how to fetch data from GitHub API asynchronously. [Source](./apps/async-gi
 
 ## Calendar Explorer
 
-Shows how to render a calendar with different styles. [Source](./apps/calendar-explorer/).
+Shows how to render a calendar with different styles. This now lives with the calendar widget in
+[`ratatui-calendar/examples`](../ratatui-calendar/examples/calendar-explorer.rs), alongside smaller
+calendar examples.
 
 ![Calendar explorer demo][calendar-explorer.gif]
 
@@ -103,7 +105,8 @@ Shows the full range of RGB colors in an animation. [Source](./apps/colors-rgb/)
 
 ## Constraint Explorer
 
-Shows how different constraints can be used to layout widgets. [Source](./apps/constraint-explorer/).
+An interactive layout playground for experimenting with constraint types and values, spacing, and
+`Flex` modes. [Source](./apps/constraint-explorer/).
 
 ![Constraint Explorer demo][constraint-explorer.gif]
 
@@ -148,6 +151,12 @@ Shows how to use the inlined viewport to render in a specific area of the screen
 
 ![Inline demo][inline.gif]
 
+## Inline Resizable
+
+Shows how to create an inline viewport that can be resized dynamically. [Source](./apps/inline-resizable/).
+
+![Inline Resizable demo][inline-resizable.gif]
+
 ## Input Form
 
 Shows how to render a form with input fields. [Source](./apps/input-form/).
@@ -191,6 +200,13 @@ Shows how to render different types of scrollbars. [Source](./apps/scrollbar/).
 Shows how to create an interactive table. [Source](./apps/table/).
 
 ![Table demo][table.gif]
+
+## Table detail TEA
+
+Shows how to structure an app with the Elm architecture, using commands for background work and a
+tick that only runs while loading. [Source](./apps/table-detail-tea/).
+
+![Table detail tea demo][table-detail-tea.gif]
 
 ## Todo List
 
@@ -257,16 +273,20 @@ vhs/generate.bash
 [constraint-explorer.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraint-explorer.gif?raw=true
 [constraints.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraints.gif?raw=true
 [custom-widget.gif]: https://github.com/ratatui/ratatui/blob/images/examples/custom-widget.gif?raw=true
+[demo.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true
+[demo2.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true
 [flex.gif]: https://github.com/ratatui/ratatui/blob/images/examples/flex.gif?raw=true
 [hello-world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello-world.gif?raw=true
 [hyperlink.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hyperlink.gif?raw=true
 [inline.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline.gif?raw=true
+[inline-resizable.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline-resizable.gif?raw=true
 [minimal.gif]: https://github.com/ratatui/ratatui/blob/images/examples/minimal.gif?raw=true
 [modifiers.gif]: https://github.com/ratatui/ratatui/blob/images/examples/modifiers.gif?raw=true
 [panic.gif]: https://github.com/ratatui/ratatui/blob/images/examples/panic.gif?raw=true
 [popup.gif]: https://github.com/ratatui/ratatui/blob/images/examples/popup.gif?raw=true
 [scrollbar.gif]: https://github.com/ratatui/ratatui/blob/images/examples/scrollbar.gif?raw=true
 [table.gif]: https://github.com/ratatui/ratatui/blob/images/examples/table.gif?raw=true
+[table-detail-tea.gif]: https://github.com/ratatui/ratatui/blob/images/examples/table-detail-tea.gif?raw=true
 [todo-list.gif]: https://github.com/ratatui/ratatui/blob/images/examples/todo-list.gif?raw=true
 [tracing.gif]: https://github.com/ratatui/ratatui/blob/images/examples/tracing.gif?raw=true
 [user-input.gif]: https://github.com/ratatui/ratatui/blob/images/examples/user-input.gif?raw=true

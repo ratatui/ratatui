@@ -66,6 +66,11 @@ use strum::EnumIs;
 /// let constraints = Constraint::from_fills([1, 2, 1]);
 /// ```
 ///
+/// For an interactive exploration of how these constraint types combine with flex modes and
+/// spacing, see the [constraint-explorer example].
+///
+/// [constraint-explorer example]: https://github.com/ratatui/ratatui/tree/main/examples/apps/constraint-explorer/
+///
 /// For comprehensive layout documentation and examples, see the [`layout`](crate::layout) module.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

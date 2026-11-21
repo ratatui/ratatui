@@ -21,3 +21,6 @@ termwiz = { workspace = true, optional = true }
 
 [target.'cfg(not(windows))'.dependencies]
 termion = { workspace = true, optional = true }
+
+[lints]
+workspace = true
