@@ -737,6 +737,8 @@ impl Styled for BarChart<'_> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
+
     use itertools::iproduct;
     use ratatui_core::layout::Alignment;
     use ratatui_core::style::{Color, Modifier, Stylize};
@@ -1578,6 +1580,150 @@ mod tests {
         widget.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(["████████", "██中文██"]));
     }
+
+    /// Empty `text_value` skips value painting and leaves only the bar fill.
+    #[test]
+    fn horizontal_empty_text_value_skips_value_paint() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(BarGroup::default().bars(&[Bar::default().value(5).text_value("")]));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(buffer, Buffer::with_lines(["█████"]));
+    }
+
+    /// Multi-byte single-width characters must be split by display width on
+    /// horizontal bars, not by UTF-8 byte length.
+    ///
+    /// `"α"` is two bytes and one cell. With `bar_length == 3` the value
+    /// `"ααααα"` must paint all five cells; the first three use `value_style`
+    /// and the rest use the bar style. Splitting on byte indices leaves a
+    /// filled-block cell in the middle and styles the overflow incorrectly.
+    #[test]
+    fn horizontal_multibyte_text_value_split_by_display_width() {
+        let bar = Bar::default()
+            .value(3)
+            .text_value("ααααα")
+            .value_style(Style::default().red());
+        let chart = BarChart::default()
+            .data(BarGroup::default().bars(&[bar, Bar::default().value(5)]))
+            .direction(Direction::Horizontal)
+            .bar_style(Style::default().yellow())
+            .value_style(Style::default().italic())
+            .bar_gap(0);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 2));
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["ααααα", "5████"]);
+        for x in 0..3 {
+            let cell = &mut expected[(x, 0)];
+            cell.set_fg(Color::Red);
+            cell.modifier.insert(Modifier::ITALIC);
+        }
+        for x in 3..5 {
+            expected[(x, 0)].set_fg(Color::Yellow);
+        }
+        expected[(0, 1)].modifier.insert(Modifier::ITALIC);
+        for x in 0..5 {
+            expected[(x, 1)].set_fg(Color::Yellow);
+        }
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::joined_emoji("👨‍👩‍👧‍👦", 2)]
+    #[case::flag("🇹🇷", 2)]
+    #[case::emoji_presentation("❤️", 2)]
+    #[case::combining_mark("e\u{301}", 1)]
+    #[case::halfwidth_kana("ｶﾞ", 2)]
+    #[case::halfwidth_sound_mark("ﾞ", 1)]
+    fn horizontal_text_value_preserves_graphemes(#[case] grapheme: &str, #[case] width: u16) {
+        let bar = Bar::new(u64::from(width))
+            .text_value(format!("{grapheme}x"))
+            .value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(u64::from(width + 1))
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, width + 1, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer[(0, 0)].symbol(), grapheme);
+        assert_eq!(buffer[(0, 0)].fg, Color::Red);
+        assert_eq!(buffer[(width, 0)].symbol(), "x");
+        assert_eq!(buffer[(width, 0)].fg, Color::Yellow);
+    }
+
+    #[rstest]
+    #[case::empty_bar(0, Color::Yellow, Color::Yellow)]
+    #[case::inside_wide_grapheme(1, Color::Yellow, Color::Yellow)]
+    #[case::after_wide_grapheme(2, Color::Red, Color::Yellow)]
+    #[case::full_bar(3, Color::Red, Color::Red)]
+    fn horizontal_joined_emoji_at_style_boundary(
+        #[case] value: u64,
+        #[case] emoji_color: Color,
+        #[case] suffix_color: Color,
+    ) {
+        let bar = Bar::new(value)
+            .text_value("👨‍👩‍👧‍👦x")
+            .value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(3)
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(2, 1, 3, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["👨‍👩‍👧‍👦x"]);
+        expected[(0, 0)].set_fg(emoji_color);
+        expected[(2, 0)].set_fg(suffix_color);
+        expected.area = buffer.area;
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::control("a\nb")]
+    #[case::carriage_return_line_feed("a\r\nb")]
+    #[case::zero_width("\u{200b}ab")]
+    fn horizontal_text_value_skips_nonprinting_graphemes(#[case] text: &str) {
+        let bar = Bar::new(1).text_value(text).value_style(Style::new().red());
+        let chart = BarChart::new([bar])
+            .max(2)
+            .direction(Direction::Horizontal)
+            .bar_style(Style::new().yellow());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 1));
+
+        chart.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(["ab"]);
+        expected[(0, 0)].set_fg(Color::Red);
+        expected[(1, 0)].set_fg(Color::Yellow);
+        assert_eq!(buffer, expected);
+    }
+
+    /// CJK text values are multi-byte and double-width. On a full-width bar the
+    /// old byte-length split could subtract a larger byte count from
+    /// `area.width`, overflowing in debug builds.
+    #[test]
+    fn horizontal_cjk_text_value_does_not_panic_when_longer_than_bar() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(
+                BarGroup::default()
+                    .bars(&[Bar::default().value(10).text_value("一二三四五六七八九十")]),
+            );
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        chart.render(buffer.area, &mut buffer);
+        // First five CJK glyphs fill the 10-wide area (2 cells each); the rest
+        // is truncated by the buffer width.
+        assert_eq!(buffer, Buffer::with_lines(["一二三四五"]));
+    }
+
     #[rstest]
     fn render_barchart_outside_buffer_is_noop(
         #[values(
