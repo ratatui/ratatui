@@ -41,7 +41,8 @@ std = [
 ]
 
 ## enables layout cache; uses thread_local when std is available,
-## critical-section::Mutex otherwise (for no_std/embedded targets).
+## critical-section::Mutex otherwise (for no_std/embedded targets, which must link a
+## critical-section implementation).
 layout-cache = ["dep:critical-section"]
 
 ## enables conversions to / from colors, modifiers, and styles in the ['anstyle'] crate

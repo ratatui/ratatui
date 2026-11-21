@@ -496,12 +496,45 @@ impl ScrollbarState {
     pub const fn get_position(&self) -> usize {
         self.position
     }
+
+    /// Returns the current configured `content_length`.
+    #[must_use]
+    pub const fn get_content_length(&self) -> usize {
+        self.content_length
+    }
+
+    /// Returns `true` if the scroll position is at the start of the scrollable content.
+    ///
+    /// # See also
+    ///
+    /// - [`ScrollbarState::is_at_end`] to check the opposite boundary.
+    /// - [`ScrollbarState::first`] to scroll to the start of the scrollable content.
+    #[must_use = "returns whether the scroll position is at the start of the scrollable content"]
+    pub const fn is_at_start(&self) -> bool {
+        self.position == 0
+    }
+
+    /// Returns `true` if the scroll position is at the end of the scrollable content.
+    ///
+    /// # See also
+    ///
+    /// - [`ScrollbarState::is_at_start`] to check the opposite boundary.
+    /// - [`ScrollbarState::last`] to scroll to the end of the scrollable content.
+    #[must_use = "returns whether the scroll position is at the end of the scrollable content"]
+    pub const fn is_at_end(&self) -> bool {
+        self.position >= self.content_length.saturating_sub(1)
+    }
 }
 
 impl StatefulWidget for Scrollbar<'_> {
     type State = ScrollbarState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         if state.content_length == 0 || self.track_length_excluding_arrow_heads(area) == 0 {
             return;
         }
@@ -700,6 +733,54 @@ mod tests {
             ScrollbarOrientation::from_str(""),
             Err(ParseError::VariantNotFound)
         );
+    }
+
+    #[rstest]
+    #[case::start(0, true, false)]
+    #[case::middle(1, false, false)]
+    #[case::end(2, false, true)]
+    #[case::past_end(5, false, true)]
+    fn scrollbar_state_is_at_start_and_end(
+        #[case] position: usize,
+        #[case] expected_at_start: bool,
+        #[case] expected_at_end: bool,
+    ) {
+        let state = ScrollbarState::new(3).position(position);
+        assert_eq!(state.is_at_start(), expected_at_start);
+        assert_eq!(state.is_at_end(), expected_at_end);
+    }
+
+    #[test]
+    fn scrollbar_state_is_at_start_and_end_with_empty_content() {
+        let state = ScrollbarState::new(0);
+        assert!(state.is_at_start());
+        assert!(state.is_at_end());
+    }
+
+    #[rstest]
+    #[case::shorter_content(3)]
+    #[case::empty_content(0)]
+    fn scrollbar_state_remains_at_end_after_content_shrinks(#[case] content_length: usize) {
+        let state = ScrollbarState::new(6).position(5);
+        assert!(state.is_at_end());
+
+        let state = state.content_length(content_length);
+        assert_eq!(state.get_position(), 5);
+        assert!(!state.is_at_start());
+        assert!(state.is_at_end());
+    }
+
+    #[test]
+    fn scrollbar_state_is_at_end_after_first_and_last() {
+        let mut state = ScrollbarState::new(5).position(2);
+
+        state.last();
+        assert!(state.is_at_end());
+        assert!(!state.is_at_start());
+
+        state.first();
+        assert!(state.is_at_start());
+        assert!(!state.is_at_end());
     }
 
     #[fixture]
@@ -1215,5 +1296,51 @@ mod tests {
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar.render(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
+    }
+    #[rstest]
+    fn render_scrollbar_outside_buffer_is_noop(
+        #[values(
+            ScrollbarOrientation::VerticalLeft,
+            ScrollbarOrientation::VerticalRight,
+            ScrollbarOrientation::HorizontalTop,
+            ScrollbarOrientation::HorizontalBottom
+        )]
+        orientation: ScrollbarOrientation,
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let mut buf = Buffer::empty(Rect::new(10, 10, 30, 8));
+        let expected = buf.clone();
+        let mut state = ScrollbarState::new(10).position(3);
+        Scrollbar::new(orientation).render(area, &mut buf, &mut state);
+        assert_eq!(buf, expected);
+        assert_eq!(state, ScrollbarState::new(10).position(3));
+    }
+
+    #[rstest]
+    fn render_scrollbar_clips_to_offset_buffer(
+        #[values(
+            ScrollbarOrientation::VerticalLeft,
+            ScrollbarOrientation::VerticalRight,
+            ScrollbarOrientation::HorizontalTop,
+            ScrollbarOrientation::HorizontalBottom
+        )]
+        orientation: ScrollbarOrientation,
+    ) {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let mut state = ScrollbarState::new(10).position(3);
+        Scrollbar::new(orientation.clone()).render(Rect::new(9, 9, 40, 10), &mut buf, &mut state);
+        Scrollbar::new(orientation).render(area, &mut expected, &mut state);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }

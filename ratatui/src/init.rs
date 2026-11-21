@@ -24,14 +24,16 @@
 //! Start with the simplest path that fits your application:
 //!
 //! 1. Use [`run`] for the normal case: Ratatui owns setup and cleanup around your application
-//!    closure.
-//! 2. Move to [`init`] / [`restore`] when you want explicit control over setup, teardown, or event
+//!    closure in fullscreen mode.
+//! 2. Use [`run_with_options`] when you want automatic setup and cleanup with custom
+//!    [`TerminalOptions`], such as inline or fixed viewports.
+//! 3. Move to [`init`] / [`restore`] when you want explicit control over setup, teardown, or event
 //!    loop structure.
-//! 3. Use [`try_init`] / [`try_restore`] when you want the same control but need explicit error
+//! 4. Use [`try_init`] / [`try_restore`] when you want the same control but need explicit error
 //!    handling instead of panicking or printing cleanup failures.
-//! 4. Use [`init_with_options`] / [`try_init_with_options`] when you need a custom
-//!    [`TerminalOptions`] such as inline or fixed viewports.
-//! 5. Construct [`Terminal`] manually only when these helpers do not match the backend or terminal
+//! 5. Use [`init_with_options`] / [`try_init_with_options`] when you need a custom
+//!    [`TerminalOptions`] and manual control over setup and teardown.
+//! 6. Construct [`Terminal`] manually only when these helpers do not match the backend or terminal
 //!    lifecycle you need.
 //!
 //! # Available Types and Functions
@@ -49,6 +51,8 @@
 //! - [`run`] - Initializes a terminal, runs a closure, and automatically restores the terminal
 //!   state. This is the simplest way to run a Ratatui application and handles all setup and cleanup
 //!   automatically.
+//! - [`run_with_options`] - Same as [`run`] but initializes the terminal with custom
+//!   [`TerminalOptions`]. Enables raw mode but not alternate screen.
 //! - [`init`] - Creates a terminal with reasonable defaults including alternate screen and raw
 //!   mode. Panics on failure.
 //! - [`try_init`] - Same as [`init`] but returns a `Result` instead of panicking.
@@ -182,6 +186,7 @@
 //! | Function | Alternate Screen | Raw Mode | Error Handling | Use Case |
 //! |----------|------------------|----------|----------------|----------|
 //! | [`run`] | ✓ | ✓ | Auto-cleanup | Simple apps |
+//! | [`run_with_options`] | ✗ | ✓ | Auto-cleanup | Custom viewport apps |
 //! | [`init`] | ✓ | ✓ | Panic | Standard full-screen apps |
 //! | [`try_init`] | ✓ | ✓ | Result | Standard apps with error handling |
 //! | [`init_with_options`] | ✗ | ✓ | Panic | Custom viewport apps |
@@ -319,9 +324,72 @@ pub fn run<F, R>(f: F) -> R
 where
     F: FnOnce(&mut DefaultTerminal) -> R,
 {
-    let mut terminal = init();
+    run_terminal(init(), f, restore)
+}
+
+/// Run a closure with a terminal initialized with the given options.
+///
+/// This function creates a new [`DefaultTerminal`] with [`init_with_options`] and then runs the
+/// given closure with a mutable reference to the terminal. After the closure completes, the
+/// terminal is restored to its original state with [`restore`].
+///
+/// Unlike [`run`], this function does not enter the alternate screen buffer as this may not be
+/// desired in all cases (such as inline or fixed viewports). If you need the alternate screen
+/// buffer, you should enable it manually after the closure starts or use [`run`].
+///
+/// In particular, `run_with_options(TerminalOptions::default(), f)` is **not** equivalent to
+/// `run(f)`: despite using the default fullscreen viewport, it does not enter the alternate screen
+/// buffer. Use [`run`] for the normal fullscreen setup.
+///
+/// See the [module-level documentation](mod@crate::init) for a comparison of all initialization
+/// functions and guidance on when to use each one.
+///
+/// # Panics
+///
+/// This function will panic if initializing the terminal fails.
+///
+/// # Examples
+///
+/// Running an application with an inline viewport:
+///
+/// ```rust,no_run
+/// use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+/// use ratatui::{TerminalOptions, Viewport};
+///
+/// fn main() -> std::io::Result<()> {
+///     let options = TerminalOptions {
+///         viewport: Viewport::Inline(8),
+///     };
+///     ratatui::run_with_options(options, |terminal| {
+///         loop {
+///             terminal.draw(|frame| {
+///                 frame.render_widget("Hello from inline!", frame.area());
+///             })?;
+///             if matches!(
+///                 event::read()?,
+///                 Event::Key(key)
+///                     if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q')
+///             ) {
+///                 break Ok(());
+///             }
+///         }
+///     })
+/// }
+/// ```
+pub fn run_with_options<F, R>(options: TerminalOptions, f: F) -> R
+where
+    F: FnOnce(&mut DefaultTerminal) -> R,
+{
+    run_terminal(init_with_options(options), f, restore)
+}
+
+fn run_terminal<T, F, R, C>(mut terminal: T, f: F, cleanup: C) -> R
+where
+    F: FnOnce(&mut T) -> R,
+    C: FnOnce(),
+{
     let result = f(&mut terminal);
-    restore();
+    cleanup();
     result
 }
 
@@ -569,4 +637,43 @@ fn set_panic_hook() {
         restore();
         hook(info);
     }));
+}
+
+#[cfg(test)]
+mod tests {
+    use core::cell::Cell;
+
+    use super::run_terminal;
+
+    #[test]
+    fn run_terminal_runs_closure_then_cleanup_and_returns_result() {
+        let closure_ran = Cell::new(false);
+        let cleanup_ran = Cell::new(false);
+
+        let result = run_terminal(
+            (),
+            |()| {
+                assert!(!cleanup_ran.get());
+                closure_ran.set(true);
+                42
+            },
+            || {
+                assert!(closure_ran.get());
+                cleanup_ran.set(true);
+            },
+        );
+
+        assert_eq!(result, 42);
+        assert!(cleanup_ran.get());
+    }
+
+    #[test]
+    fn run_terminal_cleans_up_after_error_result() {
+        let cleanup_ran = Cell::new(false);
+
+        let result = run_terminal((), |()| Err::<(), _>("error"), || cleanup_ran.set(true));
+
+        assert_eq!(result, Err("error"));
+        assert!(cleanup_ran.get());
+    }
 }

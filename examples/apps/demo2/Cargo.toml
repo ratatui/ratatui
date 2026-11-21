@@ -15,5 +15,8 @@ rand.workspace = true
 rand_chacha.workspace = true
 ratatui = { workspace = true, features = ["all-widgets"] }
 strum.workspace = true
-time.workspace = true
+jiff = { workspace = true, features = ["std"] }
 unicode-width.workspace = true
+
+[lints]
+workspace = true

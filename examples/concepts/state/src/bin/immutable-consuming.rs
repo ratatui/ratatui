@@ -73,7 +73,7 @@ struct Counter {
 
 impl Counter {
     /// Create a new counter widget with the given count.
-    fn new(count: usize) -> Self {
+    const fn new(count: usize) -> Self {
         Self { count }
     }
 }

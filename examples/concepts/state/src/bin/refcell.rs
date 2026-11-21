@@ -1,4 +1,4 @@
-//! # Interior Mutability Pattern (RefCell)
+//! # Interior Mutability Pattern (`RefCell`)
 //!
 //! This example demonstrates using `Rc<RefCell<T>>` for interior mutability, allowing multiple
 //! widgets to share and mutate the same state. This pattern is useful when you need shared
