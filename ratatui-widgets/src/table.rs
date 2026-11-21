@@ -71,6 +71,8 @@ mod state;
 /// - [`Table::cell_highlight_style`] sets the style of the selected cell.
 /// - [`Table::highlight_symbol`] sets the symbol to be displayed in front of the selected row.
 /// - [`Table::highlight_spacing`] sets when to show the highlight spacing.
+/// - [`Table::scroll_padding`] sets the number of rows to keep visible before and after the
+///   selected row.
 ///
 /// # Example
 ///
@@ -269,6 +271,9 @@ pub struct Table<'a> {
 
     /// Controls how to distribute extra space among the columns
     flex: Flex,
+
+    /// How many rows to try to keep visible before and after the selected row
+    scroll_padding: usize,
 }
 
 impl Default for Table<'_> {
@@ -287,6 +292,7 @@ impl Default for Table<'_> {
             highlight_symbol: Text::default(),
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
+            scroll_padding: 0,
         }
     }
 }
@@ -558,7 +564,7 @@ impl<'a> Table<'a> {
     ///
     /// [`Color`]: ratatui_core::style::Color
     #[must_use = "method moves the value of self and returns the modified value"]
-    #[deprecated(note = "use `row_highlight_style()` instead")]
+    #[deprecated(since = "0.29.0", note = "use `row_highlight_style()` instead")]
     pub fn highlight_style<S: Into<Style>>(self, highlight_style: S) -> Self {
         self.row_highlight_style(highlight_style)
     }
@@ -720,6 +726,27 @@ impl<'a> Table<'a> {
         self.flex = flex;
         self
     }
+
+    /// Set the number of rows to keep visible before and after the selected row when scrolling.
+    ///
+    /// This is similar to the `scrolloff` option in Vim, and ensures context around the selected
+    /// row is visible. If the padding value is too large for the visible area, it will be
+    /// automatically reduced to keep the selected row visible.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::Table;
+    ///
+    /// let table = Table::default().scroll_padding(1);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn scroll_padding(mut self, padding: usize) -> Self {
+        self.scroll_padding = padding;
+        self
+    }
 }
 
 impl Widget for Table<'_> {
@@ -747,6 +774,11 @@ impl StatefulWidget for &Table<'_> {
     type State = TableState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+
         buf.set_style(area, self.style);
         self.block.as_ref().render(area, buf);
         let table_area = self.block.inner_if_some(area);
@@ -991,6 +1023,9 @@ impl Table<'_> {
     /// - start at the offset and calculate the height of the rows that can be displayed within the
     ///   area.
     /// - if the selected row is not visible, scroll the table to ensure it is visible.
+    /// - if scroll padding is set, ensure the padding number of rows are visible before and after
+    ///   the selected row, adjusting the padding down when items of inconsistent sizes make it
+    ///   impossible.
     /// - if there is still space to fill then there's a partial row at the end which should be
     ///   included in the view.
     fn visible_rows(&self, state: &TableState, area: Rect) -> (usize, usize) {
@@ -1015,13 +1050,30 @@ impl Table<'_> {
         if let Some(selected) = state.selected {
             let selected = selected.min(last_row);
 
-            // scroll down until the selected row is visible
-            while selected >= end {
+            let index_to_display = self.apply_scroll_padding_to_selected_index(
+                selected,
+                area.height as usize,
+                start,
+                end,
+            );
+
+            // scroll down until the target index is visible
+            while index_to_display >= end {
                 height = height.saturating_add(self.rows[end].height_with_margin());
                 end += 1;
                 while height > area.height {
                     height = height.saturating_sub(self.rows[start].height_with_margin());
                     start += 1;
+                }
+            }
+
+            // scroll up until the target index is visible
+            while index_to_display < start {
+                start -= 1;
+                height = height.saturating_add(self.rows[start].height_with_margin());
+                while height > area.height {
+                    end -= 1;
+                    height = height.saturating_sub(self.rows[end].height_with_margin());
                 }
             }
         }
@@ -1032,6 +1084,57 @@ impl Table<'_> {
         }
 
         (start, end)
+    }
+
+    /// Applies scroll padding to the selected index, reducing the padding value to keep the
+    /// selected row on screen even with rows of inconsistent sizes
+    fn apply_scroll_padding_to_selected_index(
+        &self,
+        selected: usize,
+        max_height: usize,
+        first_visible_index: usize,
+        last_visible_index: usize,
+    ) -> usize {
+        let last_valid_index = self.rows.len().saturating_sub(1);
+        if self.scroll_padding == 0 {
+            return selected;
+        }
+
+        let mut scroll_padding = self.scroll_padding.min(last_valid_index);
+        let pad_start = selected.saturating_sub(scroll_padding);
+        let pad_end = selected
+            .saturating_add(scroll_padding)
+            .min(last_valid_index);
+        let mut height_around_selected = self.rows[pad_start..=pad_end]
+            .iter()
+            .map(|row| row.height_with_margin() as usize)
+            .sum::<usize>();
+
+        while scroll_padding > 0 && height_around_selected > max_height {
+            if let Some(index) = selected.checked_sub(scroll_padding) {
+                height_around_selected = height_around_selected
+                    .saturating_sub(self.rows[index].height_with_margin() as usize);
+            }
+            if let Some(index) = selected
+                .checked_add(scroll_padding)
+                .filter(|&index| index <= last_valid_index)
+            {
+                height_around_selected = height_around_selected
+                    .saturating_sub(self.rows[index].height_with_margin() as usize);
+            }
+            scroll_padding -= 1;
+        }
+
+        let selected_after_padding = selected
+            .saturating_add(scroll_padding)
+            .min(last_valid_index);
+        if selected_after_padding >= last_visible_index {
+            selected_after_padding
+        } else if selected.saturating_sub(scroll_padding) < first_visible_index {
+            selected.saturating_sub(scroll_padding)
+        } else {
+            selected
+        }
     }
 
     /// Get all offsets and widths of all user specified columns.
@@ -1152,6 +1255,7 @@ mod tests {
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
+        assert_eq!(table.scroll_padding, 0);
     }
 
     #[test]
@@ -1168,6 +1272,7 @@ mod tests {
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
+        assert_eq!(table.scroll_padding, 0);
     }
 
     #[test]
@@ -1285,6 +1390,12 @@ mod tests {
     fn highlight_spacing() {
         let table = Table::default().highlight_spacing(HighlightSpacing::Always);
         assert_eq!(table.highlight_spacing, HighlightSpacing::Always);
+    }
+
+    #[test]
+    fn scroll_padding() {
+        let table = Table::default().scroll_padding(3);
+        assert_eq!(table.scroll_padding, 3);
     }
 
     #[test]
@@ -1963,7 +2074,7 @@ mod tests {
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [Rect::new(0, 0, 6, 1), Rect::new(7, 0, 6, 1)]
+                [Rect::new(0, 0, 6, 1), Rect::new(7, 0, 5, 1)]
             );
 
             // with selection, more than needed width
@@ -1974,7 +2085,6 @@ mod tests {
             );
 
             // without selection, less than needed width
-            // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
@@ -1982,7 +2092,6 @@ mod tests {
             );
 
             // with selection, less than needed width
-            // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
             let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
@@ -1993,35 +2102,31 @@ mod tests {
         #[test]
         fn ratio_constraint() {
             // without selection, more than needed width
-            // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(20, 0, 0),
-                [Rect::new(0, 0, 7, 1), Rect::new(8, 0, 6, 1)]
+                [Rect::new(0, 0, 6, 1), Rect::new(7, 0, 7, 1)]
             );
 
             // with selection, more than needed width
-            // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(20, 3, 0),
-                [Rect::new(3, 0, 6, 1), Rect::new(10, 0, 5, 1)]
+                [Rect::new(3, 0, 5, 1), Rect::new(9, 0, 6, 1)]
             );
 
             // without selection, less than needed width
-            // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(7, 0, 0),
-                [Rect::new(0, 0, 2, 1), Rect::new(3, 0, 3, 1)]
+                [Rect::new(0, 0, 2, 1), Rect::new(3, 0, 2, 1)]
             );
 
             // with selection, less than needed width
-            // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
             let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(
                 table.get_column_widths(7, 3, 0),
-                [Rect::new(3, 0, 1, 1), Rect::new(5, 0, 2, 1)]
+                [Rect::new(3, 0, 1, 1), Rect::new(5, 0, 1, 1)]
             );
         }
 
@@ -2713,5 +2818,270 @@ mod tests {
         let mut state = TableState::default().with_selected(selection);
         StatefulWidget::render(table, area, &mut buf, &mut state);
         assert_eq!(buf, Buffer::with_lines(expected));
+    }
+
+    #[cfg(test)]
+    mod scroll_padding_tests {
+        use ratatui_core::buffer::Buffer;
+        use ratatui_core::layout::{Constraint, Rect};
+        use ratatui_core::text::Line;
+        use ratatui_core::widgets::StatefulWidget;
+        use rstest::rstest;
+
+        use super::*;
+        use crate::table::{Row, Table, TableState};
+
+        #[rstest]
+        #[case::padding_scroll_down(
+            4, // Render Area Height
+            0, // Offset
+            1, // Padding
+            Some(3), // Selected
+            1, // Expected offset
+            Some(3), // Expected selected
+        )]
+        #[case::padding_scroll_up(
+            4, // Render Area Height
+            4, // Offset
+            1, // Padding
+            Some(2), // Selected
+            1, // Expected offset
+            Some(2), // Expected selected
+        )]
+        #[case::no_padding_offset_behavior(
+            5, // Render Area Height
+            2, // Offset
+            0, // Padding
+            Some(3), // Selected
+            2, // Expected offset
+            Some(3), // Expected selected
+        )]
+        #[case::padding_two_before(
+            5, // Render Area Height
+            2, // Offset
+            2, // Padding
+            Some(3), // Selected
+            1, // Expected offset
+            Some(3), // Expected selected
+        )]
+        #[case::padding_keep_selected_visible(
+            4, // Render Area Height
+            0, // Offset
+            4, // Padding
+            Some(1), // Selected
+            0, // Expected offset
+            Some(1), // Expected selected
+        )]
+        #[case::no_selection_no_padding(
+            4, // Render Area Height
+            2, // Offset
+            1, // Padding
+            None, // Selected
+            2, // Expected offset
+            None, // Expected selected
+        )]
+        #[case::maximum_padding_when_all_rows_fit(
+            6, // Render Area Height
+            0, // Offset
+            usize::MAX, // Padding
+            Some(3), // Selected
+            0, // Expected offset
+            Some(3), // Expected selected
+        )]
+        #[case::maximum_padding_when_rows_do_not_fit(
+            4, // Render Area Height
+            0, // Offset
+            usize::MAX, // Padding
+            Some(3), // Selected
+            1, // Expected offset
+            Some(3), // Expected selected
+        )]
+        fn with_padding(
+            #[case] render_height: u16,
+            #[case] offset: usize,
+            #[case] padding: usize,
+            #[case] selected: Option<usize>,
+            #[case] expected_offset: usize,
+            #[case] expected_selected: Option<usize>,
+        ) {
+            let rows = (0..6).map(|i| Row::new(vec![format!("Row {i}")]));
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).scroll_padding(padding);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, render_height));
+            let mut state = TableState::new()
+                .with_offset(offset)
+                .with_selected(selected);
+            StatefulWidget::render(table, buf.area, &mut buf, &mut state);
+            assert_eq!(state.offset, expected_offset, "offset mismatch");
+            assert_eq!(state.selected, expected_selected, "selected mismatch");
+        }
+
+        /// If there isn't enough room for the selected item and the requested padding the table
+        /// can jump up and down every frame if something isn't done about it. This tests to make
+        /// sure that isn't happening.
+        #[test]
+        fn padding_flicker() {
+            let rows = (0..8).map(|i| Row::new(vec![format!("Row {i}")]));
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).scroll_padding(3);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 5));
+            let mut state = TableState::new().with_offset(2).with_selected(Some(4));
+
+            StatefulWidget::render(&table, buf.area, &mut buf, &mut state);
+            let offset_after_render = state.offset();
+
+            StatefulWidget::render(&table, buf.area, &mut buf, &mut state);
+            assert_eq!(
+                offset_after_render,
+                state.offset(),
+                "offset should remain stable across renders"
+            );
+        }
+
+        /// Test that scroll padding works correctly with rows of inconsistent heights
+        #[test]
+        fn padding_inconsistent_row_heights() {
+            let rows = vec![
+                Row::new(vec!["Row 0"]),
+                Row::new(vec!["Row 1"]),
+                Row::new(vec!["Row 2"]),
+                Row::new(vec!["Row 3"]),
+                Row::new(vec!["Row 4"]).height(3),
+                Row::new(vec!["Row 5"]),
+            ];
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).scroll_padding(1);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 3));
+            let mut state = TableState::new().with_offset(0).with_selected(Some(3));
+
+            StatefulWidget::render(table, buf.area, &mut buf, &mut state);
+
+            // With padding=1, the padding for the tall row 4 after selected row 3 cannot
+            // fit, so padding is reduced and selected row 3 should still be visible
+            assert!(state.offset <= 3, "selected row should be visible");
+        }
+
+        /// Test that scroll padding works correctly with rows that have bottom margins
+        #[test]
+        fn padding_with_row_margins() {
+            let rows = vec![
+                Row::new(vec!["Row 0"]).bottom_margin(1),
+                Row::new(vec!["Row 1"]).bottom_margin(1),
+                Row::new(vec!["Row 2"]).bottom_margin(1),
+                Row::new(vec!["Row 3"]).bottom_margin(1),
+                Row::new(vec!["Row 4"]).bottom_margin(1),
+                Row::new(vec!["Row 5"]),
+            ];
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).scroll_padding(1);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 6));
+            let mut state = TableState::new().with_offset(0).with_selected(Some(4));
+
+            StatefulWidget::render(table, buf.area, &mut buf, &mut state);
+
+            // Each row takes 2 lines (height=1 + bottom_margin=1), area has 6 lines
+            // => 3 rows fit. With padding=1, row 3 should be visible above row 4
+            assert!(state.offset <= 3, "offset should allow padding row to show");
+        }
+
+        /// Rendering test: verify the actual buffer output with scroll padding
+        #[rstest]
+        #[case::basic_padding(
+            4,
+            0,
+            1,
+            Some(3),
+            [
+                "Row 1     ",
+                "Row 2     ",
+                "Row 3     ",
+                "Row 4     ",
+            ]
+        )]
+        #[case::padding_at_top(
+            4,
+            4,
+            1,
+            Some(2),
+            [
+                "Row 1     ",
+                "Row 2     ",
+                "Row 3     ",
+                "Row 4     ",
+            ]
+        )]
+        #[case::no_padding(
+            4,
+            0,
+            0,
+            Some(5),
+            [
+                "Row 2     ",
+                "Row 3     ",
+                "Row 4     ",
+                "Row 5     ",
+            ]
+        )]
+        fn render_with_padding<'line, Lines>(
+            #[case] render_height: u16,
+            #[case] offset: usize,
+            #[case] padding: usize,
+            #[case] selected: Option<usize>,
+            #[case] expected: Lines,
+        ) where
+            Lines: IntoIterator,
+            Lines::Item: Into<Line<'line>>,
+        {
+            let rows = (0..6).map(|i| Row::new(vec![format!("Row {i}")]));
+            let widths = [Constraint::Length(10)];
+            let table = Table::new(rows, widths).scroll_padding(padding);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, render_height));
+            let mut state = TableState::new()
+                .with_offset(offset)
+                .with_selected(selected);
+            StatefulWidget::render(table, buf.area, &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(expected));
+        }
+    }
+
+    #[rstest]
+    fn render_table_outside_buffer_is_noop(
+        #[values(
+            Rect::new(0, 10, 10, 8),
+            Rect::new(40, 10, 10, 8),
+            Rect::new(10, 0, 30, 10),
+            Rect::new(10, 18, 30, 8),
+            Rect::new(10, 10, 0, 8),
+            Rect::new(10, 10, 30, 0)
+        )]
+        area: Rect,
+    ) {
+        let buffer_area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::filled(buffer_area, ratatui_core::buffer::Cell::new("x"));
+        let expected = buf.clone();
+        Widget::render(
+            Table::new(
+                [Row::new(["one", "two"])],
+                [Constraint::Length(5), Constraint::Length(5)],
+            ),
+            area,
+            &mut buf,
+        );
+        assert_eq!(buf, expected, "rendering into {area:?}");
+    }
+
+    #[test]
+    fn render_table_clips_to_offset_buffer() {
+        let area = Rect::new(10, 10, 30, 8);
+        let mut buf = Buffer::empty(area);
+        let mut expected = Buffer::empty(area);
+        let widget = Table::new(
+            [Row::new(["one", "two"])],
+            [Constraint::Length(5), Constraint::Length(5)],
+        );
+        Widget::render(&widget, Rect::new(9, 9, 40, 10), &mut buf);
+        Widget::render(&widget, area, &mut expected);
+        assert_eq!(buf, expected);
+        assert_ne!(buf, Buffer::empty(area));
     }
 }

@@ -99,12 +99,12 @@ pub struct RecipeTab {
 
 impl RecipeTab {
     /// Select the previous item in the ingredients list (with wrap around)
-    pub fn prev(&mut self) {
+    pub const fn prev(&mut self) {
         self.row_index = self.row_index.saturating_add(INGREDIENTS.len() - 1) % INGREDIENTS.len();
     }
 
     /// Select the next item in the ingredients list (with wrap around)
-    pub fn next(&mut self) {
+    pub const fn next(&mut self) {
         self.row_index = self.row_index.saturating_add(1) % INGREDIENTS.len();
     }
 }

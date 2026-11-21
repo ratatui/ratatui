@@ -36,10 +36,10 @@ cargo add ratatui-widgets
 
 - [`BarChart`]: displays multiple datasets as bars with optional grouping.
 - [`Block`]: a basic widget that draws a block with optional borders, titles, and styles.
-- [`calendar::Monthly`]: displays a single month.
 - [`Canvas`]: draws arbitrary shapes using drawing characters.
 - [`Chart`]: displays multiple datasets as lines or scatter graphs.
 - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
+- [`Fill`]: paints every cell in its area with a single repeated symbol and style.
 - [`Gauge`]: displays progress percentage using block characters.
 - [`LineGauge`]: displays progress as a line.
 - [`List`]: displays a list of items and allows selection.
@@ -53,10 +53,10 @@ cargo add ratatui-widgets
 
 [`BarChart`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/barchart/struct.BarChart.html
 [`Block`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/block/struct.Block.html
-[`calendar::Monthly`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/calendar/struct.Monthly.html
 [`Canvas`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/canvas/struct.Canvas.html
 [`Chart`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/chart/struct.Chart.html
 [`Clear`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/clear/struct.Clear.html
+[`Fill`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/fill/struct.Fill.html
 [`Gauge`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/gauge/struct.Gauge.html
 [`LineGauge`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/gauge/struct.LineGauge.html
 [`List`]: https://docs.rs/ratatui-widgets/latest/ratatui_widgets/list/struct.List.html
@@ -95,7 +95,7 @@ For detailed information about the workspace organization, see [ARCHITECTURE.md]
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request on GitHub. For more
-details on contributing, please see the [CONTRIBUTING](CONTRIBUTING.md) document.
+details on contributing, please see the [CONTRIBUTING](../CONTRIBUTING.md) document.
 
 ## License
 

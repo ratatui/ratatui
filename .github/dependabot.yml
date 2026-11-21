@@ -10,9 +10,33 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    # Delay routine version-update PRs for a few days to reduce supply-chain
+    # risk from immediately adopting a newly published release. Security
+    # updates are not delayed by cooldown.
+    cooldown:
+      default-days: 7
+    # Group routine Cargo updates into one reviewable PR to reduce bot traffic.
+    groups:
+      cargo-dependencies:
+        patterns: ["*"]
+    # Keep the queue bounded when grouped updates still produce follow-up PRs.
+    open-pull-requests-limit: 3
+    # For Cargo, leave the manifest requirement alone when it already admits
+    # the new release. For example, a requirement like `0.2.0` already allows
+    # compatible `0.2.x` updates, so Dependabot can update the lockfile without
+    # rewriting the manifest to `0.2.1`.
+    versioning-strategy: increase-if-necessary
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    # Delay routine action bumps for a few days to reduce supply-chain risk
+    # from immediately adopting a newly published release.
+    cooldown:
+      default-days: 7
+    # Group workflow action updates separately from Rust dependency updates.
+    groups:
+      github-actions-dependencies:
+        patterns: ["*"]
+    open-pull-requests-limit: 3

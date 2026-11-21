@@ -1,5 +1,5 @@
 //! The [`Clear`] widget allows you to clear a certain area to allow overdrawing (e.g. for popups).
-use ratatui_core::buffer::Buffer;
+use ratatui_core::buffer::{Buffer, CellDiffOption, CellWidth};
 use ratatui_core::layout::Rect;
 use ratatui_core::widgets::Widget;
 
@@ -41,6 +41,24 @@ impl Widget for &Clear {
         if area.is_empty() {
             return;
         }
+
+        // A double-width glyph sitting just to the left of the area keeps its full visual width
+        // after the loop below resets the cells inside the area: its right half occupies
+        // `area.x`, so it spills into whatever the caller draws on top of `Clear` (e.g. a popup's
+        // left border). Shrink it to a space first, while we can still see its pre-clear width.
+        if area.x > buf.area().x {
+            for y in area.top()..area.bottom() {
+                let cell = &mut buf[(area.x - 1, y)];
+                if cell.cell_width() > 1 {
+                    cell.set_symbol(" ");
+                    // The replacement space must not retain a width that skips the overlay.
+                    if matches!(cell.diff_option, CellDiffOption::ForcedWidth(_)) {
+                        cell.set_diff_option(CellDiffOption::None);
+                    }
+                }
+            }
+        }
+
         for x in area.left()..area.right() {
             for y in area.top()..area.bottom() {
                 buf[(x, y)].reset();
@@ -51,8 +69,11 @@ impl Widget for &Clear {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::buffer::Buffer;
+    use core::num::NonZeroU16;
+
+    use ratatui_core::buffer::{Buffer, CellDiffOption};
     use ratatui_core::layout::Rect;
+    use ratatui_core::style::Style;
     use ratatui_core::widgets::Widget;
 
     use super::*;
@@ -89,6 +110,59 @@ mod tests {
         let clear = Clear;
         clear.render(Rect::new(100, 0, 100, 100), &mut buffer);
         let expected = Buffer::with_lines(["xxxxxxxxxxxxxxx"; 7]);
+        assert_eq!(buffer, expected);
+    }
+
+    /// Regression test for a double-width glyph immediately to the left of the cleared area.
+    ///
+    /// `字` occupies columns 3 and 4. Clearing `Rect::new(4, 0, 2, 1)` only resets columns 4-5,
+    /// so `字` at column 3 kept its full two-cell width and its right half spilled into column 4,
+    /// underneath whatever gets drawn on top of `Clear` (e.g. a popup's left border).
+    #[test]
+    fn render_shrinks_wide_glyph_straddling_left_edge() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 1));
+        buffer.set_string(0, 0, "abc字", Style::default());
+        Clear.render(Rect::new(4, 0, 2, 1), &mut buffer);
+        let expected = Buffer::with_lines(["abc   "]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_clears_forced_width_without_skipping_overlay() {
+        let mut previous = Buffer::with_lines(["abc字 "]);
+        previous[(3, 0)]
+            .set_style(Style::new().red().on_blue().bold())
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
+        let mut buffer = previous.clone();
+
+        Clear.render(Rect::new(4, 0, 2, 1), &mut buffer);
+        buffer[(4, 0)].set_symbol("│");
+
+        assert!(
+            previous
+                .diff_iter(&buffer)
+                .any(|(x, y, cell)| (x, y, cell.symbol()) == (4, 0, "│"))
+        );
+        assert_eq!(buffer[(3, 0)].cell_width(), 1);
+        assert_eq!(buffer[(3, 0)].style(), previous[(3, 0)].style());
+    }
+
+    /// A single-width glyph at `area.x - 1` must be left untouched.
+    #[test]
+    fn render_left_edge_single_width_glyph_untouched() {
+        let mut buffer = Buffer::with_lines(["abcde "]);
+        Clear.render(Rect::new(4, 0, 2, 1), &mut buffer);
+        let expected = Buffer::with_lines(["abcd  "]);
+        assert_eq!(buffer, expected);
+    }
+
+    /// The boundary patch must not panic when the area's left edge is also the buffer's left
+    /// edge (there is no `area.x - 1` cell to look at in that case).
+    #[test]
+    fn render_area_at_buffer_left_edge_does_not_panic() {
+        let mut buffer = Buffer::with_lines(["abcd"]);
+        Clear.render(Rect::new(0, 0, 4, 1), &mut buffer);
+        let expected = Buffer::with_lines(["    "]);
         assert_eq!(buffer, expected);
     }
 }

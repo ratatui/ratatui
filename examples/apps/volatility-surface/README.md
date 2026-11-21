@@ -18,7 +18,9 @@ This example visualizes an implied volatility surface as an interactive 3D wiref
 
 ## How it works
 
-Objects further away appear smaller—that's perspective. The math is simple: divide x and y coordinates by distance. Add rotation matrices to spin the object in 3D space, and you can explore it from any angle.
+Objects further away appear smaller—that's perspective. The math is simple: divide x and y
+coordinates by distance. Add rotation matrices to spin the object in 3D space, and you can explore
+it from any angle.
 
 The result: a 500-point surface rendered at 30fps using basic trigonometry and perspective division.
 

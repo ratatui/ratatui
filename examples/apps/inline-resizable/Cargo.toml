@@ -1,5 +1,5 @@
 [package]
-name = "calendar-explorer"
+name = "inline-resizable"
 publish = false
 license.workspace = true
 edition.workspace = true
@@ -9,7 +9,6 @@ rust-version.workspace = true
 color-eyre.workspace = true
 crossterm.workspace = true
 ratatui.workspace = true
-time = { workspace = true, features = ["formatting", "parsing"] }
 
 [lints]
 workspace = true

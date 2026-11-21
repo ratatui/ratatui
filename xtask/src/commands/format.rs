@@ -14,7 +14,7 @@ pub struct Format {
 impl Run for Format {
     fn run(self) -> Result<()> {
         self.run_rustfmt()?;
-        self.run_taplo()?;
+        self.run_tombi()?;
         Ok(())
     }
 }
@@ -29,12 +29,12 @@ impl Format {
         Ok(())
     }
 
-    fn run_taplo(&self) -> Result<(), color_eyre::eyre::Error> {
-        let mut args = vec!["format", "--colors", "always"];
+    fn run_tombi(&self) -> Result<(), color_eyre::eyre::Error> {
+        let mut args = vec!["format"];
         if self.check {
             args.push("--check");
         }
-        cmd("taplo", args).run_with_trace()?;
+        cmd("tombi", args).run_with_trace()?;
         Ok(())
     }
 }

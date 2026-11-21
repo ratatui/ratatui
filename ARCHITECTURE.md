@@ -51,6 +51,15 @@ The Ratatui project is now organized as a Cargo workspace containing the followi
   - Optimized implementations
   - Comprehensive documentation and examples
 
+#### `ratatui-calendar`
+
+- **Purpose**: Calendar widget implementation
+- **Contents**: The `Monthly` calendar widget and the `DateStyler` trait for styling dates
+- **Target Users**: Applications showing calendars, widget library authors
+- **Key Features**:
+  - Kept separate because its public API uses a third-party date type, so that dependency can
+    change without a breaking release of `ratatui-widgets`
+
 ### Backend Crates
 
 #### `ratatui-crossterm`
@@ -64,6 +73,13 @@ The Ratatui project is now organized as a Cargo workspace containing the followi
 - **Purpose**: Termion backend implementation
 - **Contents**: Unix-specific terminal backend using the `termion` crate
 - **Target Users**: Unix-specific applications requiring low-level control
+
+#### `ratatui-termina`
+
+- **Purpose**: Termina backend implementation
+- **Contents**: Backend for values implementing `termina::Terminal`
+- **Target Users**: Applications that use Termina events or typed escape sequences alongside
+  Ratatui rendering
 
 #### `ratatui-termwiz`
 
@@ -85,8 +101,10 @@ The Ratatui project is now organized as a Cargo workspace containing the followi
 ratatui
 ├── ratatui-core
 ├── ratatui-widgets → ratatui-core
+├── ratatui-calendar → ratatui-core, ratatui-widgets
 ├── ratatui-crossterm → ratatui-core
 ├── ratatui-termion → ratatui-core
+├── ratatui-termina → ratatui-core
 ├── ratatui-termwiz → ratatui-core
 └── ratatui-macros
 ```
@@ -95,6 +113,8 @@ ratatui
 
 - **ratatui-core**: Foundation for all other crates
 - **ratatui-widgets**: Depends on `ratatui-core` for widget traits and types
+- **ratatui-calendar**: Depends on `ratatui-core` for widget traits and on `ratatui-widgets` for
+  `Block`
 - **Backend crates**: Each depends on `ratatui-core` for backend traits and types
 - **ratatui**: Depends on all other crates and re-exports their public APIs
 

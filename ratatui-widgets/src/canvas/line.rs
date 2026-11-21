@@ -4,6 +4,18 @@ use ratatui_core::style::Color;
 use crate::canvas::{Painter, Shape};
 
 /// A line from `(x1, y1)` to `(x2, y2)` with the given color
+///
+/// # Examples
+///
+/// ```rust
+/// # use ratatui_core::style::Color;
+/// # use ratatui_widgets::canvas::{Canvas, Line};
+/// Canvas::default().paint(|ctx| {
+///     ctx.draw(&Line::new(0.0, 0.0, 1.0, 0.0, Color::Red));
+///     ctx.draw(&Line::new(1.0, 0.0, 0.5, 1.0, Color::Red));
+///     ctx.draw(&Line::new(0.5, 1.0, 0.0, 0.0, Color::Red));
+/// });
+/// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Line {
     /// `x` of the starting point
@@ -34,6 +46,12 @@ impl Line {
 impl Shape for Line {
     #[expect(clippy::similar_names)]
     fn draw(&self, painter: &mut Painter) {
+        if [self.x1, self.y1, self.x2, self.y2]
+            .iter()
+            .any(|coordinate| !coordinate.is_finite())
+        {
+            return;
+        }
         let (x_bounds, y_bounds) = painter.bounds();
         let Some((world_x1, world_y1, world_x2, world_y2)) =
             clip_line(x_bounds, y_bounds, self.x1, self.y1, self.x2, self.y2)
@@ -47,35 +65,41 @@ impl Shape for Line {
             return;
         };
 
-        let (dx, x_range) = if x2 >= x1 {
-            (x2 - x1, x1..=x2)
-        } else {
-            (x1 - x2, x2..=x1)
-        };
-        let (dy, y_range) = if y2 >= y1 {
-            (y2 - y1, y1..=y2)
-        } else {
-            (y1 - y2, y2..=y1)
-        };
+        draw_line(painter, x1, y1, x2, y2, self.color);
+    }
+}
 
-        if dx == 0 {
-            for y in y_range {
-                painter.paint(x1, y, self.color);
-            }
-        } else if dy == 0 {
-            for x in x_range {
-                painter.paint(x, y1, self.color);
-            }
-        } else if dy < dx {
-            if x1 > x2 {
-                draw_line_low(painter, x2, y2, x1, y1, self.color);
+/// The points of a series together with the line segments joining consecutive points.
+///
+/// Draws the same dots as a [`Points`](super::Points) shape plus a [`Line`] per consecutive pair,
+/// but maps each point to the grid once. Clipping leaves a segment with both ends inside the
+/// canvas bounds unchanged, so those are drawn directly in grid space; the rest fall back to
+/// [`Line`] so they are clipped.
+pub(crate) struct Polyline<'a> {
+    pub coords: &'a [(f64, f64)],
+    pub color: Color,
+}
+
+impl Shape for Polyline<'_> {
+    fn draw(&self, painter: &mut Painter) {
+        let Some(&(mut x1, mut y1)) = self.coords.first() else {
+            return;
+        };
+        let mut start = painter.get_point(x1, y1);
+        if let Some((x, y)) = start {
+            painter.paint(x, y, self.color);
+        }
+        for &(x2, y2) in &self.coords[1..] {
+            let end = painter.get_point(x2, y2);
+            if let (Some((x1, y1)), Some((x2, y2))) = (start, end) {
+                draw_line(painter, x1, y1, x2, y2, self.color);
             } else {
-                draw_line_low(painter, x1, y1, x2, y2, self.color);
+                if let Some((x, y)) = end {
+                    painter.paint(x, y, self.color);
+                }
+                Line::new(x1, y1, x2, y2, self.color).draw(painter);
             }
-        } else if y1 > y2 {
-            draw_line_high(painter, x2, y2, x1, y1, self.color);
-        } else {
-            draw_line_high(painter, x1, y1, x2, y2, self.color);
+            (x1, y1, start) = (x2, y2, end);
         }
     }
 }
@@ -101,13 +125,56 @@ fn clip_line(
     }
 }
 
-fn draw_line_low(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: usize, color: Color) {
+pub(super) fn draw_line(
+    painter: &mut Painter,
+    x1: usize,
+    y1: usize,
+    x2: usize,
+    y2: usize,
+    color: Color,
+) {
+    for_each_line_point(x1, y1, x2, y2, |x, y| painter.paint(x, y, color));
+}
+
+/// Calls `f(x, y)` for each pixel on the Bresenham line from `(x1, y1)` to `(x2, y2)`.
+pub(super) fn for_each_line_point<F>(x1: usize, y1: usize, x2: usize, y2: usize, mut f: F)
+where
+    F: FnMut(usize, usize),
+{
+    let dx = x2.abs_diff(x1);
+    let dy = y2.abs_diff(y1);
+
+    if dx == 0 {
+        for y in y1.min(y2)..=y1.max(y2) {
+            f(x1, y);
+        }
+    } else if dy == 0 {
+        for x in x1.min(x2)..=x1.max(x2) {
+            f(x, y1);
+        }
+    } else if dy < dx {
+        if x1 > x2 {
+            for_each_line_point_low(x2, y2, x1, y1, f);
+        } else {
+            for_each_line_point_low(x1, y1, x2, y2, f);
+        }
+    } else if y1 > y2 {
+        for_each_line_point_high(x2, y2, x1, y1, f);
+    } else {
+        for_each_line_point_high(x1, y1, x2, y2, f);
+    }
+}
+
+fn for_each_line_point_low<F>(x1: usize, y1: usize, x2: usize, y2: usize, mut f: F)
+where
+    F: FnMut(usize, usize),
+{
     let dx = (x2 - x1) as isize;
     let dy = (y2 as isize - y1 as isize).abs();
     let mut d = 2 * dy - dx;
     let mut y = y1;
     for x in x1..=x2 {
-        painter.paint(x, y, color);
+        f(x, y);
         if d > 0 {
             y = if y1 > y2 {
                 y.saturating_sub(1)
@@ -120,13 +187,16 @@ fn draw_line_low(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: usi
     }
 }
 
-fn draw_line_high(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: usize, color: Color) {
+fn for_each_line_point_high<F>(x1: usize, y1: usize, x2: usize, y2: usize, mut f: F)
+where
+    F: FnMut(usize, usize),
+{
     let dx = (x2 as isize - x1 as isize).abs();
     let dy = (y2 - y1) as isize;
     let mut d = 2 * dx - dy;
     let mut x = x1;
     for y in y1..=y2 {
-        painter.paint(x, y, color);
+        f(x, y);
         if d > 0 {
             x = if x1 > x2 {
                 x.saturating_sub(1)
@@ -136,6 +206,71 @@ fn draw_line_high(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: us
             d -= 2 * dy;
         }
         d += 2 * dx;
+    }
+}
+
+/// A filled line from `(x1, y1)` to `(x2, y2)` that fills the area under/over the line
+/// to `fill_to_y` with the given color.
+///
+/// This is useful for creating area charts or filling the space under a line graph.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FilledLine {
+    /// `x` of the starting point
+    pub x1: f64,
+    /// `y` of the starting point
+    pub y1: f64,
+    /// `x` of the ending point
+    pub x2: f64,
+    /// `y` of the ending point
+    pub y2: f64,
+    /// Y-coordinate to fill to (fills area between the line and this Y value)
+    pub fill_to_y: f64,
+    /// Color of the line and filled area
+    pub color: Color,
+}
+
+impl FilledLine {
+    /// Create a new filled line from `(x1, y1)` to `(x2, y2)` that fills to `fill_to_y`
+    pub const fn new(x1: f64, y1: f64, x2: f64, y2: f64, fill_to_y: f64, color: Color) -> Self {
+        Self {
+            x1,
+            y1,
+            x2,
+            y2,
+            fill_to_y,
+            color,
+        }
+    }
+}
+
+impl Shape for FilledLine {
+    #[expect(clippy::similar_names)]
+    fn draw(&self, painter: &mut Painter) {
+        let (x_bounds, y_bounds) = painter.bounds();
+        let Some((world_x1, world_y1, world_x2, world_y2)) =
+            clip_line(x_bounds, y_bounds, self.x1, self.y1, self.x2, self.y2)
+        else {
+            return;
+        };
+        let Some((x1, y1)) = painter.get_point(world_x1, world_y1) else {
+            return;
+        };
+        let Some((x2, y2)) = painter.get_point(world_x2, world_y2) else {
+            return;
+        };
+
+        let y_fill = self.fill_to_y.clamp(y_bounds[0], y_bounds[1]);
+        let Some((_, y_fill)) = painter.get_point(world_x1, y_fill) else {
+            return;
+        };
+
+        for_each_line_point(x1, y1, x2, y2, |x, y| {
+            let start = y.min(y_fill);
+            let end = y.max(y_fill);
+            for y in start..=end {
+                painter.paint(x, y, self.color);
+            }
+        });
     }
 }
 
@@ -302,5 +437,273 @@ mod tests {
             }
         }
         assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::filled_off_grid1(&FilledLine::new(-1.0, 0.0, -1.0, 10.0, 0.0, Color::Red), ["          "; 10])]
+    #[case::filled_off_grid2(&FilledLine::new(0.0, -1.0, 10.0, -1.0, 0.0, Color::Red), ["          "; 10])]
+    #[case::filled_off_grid3(&FilledLine::new(-10.0, 5.0, -1.0, 5.0, 0.0, Color::Red), ["          "; 10])]
+    #[case::filled_off_grid4(&FilledLine::new(5.0, 11.0, 5.0, 20.0, 0.0, Color::Red), ["          "; 10])]
+    #[case::filled_off_grid5(&FilledLine::new(-10.0, 0.0, 5.0, 0.0, -10.0, Color::Red), [
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "••••••    ",
+        ])]
+    #[case::filled_off_grid6(&FilledLine::new(0.0, 0.0, 10.0, 10.0, 0.0, Color::Red), [
+            "         •",
+            "        ••",
+            "       •••",
+            "      ••••",
+            "     •••••",
+            "    ••••••",
+            "   •••••••",
+            "  ••••••••",
+            " •••••••••",
+            "••••••••••",
+        ])]
+    #[case::filled_off_grid7(&FilledLine::new(0.0, 0.0, 11.0, 11.0, 0.0, Color::Red), [
+            "         •",
+            "        ••",
+            "       •••",
+            "      ••••",
+            "     •••••",
+            "    ••••••",
+            "   •••••••",
+            "  ••••••••",
+            " •••••••••",
+            "••••••••••",
+        ])]
+    #[case::filled_off_grid8(&FilledLine::new(-1.0, -1.0, 11.0, 11.0, 0.0, Color::Red), [
+            "         •",
+            "        ••",
+            "       •••",
+            "      ••••",
+            "     •••••",
+            "    ••••••",
+            "   •••••••",
+            "  ••••••••",
+            " •••••••••",
+            "••••••••••",
+        ])]
+    #[case::filled_horizontal1(&FilledLine::new(0.0, 0.0, 10.0, 0.0, 0.0, Color::Red), [
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "••••••••••",
+        ])]
+    #[case::filled_horizontal2(&FilledLine::new(0.0, 0.0, 10.0, 0.0, 10.0, Color::Red), [
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+        ])]
+    #[case::filled_horizontal3(&FilledLine::new(10.0, 10.0, 0.0, 10.0, 10.0, Color::Red), [
+            "••••••••••",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ])]
+    #[case::filled_horizontal4(&FilledLine::new(10.0, 10.0, 0.0, 10.0, 0.0, Color::Red), [
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+            "••••••••••",
+        ])]
+    #[case::filled_vertical1(&FilledLine::new(0.0, 0.0, 0.0, 10.0, 0.0, Color::Red), ["•         "; 10])]
+    #[case::filled_vertical2(&FilledLine::new(10.0, 10.0, 10.0, 0.0, 0.0, Color::Red), ["         •"; 10])]
+    // dy < dx, x1 < x2
+    #[case::filled_diagonal1(&FilledLine::new(0.0, 0.0, 10.0, 5.0, 0.0, Color::Red), [
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "        ••",
+            "      ••••",
+            "    ••••••",
+            "  ••••••••",
+            "••••••••••",
+        ])]
+    // dy < dx, x1 > x2
+    #[case::filled_diagonal2(&FilledLine::new(10.0, 0.0, 0.0, 5.0, 0.0, Color::Red), [
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "••        ",
+            "••••      ",
+            "••••••    ",
+            "••••••••  ",
+            "••••••••••",
+        ])]
+    // dy > dx, y1 < y2
+    #[case::filled_diagonal3(&FilledLine::new(0.0, 0.0, 5.0, 10.0, 0.0, Color::Red), [
+            "     •    ",
+            "    ••    ",
+            "    ••    ",
+            "   •••    ",
+            "   •••    ",
+            "  ••••    ",
+            "  ••••    ",
+            " •••••    ",
+            " •••••    ",
+            "••••••    ",
+        ])]
+    // dy > dx, y1 > y2
+    #[case::filled_diagonal4(&FilledLine::new(0.0, 10.0, 5.0, 0.0, 0.0, Color::Red), [
+            "•         ",
+            "••        ",
+            "••        ",
+            "•••       ",
+            "•••       ",
+            "••••      ",
+            "••••      ",
+            "•••••     ",
+            "•••••     ",
+            "••••••    ",
+        ])]
+    #[case::filled_split1(&FilledLine::new(0.0, 0.0, 10.0, 10.0, 5.0, Color::Red), [
+            "         •",
+            "        ••",
+            "       •••",
+            "      ••••",
+            "     •••••",
+            "••••••••••",
+            "••••      ",
+            "•••       ",
+            "••        ",
+            "•         ",
+        ])]
+    #[case::filled_split2(&FilledLine::new(0.0, 0.0, 10.0, 10.0, 7.0, Color::Red), [
+            "         •",
+            "        ••",
+            "       •••",
+            "••••••••••",
+            "••••••    ",
+            "•••••     ",
+            "••••      ",
+            "•••       ",
+            "••        ",
+            "•         ",
+        ])]
+    fn tests_filled<'expected_line, ExpectedLines>(
+        #[case] line: &FilledLine,
+        #[case] expected: ExpectedLines,
+    ) where
+        ExpectedLines: IntoIterator,
+        ExpectedLines::Item: Into<ratatui_core::text::Line<'expected_line>>,
+    {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
+        let canvas = Canvas::default()
+            .marker(Marker::Dot)
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .paint(|context| context.draw(line));
+        canvas.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(expected);
+        for cell in &mut expected.content {
+            if cell.symbol() == "•" {
+                cell.set_style(Style::new().red());
+            }
+        }
+        assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::nan_x(f64::NAN, 5.0)]
+    #[case::nan_y(5.0, f64::NAN)]
+    #[case::inf_x(f64::INFINITY, 5.0)]
+    #[case::neg_inf_y(5.0, f64::NEG_INFINITY)]
+    fn non_finite_endpoint_draws_nothing(#[case] x2: f64, #[case] y2: f64) {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
+        let canvas = Canvas::default()
+            .marker(Marker::Dot)
+            .x_bounds([0.0, 10.0])
+            .y_bounds([10.0, 0.0])
+            .paint(|context| context.draw(&Line::new(0.0, 0.0, x2, y2, Color::Red)));
+        canvas.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(["          "; 10]));
+    }
+
+    /// `Polyline` must draw exactly what `Points` plus a `Line` per consecutive pair draws,
+    /// including points outside the bounds, segments crossing the edges, and non-finite points.
+    #[rstest]
+    fn polyline_matches_points_and_lines(
+        #[values(Marker::Dot, Marker::HalfBlock, Marker::Braille)] marker: Marker,
+    ) {
+        let coords = [
+            (0.0, 0.0),
+            (2.5, 7.25),
+            (5.0, 5.0),
+            (12.0, 3.0),
+            (15.0, -4.0),
+            (7.5, 12.0),
+            (8.0, 9.5),
+            (f64::NAN, 4.0),
+            (9.0, 1.0),
+            (f64::INFINITY, 2.0),
+            (1.0, 8.0),
+            (-3.0, 6.0),
+            (10.0, 10.0),
+            (10.0, 0.0),
+        ];
+        let render = |paint: &dyn Fn(&mut crate::canvas::Context)| {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 6));
+            Canvas::default()
+                .marker(marker)
+                .x_bounds([0.0, 10.0])
+                .y_bounds([0.0, 10.0])
+                .paint(|ctx| paint(ctx))
+                .render(buffer.area, &mut buffer);
+            buffer
+        };
+        let expected = render(&|ctx| {
+            ctx.draw(&crate::canvas::Points::new(&coords, Color::Red));
+            for pair in coords.windows(2) {
+                let [(x1, y1), (x2, y2)] = [pair[0], pair[1]];
+                ctx.draw(&Line::new(x1, y1, x2, y2, Color::Red));
+            }
+        });
+        let actual = render(&|ctx| {
+            ctx.draw(&Polyline {
+                coords: &coords,
+                color: Color::Red,
+            });
+        });
+        assert_eq!(actual, expected);
     }
 }

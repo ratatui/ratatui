@@ -4,9 +4,8 @@ use core::ops::{Index, IndexMut};
 use core::{cmp, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
-use crate::buffer::{BufferDiff, Cell};
+use crate::buffer::{BufferDiff, Cell, CellWidth};
 use crate::layout::{Position, Rect};
 use crate::style::Style;
 use crate::text::{Line, Span};
@@ -18,12 +17,23 @@ use crate::text::{Line, Span};
 /// a grapheme, a foreground color and a background color. This grid will then be used to output
 /// the appropriate escape sequences and characters to draw the UI as the user has defined it.
 ///
-/// # Examples:
+/// For text rendering, prefer rendering [`Span`], [`Line`], or [`Text`](crate::text::Text) as
+/// widgets. These text widgets restrict rendering to the intersection of the requested area and
+/// the buffer's area. For unstyled text in an area known to be inside the buffer, a [`&str`](str)
+/// or [`String`](alloc::string::String) can also be rendered directly. Their widget implementations
+/// currently delegate to [`set_stringn`](Self::set_stringn) and retain its bounds behavior.
+/// The coordinate-based text setters retain historical behavior for compatibility. For individual
+/// cells, use [`cell`](Self::cell) and [`cell_mut`](Self::cell_mut) when a position might be
+/// outside the buffer, or indexing when the position is known to be inside it.
+///
+/// # Examples
 ///
 /// ```
 /// use ratatui_core::buffer::{Buffer, Cell};
 /// use ratatui_core::layout::{Position, Rect};
 /// use ratatui_core::style::{Color, Style};
+/// use ratatui_core::text::Span;
+/// use ratatui_core::widgets::Widget;
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut buf = Buffer::empty(Rect {
@@ -60,6 +70,10 @@ use crate::text::{Line, Span};
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);
 /// assert_eq!(cell.bg, Color::White);
+///
+/// // Preferred for general text rendering: express the position and width as an area.
+/// let span = Span::styled("string", Style::default().fg(Color::Red).bg(Color::White));
+/// span.render(Rect::new(3, 0, 7, 1), &mut buf);
 /// # Ok(())
 /// # }
 /// ```
@@ -125,9 +139,31 @@ impl Buffer {
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds.
+    /// Panics if the position is outside the buffer's area.
+    ///
+    /// # Examples
+    ///
+    /// Compare this method with [`Buffer::cell`], which also handles positions outside the buffer
+    /// without panicking:
+    ///
+    /// ```
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    ///
+    /// let buffer = Buffer::empty(Rect::new(0, 0, 57, 1));
+    /// # #[allow(deprecated)]
+    /// let cell = buffer.get(1, 0);
+    /// assert_eq!(cell.symbol(), " ");
+    ///
+    /// // Preferred: return an Option when the position might be outside the buffer.
+    /// assert_eq!(buffer.cell((1, 0)).map(|cell| cell.symbol()), Some(" "));
+    /// assert_eq!(buffer.cell((1, 1)).map(|cell| cell.symbol()), None);
+    /// ```
     #[track_caller]
-    #[deprecated = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell((x, y))`. Both methods take `impl Into<Position>`."]
+    #[deprecated(
+        since = "0.28.0",
+        note = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell((x, y))`. Both methods take `impl Into<Position>`."
+    )]
     #[must_use]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
@@ -146,8 +182,33 @@ impl Buffer {
     /// # Panics
     ///
     /// Panics if the position is outside the `Buffer`'s area.
+    ///
+    /// # Examples
+    ///
+    /// Compare this method with [`Buffer::cell_mut`], which also handles positions outside the
+    /// buffer without panicking:
+    ///
+    /// ```
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    ///
+    /// let mut buffer = Buffer::empty(Rect::new(0, 0, 57, 1));
+    /// # #[allow(deprecated)]
+    /// let cell = buffer.get_mut(1, 0);
+    /// cell.set_symbol("A");
+    ///
+    /// // Preferred: handle a missing cell without panicking.
+    /// if let Some(cell) = buffer.cell_mut((1, 0)) {
+    ///     cell.set_symbol("B");
+    /// }
+    /// assert_eq!(buffer[(1, 0)].symbol(), "B");
+    /// assert_eq!(buffer.cell_mut((1, 1)), None);
+    /// ```
     #[track_caller]
-    #[deprecated = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell_mut((x, y))`. Both methods take `impl Into<Position>`."]
+    #[deprecated(
+        since = "0.28.0",
+        note = "use `Buffer[(x, y)]` instead. To avoid panicking, use `Buffer::cell_mut((x, y))`. Both methods take `impl Into<Position>`."
+    )]
     #[must_use]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);
@@ -232,9 +293,21 @@ impl Buffer {
     /// assert_eq!(buffer.index_of(200, 100), 0);
     /// ```
     ///
+    /// Prefer [`Buffer::cell`] when accessing a cell, avoiding an intermediate index and returning
+    /// `None` for positions outside the buffer:
+    ///
+    /// ```
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    ///
+    /// let buffer = Buffer::empty(Rect::new(200, 100, 10, 10));
+    /// assert!(buffer.cell((200, 100)).is_some());
+    /// assert_eq!(buffer.cell((0, 0)), None);
+    /// ```
+    ///
     /// # Panics
     ///
-    /// Panics when given an coordinate that is outside of this Buffer's area.
+    /// Panics when given a coordinate that is outside the buffer's area.
     ///
     /// ```should_panic
     /// use ratatui_core::buffer::Buffer;
@@ -293,19 +366,22 @@ impl Buffer {
     /// assert_eq!(buffer.pos_of(14), (204, 101));
     /// ```
     ///
-    /// # Panics
+    /// Prefer [`Buffer::cell`] or [`Buffer::cell_mut`] when accessing a cell by position:
     ///
-    /// Panics when given an index that is outside the Buffer's content.
-    ///
-    /// ```should_panic
+    /// ```
     /// use ratatui_core::buffer::Buffer;
     /// use ratatui_core::layout::Rect;
     ///
-    /// let rect = Rect::new(0, 0, 10, 10); // 100 cells in total
-    /// let buffer = Buffer::empty(rect);
-    /// // Index 100 is the 101th cell, which lies outside of the area of this Buffer.
-    /// buffer.pos_of(100); // Panics
+    /// let buffer = Buffer::empty(Rect::new(200, 100, 10, 10));
+    /// assert!(buffer.cell((200, 100)).is_some());
+    /// assert_eq!(buffer.cell((0, 0)), None);
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics in debug builds when `index` is outside the buffer's content. In all builds,
+    /// panics if the buffer's width is zero or the calculated coordinates do not fit in `u16`.
+    /// Callers must provide a valid index even in release builds.
     #[must_use]
     pub fn pos_of(&self, index: usize) -> (u16, u16) {
         debug_assert!(
@@ -321,7 +397,44 @@ impl Buffer {
         )
     }
 
-    /// Print a string, starting at the position (x, y)
+    /// Print a string, starting at the position (x, y).
+    ///
+    /// Prefer rendering a [`Span`], [`Line`], or [`Text`](crate::text::Text) as a widget for
+    /// general text rendering. Widget rendering restricts writes to the available area. This
+    /// coordinate-based method retains historical behavior for compatibility. For unstyled text,
+    /// render a [`&str`](str) or [`String`](alloc::string::String) directly when the rendering area
+    /// is known to be inside the buffer. These widget implementations delegate to
+    /// [`set_stringn`](Self::set_stringn), so they retain this method's bounds behavior.
+    ///
+    /// If `(x, y)` is outside the buffer's area, nothing is written.
+    ///
+    /// # Examples
+    ///
+    /// Compare the coordinate-based setter with the preferred widget rendering:
+    ///
+    /// ```
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::style::Style;
+    /// use ratatui_core::text::Span;
+    /// use ratatui_core::widgets::Widget;
+    ///
+    /// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+    /// buffer.set_string(1, 0, "Hello", Style::new().green());
+    /// assert_eq!(buffer[(1, 0)].symbol(), "H");
+    ///
+    /// // Preferred: render the same text into the remaining area of the row.
+    /// buffer.reset();
+    /// Span::styled("Hello", Style::new().green()).render(Rect::new(1, 0, 4, 1), &mut buffer);
+    /// assert_eq!(buffer[(0, 0)].symbol(), " ");
+    /// assert_eq!(buffer[(1, 0)].symbol(), "H");
+    ///
+    /// // Unstyled text can be rendered directly without constructing a Span.
+    /// "Hello".render(Rect::new(0, 0, 5, 1), &mut buffer);
+    ///
+    /// // Rendering outside the buffer is a no-op, even with nonempty content.
+    /// Span::raw("Hello").render(Rect::new(1, 1, 5, 1), &mut buffer);
+    /// ```
     pub fn set_string<T, S>(&mut self, x: u16, y: u16, string: T, style: S)
     where
         T: AsRef<str>,
@@ -330,10 +443,47 @@ impl Buffer {
         self.set_stringn(x, y, string, usize::MAX, style);
     }
 
-    /// Print at most the first n characters of a string if enough space is available
-    /// until the end of the line. Skips zero-width graphemes and control characters.
+    /// Print a string up to `max_width` terminal cells, starting at the position (x, y).
     ///
-    /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
+    /// Stops at the buffer's right edge. Skips zero-width graphemes and control characters.
+    /// Returns the position immediately after the last written grapheme, or `(x, y)` if nothing
+    /// is written.
+    ///
+    /// Prefer rendering a [`Span`] as a widget with the width limit expressed by the rendering
+    /// area. Widget rendering handles clipping and preserves zero-width graphemes. This method
+    /// retains historical behavior for compatibility. Widget rendering does not return an ending
+    /// position; account for this when migrating code that uses the return value. For unstyled
+    /// text, render a [`&str`](str) or [`String`](alloc::string::String) directly.
+    ///
+    /// If `(x, y)` is outside the buffer's area, nothing is written and `(x, y)` is returned.
+    ///
+    /// # Examples
+    ///
+    /// Compare the coordinate-based setter with the preferred widget rendering:
+    ///
+    /// ```
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::style::Style;
+    /// use ratatui_core::text::Span;
+    /// use ratatui_core::widgets::Widget;
+    ///
+    /// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+    /// let end = buffer.set_stringn(0, 0, "Hello", 3, Style::new().green());
+    /// assert_eq!(end, (3, 0));
+    ///
+    /// // Preferred: express the width limit as the rendering area's width.
+    /// buffer.reset();
+    /// Span::styled("Hello", Style::new().green()).render(Rect::new(0, 0, 3, 1), &mut buffer);
+    /// assert_eq!(buffer[(0, 0)].symbol(), "H");
+    /// assert_eq!(buffer[(1, 0)].symbol(), "e");
+    ///
+    /// // The same width limit can be used when rendering unstyled text directly.
+    /// "Hello".render(Rect::new(0, 0, 3, 1), &mut buffer);
+    ///
+    /// // Rendering outside the buffer is a no-op, even with nonempty content.
+    /// Span::raw("Hello").render(Rect::new(1, 1, 5, 1), &mut buffer);
+    /// ```
     pub fn set_stringn<T, S>(
         &mut self,
         mut x: u16,
@@ -347,10 +497,13 @@ impl Buffer {
         S: Into<Style>,
     {
         let max_width = max_width.try_into().unwrap_or(u16::MAX);
+        if !self.area.contains(Position::new(x, y)) {
+            return (x, y);
+        }
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
             .filter(|symbol| !symbol.contains(char::is_control))
-            .map(|symbol| (symbol, symbol.width() as u16))
+            .map(|symbol| (symbol, symbol.cell_width()))
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
                 remaining_width = remaining_width.checked_sub(width)?;
@@ -370,7 +523,57 @@ impl Buffer {
         (x, y)
     }
 
-    /// Print a line, starting at the position (x, y)
+    /// Print a line, starting at the position (x, y).
+    ///
+    /// Writes up to `max_width` terminal cells, stopping at the buffer's right edge, and returns
+    /// the position immediately after the last written grapheme. If nothing is written, returns
+    /// `(x, y)`. Skips zero-width graphemes and control characters, and ignores the line's
+    /// alignment.
+    ///
+    /// Prefer rendering the [`Line`] as a widget. This method retains historical behavior for
+    /// compatibility.
+    ///
+    /// # Rendering a line as a widget
+    ///
+    /// When migrating to rendering the [`Line`] as a widget:
+    ///
+    /// - Express `(x, y)` and `max_width` as a rendering [`Rect`] with height `1`. Widget rendering
+    ///   restricts writes to its intersection with the buffer's area; this method skips the write
+    ///   when `(x, y)` is outside the buffer.
+    /// - This method skips zero-width graphemes; widget rendering preserves them.
+    /// - This method returns the ending position; widget rendering returns `()`. Account for
+    ///   callers that use this position to place subsequent content.
+    /// - This method ignores the line's alignment; widget rendering respects it, including when
+    ///   truncating a line that is wider than the rendering area.
+    /// - This method applies the line style to written graphemes. Widget rendering also applies it
+    ///   to padding in the first row of the rendering area when the line has nonzero width.
+    ///
+    /// If `(x, y)` is outside the buffer's area, nothing is written and `(x, y)` is returned.
+    ///
+    /// # Examples
+    ///
+    /// Compare the coordinate-based setter with the preferred widget rendering:
+    ///
+    /// ```
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::text::Line;
+    /// use ratatui_core::widgets::Widget;
+    ///
+    /// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+    /// let line = Line::from("Hi").right_aligned();
+    /// let end = buffer.set_line(0, 0, &line, 5);
+    /// assert_eq!(end, (2, 0));
+    /// assert_eq!(buffer, Buffer::with_lines(["Hi   "])); // Alignment is ignored.
+    ///
+    /// // Preferred: render the line as a widget, which respects its alignment.
+    /// buffer.reset();
+    /// line.render(Rect::new(0, 0, 5, 1), &mut buffer);
+    /// assert_eq!(buffer, Buffer::with_lines(["   Hi"]));
+    ///
+    /// // Rendering outside the buffer is a no-op, even with nonempty content.
+    /// Line::raw("Hello").render(Rect::new(1, 1, 5, 1), &mut buffer);
+    /// ```
     pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, max_width: u16) -> (u16, u16) {
         let mut remaining_width = max_width;
         let mut x = x;
@@ -392,7 +595,53 @@ impl Buffer {
         (x, y)
     }
 
-    /// Print a span, starting at the position (x, y)
+    /// Print a span, starting at the position (x, y).
+    ///
+    /// Writes up to `max_width` terminal cells, stopping at the buffer's right edge, and returns
+    /// the position immediately after the last written grapheme. If nothing is written, returns
+    /// `(x, y)`. Skips zero-width graphemes and control characters.
+    ///
+    /// Prefer rendering the [`Span`] as a widget. This method retains historical behavior for
+    /// compatibility.
+    ///
+    /// # Rendering a span as a widget
+    ///
+    /// When migrating to rendering the [`Span`] as a widget:
+    ///
+    /// - Express `(x, y)` and `max_width` as a rendering [`Rect`] with height `1`. Widget rendering
+    ///   restricts writes to its intersection with the buffer's area; this method skips the write
+    ///   when `(x, y)` is outside the buffer.
+    /// - This method skips zero-width graphemes; widget rendering preserves them.
+    /// - This method returns the ending position; widget rendering returns `()`. Account for
+    ///   callers that use this position to place subsequent content.
+    ///
+    /// If `(x, y)` is outside the buffer's area, nothing is written and `(x, y)` is returned.
+    ///
+    /// # Examples
+    ///
+    /// Compare the coordinate-based setter with the preferred widget rendering:
+    ///
+    /// ```
+    /// use ratatui_core::buffer::Buffer;
+    /// use ratatui_core::layout::Rect;
+    /// use ratatui_core::style::Style;
+    /// use ratatui_core::text::Span;
+    /// use ratatui_core::widgets::Widget;
+    ///
+    /// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+    /// let span = Span::styled("Hello", Style::new().green());
+    /// let end = buffer.set_span(0, 0, &span, 3);
+    /// assert_eq!(end, (3, 0));
+    ///
+    /// // Preferred: render the span with the same position and width limit.
+    /// buffer.reset();
+    /// span.render(Rect::new(0, 0, 3, 1), &mut buffer);
+    /// assert_eq!(buffer[(0, 0)].symbol(), "H");
+    /// assert_eq!(buffer[(1, 0)].symbol(), "e");
+    ///
+    /// // Rendering outside the buffer is a no-op, even with nonempty content.
+    /// Span::raw("Hello").render(Rect::new(1, 1, 5, 1), &mut buffer);
+    /// ```
     pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, max_width: u16) -> (u16, u16) {
         self.set_stringn(x, y, &span.content, max_width as usize, span.style)
     }
@@ -519,7 +768,7 @@ impl<P: Into<Position>> Index<P> for Buffer {
     ///
     /// # Panics
     ///
-    /// May panic if the given position is outside the buffer's area. For a method that returns
+    /// Panics if the given position is outside the buffer's area. For a method that returns
     /// `None` instead of panicking, use [`Buffer::cell`](Self::cell).
     ///
     /// # Examples
@@ -531,6 +780,9 @@ impl<P: Into<Position>> Index<P> for Buffer {
     /// let buf = Buffer::empty(Rect::new(0, 0, 10, 10));
     /// let cell = &buf[(0, 0)];
     /// let cell = &buf[Position::new(0, 0)];
+    ///
+    /// // Use `cell` when the position may be outside the buffer.
+    /// assert_eq!(buf.cell((10, 10)), None);
     /// ```
     fn index(&self, position: P) -> &Self::Output {
         let position = position.into();
@@ -547,7 +799,7 @@ impl<P: Into<Position>> IndexMut<P> for Buffer {
     ///
     /// # Panics
     ///
-    /// May panic if the given position is outside the buffer's area. For a method that returns
+    /// Panics if the given position is outside the buffer's area. For a method that returns
     /// `None` instead of panicking, use [`Buffer::cell_mut`](Self::cell_mut).
     ///
     /// # Examples
@@ -559,6 +811,11 @@ impl<P: Into<Position>> IndexMut<P> for Buffer {
     /// let mut buf = Buffer::empty(Rect::new(0, 0, 10, 10));
     /// buf[(0, 0)].set_symbol("A");
     /// buf[Position::new(0, 0)].set_symbol("B");
+    ///
+    /// // Use `cell_mut` when the position may be outside the buffer.
+    /// if let Some(cell) = buf.cell_mut((10, 10)) {
+    ///     cell.set_symbol("C");
+    /// }
     /// ```
     fn index_mut(&mut self, position: P) -> &mut Self::Output {
         let position = position.into();
@@ -576,7 +833,7 @@ impl fmt::Debug for Buffer {
     /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
     ///   modifier: Modifier::BOLD }` only showing a value when there is a change in style.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("Buffer {{\n    area: {:?}", &self.area))?;
+        f.write_fmt(format_args!("Buffer {{\n    area: {:?}", self.area))?;
 
         if self.area.is_empty() {
             return f.write_str("\n}");
@@ -587,15 +844,16 @@ impl fmt::Debug for Buffer {
         let mut styles = vec![];
         for (y, line) in self.content.chunks(self.area.width as usize).enumerate() {
             let mut overwritten = vec![];
-            let mut skip: usize = 0;
+            let mut skip: u16 = 0;
             f.write_str("        \"")?;
             for (x, c) in line.iter().enumerate() {
+                let sym = c.symbol();
                 if skip == 0 {
-                    f.write_str(c.symbol())?;
+                    f.write_str(sym)?;
                 } else {
-                    overwritten.push((x, c.symbol()));
+                    overwritten.push((x, sym));
                 }
-                skip = cmp::max(skip, c.symbol().width()).saturating_sub(1);
+                skip = cmp::max(skip, c.cell_width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
@@ -647,7 +905,7 @@ mod tests {
     use alloc::format;
     use alloc::string::{String, ToString};
     use core::iter;
-    use core::num::NonZero;
+    use core::num::NonZeroU16;
     use std::{dbg, println};
 
     use itertools::Itertools;
@@ -751,6 +1009,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(debug_assertions)]
     #[should_panic(expected = "outside the buffer")]
     fn pos_of_panics_on_out_of_bounds() {
         let rect = Rect::new(0, 0, 10, 10);
@@ -796,6 +1055,156 @@ mod tests {
         assert_eq!(buf.cell_mut((10, 10)), None);
         assert_eq!(buf.cell_mut(Position::new(0, 0)), Some(&mut expected));
         assert_eq!(buf.cell_mut(Position::new(10, 10)), None);
+    }
+
+    #[rstest]
+    #[case::single_row(Rect::new(0, 0, 57, 1), (1, 1))]
+    #[case::zero_width(Rect::new(10, 10, 0, 1), (10, 10))]
+    #[case::zero_height(Rect::new(10, 10, 1, 0), (10, 10))]
+    #[case::empty(Rect::ZERO, (0, 0))]
+    #[case::left(Rect::new(10, 10, 10, 10), (9, 10))]
+    #[case::top(Rect::new(10, 10, 10, 10), (10, 9))]
+    #[case::right(Rect::new(10, 10, 10, 10), (20, 10))]
+    #[case::bottom(Rect::new(10, 10, 10, 10), (10, 20))]
+    #[case::maximum_position(Rect::new(0, 0, 1, 1), (u16::MAX, u16::MAX))]
+    fn cell_access_out_of_bounds_returns_none(#[case] area: Rect, #[case] position: (u16, u16)) {
+        let mut buf = Buffer::empty(area);
+        let expected = buf.clone();
+        assert_eq!(buf.cell(position), None);
+        assert_eq!(buf.cell(Position::from(position)), None);
+        assert_eq!(buf.cell_mut(position), None);
+        assert_eq!(buf.cell_mut(Position::from(position)), None);
+        assert_eq!(buf, expected);
+    }
+
+    #[rstest]
+    #[should_panic(expected = "index outside of buffer")]
+    fn get_panics_on_empty_or_single_row_buffer(
+        #[values(
+            Rect::ZERO,
+            Rect::new(0, 0, 0, 1),
+            Rect::new(0, 0, 57, 0),
+            Rect::new(0, 0, 57, 1)
+        )]
+        area: Rect,
+    ) {
+        let buf = Buffer::empty(area);
+        #[allow(deprecated)]
+        let _ = buf.get(1, 1);
+    }
+
+    #[rstest]
+    #[should_panic(expected = "index outside of buffer")]
+    fn get_mut_panics_on_empty_or_single_row_buffer(
+        #[values(
+            Rect::ZERO,
+            Rect::new(0, 0, 0, 1),
+            Rect::new(0, 0, 57, 0),
+            Rect::new(0, 0, 57, 1)
+        )]
+        area: Rect,
+    ) {
+        let mut buf = Buffer::empty(area);
+        #[allow(deprecated)]
+        let _ = buf.get_mut(1, 1);
+    }
+
+    #[rstest]
+    #[should_panic(expected = "index outside of buffer")]
+    fn index_of_panics_on_empty_or_single_row_buffer(
+        #[values(
+            Rect::ZERO,
+            Rect::new(0, 0, 0, 1),
+            Rect::new(0, 0, 57, 0),
+            Rect::new(0, 0, 57, 1)
+        )]
+        area: Rect,
+    ) {
+        let buf = Buffer::empty(area);
+        let _ = buf.index_of(1, 1);
+    }
+
+    #[rstest]
+    #[should_panic(expected = "index outside of buffer")]
+    fn index_panics_on_empty_or_single_row_buffer(
+        #[values(
+            Rect::ZERO,
+            Rect::new(0, 0, 0, 1),
+            Rect::new(0, 0, 57, 0),
+            Rect::new(0, 0, 57, 1)
+        )]
+        area: Rect,
+    ) {
+        let buf = Buffer::empty(area);
+        let _ = &buf[(1, 1)];
+    }
+
+    #[rstest]
+    #[should_panic(expected = "index outside of buffer")]
+    fn index_mut_panics_on_empty_or_single_row_buffer(
+        #[values(
+            Rect::ZERO,
+            Rect::new(0, 0, 0, 1),
+            Rect::new(0, 0, 57, 0),
+            Rect::new(0, 0, 57, 1)
+        )]
+        area: Rect,
+    ) {
+        let mut buf = Buffer::empty(area);
+        buf[(1, 1)].set_symbol("A");
+    }
+
+    #[rstest]
+    #[case::empty_content(Rect::new(0, 0, 57, 1), (1, 1), "", 5)]
+    #[case::single_row(Rect::new(0, 0, 57, 1), (1, 1), "A", 5)]
+    #[case::left(Rect::new(10, 10, 10, 10), (9, 10), "A", 5)]
+    #[case::top(Rect::new(10, 10, 10, 10), (10, 9), "A", 5)]
+    #[case::bottom(Rect::new(10, 10, 10, 10), (10, 20), "A", 5)]
+    #[case::zero_height(Rect::new(0, 0, 57, 0), (1, 0), "A", 5)]
+    #[case::zero_width_start(Rect::new(10, 10, 0, 1), (10, 10), "A", 5)]
+    #[case::zero_width_left(Rect::new(10, 10, 0, 1), (9, 10), "A", 5)]
+    #[case::zero_width_limit(Rect::new(0, 0, 57, 1), (1, 0), "A", 0)]
+    #[case::wide_grapheme_does_not_fit(Rect::new(0, 0, 57, 1), (1, 0), "界", 1)]
+    #[case::right_edge(Rect::new(0, 0, 57, 1), (57, 0), "A", 5)]
+    #[case::past_right_edge(Rect::new(0, 0, 57, 1), (58, 0), "A", 5)]
+    #[case::zero_width_buffer(Rect::new(0, 0, 0, 1), (0, 0), "A", 5)]
+    #[case::empty_buffer(Rect::ZERO, (0, 0), "A", 5)]
+    #[case::control_characters(Rect::new(0, 0, 57, 1), (1, 0), "\n\t", 5)]
+    #[case::zero_width_grapheme(Rect::new(0, 0, 57, 1), (1, 0), "\u{200B}", 5)]
+    fn text_setters_out_of_bounds_or_empty_writes_are_noops(
+        #[case] area: Rect,
+        #[case] position: (u16, u16),
+        #[case] content: &str,
+        #[case] max_width: u16,
+    ) {
+        let mut buf = Buffer::empty(area);
+        let expected = buf.clone();
+        let (x, y) = position;
+        assert_eq!(
+            buf.set_stringn(x, y, content, usize::from(max_width), Style::new()),
+            position
+        );
+        assert_eq!(buf.set_span(x, y, &Span::raw(content), max_width), position);
+        assert_eq!(buf.set_line(x, y, &Line::raw(content), max_width), position);
+        assert_eq!(buf, expected);
+        if !area.contains(Position::new(x, y)) {
+            buf.set_string(x, y, content, Style::new());
+            assert_eq!(buf, expected);
+        }
+    }
+
+    #[test]
+    #[cfg_attr(debug_assertions, should_panic(expected = "outside the buffer"))]
+    #[cfg_attr(not(debug_assertions), should_panic(expected = "divisor of zero"))]
+    fn pos_of_panics_on_zero_width_buffer() {
+        let _ = Buffer::empty(Rect::new(0, 0, 0, 1)).pos_of(0);
+    }
+
+    #[test]
+    #[cfg(not(debug_assertions))]
+    #[should_panic(expected = "y overflow")]
+    fn pos_of_panics_on_coordinate_overflow() {
+        let _ = Buffer::empty(Rect::new(0, u16::MAX, 1, 0)).pos_of(1);
     }
 
     #[test]
@@ -886,7 +1295,7 @@ mod tests {
 
     #[test]
     fn set_string_zero_width() {
-        assert_eq!("\u{200B}".width(), 0);
+        assert_eq!("\u{200B}".cell_width(), 0);
 
         let area = Rect::new(0, 0, 1, 1);
         let mut buffer = Buffer::empty(area);
@@ -912,6 +1321,78 @@ mod tests {
         // Only 1 space left.
         buffer.set_string(0, 0, "コンピ", Style::default());
         assert_eq!(buffer, Buffer::with_lines(["コン "]));
+    }
+
+    #[test]
+    fn set_string_halfwidth_katakana_with_dakuten() {
+        let area = Rect::new(0, 0, 5, 1);
+
+        // Fullwidth katakana: 2 cells
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ガ", Style::default());
+        let mut expected = Buffer::empty(area);
+        expected.set_string(0, 0, "ガ", Style::default());
+        assert_eq!(buffer, expected);
+
+        // Halfwidth katakana (no dakuten): 1 cell
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ｶ", Style::default());
+        assert_eq!(buffer.content[0].symbol(), "ｶ");
+        assert_eq!(buffer.content[1].symbol(), " ");
+
+        // Halfwidth katakana + non-combining dakuten (U+FF9E): grapheme cluster takes 2 cells
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ｶﾞ", Style::default());
+        // The whole grapheme cluster "ｶﾞ" is placed in cell[0], and cell[1] is reset (width=2)
+        assert_eq!(buffer.content[0].symbol(), "ｶﾞ");
+        assert_eq!(buffer.content[1].symbol(), " "); // reset cell
+        assert_eq!(buffer.content[2].symbol(), " ");
+
+        // Halfwidth katakana + non-combining handakuten (U+FF9F): grapheme cluster takes 2 cells
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ﾊﾟ", Style::default());
+        assert_eq!(buffer.content[0].symbol(), "ﾊﾟ");
+        assert_eq!(buffer.content[1].symbol(), " "); // reset cell
+        assert_eq!(buffer.content[2].symbol(), " ");
+
+        // Multiple halfwidth katakana with dakuten: each cluster takes 2 cells (4 total)
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ｶﾞｷﾞ", Style::default());
+        assert_eq!(buffer.content[0].symbol(), "ｶﾞ"); // first cluster: width 2
+        assert_eq!(buffer.content[1].symbol(), " "); // reset by first cluster
+        assert_eq!(buffer.content[2].symbol(), "ｷﾞ"); // second cluster: width 2
+        assert_eq!(buffer.content[3].symbol(), " "); // reset by second cluster
+        assert_eq!(buffer.content[4].symbol(), " ");
+
+        // Overflow: only first 2 grapheme clusters fit (4 cells out of 5)
+        let mut buffer = Buffer::empty(area);
+        buffer.set_string(0, 0, "ｶﾞｷﾞｸﾞ", Style::default());
+        assert_eq!(buffer.content[0].symbol(), "ｶﾞ");
+        assert_eq!(buffer.content[1].symbol(), " ");
+        assert_eq!(buffer.content[2].symbol(), "ｷﾞ");
+        assert_eq!(buffer.content[3].symbol(), " ");
+        assert_eq!(buffer.content[4].symbol(), " ");
+    }
+
+    #[test]
+    fn set_string_combining_vs_halfwidth_dakuten() {
+        let area = Rect::new(0, 0, 5, 1);
+
+        // Combining dakuten (U+3099): forms 1-cell grapheme cluster with width 1
+        let mut buffer1 = Buffer::empty(area);
+        let (x1, _) = buffer1.set_stringn(0, 0, "ｶ゙", usize::MAX, Style::default());
+        // The combining dakuten merges with ｶ into a single cell (width 1)
+        assert_eq!(buffer1.content[0].symbol(), "ｶ゙");
+        assert_eq!(buffer1.content[0].cell_width(), 1);
+        assert_eq!(x1, 1);
+
+        // Non-combining halfwidth dakuten (U+FF9E): grapheme cluster with width 2
+        let mut buffer2 = Buffer::empty(area);
+        let (x2, _) = buffer2.set_stringn(0, 0, "ｶﾞ", usize::MAX, Style::default());
+        // The grapheme cluster "ｶﾞ" is stored in cell[0], but takes 2 cells width
+        assert_eq!(buffer2.content[0].symbol(), "ｶﾞ");
+        assert_eq!(buffer2.content[0].cell_width(), 2);
+        assert_eq!(x2, 2);
     }
 
     #[fixture]
@@ -1001,6 +1482,19 @@ mod tests {
             "ccccc".red(),
         ]);
         assert_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::left(5, 1)]
+    #[case::right(30, 1)]
+    #[case::above(15, 0)]
+    #[case::below(15, 2)]
+    fn set_stringn_out_of_area_is_noop(#[case] x: u16, #[case] y: u16) {
+        let area = Rect::new(10, 1, 20, 1);
+        let mut buffer = Buffer::empty(area);
+        let pos = buffer.set_stringn(x, y, "hello", 10, Style::default());
+        assert_eq!(pos, (x, y));
+        assert_eq!(buffer, Buffer::empty(area));
     }
 
     #[test]
@@ -1131,7 +1625,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("456")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(3).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(3).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1146,7 +1640,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("\x1b]8;;http://example.com\x1b\\link\x1b]8;;\x1b\\")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(4).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(4).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1161,7 +1655,7 @@ mod tests {
         next.cell_mut((0, 0))
             .unwrap()
             .set_symbol("\x1b]8;;http://example.com\x1b\\🔗")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(2).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
         // Set inner characters normally.
         next.cell_mut((2, 0)).unwrap().set_symbol("l");
         next.cell_mut((3, 0)).unwrap().set_symbol("i");
@@ -1171,7 +1665,7 @@ mod tests {
         next.cell_mut((7, 0))
             .unwrap()
             .set_symbol("🔗\x1b]8;;\x1b\\")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(2).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
         prev.merge(&next);
 
         let diff = prev.diff(&next);
@@ -1200,7 +1694,7 @@ mod tests {
         prev.cell_mut((0, 0))
             .unwrap()
             .set_symbol(&kitty_image_placeholder_start)
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(1).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(1).unwrap()));
 
         // Add two follow up placeholder symbols that have a natural width of 1.
         prev.cell_mut((1, 0)).unwrap().set_char('\u{10EEEE}');
@@ -1210,7 +1704,7 @@ mod tests {
         prev.cell_mut((3, 0))
             .unwrap()
             .set_symbol("\u{10EEEE}\x1b[u")
-            .set_diff_option(CellDiffOption::ForcedWidth(NonZero::new(1).unwrap()));
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(1).unwrap()));
 
         let mut buffer = Buffer::filled(Rect::new(0, 0, 20, 1), Cell::new("x"));
         buffer.merge(&prev);
@@ -1223,8 +1717,8 @@ mod tests {
     fn diff_skip() {
         let prev = Buffer::with_lines(["123"]);
         let mut next = Buffer::with_lines(["456"]);
-        for i in 1..3 {
-            next.content[i].set_diff_option(CellDiffOption::Skip);
+        for cell in &mut next.content[1..3] {
+            cell.set_diff_option(CellDiffOption::Skip);
         }
 
         let diff = prev.diff(&next);
@@ -1380,7 +1874,11 @@ mod tests {
         dbg!(
             input
                 .graphemes(true)
-                .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
+                .map(|symbol| (
+                    symbol,
+                    symbol.escape_unicode().to_string(),
+                    symbol.cell_width()
+                ))
                 .collect::<Vec<_>>()
         );
         dbg!(

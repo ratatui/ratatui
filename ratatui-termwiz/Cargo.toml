@@ -1,10 +1,9 @@
 [package]
 name = "ratatui-termwiz"
-version = "0.1.0"
+version = "0.1.2"
 description = "Termwiz backend for the Ratatui Terminal UI library."
 documentation = "https://docs.rs/ratatui-termwiz"
 readme = "README.md"
-authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 keywords.workspace = true
@@ -18,6 +17,9 @@ rust-version.workspace = true
 all-features = true
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.cargo-udeps.ignore]
+development = ["ratatui"]
 
 [features]
 default = []
@@ -39,7 +41,6 @@ termwiz.workspace = true
 
 [dev-dependencies]
 ratatui = { path = "../ratatui", features = ["termwiz"], default-features = false }
-rstest.workspace = true
 
 [lints]
 workspace = true

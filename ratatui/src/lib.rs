@@ -56,6 +56,68 @@
 //! various [Examples]. There are also several starter [Templates] available to help you get
 //! started quickly with common patterns.
 //!
+//! ## Which setup path should I use?
+//!
+//! Most application authors should start with one of these entry points:
+//!
+//! - Use [`run()`] for normal applications. It initializes the terminal, runs your app, and
+//!   restores the terminal on exit.
+//! - Use [`run_with_options()`] for applications with a custom [`Viewport`] (such as inline
+//!   rendering) and automatic terminal restoration.
+//! - Use [`init()`] / [`restore()`] (or [`try_init()`] / [`try_restore()`]) when you want manual
+//!   control over terminal lifetime and the event loop structure.
+//! - Use [`init_with_options()`] / [`try_init_with_options()`] when you need a custom [`Viewport`]
+//!   and manual control over setup and teardown.
+//!
+//! Reach for [`Terminal::new`] or [`Terminal::with_options`] directly only when you need custom
+//! backend construction or terminal setup that Ratatui's convenience functions do not manage.
+//!
+//! ## Which crate should I use?
+//!
+//! Most application authors should stay in this `ratatui` crate. It is the docs.rs entry point
+//! for building apps and re-exports the pieces most applications need.
+//!
+//! Reach for other crates in the workspace only when you specifically need a lower-level layer:
+//!
+//! - [`ratatui-core`] for widget libraries, custom integrations, and lower-level rendering
+//!   contracts
+//! - [`ratatui-widgets`] when you only need the built-in widgets crate as a dependency
+//! - [`ratatui-calendar`] when you only need the calendar widget as a dependency
+//! - [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termina`], or [`ratatui-termwiz`] when
+//!   your application needs backend-specific APIs or a direct backend dependency
+//!
+//! ## Using Ratatui without std
+//!
+//! Ratatui can run on `no_std` targets such as microcontrollers, with a backend like
+//! [Mousefood]. Turning off default features removes the terminal backends and `std`, but it also
+//! turns off the `layout-cache` feature. Without the cache, every layout is recomputed by the
+//! constraint solver on each frame. That solver uses `f64` arithmetic, which is slow on chips
+//! without a double-precision FPU, so turn the cache back on:
+//!
+//! ```toml
+//! [dependencies]
+//! ratatui = { version = "0.30", default-features = false, features = ["layout-cache"] }
+//! ```
+//!
+//! The default cache holds [`Layout::DEFAULT_CACHE_SIZE`] entries, which can exhaust a small heap.
+//! Call [`Layout::init_cache()`] once before the first draw with a size that fits your app,
+//! for example a few dozen entries:
+//!
+//! ```rust
+//! # #[cfg(feature = "layout-cache")] {
+//! use core::num::NonZeroUsize;
+//!
+//! use ratatui::layout::Layout;
+//!
+//! Layout::init_cache(NonZeroUsize::new(64).unwrap());
+//! # }
+//! ```
+//!
+//! Without `std`, the cache is guarded by a [`critical-section`] mutex, so your binary must link a
+//! `critical-section` implementation. Most embedded HALs and runtimes provide one through a
+//! feature flag. To run host tests for a `no_std` crate, add `critical-section` with its `std`
+//! feature as a dev-dependency.
+//!
 //! # Other documentation
 //!
 //! - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
@@ -89,10 +151,12 @@
 //! - **[`ratatui`](crate)**: Main crate with complete functionality (recommended for apps)
 //! - **[`ratatui-core`]**: Core traits and types for widget libraries
 //! - **[`ratatui-widgets`]**: Built-in widget implementations
-//! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termwiz`]
+//! - **[`ratatui-calendar`]**: The calendar widget
+//! - **Backend crates**: [`ratatui-crossterm`], [`ratatui-termion`], [`ratatui-termina`],
+//!   [`ratatui-termwiz`]
 //! - **[`ratatui-macros`]**: Macros for simplifying the boilerplate
 //!
-//! **For application developers**: No changes needed - continue using `ratatui` as before.
+//! **For application developers**: `ratatui` remains the recommended starting point.
 //!
 //! **For widget library authors**: Consider depending on [`ratatui-core`] instead of the full
 //! `ratatui` crate for better API stability and reduced dependencies.
@@ -169,19 +233,17 @@
 //! # fn should_quit() -> std::io::Result<bool> { Ok(false) }
 //! ```
 //!
-//! Note that when using [`init()`] and [`restore()`], it's important to use a separate function
-//! for the main loop to ensure that [`restore()`] is always called, even if the `?` operator
-//! causes early return from an error.
-//!
-//! For more detailed information about initialization options and when to use each function, see
-//! the [`init` module] documentation.
+//! Use [`run()`] as the default. Reach for [`init()`] / [`restore()`] when setup and teardown
+//! should surround code outside the application closure, and see the [`init` module] documentation
+//! for the full chooser including `try_*` and `*_with_options`.
 //!
 //! ### Manual Terminal and Backend Construction
 //!
 //! Before the convenience functions were introduced in version 0.28.1 ([`init()`]/[`restore()`])
 //! and 0.30.0 ([`run()`]), applications constructed [`Terminal`] and [`Backend`] instances
 //! manually. This approach is still supported for applications that need fine-grained control over
-//! initialization. See the [`Terminal`] and [`backend`] module documentation for details.
+//! initialization, custom backends, or terminal setup that should happen outside Ratatui's
+//! convenience helpers. See the [`Terminal`] and [`backend`] module documentation for details.
 //!
 //! See the [`backend` module] and the [Backends] section of the [Ratatui Website] for more info on
 //! the alternate screen and raw mode. Learn more about different backend options in the [Backend
@@ -219,6 +281,26 @@
 //! # fn handle_events() -> std::io::Result<bool> { Ok(false) }
 //! ```
 //!
+//! ### What happens if...
+//!
+//! - **If the terminal is resized:**<br> Ratatui does not redraw automatically when a resize event
+//!   arrives. Your app should continue the event loop and call [`Terminal::draw`] again. During
+//!   that render pass, Ratatui checks the backend's current size instead of assuming the resize
+//!   events were complete or up to date. This keeps layout based on the size that actually exists
+//!   when rendering, even if multiple resize events were coalesced, missed, or delivered before the
+//!   UI redraws. Fullscreen and inline viewports update their internal size during that render
+//!   pass; fixed viewports keep their configured rectangle until you call [`Terminal::resize`].
+//! - **If [`Terminal::try_draw`] returns an error:**<br> The render pass stops early and Ratatui
+//!   does not promise that the terminal, cursor, and internal buffers are still synchronized. In
+//!   most applications, return the error and let the surrounding setup path restore terminal state
+//!   on exit.
+//! - **If you move the cursor directly:**<br> Cursor changes made through backend-specific APIs or
+//!   [`Terminal`] cursor methods can be overwritten by the next render pass if that pass sets
+//!   cursor state through [`Frame`]. Prefer choosing one path and using it consistently.
+//! - **If you mutate the backend directly:**<br> Direct backend changes bypass Ratatui's diffing
+//!   and viewport bookkeeping. After doing that, run a full draw pass or clear the terminal before
+//!   assuming Ratatui's internal view still matches the screen.
+//!
 //! ## Handling events
 //!
 //! Ratatui does not include any input handling. Instead event handling can be implemented by
@@ -250,6 +332,9 @@
 //! area. This lets you describe a responsive terminal UI by nesting layouts. See the [Layout]
 //! section of the [Ratatui Website] for more info, and check out the [Layout Recipes] for
 //! practical examples.
+//!
+//! For an interactive exploration of constraint types, flex modes, and spacing, see the
+//! [Constraint Explorer example].
 //!
 //! ```rust,no_run
 //! use ratatui::Frame;
@@ -339,12 +424,14 @@
 //! [Counter App]: https://ratatui.rs/tutorials/counter-app/
 //! [Recipes]: https://ratatui.rs/recipes/
 //! [FAQ]: https://ratatui.rs/faq/
+//! [Mousefood]: https://github.com/ratatui/mousefood
+//! [`critical-section`]: https://docs.rs/critical-section
 //! [Templates]: https://ratatui.rs/templates/
 //! [Cargo Generate]: https://cargo-generate.github.io/cargo-generate/
 //! [Showcase]: https://ratatui.rs/showcase/
 //! [Rendering]: https://ratatui.rs/concepts/rendering/
 //! [Application Patterns]: https://ratatui.rs/concepts/application-patterns/
-//! [Hello World tutorial]: https://ratatui.rs/tutorials/hello-world/
+//! [Hello World tutorial]: https://ratatui.rs/tutorials/hello-ratatui/
 //! [Backends]: https://ratatui.rs/concepts/backends/
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Widgets]: https://ratatui.rs/recipes/widgets/
@@ -352,10 +439,11 @@
 //! [Handling Events]: https://ratatui.rs/concepts/event-handling/
 //! [Layout]: https://ratatui.rs/recipes/layout/
 //! [Layout Recipes]: https://ratatui.rs/recipes/layout/
+//! [Constraint Explorer example]: https://github.com/ratatui/ratatui/tree/main/examples/apps/constraint-explorer/
 //! [Styling Text]: https://ratatui.rs/recipes/render/style-text/
 //! [Styling Recipes]: https://ratatui.rs/recipes/render/
 //! [templates]: https://github.com/ratatui/templates/
-//! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
+//! [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 //! [Report a bug]: https://github.com/ratatui/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
 //! [Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
 //! [Create a Pull Request]: https://github.com/ratatui/ratatui/compare
@@ -369,6 +457,8 @@
 //! [`render_widget`]: Frame::render_widget
 //! [`Widget`]: widgets::Widget
 //! [`Layout`]: layout::Layout
+//! [`Layout::DEFAULT_CACHE_SIZE`]: layout::Layout::DEFAULT_CACHE_SIZE
+//! [`Layout::init_cache()`]: layout::Layout::init_cache
 //! [`Text`]: text::Text
 //! [`Line`]: text::Line
 //! [`Span`]: text::Span
@@ -387,8 +477,10 @@
 //! [tui-rs]: https://crates.io/crates/tui
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [`ratatui-calendar`]: https://crates.io/crates/ratatui-calendar
 //! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
 //! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
+//! [`ratatui-termina`]: https://crates.io/crates/ratatui-termina
 //! [`ratatui-termwiz`]: https://crates.io/crates/ratatui-termwiz
 //! [`ratatui-macros`]: https://crates.io/crates/ratatui-macros
 //! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
@@ -411,8 +503,10 @@
 //! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
 //! [`ratatui-core`]: https://crates.io/crates/ratatui-core
 //! [`ratatui-widgets`]: https://crates.io/crates/ratatui-widgets
+//! [`ratatui-calendar`]: https://crates.io/crates/ratatui-calendar
 //! [`ratatui-crossterm`]: https://crates.io/crates/ratatui-crossterm
 //! [`ratatui-termion`]: https://crates.io/crates/ratatui-termion
+//! [`ratatui-termina`]: https://crates.io/crates/ratatui-termina
 //! [`ratatui-termwiz`]: https://crates.io/crates/ratatui-termwiz
 //! [`ratatui-macros`]: https://crates.io/crates/ratatui-macros
 //! [ARCHITECTURE.md]: https://github.com/ratatui/ratatui/blob/main/ARCHITECTURE.md
@@ -435,6 +529,9 @@ pub use ratatui_core::{buffer, layout};
 pub use ratatui_crossterm::crossterm;
 #[cfg(feature = "macros")]
 pub use ratatui_macros as macros;
+/// re-export the `termina` crate so that users don't have to add it as a dependency
+#[cfg(feature = "termina")]
+pub use ratatui_termina::termina;
 /// re-export the `termion` crate so that users don't have to add it as a dependency
 #[cfg(all(not(windows), feature = "termion"))]
 pub use ratatui_termion::termion;
@@ -445,8 +542,8 @@ pub use ratatui_termwiz::termwiz;
 #[cfg(feature = "crossterm")]
 #[doc(inline)]
 pub use crate::init::{
-    DefaultTerminal, init, init_with_options, restore, run, try_init, try_init_with_options,
-    try_restore,
+    DefaultTerminal, init, init_with_options, restore, run, run_with_options, try_init,
+    try_init_with_options, try_restore,
 };
 
 /// Re-exports for the backend implementations.
@@ -454,6 +551,8 @@ pub mod backend {
     pub use ratatui_core::backend::{Backend, ClearType, TestBackend, WindowSize};
     #[cfg(feature = "crossterm")]
     pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
+    #[cfg(feature = "termina")]
+    pub use ratatui_termina::{FromTermina, IntoTermina, TerminaBackend};
     #[cfg(all(not(windows), feature = "termion"))]
     pub use ratatui_termion::{FromTermion, IntoTermion, TermionBackend};
     #[cfg(feature = "termwiz")]

@@ -12,11 +12,11 @@ pub struct AboutTab {
 }
 
 impl AboutTab {
-    pub fn prev_row(&mut self) {
+    pub const fn prev_row(&mut self) {
         self.row_index = self.row_index.saturating_sub(1);
     }
 
-    pub fn next_row(&mut self) {
+    pub const fn next_row(&mut self) {
         self.row_index = self.row_index.saturating_add(1);
     }
 }

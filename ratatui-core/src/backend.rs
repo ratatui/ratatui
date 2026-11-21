@@ -7,6 +7,7 @@
 //! Supported terminal backends:
 //! - [Crossterm]: enable the `crossterm` feature (enabled by default) and use [`CrosstermBackend`]
 //! - [Termion]: enable the `termion` feature and use [`TermionBackend`]
+//! - [Termina]: enable the `termina` feature and use [`TerminaBackend`]
 //! - [Termwiz]: enable the `termwiz` feature and use [`TermwizBackend`]
 //!
 //! Additionally, a [`TestBackend`] is provided for testing purposes.
@@ -38,7 +39,7 @@
 //! # std::io::Result::Ok(())
 //! ```
 //!
-//! See the the [Examples] directory for more examples.
+//! See the [Examples] directory for more examples.
 //!
 //! # Raw Mode
 //!
@@ -92,12 +93,14 @@
 //!
 //! [`CrosstermBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.CrosstermBackend.html
 //! [`TermionBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermionBackend.html
+//! [`TerminaBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TerminaBackend.html
 //! [`TermwizBackend`]: https://docs.rs/ratatui/latest/ratatui/backend/struct.TermwizBackend.html
 //! [`Terminal`]: https://docs.rs/ratatui/latest/ratatui/struct.Terminal.html
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
+//! [Termina]: https://crates.io/crates/termina
 //! [Termwiz]: https://crates.io/crates/termwiz
-//! [Examples]: https://github.com/ratatui/ratatui/tree/main/ratatui/examples/README.md
+//! [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 //! [Backend Comparison]: https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
 
@@ -228,11 +231,45 @@ pub trait Backend {
     /// ```
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> Result<(), Self::Error>;
 
+    /// Try to save the current cursor position so it can be restored with
+    /// [`restore_cursor_position`](Self::restore_cursor_position).
+    ///
+    /// Returns `true` when the position was saved. When this returns `false`, callers should use
+    /// [`get_cursor_position`](Self::get_cursor_position) and
+    /// [`set_cursor_position`](Self::set_cursor_position) to preserve the cursor instead.
+    ///
+    /// Saving and restoring the cursor position is not nestable. Backends are only required to
+    /// retain one saved position, so a later successful save may replace the position from an
+    /// earlier save.
+    ///
+    /// This must not query the terminal for the cursor position or read from its input stream.
+    /// Backends that support a terminal cursor-save command should override this method and return
+    /// `true` after writing it. The default implementation returns `false`.
+    fn save_cursor_position(&mut self) -> Result<bool, Self::Error> {
+        Ok(false)
+    }
+
+    /// Restore the cursor position previously saved by
+    /// [`save_cursor_position`](Self::save_cursor_position).
+    ///
+    /// This restores the most recently saved position. Saving and restoring the cursor position
+    /// is not nestable.
+    ///
+    /// This must not query the terminal for the cursor position or read from its input stream.
+    /// Backends whose [`save_cursor_position`](Self::save_cursor_position) implementation can
+    /// return `true` must override this method. The default implementation does nothing.
+    fn restore_cursor_position(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
     /// Get the current cursor position on the terminal screen.
     ///
     /// The returned tuple contains the x and y coordinates of the cursor. The origin
     /// (0, 0) is at the top left corner of the screen.
-    #[deprecated = "use `get_cursor_position()` instead which returns `Result<Position>`"]
+    #[deprecated(
+        since = "0.28.0",
+        note = "use `get_cursor_position()` instead which returns `Result<Position>`"
+    )]
     fn get_cursor(&mut self) -> Result<(u16, u16), Self::Error> {
         let Position { x, y } = self.get_cursor_position()?;
         Ok((x, y))
@@ -241,7 +278,10 @@ pub trait Backend {
     /// Set the cursor position on the terminal screen to the given x and y coordinates.
     ///
     /// The origin (0, 0) is at the top left corner of the screen.
-    #[deprecated = "use `set_cursor_position((x, y))` instead which takes `impl Into<Position>`"]
+    #[deprecated(
+        since = "0.28.0",
+        note = "use `set_cursor_position((x, y))` instead which takes `impl Into<Position>`"
+    )]
     fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), Self::Error> {
         self.set_cursor_position(Position { x, y })
     }
@@ -321,7 +361,10 @@ pub trait Backend {
     /// syscall, and the user is also most likely to need columns and rows along with pixel size.
     fn window_size(&mut self) -> Result<WindowSize, Self::Error>;
 
-    /// Flush any buffered content to the terminal screen.
+    /// Flush any backend-buffered output to the terminal screen.
+    ///
+    /// This is distinct from [`Terminal::flush`](crate::terminal::Terminal::flush), which computes
+    /// a diff between Ratatui's screen buffers and sends draw commands to the backend.
     fn flush(&mut self) -> Result<(), Self::Error>;
 
     /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range
