@@ -4,7 +4,8 @@
 //! `Monthly` style option across a whole year. It marks holidays, seasons and fortnightly
 //! paydays, computing the dates that move each year (US Thanksgiving and the paydays) with jiff
 //! rather than listing them by hand. Move around with the arrow keys or `hjkl`, change month with
-//! `n` and `p`, cycle styles with `s`, and quit with `q` or Esc.
+//! `n` and `p`, cycle styles with `s`, switch weeks between starting on Sunday and Monday with
+//! `w`, and quit with `q` or Esc.
 //!
 //! For something easier to start from, see the smaller examples in the same folder: [`minimal`],
 //! [`calendar`], and [`time`] or [`chrono`] for apps that use those crates for their own dates.
@@ -41,6 +42,7 @@ fn main() -> Result<()> {
 struct App {
     selected_date: Date,
     calendar_style: StyledCalendar,
+    first_day_of_week: Weekday,
     exit: bool,
 }
 
@@ -49,6 +51,7 @@ impl App {
         Self {
             selected_date: ZonedDateTime::now().date(),
             calendar_style: StyledCalendar::Default,
+            first_day_of_week: Weekday::Sunday,
             exit: false,
         }
     }
@@ -56,12 +59,36 @@ impl App {
     /// Run the application until the user quits.
     fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while !self.exit {
-            terminal.draw(|frame| render(frame, self.calendar_style, self.selected_date))?;
+            terminal.draw(|frame| self.render(frame))?;
             if let Some(key) = event::read()?.as_key_press_event() {
                 self.handle_key(key.code);
             }
         }
         Ok(())
+    }
+
+    /// Render the UI with a calendar.
+    fn render(&self, frame: &mut Frame) {
+        let header = Text::from_iter([
+            Line::from("Calendar Example".bold()),
+            Line::from(
+                "<q/Esc> Quit | <s> Change Style | <w> Week Start | <n> Next Month | <p> Previous \
+                 Month, <hjkl> Move",
+            ),
+            Line::from(format!(
+                "Current date: {} | Current style: {} | Week starts: {:?}",
+                self.selected_date, self.calendar_style, self.first_day_of_week
+            )),
+        ]);
+
+        let [text_area, area] = frame.area().layout(&Layout::vertical([
+            Constraint::Length(header.height() as u16),
+            Constraint::Fill(1),
+        ]));
+        frame.render_widget(header.centered(), text_area);
+        self.calendar_style
+            .render_year(frame, area, self.selected_date, self.first_day_of_week)
+            .unwrap();
     }
 
     fn handle_key(&mut self, code: KeyCode) {
@@ -72,6 +99,13 @@ impl App {
             }
             KeyCode::Char('s') => {
                 self.calendar_style = self.calendar_style.next();
+                return;
+            }
+            KeyCode::Char('w') => {
+                self.first_day_of_week = match self.first_day_of_week {
+                    Weekday::Sunday => Weekday::Monday,
+                    _ => Weekday::Sunday,
+                };
                 return;
             }
             KeyCode::Char('n') | KeyCode::Tab => 1.month(),
@@ -85,28 +119,6 @@ impl App {
         // saturate at the first and last dates jiff supports instead of panicking
         self.selected_date = self.selected_date.saturating_add(step);
     }
-}
-
-/// Render the UI with a calendar.
-fn render(frame: &mut Frame, calendar_style: StyledCalendar, selected_date: Date) {
-    let header = Text::from_iter([
-        Line::from("Calendar Example".bold()),
-        Line::from(
-            "<q/Esc> Quit | <s> Change Style | <n> Next Month | <p> Previous Month, <hjkl> Move",
-        ),
-        Line::from(format!(
-            "Current date: {selected_date} | Current style: {calendar_style}"
-        )),
-    ]);
-
-    let [text_area, area] = frame.area().layout(&Layout::vertical([
-        Constraint::Length(header.height() as u16),
-        Constraint::Fill(1),
-    ]));
-    frame.render_widget(header.centered(), text_area);
-    calendar_style
-        .render_year(frame, area, selected_date)
-        .unwrap();
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -147,7 +159,13 @@ impl fmt::Display for StyledCalendar {
 }
 
 impl StyledCalendar {
-    fn render_year(self, frame: &mut Frame, area: Rect, date: Date) -> Result<()> {
+    fn render_year(
+        self,
+        frame: &mut Frame,
+        area: Rect,
+        date: Date,
+        first_day_of_week: Weekday,
+    ) -> Result<()> {
         let events = events(date)?;
 
         let vertical = Layout::vertical([Constraint::Ratio(1, 3); 3]);
@@ -159,12 +177,19 @@ impl StyledCalendar {
             .flat_map(|row| row.layout_vec(horizontal));
         let months = date.first_of_year().series(1.month());
         for (area, month) in areas.zip(months) {
-            self.render_month(frame, area, month, &events);
+            self.render_month(frame, area, month, &events, first_day_of_week);
         }
         Ok(())
     }
 
-    fn render_month(self, frame: &mut Frame, area: Rect, date: Date, events: &CalendarEventStore) {
+    fn render_month(
+        self,
+        frame: &mut Frame,
+        area: Rect,
+        date: Date,
+        events: &CalendarEventStore,
+        first_day_of_week: Weekday,
+    ) {
         let calendar = match self {
             Self::Default => Monthly::new(date, events)
                 .default_style(Style::new().bold().bg(Color::Rgb(50, 50, 50)))
@@ -191,7 +216,7 @@ impl StyledCalendar {
                 .show_month_header(Style::default())
                 .show_weekdays_header(Style::new().bold().dim().light_yellow()),
         };
-        frame.render_widget(calendar, area);
+        frame.render_widget(calendar.first_day_of_week(first_day_of_week), area);
     }
 }
 
