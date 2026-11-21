@@ -1,5 +1,5 @@
 //! The [`Clear`] widget allows you to clear a certain area to allow overdrawing (e.g. for popups).
-use ratatui_core::buffer::{Buffer, CellWidth};
+use ratatui_core::buffer::{Buffer, CellDiffOption, CellWidth};
 use ratatui_core::layout::Rect;
 use ratatui_core::widgets::Widget;
 
@@ -48,8 +48,13 @@ impl Widget for &Clear {
         // left border). Shrink it to a space first, while we can still see its pre-clear width.
         if area.x > buf.area().x {
             for y in area.top()..area.bottom() {
-                if buf[(area.x - 1, y)].cell_width() > 1 {
-                    buf[(area.x - 1, y)].set_symbol(" ");
+                let cell = &mut buf[(area.x - 1, y)];
+                if cell.cell_width() > 1 {
+                    cell.set_symbol(" ");
+                    // The replacement space must not retain a width that skips the overlay.
+                    if matches!(cell.diff_option, CellDiffOption::ForcedWidth(_)) {
+                        cell.set_diff_option(CellDiffOption::None);
+                    }
                 }
             }
         }
@@ -64,7 +69,9 @@ impl Widget for &Clear {
 
 #[cfg(test)]
 mod tests {
-    use ratatui_core::buffer::Buffer;
+    use core::num::NonZeroU16;
+
+    use ratatui_core::buffer::{Buffer, CellDiffOption};
     use ratatui_core::layout::Rect;
     use ratatui_core::style::Style;
     use ratatui_core::widgets::Widget;
@@ -118,6 +125,26 @@ mod tests {
         Clear.render(Rect::new(4, 0, 2, 1), &mut buffer);
         let expected = Buffer::with_lines(["abc   "]);
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn render_clears_forced_width_without_skipping_overlay() {
+        let mut previous = Buffer::with_lines(["abc字 "]);
+        previous[(3, 0)]
+            .set_style(Style::new().red().on_blue().bold())
+            .set_diff_option(CellDiffOption::ForcedWidth(NonZeroU16::new(2).unwrap()));
+        let mut buffer = previous.clone();
+
+        Clear.render(Rect::new(4, 0, 2, 1), &mut buffer);
+        buffer[(4, 0)].set_symbol("│");
+
+        assert!(
+            previous
+                .diff_iter(&buffer)
+                .any(|(x, y, cell)| (x, y, cell.symbol()) == (4, 0, "│"))
+        );
+        assert_eq!(buffer[(3, 0)].cell_width(), 1);
+        assert_eq!(buffer[(3, 0)].style(), previous[(3, 0)].style());
     }
 
     /// A single-width glyph at `area.x - 1` must be left untouched.
