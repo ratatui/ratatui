@@ -2,7 +2,7 @@ use std::hint::black_box;
 
 use criterion::{BenchmarkId, Criterion};
 use ratatui::buffer::{Buffer, Cell};
-use ratatui::layout::{Rect, Size};
+use ratatui::layout::Size;
 use ratatui::style::Style;
 use ratatui::text::Line;
 
@@ -18,21 +18,13 @@ criterion::criterion_group!(
     diff_emoji
 );
 
-const fn rect(size: Size) -> Rect {
-    Rect {
-        x: 0,
-        y: 0,
-        width: size.width,
-        height: size.height,
-    }
-}
-
+/// A reasonable terminal size, and a size that's probably too big to be useful
 const SIZES: [Size; 2] = [Size::new(200, 50), Size::new(1000, 250)];
 
 fn empty(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/empty");
     for size in SIZES {
-        let area = rect(size);
+        let area = size.into();
         group.bench_with_input(BenchmarkId::from_parameter(size), &area, |b, &area| {
             b.iter(|| {
                 let _buffer = Buffer::empty(black_box(area));
@@ -47,7 +39,7 @@ fn empty(c: &mut Criterion) {
 fn filled(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/filled");
     for size in SIZES {
-        let area = rect(size);
+        let area = size.into();
         let cell = Cell::new("AAAA"); // simulate a multi-byte character
         group.bench_with_input(
             BenchmarkId::from_parameter(size),
@@ -80,8 +72,7 @@ fn with_lines(c: &mut Criterion) {
 fn diff_no_change(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_no_change");
     for size in SIZES {
-        let area = rect(size);
-        let buffer = Buffer::filled(area, Cell::new("x"));
+        let buffer = Buffer::filled(size.into(), Cell::new("x"));
         group.bench_with_input(BenchmarkId::from_parameter(size), &buffer, |b, buffer| {
             b.iter(|| {
                 let diff = black_box(buffer).diff(black_box(buffer));
@@ -96,7 +87,7 @@ fn diff_no_change(c: &mut Criterion) {
 fn diff_full_change(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_full_change");
     for size in SIZES {
-        let area = rect(size);
+        let area = size.into();
         let prev = Buffer::filled(area, Cell::new("a"));
         let next = Buffer::filled(area, Cell::new("b"));
         group.bench_with_input(
@@ -117,7 +108,7 @@ fn diff_full_change(c: &mut Criterion) {
 fn diff_partial_change(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_partial_change");
     for size in SIZES {
-        let area = rect(size);
+        let area = size.into();
         let prev = Buffer::filled(area, Cell::new("a"));
         let mut next = Buffer::filled(area, Cell::new("a"));
 
@@ -145,7 +136,7 @@ fn diff_partial_change(c: &mut Criterion) {
 fn diff_multi_width(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_multi_width");
     for size in SIZES {
-        let area = rect(size);
+        let area = size.into();
         let prev = Buffer::with_lines(vec!["a".repeat(size.width as usize); size.height as usize]);
         let mut next = Buffer::filled(area, Cell::new(" "));
 
@@ -176,7 +167,7 @@ fn diff_multi_width(c: &mut Criterion) {
 fn diff_emoji(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_emoji");
     for size in SIZES {
-        let area = rect(size);
+        let area = size.into();
         let prev = Buffer::filled(area, Cell::new("a"));
         let mut next = Buffer::filled(area, Cell::new(" "));
 
