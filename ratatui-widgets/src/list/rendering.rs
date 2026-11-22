@@ -47,13 +47,7 @@ impl StatefulWidget for &List<'_> {
         }
 
         if self.items.is_empty() {
-            state.select(None);
             return;
-        }
-
-        // If the selected index is out of bounds, set it to the last item
-        if state.selected.is_some_and(|s| s >= self.items.len()) {
-            state.select(Some(self.items.len().saturating_sub(1)));
         }
 
         let list_height = list_area.height as usize;
@@ -338,6 +332,49 @@ mod tests {
         *state.item_count_mut() = Some(3);
         state.select_last();
         assert_eq!(state.selected(), Some(2));
+    }
+
+    #[test]
+    fn follow_last_selects_items_added_before_render() {
+        let mut state = ListState::default().with_follow_last();
+        stateful_widget(List::new(["one", "two"]), &mut state, 10, 3);
+        assert_eq!(state.selected(), Some(1));
+
+        stateful_widget(
+            List::new(["one", "two", "three", "four"]),
+            &mut state,
+            10,
+            3,
+        );
+        assert_eq!(state.selected(), Some(3));
+        assert_eq!(state.offset(), 1);
+        assert!(state.is_following_last());
+
+        stateful_widget(List::default(), &mut state, 10, 3);
+        assert_eq!(state.selected(), None);
+        assert!(state.is_following_last());
+        stateful_widget(List::new(["one"]), &mut state, 10, 3);
+        assert_eq!(state.selected(), Some(0));
+    }
+
+    #[test]
+    fn navigation_stops_following_last() {
+        let mut state = ListState::default().with_follow_last();
+        stateful_widget(List::new(["one", "two", "three"]), &mut state, 10, 3);
+        state.select_previous();
+        assert!(!state.is_following_last());
+        stateful_widget(
+            List::new(["one", "two", "three", "four"]),
+            &mut state,
+            10,
+            3,
+        );
+        assert_eq!(state.selected(), Some(1));
+
+        state.follow_last();
+        assert_eq!(state.selected(), Some(3));
+        state.select_last();
+        assert!(!state.is_following_last());
     }
 
     #[test]

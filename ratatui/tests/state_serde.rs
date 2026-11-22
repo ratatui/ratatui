@@ -250,6 +250,15 @@ fn list_state_preserves_serialized_format() {
     assert_eq!(restored.item_count(), None);
     assert_eq!(restored.selection_mode(), SelectionMode::Wrap);
 
+    let following = ListState::default().with_follow_last();
+    let json = serde_json::to_string(&following).unwrap();
+    assert_eq!(
+        json,
+        r#"{"offset":0,"selected":18446744073709551615,"following_last":true}"#
+    );
+    let restored: ListState = serde_json::from_str(&json).unwrap();
+    assert!(restored.is_following_last());
+
     let untracked = ListState::default().with_selected(Some(2));
     let json = serde_json::to_string(&untracked).unwrap();
     assert_eq!(json, r#"{"offset":0,"selected":2}"#);
