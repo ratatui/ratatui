@@ -27,7 +27,10 @@ Our release strategy is:
 
 1. Ensure that any breaking changes are documented in [BREAKING-CHANGES.md](./BREAKING-CHANGES.md)
 1. Commit and push the changes to `main`.
-1. On every push to `main`, release-plz opens (or updates) a release PR that bumps the version in
+1. Run the [Release-plz
+   workflow](https://github.com/ratatui/ratatui/actions/workflows/release-plz.yml) manually on
+   `main` (Actions → Release-plz → Run workflow, or `gh workflow run release-plz.yml --ref main`).
+   This opens (or updates) a release PR that bumps the version in
    [Cargo.toml](Cargo.toml) and updates [CHANGELOG.md](CHANGELOG.md) (generated via
    [git-cliff](https://github.com/orhun/git-cliff), configured in [cliff.toml](./cliff.toml)).
 1. Merging that release PR into `main` triggers the release job: it tags the release (e.g.

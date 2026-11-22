@@ -43,13 +43,14 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
   # Create a PR with the new versions and changelog, preparing the next release.
+  # Only runs when triggered manually, so the release PR doesn't churn on every push.
   release-plz-pr:
     name: Release-plz PR
     permissions:
       pull-requests: write
       contents: write
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'ratatui' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository_owner == 'ratatui' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' }}
     concurrency:
       group: release-plz-${{ github.ref }}
       cancel-in-progress: false
