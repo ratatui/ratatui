@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::layout::Position;
-use crate::terminal::Terminal;
+use crate::terminal::{CursorVisibility, Terminal};
 
 impl<B: Backend> Terminal<B> {
     /// Hides the cursor.
@@ -14,7 +14,7 @@ impl<B: Backend> Terminal<B> {
     /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     pub fn hide_cursor(&mut self) -> Result<(), B::Error> {
         self.backend.hide_cursor()?;
-        self.hidden_cursor = true;
+        self.cursor_visibility = CursorVisibility::Hidden;
         Ok(())
     }
 
@@ -24,12 +24,17 @@ impl<B: Backend> Terminal<B> {
     /// [`Frame::set_cursor_position`]. A later successful [`Terminal::draw`] /
     /// [`Terminal::try_draw`] call may overwrite this change.
     ///
+    /// Ratatui only sends a show sequence when it doesn't already know the cursor is visible. If
+    /// something else hides the cursor without going through Ratatui (for example a child process
+    /// run while the app is suspended, or a direct write to stdout), call this method so the
+    /// cursor is visible again before the next draw.
+    ///
     /// [`Frame::set_cursor_position`]: crate::terminal::Frame::set_cursor_position
     /// [`Terminal::draw`]: crate::terminal::Terminal::draw
     /// [`Terminal::try_draw`]: crate::terminal::Terminal::try_draw
     pub fn show_cursor(&mut self) -> Result<(), B::Error> {
         self.backend.show_cursor()?;
-        self.hidden_cursor = false;
+        self.cursor_visibility = CursorVisibility::Visible;
         Ok(())
     }
 
@@ -95,7 +100,7 @@ impl<B: Backend> Terminal<B> {
 mod tests {
     use crate::backend::{Backend, TestBackend};
     use crate::layout::Position;
-    use crate::terminal::Terminal;
+    use crate::terminal::{CursorVisibility, Terminal};
 
     #[test]
     fn hide_cursor_updates_terminal_state() {
@@ -104,7 +109,7 @@ mod tests {
 
         terminal.hide_cursor().unwrap();
 
-        assert!(terminal.hidden_cursor);
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Hidden);
         assert!(!terminal.backend().cursor_visible());
     }
 
@@ -116,7 +121,7 @@ mod tests {
         terminal.hide_cursor().unwrap();
         terminal.show_cursor().unwrap();
 
-        assert!(!terminal.hidden_cursor);
+        assert_eq!(terminal.cursor_visibility, CursorVisibility::Visible);
         assert!(terminal.backend().cursor_visible());
     }
 
