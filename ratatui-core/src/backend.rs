@@ -366,7 +366,19 @@ pub trait Backend {
     /// This is distinct from [`Terminal::flush`](crate::terminal::Terminal::flush), which computes
     /// a diff between Ratatui's screen buffers and sends draw commands to the backend.
     fn flush(&mut self) -> Result<(), Self::Error>;
+}
 
+/// A [`Backend`] that can scroll a region of the screen without affecting the rows outside it.
+///
+/// [`Terminal::insert_before`] requires this trait. It uses scrolling regions to insert lines
+/// above an inline viewport without clearing and redrawing the viewport.
+///
+/// The built-in Crossterm, Termina, Termion, Termwiz, and [`TestBackend`] backends implement this
+/// trait. Backends that can't scroll a region natively can still implement it by emulating the
+/// behavior, as [`TestBackend`] does.
+///
+/// [`Terminal::insert_before`]: crate::terminal::Terminal::insert_before
+pub trait ScrollByRegion: Backend {
     /// Scroll a region of the screen upwards, where a region is specified by a (half-open) range
     /// of rows.
     ///
@@ -396,7 +408,6 @@ pub trait Backend {
     ///
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_up`].
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_up(
         &mut self,
         region: core::ops::Range<u16>,
@@ -412,7 +423,7 @@ pub trait Backend {
     ///
     /// The position of the cursor afterwards is undefined.
     ///
-    /// See the documentation for [`Self::scroll_region_down`] for more information about how this
+    /// See the documentation for [`Self::scroll_region_up`] for more information about how this
     /// is expected to be implemented for ANSI terminals. All of that applies, except the ANSI
     /// sequence to scroll down is "^[[NT".
     ///
@@ -421,7 +432,6 @@ pub trait Backend {
     ///
     /// For examples of how this function is expected to work, refer to the tests for
     /// [`TestBackend::scroll_region_down`].
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(
         &mut self,
         region: core::ops::Range<u16>,

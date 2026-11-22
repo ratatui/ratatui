@@ -26,7 +26,7 @@
 use std::fmt::{self, Write as FmtWrite};
 use std::io::{self, Write};
 
-use ratatui_core::backend::{Backend, ClearType, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, WindowSize};
 use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -287,8 +287,12 @@ where
     fn flush(&mut self) -> io::Result<()> {
         self.terminal.flush()
     }
+}
 
-    #[cfg(feature = "scrolling-regions")]
+impl<T> ScrollByRegion for TerminaBackend<T>
+where
+    T: Terminal,
+{
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         let margins = Csi::Cursor(set_top_and_bottom_margins(region)?);
         let scroll = Csi::Edit(Edit::ScrollUp(amount.into()));
@@ -297,7 +301,6 @@ where
         self.terminal.flush()
     }
 
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         let margins = Csi::Cursor(set_top_and_bottom_margins(region)?);
         let scroll = Csi::Edit(Edit::ScrollDown(amount.into()));
@@ -320,7 +323,6 @@ fn one_based(n: u16) -> io::Result<OneBased> {
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "position exceeds u16::MAX - 1"))
 }
 
-#[cfg(feature = "scrolling-regions")]
 fn set_top_and_bottom_margins(region: std::ops::Range<u16>) -> io::Result<Cursor> {
     Ok(Cursor::SetTopAndBottomMargins {
         top: one_based(region.start)?,
@@ -330,7 +332,6 @@ fn set_top_and_bottom_margins(region: std::ops::Range<u16>) -> io::Result<Cursor
     })
 }
 
-#[cfg(feature = "scrolling-regions")]
 const fn reset_top_and_bottom_margins() -> Cursor {
     Cursor::SetTopAndBottomMargins {
         top: OneBased::from_zero_based(0),
@@ -969,7 +970,6 @@ mod tests {
         assert_eq!(Modifier::from_termina(Blink::Rapid), Modifier::RAPID_BLINK);
     }
 
-    #[cfg(feature = "scrolling-regions")]
     #[test]
     fn scrolls_regions() {
         let mut backend = backend();
@@ -993,7 +993,6 @@ mod tests {
         assert_eq!(backend.terminal.output(), expected);
     }
 
-    #[cfg(feature = "scrolling-regions")]
     #[test]
     fn rejects_zero_ended_scroll_regions() {
         let mut backend = backend();

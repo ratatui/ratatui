@@ -101,7 +101,7 @@ cfg_if::cfg_if! {
 // unused_dependencies lint.
 #[cfg(all(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
 use crossterm_0_28 as _;
-use ratatui_core::backend::{Backend, ClearType, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, WindowSize};
 use ratatui_core::buffer::{Cell, CellWidth};
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -377,8 +377,12 @@ where
     fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
+}
 
-    #[cfg(feature = "scrolling-regions")]
+impl<W> ScrollByRegion for CrosstermBackend<W>
+where
+    W: Write,
+{
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         queue!(
             self.writer,
@@ -391,7 +395,6 @@ where
         self.writer.flush()
     }
 
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         queue!(
             self.writer,
@@ -756,7 +759,6 @@ impl FromCrossterm<ContentStyle> for Style {
 /// crossterm PRs that will address this:
 ///   - [918](https://github.com/crossterm-rs/crossterm/pull/918)
 ///   - [923](https://github.com/crossterm-rs/crossterm/pull/923)
-#[cfg(feature = "scrolling-regions")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ScrollUpInRegion {
     /// The first row of the scrolling region.
@@ -769,7 +771,6 @@ struct ScrollUpInRegion {
     pub lines_to_scroll: u16,
 }
 
-#[cfg(feature = "scrolling-regions")]
 impl crate::crossterm::Command for ScrollUpInRegion {
     fn write_ansi(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
         if self.lines_to_scroll != 0 {
@@ -804,7 +805,6 @@ impl crate::crossterm::Command for ScrollUpInRegion {
 /// crossterm PRs that will address this:
 ///   - [918](https://github.com/crossterm-rs/crossterm/pull/918)
 ///   - [923](https://github.com/crossterm-rs/crossterm/pull/923)
-#[cfg(feature = "scrolling-regions")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ScrollDownInRegion {
     /// The first row of the scrolling region.
@@ -817,7 +817,6 @@ struct ScrollDownInRegion {
     pub lines_to_scroll: u16,
 }
 
-#[cfg(feature = "scrolling-regions")]
 impl crate::crossterm::Command for ScrollDownInRegion {
     fn write_ansi(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
         if self.lines_to_scroll != 0 {

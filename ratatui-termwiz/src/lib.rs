@@ -41,7 +41,7 @@
 use std::error::Error;
 use std::io;
 
-use ratatui_core::backend::{Backend, ClearType, WindowSize};
+use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, WindowSize};
 use ratatui_core::buffer::Cell;
 use ratatui_core::layout::{Position, Size};
 use ratatui_core::style::{Color, Modifier, Style};
@@ -309,8 +309,9 @@ impl Backend for TermwizBackend {
         self.buffered_terminal.flush().map_err(io::Error::other)?;
         Ok(())
     }
+}
 
-    #[cfg(feature = "scrolling-regions")]
+impl ScrollByRegion for TermwizBackend {
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         // termwiz doesn't have a command to just set the scrolling region. Instead, setting the
         // scrolling region and scrolling are combined. However, this has the side-effect of
@@ -333,7 +334,6 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
         // termwiz doesn't have a command to just set the scrolling region. Instead, setting the
         // scrolling region and scrolling are combined. However, this has the side-effect of

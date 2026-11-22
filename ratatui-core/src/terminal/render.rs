@@ -414,28 +414,6 @@ mod tests {
         fn flush(&mut self) -> Result<(), Self::Error> {
             self.inner.flush().map_err(|err| match err {})
         }
-
-        #[cfg(feature = "scrolling-regions")]
-        fn scroll_region_up(
-            &mut self,
-            region: core::ops::Range<u16>,
-            line_count: u16,
-        ) -> Result<(), Self::Error> {
-            self.inner
-                .scroll_region_up(region, line_count)
-                .map_err(|err| match err {})
-        }
-
-        #[cfg(feature = "scrolling-regions")]
-        fn scroll_region_down(
-            &mut self,
-            region: core::ops::Range<u16>,
-            line_count: u16,
-        ) -> Result<(), Self::Error> {
-            self.inner
-                .scroll_region_down(region, line_count)
-                .map_err(|err| match err {})
-        }
     }
 
     /// `draw` hides the cursor when the frame does not request a cursor position.

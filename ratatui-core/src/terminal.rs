@@ -251,9 +251,9 @@ use crate::layout::{Position, Rect};
 /// computed viewport origin upward so the viewport stays fully visible.
 ///
 /// While running in inline mode, [`Terminal::insert_before`] can be used to print output above the
-/// viewport without disturbing the UI's logical position. When Ratatui is built with the
-/// `scrolling-regions` feature, `insert_before` can do this without clearing and redrawing the
-/// viewport.
+/// viewport without disturbing the UI's logical position. `insert_before` requires a backend that
+/// implements [`ScrollByRegion`], and uses terminal scrolling regions so the viewport is not
+/// cleared and redrawn.
 ///
 /// ```rust,no_run
 /// # #![allow(unexpected_cfgs)]
@@ -379,9 +379,8 @@ use crate::layout::{Position, Rect};
 /// visible. On resize, Ratatui recomputes the inline origin while trying to keep the cursor at the
 /// same relative row inside the viewport.
 ///
-/// When Ratatui is built with the `scrolling-regions` feature, [`Terminal::insert_before`] uses
-/// terminal scrolling regions to insert content above an inline viewport without clearing and
-/// redrawing it.
+/// [`Terminal::insert_before`] uses terminal scrolling regions (via [`ScrollByRegion`]) to insert
+/// content above an inline viewport without clearing and redrawing it.
 ///
 /// [Crossterm]: https://crates.io/crates/crossterm
 /// [Termion]: https://crates.io/crates/termion
@@ -389,6 +388,7 @@ use crate::layout::{Position, Rect};
 /// [`backend`]: crate::backend
 /// [`Backend`]: crate::backend::Backend
 /// [`Backend::flush`]: crate::backend::Backend::flush
+/// [`ScrollByRegion`]: crate::backend::ScrollByRegion
 /// [`Buffer`]: crate::buffer::Buffer
 /// [`ratatui::DefaultTerminal`]: https://docs.rs/ratatui/latest/ratatui/type.DefaultTerminal.html
 /// [`ratatui::init`]: https://docs.rs/ratatui/latest/ratatui/fn.init.html
