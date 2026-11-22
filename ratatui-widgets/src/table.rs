@@ -845,11 +845,7 @@ impl Table<'_> {
     fn render_header(&self, area: Rect, buf: &mut Buffer, column_widths: &[Rect]) {
         if let Some(ref header) = self.header {
             buf.set_style(area, header.style);
-            for (cell_area, cell) in column_widths.iter().zip(header.cells.iter()) {
-                let new_x = area.x + cell_area.x;
-                let area_to_render = Rect::new(new_x, area.y, cell_area.width, area.height);
-                cell.render(area_to_render, buf);
-            }
+            self.render_row_cells(buf, column_widths.iter().collect(), &header.cells, area);
         }
     }
 
@@ -860,11 +856,7 @@ impl Table<'_> {
     fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: &[Rect]) {
         if let Some(ref footer) = self.footer {
             buf.set_style(area, footer.style);
-            for (cell_area, cell) in column_widths.iter().zip(footer.cells.iter()) {
-                let new_x = area.x + cell_area.x;
-                let area_to_render = Rect::new(new_x, area.y, cell_area.width, area.height);
-                cell.render(area_to_render, buf);
-            }
+            self.render_row_cells(buf, column_widths.iter().collect(), &footer.cells, area);
         }
     }
 
@@ -1642,6 +1634,44 @@ mod tests {
             let table = Table::new(rows, [Constraint::Length(column_width); 3]);
             Widget::render(table, Rect::new(0, 0, width, 2), &mut buf);
             assert_eq!(buf, *expected);
+        }
+
+        #[rstest]
+        #[case::zero(0, "Z          ")]
+        #[case::one(1, "ABC Z      ")]
+        #[case::two(2, "ABCDEFG Z  ")]
+        #[case::beyond_available(4, "ABCDEFG    ")]
+        fn render_column_spans_in_header_and_footer(#[case] span: u16, #[case] expected: &str) {
+            let row = Row::new([Cell::new("ABCDEFG").column_span(span), Cell::new("Z")]);
+            let table = Table::new([row.clone()], [Constraint::Length(3); 3])
+                .header(row.clone())
+                .footer(row);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 11, 3));
+
+            Widget::render(table, buf.area, &mut buf);
+
+            assert_eq!(buf, Buffer::with_lines([expected; 3]));
+        }
+
+        #[test]
+        fn render_column_spans_in_styled_offset_header_and_footer() {
+            let row =
+                Row::new([Cell::new("ABCDEFG").column_span(2).red(), Cell::new("Z")]).on_blue();
+            let table = Table::new([row.clone()], [Constraint::Length(3); 3])
+                .header(row.clone())
+                .footer(row);
+            let area = Rect::new(10, 5, 11, 3);
+            let mut buf = Buffer::empty(area);
+            let mut expected = Buffer::empty(area);
+            expected.set_style(area, Style::new().on_blue());
+            for y in 5..8 {
+                expected.set_string(10, y, "ABCDEFG", Style::new().red());
+                expected.set_string(18, y, "Z", Style::new());
+            }
+
+            Widget::render(table, area, &mut buf);
+
+            assert_eq!(buf, expected);
         }
 
         #[test]
