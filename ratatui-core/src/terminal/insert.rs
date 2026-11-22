@@ -194,13 +194,21 @@ impl<B: ScrollByRegion> Terminal<B> {
         let width: usize = self.last_known_area.width.into();
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
         if lines_to_draw > 0 {
-            let area = Rect::new(0, y_offset, width as u16, y_offset + lines_to_draw);
-            let old = Buffer::empty(area);
-            let new = Buffer {
-                area,
-                content: to_draw.to_vec(),
-            };
-            self.backend.draw(old.diff_iter(&new))?;
+            // Skip the cells hidden behind wide glyphs: drawn after the glyph, they erase it.
+            let mut hidden = 0;
+            let iter = to_draw
+                .iter()
+                .enumerate()
+                .filter(|(i, c)| {
+                    // A glyph never hides cells on the next row.
+                    let visible = hidden == 0 || i % width == 0;
+                    hidden = if visible { c.cell_width() } else { hidden }.saturating_sub(1);
+                    visible
+                })
+                // The screen is already cleared, so empty cells don't need drawing.
+                .filter(|(_, c)| **c != Cell::EMPTY)
+                .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
+            self.backend.draw(iter)?;
             self.backend.flush()?;
         }
         Ok(remainder)
@@ -306,6 +314,8 @@ mod tests {
                 buf[(0, 0)].set_symbol("界");
                 // Hidden behind `界`: drawing it would erase the glyph.
                 buf[(1, 0)].set_symbol("x");
+                // A glyph in the last column hides nothing on the next row.
+                buf[(2, 0)].set_symbol("界");
                 buf[(0, 1)].set_symbol("b");
             })
             .unwrap();
@@ -313,6 +323,36 @@ mod tests {
         let screen = terminal.backend().buffer();
         assert_eq!(screen[(1, 0)].symbol(), " ");
         assert_eq!(screen[(0, 1)].symbol(), "b");
+    }
+
+    #[test]
+    fn insert_before_skips_hidden_cells_when_viewport_is_fullscreen() {
+        // A fullscreen viewport sends each inserted line straight to scrollback. The first line is
+        // drawn with `draw_lines` and later ones with `draw_lines_over_cleared`, so put a wide
+        // glyph on both.
+        let backend = TestBackend::new(3, 2);
+        let options = TerminalOptions {
+            viewport: Viewport::Inline(2),
+        };
+        let mut terminal = Terminal::with_options(backend, options).unwrap();
+
+        terminal
+            .insert_before(2, |buf| {
+                for y in 0..2 {
+                    buf[(0, y)].set_symbol("界");
+                    // Hidden behind `界`: drawing it would erase the glyph.
+                    buf[(1, y)].set_symbol("x");
+                    buf[(2, y)].set_symbol("b");
+                }
+            })
+            .unwrap();
+
+        let scrollback = terminal.backend().scrollback();
+        for y in 0..2 {
+            assert_eq!(scrollback[(0, y)].symbol(), "界");
+            assert_eq!(scrollback[(1, y)].symbol(), " ");
+            assert_eq!(scrollback[(2, y)].symbol(), "b");
+        }
     }
 
     #[test]
