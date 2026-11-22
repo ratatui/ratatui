@@ -31,10 +31,7 @@ impl StatefulWidget for &List<'_> {
     type State = ListState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        if state.item_count.is_some() || state.selection_mode.is_some() {
-            state.item_count = Some(self.items.len());
-            state.clamp_selected();
-        }
+        state.update_selection_for_render(self.items.len());
 
         let area = area.intersection(buf.area);
         if area.is_empty() {
@@ -314,46 +311,48 @@ mod tests {
     }
 
     #[test]
-    fn bounded_navigation_is_opt_in() {
+    fn navigation_is_bounded_after_render() {
         let list = List::new(["one", "two", "three"]);
         let mut state = ListState::default().with_selected(Some(2));
         assert_eq!(state.selection_mode(), SelectionMode::Clamp);
-        let original_state = state;
-        stateful_widget(list.clone(), &mut state, 10, 3);
-        assert_eq!(state, original_state);
+        assert_eq!(state.item_count(), None);
+        stateful_widget(list, &mut state, 10, 3);
+        assert_eq!(state.item_count(), Some(3));
         state.select_next();
-        assert_eq!(state.selected(), Some(3));
-
-        stateful_widget(list.clone(), &mut state, 10, 3);
         assert_eq!(state.selected(), Some(2));
-        state.select_last();
-        assert_eq!(state.selected(), Some(usize::MAX));
         state.select(None);
         state.select_previous();
-        assert_eq!(state.selected(), Some(usize::MAX));
-
-        *state.item_count_mut() = Some(3);
-        stateful_widget(list.clone(), &mut state, 10, 3);
-        state.select_next();
         assert_eq!(state.selected(), Some(2));
+    }
 
-        *state.item_count_mut() = None;
-        stateful_widget(list, &mut state, 10, 3);
-        state.select_next();
-        assert_eq!(state.selected(), Some(3));
+    #[test]
+    fn select_last_uses_rendered_count() {
+        let mut state = ListState::default();
+        stateful_widget(List::new(["one", "two"]), &mut state, 10, 3);
+        state.select_last();
+        assert_eq!(state.selected(), Some(1));
 
-        stateful_widget(List::default(), &mut state, 10, 3);
-        state.select_first();
-        assert_eq!(state.selected(), Some(0));
+        // Items added after rendering are unknown until the count is updated or the list renders.
+        state.select_last();
+        assert_eq!(state.selected(), Some(1));
+        *state.item_count_mut() = Some(3);
+        state.select_last();
+        assert_eq!(state.selected(), Some(2));
+    }
+
+    #[test]
+    fn navigation_is_unbounded_before_first_render() {
+        let mut state = ListState::default();
+        state.select_last();
+        assert_eq!(state.selected(), Some(usize::MAX));
+        stateful_widget(List::new(["one", "two", "three"]), &mut state, 10, 3);
+        assert_eq!(state.selected(), Some(2));
     }
 
     #[rstest]
     #[case::clamp(SelectionMode::Clamp, Some(2))]
     #[case::wrap(SelectionMode::Wrap, Some(0))]
-    fn selection_mode_enables_count_tracking(
-        #[case] mode: SelectionMode,
-        #[case] next: Option<usize>,
-    ) {
+    fn rendering_refreshes_item_count(#[case] mode: SelectionMode, #[case] next: Option<usize>) {
         let mut state_from_mut = ListState::default();
         *state_from_mut.selection_mode_mut() = mode;
         for mut state in [
@@ -1374,9 +1373,13 @@ mod tests {
         let expected = buf.clone();
         let widget = List::new(["item 1", "item 2"]);
         let mut state = ListState::default().with_offset(4).with_selected(Some(10));
-        let expected_state = state;
         StatefulWidget::render(&widget, area, &mut buf, &mut state);
         assert_eq!(buf, expected, "rendering into {area:?}");
+        // The item count is recorded even when nothing is drawn, so navigation stays bounded.
+        let expected_state = ListState::default()
+            .with_offset(4)
+            .with_selected(Some(1))
+            .with_item_count(Some(2));
         assert_eq!(state, expected_state);
     }
 

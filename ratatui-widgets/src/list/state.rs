@@ -16,16 +16,25 @@
 /// [`item_count`]: ListState::item_count()
 /// [`selection_mode`]: ListState::selection_mode()
 ///
-/// By default, navigation can select an index beyond the list's bounds; rendering clamps it.
-/// Choose [`with_selection_mode`](Self::with_selection_mode) to enable bounded navigation after
-/// rendering discovers the item count. Supply [`with_item_count`](Self::with_item_count) to enable
-/// it before rendering. Rendering refreshes the count once either option is enabled. If items
-/// change between renders, update [`item_count_mut`](Self::item_count_mut) before navigating.
-/// Direct selection assignments are only clamped during rendering, so you can select an item
+/// Rendering records the number of items, and navigation methods such as
+/// [`select_next`](Self::select_next) stay within that count, so [`selected`] is a valid index
+/// into the items that were last rendered. By default navigation stops at the first and last
+/// items; choose [`SelectionMode::Wrap`] with [`with_selection_mode`](Self::with_selection_mode)
+/// to continue from the other end.
+///
+/// The state only knows about the items as of the last render. Selecting the last item and then
+/// adding more items leaves the selection where it was; it does not follow the end of the list.
+/// If items change before the next render, update [`item_count_mut`](Self::item_count_mut) before
+/// navigating. Before the first render the count is unknown unless supplied with
+/// [`with_item_count`](Self::with_item_count), and navigation is unbounded until rendering clamps
+/// it. Direct selection assignments are only clamped during rendering, so you can select an item
 /// that will be added on the next render.
 ///
-/// Serialization preserves the offset and selection. Reapply any navigation settings after
-/// deserialization.
+/// Equality and hashing compare all four fields, so a state compares unequal to an otherwise
+/// identical one after rendering records the item count.
+///
+/// Serialization preserves the offset, selection and selection mode. The item count is not
+/// serialized; rendering or [`item_count_mut`](Self::item_count_mut) restores it.
 ///
 /// See the list in the [Examples] directory for a more in-depth example of the various
 /// configuration options and for how to handle state.
@@ -61,9 +70,12 @@ pub struct ListState {
     pub(crate) offset: usize,
     pub(crate) selected: Option<usize>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub(crate) item_count: Option<usize>,
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub(super) selection_mode: Option<SelectionMode>,
+    item_count: Option<usize>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "SelectionMode::is_clamp")
+    )]
+    selection_mode: SelectionMode,
 }
 
 /// How list navigation behaves at the first and last items.
@@ -71,6 +83,9 @@ pub struct ListState {
 /// This applies to [`ListState::select_next`], [`ListState::select_previous`],
 /// [`ListState::scroll_down_by`] and [`ListState::scroll_up_by`] when the item count is known.
 /// Direct selection assignments are clamped during rendering instead of wrapping.
+///
+/// The mode takes effect once the item count is known: after the first render, or immediately
+/// when supplied with [`ListState::with_item_count`]. Before that, navigation is unbounded.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SelectionMode {
@@ -79,6 +94,17 @@ pub enum SelectionMode {
     Clamp,
     /// Continue from the other end, including when moving by more than the list length.
     Wrap,
+}
+
+impl SelectionMode {
+    #[cfg(feature = "serde")]
+    #[expect(
+        clippy::trivially_copy_pass_by_ref,
+        reason = "serde's skip_serializing_if passes a reference"
+    )]
+    const fn is_clamp(&self) -> bool {
+        matches!(self, Self::Clamp)
+    }
 }
 
 impl ListState {
@@ -118,10 +144,9 @@ impl ListState {
 
     /// Sets the number of items in the list
     ///
-    /// `Some(count)` enables bounded navigation before rendering. Rendering refreshes the count
-    /// when a count or selection mode has been supplied. `None` clears the count; rendering
-    /// discovers it again if a mode was explicitly chosen. This does not change the selection.
-    /// The count is not serialized.
+    /// `Some(count)` enables bounded navigation before the first render. Rendering replaces the
+    /// count with the number of items rendered. This does not change the selection. The count is
+    /// not serialized.
     ///
     /// # Examples
     ///
@@ -138,9 +163,7 @@ impl ListState {
 
     /// Sets whether navigation clamps at the ends or wraps around.
     ///
-    /// Enables item-count tracking during rendering, including when choosing
-    /// [`SelectionMode::Clamp`]. Supply [`with_item_count`](Self::with_item_count) to enable bounded
-    /// navigation before rendering. The mode is not serialized.
+    /// Defaults to [`SelectionMode::Clamp`].
     ///
     /// # Examples
     ///
@@ -156,25 +179,19 @@ impl ListState {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn with_selection_mode(mut self, mode: SelectionMode) -> Self {
-        self.selection_mode = Some(mode);
+        self.selection_mode = mode;
         self
     }
 
     /// Returns how navigation behaves at the ends of the list. Defaults to
-    /// [`SelectionMode::Clamp`]. Reading the mode does not enable item-count tracking.
+    /// [`SelectionMode::Clamp`].
     pub const fn selection_mode(&self) -> SelectionMode {
-        match self.selection_mode {
-            Some(mode) => mode,
-            None => SelectionMode::Clamp,
-        }
+        self.selection_mode
     }
 
     /// Mutable reference to how navigation behaves at the ends of the list.
-    ///
-    /// Calling this method enables item-count tracking during rendering.
     pub const fn selection_mode_mut(&mut self) -> &mut SelectionMode {
-        self.selection_mode = Some(self.selection_mode());
-        self.selection_mode.as_mut().unwrap()
+        &mut self.selection_mode
     }
 
     /// Index of the first item to be displayed
@@ -267,11 +284,10 @@ impl ListState {
 
     /// Mutable reference to the number of items in the list.
     ///
-    /// Set this before navigating when items change between renders. This does not change the
+    /// Set this before navigating when items change between renders, for example after adding an
+    /// item and before calling [`select_last`](Self::select_last). This does not change the
     /// selection; rendering or bounded navigation corrects out-of-bounds selections. Rendering
-    /// refreshes the count when a count or selection mode has been supplied. Set to `None` to
-    /// clear the count; rendering discovers it again if a mode was explicitly chosen. The count
-    /// is not serialized.
+    /// replaces the count with the number of items rendered. The count is not serialized.
     ///
     /// # Examples
     ///
@@ -287,14 +303,20 @@ impl ListState {
 
     /// Returns the number of items in the list, if known.
     ///
-    /// Returns `None` by default. Rendering discovers the count when a selection mode has been
-    /// explicitly chosen, or refreshes a manually supplied count.
+    /// Returns `None` until the list is rendered or a count is supplied. Rendering records the
+    /// number of items rendered.
     pub const fn item_count(&self) -> Option<usize> {
         self.item_count
     }
 
+    /// Records the rendered item count and keeps the selection in bounds.
+    pub(super) const fn update_selection_for_render(&mut self, item_count: usize) {
+        self.item_count = Some(item_count);
+        self.clamp_selected();
+    }
+
     /// Clamps the `selected` index to valid bounds if `item_count` is known.
-    pub(super) const fn clamp_selected(&mut self) {
+    const fn clamp_selected(&mut self) {
         match (self.selected, self.item_count) {
             (_, Some(0)) => self.select(None),
             (Some(selected), Some(count)) if selected >= count => {

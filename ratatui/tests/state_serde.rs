@@ -244,9 +244,13 @@ fn list_state_preserves_serialized_format() {
         .with_selected(Some(2))
         .with_selection_mode(SelectionMode::Wrap);
     let json = serde_json::to_string(&state).unwrap();
-    assert_eq!(json, r#"{"offset":0,"selected":2}"#);
+    assert_eq!(json, r#"{"offset":0,"selected":2,"selection_mode":"Wrap"}"#);
     let restored: ListState = serde_json::from_str(&json).unwrap();
     assert_eq!(restored.selected(), state.selected());
     assert_eq!(restored.item_count(), None);
-    assert_eq!(restored.selection_mode(), SelectionMode::Clamp);
+    assert_eq!(restored.selection_mode(), SelectionMode::Wrap);
+
+    let untracked = ListState::default().with_selected(Some(2));
+    let json = serde_json::to_string(&untracked).unwrap();
+    assert_eq!(json, r#"{"offset":0,"selected":2}"#);
 }
