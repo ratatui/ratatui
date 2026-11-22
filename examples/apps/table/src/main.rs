@@ -269,7 +269,8 @@ impl App {
             Scrollbar::default()
                 .orientation(ScrollbarOrientation::VerticalRight)
                 .begin_symbol(None)
-                .end_symbol(None),
+                .end_symbol(None)
+                .style(Color::Reset),
             area.inner(Margin {
                 vertical: 1,
                 horizontal: 1,
