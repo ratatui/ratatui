@@ -4,7 +4,6 @@ use criterion::{BenchmarkId, Criterion};
 use ratatui::buffer::{Buffer, Cell};
 use ratatui::layout::Size;
 use ratatui::style::Style;
-use ratatui::text::Line;
 
 criterion::criterion_group!(
     benches,
@@ -21,175 +20,150 @@ criterion::criterion_group!(
 /// A reasonable terminal size, and a size that's probably too big to be useful
 const SIZES: [Size; 2] = [Size::new(200, 50), Size::new(1000, 250)];
 
+/// Allocating a buffer of default cells should grow linearly with the cell count.
 fn empty(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/empty");
     for size in SIZES {
         let area = size.into();
-        group.bench_with_input(BenchmarkId::from_parameter(size), &area, |b, &area| {
-            b.iter(|| {
-                let _buffer = Buffer::empty(black_box(area));
-            });
+        let id = BenchmarkId::from_parameter(size);
+        group.bench_function(id, |b| b.iter(|| Buffer::empty(black_box(area))));
+    }
+    group.finish();
+}
+
+/// Filling with a non-default cell should cost about the same as `empty`; a gap would mean
+/// cloning the cell got more expensive.
+fn filled(c: &mut Criterion) {
+    let mut group = c.benchmark_group("buffer/filled");
+    let cell = Cell::new("AAAA"); // a symbol longer than one character
+    for size in SIZES {
+        let area = size.into();
+        let id = BenchmarkId::from_parameter(size);
+        group.bench_function(id, |b| {
+            b.iter(|| Buffer::filled(black_box(area), cell.clone()));
         });
     }
     group.finish();
 }
 
-/// This likely should have the same performance as `empty`, but it's here for completeness
-/// and to catch any potential performance regressions.
-fn filled(c: &mut Criterion) {
-    let mut group = c.benchmark_group("buffer/filled");
-    for size in SIZES {
-        let area = size.into();
-        let cell = Cell::new("AAAA"); // simulate a multi-byte character
-        group.bench_with_input(
-            BenchmarkId::from_parameter(size),
-            &(area, cell),
-            |b, (area, cell)| {
-                b.iter(|| {
-                    let _buffer = Buffer::filled(black_box(*area), cell.clone());
-                });
-            },
-        );
-    }
-    group.finish();
-}
-
+/// Building a buffer from text should grow with the amount of text.
 fn with_lines(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/with_lines");
     for size in SIZES {
-        let word_count = 50;
-        let lines = fakeit::words::sentence(word_count);
-        let lines = lines.lines().map(Line::from);
-        group.bench_with_input(BenchmarkId::from_parameter(size), &lines, |b, lines| {
-            b.iter(|| {
-                let _buffer = Buffer::with_lines(black_box(lines.clone()));
-            });
+        let lines = sentences_filling(size);
+        let rows = lines.iter().map(String::as_str);
+        let id = BenchmarkId::from_parameter(size);
+        group.bench_function(id, |b| {
+            b.iter(|| Buffer::with_lines(black_box(rows.clone())));
         });
     }
     group.finish();
 }
 
+/// One sentence per row, each with roughly enough words to fill the width
+fn sentences_filling(size: Size) -> Vec<String> {
+    let words_per_row = i64::from(size.width / 6); // about 5 letters and a space per word
+    (0..size.height)
+        .map(|_| fakeit::words::sentence(words_per_row))
+        .collect()
+}
+
+/// Diffing identical buffers is the floor: the cost of comparing every cell and emitting nothing.
 fn diff_no_change(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_no_change");
     for size in SIZES {
-        let buffer = Buffer::filled(size.into(), Cell::new("x"));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &buffer, |b, buffer| {
-            b.iter(|| {
-                let diff = black_box(buffer).diff(black_box(buffer));
-                black_box(diff);
-            });
+        let buffer = Buffer::filled(size.into(), Cell::new("a"));
+        let id = BenchmarkId::from_parameter(size);
+        group.bench_function(id, |b| {
+            b.iter(|| black_box(&buffer).diff(black_box(&buffer)));
         });
     }
     group.finish();
 }
 
-/// This tests maximum update cost with every cell needing an update
+/// Changing every cell is the ceiling: every cell is compared and emitted as an update.
 fn diff_full_change(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_full_change");
     for size in SIZES {
-        let area = size.into();
-        let prev = Buffer::filled(area, Cell::new("a"));
-        let next = Buffer::filled(area, Cell::new("b"));
-        group.bench_with_input(
-            BenchmarkId::from_parameter(size),
-            &(prev, next),
-            |b, (prev, next)| {
-                b.iter(|| {
-                    let diff = black_box(prev).diff(black_box(next));
-                    black_box(diff);
-                });
-            },
-        );
+        let previous = Buffer::filled(size.into(), Cell::new("a"));
+        let next = Buffer::filled(size.into(), Cell::new("b"));
+        let id = BenchmarkId::from_parameter(size);
+        group.bench_function(id, |b| {
+            b.iter(|| black_box(&previous).diff(black_box(&next)));
+        });
     }
     group.finish();
 }
 
-/// This simulates typical incremental updates in a TUI
+/// Changing every 10th cell, like a typical incremental redraw, should land between the floor
+/// and the ceiling, in proportion to the number of updates.
 fn diff_partial_change(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_partial_change");
     for size in SIZES {
-        let area = size.into();
-        let prev = Buffer::filled(area, Cell::new("a"));
-        let mut next = Buffer::filled(area, Cell::new("a"));
-
-        let total_cells = (size.width as usize) * (size.height as usize);
-        for i in (0..total_cells).step_by(10) {
-            if i < next.content.len() {
-                next.content[i].set_symbol("b");
-            }
-        }
-
-        group.bench_with_input(
-            BenchmarkId::from_parameter(size),
-            &(prev, next),
-            |b, (prev, next)| {
-                b.iter(|| {
-                    let diff = black_box(prev).diff(black_box(next));
-                    black_box(diff);
-                });
-            },
-        );
+        let previous = Buffer::filled(size.into(), Cell::new("a"));
+        let next = with_every_tenth_cell_changed(&previous);
+        let id = BenchmarkId::from_parameter(size);
+        group.bench_function(id, |b| {
+            b.iter(|| black_box(&previous).diff(black_box(&next)));
+        });
     }
     group.finish();
 }
 
+fn with_every_tenth_cell_changed(buffer: &Buffer) -> Buffer {
+    let mut changed = buffer.clone();
+    for cell in changed.content.iter_mut().step_by(10) {
+        cell.set_symbol("b");
+    }
+    changed
+}
+
+/// Replacing narrow text with wide (CJK) characters exercises the path that skips the cells a
+/// wide character covers, so it should cost more per update than a full change.
 fn diff_multi_width(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_multi_width");
     for size in SIZES {
-        let area = size.into();
-        let prev = Buffer::with_lines(vec!["a".repeat(size.width as usize); size.height as usize]);
-        let mut next = Buffer::filled(area, Cell::new(" "));
-
-        for y in 0..size.height {
-            next.set_string(
-                0,
-                y,
-                "日本語中文한국어".repeat(size.width as usize / 6),
-                Style::default(),
-            );
-        }
-
-        group.bench_with_input(
-            BenchmarkId::from_parameter(size),
-            &(prev, next),
-            |b, (prev, next)| {
-                b.iter(|| {
-                    let diff = black_box(prev).diff(black_box(next));
-                    black_box(diff);
-                });
-            },
-        );
+        let previous = Buffer::filled(size.into(), Cell::new("a"));
+        let next = wide_character_rows(size);
+        let id = BenchmarkId::from_parameter(size);
+        group.bench_function(id, |b| {
+            b.iter(|| black_box(&previous).diff(black_box(&next)));
+        });
     }
     group.finish();
 }
 
-/// Tests the emoji-specific VS16 clearing path for complex emoji sequences
+/// Every row filled with `日本語中文한국어` repeated to the buffer width
+fn wide_character_rows(size: Size) -> Buffer {
+    let mut buffer = Buffer::filled(size.into(), Cell::new(" "));
+    let row = "日本語中文한국어".repeat(size.width as usize);
+    for y in 0..size.height {
+        buffer.set_string(0, y, &row, Style::default());
+    }
+    buffer
+}
+
+/// Replacing narrow text with emoji sequences (VS16 and ZWJ) exercises the extra clearing the
+/// diff does for emoji, so it should cost more per update than wide characters.
 fn diff_emoji(c: &mut Criterion) {
     let mut group = c.benchmark_group("buffer/diff_emoji");
     for size in SIZES {
-        let area = size.into();
-        let prev = Buffer::filled(area, Cell::new("a"));
-        let mut next = Buffer::filled(area, Cell::new(" "));
-
-        for y in 0..size.height {
-            next.set_string(
-                0,
-                y,
-                "⌨️👁️‍🗨️🐻‍❄️".repeat(size.width as usize / 6),
-                Style::default(),
-            );
-        }
-
-        group.bench_with_input(
-            BenchmarkId::from_parameter(size),
-            &(prev, next),
-            |b, (prev, next)| {
-                b.iter(|| {
-                    let diff = black_box(prev).diff(black_box(next));
-                    black_box(diff);
-                });
-            },
-        );
+        let previous = Buffer::filled(size.into(), Cell::new("a"));
+        let next = emoji_rows(size);
+        let id = BenchmarkId::from_parameter(size);
+        group.bench_function(id, |b| {
+            b.iter(|| black_box(&previous).diff(black_box(&next)));
+        });
     }
     group.finish();
+}
+
+/// Every row filled with `⌨️👁️‍🗨️🐻‍❄️` repeated to the buffer width
+fn emoji_rows(size: Size) -> Buffer {
+    let mut buffer = Buffer::filled(size.into(), Cell::new(" "));
+    let row = "⌨️👁️‍🗨️🐻‍❄️".repeat(size.width as usize);
+    for y in 0..size.height {
+        buffer.set_string(0, y, &row, Style::default());
+    }
+    buffer
 }
