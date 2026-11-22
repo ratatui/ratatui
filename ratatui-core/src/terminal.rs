@@ -48,6 +48,7 @@ mod cursor;
 mod frame;
 mod init;
 mod inline;
+mod insert;
 mod render;
 mod resize;
 mod viewport;
