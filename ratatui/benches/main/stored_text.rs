@@ -1,6 +1,6 @@
 use std::hint::black_box;
 
-use criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
+use hotpath::criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};

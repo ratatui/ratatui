@@ -1,4 +1,4 @@
-use criterion::{BatchSize, Criterion, criterion_group};
+use hotpath::criterion::{BatchSize, Criterion, criterion_group};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;

@@ -104,6 +104,24 @@ underline-color = [
   "ratatui-termwiz?/underline-color",
 ]
 
+#! The following features are used to profile Ratatui's benchmarks with
+#! [hotpath-rs](https://hotpath.rs):
+
+## enables hotpath-rs instrumentation of the rendering hot paths.
+hotpath = [
+  "dep:hotpath",
+  "hotpath/hotpath",
+  "ratatui-core/hotpath",
+  "ratatui-widgets/hotpath",
+  "std",
+]
+## enables allocation tracking.
+hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
+## enables uploading reports to hotpath.rs.
+hotpath-cloud = ["hotpath", "hotpath/hotpath-cloud"]
+## enables Callgrind instruction counts.
+hotpath-callgrind = ["hotpath", "hotpath/hotpath-callgrind"]
+
 #! The following features are unstable and may change in the future:
 
 ## Enable all unstable features.
@@ -131,6 +149,7 @@ unstable-backend-writer = [
 
 [dependencies]
 document-features = { workspace = true, optional = true }
+hotpath = { workspace = true, optional = true }
 instability.workspace = true
 palette = { workspace = true, optional = true }
 ratatui-calendar = { workspace = true, optional = true }
@@ -147,6 +166,7 @@ ratatui-termion = { workspace = true, optional = true }
 
 [dev-dependencies]
 criterion.workspace = true
+hotpath = { workspace = true, features = ["criterion-0-8"] }
 crossterm = { workspace = true, features = ["event-stream"] }
 fakeit.workspace = true
 indoc.workspace = true

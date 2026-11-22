@@ -36,6 +36,9 @@ portable-atomic = [
   "ratatui-core/portable-atomic",
 ]
 
+## enables [hotpath-rs](https://hotpath.rs) instrumentation of the rendering hot paths.
+hotpath = ["dep:hotpath", "hotpath/hotpath", "ratatui-core/hotpath", "std"]
+
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info"]
 
@@ -48,6 +51,7 @@ unstable-rendered-line-info = []
 [dependencies]
 bitflags.workspace = true
 document-features = { workspace = true, optional = true }
+hotpath = { workspace = true, optional = true }
 indoc.workspace = true
 instability.workspace = true
 itertools.workspace = true

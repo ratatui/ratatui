@@ -1,4 +1,4 @@
-use criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
+use hotpath::criterion::{Bencher, BenchmarkId, Criterion, criterion_group};
 use rand::RngExt;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Direction, Rect};
@@ -62,7 +62,7 @@ fn render(bencher: &mut Bencher, barchart: &BarChart) {
         |bench_barchart| {
             bench_barchart.render(buffer.area, &mut buffer);
         },
-        criterion::BatchSize::LargeInput,
+        hotpath::criterion::BatchSize::LargeInput,
     );
 }
 

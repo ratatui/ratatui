@@ -826,6 +826,7 @@ impl Widget for &Line<'_> {
 impl Line<'_> {
     /// An internal implementation method for `Widget::render` that allows the parent widget to
     /// define a default alignment, to be used if `Line::alignment` is `None`.
+    #[cfg_attr(feature = "hotpath", hotpath::measure)]
     pub(crate) fn render_with_alignment(
         &self,
         area: Rect,

@@ -602,6 +602,7 @@ impl<'a> Context<'a> {
     }
 
     /// Draw the given [`Shape`] in this context
+    #[cfg_attr(feature = "hotpath", hotpath::measure)]
     pub fn draw<S>(&mut self, shape: &S)
     where
         S: Shape,
@@ -642,6 +643,7 @@ impl<'a> Context<'a> {
     }
 
     /// Save the last layer if necessary
+    #[cfg_attr(feature = "hotpath", hotpath::measure)]
     fn finish(&mut self) {
         if self.dirty {
             self.layer();
@@ -862,6 +864,7 @@ impl<F> Widget for &Canvas<'_, F>
 where
     F: Fn(&mut Context),
 {
+    #[cfg_attr(feature = "hotpath", hotpath::measure)]
     fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         if area.is_empty() {

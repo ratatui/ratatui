@@ -1,0 +1,25 @@
+# https://hotpath.rs/regression_policy
+
+pr_comment = "on_change"
+
+[functions]
+min_percent_total = 2
+
+[functions.icount]
+judged = true
+fail_check = false
+min_percent_change = 2
+metrics = ["avg", "total"]
+min_calls = 1
+
+[functions.alloc]
+judged = true
+min_percent_change = 5
+metrics = ["avg", "total"]
+min_calls = 1
+
+[functions.timing]
+judged = false
+min_percent_change = 50
+metrics = ["avg", "total"]
+min_calls = 1
