@@ -21,10 +21,6 @@ use strum::EnumIs;
 /// 5. [`Constraint::Ratio`]
 /// 6. [`Constraint::Fill`]
 ///
-/// # Size Calculation
-///
-/// - [`apply`](Self::apply) - Apply the constraint to a length and return the resulting size
-///
 /// # Collection Creation
 ///
 /// - [`from_lengths`](Self::from_lengths) - Create a collection of length constraints
@@ -224,30 +220,6 @@ pub enum Constraint {
 }
 
 impl Constraint {
-    #[deprecated(
-        since = "0.26.0",
-        note = "This field will be hidden in the next minor version."
-    )]
-    pub fn apply(&self, length: u16) -> u16 {
-        match *self {
-            Self::Percentage(p) => {
-                let p = f32::from(p) / 100.0;
-                let length = f32::from(length);
-                (p * length).min(length) as u16
-            }
-            Self::Ratio(numerator, denominator) => {
-                // avoid division by zero by using 1 when denominator is 0
-                // this results in 0/0 -> 0 and x/0 -> x for x != 0
-                let percentage = numerator as f32 / denominator.max(1) as f32;
-                let length = f32::from(length);
-                (percentage * length).min(length) as u16
-            }
-            Self::Length(l) | Self::Fill(l) => length.min(l),
-            Self::Max(m) => length.min(m),
-            Self::Min(m) => length.max(m),
-        }
-    }
-
     /// Convert an iterator of lengths into a vector of constraints
     ///
     /// # Examples
@@ -489,43 +461,5 @@ mod tests {
         ];
         assert_eq!(Constraint::from_fills([1, 2, 3]), expected);
         assert_eq!(Constraint::from_fills(vec![1, 2, 3]), expected);
-    }
-
-    #[test]
-    #[expect(deprecated)]
-    fn apply() {
-        assert_eq!(Constraint::Percentage(0).apply(100), 0);
-        assert_eq!(Constraint::Percentage(50).apply(100), 50);
-        assert_eq!(Constraint::Percentage(100).apply(100), 100);
-        assert_eq!(Constraint::Percentage(200).apply(100), 100);
-        assert_eq!(Constraint::Percentage(u16::MAX).apply(100), 100);
-
-        // 0/0 intentionally avoids a panic by returning 0.
-        assert_eq!(Constraint::Ratio(0, 0).apply(100), 0);
-        // 1/0 intentionally avoids a panic by returning 100% of the length.
-        assert_eq!(Constraint::Ratio(1, 0).apply(100), 100);
-        assert_eq!(Constraint::Ratio(0, 1).apply(100), 0);
-        assert_eq!(Constraint::Ratio(1, 2).apply(100), 50);
-        assert_eq!(Constraint::Ratio(2, 2).apply(100), 100);
-        assert_eq!(Constraint::Ratio(3, 2).apply(100), 100);
-        assert_eq!(Constraint::Ratio(u32::MAX, 2).apply(100), 100);
-
-        assert_eq!(Constraint::Length(0).apply(100), 0);
-        assert_eq!(Constraint::Length(50).apply(100), 50);
-        assert_eq!(Constraint::Length(100).apply(100), 100);
-        assert_eq!(Constraint::Length(200).apply(100), 100);
-        assert_eq!(Constraint::Length(u16::MAX).apply(100), 100);
-
-        assert_eq!(Constraint::Max(0).apply(100), 0);
-        assert_eq!(Constraint::Max(50).apply(100), 50);
-        assert_eq!(Constraint::Max(100).apply(100), 100);
-        assert_eq!(Constraint::Max(200).apply(100), 100);
-        assert_eq!(Constraint::Max(u16::MAX).apply(100), 100);
-
-        assert_eq!(Constraint::Min(0).apply(100), 100);
-        assert_eq!(Constraint::Min(50).apply(100), 100);
-        assert_eq!(Constraint::Min(100).apply(100), 100);
-        assert_eq!(Constraint::Min(200).apply(100), 200);
-        assert_eq!(Constraint::Min(u16::MAX).apply(100), u16::MAX);
     }
 }

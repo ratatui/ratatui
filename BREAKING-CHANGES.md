@@ -18,6 +18,7 @@ This is a quick summary of the sections below:
   - The calendar widget uses `jiff` dates instead of `time` dates
   - `Widget` is implemented for `&Box<W>` and `WidgetRef` for `Box<W>`, which conflicts with manual
     impls for boxed widgets
+  - Removed APIs deprecated in v0.26.x
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -223,6 +224,19 @@ implements `Widget`.
 With the `unstable-widget-ref` feature, `WidgetRef` is likewise implemented for `Box<W>`, `Rc<W>`,
 and `Arc<W>` whenever `&W` implements `Widget`. Remove any `impl WidgetRef for Box<MyWidget>` in
 the same way.
+
+### Removed APIs deprecated in v0.26.x
+
+The following APIs, deprecated since February to May 2024, have been removed:
+
+- `Constraint::apply`. It has no replacement; layout computes sizes from constraints internally.
+- `Span::to_left_aligned_line`, `Span::to_centered_line` and `Span::to_right_aligned_line`. Use
+  `Span::into_left_aligned_line`, `Span::into_centered_line` and `Span::into_right_aligned_line`
+  instead.
+- `assert_buffer_eq!`. Use `assert_eq!(&actual, &expected)` instead.
+
+`TestBackend::assert_buffer` now uses `assert_eq!` internally, so its panic message is the standard
+``assertion `left == right` failed`` output instead of the `assert_buffer_eq!` message.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 
