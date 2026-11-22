@@ -27,9 +27,6 @@ serde = []
 ## Enables SGR underline-color writes from cell underline colors.
 underline-color = ["ratatui-core/underline-color"]
 
-## Enables terminal scrolling regions for Terminal::insert_before.
-scrolling-regions = ["ratatui-core/scrolling-regions"]
-
 #! The following features are unstable and may change in the future:
 
 ## Enable all unstable features.

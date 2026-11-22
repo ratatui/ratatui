@@ -24,7 +24,6 @@ impl Run for Clippy {
         let common_features = [
             "serde",
             "underline-color",
-            "scrolling-regions",
             "unstable",
             "unstable-backend-writer",
         ]

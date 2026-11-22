@@ -19,6 +19,8 @@ This is a quick summary of the sections below:
   - `Widget` is implemented for `&Box<W>` and `WidgetRef` for `Box<W>`, which conflicts with manual
     impls for boxed widgets
   - Removed APIs deprecated in v0.26.x
+  - The `scrolling-regions` feature is removed. `Terminal::insert_before` now requires a backend
+    that implements the new `ScrollByRegion` trait
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -237,6 +239,70 @@ The following APIs, deprecated since February to May 2024, have been removed:
 
 `TestBackend::assert_buffer` now uses `assert_eq!` internally, so its panic message is the standard
 ``assertion `left == right` failed`` output instead of the `assert_buffer_eq!` message.
+
+### The `scrolling-regions` feature is removed and `insert_before` requires `ScrollByRegion` ([#2121])
+
+[#2121]: https://github.com/ratatui/ratatui/pull/2121
+
+The `scrolling-regions` feature added `scroll_region_up` and `scroll_region_down` to `Backend` only
+when it was enabled. Cargo features should only add things, so a crate that enabled the feature
+could break another crate in the same build that implemented `Backend`. The feature is removed, and
+the two methods move from `Backend` to a new `ScrollByRegion` trait, which has `Backend` as a
+supertrait.
+
+`Terminal::insert_before` now always uses scrolling regions, so it no longer clears the viewport
+when inserting lines. The implementation that moved the cursor and cleared the viewport is removed,
+and `insert_before` is only available when the backend implements `ScrollByRegion`. The built-in
+Crossterm, Termina, Termion, Termwiz, and `TestBackend` backends implement it.
+
+Remove `scrolling-regions` from any `features` list for `ratatui`, `ratatui-core`,
+`ratatui-crossterm`, `ratatui-termina`, `ratatui-termion`, or `ratatui-termwiz`:
+
+```diff
+- ratatui = { version = "0.30", features = ["scrolling-regions"] }
++ ratatui = "0.31"
+```
+
+Code that calls `insert_before` through a generic backend needs a `ScrollByRegion` bound instead of
+`Backend`. `Backend` is a supertrait, so all other `Terminal` methods remain available:
+
+```diff
+- fn run<B: Backend>(terminal: &mut Terminal<B>) -> Result<(), B::Error> {
++ fn run<B: ScrollByRegion>(terminal: &mut Terminal<B>) -> Result<(), B::Error> {
+      terminal.insert_before(1, |buf| { /* ... */ })
+  }
+```
+
+Backends that implemented `scroll_region_up` and `scroll_region_down` behind the feature should move
+those methods into an `impl ScrollByRegion` block:
+
+```diff
+  impl Backend for MyBackend {
+      // ...
+-     #[cfg(feature = "scrolling-regions")]
+-     fn scroll_region_up(&mut self, region: Range<u16>, amount: u16) -> Result<(), Self::Error> {
+-         // ...
+-     }
+-
+-     #[cfg(feature = "scrolling-regions")]
+-     fn scroll_region_down(&mut self, region: Range<u16>, amount: u16) -> Result<(), Self::Error> {
+-         // ...
+-     }
+  }
++
++ impl ScrollByRegion for MyBackend {
++     fn scroll_region_up(&mut self, region: Range<u16>, amount: u16) -> Result<(), Self::Error> {
++         // ...
++     }
++
++     fn scroll_region_down(&mut self, region: Range<u16>, amount: u16) -> Result<(), Self::Error> {
++         // ...
++     }
++ }
+```
+
+Backends without scrolling regions no longer support `insert_before`. To keep supporting it, they
+can implement `ScrollByRegion` by emulating the region scroll, as `TestBackend` does.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 
