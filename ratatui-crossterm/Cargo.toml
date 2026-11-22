@@ -64,6 +64,7 @@ crossterm_0_29 = { version = "0.29", package = "crossterm", optional = true }
 document-features = { workspace = true, optional = true }
 instability.workspace = true
 ratatui-core.workspace = true
+unicode-width.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true
