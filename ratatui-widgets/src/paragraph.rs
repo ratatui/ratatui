@@ -326,40 +326,83 @@ impl<'a> Paragraph<'a> {
         self.alignment(Alignment::Right)
     }
 
-    /// Calculates the number of lines needed to fully render.
+    /// Calculates the height needed to render this paragraph at the given width.
     ///
-    /// Given a max line width, this method calculates the number of lines that a paragraph will
-    /// need in order to be fully rendered. For paragraphs that do not use wrapping, this count is
-    /// simply the number of lines present in the paragraph.
+    /// The `width` includes the [`Block`]'s borders and padding, if set through [`Self::block`].
     ///
-    /// This method will also account for the [`Block`] if one is set through [`Self::block`].
+    /// Returns `0` if `width` is zero. If the block's borders and padding consume all available
+    /// width, no text rows are rendered, but the returned height still includes the block's
+    /// vertical borders and padding.
+    ///
+    /// Text is wrapped according to [`Wrap`] if set through [`Self::wrap`]. Without wrapping, text
+    /// exceeding the available width is horizontally clipped, and the returned height is the number
+    /// of text lines plus the block's vertical borders and padding.
     ///
     /// Note: The design for text wrapping is not stable and might affect this API.
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```ignore
-    /// use ratatui::{widgets::{Paragraph, Wrap}};
+    /// ```
+    /// # #[cfg(feature = "unstable-rendered-line-info")] {
+    /// use ratatui::widgets::{Paragraph, Wrap};
     ///
-    /// let paragraph = Paragraph::new("Hello World")
-    ///     .wrap(Wrap { trim: false });
+    /// let paragraph = Paragraph::new("Hello World").wrap(Wrap { trim: false });
     /// assert_eq!(paragraph.line_count(20), 1);
     /// assert_eq!(paragraph.line_count(10), 2);
+    /// # }
+    /// ```
+    ///
+    /// ## Determining Rendered Height
+    ///
+    /// The returned height can be used to size the render area for the given width.
+    ///
+    /// ```
+    /// # #[cfg(feature = "unstable-rendered-line-info")] {
+    /// use ratatui::buffer::Buffer;
+    /// use ratatui::layout::Rect;
+    /// use ratatui::widgets::{Block, Paragraph, Widget, Wrap};
+    ///
+    /// let paragraph = Paragraph::new("Hello World")
+    ///     .block(Block::bordered())
+    ///     .wrap(Wrap { trim: false });
+    ///
+    /// let width = 10;
+    /// let height = paragraph.line_count(width) as u16;
+    /// assert_eq!(height, 4);
+    ///
+    /// let area = Rect::new(0, 0, width, height);
+    /// let mut buffer = Buffer::empty(area);
+    /// paragraph.render(area, &mut buffer);
+    /// assert_eq!(
+    ///     buffer,
+    ///     Buffer::with_lines([
+    ///         "┌────────┐",
+    ///         "│Hello   │",
+    ///         "│World   │",
+    ///         "└────────┘",
+    ///     ]),
+    /// );
+    /// # }
     /// ```
     #[instability::unstable(
         feature = "rendered-line-info",
         issue = "https://github.com/ratatui/ratatui/issues/293"
     )]
     pub fn line_count(&self, width: u16) -> usize {
-        if width < 1 {
+        if width == 0 {
             return 0;
         }
 
-        let (top, bottom) = self
+        let ((left, right), (top, bottom)) = self
             .block
             .as_ref()
-            .map(Block::vertical_space)
+            .map(|block| (block.horizontal_space(), block.vertical_space()))
             .unwrap_or_default();
+
+        let text_width = width.saturating_sub(left).saturating_sub(right);
+        if text_width == 0 {
+            return (top as usize).saturating_add(bottom as usize);
+        }
 
         let count = if let Some(Wrap { trim }) = self.wrap {
             let styled = self.text.iter().map(|line| {
@@ -370,7 +413,7 @@ impl<'a> Paragraph<'a> {
                 let alignment = line.alignment.unwrap_or(self.alignment);
                 (graphemes, alignment)
             });
-            let mut line_composer = WordWrapper::new(styled, width, trim);
+            let mut line_composer = WordWrapper::new(styled, text_width, trim);
             let mut count = 0;
             while line_composer.next_line().is_some() {
                 count += 1;
@@ -527,7 +570,7 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
-    use crate::block::TitlePosition;
+    use crate::block::{Padding, TitlePosition};
     use crate::borders::Borders;
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
@@ -1212,6 +1255,235 @@ mod tests {
         let paragraph = paragraph.block(block);
         assert_eq!(paragraph.line_count(11), 1);
         assert_eq!(paragraph.line_count(6), 1);
+    }
+
+    #[test]
+    fn line_count_bordered() {
+        let paragraph = Paragraph::new("The quick brown fox jumps over the lazy dog")
+            .wrap(Wrap { trim: false })
+            .block(Block::bordered());
+        let mut buf = Buffer::empty(Rect::new(0, 0, 24, paragraph.line_count(24) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "┌──────────────────────┐",
+            "│The quick brown fox   │",
+            "│jumps over the lazy   │",
+            "│dog                   │",
+            "└──────────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn line_count_left_border() {
+        let paragraph = Paragraph::new("The quick brown fox jumps over the lazy dog")
+            .wrap(Wrap { trim: false })
+            .block(Block::new().borders(Borders::LEFT));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 23, paragraph.line_count(23) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "│The quick brown fox   ",
+            "│jumps over the lazy   ",
+            "│dog                   ",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn line_count_right_border() {
+        let paragraph = Paragraph::new("The quick brown fox jumps over the lazy dog")
+            .wrap(Wrap { trim: false })
+            .block(Block::new().borders(Borders::RIGHT));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 23, paragraph.line_count(23) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "The quick brown fox   │",
+            "jumps over the lazy   │",
+            "dog                   │",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn line_count_top_border() {
+        let paragraph = Paragraph::new("The quick brown fox jumps over the lazy dog")
+            .wrap(Wrap { trim: false })
+            .block(Block::new().borders(Borders::TOP));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 22, paragraph.line_count(22) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "──────────────────────",
+            "The quick brown fox   ",
+            "jumps over the lazy   ",
+            "dog                   ",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn line_count_bottom_border() {
+        let paragraph = Paragraph::new("The quick brown fox jumps over the lazy dog")
+            .wrap(Wrap { trim: false })
+            .block(Block::new().borders(Borders::BOTTOM));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 22, paragraph.line_count(22) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "The quick brown fox   ",
+            "jumps over the lazy   ",
+            "dog                   ",
+            "──────────────────────",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn line_count_padding() {
+        let paragraph = Paragraph::new("The quick brown fox jumps over the lazy dog")
+            .wrap(Wrap { trim: false })
+            .block(Block::new().padding(Padding::uniform(1)));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 24, paragraph.line_count(24) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "                        ",
+            " The quick brown fox    ",
+            " jumps over the lazy    ",
+            " dog                    ",
+            "                        ",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    /// The example from <https://github.com/ratatui/ratatui/issues/2823>.
+    #[test]
+    fn line_count_issue_2823() {
+        let paragraph = Paragraph::new("This is an example")
+            .wrap(Wrap { trim: false })
+            .block(Block::bordered());
+        let mut buf = Buffer::empty(Rect::new(0, 0, 18, paragraph.line_count(18) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "┌────────────────┐",
+            "│This is an      │",
+            "│example         │",
+            "└────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn line_count_borders_and_padding() {
+        let paragraph = Paragraph::new("The quick brown fox jumps over the lazy dog")
+            .wrap(Wrap { trim: false })
+            .block(Block::bordered().padding(Padding::horizontal(1)));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 26, paragraph.line_count(26) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "┌────────────────────────┐",
+            "│ The quick brown fox    │",
+            "│ jumps over the lazy    │",
+            "│ dog                    │",
+            "└────────────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn line_count_title() {
+        let paragraph = Paragraph::new("The quick brown fox jumps over the lazy dog")
+            .wrap(Wrap { trim: false })
+            .block(Block::new().title("Title"));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 22, paragraph.line_count(22) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "Title                 ",
+            "The quick brown fox   ",
+            "jumps over the lazy   ",
+            "dog                   ",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    /// Unwrapped text is clipped, so the height is the number of lines plus the borders.
+    #[test]
+    fn line_count_unwrapped_bordered() {
+        let paragraph =
+            Paragraph::new("The quick brown fox jumps over the lazy dog").block(Block::bordered());
+        let mut buf = Buffer::empty(Rect::new(0, 0, 24, paragraph.line_count(24) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        let expected = Buffer::with_lines([
+            "┌──────────────────────┐",
+            "│The quick brown fox ju│",
+            "└──────────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    /// With no inner width there are no text rows, but the borders still count.
+    #[test]
+    fn line_count_bordered_without_inner_width() {
+        let paragraph = Paragraph::new("Hello world").block(Block::bordered());
+        let mut buf = Buffer::empty(Rect::new(0, 0, 2, paragraph.line_count(2) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌┐",
+            "└┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    /// With no inner width there are no text rows, but the vertical padding still counts.
+    #[test]
+    fn line_count_padding_without_inner_width() {
+        let paragraph =
+            Paragraph::new("Hello world").block(Block::new().padding(Padding::new(1, 1, 1, 2)));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 2, paragraph.line_count(2) as u16));
+
+        Widget::render(&paragraph, buf.area, &mut buf);
+
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "  ",
+            "  ",
+            "  ",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn line_count_zero_width() {
+        let paragraph = Paragraph::new("Hello world").block(Block::bordered());
+        assert_eq!(paragraph.line_count(0), 0);
+    }
+
+    /// With no inner width and no vertical borders or padding, nothing is rendered.
+    #[test]
+    fn line_count_left_right_borders_without_inner_width() {
+        let paragraph = Paragraph::new("Hello world")
+            .block(Block::new().borders(Borders::LEFT | Borders::RIGHT));
+        assert_eq!(paragraph.line_count(2), 0);
     }
 
     #[test]
