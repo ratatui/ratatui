@@ -897,7 +897,6 @@ fn spans_after_width<'a>(
         })
         .map(|(span, span_width, available_width)| {
             if span_width <= available_width {
-                // Span is fully visible. Borrow it, as cloning would copy owned content.
                 return (Span::from(span), span_width, 0u16);
             }
             // Span is only partially visible. As the end is truncated by the area width, only
