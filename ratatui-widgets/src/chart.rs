@@ -682,14 +682,14 @@ impl<'a> Chart<'a> {
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
-    /// Allow the legend to use the whole graph area. It is still hidden if it does not fit,
+    /// Show the legend whenever it fits in the graph area. It is still hidden if it does not fit,
     /// counting one row for each axis title that is displayed.
     ///
     /// ```
     /// use ratatui::layout::Constraint;
     /// use ratatui::widgets::Chart;
     ///
-    /// let constraints = (Constraint::Percentage(100), Constraint::Percentage(100));
+    /// let constraints = (Constraint::Fill(1), Constraint::Fill(1));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
@@ -1515,6 +1515,186 @@ mod tests {
             ]);
             assert_eq!(buffer, expected);
         }
+    }
+
+    const DIAGONAL: &[(f64, f64)] = &[(0.0, 0.0), (5.0, 5.0), (10.0, 10.0)];
+
+    fn axis() -> Axis<'static> {
+        Axis::default().bounds([0.0, 10.0])
+    }
+
+    /// A chart with a 5 row high legend in the top right corner.
+    fn chart_with_three_named_datasets() -> Chart<'static> {
+        let datasets = ["aaa", "bbb", "ccc"]
+            .map(|name| Dataset::default().name(name).data(DIAGONAL))
+            .to_vec();
+        Chart::new(datasets)
+            .legend_position(Some(LegendPosition::TopRight))
+            .x_axis(axis())
+            .y_axis(axis())
+    }
+
+    #[test]
+    fn default_axis_draws_no_line() {
+        let chart = Chart::new(vec![Dataset::default().data(DIAGONAL)])
+            .x_axis(axis())
+            .y_axis(axis());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 6));
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "           •",
+            "            ",
+            "            ",
+            "      •     ",
+            "            ",
+            "•           ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn axis_with_labels_draws_line() {
+        let chart = Chart::new(vec![Dataset::default().data(DIAGONAL)])
+            .x_axis(axis().labels(["0", "10"]))
+            .y_axis(axis().labels(["0", "10"]));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 6));
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "10│        •",
+            "  │         ",
+            "  │    •    ",
+            "0 │•        ",
+            "  └─────────",
+            "  0       10",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn min_width_constraint_does_not_force_legend_to_show() {
+        let chart = chart_with_three_named_datasets()
+            .hidden_legend_constraints((Constraint::Min(0), Constraint::Ratio(1, 4)));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "                   •",
+            "                    ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "          •         ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "•                   ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn fill_constraints_show_legend_when_it_fits() {
+        let chart = chart_with_three_named_datasets()
+            .hidden_legend_constraints((Constraint::Fill(1), Constraint::Fill(1)));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "               ┌───┐",
+            "               │aaa│",
+            "               │bbb│",
+            "               │ccc│",
+            "               └───┘",
+            "          •         ",
+            "                    ",
+            "                    ",
+            "                    ",
+            "•                   ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn fill_constraints_hide_legend_when_it_does_not_fit() {
+        let chart = chart_with_three_named_datasets()
+            .hidden_legend_constraints((Constraint::Fill(1), Constraint::Fill(1)));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 4));
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "                   •",
+            "                    ",
+            "          •         ",
+            "•                   ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    /// A 3 row legend fits a 3 row graph area on its own (see
+    /// `test_legend_area_can_fit_same_chart_area`), but the x axis title needs a row of its own,
+    /// so the legend is hidden.
+    #[test]
+    fn legend_hidden_when_x_axis_title_leaves_no_room() {
+        let chart = Chart::new(vec![Dataset::default().name("Data").data(DIAGONAL)])
+            .legend_position(Some(LegendPosition::TopRight))
+            .hidden_legend_constraints((Constraint::Fill(1), Constraint::Fill(1)))
+            .x_axis(axis().title("X"))
+            .y_axis(axis());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 6, 3));
+        chart.render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "     •",
+            "   •  ",
+            "•    X",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn legend_constraints_measure_graph_area_without_axis_labels() {
+        let chart = Chart::new(vec![Dataset::default().name("1234567").data(DIAGONAL)])
+            .legend_position(Some(LegendPosition::TopRight))
+            .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Fill(1)))
+            .x_axis(axis());
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 8));
+        chart
+            .clone()
+            .y_axis(axis())
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "           ┌───────┐",
+            "           │1234567│",
+            "           └───────┘",
+            "                    ",
+            "          •         ",
+            "                    ",
+            "                    ",
+            "•                   ",
+        ]);
+        assert_eq!(buffer, expected);
+
+        // The labels and axis line leave a 15 column graph area, half of which is too narrow.
+        buffer.reset();
+        chart
+            .y_axis(axis().labels(["0", "1000"]))
+            .render(buffer.area, &mut buffer);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "1000│              •",
+            "    │               ",
+            "    │               ",
+            "    │               ",
+            "    │       •       ",
+            "    │               ",
+            "    │               ",
+            "0   │•              ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[rstest]
