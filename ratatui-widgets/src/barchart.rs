@@ -440,14 +440,25 @@ impl BarChart<'_> {
                 if *space == 0 {
                     return None;
                 }
-                let n_bars = group.bars.len() as u16;
-                let group_width = n_bars * self.bar_width + n_bars.saturating_sub(1) * self.bar_gap;
+                // `u16` fit math panics or wraps once the group is wider than 65535 cells.
+                let bar_width = u32::from(self.bar_width);
+                let bar_gap = u32::from(self.bar_gap);
+                let count = u32::try_from(group.bars.len()).unwrap_or(u32::MAX);
+                let group_width = Self::bars_width(count, bar_width, bar_gap);
+                let available = u32::from(*space);
 
-                let n_bars = if *space > group_width {
-                    *space = space.saturating_sub(group_width + self.group_gap + self.bar_gap);
-                    Some(n_bars)
+                let n_bars = if available > group_width {
+                    let consumed = group_width
+                        .saturating_add(u32::from(self.group_gap))
+                        .saturating_add(bar_gap);
+                    *space = u16::try_from(available.saturating_sub(consumed)).unwrap_or(0);
+                    Some(count)
                 } else {
-                    let max_bars = (*space + self.bar_gap) / (self.bar_width + self.bar_gap);
+                    let slot = bar_width.saturating_add(bar_gap);
+                    let max_bars = available
+                        .saturating_add(bar_gap)
+                        .checked_div(slot)
+                        .unwrap_or(0);
                     if max_bars > 0 {
                         *space = 0;
                         Some(max_bars)
@@ -466,6 +477,19 @@ impl BarChart<'_> {
                 })
             })
             .collect()
+    }
+
+    /// Cell width of `count` bars, including the gaps between them.
+    ///
+    /// `n * bar_width + (n - 1) * bar_gap`. Zero bars take no space.
+    const fn bars_width(count: u32, bar_width: u32, bar_gap: u32) -> u32 {
+        if count == 0 {
+            0
+        } else {
+            count
+                .saturating_mul(bar_width)
+                .saturating_add(count.saturating_sub(1).saturating_mul(bar_gap))
+        }
     }
 
     fn scale_ticks(value: u64, max: u64, max_length: u16) -> u64 {
@@ -539,6 +563,11 @@ impl BarChart<'_> {
         // print all visible bars, label and values
         let mut bar_y = bars_area.top();
         for (ticks_vec, group) in group_ticks.into_iter().zip(self.data.iter()) {
+            // An empty fit used to fall through to `bar_y - bar_gap` and panic
+            // when `bars.len()` did not fit in `u16`.
+            if ticks_vec.is_empty() {
+                continue;
+            }
             for (ticks, bar) in ticks_vec.into_iter().zip(group.bars.iter()) {
                 let bar_length = (ticks / 8) as u16;
                 let bar_style = self.bar_style.patch(bar.style);
@@ -669,8 +698,12 @@ impl BarChart<'_> {
             }
             // print group labels under the bars or the previous labels
             if label_info.group_label_visible {
-                let label_max_width =
-                    ticks_vec.len() as u16 * (self.bar_width + self.bar_gap) - self.bar_gap;
+                let label_max_width = Self::bars_width(
+                    u32::try_from(ticks_vec.len()).unwrap_or(u32::MAX),
+                    u32::from(self.bar_width),
+                    u32::from(self.bar_gap),
+                );
+                let label_max_width = u16::try_from(label_max_width).unwrap_or(u16::MAX);
                 let group_area = Rect {
                     x: bar_x,
                     y: area.bottom() - 1,
@@ -1755,5 +1788,49 @@ mod tests {
         (&widget).render(area, &mut expected);
         assert_eq!(buf, expected);
         assert_ne!(buf, Buffer::empty(area));
+    }
+
+    /// 32,769 bars at the default width and gap make `n * bar_width + (n - 1) * bar_gap`
+    /// overflow `u16` (65537). Debug panics on the add. Release wraps the width, treats
+    /// every bar as fitting, and then panics on a buffer index.
+    #[test]
+    fn vertical_chart_with_many_bars_does_not_overflow() {
+        let bars: Vec<Bar> = (0..32_769).map(|_| Bar::new(1)).collect();
+        let chart = BarChart::default().data(BarGroup::default().label("Group").bars(&bars));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 10));
+
+        chart.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer[(0, 0)].symbol(), "█");
+    }
+
+    /// `bars.len() as u16` truncates 65,536 to 0. The horizontal path then subtracts
+    /// `bar_gap` from a `bar_y` that never advanced.
+    #[test]
+    fn horizontal_chart_with_u16_bar_count_does_not_overflow() {
+        let bars: Vec<Bar> = (0..65_536).map(|_| Bar::new(1)).collect();
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .data(BarGroup::default().bars(&bars));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
+
+        chart.render(buffer.area, &mut buffer);
+
+        // The value text replaces the block on a one-cell bar. Seeing it means a bar was drawn.
+        assert_eq!(buffer[(0, 0)].symbol(), "1");
+    }
+
+    /// One bar of width `u16::MAX` overflows `bar_width + bar_gap` while measuring how
+    /// many bars fit in a small area.
+    #[test]
+    fn wide_bar_does_not_overflow_group_width() {
+        let chart = BarChart::default()
+            .bar_width(u16::MAX)
+            .data(BarGroup::default().bars(&[Bar::new(1)]));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
+
+        chart.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::empty(buffer.area));
     }
 }
