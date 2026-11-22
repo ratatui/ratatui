@@ -12,7 +12,7 @@ use ratatui_core::text::Text;
 use ratatui_core::widgets::{StatefulWidget, Widget};
 
 pub use self::cell::Cell;
-pub use self::highlight_spacing::HighlightSpacing;
+pub use self::highlight_spacing::TableHighlightSpacing;
 pub use self::row::Row;
 pub use self::state::TableState;
 use crate::block::{Block, BlockExt};
@@ -267,7 +267,7 @@ pub struct Table<'a> {
     highlight_symbol: Text<'a>,
 
     /// Decides when to allocate spacing for the row selection
-    highlight_spacing: HighlightSpacing,
+    highlight_spacing: TableHighlightSpacing,
 
     /// Controls how to distribute extra space among the columns
     flex: Flex,
@@ -290,7 +290,7 @@ impl Default for Table<'_> {
             column_highlight_style: Style::new(),
             cell_highlight_style: Style::new(),
             highlight_symbol: Text::default(),
-            highlight_spacing: HighlightSpacing::default(),
+            highlight_spacing: TableHighlightSpacing::default(),
             flex: Flex::Start,
             scroll_padding: 0,
         }
@@ -670,15 +670,15 @@ impl<'a> Table<'a> {
     /// enabled) and is used to shift the table when a row is selected. This method allows you to
     /// configure when this spacing is allocated.
     ///
-    /// - [`HighlightSpacing::Always`] will always allocate the spacing, regardless of whether a row
-    ///   is selected or not. This means that the table will never change size, regardless of if a
-    ///   row is selected or not.
-    /// - [`HighlightSpacing::WhenSelected`] will only allocate the spacing if a row is selected.
-    ///   This means that the table will shift when a row is selected. This is the default setting
-    ///   for backwards compatibility, but it is recommended to use `HighlightSpacing::Always` for a
-    ///   better user experience.
-    /// - [`HighlightSpacing::Never`] will never allocate the spacing, regardless of whether a row
-    ///   is selected or not. This means that the highlight symbol will never be drawn.
+    /// - [`TableHighlightSpacing::Always`] will always allocate the spacing, regardless of whether
+    ///   a row is selected or not. This means that the table will never change size, regardless of
+    ///   if a row is selected or not.
+    /// - [`TableHighlightSpacing::WhenSelected`] will only allocate the spacing if a row is
+    ///   selected. This means that the table will shift when a row is selected. This is the default
+    ///   setting for backwards compatibility, but it is recommended to use
+    ///   `TableHighlightSpacing::Always` for a better user experience.
+    /// - [`TableHighlightSpacing::Never`] will never allocate the spacing, regardless of whether a
+    ///   row is selected or not. This means that the highlight symbol will never be drawn.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -686,14 +686,14 @@ impl<'a> Table<'a> {
     ///
     /// ```rust
     /// use ratatui::layout::Constraint;
-    /// use ratatui::widgets::{HighlightSpacing, Row, Table};
+    /// use ratatui::widgets::{Row, Table, TableHighlightSpacing};
     ///
     /// let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// let widths = [Constraint::Length(5), Constraint::Length(5)];
-    /// let table = Table::new(rows, widths).highlight_spacing(HighlightSpacing::Always);
+    /// let table = Table::new(rows, widths).highlight_spacing(TableHighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
+    pub const fn highlight_spacing(mut self, value: TableHighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }
@@ -1253,7 +1253,7 @@ mod tests {
         assert_eq!(table.style, Style::default());
         assert_eq!(table.row_highlight_style, Style::default());
         assert_eq!(table.highlight_symbol, Text::default());
-        assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
+        assert_eq!(table.highlight_spacing, TableHighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
         assert_eq!(table.scroll_padding, 0);
     }
@@ -1270,7 +1270,7 @@ mod tests {
         assert_eq!(table.style, Style::default());
         assert_eq!(table.row_highlight_style, Style::default());
         assert_eq!(table.highlight_symbol, Text::default());
-        assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
+        assert_eq!(table.highlight_spacing, TableHighlightSpacing::WhenSelected);
         assert_eq!(table.flex, Flex::Start);
         assert_eq!(table.scroll_padding, 0);
     }
@@ -1388,8 +1388,8 @@ mod tests {
 
     #[test]
     fn highlight_spacing() {
-        let table = Table::default().highlight_spacing(HighlightSpacing::Always);
-        assert_eq!(table.highlight_spacing, HighlightSpacing::Always);
+        let table = Table::default().highlight_spacing(TableHighlightSpacing::Always);
+        assert_eq!(table.highlight_spacing, TableHighlightSpacing::Always);
     }
 
     #[test]
@@ -2240,7 +2240,7 @@ mod tests {
 
         #[track_caller]
         fn test_table_with_selection<'line, Lines>(
-            highlight_spacing: HighlightSpacing,
+            highlight_spacing: TableHighlightSpacing,
             columns: u16,
             spacing: u16,
             selection: Option<usize>,
@@ -2265,7 +2265,7 @@ mod tests {
         fn excess_area_highlight_symbol_and_column_spacing_allocation() {
             // no highlight_symbol rendered ever
             test_table_with_selection(
-                HighlightSpacing::Never,
+                TableHighlightSpacing::Never,
                 15,   // width
                 0,    // spacing
                 None, // selection
@@ -2295,7 +2295,7 @@ mod tests {
 
             // no highlight_symbol rendered ever
             test_table_with_selection(
-                HighlightSpacing::Never,
+                TableHighlightSpacing::Never,
                 15,      // width
                 0,       // spacing
                 Some(0), // selection
@@ -2308,7 +2308,7 @@ mod tests {
 
             // no highlight_symbol rendered because no selection is made
             test_table_with_selection(
-                HighlightSpacing::WhenSelected,
+                TableHighlightSpacing::WhenSelected,
                 15,   // width
                 0,    // spacing
                 None, // selection
@@ -2320,7 +2320,7 @@ mod tests {
             );
             // highlight_symbol rendered because selection is made
             test_table_with_selection(
-                HighlightSpacing::WhenSelected,
+                TableHighlightSpacing::WhenSelected,
                 15,      // width
                 0,       // spacing
                 Some(0), // selection
@@ -2333,7 +2333,7 @@ mod tests {
 
             // highlight_symbol always rendered even no selection is made
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 15,   // width
                 0,    // spacing
                 None, // selection
@@ -2346,7 +2346,7 @@ mod tests {
 
             // no highlight_symbol rendered because no selection is made
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 15,      // width
                 0,       // spacing
                 Some(0), // selection
@@ -2363,7 +2363,7 @@ mod tests {
         fn insufficient_area_highlight_symbol_and_column_spacing_allocation() {
             // column spacing is prioritized over every other constraint
             test_table_with_selection(
-                HighlightSpacing::Never,
+                TableHighlightSpacing::Never,
                 10,   // width
                 1,    // spacing
                 None, // selection
@@ -2374,7 +2374,7 @@ mod tests {
                 ],
             );
             test_table_with_selection(
-                HighlightSpacing::WhenSelected,
+                TableHighlightSpacing::WhenSelected,
                 10,   // width
                 1,    // spacing
                 None, // selection
@@ -2394,7 +2394,7 @@ mod tests {
             // column spacing is prioritized when column widths are calculated and last column here
             // ends up with just 1 wide
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 10,   // width
                 1,    // spacing
                 None, // selection
@@ -2407,7 +2407,7 @@ mod tests {
 
             // the following are specification tests
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 9,    // width
                 1,    // spacing
                 None, // selection
@@ -2418,7 +2418,7 @@ mod tests {
                 ],
             );
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 8,    // width
                 1,    // spacing
                 None, // selection
@@ -2429,7 +2429,7 @@ mod tests {
                 ],
             );
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 7,    // width
                 1,    // spacing
                 None, // selection
@@ -2442,7 +2442,7 @@ mod tests {
 
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
-                .highlight_spacing(HighlightSpacing::Always)
+                .highlight_spacing(TableHighlightSpacing::Always)
                 .flex(Flex::Legacy)
                 .highlight_symbol(">>>")
                 .column_spacing(1);
@@ -2460,7 +2460,7 @@ mod tests {
 
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
-                .highlight_spacing(HighlightSpacing::Always)
+                .highlight_spacing(TableHighlightSpacing::Always)
                 .flex(Flex::Start)
                 .highlight_symbol(">>>")
                 .column_spacing(1);
@@ -2477,7 +2477,7 @@ mod tests {
             assert_eq!(buf, expected);
 
             test_table_with_selection(
-                HighlightSpacing::Never,
+                TableHighlightSpacing::Never,
                 10,      // width
                 1,       // spacing
                 Some(0), // selection
@@ -2489,7 +2489,7 @@ mod tests {
             );
 
             test_table_with_selection(
-                HighlightSpacing::WhenSelected,
+                TableHighlightSpacing::WhenSelected,
                 10,      // width
                 1,       // spacing
                 Some(0), // selection
@@ -2501,7 +2501,7 @@ mod tests {
             );
 
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 10,      // width
                 1,       // spacing
                 Some(0), // selection
@@ -2516,7 +2516,7 @@ mod tests {
         #[test]
         fn insufficient_area_highlight_symbol_allocation_with_no_column_spacing() {
             test_table_with_selection(
-                HighlightSpacing::Never,
+                TableHighlightSpacing::Never,
                 10,   // width
                 0,    // spacing
                 None, // selection
@@ -2527,7 +2527,7 @@ mod tests {
                 ],
             );
             test_table_with_selection(
-                HighlightSpacing::WhenSelected,
+                TableHighlightSpacing::WhenSelected,
                 10,   // width
                 0,    // spacing
                 None, // selection
@@ -2542,7 +2542,7 @@ mod tests {
             // this is because highlight_symbol column is separated _before_ any of the constraint
             // widths are calculated
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 10,   // width
                 0,    // spacing
                 None, // selection
@@ -2553,7 +2553,7 @@ mod tests {
                 ],
             );
             test_table_with_selection(
-                HighlightSpacing::Never,
+                TableHighlightSpacing::Never,
                 10,      // width
                 0,       // spacing
                 Some(0), // selection
@@ -2564,7 +2564,7 @@ mod tests {
                 ],
             );
             test_table_with_selection(
-                HighlightSpacing::WhenSelected,
+                TableHighlightSpacing::WhenSelected,
                 10,      // width
                 0,       // spacing
                 Some(0), // selection
@@ -2575,7 +2575,7 @@ mod tests {
                 ],
             );
             test_table_with_selection(
-                HighlightSpacing::Always,
+                TableHighlightSpacing::Always,
                 10,      // width
                 0,       // spacing
                 Some(0), // selection
@@ -2736,7 +2736,7 @@ mod tests {
 
     #[rstest]
     #[case(
-        HighlightSpacing::Always,
+        TableHighlightSpacing::Always,
         15,   // width
         1,    // spacing
         None, // selection
@@ -2751,7 +2751,7 @@ mod tests {
             "               ", // row 3
         ])]
     #[case(
-        HighlightSpacing::Always,
+        TableHighlightSpacing::Always,
         15,      // width
         1,       // spacing
         Some(0), // selection
@@ -2766,7 +2766,7 @@ mod tests {
             "               ", // row 3
         ])]
     #[case(
-        HighlightSpacing::WhenSelected,
+        TableHighlightSpacing::WhenSelected,
         15,   // width
         1,    // spacing
         None, // selection
@@ -2781,7 +2781,7 @@ mod tests {
             "               ", // row 3
         ])]
     #[case(
-        HighlightSpacing::WhenSelected,
+        TableHighlightSpacing::WhenSelected,
         15,      // width
         1,       // spacing
         Some(0), // selection
@@ -2796,7 +2796,7 @@ mod tests {
             "               ", // row 3
         ])]
     fn test_table_with_selection_and_column_spans<'line, 'cell, Lines, Cells>(
-        #[case] highlight_spacing: HighlightSpacing,
+        #[case] highlight_spacing: TableHighlightSpacing,
         #[case] columns: u16,
         #[case] spacing: u16,
         #[case] selection: Option<usize>,

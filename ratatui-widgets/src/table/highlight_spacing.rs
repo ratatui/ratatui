@@ -3,7 +3,7 @@ use strum::{Display, EnumString};
 /// This option allows the user to configure the "highlight symbol" column width spacing
 #[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum HighlightSpacing {
+pub enum TableHighlightSpacing {
     /// Always add spacing for the selection symbol column
     ///
     /// With this variant, the column for the selection symbol will always be allocated, and so the
@@ -24,7 +24,7 @@ pub enum HighlightSpacing {
     Never,
 }
 
-impl HighlightSpacing {
+impl TableHighlightSpacing {
     /// Determine if a selection column should be displayed
     ///
     /// `has_selection`: true if a row is selected in the table
@@ -47,30 +47,36 @@ mod tests {
 
     #[test]
     fn to_string() {
-        assert_eq!(HighlightSpacing::Always.to_string(), "Always".to_string());
         assert_eq!(
-            HighlightSpacing::WhenSelected.to_string(),
+            TableHighlightSpacing::Always.to_string(),
+            "Always".to_string()
+        );
+        assert_eq!(
+            TableHighlightSpacing::WhenSelected.to_string(),
             "WhenSelected".to_string()
         );
-        assert_eq!(HighlightSpacing::Never.to_string(), "Never".to_string());
+        assert_eq!(
+            TableHighlightSpacing::Never.to_string(),
+            "Never".to_string()
+        );
     }
 
     #[test]
     fn from_str() {
         assert_eq!(
-            "Always".parse::<HighlightSpacing>(),
-            Ok(HighlightSpacing::Always)
+            "Always".parse::<TableHighlightSpacing>(),
+            Ok(TableHighlightSpacing::Always)
         );
         assert_eq!(
-            "WhenSelected".parse::<HighlightSpacing>(),
-            Ok(HighlightSpacing::WhenSelected)
+            "WhenSelected".parse::<TableHighlightSpacing>(),
+            Ok(TableHighlightSpacing::WhenSelected)
         );
         assert_eq!(
-            "Never".parse::<HighlightSpacing>(),
-            Ok(HighlightSpacing::Never)
+            "Never".parse::<TableHighlightSpacing>(),
+            Ok(TableHighlightSpacing::Never)
         );
         assert_eq!(
-            "".parse::<HighlightSpacing>(),
+            "".parse::<TableHighlightSpacing>(),
             Err(strum::ParseError::VariantNotFound)
         );
     }

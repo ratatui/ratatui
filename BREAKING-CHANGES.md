@@ -21,6 +21,7 @@ This is a quick summary of the sections below:
   - Removed APIs deprecated in v0.26.x
   - The `scrolling-regions` feature is removed. `Terminal::insert_before` now requires a backend
     that implements the new `ScrollByRegion` trait
+  - `HighlightSpacing` is split into `ListHighlightSpacing` and `TableHighlightSpacing`
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -303,6 +304,28 @@ those methods into an `impl ScrollByRegion` block:
 
 Backends without scrolling regions no longer support `insert_before`. To keep supporting it, they
 can implement `ScrollByRegion` by emulating the region scroll, as `TestBackend` does.
+
+### `HighlightSpacing` is split into `ListHighlightSpacing` and `TableHighlightSpacing` ([#2265])
+
+[#2265]: https://github.com/ratatui/ratatui/pull/2265
+
+`List` and `Table` used to share one `HighlightSpacing` enum, defined in the table module. Each
+widget now has its own type so the two can evolve independently. `List::highlight_spacing` takes a
+`ListHighlightSpacing` and `Table::highlight_spacing` takes a `TableHighlightSpacing`. The variants
+are unchanged.
+
+```diff
+- use ratatui::widgets::{HighlightSpacing, List, Table};
++ use ratatui::widgets::{List, ListHighlightSpacing, Table, TableHighlightSpacing};
+
+- let list = List::new(items).highlight_spacing(HighlightSpacing::Always);
++ let list = List::new(items).highlight_spacing(ListHighlightSpacing::Always);
+- let table = Table::new(rows, widths).highlight_spacing(HighlightSpacing::Always);
++ let table = Table::new(rows, widths).highlight_spacing(TableHighlightSpacing::Always);
+```
+
+`HighlightSpacing` has been removed. Replace it with `ListHighlightSpacing` where it is passed to a
+`List` and with `TableHighlightSpacing` where it is passed to a `Table`.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 

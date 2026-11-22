@@ -278,8 +278,7 @@ mod tests {
 
     use super::*;
     use crate::block::Block;
-    use crate::list::{ListItem, SelectionMode};
-    use crate::table::HighlightSpacing;
+    use crate::list::{ListHighlightSpacing, ListItem, SelectionMode};
 
     #[fixture]
     fn single_line_buf() -> Buffer {
@@ -815,7 +814,7 @@ mod tests {
         {
             let list = List::new(["Item 0", "Item 1", "Item 2"])
                 .highlight_symbol(">>")
-                .highlight_spacing(HighlightSpacing::Always);
+                .highlight_spacing(ListHighlightSpacing::Always);
             let mut state = ListState::default();
             let buffer = stateful_widget(list, &mut state, 10, 5);
             let expected = Buffer::with_lines([
@@ -832,7 +831,7 @@ mod tests {
         {
             let list = List::new(["Item 0", "Item 1", "Item 2"])
                 .highlight_symbol(">>")
-                .highlight_spacing(HighlightSpacing::Always);
+                .highlight_spacing(ListHighlightSpacing::Always);
             let mut state = ListState::default();
             state.select(Some(1));
             let buffer = stateful_widget(list, &mut state, 10, 5);
@@ -853,7 +852,7 @@ mod tests {
         {
             let list = List::new(["Item 0", "Item 1", "Item 2"])
                 .highlight_symbol(">>")
-                .highlight_spacing(HighlightSpacing::Never);
+                .highlight_spacing(ListHighlightSpacing::Never);
             let mut state = ListState::default();
             let buffer = stateful_widget(list, &mut state, 10, 5);
             let expected = Buffer::with_lines([
@@ -870,7 +869,7 @@ mod tests {
         {
             let list = List::new(["Item 0", "Item 1", "Item 2"])
                 .highlight_symbol(">>")
-                .highlight_spacing(HighlightSpacing::Never);
+                .highlight_spacing(ListHighlightSpacing::Never);
             let mut state = ListState::default();
             state.select(Some(1));
             let buffer = stateful_widget(list, &mut state, 10, 5);
