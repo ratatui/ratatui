@@ -501,7 +501,24 @@ impl Buffer {
             return (x, y);
         }
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
-        let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
+        let string = string.as_ref();
+        let style = style.into();
+        // Each printable ASCII byte is its own grapheme one cell wide, so writing the bytes
+        // straight into the row gives the same cells as the grapheme path below, without
+        // segmenting the string.
+        let is_printable_ascii = string
+            .bytes()
+            .fold(true, |all, byte| all & (b' '..=b'~').contains(&byte));
+        if is_printable_ascii {
+            let width = string.len().min(usize::from(remaining_width));
+            let start = self.index_of(x, y);
+            let row = &mut self.content[start..start + width];
+            for (cell, byte) in row.iter_mut().zip(string.bytes()) {
+                cell.set_char(char::from(byte)).set_style(style);
+            }
+            return (x + width as u16, y);
+        }
+        let graphemes = UnicodeSegmentation::graphemes(string, true)
             .filter(|symbol| !symbol.contains(char::is_control))
             .map(|symbol| (symbol, symbol.cell_width()))
             .filter(|(_symbol, width)| *width > 0)
@@ -509,7 +526,6 @@ impl Buffer {
                 remaining_width = remaining_width.checked_sub(width)?;
                 Some((symbol, width))
             });
-        let style = style.into();
         for (symbol, width) in graphemes {
             self[(x, y)].set_symbol(symbol).set_style(style);
             let next_symbol = x + width;
@@ -1280,6 +1296,30 @@ mod tests {
         buffer.set_string(0, 0, "12345", Style::default());
         buffer.set_string(0, 1, "67890", Style::default());
         assert_eq!(buffer, Buffer::with_lines(["12345", "67890"]));
+    }
+
+    #[rstest]
+    #[case::empty(0, "", usize::MAX)]
+    #[case::whole(0, "abcdef", usize::MAX)]
+    #[case::max_width(1, "abcdef", 2)]
+    #[case::buffer_edge(3, "abcdef", usize::MAX)]
+    #[case::space_and_tilde(0, " ~ ", usize::MAX)]
+    fn set_stringn_writes_printable_ascii_like_graphemes(
+        #[case] x: u16,
+        #[case] string: &str,
+        #[case] max_width: usize,
+    ) {
+        let area = Rect::new(0, 0, 6, 1);
+        let style = Style::new().red();
+        let mut ascii = Buffer::filled(area, Cell::new("x"));
+        let mut graphemes = ascii.clone();
+        // A control character is skipped when written, but it keeps the string off the ASCII path.
+        let through_graphemes = format!("{string}\u{7}");
+        assert_eq!(
+            ascii.set_stringn(x, 0, string, max_width, style),
+            graphemes.set_stringn(x, 0, through_graphemes, max_width, style)
+        );
+        assert_eq!(ascii, graphemes);
     }
 
     #[test]
