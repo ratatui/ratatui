@@ -124,12 +124,12 @@ fn slice_render(bencher: &mut Bencher, input: &StoredText) {
 struct StoredText {
     text: Text<'static>,
     /// The scroll offset that shows the last screen of `text`.
-    scroll_end: u16,
+    scroll_end: usize,
     /// The first line that can be visible when scrolled to the end. Every line takes up at least
     /// one row, so only the last `HEIGHT` lines can be visible.
     visible_start: usize,
     /// The scroll offset that shows the last screen of the lines from `visible_start`.
-    visible_scroll: u16,
+    visible_scroll: usize,
 }
 
 impl StoredText {
@@ -157,9 +157,8 @@ impl StoredText {
 }
 
 /// The vertical scroll offset that shows the last screen of a text that wraps to `rows` rows.
-fn end_offset(rows: usize) -> u16 {
-    let rows = u16::try_from(rows).expect("wrapped text should fit in a u16 scroll offset");
-    rows.saturating_sub(HEIGHT)
+fn end_offset(rows: usize) -> usize {
+    rows.saturating_sub(usize::from(HEIGHT))
 }
 
 /// Check that both paragraphs render the same screen, ending with `last_word` on the bottom row.
