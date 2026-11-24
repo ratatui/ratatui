@@ -563,11 +563,6 @@ impl BarChart<'_> {
         // print all visible bars, label and values
         let mut bar_y = bars_area.top();
         for (ticks_vec, group) in group_ticks.into_iter().zip(self.data.iter()) {
-            // An empty fit used to fall through to `bar_y - bar_gap` and panic
-            // when `bars.len()` did not fit in `u16`.
-            if ticks_vec.is_empty() {
-                continue;
-            }
             for (ticks, bar) in ticks_vec.into_iter().zip(group.bars.iter()) {
                 let bar_length = (ticks / 8) as u16;
                 let bar_style = self.bar_style.patch(bar.style);
