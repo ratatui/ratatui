@@ -57,7 +57,7 @@ rand_chacha = "0.10"
 ratatui = { path = "ratatui", version = "0.30.2" }
 ratatui-calendar = { path = "ratatui-calendar", version = "0.1.0", default-features = false }
 ratatui-core = { path = "ratatui-core", version = "0.1.2" }
-ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.2" }
+ratatui-crossterm = { path = "ratatui-crossterm", version = "0.1.2", default-features = false }
 ratatui-macros = { path = "ratatui-macros", version = "0.7.2" }
 ratatui-termina = { path = "ratatui-termina", version = "0.1.0" }
 ratatui-termion = { path = "ratatui-termion", version = "0.1.2" }

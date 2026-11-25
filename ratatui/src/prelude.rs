@@ -30,7 +30,7 @@
 
 #[doc(no_inline)]
 pub use ratatui_core::backend::{self, Backend};
-#[cfg(feature = "crossterm")]
+#[cfg(any(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
 #[doc(no_inline)]
 pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
 
