@@ -29,11 +29,23 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = ["all-widgets", "crossterm", "layout-cache", "macros", "underline-color"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
-crossterm = ["dep:ratatui-crossterm", "std"]
-## selects the crossterm 0.28.x backend implementation
-crossterm_0_28 = ["crossterm", "ratatui-crossterm/crossterm_0_28"]
-## selects the crossterm 0.29.x backend implementation (default)
-crossterm_0_29 = ["crossterm", "ratatui-crossterm/crossterm_0_29"]
+## This uses crossterm 0.29.x.
+crossterm = ["crossterm_0_29"]
+## enables the crossterm backend with crossterm 0.28.x. Disable the default features to use it, as
+## the default `crossterm` feature selects crossterm 0.29.x.
+crossterm_0_28 = [
+  "dep:ratatui-crossterm",
+  "ratatui-crossterm/crossterm_0_28",
+  "ratatui-crossterm/underline-color",
+  "std",
+]
+## enables the crossterm backend with crossterm 0.29.x.
+crossterm_0_29 = [
+  "dep:ratatui-crossterm",
+  "ratatui-crossterm/crossterm_0_29",
+  "ratatui-crossterm/underline-color",
+  "std",
+]
 ## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
 termion = ["dep:ratatui-termion", "std"]
 ## enables the [`TerminaBackend`](backend::TerminaBackend) backend and adds a dependency on [`termina`].

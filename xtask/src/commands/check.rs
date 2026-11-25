@@ -1,6 +1,8 @@
 use color_eyre::Result;
+use color_eyre::eyre::bail;
+use duct::cmd;
 
-use crate::{CROSSTERM_COMMON_FEATURES, CROSSTERM_VERSION_FEATURES, Run, run_cargo};
+use crate::{CROSSTERM_COMMON_FEATURES, CROSSTERM_VERSION_FEATURES, ExpressionExt, Run, run_cargo};
 
 /// Run cargo check
 #[derive(Clone, Debug, clap::Args)]
@@ -28,6 +30,7 @@ impl Run for Check {
                     features.as_str(),
                 ];
                 run_cargo(command)?;
+                check_ratatui_crossterm_version(crossterm_feature)?;
             }
 
             run_cargo(vec![
@@ -46,4 +49,45 @@ impl Run for Check {
             run_cargo(vec!["check", "--all-targets"])
         }
     }
+}
+
+/// Check that `ratatui` built with only `crossterm_feature` depends on that crossterm version
+/// alone, so an application using the same crossterm version gets matching types.
+fn check_ratatui_crossterm_version(crossterm_feature: &str) -> Result<()> {
+    let tree = cmd(
+        "cargo",
+        [
+            "tree",
+            "--package",
+            "ratatui",
+            "--no-default-features",
+            "--features",
+            crossterm_feature,
+            "--edges",
+            "normal",
+            "--prefix",
+            "none",
+            "--format",
+            "{p}",
+        ],
+    )
+    .stdout_capture()
+    .run_with_trace()?;
+    let tree = String::from_utf8(tree.stdout)?;
+    let expected = crossterm_feature.replace("crossterm_0_", "crossterm v0.");
+    let crossterm_versions: Vec<&str> = tree
+        .lines()
+        .filter(|line| line.starts_with("crossterm v"))
+        .collect();
+    if crossterm_versions.is_empty()
+        || crossterm_versions
+            .iter()
+            .any(|version| !version.starts_with(&expected))
+    {
+        bail!(
+            "ratatui with only the `{crossterm_feature}` feature should depend on {expected} \
+            only, but it depends on {crossterm_versions:?}"
+        );
+    }
+    Ok(())
 }

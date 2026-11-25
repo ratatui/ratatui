@@ -525,7 +525,7 @@ pub use palette;
 pub use ratatui_core::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 pub use ratatui_core::{buffer, layout};
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
-#[cfg(feature = "crossterm")]
+#[cfg(any(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
 pub use ratatui_crossterm::crossterm;
 #[cfg(feature = "macros")]
 pub use ratatui_macros as macros;
@@ -539,7 +539,7 @@ pub use ratatui_termion::termion;
 #[cfg(feature = "termwiz")]
 pub use ratatui_termwiz::termwiz;
 
-#[cfg(feature = "crossterm")]
+#[cfg(any(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
 #[doc(inline)]
 pub use crate::init::{
     DefaultTerminal, init, init_with_options, restore, run, run_with_options, try_init,
@@ -549,7 +549,7 @@ pub use crate::init::{
 /// Re-exports for the backend implementations.
 pub mod backend {
     pub use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, TestBackend, WindowSize};
-    #[cfg(feature = "crossterm")]
+    #[cfg(any(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
     pub use ratatui_crossterm::{CrosstermBackend, FromCrossterm, IntoCrossterm};
     #[cfg(feature = "termina")]
     pub use ratatui_termina::{FromTermina, IntoTermina, TerminaBackend};
@@ -563,5 +563,5 @@ pub mod prelude;
 pub use ratatui_core::{style, symbols, text};
 pub mod widgets;
 pub use ratatui_widgets::border;
-#[cfg(feature = "crossterm")]
+#[cfg(any(feature = "crossterm_0_28", feature = "crossterm_0_29"))]
 pub mod init;
