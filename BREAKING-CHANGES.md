@@ -22,6 +22,7 @@ This is a quick summary of the sections below:
   - The `scrolling-regions` feature is removed. `Terminal::insert_before` now requires a backend
     that implements the new `ScrollByRegion` trait
   - `HighlightSpacing` is split into `ListHighlightSpacing` and `TableHighlightSpacing`
+  - `Paragraph::scroll` now accepts `(usize, usize)` instead of `(u16, u16)`
 - [v0.30.1](#v0301)
   - Adding `AsRef` impls for widgets may affect type inference in rare cases
   - MSRV is now 1.88.0
@@ -326,6 +327,30 @@ are unchanged.
 
 `HighlightSpacing` has been removed. Replace it with `ListHighlightSpacing` where it is passed to a
 `List` and with `TableHighlightSpacing` where it is passed to a `Table`.
+
+### `Paragraph::scroll` now accepts `(usize, usize)` instead of `(u16, u16)` ([#2803])
+
+[#2803]: https://github.com/ratatui/ratatui/pull/2803
+
+Offsets were limited to `u16`, so content beyond 65,535 lines or columns could not be reached. The
+order is still `(y, x)`, and literals such as `.scroll((0, 0))` still compile.
+
+If you convert a `usize` to `u16`, pass the `usize` directly. Otherwise, store the offset as a
+`usize` or convert it with `.into()`. Change stored or returned `(u16, u16)` tuples to
+`(usize, usize)`.
+
+```diff
+- paragraph.scroll((offset as u16, 0)) // offset: usize
+- paragraph.scroll((u16::try_from(offset).unwrap_or(u16::MAX), 0))
++ paragraph.scroll((offset, 0))
+
+- paragraph.scroll((app.scroll, 0)) // app.scroll: u16
++ paragraph.scroll((app.scroll.into(), 0))
+```
+
+For signed offsets, use `usize::try_from(offset).unwrap_or(0)`. Casting a negative value with
+`as usize` gives a very large offset. Integer variables without an explicit type are now inferred as
+`usize`, so a type error may appear away from the `scroll` call.
 
 ## [v0.30.1](https://github.com/ratatui/ratatui/releases/tag/ratatui-v0.30.1)
 
