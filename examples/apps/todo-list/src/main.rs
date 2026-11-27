@@ -106,7 +106,7 @@ impl FromIterator<(Status, &'static str, &'static str)> for TodoList {
             .map(|(status, todo, info)| TodoItem::new(status, todo, info))
             .collect::<Vec<_>>();
         // Choosing a mode enables item-count tracking on the first render.
-        let state = ListState::default().with_selection_mode(SelectionMode::Clamp);
+        let state = ListState::default();
         Self { items, state }
     }
 }

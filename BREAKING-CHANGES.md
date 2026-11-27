@@ -11,6 +11,7 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.31.0](#v0310)
+  - `ListState` navigation stays within the rendered item count
   - `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
   - `Scrollbar` thumb now reaches the end of the track when the content is fully scrolled
   - `Backend` adds cursor save and restore methods
@@ -111,6 +112,28 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.31.0
+
+### `ListState` navigation stays within the rendered item count
+
+Rendering a `List` now records the number of items in its `ListState`. Navigation methods
+(`select_next`, `select_previous`, `select_last`, `scroll_down_by`, `scroll_up_by`) stay within
+that count, so `selected()` is a valid index into the items that were last rendered. Previously
+`select_next` on the last item selected an index past the end until the next render clamped it,
+which panicked when used to index the items.
+
+The state only knows the items as of the last render. Selecting the last item and then adding more
+items leaves the selection where it was. Apps that follow the end of a growing list (logs, chat)
+must update the count before calling `select_last`, or call it after rendering:
+
+```diff
+ self.items.push(item);
++*self.state.item_count_mut() = Some(self.items.len());
+ self.state.select_last();
+```
+
+Navigation wraps instead of clamping with `ListState::with_selection_mode(SelectionMode::Wrap)`.
+Before the first render the count is unknown unless supplied with `ListState::with_item_count`,
+and navigation behaves as before.
 
 ### `Flex::SpaceBetween` with a single item now preserves fixed-size constraints
 
