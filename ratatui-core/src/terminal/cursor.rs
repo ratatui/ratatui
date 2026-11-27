@@ -15,6 +15,8 @@ impl<B: Backend> Terminal<B> {
     pub fn hide_cursor(&mut self) -> Result<(), B::Error> {
         self.backend.hide_cursor()?;
         self.cursor_visibility = CursorVisibility::Hidden;
+        // The cursor is no longer visible, so the last-frame dedup position is stale.
+        self.last_frame_cursor_position = None;
         Ok(())
     }
 
@@ -92,6 +94,9 @@ impl<B: Backend> Terminal<B> {
         let position = position.into();
         self.backend.set_cursor_position(position)?;
         self.last_known_cursor_pos = position;
+        // Record the new position in the last-frame dedup tracking so a subsequent draw that
+        // requests the same position cannot mistakenly assume the caret was placed elsewhere.
+        self.last_frame_cursor_position = Some(position);
         Ok(())
     }
 }

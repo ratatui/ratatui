@@ -106,6 +106,11 @@ impl<B: Backend> Terminal<B> {
             });
         self.backend.draw(updates)?;
 
+        // Track whether any cells were actually written, so the cursor dedup logic can skip a
+        // redundant `MoveTo` only when the diff was empty (and thus the physical cursor did not
+        // move). See `Terminal::last_flush_had_updates`.
+        self.last_flush_had_updates = last_pos.is_some();
+
         if let Some(pos) = last_pos {
             self.last_known_cursor_pos = pos;
         }

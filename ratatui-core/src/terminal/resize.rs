@@ -65,6 +65,18 @@ impl<B: Backend> Terminal<B> {
         self.clear_viewport()?;
         if let Some(cursor_position) = cursor_to_restore {
             self.backend.set_cursor_position(cursor_position)?;
+            // `resize` moves the physical cursor directly on the backend. Keep the next-frame
+            // `MoveTo` dedup tracking (`last_frame_cursor_position`) accurate so a subsequent
+            // draw at this same position correctly skips a redundant move, while a draw at a
+            // different position still emits one. (`last_known_cursor_pos` is left untouched:
+            // inline viewports use it to anchor the cursor offset within the previous viewport
+            // during resize, which is independent of the physical cursor's absolute position.)
+            self.last_frame_cursor_position = Some(cursor_position);
+        } else {
+            // For fullscreen and fixed viewports there is no restored cursor: the physical cursor
+            // ends wherever the clear left it, which is not tracked. Invalidate the dedup so a
+            // following draw always re-emits `Show` + `MoveTo`.
+            self.last_frame_cursor_position = None;
         }
 
         self.last_known_area = area;
@@ -206,6 +218,23 @@ mod tests {
         assert_eq!(terminal.last_known_area, new_area);
         assert_eq!(terminal.buffers[terminal.current].area, new_area);
         assert_eq!(terminal.buffers[1 - terminal.current].area, new_area);
+    }
+
+    #[test]
+    fn resize_fullscreen_invalidates_move_dedup_tracking() {
+        let backend = TestBackend::new(3, 2);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        // Simulate a prior draw that left a caret tracked at (1, 1).
+        terminal.last_frame_cursor_position = Some(Position { x: 1, y: 1 });
+
+        terminal.backend_mut().resize(4, 3);
+        terminal.resize(Rect::new(0, 0, 4, 3)).unwrap();
+
+        assert_eq!(
+            terminal.last_frame_cursor_position, None,
+            "a fullscreen resize must invalidate the MoveTo dedup tracking"
+        );
     }
 
     #[test]
