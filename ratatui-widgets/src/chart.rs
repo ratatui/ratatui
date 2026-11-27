@@ -1024,7 +1024,10 @@ impl<'a> Chart<'a> {
         }
 
         for (i, label) in labels.iter().enumerate() {
-            let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
+            // The factors are `u16` values, so the product fits in `u32`.
+            let dy = u32::from(i as u16) * u32::from(graph_area.height.saturating_sub(1))
+                / u32::from(labels_len - 1);
+            let dy = u16::try_from(dy).unwrap_or(u16::MAX);
             if dy < graph_area.bottom() {
                 let label_area = Rect::new(
                     x,
@@ -2199,5 +2202,20 @@ mod tests {
         (&widget).render(area, &mut expected);
         assert_eq!(buf, expected);
         assert_ne!(buf, Buffer::empty(area));
+    }
+
+    /// `i * (height - 1)` is a `u16` product. 1800 labels on a 40-row chart overflow it
+    /// (`attempt to multiply with overflow`). Three labels on a normal chart do not.
+    #[test]
+    fn y_labels_do_not_overflow_wide_spacing() {
+        let labels: Vec<String> = (0..1800).map(|i| i.to_string()).collect();
+        let chart =
+            Chart::new(vec![]).y_axis(Axis::default().labels(labels.iter().map(String::as_str)));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 40));
+
+        chart.render(buffer.area, &mut buffer);
+
+        // 1799 is the top label. It only reaches row 0 when the spacing product does not wrap.
+        assert_eq!(buffer[(0, 0)].symbol(), "1");
     }
 }
