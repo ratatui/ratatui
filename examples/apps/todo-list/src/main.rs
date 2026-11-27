@@ -5,11 +5,13 @@
 /// release.
 ///
 /// [`latest`]: https://github.com/ratatui/ratatui/tree/latest
+use std::sync::LazyLock;
+
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEvent};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::palette::tailwind::{BLUE, GREEN, SLATE};
+use ratatui::style::palette::tailwind;
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::widgets::{
@@ -18,12 +20,10 @@ use ratatui::widgets::{
 };
 use ratatui::{DefaultTerminal, symbols};
 
-const TODO_HEADER_STYLE: Style = Style::new().fg(SLATE.c100).bg(BLUE.c800);
-const NORMAL_ROW_BG: Color = SLATE.c950;
-const ALT_ROW_BG_COLOR: Color = SLATE.c900;
-const SELECTED_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier::BOLD);
-const TEXT_FG_COLOR: Color = SLATE.c200;
-const COMPLETED_TEXT_FG_COLOR: Color = GREEN.c500;
+// Colors are resolved once at startup. On terminals that don't support 24-bit color
+// (e.g. Apple Terminal.app before build 465) the truecolor tailwind palette looks bad,
+// so we fall back to indexed colors. See issue #1972.
+static THEME: LazyLock<Theme> = LazyLock::new(Theme::new);
 
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -232,8 +232,8 @@ impl App {
             .title(Line::raw("TODO List").centered())
             .borders(Borders::TOP)
             .border_set(symbols::border::EMPTY)
-            .border_style(TODO_HEADER_STYLE)
-            .bg(NORMAL_ROW_BG);
+            .border_style(THEME.todo_header_style())
+            .bg(THEME.normal_row_bg);
 
         // Iterate through all elements in the `items` and stylize them.
         let items: Vec<ListItem> = self
@@ -250,7 +250,7 @@ impl App {
         // Create a List from all list items and highlight the currently selected one
         let list = List::new(items)
             .block(block)
-            .highlight_style(SELECTED_STYLE)
+            .highlight_style(THEME.selected_style())
             .highlight_symbol(">")
             .highlight_spacing(ListHighlightSpacing::Always);
 
@@ -275,35 +275,199 @@ impl App {
             .title(Line::raw("TODO Info").centered())
             .borders(Borders::TOP)
             .border_set(symbols::border::EMPTY)
-            .border_style(TODO_HEADER_STYLE)
-            .bg(NORMAL_ROW_BG)
+            .border_style(THEME.todo_header_style())
+            .bg(THEME.normal_row_bg)
             .padding(Padding::horizontal(1));
 
         // We can now render the item info
         Paragraph::new(info)
             .block(block)
-            .fg(TEXT_FG_COLOR)
+            .fg(THEME.text_fg)
             .wrap(Wrap { trim: false })
             .render(area, buf);
     }
 }
 
-const fn alternate_colors(i: usize) -> Color {
+fn alternate_colors(i: usize) -> Color {
     if i.is_multiple_of(2) {
-        NORMAL_ROW_BG
+        THEME.normal_row_bg
     } else {
-        ALT_ROW_BG_COLOR
+        THEME.alt_row_bg
     }
 }
 
 impl From<&TodoItem> for ListItem<'_> {
     fn from(value: &TodoItem) -> Self {
         let line = match value.status {
-            Status::Todo => Line::styled(format!(" ☐ {}", value.todo), TEXT_FG_COLOR),
+            Status::Todo => Line::styled(format!(" ☐ {}", value.todo), THEME.text_fg),
             Status::Completed => {
-                Line::styled(format!(" ✓ {}", value.todo), COMPLETED_TEXT_FG_COLOR)
+                Line::styled(format!(" ✓ {}", value.todo), THEME.completed_text_fg)
             }
         };
         ListItem::new(line)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+struct Theme {
+    header_fg: Color,
+    header_bg: Color,
+    normal_row_bg: Color,
+    alt_row_bg: Color,
+    selected_row_bg: Color,
+    text_fg: Color,
+    completed_text_fg: Color,
+}
+
+impl Theme {
+    fn new() -> Self {
+        let term_program = std::env::var("TERM_PROGRAM").ok();
+        let term_program_version = std::env::var("TERM_PROGRAM_VERSION").ok();
+        let is_true_color =
+            Self::supports_true_color(term_program.as_deref(), term_program_version.as_deref());
+        Self::from_true_color(is_true_color)
+    }
+
+    // Builds the theme for a terminal that either does or does not support 24-bit color.
+    fn from_true_color(is_true_color: bool) -> Self {
+        use tailwind::{BLUE, GREEN, SLATE};
+
+        let color = |true_color, indexed_color| {
+            if is_true_color {
+                true_color
+            } else {
+                indexed_color
+            }
+        };
+
+        Self {
+            header_fg: color(SLATE.c100, Color::Indexed(255)),
+            header_bg: color(BLUE.c800, Color::Indexed(25)),
+            normal_row_bg: color(SLATE.c950, Color::Indexed(16)),
+            alt_row_bg: color(SLATE.c900, Color::Indexed(17)),
+            selected_row_bg: color(SLATE.c800, Color::Indexed(18)),
+            text_fg: color(SLATE.c200, Color::Indexed(252)),
+            completed_text_fg: color(GREEN.c500, Color::Indexed(41)),
+        }
+    }
+
+    const fn todo_header_style(self) -> Style {
+        Style::new().fg(self.header_fg).bg(self.header_bg)
+    }
+
+    const fn selected_style(self) -> Style {
+        Style::new()
+            .bg(self.selected_row_bg)
+            .add_modifier(Modifier::BOLD)
+    }
+
+    // Checks whether truecolor (24-bit color) is supported by the current terminal.
+    //
+    // Terminals known *not* to support truecolor:
+    // - Apple Terminal.app: all versions before build 465
+    //
+    // Environment variables used:
+    // - `TERM_PROGRAM`: identifies the terminal application in use
+    // - `TERM_PROGRAM_VERSION`: build number of that terminal application
+    fn supports_true_color(term_program: Option<&str>, term_program_version: Option<&str>) -> bool {
+        if term_program != Some("Apple_Terminal") {
+            return true;
+        }
+        let build_number = term_program_version
+            .and_then(|version| version.split('.').next())
+            .and_then(|version| version.parse::<u32>().ok())
+            .unwrap_or(0);
+        build_number >= 465
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ratatui::style::{Color, Modifier, Style};
+
+    use super::Theme;
+
+    #[test]
+    fn apple_terminal_before_build_465_does_not_support_true_color() {
+        assert!(!Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("464")
+        ));
+        assert!(!Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("455.1")
+        ));
+        assert!(!Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("unknown")
+        ));
+        assert!(!Theme::supports_true_color(Some("Apple_Terminal"), None));
+    }
+
+    #[test]
+    fn apple_terminal_build_465_and_later_supports_true_color() {
+        assert!(Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("465")
+        ));
+        assert!(Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("465.1")
+        ));
+        assert!(Theme::supports_true_color(
+            Some("Apple_Terminal"),
+            Some("500")
+        ));
+    }
+
+    #[test]
+    fn other_terminals_support_true_color() {
+        assert!(Theme::supports_true_color(Some("iTerm.app"), Some("3.5.0")));
+        assert!(Theme::supports_true_color(Some("WezTerm"), None));
+        assert!(Theme::supports_true_color(None, None));
+    }
+
+    #[test]
+    fn theme_falls_back_to_indexed_colors_without_true_color() {
+        let theme = Theme::from_true_color(false);
+        assert_eq!(theme.header_fg, Color::Indexed(255));
+        assert_eq!(theme.header_bg, Color::Indexed(25));
+        assert_eq!(theme.normal_row_bg, Color::Indexed(16));
+        assert_eq!(theme.alt_row_bg, Color::Indexed(17));
+        assert_eq!(theme.selected_row_bg, Color::Indexed(18));
+        assert_eq!(theme.text_fg, Color::Indexed(252));
+        assert_eq!(theme.completed_text_fg, Color::Indexed(41));
+        assert_eq!(
+            theme.todo_header_style(),
+            Style::new().fg(Color::Indexed(255)).bg(Color::Indexed(25))
+        );
+        assert_eq!(
+            theme.selected_style(),
+            Style::new()
+                .bg(Color::Indexed(18))
+                .add_modifier(Modifier::BOLD)
+        );
+    }
+
+    #[test]
+    fn theme_uses_truecolor_when_supported() {
+        let theme = Theme::from_true_color(true);
+        assert!(matches!(theme.header_fg, Color::Rgb(..)));
+        assert!(matches!(theme.header_bg, Color::Rgb(..)));
+        assert!(matches!(theme.normal_row_bg, Color::Rgb(..)));
+        assert!(matches!(theme.alt_row_bg, Color::Rgb(..)));
+        assert!(matches!(theme.selected_row_bg, Color::Rgb(..)));
+        assert!(matches!(theme.text_fg, Color::Rgb(..)));
+        assert!(matches!(theme.completed_text_fg, Color::Rgb(..)));
+        assert_eq!(
+            theme.todo_header_style(),
+            Style::new().fg(theme.header_fg).bg(theme.header_bg)
+        );
+        assert_eq!(
+            theme.selected_style(),
+            Style::new()
+                .bg(theme.selected_row_bg)
+                .add_modifier(Modifier::BOLD)
+        );
     }
 }
