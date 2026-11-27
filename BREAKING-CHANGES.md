@@ -123,7 +123,17 @@ which panicked when used to index the items.
 
 The state only knows the items as of the last render. Selecting the last item and then adding more
 items leaves the selection where it was. Apps that follow the end of a growing list (logs, chat)
-must update the count before calling `select_last`, or call it after rendering:
+by calling `select_last` after each push should call `follow_last` instead, which keeps the newest
+item selected on each render until another selection change:
+
+```diff
+-self.items.push(item);
+-self.state.select_last();
++self.state.follow_last(); // once, e.g. when the user presses End
++self.items.push(item);
+```
+
+Alternatively, update the count before calling `select_last`:
 
 ```diff
  self.items.push(item);

@@ -5,16 +5,18 @@
 /// that the selected item is visible. This will modify the [`ListState`] object passed to the
 /// `Frame::render_stateful_widget` method.
 ///
-/// The state consists of four fields:
+/// The state consists of five fields:
 /// - [`offset`]: the index of the first item to be displayed
 /// - [`selected`]: the index of the selected item, which can be `None` if no item is selected
 /// - [`item_count`]: an optional item count that enables bounded navigation
 /// - [`selection_mode`]: whether navigation clamps at the ends or wraps around
+/// - [`is_following_last`]: whether rendering keeps the last item selected as items are added
 ///
 /// [`offset`]: ListState::offset()
 /// [`selected`]: ListState::selected()
 /// [`item_count`]: ListState::item_count()
 /// [`selection_mode`]: ListState::selection_mode()
+/// [`is_following_last`]: ListState::is_following_last()
 ///
 /// Rendering records the number of items, and navigation methods such as
 /// [`select_next`](Self::select_next) stay within that count, so [`selected`] is a valid index
@@ -23,17 +25,19 @@
 /// to continue from the other end.
 ///
 /// The state only knows about the items as of the last render. Selecting the last item and then
-/// adding more items leaves the selection where it was; it does not follow the end of the list.
+/// adding more items leaves the selection where it was. To keep the newest item selected as items
+/// are added, use [`follow_last`](Self::follow_last).
 /// If items change before the next render, update [`item_count_mut`](Self::item_count_mut) before
 /// navigating. Before the first render the count is unknown unless supplied with
 /// [`with_item_count`](Self::with_item_count), and navigation is unbounded until rendering clamps
 /// it. Direct selection assignments are only clamped during rendering, so you can select an item
 /// that will be added on the next render.
 ///
-/// Equality and hashing compare all four fields, so a state compares unequal to an otherwise
+/// Equality and hashing compare all five fields, so a state compares unequal to an otherwise
 /// identical one after rendering records the item count.
 ///
-/// Serialization preserves the offset, selection and selection mode. The item count is not
+/// Serialization preserves the offset, selection, selection mode and whether the state follows
+/// the last item. The item count is not
 /// serialized; rendering or [`item_count_mut`](Self::item_count_mut) restores it.
 ///
 /// See the list in the [Examples] directory for a more in-depth example of the various
@@ -76,6 +80,11 @@ pub struct ListState {
         serde(default, skip_serializing_if = "SelectionMode::is_clamp")
     )]
     selection_mode: SelectionMode,
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "core::ops::Not::not")
+    )]
+    following_last: bool,
 }
 
 /// How list navigation behaves at the first and last items.
@@ -248,6 +257,9 @@ impl ListState {
     /// This bypasses bounds checks. Rendering or navigation with a known item count corrects
     /// out-of-bounds selections.
     ///
+    /// Changing the selection through this reference does not stop
+    /// [`follow_last`](Self::follow_last); the next render selects the last item again.
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -276,10 +288,64 @@ impl ListState {
     /// state.select(Some(1));
     /// ```
     pub const fn select(&mut self, index: Option<usize>) {
+        self.following_last = false;
         self.selected = index;
         if index.is_none() {
             self.offset = 0;
         }
+    }
+
+    /// Selects the last item and keeps it selected as items are added.
+    ///
+    /// While following, each render selects the last item rendered, so the selection stays on
+    /// the newest item without updating [`item_count_mut`](Self::item_count_mut). Between adding
+    /// items and the next render, [`selected`](Self::selected) is still the previous last item.
+    /// Any other selection change, such as [`select_previous`](Self::select_previous) or
+    /// [`select`](Self::select), stops following. Use this for logs, chat and other lists that
+    /// grow at the end.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::ListState;
+    ///
+    /// let mut state = ListState::default().with_item_count(Some(3));
+    /// state.follow_last();
+    /// assert_eq!(state.selected(), Some(2));
+    /// assert!(state.is_following_last());
+    ///
+    /// state.select_previous();
+    /// assert!(!state.is_following_last());
+    /// ```
+    pub const fn follow_last(&mut self) {
+        self.select_last();
+        self.following_last = true;
+    }
+
+    /// Selects the last item and keeps it selected as items are added.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self. See
+    /// [`follow_last`](Self::follow_last).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use ratatui::widgets::ListState;
+    ///
+    /// let state = ListState::default().with_follow_last();
+    /// assert!(state.is_following_last());
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn with_follow_last(mut self) -> Self {
+        self.follow_last();
+        self
+    }
+
+    /// Returns whether rendering keeps the last item selected.
+    ///
+    /// See [`follow_last`](Self::follow_last).
+    pub const fn is_following_last(&self) -> bool {
+        self.following_last
     }
 
     /// Mutable reference to the number of items in the list.
@@ -309,16 +375,23 @@ impl ListState {
         self.item_count
     }
 
-    /// Records the rendered item count and keeps the selection in bounds.
+    /// Records the rendered item count, selects the last item when following, and keeps the
+    /// selection in bounds.
     pub(super) const fn update_selection_for_render(&mut self, item_count: usize) {
         self.item_count = Some(item_count);
+        if self.following_last {
+            self.selected = item_count.checked_sub(1);
+        }
         self.clamp_selected();
     }
 
     /// Clamps the `selected` index to valid bounds if `item_count` is known.
     const fn clamp_selected(&mut self) {
         match (self.selected, self.item_count) {
-            (_, Some(0)) => self.select(None),
+            (_, Some(0)) => {
+                self.selected = None;
+                self.offset = 0;
+            }
             (Some(selected), Some(count)) if selected >= count => {
                 self.selected = Some(count - 1);
             }
