@@ -39,6 +39,7 @@
 
 use std::fmt;
 use std::io::{self, Write};
+use std::os::fd::{AsRawFd, RawFd};
 
 use ratatui_core::backend::{Backend, ClearType, ScrollByRegion, WindowSize};
 use ratatui_core::buffer::{Cell, CellWidth};
@@ -99,6 +100,7 @@ where
     W: Write,
 {
     writer: W,
+    tty_fd: Option<RawFd>,
 }
 
 impl<W> TermionBackend<W>
@@ -106,6 +108,10 @@ where
     W: Write,
 {
     /// Creates a new Termion backend with the given writer.
+    ///
+    /// Queries terminal dimensions from `stdout`. If `stdout` is redirected or piped while
+    /// rendering to another file descriptor (such as `/dev/tty` or [`stderr`](std::io::stderr)),
+    /// use [`TermionBackend::new_from_fd`] or [`TermionBackend::with_fd`] instead.
     ///
     /// Most applications will use either [`stdout`](std::io::stdout) or
     /// [`stderr`](std::io::stderr) as writer. See the [FAQ] to determine which one to use.
@@ -122,7 +128,64 @@ where
     /// let backend = TermionBackend::new(stdout());
     /// ```
     pub const fn new(writer: W) -> Self {
-        Self { writer }
+        Self {
+            writer,
+            tty_fd: None,
+        }
+    }
+
+    /// Creates a new Termion backend that queries terminal dimensions using the file descriptor of
+    /// `writer` rather than `stdout`.
+    ///
+    /// This is useful when `stdout` is redirected (for example to a pipe or file) and rendering is
+    /// directed to a terminal file descriptor such as `/dev/tty` or [`stderr`](std::io::stderr).
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use std::fs::OpenOptions;
+    ///
+    /// use ratatui_termion::TermionBackend;
+    ///
+    /// let tty = OpenOptions::new().read(true).write(true).open("/dev/tty")?;
+    /// let backend = TermionBackend::new_from_fd(tty);
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn new_from_fd(writer: W) -> Self
+    where
+        W: AsRawFd,
+    {
+        let fd = writer.as_raw_fd();
+        Self::with_fd(writer, fd)
+    }
+
+    /// Creates a new Termion backend with the given writer and explicit terminal file descriptor
+    /// `fd` for [`Backend::size`] and [`Backend::window_size`] queries.
+    ///
+    /// Use this constructor when `writer` wraps an underlying TTY (such as a buffered writer or
+    /// alternate/raw screen wrapper that does not implement [`AsRawFd`]). The caller must ensure
+    /// `fd` remains open for the lifetime of this backend.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use std::fs::OpenOptions;
+    /// use std::io::BufWriter;
+    /// use std::os::fd::AsRawFd;
+    ///
+    /// use ratatui_termion::TermionBackend;
+    ///
+    /// let tty = OpenOptions::new().read(true).write(true).open("/dev/tty")?;
+    /// let fd = tty.as_raw_fd();
+    /// let writer = BufWriter::new(tty);
+    /// let backend = TermionBackend::with_fd(writer, fd);
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub const fn with_fd(writer: W, fd: RawFd) -> Self {
+        Self {
+            writer,
+            tty_fd: Some(fd),
+        }
     }
 
     /// Gets the writer.
@@ -273,14 +336,24 @@ where
     }
 
     fn size(&self) -> io::Result<Size> {
-        let terminal = termion::terminal_size()?;
+        let terminal = match self.tty_fd {
+            Some(fd) => termion::terminal_size_fd(&fd)?,
+            None => termion::terminal_size()?,
+        };
         Ok(Size::new(terminal.0, terminal.1))
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {
+        let (columns_rows, pixels) = match self.tty_fd {
+            Some(fd) => (
+                termion::terminal_size_fd(&fd)?,
+                termion::terminal_size_pixels_fd(&fd)?,
+            ),
+            None => (termion::terminal_size()?, termion::terminal_size_pixels()?),
+        };
         Ok(WindowSize {
-            columns_rows: termion::terminal_size()?.into(),
-            pixels: termion::terminal_size_pixels()?.into(),
+            columns_rows: columns_rows.into(),
+            pixels: pixels.into(),
         })
     }
 
@@ -830,5 +903,73 @@ mod tests {
         );
         assert_eq!(Modifier::from_termion(tstyle::Blink), Modifier::SLOW_BLINK);
         assert_eq!(Modifier::from_termion(tstyle::Reset), Modifier::empty());
+    }
+
+    #[test]
+    fn size_and_window_size_use_custom_fd() {
+        let mut bad_fd_backend = TermionBackend::with_fd(Vec::new(), -1);
+        let size_err = bad_fd_backend.size().unwrap_err();
+        let win_err = bad_fd_backend.window_size().unwrap_err();
+        assert_eq!(size_err.raw_os_error(), Some(9));
+        assert_eq!(win_err.raw_os_error(), Some(9));
+
+        let dev_null = std::fs::File::open("/dev/null").expect("open /dev/null");
+        let mut null_backend = TermionBackend::new_from_fd(dev_null);
+        let null_size_err = null_backend.size().unwrap_err();
+        let null_win_err = null_backend.window_size().unwrap_err();
+        assert!(null_size_err.raw_os_error().is_some());
+        assert!(null_win_err.raw_os_error().is_some());
+    }
+
+    #[test]
+    fn size_and_window_size_from_pty_when_stdout_redirected() {
+        use std::io::{BufRead, BufReader};
+        use std::process::{Command, Stdio};
+
+        let script = r#"import fcntl, os, pty, struct, sys, termios
+m, s = pty.openpty()
+fcntl.ioctl(s, termios.TIOCSWINSZ, struct.pack("HHHH", 42, 132, 2640, 840))
+print(os.ttyname(s), flush=True)
+sys.stdin.read()
+os.close(s)
+os.close(m)
+"#;
+
+        let mut child = match Command::new("python3")
+            .args(["-c", script])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+        {
+            Ok(child) => child,
+            Err(err) if err.kind() == io::ErrorKind::NotFound => return,
+            Err(err) => panic!("failed to spawn python3 pty helper: {err}"),
+        };
+
+        let stdout = child.stdout.take().expect("child stdout");
+        let mut reader = BufReader::new(stdout);
+        let mut tty_path = String::new();
+        reader
+            .read_line(&mut tty_path)
+            .expect("read slave pty path");
+        let tty_path = tty_path.trim();
+        assert!(!tty_path.is_empty(), "empty slave pty path");
+
+        let pty = std::fs::File::open(tty_path).expect("open slave pty");
+        let raw_fd = pty.as_raw_fd();
+
+        let backend_from_fd = TermionBackend::new_from_fd(pty);
+        assert_eq!(backend_from_fd.size().unwrap(), Size::new(132, 42));
+
+        let mut backend_with_fd = TermionBackend::with_fd(Vec::new(), raw_fd);
+        let win_size = backend_with_fd.window_size().unwrap();
+        assert_eq!(win_size.columns_rows, Size::new(132, 42));
+        assert_eq!(win_size.pixels, Size::new(2640, 840));
+
+        drop(backend_with_fd);
+        drop(backend_from_fd);
+        drop(child.stdin.take());
+        let status = child.wait().expect("wait pty helper");
+        assert!(status.success(), "python3 pty helper exited with {status}");
     }
 }
