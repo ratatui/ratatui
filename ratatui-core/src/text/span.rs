@@ -488,10 +488,13 @@ impl Widget for &Span<'_> {
         let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
             let symbol_width = grapheme.symbol.cell_width();
-            let next_x = x.saturating_add(symbol_width);
-            if next_x > area.right() {
+            // `area.right()` can be `u16::MAX`, so a saturating add could never pass it.
+            let Some(next_x) = x
+                .checked_add(symbol_width)
+                .filter(|&end| end <= area.right())
+            else {
                 break;
-            }
+            };
 
             if i == 0 {
                 // the first grapheme is always set on the cell
@@ -905,6 +908,21 @@ mod tests {
                 "test ".green().on_yellow(),
             ])]);
             assert_eq!(buf, expected);
+        }
+
+        /// When the area ends at `u16::MAX`, content that does not fit is truncated at the
+        /// right edge instead of being written past it.
+        #[rstest]
+        #[case::narrow("abc", ["a", "b"])]
+        #[case::wide("a😃", ["a", " "])]
+        fn render_truncates_at_max_right_edge(
+            #[case] content: &str,
+            #[case] expected: [&'static str; 2],
+        ) {
+            let area = Rect::new(u16::MAX - 2, 0, 2, 1);
+            let mut buf = Buffer::empty(area);
+            Span::raw(content).render(area, &mut buf);
+            assert_eq!(buf.content(), expected.map(Cell::new));
         }
 
         #[test]
