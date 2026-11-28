@@ -18,7 +18,7 @@ pub mod main {
 }
 pub use main::*;
 
-criterion::criterion_main!(
+hotpath::criterion::criterion_main!(
     barchart::benches,
     block::benches,
     canvas::benches,

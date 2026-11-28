@@ -1,4 +1,4 @@
-use criterion::{BatchSize, Bencher, Criterion, criterion_group};
+use hotpath::criterion::{BatchSize, Bencher, Criterion, criterion_group};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Rect};
 use ratatui::text::Line;

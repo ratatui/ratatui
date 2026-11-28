@@ -1,11 +1,11 @@
 use std::hint::black_box;
 
-use criterion::{BenchmarkId, Criterion};
+use hotpath::criterion::{BenchmarkId, Criterion};
 use ratatui::buffer::{Buffer, Cell};
 use ratatui::layout::{Rect, Size};
 use ratatui::style::Style;
 
-criterion::criterion_group!(
+hotpath::criterion::criterion_group!(
     benches,
     empty,
     filled,

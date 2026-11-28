@@ -1,0 +1,47 @@
+name: hotpath relay
+
+# Uploads the reports written by pull request runs of hotpath-benchmark.yml to hotpath.rs. Those
+# runs may come from forks and get no OIDC token, so this workflow uploads on their behalf. It never
+# checks out or runs code from the pull request. See https://hotpath.rs/ci_integration.
+#
+# `workflow_run` runs the copy of this file on the default branch, and matches the benchmark
+# workflow by its `name:`: renaming it silently stops the relay.
+
+on:
+  # zizmor: ignore[dangerous-triggers] intentional two-workflow split: fork pull requests get no
+  # OIDC token, so this workflow uploads their report artifact without checking out their code.
+  workflow_run:
+    workflows: ["hotpath benchmark"]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  relay:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # keep in sync with the matrix names in hotpath-benchmark.yml
+        scenario:
+          - block-render
+          - text-render
+          - canvas-circle-render
+    permissions:
+      actions: read # download the artifact of the benchmark run
+      id-token: write # authenticate the upload
+      pull-requests: read # find the pull request the run belongs to
+    concurrency:
+      group: hotpath-relay-${{ matrix.scenario }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: true
+    steps:
+      - uses: hotpath-rs/hotpath-relay@d40b0e465fa852b0c1f4e33989140d11d7b2742c # v1.0.0
+        continue-on-error: true
+        with:
+          benchmark: ${{ matrix.scenario }}
+          artifact_name: hotpath-report-${{ matrix.scenario }}
+          report_file: report.json

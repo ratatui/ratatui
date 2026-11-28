@@ -1,4 +1,4 @@
-use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group};
+use hotpath::criterion::{BatchSize, BenchmarkId, Criterion, criterion_group};
 use ratatui::text::{Line, Text};
 
 /// Benchmark for building a [`Line`] or [`Text`] from an owned [`String`], such as the result of

@@ -17,6 +17,7 @@
 
 [![Crate Badge]][Crate] [![Repo Badge]][Repo] [![Docs Badge]][Docs] [![License Badge]][License]  \
 [![CI Badge]][CI] [![Deps Badge]][Deps] [![Codecov Badge]][Codecov] [![Sponsors Badge]][Sponsors]  \
+[![hotpath-cloud Badge]][hotpath-cloud]  \
 [Ratatui Website] · [Docs] · [Widget Examples] · [App Examples] · [Changelog]  \
 [Breaking Changes] · [Contributing] · [Report a bug] · [Request a Feature]
 
@@ -181,6 +182,8 @@ This project is licensed under the [MIT License][License].
 [Matrix]: https://matrix.to/#/#ratatui:matrix.org
 [Forum Badge]: https://img.shields.io/discourse/likes?server=https%3A%2F%2Fforum.ratatui.rs&style=flat-square&logo=discourse&label=forum&color=C43AC3
 [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
+[hotpath-cloud Badge]: https://img.shields.io/endpoint?url=https://hotpath.rs/badge-cloud.json
+[hotpath-cloud]: https://hotpath.rs/app/repos/ratatui/ratatui
 [templates]: https://github.com/ratatui/templates/
 [showcase]: https://ratatui.rs/showcase/
 [awesome-ratatui]: https://github.com/ratatui/awesome-ratatui

@@ -803,6 +803,7 @@ impl Widget for Block<'_> {
 }
 
 impl Widget for &Block<'_> {
+    #[cfg_attr(feature = "hotpath", hotpath::measure)]
     fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         if area.is_empty() {
@@ -816,6 +817,7 @@ impl Widget for &Block<'_> {
 }
 
 impl Block<'_> {
+    #[cfg_attr(feature = "hotpath", hotpath::measure)]
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
         self.render_sides(area, buf);
         self.render_corners(area, buf);
@@ -917,6 +919,7 @@ impl Block<'_> {
             }
         }
     }
+    #[cfg_attr(feature = "hotpath", hotpath::measure)]
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
         self.render_title_position(TitlePosition::Top, area, buf);
         self.render_title_position(TitlePosition::Bottom, area, buf);

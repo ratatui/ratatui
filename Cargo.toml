@@ -41,6 +41,7 @@ crossterm = "0.29"
 document-features = "0.2.11"
 fakeit = "1"
 hashbrown = "0.17"
+hotpath = "0.33.1"
 indoc = "2.0.5"
 instability = "0.3.7"
 jiff = { version = "1.0.0", default-features = false }
@@ -128,3 +129,10 @@ use_self = "warn"
 [profile.bench]
 codegen-units = 1
 lto = true
+
+# hotpath benchmark runs: Callgrind needs symbols, and fat LTO is slow to rebuild in CI
+[profile.hotpath]
+inherits = "release"
+codegen-units = 1
+lto = false
+strip = "none"

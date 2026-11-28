@@ -52,6 +52,7 @@ impl Shape for Circle {
     ///
     /// Circles with a radius of more than about 300 million dots are not drawn, as the integer
     /// arithmetic would overflow.
+    #[cfg_attr(feature = "hotpath", hotpath::measure)]
     fn draw(&self, painter: &mut Painter<'_, '_>) {
         let (&[left, right], &[bottom, top]) = painter.bounds();
         if right <= left || top <= bottom {

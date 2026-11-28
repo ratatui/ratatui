@@ -1,0 +1,138 @@
+name: hotpath benchmark
+
+# Runs a few Criterion benchmarks with hotpath profiling, natively and under Callgrind, and sends
+# the merged reports to hotpath.rs, which compares each pull request with `main` and comments on
+# regressions. See https://hotpath.rs/ci_integration.
+#
+# Pushes to `main` upload the baseline directly. Pull requests (including forks, which get no OIDC
+# token) only write the reports to artifacts; hotpath-relay.yml uploads them.
+#
+# To profile a benchmark locally:
+#   HOTPATH_CRITERION_ITERATIONS=1000 cargo bench -p ratatui --bench main \
+#     --features hotpath-alloc -- --test --exact block/render_all_feature/200x50
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  upload:
+    name: benchmark ${{ matrix.name }} (push)
+    if: github.event_name == 'push'
+    # Instruction counts depend on the Valgrind build, the Rust toolchain and the OS, so the
+    # image, the package and the toolchain are pinned. Bump them in a dedicated pull request.
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # the upload authenticates with the job's OIDC token
+    strategy: &strategy
+      fail-fast: false
+      matrix:
+        # keep the names in sync with hotpath-relay.yml
+        include:
+          - { name: block-render, id: block/render_all_feature/200x50, iterations: 10000 }
+          - { name: text-render, id: text/render/200x50, iterations: 3000 }
+          - { name: canvas-circle-render, id: canvas/circle/render/braille/8, iterations: 20000 }
+    env: &env
+      RUSTUP_TOOLCHAIN: "1.100.0"
+      HOTPATH_BENCHMARK: ${{ matrix.name }}
+      HOTPATH_CRITERION_ITERATIONS: ${{ matrix.iterations }}
+      HOTPATH_USER_METADATA: runner=Linux-X64,toolchain=1.100.0,profile=hotpath,valgrind=3.26.0
+      HOTPATH_OUTPUT_FORMAT: json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: "1.100.0"
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Install valgrind
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind=1:3.26.0-0ubuntu1
+          valgrind --version
+      - name: Build benchmark
+        run: |
+          cargo bench -q -p ratatui --profile hotpath --bench main \
+            --features hotpath-alloc,hotpath-cloud,hotpath-callgrind --no-run
+      - name: Run benchmark natively
+        env:
+          HOTPATH_OUTPUT_PATH: ${{ runner.temp }}/native.json
+          BENCHMARK_ID: ${{ matrix.id }}
+        run: |
+          cargo bench -q -p ratatui --profile hotpath --bench main \
+            --features hotpath-alloc,hotpath-cloud,hotpath-callgrind -- --test --exact "$BENCHMARK_ID"
+      - name: Run benchmark under Callgrind and upload the merged report
+        env:
+          HOTPATH_UPLOAD: enabled
+          HOTPATH_OUTPUT_PATH: ${{ runner.temp }}/merged.json
+          HOTPATH_MERGE_REPORT: ${{ runner.temp }}/native.json
+          HOTPATH_CALLGRIND_OUT_FILE: ${{ runner.temp }}/callgrind.out.%p
+          BENCHMARK_ID: ${{ matrix.id }}
+        run: |
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="valgrind -q --tool=callgrind --instr-atstart=no --callgrind-out-file=$HOTPATH_CALLGRIND_OUT_FILE" \
+            cargo bench -q -p ratatui --profile hotpath --bench main \
+            --features hotpath-alloc,hotpath-cloud,hotpath-callgrind -- --test --exact "$BENCHMARK_ID"
+
+  report:
+    name: benchmark ${{ matrix.name }} (pull request)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    # Runs the pull request's code: no OIDC token and no secrets.
+    permissions:
+      contents: read
+    strategy: *strategy
+    env: *env
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # The default merge commit, so the pull request is measured merged into `main`, like
+        # the baseline it is compared with.
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: "1.100.0"
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Install valgrind
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind=1:3.26.0-0ubuntu1
+          valgrind --version
+      - name: Build benchmark
+        run: |
+          cargo bench -q -p ratatui --profile hotpath --bench main \
+            --features hotpath-alloc,hotpath-cloud,hotpath-callgrind --no-run
+      - name: Run benchmark natively
+        env:
+          HOTPATH_OUTPUT_PATH: ${{ runner.temp }}/native.json
+          BENCHMARK_ID: ${{ matrix.id }}
+        run: |
+          cargo bench -q -p ratatui --profile hotpath --bench main \
+            --features hotpath-alloc,hotpath-cloud,hotpath-callgrind -- --test --exact "$BENCHMARK_ID"
+      - name: Run benchmark under Callgrind and write the merged report
+        env:
+          HOTPATH_OUTPUT_PATH: ${{ runner.temp }}/report.json
+          HOTPATH_MERGE_REPORT: ${{ runner.temp }}/native.json
+          HOTPATH_CALLGRIND_OUT_FILE: ${{ runner.temp }}/callgrind.out.%p
+          BENCHMARK_ID: ${{ matrix.id }}
+        run: |
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="valgrind -q --tool=callgrind --instr-atstart=no --callgrind-out-file=$HOTPATH_CALLGRIND_OUT_FILE" \
+            cargo bench -q -p ratatui --profile hotpath --bench main \
+            --features hotpath-alloc,hotpath-cloud,hotpath-callgrind -- --test --exact "$BENCHMARK_ID"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: hotpath-report-${{ matrix.name }}
+          path: ${{ runner.temp }}/report.json
+          retention-days: 1
+          if-no-files-found: error

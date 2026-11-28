@@ -62,6 +62,9 @@ underline-color = []
 ## This is useful if you want to save themes to a file.
 serde = ["bitflags/serde", "compact_str/serde", "dep:serde"]
 
+## enables [hotpath-rs](https://hotpath.rs) instrumentation of the rendering hot paths.
+hotpath = ["dep:hotpath", "hotpath/hotpath", "std"]
+
 [dependencies]
 anstyle = { workspace = true, optional = true }
 bitflags.workspace = true
@@ -69,6 +72,7 @@ compact_str.workspace = true
 critical-section = { workspace = true, optional = true }
 document-features = { workspace = true, optional = true }
 hashbrown.workspace = true
+hotpath = { workspace = true, optional = true }
 itertools.workspace = true
 kasuari = { workspace = true, default-features = false }
 lru.workspace = true
